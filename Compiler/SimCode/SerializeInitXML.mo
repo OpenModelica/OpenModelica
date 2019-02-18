@@ -73,18 +73,32 @@ protected
   VarInfo vi;
   SimulationSettings s;
   File.File file = File.File();
+  String FMUType;
 algorithm
   try
-  File.open(file, simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
+  _ := match Config.simCodeTarget()
+    case "omsic" algorithm
+      File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
+      then();
+    else algorithm
+      File.open(file, simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
+      then();
+  end match;
   makefileParams := simCode.makefileParams;
   modelInfo := simCode.modelInfo;
   vi := modelInfo.varInfo;
   SOME(s) := simCode.simulationSettingsOpt;
+  FMUType := match Config.simCodeTarget()
+    case "omsic" then "2.0";
+    case "omsicpp" then "2.0";
+    else "1.0";
+  end match;
+
 
   File.write(file, "<?xml version = \"1.0\" encoding=\"UTF-8\"?>\n\n");
   File.write(file, "<!-- description of the model interface using an extention of the FMI standard -->\n");
   File.write(file, "<fmiModelDescription\n");
-  File.write(file, "  fmiVersion                          = \"1.0\"\n\n");
+  File.write(file, "  fmiVersion                          = \""+FMUType+"\"\n\n");
 
   File.write(file, "  modelName                           = \"");
   Dump.writePath(file, modelInfo.name, initialDot=false);
@@ -251,8 +265,16 @@ function modelVariables "Generates code for ModelVariables file for FMU target."
   input ModelInfo modelInfo;
 protected
   SimCodeVar.SimVars vars;
-  Integer vr=1000, ix=0;
+  Integer vr, ix=0;
 algorithm
+
+  // set starting index
+  vr := match Config.simCodeTarget()
+    case "omsic" then 0;
+    case "omsicpp" then 0;
+    else 1000;
+  end match;
+
   vars := modelInfo.vars;
 
   vr := scalarVariables(file, vars.stateVars, "rSta", vr);
@@ -358,7 +380,7 @@ algorithm
   end if;
 
   File.write(file, "    alias = ");
-  getAliasVar(file, simVar.aliasvar);
+  getAliasVar(file, simVar);
   File.write(file, "\n");
 
   File.write(file, "    classIndex = \"");
@@ -552,13 +574,24 @@ end getVariablity;
 
 function getAliasVar "Returns the alias Attribute of ScalarVariable."
   input File.File file;
-  input AliasVariable aliasvar;
+  input SimCodeVar.SimVar simVar;
 algorithm
-  _ := match aliasvar
-  case AliasVariable.ALIAS()
-    algorithm File.write(file, "\"alias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName, XML); File.write(file, "\""); then ();
-  case AliasVariable.NEGATEDALIAS()
-    algorithm File.write(file, "\"negatedAlias\" aliasVariable=\""); CR.writeCref(file, aliasvar.varName, XML); File.write(file, "\""); then ();
+  _ := match simVar
+  local SimCodeVar.AliasVariable aliasvar;
+  case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.ALIAS())
+    algorithm
+      File.write(file, "\"alias\" aliasVariable=\"");
+      CR.writeCref(file, aliasvar.varName, XML);
+      File.write(file, "\" aliasVariableId=\"");
+      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true)+"\"");
+    then ();
+  case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.NEGATEDALIAS())
+    algorithm
+      File.write(file, "\"negatedAlias\" aliasVariable=\"");
+      CR.writeCref(file, aliasvar.varName, XML);
+      File.write(file, "\" aliasVariableId=\"");
+      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true)+"\"");
+      then ();
   else
     algorithm File.write(file, "\"noAlias\""); then ();
   end match;

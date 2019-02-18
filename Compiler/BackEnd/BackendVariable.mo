@@ -659,6 +659,8 @@ algorithm
     case BackendDAE.VAR(varKind=BackendDAE.OPT_TGRID()) then true;
     case BackendDAE.VAR(varKind=BackendDAE.OPT_LOOP_INPUT()) then true;
     case BackendDAE.VAR(varKind=BackendDAE.ALG_STATE()) then true;
+    case BackendDAE.VAR(varKind=BackendDAE.LOOP_ITERATION()) then true;
+    case BackendDAE.VAR(varKind=BackendDAE.LOOP_SOLVED()) then true;
     else false;
   end match;
 end isNonStateVar;

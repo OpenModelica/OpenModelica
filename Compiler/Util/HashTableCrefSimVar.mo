@@ -44,6 +44,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 import BaseHashTable;
 import DAE;
 import SimCodeVar;
+import Error.addInternalError;
 
 type Key = DAE.ComponentRef;
 type Value = SimCodeVar.SimVar;
@@ -104,13 +105,45 @@ algorithm
 end emptyHashTableSized;
 
 protected
-
 function opaqueStr
   input SimCodeVar.SimVar var;
   output String str;
 algorithm
   str := "#SimVar(index="+String(var.index)+",name="+ComponentReference.printComponentRefStr(var.name)+")#";
 end opaqueStr;
+
+
+public function addSimVarToHashTable
+"adds SimVar to hash table inHT and returns extended hash table"
+  input  SimCodeVar.SimVar simvarIn;
+  input  HashTable inHT;
+  output HashTable outHT;
+algorithm
+  outHT :=
+  matchcontinue (simvarIn, inHT)
+    local
+      DAE.ComponentRef cr, acr;
+      SimCodeVar.SimVar sv;
+
+    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
+      equation
+        //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
+        outHT = BaseHashTable.add((cr, sv), inHT);
+      then outHT;
+        // add the whole array crefs to the hashtable, too
+    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
+      equation
+        //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
+        outHT = BaseHashTable.add((acr, sv), inHT);
+        outHT = BaseHashTable.add((cr, sv), outHT);
+      then outHT;
+    else
+      equation
+        Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
+      then
+        fail();
+  end matchcontinue;
+end addSimVarToHashTable;
 
 annotation(__OpenModelica_Interface="backend");
 end HashTableCrefSimVar;

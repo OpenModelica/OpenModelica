@@ -46,6 +46,7 @@ import SimCode;
 
 protected
 import Algorithm;
+import Config;
 import DAEDump;
 import Error;
 import Expression;
@@ -75,7 +76,11 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
       equation
-        fileName = code.fileNamePrefix + "_info.json";
+        if Config.simCodeTarget() == "omsic" then
+          fileName = code.fullPathPrefix + System.pathDelimiter() + code.fileNamePrefix + "_info.json";
+        else
+          fileName = code.fileNamePrefix + "_info.json";
+        end if;
         File.open(file,fileName,File.Mode.Write);
         File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
         serializePath(file, mi.name);

@@ -73,6 +73,7 @@ import BaseHashTable;
 import Builtin;
 import CheckModel;
 import ClassInf;
+import CommonSubExpression.isCSECref;
 import ComponentReference;
 import Config;
 import DAEDump;
@@ -94,6 +95,7 @@ import Global;
 import Graph;
 import HashSet;
 import HashSetExp;
+import HashTableCrefSimVar;
 import HashTableSimCodeEqCache;
 import HpcOmSimCode;
 import Inline;
@@ -279,6 +281,10 @@ protected
   BackendDAE.Variables setcVars;
   list<SimCodeVar.SimVar> tmpsetcVars;
   SimCode.JacobianMatrix dataReconSimJac;
+  String fullPathPrefix;
+
+  SimCode.OMSIFunction omsiAllEquations, omsiInitEquations;
+  Option<SimCode.OMSIData> omsiOptData;
 
   constant Boolean debug = false;
 algorithm
@@ -288,7 +294,7 @@ algorithm
 
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
-    ifcpp := stringEqual(Config.simCodeTarget(), "Cpp");
+    ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp") or stringEqual(Config.simCodeTarget(), "omsicpp"));
 
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
@@ -302,21 +308,34 @@ algorithm
     // initialization stuff
     // ********************
 
-    // generate equations for initDAE
-    (initialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, uniqueEqIndex, {});
+    if not (Config.simCodeTarget() == "omsic" or
+            Config.simCodeTarget() == "omsicpp")
+    then
+      // generate equations for initDAE
+      (initialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, uniqueEqIndex, {});
 
-    // generate equations for initDAE_lambda0
-    if isSome(inInitDAE_lambda0) then
-      SOME(initDAE_lambda0) := inInitDAE_lambda0;
-      (initialEquations_lambda0, uniqueEqIndex, tempvars) := createInitialEquations_lambda0(initDAE_lambda0, uniqueEqIndex, tempvars);
+      // generate equations for initDAE_lambda0
+      if isSome(inInitDAE_lambda0) then
+        SOME(initDAE_lambda0) := inInitDAE_lambda0;
+        (initialEquations_lambda0, uniqueEqIndex, tempvars) := createInitialEquations_lambda0(initDAE_lambda0, uniqueEqIndex, tempvars);
+      else
+        initialEquations_lambda0 := {};
+      end if;
+
+      // generate equations for removed initial equations
+      (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempvars, dlow.shared.functionTree);
+
+      execStat("simCode: created initialization part");
     else
-      initialEquations_lambda0 := {};
+       initialEquations_lambda0 :={};
+       initialEquations := {};
+       removedInitialEquations := {};
+       tempvars := {};
+
+       // TODO: check createInitialEquations to create additional equations for knownVars, alias, etc.
+       (omsiInitEquations, uniqueEqIndex) :=
+           createAllEquationOMSI(inInitDAE.eqs, dlow.shared, {}, uniqueEqIndex);
     end if;
-
-    // generate equations for removed initial equations
-    (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempvars, dlow.shared.functionTree);
-
-    execStat("simCode: created initialization part");
 
     shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,
                                 constraints=constraints,
@@ -345,11 +364,44 @@ algorithm
       Flags.setConfigEnum(Flags.SYM_SOLVER, 0);
     end if;
 
-    (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
-      equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
-          createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
-    if debug then execStat("simCode: createEquationsForSystems"); end if;
+    if not (Config.simCodeTarget() == "omsic" or
+            Config.simCodeTarget() == "omsicpp")
+    then
+      (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
+        equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
+           createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
+      omsiOptData := NONE();
+      if debug then execStat("simCode: createEquationsForSystems"); end if;
+    else
+      odeEquations :={};
+      algebraicEquations := {};
+      localKnownVars := {};
+      allEquations := {};
+      equationsForZeroCrossings := {};
+      equationSccMapping := {};
+      eqBackendSimCodeMapping := {};
+      sccOffset := 0;
+      (omsiAllEquations, uniqueEqIndex) :=
+          createAllEquationOMSI(contSysts, shared, zeroCrossings, uniqueEqIndex);
 
+      // Add removed equations (e.g. reinit)
+      ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      omsiAllEquations.equations := listAppend(omsiAllEquations.equations, removedEquations);
+
+      omsiOptData := SOME(SimCode.OMSI_DATA(simulation=omsiAllEquations, initialization=omsiInitEquations));
+
+      // debug print
+      if debug then
+        _ := match omsiOptData
+          local
+            SimCode.OMSIData omsiData;
+          case SOME(omsiData as SimCode.OMSI_DATA(__))
+            algorithm
+              dumpOMSIData(omsiData, "Dump OMSI Data");
+            then ();
+        end match;
+      end if;
+    end if;
 
 
     if (SymEuler_help > 0) then
@@ -486,7 +538,7 @@ algorithm
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
     // collect fmi partial derivative
-    if FMI.isFMIVersion20(FMUVersion) then
+    if FMI.isFMIVersion20(FMUVersion) or Config.simCodeTarget() ==  "omsicpp"  then
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
@@ -525,7 +577,9 @@ algorithm
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable: " + realString(clock()) + "\n");
     end if;
+    // generate cref2simVar hash table
     crefToSimVarHT := createCrefToSimVarHT(modelInfo);
+
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
@@ -539,7 +593,7 @@ algorithm
       dtSimVar := dlowvarToSimvar(dtVar, NONE(), emptyVars);
       dtSimVar.index := listLength(inlineSimKnVars);
       inlineSimKnVars := dtSimVar::inlineSimKnVars;
-      crefToSimVarHT := List.fold(inlineSimKnVars,addSimVarToHashTable,crefToSimVarHT);
+      crefToSimVarHT := List.fold(inlineSimKnVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
     end if;
 
     if Flags.getConfigBool(Flags.CALCULATE_SENSITIVITIES) then
@@ -580,9 +634,11 @@ algorithm
 
     execStat("simCode: some other stuff during SimCode phase");
 
-    if Config.simCodeTarget() <> "Cpp" then
+
+     if ((Config.simCodeTarget() <> "Cpp") and (Config.simCodeTarget()<>"omsicpp"))then
       reasonableSize := Util.nextPrime(10+integer(1.4*(BackendDAEUtil.equationArraySizeBDAE(inBackendDAE)+BackendDAEUtil.equationArraySizeBDAE(inInitDAE)+listLength(parameterEquations))));
       eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
+
 
       // Alias equations to other equations.
       // The C++ codegen does things differently and will not handle this
@@ -597,6 +653,19 @@ algorithm
       (jacobianEquations, eqCache) := aliasSimEqs(jacobianEquations, eqCache);
       (parameterEquations, eqCache) := aliasSimEqs(parameterEquations, eqCache);
       execStat("simCode: alias equations");
+    end if;
+
+    // Set fullPathPrefix for FMUs
+    if isFMU then
+      if Config.simCodeTarget()=="omsic" then
+        fullPathPrefix := filenamePrefix+".fmutmp";
+      elseif Config.simCodeTarget()=="omsicpp" then
+        fullPathPrefix := inFileDir;
+      else
+        fullPathPrefix := filenamePrefix+".fmutmp/sources/";
+      end if;
+    else
+      fullPathPrefix := "";
     end if;
 
     simCode := SimCode.SIMCODE(modelInfo,
@@ -633,7 +702,7 @@ algorithm
                               SymbolicJacs,
                               simSettingsOpt,
                               filenamePrefix,
-                              if isFMU then (filenamePrefix+".fmutmp/sources/") else "",
+                              fullPathPrefix,
                               fmuTargetName,
                               HpcOmSimCode.emptyHpcomData,
                               if isFMU then getValueReferenceMapping(modelInfo) else AvlTreeCRToInt.EMPTY(),
@@ -645,7 +714,8 @@ algorithm
                               modelStructure,
                               SimCode.emptyPartitionData,
                               NONE(),
-                              inlineEquations
+                              inlineEquations,
+                              omsiOptData
                               );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
@@ -3297,7 +3367,7 @@ algorithm
       (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
       beqs = listReverse(beqs);
       simJac = List.map1(jac, jacToSimjac, inVars);
-      if (Config.simCodeTarget()=="Cpp") then
+      if (Config.simCodeTarget() == "Cpp" or Config.simCodeTarget() == "omsicpp") then
         simJac = List.sort(simJac,simJacCSRToCSC);
       end if;
 
@@ -3750,6 +3820,505 @@ algorithm
 end createTornSystemInnerEqns1;
 
 // =============================================================================
+// section to create equations for omsi functions
+//
+// =============================================================================
+
+protected function createAllEquationOMSI
+  "fills SimCode.OMSIFunction with equations and variables"
+  input BackendDAE.EqSystems constSysts;
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.ZeroCrossing> inZeroCrossings;
+  output SimCode.OMSIFunction omsiAllEquations = SimCode.emptyOMSIFunction;
+  input output Integer uniqueEqIndex;
+protected
+  BackendDAE.StrongComponents components;
+  list<BackendDAE.Equation> eqnlst;
+  list<BackendDAE.Var> varlst;
+  BackendDAE.Equation eqn;
+  BackendDAE.Var var;
+
+  SimCode.OMSIFunction newAllEquations;
+algorithm
+  // Add empty hash table to omsiAllEquations
+  omsiAllEquations.context := SimCodeFunction.OMSI_CONTEXT(SOME(HashTableCrefSimVar.emptyHashTableSized(1013)));
+
+  for constSyst in constSysts loop
+    try
+      BackendDAE.MATCHING(comps=components) := constSyst.matching;
+    else
+      Error.addInternalError("The matching information is missing in function createAllEquationOMSI!", sourceInfo());
+      fail();
+    end try;
+
+    (newAllEquations, uniqueEqIndex) := generateEquationsForComponents(components, constSyst, shared, uniqueEqIndex);
+
+    // Update omsiAllEquations
+    omsiAllEquations := appendOMSIFunction(omsiAllEquations, newAllEquations);
+  end for;
+
+end createAllEquationOMSI;
+
+
+function generateEquationsForComponents
+  "generates equations and variables for independent system of equations for
+  SimCode.OMSIFunction"
+  input BackendDAE.StrongComponents components;
+  input BackendDAE.EqSystem constSyst;
+  input BackendDAE.Shared shared;
+  output SimCode.OMSIFunction omsiFuncEquations;
+  input output Integer uniqueEqIndex;
+protected
+  list<SimCode.SimEqSystem> equations = {};
+  list<SimCodeVar.SimVar> inputVars = {};
+  list<SimCodeVar.SimVar> outputVars = {};
+  list<SimCodeVar.SimVar> innerVars = {};
+  HashTableCrefSimVar.HashTable hashTable;
+  list<SimCode.SimEqSystem> tmpEqns = {};
+  list<SimCodeVar.SimVar> tmpInputVars = {}, tmpOutputVars = {}, tmpInnerVars = {};
+  list<SimCodeVar.SimVar> tempVars;
+  Integer nAlgebraicSystems = 0;
+  Integer index, nAllVars = 0;
+  Boolean debug=false;
+algorithm
+  for component in components loop
+    tmpEqns := {};
+    tmpInputVars := {}; tmpOutputVars := {}; tmpInnerVars := {};
+    () := match(component)
+    local
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+
+      BackendDAE.Jacobian jacobian;
+      BackendDAE.JacobianType jacobianType;
+      BackendDAE.InnerEquations innerEquations;
+      list<Integer> tearingVars, residualEqns;
+      list<BackendDAE.Var> tvars, varlst;
+      list<SimCodeVar.SimVar> loopIterationVars, loopSolvedVars;
+      list<BackendDAE.Equation> reqns, eqnlst;
+      SimCode.SimEqSystem algSystem;
+      list<SimCode.SimEqSystem> resEqs, simequations;
+      SimCode.OMSIFunction omsiFunction;
+      Boolean linear, mixedSystem;
+      Option<SimCode.DerivativeMatrix> derivativeMatrix;
+      Integer algEqIndex;
+
+      list<Integer> eqns;
+      list<Integer> variables;
+
+    // case for singele equations
+    case BackendDAE.SINGLEEQUATION() equation
+      ({eqn}, {var}, _) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
+      (tmpEqns, tmpInputVars, tmpOutputVars, tmpInnerVars, uniqueEqIndex) =
+        generateSingleEquation(eqn, var, shared.functionTree, uniqueEqIndex);
+    then ();
+
+    // case for singe when equations
+    case BackendDAE.SINGLEWHENEQUATION() equation
+      (eqnlst, varlst, _) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
+      (tmpEqns, tmpInputVars, tmpOutputVars, tmpInnerVars, uniqueEqIndex) =
+        generateSingleEquation(listHead(eqnlst), listHead(varlst), shared.functionTree, uniqueEqIndex);
+    then();
+
+    // case for single comlpex equation
+    case BackendDAE.SINGLECOMPLEXEQUATION() equation
+      (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
+      // States are solved for der(x) not x.
+      varlst = List.map(varlst, BackendVariable.transformXToXd);
+      (tmpEqns, uniqueEqIndex, _) = createSingleComplexEqnCode(listHead(eqnlst), varlst, uniqueEqIndex, {}, shared.info, true, shared.functionTree);
+    then();
+
+    // case for single algorithm equation
+    case BackendDAE.SINGLEALGORITHM() equation
+      (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
+      varlst = List.map(varlst, BackendVariable.transformXToXd);
+      (tmpEqns, uniqueEqIndex) = createSingleAlgorithmCode(eqnlst, varlst, false, uniqueEqIndex);
+    then();
+
+    // case for single algorithm equation
+    case BackendDAE.SINGLEARRAY() equation
+      (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
+      varlst = List.map(varlst, BackendVariable.transformXToXd);
+      (tmpEqns, _, uniqueEqIndex, _) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, {}, shared);
+    then();
+
+    // case for torn systems of equations
+    case BackendDAE.TORNSYSTEM(strictTearingSet =
+           BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=jacobian),
+           linear = linear, mixedSystem = mixedSystem)
+    algorithm
+      if not SymbolicJacobian.isJacobianGeneric(jacobian) and linear then
+        Error.addMessage(Error.NO_JACONIAN_TORNLINEAR_SYSTEM, {});
+        fail();
+      end if;
+      algEqIndex := uniqueEqIndex;
+      uniqueEqIndex := uniqueEqIndex+1;
+      // get tearing vars
+      tvars := List.map1r(tearingVars, BackendVariable.getVarAt, constSyst.orderedVars);
+      tvars := List.map(tvars, BackendVariable.transformXToXd);
+      tvars := BackendVariable.setVarsKind(tvars, BackendDAE.LOOP_ITERATION());
+      ((loopIterationVars, _)) := List.fold(tvars, traversingdlowvarToSimvarFold, ({}, BackendVariable.emptyVars(0)));
+      loopIterationVars := listReverse(loopIterationVars);
+
+      // generate other equations
+      (simequations, loopSolvedVars, uniqueEqIndex) := generateInnerEqns(innerEquations, constSyst, shared, uniqueEqIndex);
+
+      // get residual eqns
+      reqns := BackendEquation.getList(residualEqns, constSyst.orderedEqs);
+      reqns := BackendEquation.replaceDerOpInEquationList(reqns);
+      (resEqs, uniqueEqIndex, tempVars) := createNonlinearResidualEquations(reqns, uniqueEqIndex, {}, shared.functionTree);
+
+      simequations := listAppend(simequations, resEqs);
+
+      //set index
+      (loopIterationVars, index) := rewriteIndex(loopIterationVars, 0);
+      (loopSolvedVars, index) := rewriteIndex(loopSolvedVars, index);
+
+      // create hash table with local index
+      nAllVars := listLength(loopIterationVars)+listLength(loopSolvedVars)+listLength(tempVars);
+      hashTable := fillLocalHashTable({loopIterationVars, loopSolvedVars, tempVars}, nAllVars);
+
+      // inputs empty, since we haven't check for inputs yet
+      if debug then
+        print("Function SimCodeUtil.generateEquationsForComponentsAlgSystem:\n");
+        dumpVarLst(loopIterationVars, "AlgSystem loopIterationVars");
+        dumpVarLst(loopSolvedVars, "AlgSystem loopSolvedVars");
+      end if;
+
+      tmpOutputVars := listAppend(loopIterationVars, loopSolvedVars);
+      omsiFunction := SimCode.OMSI_FUNCTION(equations = simequations,
+                                            inputVars = {},
+                                            outputVars = tmpOutputVars,
+                                            innerVars = tempVars,
+                                            nAllVars = nAllVars,
+                                            context = SimCodeFunction.OMSI_CONTEXT(SOME(hashTable)),
+                                            nAlgebraicSystems = 0);
+
+      // fill SES_ALGEBRAIC_SYSTEM
+      (derivativeMatrix, uniqueEqIndex) := createDerivativeMatrix(jacobian, uniqueEqIndex);
+      algSystem := SimCode.SES_ALGEBRAIC_SYSTEM(index = algEqIndex,
+                                                algSysIndex = nAlgebraicSystems,
+                                                dim_n = listLength(tvars),
+                                                partOfMixed = mixedSystem,
+                                                tornSystem = true,
+                                                linearSystem = linear,
+                                                residual = omsiFunction,
+                                                matrix = derivativeMatrix,
+                                                zeroCrossingConditions = {},
+                                                sources = {},
+                                                eqAttr = BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      nAlgebraicSystems := nAlgebraicSystems+1;
+      tmpEqns := {algSystem};
+    then ();
+
+    // case for non-teared systems of equations
+    case BackendDAE.EQUATIONSYSTEM(eqns = eqns,
+                                   vars = variables,
+                                   jac = jacobian,
+                                   jacType = jacobianType,
+                                   mixedSystem = mixedSystem)
+      algorithm
+
+      /*
+      if not SymbolicJacobian.isJacobianGeneric(jacobian) then
+        Error.addMessage(Error.NO_JACONIAN_TORNLINEAR_SYSTEM, {});    // ToDo: edit error message
+        fail();
+      end if;
+      */
+
+      algEqIndex := uniqueEqIndex;
+      uniqueEqIndex := uniqueEqIndex+1;
+
+      // get variables
+      tvars := List.map1r(variables, BackendVariable.getVarAt, constSyst.orderedVars);
+      tvars := List.map(tvars, BackendVariable.transformXToXd);
+      //tvars := BackendVariable.setVarsKind(tvars, BackendDAE.LOOP_SOLVED());
+      ((loopSolvedVars, _)) := List.fold(tvars, traversingdlowvarToSimvarFold, ({}, BackendVariable.emptyVars(0)));
+      loopSolvedVars := listReverse(loopSolvedVars);
+
+      // get residual equations
+      reqns := BackendEquation.getList(eqns, constSyst.orderedEqs);
+      reqns := BackendEquation.replaceDerOpInEquationList(reqns);
+      (resEqs, uniqueEqIndex, tempVars) := createNonlinearResidualEquations(reqns, uniqueEqIndex, {}, shared.functionTree);
+
+      //set index
+      (loopSolvedVars, index) := rewriteIndex(loopSolvedVars, 0);
+
+      // create hash table with local index
+      nAllVars := listLength(loopSolvedVars)+listLength(tempVars);
+      hashTable := fillLocalHashTable({loopSolvedVars, tempVars}, nAllVars);
+
+      // fill OMSI_FUNCTION
+      omsiFunction := SimCode.OMSI_FUNCTION(equations = resEqs,
+                                            inputVars = {},
+                                            outputVars = loopSolvedVars,
+                                            innerVars = tempVars,
+                                            nAllVars = nAllVars,
+                                            context = SimCodeFunction.OMSI_CONTEXT(SOME(hashTable)),
+                                            nAlgebraicSystems = 0);
+
+      // fill SES_ALGEBRAIC_SYSTEM
+      (derivativeMatrix, uniqueEqIndex) := createDerivativeMatrix(jacobian, uniqueEqIndex);
+      algSystem := SimCode.SES_ALGEBRAIC_SYSTEM(index = algEqIndex,
+                                                algSysIndex = nAlgebraicSystems,
+                                                dim_n = listLength(tvars),
+                                                partOfMixed = mixedSystem,
+                                                tornSystem = false,
+                                                linearSystem = false,             // ToDo: check if system is linear
+                                                residual = omsiFunction,
+                                                matrix = derivativeMatrix,
+                                                zeroCrossingConditions = {},
+                                                sources = {},
+                                                eqAttr = BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+
+      nAlgebraicSystems := nAlgebraicSystems+1;
+      tmpEqns := {algSystem};
+
+      if debug then
+        dumpOMSIFunc(omsiFunction, "\nEquation system omsiFunction");
+      end if;
+    then();
+
+    // error case
+    else algorithm
+      Error.addInternalError(" - case for component "+ BackendDump.printComponent(component) + " not implemented in SimCodeUtil.createAllEquationOMSI", sourceInfo());
+      fail();
+      then();
+    end match;
+
+    // append OMSI_FUNCTION data
+    equations := listAppend(tmpEqns, equations);
+    inputVars := listAppend(tmpInputVars, inputVars);
+    outputVars := listAppend(tmpOutputVars, outputVars);
+    innerVars := listAppend(tmpInnerVars, innerVars);
+  end for;
+
+  //set index
+  (inputVars, index) := rewriteIndex(inputVars, 0);
+  (innerVars, index) := rewriteIndex(innerVars, index);
+  (outputVars, index) := rewriteIndex(outputVars, index);
+
+  omsiFuncEquations := SimCode.OMSI_FUNCTION(equations =  listReverse(equations),
+                                            inputVars = inputVars,
+                                            outputVars = outputVars,
+                                            innerVars =  innerVars,
+                                            nAllVars = nAllVars,
+                                            context = SimCodeFunction.OMSI_CONTEXT(NONE()),  // hash table with global index will be set in createAllEquationOMSI
+                                            nAlgebraicSystems = nAlgebraicSystems);
+  if debug then
+    print("Function SimCodeUtil.generateEquationsForComponentsAlgSystem:\n");
+    dumpVarLst(inputVars, "InputVars");
+    dumpVarLst(innerVars, "InnerVars");
+    dumpVarLst(outputVars, "OutputVars");
+    end if;
+end generateEquationsForComponents;
+
+
+function generateSingleEquation
+  "generates single equation from BackendDAE equations"
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Var var;
+  input DAE.FunctionTree funcTree;
+  output list<SimCode.SimEqSystem> equations = {};
+  output list<SimCodeVar.SimVar> inputVars = {};
+  output list<SimCodeVar.SimVar> outputVars = {};
+  output list<SimCodeVar.SimVar> innerVars = {};
+  input output Integer uniqueEqIndex;
+protected
+  constant Boolean debug = false;
+algorithm
+  _ := match (eqn)
+    local
+      DAE.Exp lhs, rhs, resolvedExp, varExp;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes eqAttr;
+      BackendDAE.WhenEquation whenEquation;
+      DAE.Exp cond;
+      list<BackendDAE.WhenOperator> whenStmtLst;
+      Option<BackendDAE.WhenEquation> oelseWhen;
+
+      list<SimCode.SimEqSystem> tmpSimEqLst;
+      SimCodeVar.SimVar newSimVar;
+      list<BackendDAE.Equation> solveEqns;
+      list<DAE.Statement> asserts;
+      list<DAE.ComponentRef> solveCr, conditions;
+      DAE.ComponentRef cr;
+
+      String str;
+      Boolean initialCall;
+
+    // single equation
+    case BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source, attr=eqAttr)
+      algorithm
+        cr := var.varName;
+        varExp := Expression.crefToExp(cr);
+
+        if BackendVariable.isStateVar(var) then
+          // exp -> der(exp)
+          varExp := Expression.expDer(varExp);
+          cr := ComponentReference.crefPrefixDer(cr);
+        end if;
+
+        try
+          //solve equation lhs=rhs with respect to varible varExp
+          (resolvedExp, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(lhs, rhs, varExp, SOME(funcTree), SOME(uniqueEqIndex), true, true);
+
+          (equations, uniqueEqIndex) := List.mapFold(listReverse(solveEqns), makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
+          innerVars := createTempVarsforCrefs(List.map(listReverse(solveCr), Expression.crefExp), {});
+
+          source := ElementSource.addSymbolicTransformationSolve(true, source, cr, lhs, rhs, resolvedExp, asserts);
+          (tmpSimEqLst, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, resolvedExp, source, eqAttr)}, uniqueEqIndex+1);
+
+          equations := listAppend(equations, tmpSimEqLst);
+
+          //TODO: fix dlowvarToSimvar by romving Variables, they are not needed any more
+          newSimVar := dlowvarToSimvar(var, NONE(), BackendVariable.emptyVars(0));
+          if debug then
+            print("generateSingleEquation:\n");
+            dumpSimEqSystemLst(tmpSimEqLst, "\n");
+            dumpVarLst({newSimVar},"newSimVar");
+          end if;
+
+          // add der(newSimVar) to outputVars if newSimVar is state
+          if BackendVariable.isStateVar(var) then
+            outputVars := listAppend({derVarFromStateVar(newSimVar)}, outputVars);
+            inputVars := listAppend({newSimVar}, inputVars);
+          else
+            outputVars := listAppend({newSimVar}, outputVars);
+          end if;
+
+        else
+          Error.addInternalError("- " + BackendDump.equationString(eqn)+ " could not resolved for "
+            +  ComponentReference.printComponentRefStr(cr) + " in SimCodeUtil.generateSingleEquation", sourceInfo());
+          fail();
+        end try;
+    then ();
+
+    // when equation
+    case BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source, attr=eqAttr) algorithm
+      BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) := whenEquation;
+      if isSome(oelseWhen) then /* else when not suported */
+        Error.addInternalError("Else when equation not implemented in SimCodeUtil.generateSingleEquation", sourceInfo());
+        fail();
+      end if;
+
+      (conditions, initialCall) := BackendDAEUtil.getConditionList(cond);
+
+      tmpSimEqLst := {SimCode.SES_WHEN(uniqueEqIndex, conditions, initialCall,
+                                    whenStmtLst, NONE(), source, eqAttr)};
+      uniqueEqIndex := uniqueEqIndex+1;
+      newSimVar := dlowvarToSimvar(var, NONE(), BackendVariable.emptyVars(0));
+
+      if debug then
+        print("generateWhenEquation:\n");
+        dumpSimEqSystemLst(tmpSimEqLst, "\n");
+        dumpVarLst({newSimVar},"newSimVar");
+      end if;
+
+      equations := listAppend(equations, tmpSimEqLst);
+      outputVars := listAppend({newSimVar}, outputVars);
+    then();
+
+    // no matched equation
+    else equation
+      str = BackendDump.equationString(eqn);
+      Error.addInternalError("- " + str + " not implemented SimCodeUtil.generateSingleEquation", sourceInfo());
+      fail();
+    then ();
+  end match;
+end generateSingleEquation;
+
+protected function generateInnerEqns
+"generates inner equations for equation systems in one SimCode.OMSIFunction"
+  input BackendDAE.InnerEquations innerEquations;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output list<SimCode.SimEqSystem> equations = {};
+  output list<SimCodeVar.SimVar> outputVars = {};
+  input output Integer uniqueEqIndex;
+protected
+  Integer eqnindx;
+  list<Integer> vars;
+  list<SimCodeVar.SimVar> tmpOutputVars;
+  list<BackendDAE.Var> tmpVars;
+  BackendDAE.Equation eqn;
+  BackendDAE.StrongComponent comp;
+  list<SimCode.SimEqSystem> simequations;
+  DoubleEndedList<SimCode.SimEqSystem> dblLstEqns;
+  SimCode.OMSIFunction omsiFuncEquations;
+algorithm
+  dblLstEqns := DoubleEndedList.fromList(equations);
+
+  for eq in innerEquations loop
+    // get Eqn
+    (eqnindx, vars, _) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
+    tmpVars := List.map1r(vars, BackendVariable.getVarAt, syst.orderedVars);
+    tmpVars := BackendVariable.setVarsKind(tmpVars, BackendDAE.LOOP_SOLVED());
+    ((tmpOutputVars, _)) := List.fold(tmpVars, traversingdlowvarToSimvarFold, ({}, BackendVariable.emptyVars(0)));
+    outputVars := listAppend(outputVars,tmpOutputVars);
+    eqn := BackendEquation.get(syst.orderedEqs, eqnindx);
+
+    // generate comp
+    comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
+    (omsiFuncEquations, uniqueEqIndex) := generateEquationsForComponents({comp}, syst, shared, uniqueEqIndex);
+    DoubleEndedList.push_list_back(dblLstEqns, omsiFuncEquations.equations);
+  end for;
+
+  equations := DoubleEndedList.toListAndClear(dblLstEqns);
+end generateInnerEqns;
+
+
+protected function appendOMSIFunction
+"Append omsiFunction_2 to omsiFunction_1 and return omsiFunction_1."
+  input output SimCode.OMSIFunction omsiFunction_1;
+  input SimCode.OMSIFunction omsiFunction_2;
+algorithm
+    omsiFunction_1.equations := listAppend(omsiFunction_1.equations, omsiFunction_2.equations);
+
+    omsiFunction_1.inputVars := listAppend(omsiFunction_1.inputVars, omsiFunction_2.inputVars);
+    omsiFunction_1.outputVars := listAppend(omsiFunction_1.outputVars, omsiFunction_2.outputVars);
+    omsiFunction_1.innerVars := listAppend(omsiFunction_1.innerVars, omsiFunction_2.innerVars);
+    omsiFunction_1.nAllVars := omsiFunction_1.nAllVars + omsiFunction_2.nAllVars;
+
+    // Update hashTable
+    omsiFunction_1.context := match omsiFunction_1.context
+      local
+        HashTableCrefSimVar.HashTable hashTable;
+      case SimCodeFunction.OMSI_CONTEXT(SOME(hashTable))
+        algorithm
+          hashTable := List.fold(omsiFunction_2.inputVars, HashTableCrefSimVar.addSimVarToHashTable, hashTable);
+        for simVar in omsiFunction_2.outputVars loop
+          hashTable := HashTableCrefSimVar.addSimVarToHashTable(simVar, hashTable);
+        end for;
+        for simVar in omsiFunction_2.innerVars loop
+          hashTable := HashTableCrefSimVar.addSimVarToHashTable(simVar, hashTable);
+        end for;
+        then SimCodeFunction.OMSI_CONTEXT(SOME(hashTable));
+    end match;
+
+    omsiFunction_1.nAlgebraicSystems := omsiFunction_1.nAlgebraicSystems + omsiFunction_2.nAlgebraicSystems;
+end appendOMSIFunction;
+
+protected function fillLocalHashTable
+"Generates new hashTable filled with all SimVars from input lists."
+  input list<list<SimCodeVar.SimVar>> varListList;
+  input Integer numberOfElements "number of all elemtens of VarListList";
+  output HashTableCrefSimVar.HashTable hashTable;
+protected
+  Integer sizeHT;
+algorithm
+  // generate empty hashTable
+  sizeHT := max(1013, Util.nextPrime(numberOfElements*2));   // chose big enough prime for hash table
+  hashTable := HashTableCrefSimVar.emptyHashTableSized(sizeHT);
+
+  // fill hashTable
+  for simVarList in varListList loop
+    hashTable := List.fold(simVarList, HashTableCrefSimVar.addSimVarToHashTable, hashTable);
+  end for;
+end fillLocalHashTable;
+
+
+// =============================================================================
 // section to create state set equations
 //
 // =============================================================================
@@ -4041,8 +4610,8 @@ algorithm
         end if;
 
         crefToSimVarHTJacobian = HashTableCrefSimVar.emptyHashTableSized(listLength(seedVars)+ listLength(columnVars));
-        crefToSimVarHTJacobian = List.fold(seedVars, addSimVarToHashTable, crefToSimVarHTJacobian);
-        crefToSimVarHTJacobian = List.fold(columnVars, addSimVarToHashTable, crefToSimVarHTJacobian);
+        crefToSimVarHTJacobian = List.fold(seedVars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHTJacobian);
+        crefToSimVarHTJacobian = List.fold(columnVars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHTJacobian);
 
       then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian))), uniqueEqIndex, tempvars);
 
@@ -4349,8 +4918,8 @@ algorithm
 
         // create hash table for this jacobians
         crefToSimVarHTJacobian = HashTableCrefSimVar.emptyHashTableSized(listLength(seedVars)+ listLength(columnVars));
-        crefToSimVarHTJacobian = List.fold(seedVars, addSimVarToHashTable, crefToSimVarHTJacobian);
-        crefToSimVarHTJacobian = List.fold(columnVars, addSimVarToHashTable, crefToSimVarHTJacobian);
+        crefToSimVarHTJacobian = List.fold(seedVars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHTJacobian);
+        crefToSimVarHTJacobian = List.fold(columnVars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHTJacobian);
 
         tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(columnEquations, columnVars, nRows)}, seedVars, name, sparseInts, sparseIntsT, coloring, maxColor, -1, 0, SOME(crefToSimVarHTJacobian));
         linearModelMatrices = tmpJac::inJacobianMatrixes;
@@ -4409,6 +4978,69 @@ algorithm
   outTuple := ((var, (vars, v::varLst)));
 end sortBackVarWithSimVarsOrder;
 
+protected function createJacSimVarsColumn "author: wbraun"
+  input list<BackendDAE.Var> inVars;
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inAllVars;
+  input Integer inResIndex;
+  input Integer inTmpIndex;
+  input String inMatrixName;
+  input output list<SimCodeVar.SimVar> tmpVars;
+  input output list<SimCodeVar.SimVar> resVars;
+algorithm
+  (tmpVars, resVars) := match(inVars)
+  local
+    BackendDAE.Var v, v1;
+    SimCodeVar.SimVar simVar;
+    DAE.ComponentRef currVar, cref, derivedCref;
+    list<BackendDAE.Var> restVar;
+    Option<DAE.VariableAttributes> dae_var_attr;
+    Boolean isProtected;
+    Boolean hideResult = false;
+    Integer resIndex, tmpIndex=0;
+    BackendDAE.VarKind varkind;
+
+    case ({}) then (listReverse(tmpVars), listReverse(resVars));
+
+    case((v as BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr))::restVar) algorithm
+      try
+        BackendVariable.getVarSingle(currVar, inAllVars);
+        currVar := match (varkind)
+          case BackendDAE.STATE() then ComponentReference.crefPrefixDer(currVar);
+          else currVar;
+        end match;
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, inCref, inMatrixName);
+        v1 := BackendVariable.copyVarNewName(derivedCref, v);
+        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_VAR());
+        simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
+        simVar.index := inResIndex;
+        resIndex := inResIndex + 1;
+        simVar.matrixName := SOME(inMatrixName);
+        resVars := simVar::resVars;
+      else
+        currVar := match (varkind)
+          case BackendDAE.STATE() then ComponentReference.crefPrefixDer(currVar);
+          else currVar;
+        end match;
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, inCref, inMatrixName);
+        v1 := BackendVariable.copyVarNewName(derivedCref, v);
+        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_DIFF_VAR());
+        simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
+        simVar.index := inTmpIndex;
+        simVar.matrixName := SOME(inMatrixName);
+        tmpIndex := inTmpIndex + 1;
+        tmpVars := simVar::tmpVars;
+      end try;
+     then
+       createJacSimVarsColumn(restVar, inCref, inAllVars, resIndex, tmpIndex, inMatrixName, tmpVars, resVars);
+
+    else
+     equation
+      Error.addInternalError("function createAllDiffedSimVars failed", sourceInfo());
+    then fail();
+  end match;
+end createJacSimVarsColumn;
+
 protected function createAllDiffedSimVars "author: wbraun"
   input list<BackendDAE.Var> inVars;
   input DAE.ComponentRef inCref;
@@ -4418,55 +5050,11 @@ protected function createAllDiffedSimVars "author: wbraun"
   input String inMatrixName;
   input list<SimCodeVar.SimVar> iVars;
   output list<SimCodeVar.SimVar> outVars;
+protected
+  list<SimCodeVar.SimVar> lst1;
 algorithm
-  outVars := match(inVars, inCref, inAllVars, inResIndex, inTmpIndex, inMatrixName, iVars)
-  local
-    BackendDAE.Var v, v1;
-    SimCodeVar.SimVar simVar;
-    DAE.ComponentRef currVar, cref, derivedCref;
-    list<BackendDAE.Var> restVar;
-    Option<DAE.VariableAttributes> dae_var_attr;
-    Boolean isProtected;
-    Boolean hideResult = false;
-    Integer resIndex, tmpIndex;
-    BackendDAE.VarKind varkind;
-
-    case({}, _, _, _, _, _, _) then listReverse(iVars);
-
-    case((v as BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr))::restVar, cref, _, resIndex, tmpIndex, _, _) algorithm
-      try
-        BackendVariable.getVarSingle(currVar, inAllVars);
-        currVar := match (varkind)
-          case BackendDAE.STATE() then ComponentReference.crefPrefixDer(currVar);
-          else currVar;
-        end match;
-        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-        v1 := BackendVariable.copyVarNewName(derivedCref, v);
-        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_VAR());
-        simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
-        simVar.index := resIndex;
-        resIndex := resIndex + 1;
-      else
-        currVar := match (varkind)
-          case BackendDAE.STATE() then ComponentReference.crefPrefixDer(currVar);
-          else currVar;
-        end match;
-        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
-        v1 := BackendVariable.copyVarNewName(derivedCref, v);
-        v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_DIFF_VAR());
-        simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
-        simVar.index := tmpIndex;
-        tmpIndex := tmpIndex + 1;
-      end try;
-      simVar.matrixName := SOME(inMatrixName);
-     then
-       createAllDiffedSimVars(restVar, cref, inAllVars, resIndex, tmpIndex, inMatrixName, simVar::iVars);
-
-    else
-     equation
-      Error.addInternalError("function createAllDiffedSimVars failed", sourceInfo());
-    then fail();
-  end match;
+  (outVars, lst1) := createJacSimVarsColumn(inVars, inCref, inAllVars, inResIndex, inTmpIndex, inMatrixName, iVars, {});
+  outVars := listAppend(lst1, outVars);
 end createAllDiffedSimVars;
 
 public function collectAllJacobianEquations
@@ -4643,6 +5231,208 @@ algorithm
     print("Cols: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr)," ") + "\n");
   end for;
 end dumpSparsePattern;
+
+
+protected function createDerivativeMatrix
+"translates BackendDAE.SymbolicJacobian to SimCode.DerivativeMatrix."
+  input BackendDAE.Jacobian inJacobian;
+  input Integer iuniqueEqIndex;
+  output Option<SimCode.DerivativeMatrix> res;
+  output Integer ouniqueEqIndex;
+protected
+  Boolean debug = false;
+algorithm
+  (res, ouniqueEqIndex) := matchcontinue(inJacobian, iuniqueEqIndex)
+  local
+
+    BackendDAE.Variables emptyVars, dependentVars, independentVars, globalKnownVars, allvars, residualVars, systvars;
+    BackendDAE.EquationArray emptyEqns, eqns;
+    list<BackendDAE.Var> knvarLst, seedVarLst, independentVarsLst, dependentVarsLst, residualVarsLst, allVars;
+    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs;
+
+    DAE.ComponentRef x;
+    BackendDAE.SparsePattern pattern;
+    BackendDAE.SparseColoring sparseColoring;
+    list<list<Integer>> coloring;
+    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs, sparsepatternComRefsT;
+    list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+
+    BackendDAE.EqSystem syst;
+    BackendDAE.Shared shared;
+    BackendDAE.StrongComponents comps;
+
+    list<SimCodeVar.SimVar> tempvars;
+    String name, dummyVar;
+    Integer maxColor, uniqueEqIndex, nonZeroElements, nRows, index, nAllVars;
+
+    list<SimCode.SimEqSystem> columnEquations;
+    list<SimCodeVar.SimVar> columnVars, innerVars, residualSimVars;
+    list<SimCodeVar.SimVar> varsSeedIndex, seedVars, indexVars;
+
+    String errorMessage;
+
+    DAE.FunctionTree funcs;
+
+    SimCode.HashTableCrefToSimVar crefSimVarHT;
+    HashTableCrefSimVar.HashTable hashTable;
+
+    Option<SimCode.DerivativeMatrix> outRes;
+    SimCode.OMSIFunction omsiJacFunction;
+
+  case (BackendDAE.EMPTY_JACOBIAN(), _) then (NONE(), iuniqueEqIndex);
+
+  case (BackendDAE.FULL_JACOBIAN(_), _) then (NONE(), iuniqueEqIndex);
+
+  // translate only sparcity pattern
+  case (BackendDAE.GENERIC_JACOBIAN(NONE(),pattern as (sparsepatternComRefs, sparsepatternComRefsT,
+                                           (independentComRefs, dependentVarsComRefs), _),
+                                           sparseColoring), _)
+    equation
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("create sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
+        BackendDump.dumpSparsityPattern(pattern, "---+++ SparsePattern +++---");
+      end if;
+      seedVars = list(makeTmpRealSimCodeVar(cr, BackendDAE.SEED_VAR()) for cr in independentComRefs);
+      indexVars = list(makeTmpRealSimCodeVar(cr, BackendDAE.VARIABLE()) for cr in dependentVarsComRefs);
+
+      (seedVars, index) = rewriteIndex(seedVars, 0);   // ToDo: why start twice at zero?
+      //indexVars = rewriteIndex(indexVars, 0);
+      (indexVars, index) = rewriteIndex(indexVars, index);
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("\n---+++ seedVars variables +++---\n");
+        print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        print("\n---+++ indexVars variables +++---\n");
+        print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+      end if;
+      //sort sparse pattern
+      varsSeedIndex = listAppend(seedVars, indexVars);
+      //sort sparse pattern
+      sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
+      sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
+
+      // set sparse pattern
+      coloring = sortColoring(seedVars, sparseColoring);
+      maxColor = listLength(sparseColoring);
+
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
+      end if;
+
+    then (SOME(SimCode.DERIVATIVE_MATRIX({}, "", sparseInts, sparseIntsT, coloring, maxColor)), iuniqueEqIndex);
+
+  // translate omsi_function and sparsity pattern
+  case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
+                                  shared=shared), name,
+                                  independentVarsLst, residualVarsLst, dependentVarsLst)),
+                                    (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
+                                    sparseColoring), _)
+    equation
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
+      end if;
+      // generate also discrete equations, they might be introduced by wrapFunctionCalls
+
+      (omsiJacFunction, uniqueEqIndex) = generateEquationsForComponents(comps, syst, shared, iuniqueEqIndex);
+
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
+      end if;
+
+      // create SimCodeVar.SimVars from jacobian vars
+      dummyVar = ("dummyVar" + name);
+      x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
+      emptyVars =  BackendVariable.emptyVars();
+
+      residualVars = BackendVariable.listVar1(residualVarsLst);
+      independentVars = BackendVariable.listVar1(independentVarsLst);
+
+      // get cse and other aux vars > columnVars
+      ((allVars, _)) = BackendVariable.traverseBackendDAEVars(syst.orderedVars, getFurtherVars , ({}, x));
+      systvars = BackendVariable.listVar1(allVars);
+      ((columnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
+      columnVars = List.map1(columnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+      columnVars = List.map1(columnVars, setSimVarMatrixName, SOME(name));
+      innerVars = rewriteIndex(columnVars, 0);
+
+      (innerVars, columnVars) = createJacSimVarsColumn(dependentVarsLst, x, residualVars, 0, listLength(innerVars), name, innerVars, {});
+
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("\n---+++ all column variables +++---\n");
+        print(Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
+        print("analytical Jacobians -> create all SimCode vars for Matrix " + name + " time: " + realString(clock()) + "\n");
+      end if;
+
+      ((seedVars, _)) =  BackendVariable.traverseBackendDAEVars(independentVars, traversingdlowvarToSimvar, ({}, emptyVars));
+      ((indexVars, _)) =  BackendVariable.traverseBackendDAEVars(residualVars, traversingdlowvarToSimvar, ({}, emptyVars));
+      seedVars = rewriteIndex(listReverse(seedVars), 0);
+      indexVars = rewriteIndex(listReverse(indexVars), 0);
+
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("\n---+++ seedVars variables +++---\n");
+        print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        print("\n---+++ indexVars variables +++---\n");
+        print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+      end if;
+      //sort sparse pattern
+      varsSeedIndex = listAppend(seedVars, indexVars);
+      sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
+      sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
+
+      // set sparse pattern
+      coloring = sortColoring(varsSeedIndex, sparseColoring);
+      maxColor = listLength(sparseColoring);
+
+      // create seed vars
+      seedVars = replaceSeedVarsName(seedVars, name);
+      seedVars = List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
+      seedVars = List.map1(seedVars, setSimVarMatrixName, SOME(name));
+
+      if Flags.isSet(Flags.JAC_DUMP2) then
+        print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
+      end if;
+
+      //rewrite index
+      (columnVars, index) = rewriteIndex(columnVars, 0);
+      (innerVars, index) = rewriteIndex(innerVars, index);
+      (seedVars, index) = rewriteIndex(seedVars, index);    // count local inputVars always last
+
+      // create hash table
+      nAllVars = (listLength(seedVars)+listLength(innerVars)+listLength(indexVars));
+      hashTable = fillLocalHashTable({seedVars, innerVars, columnVars}, nAllVars);
+
+      // rewrite omsiJacFunction variables
+      omsiJacFunction.inputVars = seedVars;
+      omsiJacFunction.innerVars = innerVars;
+      omsiJacFunction.outputVars = columnVars;
+      omsiJacFunction.nAllVars = nAllVars;
+      omsiJacFunction.context = SimCodeFunction.JACOBIAN_CONTEXT(SOME(hashTable));
+
+      if debug then
+        dumpOMSIFunc(omsiJacFunction, "\nJacobian OMSIFunction");
+        print("\nLocal jacobian hash table:\n");
+        BaseHashTable.dumpHashTableStatistics(hashTable);
+      end if;
+
+      outRes = SOME(SimCode.DERIVATIVE_MATRIX(
+        columns = {omsiJacFunction},
+        matrixName = name,
+        sparsity = sparseInts,
+        sparsityT = sparseIntsT,
+        coloredCols = coloring,
+        maxColorCols = maxColor));
+
+      then (outRes, uniqueEqIndex);
+
+  else
+    equation
+      if Flags.isSet(Flags.JAC_DUMP) then
+        errorMessage = "function createSymbolicSimulationJacobian failed.";
+        Error.addInternalError(errorMessage, sourceInfo());
+      end if;
+    then (NONE(), iuniqueEqIndex);
+
+  end matchcontinue;
+end createDerivativeMatrix;
 
 
 // =============================================================================
@@ -6988,7 +7778,7 @@ algorithm
   sortSimvars(simVars);
   if debug then execStat("createVars: sortSimVars"); end if;
 
-  if stringEqual(Config.simCodeTarget(), "Cpp") then
+   if (stringEqual(Config.simCodeTarget(), "Cpp") or (Config.simCodeTarget()=="omsicpp")) then
     extendIncompleteArray(simVars);
     if debug then execStat("createVars: Cpp, extendIncompleteArray"); end if;
   end if;
@@ -7453,7 +8243,7 @@ author:Waurich TUD 2016-04"
 algorithm
   str := matchcontinue(eqSysIn)
     local
-      Boolean partMixed,lin,initCall;
+      Boolean partMixed,lin,initCall,torn;
       Integer idx,idxLS,idxNLS,idx2,idxLS2,idxNLS2,idxMS;
       String s,s1,s2,s3,s4,s5,s6;
       list<String> sLst;
@@ -7580,6 +8370,23 @@ algorithm
     case SimCode.SES_ALIAS()
       equation
         s = String(eqSysIn.index) +": alias of "+ String(eqSysIn.aliasOf);
+    then s;
+
+    case SimCode.SES_ALGEBRAIC_SYSTEM(index=idx, algSysIndex=idx2, partOfMixed=partMixed, tornSystem=torn , linearSystem=lin)
+      algorithm
+        s := intString(idx) +": "+ " (ALGEBRAIC_SYSTEM) algSysIndex: "+intString(idx2)+"\n";
+        s := s+"\tpartOfMixed system: " + boolString(partMixed) + ", tornSystem: " + boolString(torn) + ", linearSystem: "+ boolString(lin) +"\n";
+
+        s := s+omsiFuncEqnString(eqSysIn.residual);
+        _ := match eqSysIn.matrix
+          local
+            SimCode.DerivativeMatrix matrix;
+          case SOME(matrix as SimCode.DERIVATIVE_MATRIX(__))
+            algorithm
+             s := s+derivativeMatrixString(matrix);
+            then ();
+        end match;
+        s := s+"\n";
     then s;
 
     else
@@ -8025,7 +8832,7 @@ protected function fixIndex
 protected
   Integer ix=0;
   list<SimCodeVar.SimVar> lst;
-  Boolean isCpp = Config.simCodeTarget() == "Cpp";
+  Boolean isCpp = (Config.simCodeTarget() == "Cpp" or Config.simCodeTarget() == "omsicpp");
 algorithm
   for i in SimVarsIndex.state : SimVarsIndex.realOptimizeFinalConstraints loop
     lst := Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i));
@@ -8103,70 +8910,44 @@ algorithm
     outHT := HashTableCrefSimVar.emptyHashTableSized(size);
     arraySimVars := HashTableCrILst.emptyHashTableSized(size);
 
-    outHT := List.fold(vars.stateVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.stateVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     //true := intLt(size, -1);
-    outHT := List.fold(vars.derivativeVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.algVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.derivativeVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.algVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     arraySimVars := List.fold(vars.algVars, getArraySimVars, arraySimVars);
-    outHT := List.fold(vars.discreteAlgVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.intAlgVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.boolAlgVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.paramVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.discreteAlgVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.intAlgVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.boolAlgVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.paramVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     arraySimVars := List.fold(vars.paramVars, getArraySimVars, arraySimVars);
-    outHT := List.fold(vars.intParamVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.boolParamVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.aliasVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.intParamVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.boolParamVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.aliasVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     arraySimVars := List.fold(vars.aliasVars, getArraySimVars, arraySimVars);
-    outHT := List.fold(vars.intAliasVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.boolAliasVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.stringAlgVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.stringParamVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.stringAliasVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.extObjVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.constVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.intConstVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.boolConstVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.stringConstVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.sensitivityVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.jacobianVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.realOptimizeConstraintsVars, addSimVarToHashTable, outHT);
-    outHT := List.fold(vars.realOptimizeFinalConstraintsVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.intAliasVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.boolAliasVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.stringAlgVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.stringParamVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.stringAliasVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.extObjVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.constVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.intConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.boolConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.stringConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    if (Config.simCodeTarget()=="Cpp" or Config.simCodeTarget()=="omsicpp") then
+      // Not needed in the hashtable (actually breaks code generation
+      // due to bad indexes, no information that they are seed variables
+      // and so on...
+      outHT := List.fold(vars.sensitivityVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+      outHT := List.fold(vars.jacobianVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+      outHT := List.fold(vars.seedVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    end if;
+    outHT := List.fold(vars.realOptimizeConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.realOptimizeFinalConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
   else
     Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
   end try;
 end createCrefToSimVarHT;
-
-public function addSimVarToHashTable
-  input SimCodeVar.SimVar simvarIn;
-  input  SimCode.HashTableCrefToSimVar inHT;
-  output SimCode.HashTableCrefToSimVar outHT;
-algorithm
-  outHT :=
-  matchcontinue (simvarIn, inHT)
-    local
-      DAE.ComponentRef cr, acr;
-      SimCodeVar.SimVar sv;
-
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
-      equation
-        //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((cr, sv), inHT);
-      then outHT;
-        // add the whole array crefs to the hashtable, too
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
-      equation
-        //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((acr, sv), inHT);
-        outHT = BaseHashTable.add((cr, sv), outHT);
-      then outHT;
-    else
-      equation
-        Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
-end addSimVarToHashTable;
 
 protected function getArraySimVars "author: marcusw
   store the array-cref of the variable in the hash table and add the variable-index as value. The variable is handled as array-variable,
@@ -11075,7 +11856,7 @@ algorithm
 
         // get states and create hash table
         SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
-        htStates = List.fold(allVars.stateVars, addSimVarToHashTable, HashTableCrefSimVar.emptyHashTableSized(1+integer(1.4*size)));
+        htStates = List.fold(allVars.stateVars, HashTableCrefSimVar.addSimVarToHashTable, HashTableCrefSimVar.emptyHashTableSized(1+integer(1.4*size)));
 
         // produce mapping
         simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,htStates);
@@ -11941,6 +12722,67 @@ algorithm
    noOut := noIn+1;
 end dumpVarMappingTuple;
 
+
+public function dumpOMSIData
+"Outputs a SimCode.OMSIData"
+  input SimCode.OMSIData omsiData;
+  input String head;
+algorithm
+  print(head+"\n");
+
+  print("OMSIFunction initialization:\n");
+  dumpOMSIFunc(omsiData.initialization,"");
+
+  print("----------------------\n");
+  print("OMSIFunction simulation:\n");
+  dumpOMSIFunc(omsiData.simulation,"");
+end dumpOMSIData;
+
+
+public function dumpOMSIFunc
+"Outputs a SimCode.OMSIFunction"
+  input SimCode.OMSIFunction omsiFunc;
+  input String head;
+algorithm
+  print(head+"\n");
+  try
+    print("equations:\n");
+    print("----------------------\n");
+    dumpSimEqSystemLst(omsiFunc.equations,"\n");
+    dumpVarLst(omsiFunc.inputVars,"inputVars");
+    dumpVarLst(omsiFunc.innerVars,"innerVars");
+    dumpVarLst(omsiFunc.outputVars,"outputVars");
+    print("numer of all vars: " + String(omsiFunc.nAllVars)+"\n");
+    print("Context\n");    // ToDo: add dump context
+    print("number of algebraic systems: " + String(omsiFunc.nAlgebraicSystems)+"\n");
+    else
+      print("ERROR in dumpOMSIFunc\n");
+  end try;
+end dumpOMSIFunc;
+
+
+public function omsiFuncEqnString
+"Outputs a string containing SimCode.OMSIFunction informations"
+  input SimCode.OMSIFunction omsiFunc;
+  output String s="";
+algorithm
+  for eqs in omsiFunc.equations loop
+    s := s+simEqSystemString(eqs) + "\n";
+  end for;
+end omsiFuncEqnString;
+
+
+public function derivativeMatrixString
+"Outputs a string containing SimCode.OMSIFunction informations"
+  input SimCode.DerivativeMatrix matrix;
+  output String s="";
+algorithm
+  for col in matrix.columns loop
+    s := s+omsiFuncEqnString(col);
+  end for;
+end derivativeMatrixString;
+
+
 public function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
   by analyzing the symbolic jacobian matrixes and sparsity pattern"
@@ -12188,7 +13030,7 @@ public function getStateSimVarIndexFromIndex
 protected
   SimCodeVar.SimVar stateVar;
 algorithm
-  stateVar := listGet(inStateVars, inIndex + 1 - (if Config.simCodeTarget()=="Cpp" then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
+  stateVar := listGet(inStateVars, inIndex + 1 - (if (Config.simCodeTarget()=="Cpp" or Config.simCodeTarget()=="omsicpp") then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
   outVariableIndex := getVariableIndex(stateVar);
 end getStateSimVarIndexFromIndex;
 
@@ -12323,16 +13165,25 @@ algorithm
       String valueReference;
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-    case (_, _, "Cpp") algorithm
+    case (_, _, _) guard(stringEqual(Config.simCodeTarget(), "Cpp")
+                         or stringEqual(Config.simCodeTarget(), "omsicpp")
+                         or stringEqual(Config.simCodeTarget(), "omsic"))
+    algorithm
       // resolve aliases to get multi-dimensional arrays right
       // (this should possibly be done in getVarIndexByMapping?)
       simVar := match inSimVar
+        local
+          DAE.ComponentRef componentRef;
         case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS(varName = cref))
           then cref2simvar(cref, inSimCode);
         case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(varName = cref))
           then cref2simvar(cref, inSimCode);
+        // resolve pre vars
+        case SimCodeVar.SIMVAR(name = DAE.CREF_QUAL(ident=DAE.preNamePrefix, componentRef=componentRef))
+          then cref2simvar(componentRef, inSimCode);
         else inSimVar;
       end match;
+
       valueReference := getVarIndexByMapping(inSimCode.varToArrayIndexMapping, simVar.name, true, "-1");
       if stringEqual(valueReference, "-1") then
         Error.addInternalError("invalid return value from getVarIndexByMapping for " + simVarString(simVar), sourceInfo());
@@ -12344,6 +13195,7 @@ algorithm
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
   end match;
 end getValueReference;
+
 
 protected function getDefaultValueReference
   "returns the value reference without consideration of aliases,
@@ -12373,6 +13225,39 @@ algorithm
   end if;
   outDefaultValueReference := String(reference - 1);
 end getDefaultValueReference;
+
+
+public function getLocalValueReference
+ "returns the local value reference of current OMSIFuncton of a variable for
+  direct memory access considering aliases and array storage order."
+  input SimCodeVar.SimVar inSimVar;
+  input SimCode.SimCode inSimCode;
+  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
+  input Boolean inElimNegAliases "=false to keep negative alias references";
+  output String outValueReference;
+algorithm
+  outValueReference := matchcontinue (inSimVar, inElimNegAliases, inCrefToSimVarHT)
+    local
+      DAE.ComponentRef cref;
+      String valueReference;
+      HashTableCrefSimVar.HashTable crefToSimVarHT;
+
+    // default case
+    case (SimCodeVar.SIMVAR(name=cref), _, crefToSimVarHT)
+    algorithm
+      valueReference := localCref2Index(cref, crefToSimVarHT);
+      // if localy no index was found search globaly
+      if stringEqual(valueReference, "-1") then
+        valueReference := getValueReference(inSimVar, inSimCode, inElimNegAliases);
+      end if;
+      then valueReference;
+    else
+      algorithm
+      Error.addInternalError("getLocalValueReference failed.", sourceInfo());
+      then "ERROR: getLocalValueReference failed";
+  end matchcontinue;
+end getLocalValueReference;
+
 
 protected function getHighestDerivation"computes the highest derivative among all states. this includes derivatives of derivatives as well
 author: waurich TUD 2015-05"
@@ -12790,6 +13675,53 @@ public function createJacContext
 algorithm
   outContext := SimCodeFunction.JACOBIAN_CONTEXT(jacHT);
 end createJacContext;
+
+
+public function localCref2SimVar
+"Used by templates to find SIMVAR in given hashTable for given cref
+ (to gain representaion index info mainly). Does not check if variable is alias."
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
+  output SimCodeVar.SimVar outSimVar;
+algorithm
+  outSimVar := matchcontinue (inCref, inCrefToSimVarHT)
+    local
+      DAE.ComponentRef cref, badcref;
+      SimCodeVar.SimVar sv;
+      SimCode.HashTableCrefSimVar.HashTable crefToSimVarHT;
+    case (cref, crefToSimVarHT)
+      equation
+        sv = BaseHashTable.get(cref, crefToSimVarHT);
+      then sv;
+
+    case (_,_)
+      equation
+        badcref = ComponentReference.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
+        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
+  end matchcontinue;
+end localCref2SimVar;
+
+
+public function localCref2Index
+"Finds local value reference for given cref and hash table"
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
+  output String outIndex;
+algorithm
+  outIndex:= matchcontinue (inCref, inCrefToSimVarHT)
+    local
+      DAE.ComponentRef cref;
+      HashTableCrefSimVar.HashTable crefToSimVarHT;
+      SimCodeVar.SimVar sv;
+    case (cref, crefToSimVarHT)
+      equation
+        sv = BaseHashTable.get(cref, crefToSimVarHT);
+      then String(sv.index);
+    else
+      then "-1";
+  end matchcontinue;
+end localCref2Index;
+
 
 public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
 * Expand simulation context arrays that contain variables stored in different locations...

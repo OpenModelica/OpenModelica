@@ -51,6 +51,7 @@ import DAE;
 import Error;
 import Expression;
 import Flags;
+import HashTableCrefSimVar;
 import HpcOmSchedulerExt;
 import HpcOmSimCodeMain;
 import List;
@@ -3887,7 +3888,7 @@ algorithm
   simVarIdx2 := simVarIdx + numVars;
 
   //update hashtable, create replacement rules and build new simEqSystems
-  ht := List.fold(simVarDupl,SimCodeUtil.addSimVarToHashTable,ht);
+  ht := List.fold(simVarDupl,HashTableCrefSimVar.addSimVarToHashTable,ht);
   repl := BackendVarTransform.addReplacements(replIn,crefs,crefsDuplExp,NONE());
   //BackendVarTransform.dumpReplacements(repl);
   simEqSysts := List.map1(simEqSysIdcs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));

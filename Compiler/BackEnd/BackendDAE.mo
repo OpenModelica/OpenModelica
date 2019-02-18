@@ -279,10 +279,12 @@ uniontype VarKind "variable kind"
   record OPT_LOOP_INPUT
     .DAE.ComponentRef replaceExp;
   end OPT_LOOP_INPUT;
-  record ALG_STATE  end ALG_STATE; // algebraic state used by inline solver
-  record ALG_STATE_OLD  end ALG_STATE_OLD; // algebraic state old value used by inline solver
+  record ALG_STATE  end ALG_STATE;              // algebraic state used by inline solver
+  record ALG_STATE_OLD  end ALG_STATE_OLD;      // algebraic state old value used by inline solver
   record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
-  record DAE_AUX_VAR end DAE_AUX_VAR; // auxiliary variable used for DAEmode
+  record DAE_AUX_VAR end DAE_AUX_VAR;           // auxiliary variable used for DAEmode
+  record LOOP_ITERATION end LOOP_ITERATION;     // used in SIMCODE, iteration variables in algebraic loops
+  record LOOP_SOLVED end LOOP_SOLVED;           // used in SIMCODE, inner variables of a torn algebraic loop
 end VarKind;
 
 public uniontype TearingSelect

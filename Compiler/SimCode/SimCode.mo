@@ -152,6 +152,7 @@ uniontype SimCode
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
+    Option<OMSIData> omsiData "used for OMSI to generate equations code";
   end SIMCODE;
 end SimCode;
 
@@ -292,6 +293,37 @@ uniontype DaeModeData
   end DAEMODEDATA;
 end DaeModeData;
 
+uniontype OMSIData
+  "contains data for code generation for OMSI"
+  record OMSI_DATA
+    OMSIFunction initialization "contains equations and variables for initialization problem";
+    OMSIFunction simulation "contains equations and variables for simulation problem";
+  end OMSI_DATA;
+end OMSIData;
+
+uniontype OMSIFunction
+  "contains equations and variables for initialization or simulation problem"
+  record OMSI_FUNCTION
+    list<SimEqSystem>       equations   "list of single equations and systems of equations";
+    list<SimCodeVar.SimVar> inputVars   "list of simcode variables determining input variables for equation(s)";
+    list<SimCodeVar.SimVar> outputVars  "list of simcode variables determining output variables for equation(s)";
+    list<SimCodeVar.SimVar> innerVars   "list of simcode variables determining inner variables for equation(s), e.g $DER(x)";
+    Integer nAllVars                    "number of input, inner and output vars";
+    SimCodeFunction.Context context     "contains crefToSimVar hash table for lookup function in templates";
+    Integer nAlgebraicSystems           "number of linear and non-linear algebraic systems in OMSI_FUNCTION.equations";
+  end OMSI_FUNCTION;
+end OMSIFunction;
+
+public constant
+OMSIFunction emptyOMSIFunction = OMSI_FUNCTION(equations = {},
+                                               inputVars = {},
+                                               outputVars = {},
+                                               innerVars = {},
+                                               nAllVars = 0,
+                                               context = SimCodeFunction.contextOMSI,
+                                               nAlgebraicSystems = 0);
+
+
 uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."
   record SES_RESIDUAL
@@ -303,7 +335,7 @@ uniontype SimEqSystem
 
   record SES_SIMPLE_ASSIGN
     Integer index;
-    DAE.ComponentRef cref;
+    DAE.ComponentRef cref "left hand side of equation";
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -396,7 +428,50 @@ uniontype SimEqSystem
     Integer aliasOf;
   end SES_ALIAS;
 
+  record SES_ALGEBRAIC_SYSTEM
+    Integer index;            // equation index
+    Integer algSysIndex;      // index of algebraic system
+
+    Integer dim_n;            // dimension of algebraic loop (after tearing)
+
+    Boolean partOfMixed;
+    Boolean tornSystem;
+    Boolean linearSystem;
+
+    // residual.inputVars = dependentVars
+    // residual.innerVars = otherTearingVars
+    // residual.outputVars = iterationsVars
+    OMSIFunction residual; // linear: A*x-b = res
+                           // non-linear: f(x) = res
+
+    Option<DerivativeMatrix> matrix;  // linear => A
+                                      // non-linear => f'(x)
+
+    list<Integer> zeroCrossingConditions;
+
+    list<DAE.ElementSource> sources;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_ALGEBRAIC_SYSTEM;
+
 end SimEqSystem;
+
+
+public
+uniontype DerivativeMatrix
+  "represents directional derivatives with sparsity and coloring"
+  record DERIVATIVE_MATRIX
+    list<OMSIFunction> columns;         // column(s) equations and variables
+                                        // inputVars:  seedVars
+                                        // innerVars:  inner column vars
+                                        // outputVars: result vars of the column
+
+    String matrixName;                  // unique matrix name
+    SparsityPattern sparsity;
+    SparsityPattern sparsityT;
+    list<list<Integer>> coloredCols;
+    Integer maxColorCols;
+  end DERIVATIVE_MATRIX;
+end DerivativeMatrix;
 
 public
 uniontype LinearSystem
