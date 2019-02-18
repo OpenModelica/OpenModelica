@@ -73,6 +73,9 @@
 #include "Traceability/TraceabilityInformationURI.h"
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "Plotting/DiagramWindow.h"
+#include "Interfaces/InformationInterface.h"
+#include "Interfaces/ModelInterface.h"
+#include "Interfaces/Model.h"
 #include "omc_config.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -2549,6 +2552,24 @@ void MainWindow::openConfigurationOptions()
 }
 
 /*!
+ * \brief MainWindow::runOMSensPlugin
+ * Slots activated when OMSens plugin action is triggered.\n
+ * Runs OMSens plugin.
+ */
+void MainWindow::runOMSensPlugin()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    QAction *pAction = qobject_cast<QAction *>(sender());
+    ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(pAction->parent());
+    pModelInterface->analyzeModel(Model(pModelWidget));
+  } else {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                             tr("Please open a model before starting the OMSens plugin."), Helper::ok);
+  }
+}
+
+/*!
  * \brief MainWindow::openUsersGuide
  * Slot activated when mpUsersGuideAction triggered signal is raised.\n
  * Opens the html based version of OpenModelica users guide.
@@ -3899,6 +3920,28 @@ void MainWindow::createMenus()
   pToolsMenu->addAction(mpOpenTerminalAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOptionsAction);
+  // Plugins View Menu
+  mpPluginsMenu = new QMenu(menuBar());
+  mpPluginsMenu->setObjectName("PluginsMenu");
+  mpPluginsMenu->setTitle(tr("Plugins"));
+  // load OMSens plugin
+#ifdef Q_OS_WIN
+  QPluginLoader loader("../../../OMSensPlugin/bin/OMSensPlugin.dll");
+#elif defined(Q_OS_MAC)
+  QPluginLoader loader("../../../OMSensPlugin/bin/libOMSensPlugin.dylib");
+#else
+  QPluginLoader loader("../../../OMSensPlugin/bin/libOMSensPlugin.so");
+#endif
+  QObject *pOMSensPlugin = loader.instance();
+  if (pOMSensPlugin) {
+    InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(pOMSensPlugin);
+    // Add OMSens plugin action to plugins menu
+    QAction *pOMSensPluginAction = new QAction(pInformationInterface->icon(), pInformationInterface->name(), pOMSensPlugin);
+    connect(pOMSensPluginAction, SIGNAL(triggered()), SLOT(runOMSensPlugin()));
+    mpPluginsMenu->addAction(pOMSensPluginAction);
+  }
+  pToolsMenu->addSeparator();
+  pToolsMenu->addMenu(mpPluginsMenu);
   // add Tools menu to menu bar
   menuBar()->addAction(pToolsMenu->menuAction());
   // Help menu

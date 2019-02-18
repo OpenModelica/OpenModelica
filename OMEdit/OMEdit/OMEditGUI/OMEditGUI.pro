@@ -206,7 +206,8 @@ SOURCES += main.cpp \
   OMS/InstantiateDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
-  Animation/TimeManager.cpp
+  Animation/TimeManager.cpp \
+  Interfaces/Model.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -298,7 +299,10 @@ HEADERS  += Util/Helper.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
   OMS/OMSSimulationOutputWidget.h \
-  Animation/TimeManager.h
+  Animation/TimeManager.h \
+  Interfaces/InformationInterface.h \
+  Interfaces/ModelInterface.h \
+  Interfaces/Model.h
 
 CONFIG(osg) {
 

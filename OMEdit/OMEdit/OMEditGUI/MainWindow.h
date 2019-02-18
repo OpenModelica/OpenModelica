@@ -429,6 +429,7 @@ private:
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
+  QMenu *mpPluginsMenu;
   QToolBar *mpFileToolBar;
   QToolBar *mpEditToolBar;
   QToolBar *mpViewToolBar;
@@ -510,6 +511,7 @@ public slots:
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();
+  void runOMSensPlugin();
   void openUsersGuide();
   void openUsersGuidePdf();
   void openUsersGuideOldPdf();
