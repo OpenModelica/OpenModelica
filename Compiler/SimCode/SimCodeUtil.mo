@@ -8934,14 +8934,9 @@ algorithm
     outHT := List.fold(vars.intConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     outHT := List.fold(vars.boolConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     outHT := List.fold(vars.stringConstVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
-    if (Config.simCodeTarget()=="Cpp" or Config.simCodeTarget()=="omsicpp") then
-      // Not needed in the hashtable (actually breaks code generation
-      // due to bad indexes, no information that they are seed variables
-      // and so on...
-      outHT := List.fold(vars.sensitivityVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
-      outHT := List.fold(vars.jacobianVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
-      outHT := List.fold(vars.seedVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
-    end if;
+    outHT := List.fold(vars.sensitivityVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.jacobianVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.seedVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
   else
