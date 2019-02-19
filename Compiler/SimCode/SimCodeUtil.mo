@@ -4997,7 +4997,7 @@ algorithm
     Option<DAE.VariableAttributes> dae_var_attr;
     Boolean isProtected;
     Boolean hideResult = false;
-    Integer resIndex, tmpIndex=0;
+    Integer resIndex=inResIndex, tmpIndex=inTmpIndex;
     BackendDAE.VarKind varkind;
 
     case ({}) then (listReverse(tmpVars), listReverse(resVars));
