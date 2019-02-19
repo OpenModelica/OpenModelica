@@ -283,7 +283,7 @@ protected
   SimCode.JacobianMatrix dataReconSimJac;
   String fullPathPrefix;
 
-  SimCode.OMSIFunction omsiAllEquations, omsiInitEquations;
+  SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
 
   constant Boolean debug = false;
@@ -381,14 +381,14 @@ algorithm
       equationSccMapping := {};
       eqBackendSimCodeMapping := {};
       sccOffset := 0;
-      (omsiAllEquations, uniqueEqIndex) :=
+      (omsiSimEquations, uniqueEqIndex) :=
           createAllEquationOMSI(contSysts, shared, zeroCrossings, uniqueEqIndex);
 
       // Add removed equations (e.g. reinit)
       ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-      omsiAllEquations.equations := listAppend(omsiAllEquations.equations, removedEquations);
+      omsiSimEquations.equations := listAppend(omsiSimEquations.equations, removedEquations);
 
-      omsiOptData := SOME(SimCode.OMSI_DATA(simulation=omsiAllEquations, initialization=omsiInitEquations));
+      omsiOptData := SOME(SimCode.OMSI_DATA(simulation=omsiSimEquations, initialization=omsiInitEquations));
 
       // debug print
       if debug then

@@ -677,9 +677,7 @@ algorithm
     local
       String str, newdir, newpath, resourcesDir, dirname;
       String fmutmp;
-      String guid;
       Boolean b;
-      String fileprefix;
     case (SimCode.SIMCODE(),"C")
       algorithm
         fmutmp := simCode.fileNamePrefix + ".fmutmp";
@@ -795,7 +793,6 @@ algorithm
       Boolean isFMI2;
       String fmiVersion;
       BackendDAE.SymbolicJacobians fmiDer;
-      Boolean symJacBackup;
       DAE.FunctionTree funcs;
       list<Option<Integer>> allRoots;
 

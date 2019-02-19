@@ -304,7 +304,7 @@ end OMSIData;
 uniontype OMSIFunction
   "contains equations and variables for initialization or simulation problem"
   record OMSI_FUNCTION
-    list<SimEqSystem>       equations   "list of single equations and systems of equations";
+    list<SimEqSystem>       equations   "causalized list of single equations and systems of equations";
     list<SimCodeVar.SimVar> inputVars   "list of simcode variables determining input variables for equation(s)";
     list<SimCodeVar.SimVar> outputVars  "list of simcode variables determining output variables for equation(s)";
     list<SimCodeVar.SimVar> innerVars   "list of simcode variables determining inner variables for equation(s), e.g $DER(x)";
