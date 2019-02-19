@@ -286,7 +286,7 @@ uniontype DaeModeData
   record DAEMODEDATA
     list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
     Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
-    list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
+    list<SimCodeVar.SimVar> residualVars "variable used to calculate residuals of a DAE form, they are real";
     list<SimCodeVar.SimVar> algebraicVars;
     list<SimCodeVar.SimVar> auxiliaryVars;
     DaeModeConfig modeCreated; // indicates the mode in which
@@ -429,10 +429,10 @@ uniontype SimEqSystem
   end SES_ALIAS;
 
   record SES_ALGEBRAIC_SYSTEM
-    Integer index;            // equation index
-    Integer algSysIndex;      // index of algebraic system
+    Integer index "equation index";
+    Integer algSysIndex "index of algebraic system";
 
-    Integer dim_n;            // dimension of algebraic loop (after tearing)
+    Integer dim_n "dimension of algebraic loop (after tearing)";
 
     Boolean partOfMixed;
     Boolean tornSystem;
@@ -465,7 +465,7 @@ uniontype DerivativeMatrix
                                         // innerVars:  inner column vars
                                         // outputVars: result vars of the column
 
-    String matrixName;                  // unique matrix name
+    String matrixName "unique matrix name";
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
     list<list<Integer>> coloredCols;

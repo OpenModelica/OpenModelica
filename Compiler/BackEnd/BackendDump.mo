@@ -2485,7 +2485,7 @@ algorithm
     case BackendDAE.DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR";
     case BackendDAE.LOOP_ITERATION() then "LOOP_ITERATION";
     case BackendDAE.LOOP_SOLVED() then "LOOP_SOLVED";
-    else then "ERROR: BackendDump.kindString varKind not implemented";
+    else "ERROR: BackendDump.kindString varKind not implemented";
   end match;
 end kindString;
 

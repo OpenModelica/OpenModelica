@@ -229,7 +229,7 @@ uniontype Context
   end DAE_MODE_CONTEXT;
 
   record OMSI_CONTEXT
-    Option<HashTableCrefSimVar.HashTable> hashTable;    // used to get local SimVars and corresponding value references
+    Option<HashTableCrefSimVar.HashTable> hashTable "used to get local SimVars and corresponding value references";
   end OMSI_CONTEXT;
 end Context;
 
