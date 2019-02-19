@@ -4533,6 +4533,7 @@ algorithm
     case SOURCEINFO()
       algorithm
         outInfo.fileName := dstPath;
+        outInfo.isReadOnly := false;
       then
         ();
 
