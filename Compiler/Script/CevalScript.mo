@@ -1445,10 +1445,18 @@ algorithm
               b = true;
               s1 = System.basename(filename);
               s2 = Util.removeLast4Char(s1);
+              // possible .moc files to look for
               filename1 = workdir + "/" + s2 + "/" + s2 + ".moc";
               filename2 = workdir + "/" + s2 + "/package.moc";
               filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
+              // possible .mo files to look for
+              str1 = workdir + "/" + s2 + "/" + s2 + ".mo";
+              str2 = workdir + "/" + s2 + "/package.mo";
+              str = if System.regularFileExists(str1) then str1 else str2;
+              // check if .mol contains .moc or .mo files
+              filename_1 = if System.regularFileExists(filename_1) then filename_1 else str;
               if (System.regularFileExists(filename_1)) then
+                execStatReset();
                 filename_1 = Util.testsuiteFriendlyPath(filename_1);
                 p = SymbolTable.getAbsyn();
                 newp = loadFile(filename_1, "UTF-8", p, true);
