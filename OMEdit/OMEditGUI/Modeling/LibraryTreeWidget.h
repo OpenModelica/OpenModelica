@@ -126,6 +126,8 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
+  bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
+  void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
   bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
@@ -214,6 +216,7 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
+  bool mAccessAnnotations;
   oms_element_t *mpOMSElement;
   oms_system_enu_t mSystemType;
   oms_component_enu_t mComponentType;
@@ -281,7 +284,7 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries();
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                         bool isSystemLibrary = false, bool load = false, int row = -1);
+                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
@@ -331,7 +334,7 @@ public:
   void updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
 private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                             bool isSystemLibrary = false, bool load = false, int row = -1);
+                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
   void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                         int row = -1);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
@@ -402,6 +405,7 @@ private:
   QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
   QAction *mpExportEncryptedPackageAction;
+  QAction *mpExportRealonlyPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpUpdateBindingsAction;
@@ -452,6 +456,7 @@ public slots:
   void deleteTextFile();
   void exportModelFMU();
   void exportEncryptedPackage();
+  void exportReadonlyPackage();
   void exportModelXML();
   void exportModelFigaro();
   void updateBindings();
@@ -495,6 +500,7 @@ private:
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
+  bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem);

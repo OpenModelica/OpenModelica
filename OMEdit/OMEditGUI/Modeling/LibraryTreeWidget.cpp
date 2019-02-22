@@ -76,6 +76,7 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
+  setAccessAnnotations(false);
   setOMSElement(0);
   setSystemType(oms_system_none);
   setComponentType(oms_component_none);
@@ -138,6 +139,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
+  setAccessAnnotations(false);
   setOMSElement(0);
   setSystemType(oms_system_none);
   setComponentType(oms_component_none);
@@ -244,12 +246,17 @@ bool LibraryTreeItem::isDocumentationClass()
 LibraryTreeItem::Access LibraryTreeItem::getAccess()
 {
   /* Activate the access annotations if the class is encrypted
-   * OR if the activate access annotations option is set.
+   * OR if the activate access annotations option is set
+   * OR if the LibraryTreeItem's mAccessAnnotations is marked true.
    */
   bool isEncryptedClass = mFileName.endsWith(".moc");
-  bool activateAccessAnnotations = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsCheckBox()->isChecked();
+  bool activateAccessAnnotations = false;
+  QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
+  if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always) {
+    activateAccessAnnotations = true;
+  }
 
-  if (isEncryptedClass || activateAccessAnnotations) {
+  if (isEncryptedClass || activateAccessAnnotations || isAccessAnnotationsEnabled()) {
     if (mClassInformation.access.compare("Access.hide") == 0) {
       return LibraryTreeItem::hide;
     } else if (mClassInformation.access.compare("Access.icon") == 0) {
@@ -1343,20 +1350,20 @@ void LibraryTreeModel::addModelicaLibraries()
  * \param row
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                         bool isSystemLibrary, bool load, int row)
+                                                         bool isSystemLibrary, bool load, int row, bool loadingMOL)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row);
+    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, loadingMOL);
   } else {
     if (row == -1) {
       row = pParentLibraryTreeItem->childrenSize();
     }
     QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
     beginInsertRows(index, row, row);
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row);
+    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, loadingMOL);
     endInsertRows();
   }
   return pLibraryTreeItem;
@@ -2531,7 +2538,8 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         pParentLibraryTreeItem = findLibraryTreeItem(parentName, pLibraryTreeItem);
       }
       if (pParentLibraryTreeItem) {
-        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false);
+        createLibraryTreeItemImpl(name, pParentLibraryTreeItem, pParentLibraryTreeItem->isSaved(), false, false, -1,
+                                  pParentLibraryTreeItem->isAccessAnnotationsEnabled());
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
@@ -2590,13 +2598,14 @@ void LibraryTreeModel::updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *p
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                             bool isSystemLibrary, bool load, int row)
+                                                             bool isSystemLibrary, bool load, int row, bool loadingMOL)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
+    pLibraryTreeItem->setAccessAnnotations(loadingMOL);
     createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved, row);
     if (load) {
       // create library tree items
@@ -2610,6 +2619,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
+    pLibraryTreeItem->setAccessAnnotations(loadingMOL);
     if (row == -1) {
       row = pParentLibraryTreeItem->childrenSize();
     }
@@ -3128,6 +3138,10 @@ void LibraryTreeView::createActions()
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
   connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
+  // Export read-only package action
+  mpExportRealonlyPackageAction = new QAction(Helper::exportRealonlyPackage, this);
+  mpExportRealonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  connect(mpExportRealonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // Export XML Action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
@@ -3320,6 +3334,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
               && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
             menu.addAction(mpExportEncryptedPackageAction);
+            menu.addAction(mpExportRealonlyPackageAction);
           }
           menu.addAction(mpExportXMLAction);
           menu.addAction(mpExportFigaroAction);
@@ -3825,11 +3840,27 @@ void LibraryTreeView::exportModelFMU()
   }
 }
 
+/*!
+ * \brief LibraryTreeView::exportEncryptedPackage
+ * Exports an encrypted package.
+ */
 void LibraryTreeView::exportEncryptedPackage()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->exportEncryptedPackage(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::exportReadonlyPackage
+ * Exports a read-only package.
+ */
+void LibraryTreeView::exportReadonlyPackage()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->exportReadonlyPackage(pLibraryTreeItem);
   }
 }
 
@@ -4141,34 +4172,18 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  */
 void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress)
 {
-  // get the class names now to check if they are already loaded or not
-  QStringList existingmodelsList;
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
   QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
   if (!classesList.isEmpty()) {
-    /*
-      Only allow loading of files that has just one nonstructured entity.
-      From Modelica specs section 13.2.2.2,
-      "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
-       matching the name of the nonstructured entity."
-      */
-    if (classesList.size() > 1) {
-      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                      .arg(classesList.join(",")));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
+    if (multipleTopLevelClasses(classesList, fileName)) {
       if (showProgress) {
         MainWindow::instance()->getStatusBar()->clearMessage();
       }
       return;
     }
+    QStringList existingmodelsList;
     bool existModel = false;
     // check if the model already exists
     foreach(QString model, classesList) {
@@ -4230,16 +4245,64 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
-  // load the encrypted package in OMC
-  if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, Utilities::tempDirectory())) {
-    MainWindow::instance()->addRecentFile(fileName, encoding);
-    mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
-    if (showProgress) {
-      MainWindow::instance()->hideProgressBar();
+
+  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseEncryptedPackage(fileName, Utilities::tempDirectory());
+  if (!classesList.isEmpty()) {
+    if (multipleTopLevelClasses(classesList, fileName)) {
+      if (showProgress) {
+        MainWindow::instance()->getStatusBar()->clearMessage();
+      }
+      return;
     }
-  }
-  if (showProgress) {
-    MainWindow::instance()->getStatusBar()->clearMessage();
+    QStringList existingmodelsList;
+    bool existModel = false;
+    // check if the model already exists
+    foreach(QString model, classesList) {
+      if (mpLibraryTreeModel->findLibraryTreeItemOneLevel(model)) {
+        existingmodelsList.append(model);
+        existModel = true;
+      }
+    }
+    // if existModel is true, show user an error message
+    if (existModel) {
+      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(existingmodelsList.join(",")).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileName)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else { // if no conflicting model found then just load the file simply
+      // load the encrypted package in OMC
+      if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, Utilities::tempDirectory())) {
+        // create library tree nodes for loaded models
+        int progressvalue = 0;
+        if (showProgress) {
+          MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
+          MainWindow::instance()->showProgressBar();
+        }
+        bool loadingMOL = false;
+        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
+        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Loading) {
+          loadingMOL = true;
+        }
+        foreach (QString model, classesList) {
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, loadingMOL);
+          mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+          if (showProgress) {
+            MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
+          }
+        }
+        MainWindow::instance()->addRecentFile(fileName, encoding);
+        mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
+        if (showProgress) {
+          MainWindow::instance()->hideProgressBar();
+        }
+      }
+    }
   }
 }
 
@@ -4655,6 +4718,36 @@ void LibraryWidget::openLibraryTreeItem(QString nameStructure)
   } else {
     mpLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryWidget::multipleTopLevelClasses
+ * Checks if we have more than one classes in the list.
+ * \param classesList
+ * \param fileName
+ * \return
+ */
+bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, const QString &fileName)
+{
+  /*
+    Only allow loading of files that has just one nonstructured entity.
+    From Modelica specs section 13.2.2.2,
+    "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
+     matching the name of the nonstructured entity."
+    */
+  if (classesList.size() > 1) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString("%1 - %2)").arg(Helper::applicationName, Helper::error));
+    pMessageBox->setIcon(QMessageBox::Critical);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
+    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
+                                    .arg(classesList.join(",")));
+    pMessageBox->setStandardButtons(QMessageBox::Ok);
+    pMessageBox->exec();
+    return true;
+  }
+  return false;
 }
 
 /*!

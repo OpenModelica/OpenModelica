@@ -1000,6 +1000,39 @@ void MainWindow::exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 }
 
+/*!
+ * \brief MainWindow::exportReadonlyPackage
+ * Exports the package as read-only package
+ * \param pLibraryTreeItem
+ */
+void MainWindow::exportReadonlyPackage(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(tr("Exporting the package as read-only package"));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  // build read-only package
+  if (mpOMCProxy->buildEncryptedPackage(pLibraryTreeItem->getNameStructure(), false)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::READONLY_PACKAGE_GENERATED)
+                                                          .arg(QString("%1/%2.mol")
+                                                               .arg(MainWindow::instance()->getOMCProxy()->changeDirectory())
+                                                               .arg(pLibraryTreeItem->getNameStructure())),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
 void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -2162,8 +2195,9 @@ void MainWindow::exportModelFMU()
   if (pModelWidget) {
     exportModelFMU(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2177,8 +2211,27 @@ void MainWindow::exportEncryptedPackage()
   if (pModelWidget) {
     exportEncryptedPackage(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("making encrypted package")), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making encrypted package")), Helper::scriptingKind,
+                                                          Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::exportReadonlyPackage
+ * Slot activated when mpExportReadonlyPackageAction triggered SIGNAL is raised.
+ */
+void MainWindow::exportReadonlyPackage()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    exportReadonlyPackage(pModelWidget->getLibraryTreeItem());
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making read-only package")), Helper::scriptingKind,
+                                                          Helper::notificationLevel));
   }
 }
 
@@ -2189,8 +2242,9 @@ void MainWindow::exportModelXML()
   if (pModelWidget) {
     exportModelXML(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2201,8 +2255,9 @@ void MainWindow::exportModelFigaro()
   if (pModelWidget) {
     exportModelFigaro(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2219,7 +2274,7 @@ void MainWindow::showOpenModelicaCommandPrompt()
   if (!QProcess::startDetached(commandPrompt, args, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())) {
     QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>.").arg(commandPrompt).arg(args.join(" "));
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
-                                                Helper::errorLevel));
+                                                          Helper::errorLevel));
   }
 }
 
@@ -2246,8 +2301,10 @@ void MainWindow::exportModelToOMNotebook()
   if (pModelWidget) {
     exportModelToOMNotebook(pModelWidget->getLibraryTreeItem());
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("exporting to OMNotebook")), Helper::scriptingKind,
+                                                          Helper::notificationLevel));
   }
 }
 
@@ -3337,6 +3394,10 @@ void MainWindow::createActions()
   mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
   connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
+  // export read-only package action
+  mpExportRealonlyPackageAction = new QAction(Helper::exportRealonlyPackage, this);
+  mpExportRealonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  connect(mpExportRealonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // export XML action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
@@ -3788,6 +3849,7 @@ void MainWindow::createMenus()
   pExportMenu->setTitle(tr("E&xport"));
   // add actions to Export menu
   pExportMenu->addAction(mpExportEncryptedPackageAction);
+  pExportMenu->addAction(mpExportRealonlyPackageAction);
   pExportMenu->addAction(mpExportXMLAction);
   pExportMenu->addAction(mpExportFigaroAction);
   // add Export menu to menu bar

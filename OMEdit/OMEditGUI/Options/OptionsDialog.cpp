@@ -199,7 +199,11 @@ void OptionsDialog::readGeneralSettings()
   }
   // read activate access annotations
   if (mpSettings->contains("activateAccessAnnotations")) {
-    mpGeneralSettingsPage->getActivateAccessAnnotationsCheckBox()->setChecked(mpSettings->value("activateAccessAnnotations").toBool());
+    bool ok;
+    int currentIndex = mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->findData(mpSettings->value("activateAccessAnnotations").toInt(&ok));
+    if (currentIndex > -1 && ok) {
+      mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->setCurrentIndex(currentIndex);
+    }
   }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
@@ -926,7 +930,7 @@ void OptionsDialog::saveGeneralSettings()
   // save hide variables browser
   mpSettings->setValue("hideVariablesBrowser", mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->isChecked());
   // save activate access annotations
-  mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsCheckBox()->isChecked());
+  mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->itemData(mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->currentIndex()).toInt());
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
@@ -1719,9 +1723,18 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpHideVariablesBrowserCheckBox->setToolTip(tr("Hides the variable browser when switching away from plotting perspective."));
   mpHideVariablesBrowserCheckBox->setChecked(true);
   // activate access annotation
-  mpActivateAccessAnnotationsCheckBox = new QCheckBox(tr("Activate Access Annotations *"));
-  mpActivateAccessAnnotationsCheckBox->setToolTip(tr("Activates the access annotations for the non-encrypted libraries. "
-                                                     "Access annotations are always active for encrypted libraries."));
+  mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
+  mpActivateAccessAnnotationsComboBox = new QComboBox;
+  mpActivateAccessAnnotationsComboBox->addItem(tr("Always"), GeneralSettingsPage::Always);
+  mpActivateAccessAnnotationsComboBox->addItem(tr("When loading .mol file(s)"), GeneralSettingsPage::Loading);
+  mpActivateAccessAnnotationsComboBox->addItem(tr("Never"), GeneralSettingsPage::Never);
+  mpActivateAccessAnnotationsComboBox->setCurrentIndex(1);
+  mpActivateAccessAnnotationsComboBox->setToolTip(tr("<html><head/><body>"
+                                                     "<p>Options for handling of access annotations:</p>"
+                                                     "<ul><li><i>Always:</i> Activates the access annotations even for the non-encrypted libraries.</li>"
+                                                     "<li><i>When loading .mol file(s):</i> Activates the access annotations even if the .mol contains a non-encrypted library.</li>"
+                                                     "<li><i>Never:</i> Deactivates access annotations except for encrypted libraries.</li></ul>"
+                                                     "</body></html>"));
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1739,7 +1752,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
   generalSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsCheckBox, 7, 0, 1, 3);
+  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
+  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));

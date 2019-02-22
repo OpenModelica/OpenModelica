@@ -174,6 +174,8 @@ QString Helper::exportFMU;
 QString Helper::exportFMUTip;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
+QString Helper::exportRealonlyPackage;
+QString Helper::exportRealonlyPackageTip;
 QString Helper::importFMU;
 QString Helper::importFMUTip;
 QString Helper::exportXML;
@@ -463,6 +465,8 @@ void Helper::initHelperVariables()
   Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
   Helper::exportEncryptedPackage = tr("Export Encrypted Package");
   Helper::exportEncryptedPackageTip = tr("Exports the package as Encrytped package");
+  Helper::exportRealonlyPackage = tr("Export Read-only Package");
+  Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
   Helper::importFMU = tr("Import FMU");
   Helper::importFMUTip = tr("Imports the model from Functional Mockup Interface (FMU)");
   Helper::exportXML = tr("Export XML");
@@ -781,6 +785,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The FIGARO is generated.");
     case ENCRYPTED_PACKAGE_GENERATED:
       return tr("The encrytped package is generated at <b>%1</b>.");
+    case READONLY_PACKAGE_GENERATED:
+      return tr("The read-only package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case DELETE_CLASS_MSG:

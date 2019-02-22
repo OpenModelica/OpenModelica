@@ -3000,17 +3000,36 @@ QList<QList<QString > > OMCProxy::getUses(QString className)
  * \brief OMCProxy::buildEncryptedPackage
  * Builds the encrypted package.
  * \param className
+ * \param encrypt
  * \return
  */
-bool OMCProxy::buildEncryptedPackage(QString className)
+bool OMCProxy::buildEncryptedPackage(QString className, bool encrypt)
 {
-  OMCInterface::buildEncryptedPackage_res result = mpOMCInterface->buildEncryptedPackage(className);
+  OMCInterface::buildEncryptedPackage_res result = mpOMCInterface->buildEncryptedPackage(className, encrypt);
   printMessagesStringInternal();
   if (!result.success && !result.commandOutput.isEmpty()) {
     MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, result.commandOutput, Helper::scriptingKind, Helper::errorLevel);
     MessagesWidget::instance()->addGUIMessage(messageItem);
   }
   return result.success;
+}
+
+/*!
+ * \brief OMCProxy::parseEncryptedPackage
+ * Parse the file. Doesn't load it into OMC.
+ * \param fileName - the file to parse.
+ * \param workingDirectory
+ * \return
+ */
+QList<QString> OMCProxy::parseEncryptedPackage(QString fileName, QString workingDirectory)
+{
+  QList<QString> result;
+  fileName = fileName.replace('\\', '/');
+  result = mpOMCInterface->parseEncryptedPackage(fileName, workingDirectory);
+  if (result.isEmpty()) {
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!

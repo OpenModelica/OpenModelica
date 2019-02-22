@@ -256,7 +256,8 @@ public:
   bool inferBindings(QString className);
   bool generateVerificationScenarios(QString className);
   QList<QList<QString > > getUses(QString className);
-  bool buildEncryptedPackage(QString className);
+  bool buildEncryptedPackage(QString className, bool encrypt = true);
+  QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
   bool loadEncryptedPackage(QString fileName, QString workingDirectory);
 signals:
   void commandFinished();

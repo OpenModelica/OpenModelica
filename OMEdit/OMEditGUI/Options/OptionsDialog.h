@@ -208,6 +208,11 @@ class GeneralSettingsPage : public QWidget
 {
   Q_OBJECT
 public:
+  enum AccessAnnotations {
+    Always = 0,
+    Loading = 1,
+    Never = 2
+  };
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
@@ -220,7 +225,7 @@ public:
   void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
-  QCheckBox* getActivateAccessAnnotationsCheckBox() {return mpActivateAccessAnnotationsCheckBox;}
+  QComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
@@ -252,7 +257,8 @@ private:
   Label *mpTerminalCommandArgumentsLabel;
   QLineEdit *mpTerminalCommandArgumentsTextBox;
   QCheckBox *mpHideVariablesBrowserCheckBox;
-  QCheckBox *mpActivateAccessAnnotationsCheckBox;
+  Label *mpActivateAccessAnnotationsLabel;
+  QComboBox *mpActivateAccessAnnotationsComboBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;

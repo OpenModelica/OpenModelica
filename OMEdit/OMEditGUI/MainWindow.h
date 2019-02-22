@@ -165,6 +165,7 @@ public:
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
+  QAction* getExportRealonlyPackageAction() {return mpExportRealonlyPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
   QAction* getExportFigaroAction() {return mpExportFigaroAction;}
   QAction* getLineShapeAction() {return mpLineShapeAction;}
@@ -222,6 +223,7 @@ public:
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFMU(LibraryTreeItem *pLibraryTreeItem);
   void exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem);
+  void exportReadonlyPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
   void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
@@ -347,6 +349,7 @@ private:
   QAction *mpImportFMUModelDescriptionAction;
   // Export Menu
   QAction *mpExportEncryptedPackageAction;
+  QAction *mpExportRealonlyPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   // Debug Menu
@@ -493,6 +496,7 @@ public slots:
   void importModelFMU();
   void importFMUModelDescription();
   void exportEncryptedPackage();
+  void exportReadonlyPackage();
   void exportModelXML();
   void exportModelFigaro();
   void showOpenModelicaCommandPrompt();

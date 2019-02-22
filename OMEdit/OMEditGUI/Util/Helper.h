@@ -176,6 +176,8 @@ public:
   static QString exportFMUTip;
   static QString exportEncryptedPackage;
   static QString exportEncryptedPackageTip;
+  static QString exportRealonlyPackage;
+  static QString exportRealonlyPackageTip;
   static QString importFMU;
   static QString importFMUTip;
   static QString exportXML;
@@ -455,6 +457,7 @@ public:
     XML_GENERATED,
     FIGARO_GENERATED,
     ENCRYPTED_PACKAGE_GENERATED,
+    READONLY_PACKAGE_GENERATED,
     UNLOAD_CLASS_MSG,
     DELETE_CLASS_MSG,
     UNLOAD_TEXT_FILE_MSG,
