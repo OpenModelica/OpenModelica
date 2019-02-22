@@ -52,7 +52,6 @@ public:
   QString getLastValidText() {return mLastValidText;}
   QStringList getClassNames(QString *errorString);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
-  QString removeLeadingSpaces(QString contents);
   void storeLeadingSpaces(QMap<int, int> leadingSpacesMap);
   QString getPlainText();
   void setTextChanged(bool changed) {mTextChanged = changed;}

@@ -1787,3 +1787,71 @@ QString StringHandler::joinDerivativeAndPreviousVariable(QString fullVariableNam
   int times = (fullVariableName.lastIndexOf(derivativeOrPrevious) / derivativeOrPrevious.size()) + 1;
   return QString("%1%2%3").arg(QString(derivativeOrPrevious).repeated(times), variableName, QString(")").repeated(times));
 }
+
+/*!
+ * \brief StringHandler::removeLeadingSpaces
+ * Removes the leading spaces from a nested class text to make it more readable.
+ * \param contents
+ * \return
+ */
+QString StringHandler::removeLeadingSpaces(QString contents)
+{
+  QString text;
+  int startLeadingSpaces = 0;
+  int leadingSpaces = 0;
+  QTextStream textStream(&contents);
+  int lineNumber = 1;
+  while (!textStream.atEnd()) {
+    QString currentLine = textStream.readLine();
+    if (lineNumber == 1) {  // the first line
+      startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
+      leadingSpaces = startLeadingSpaces;
+    } else {
+      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
+    }
+    text += currentLine.mid(leadingSpaces) + "\n";
+    lineNumber++;
+  }
+  return text;
+}
+
+QString StringHandler::removeLine(QString text, QString lineToRemove)
+{
+  QString classText;
+  QTextStream textStream(&text);
+  while (!textStream.atEnd()) {
+    QString currentLine = textStream.readLine();
+    if (currentLine.compare(lineToRemove) != 0) {
+      classText += currentLine + "\n";
+    }
+  }
+  return classText;
+}
+
+/*!
+ * \brief StringHandler::insertClassAtPosition
+ * Inserts the childClassText inside a parentClassText at linePosition.
+ * \param parentClassText
+ * \param childClassText
+ * \param linePosition
+ * \param nestedLevel
+ * \return
+ */
+QString StringHandler::insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel)
+{
+  QString classText;
+  QTextStream parentTextStream(&parentClassText);
+  int lineNumber = 1;
+  while (!parentTextStream.atEnd()) {
+    QString currentLine = parentTextStream.readLine();
+    classText += currentLine + "\n";
+    if (linePosition == lineNumber) {
+      QTextStream childTextStream(&childClassText);
+      while (!childTextStream.atEnd()) {
+        classText += QString(' ').repeated(nestedLevel) + childTextStream.readLine() + "\n";
+      }
+    }
+    lineNumber++;
+  }
+  return classText;
+}

@@ -156,6 +156,12 @@ class DuplicateClassDialog : public QDialog
 {
   Q_OBJECT
 public:
+  enum FileType {
+    OneFile,
+    Directory,
+    Directories,
+    KeepStructure
+  };
   DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibraryTreeItem, QWidget *pParent = 0);
 private:
   bool mSaveAs;
@@ -165,14 +171,18 @@ private:
   Label *mpPathLabel;
   QLineEdit *mpPathTextBox;
   QPushButton *mpPathBrowseButton;
-  QCheckBox *mpSaveContentsInOneFileCheckBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 
+  FileType selectFileType(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem = 0);
   void setSaveContentsTypeAsFolderStructure(LibraryTreeItem *pLibraryTreeItem);
-public slots:
-  int exec();
+
+  void duplicateClassHelper(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem, FileType fileType);
+  void syncDuplicatedModelWithOMC(LibraryTreeItem *pLibraryTreeItem);
+  void folderToOneFilePackage(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem, QString *classText);
+  void insertClassInOneFilePackage(LibraryTreeItem *pLibraryTreeItem);
+private slots:
   void browsePath();
   void duplicateClass();
 };

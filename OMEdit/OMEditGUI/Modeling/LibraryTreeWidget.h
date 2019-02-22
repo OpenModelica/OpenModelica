@@ -118,7 +118,7 @@ public:
   QPixmap getDragPixmap() {return mDragPixmap;}
   void setClassTextBefore(QString classTextBefore) {mClassTextBefore = classTextBefore;}
   QString getClassTextBefore() {return mClassTextBefore;}
-  void setClassText(QString classText) {mClassText = classText;}
+  void setClassText(QString classText);
   QString getClassText(LibraryTreeModel *pLibraryTreeModel);
   void setClassTextAfter(QString classTextAfter) {mClassTextAfter = classTextAfter;}
   QString getClassTextAfter() {return mClassTextAfter;}
@@ -299,6 +299,7 @@ public:
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents);
+  void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
@@ -325,7 +326,6 @@ private:
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
-  void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void updateOMSLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);

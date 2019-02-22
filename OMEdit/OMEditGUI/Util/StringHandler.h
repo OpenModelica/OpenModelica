@@ -161,6 +161,9 @@ public:
   static bool containsSpace(QString str);
   static QString trimmedEnd(const QString &str);
   static QString joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious);
+  static QString removeLeadingSpaces(QString contents);
+  static QString removeLine(QString text, QString lineToRemove);
+  static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
 protected:
   static QString mLastOpenDir;
 };

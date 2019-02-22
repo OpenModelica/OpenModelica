@@ -300,33 +300,6 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
 }
 
 /*!
- * \brief ModelicaEditor::removeLeadingSpaces
- * Removes the leading spaces from a nested class text to make it more readable.
- * \param contents
- * \return
- */
-QString ModelicaEditor::removeLeadingSpaces(QString contents)
-{
-  QString text;
-  int startLeadingSpaces = 0;
-  int leadingSpaces = 0;
-  QTextStream textStream(&contents);
-  int lineNumber = 1;
-  while (!textStream.atEnd()) {
-    QString currentLine = textStream.readLine();
-    if (lineNumber == 1) {  // the first line
-      startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
-      leadingSpaces = startLeadingSpaces;
-    } else {
-      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
-    }
-    text += currentLine.mid(leadingSpaces) + "\n";
-    lineNumber++;
-  }
-  return text;
-}
-
-/*!
  * \brief ModelicaEditor::storeLeadingSpaces
  * Stores the leading spaces information in the text block user data.
  * \param leadingSpacesMap
@@ -414,7 +387,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
   // store and remove leading spaces
   if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
     leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
-    contents = removeLeadingSpaces(contents);
+    contents = StringHandler::removeLeadingSpaces(contents);
   }
   // Only set the text when it is really new
   if (contents != mpPlainTextEdit->toPlainText()) {

@@ -109,6 +109,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setName(text);
   setNameStructure(nameStructure);
   if (type == LibraryTreeItem::Modelica) {
+    setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     setClassInformation(classInformation);
   } else {
     setFileName(fileName);
@@ -163,9 +164,7 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
 {
   if (mLibraryType == LibraryTreeItem::Modelica) {
     mClassInformation = classInformation;
-    if (!isFilePathValid()) {
-      setFileName(classInformation.fileName);
-    }
+    setFileName(classInformation.fileName);
     setReadOnly(classInformation.fileReadOnly);
     // set save contents type
     if (isFilePathValid()) {
@@ -184,8 +183,6 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
           setSaveContentsType(LibraryTreeItem::SaveInOneFile);
         }
       }
-    } else {
-      setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
@@ -276,6 +273,28 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
     }
   } else {
     return LibraryTreeItem::all;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::setClassText
+ *
+ * \param classText
+ */
+void LibraryTreeItem::setClassText(QString classText)
+{
+  mClassText = classText;
+  if (mpModelWidget && mpModelWidget->getEditor()) {
+    ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpModelWidget->getEditor());
+    if (pModelicaEditor) {
+      pModelicaEditor->setPlainText(classText);
+      return;
+    }
+    OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpModelWidget->getEditor());
+    if (pOMSimulatorEditor) {
+      pOMSimulatorEditor->setPlainText(classText);
+      return;
+    }
   }
 }
 
@@ -539,7 +558,7 @@ int LibraryTreeItem::getNestedLevelInPackage() const
 {
   int level = 0;
   LibraryTreeItem *pParentLibraryTreeItem = parent();
-  while (pParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
+  while (pParentLibraryTreeItem && pParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
     level++;
     pParentLibraryTreeItem = pParentLibraryTreeItem->parent();
   }
@@ -1530,10 +1549,6 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
     pParentLibraryTreeItem->setClassText(contents);
     if (pParentLibraryTreeItem->getModelWidget()) {
       pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-      ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-      if (pModelicaEditor) {
-        pModelicaEditor->setPlainText(contents);
-      }
     }
     // if we first updated the parent class then the child classes needs to be updated as well.
     if (pParentLibraryTreeItem != pLibraryTreeItem) {
@@ -1567,10 +1582,6 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
   pParentLibraryTreeItem->setClassText(contents);
   if (pParentLibraryTreeItem->getModelWidget()) {
     pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-    ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-    if (pModelicaEditor) {
-      pModelicaEditor->setPlainText(contents);
-    }
   }
   // if we first updated the parent class then the child classes needs to be updated as well.
   if (pParentLibraryTreeItem != pLibraryTreeItem) {
@@ -1578,6 +1589,36 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
                           pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
     updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
     pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
+ * Updates the class text of child LibraryTreeItems
+ * \param pLibraryTreeItem
+ * \param contents
+ * \param fileName
+ */
+void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
+      pChildLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
+      readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
+      if (pChildLibraryTreeItem->getModelWidget()) {
+        ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
+        if (pModelicaEditor) {
+          pModelicaEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
+          if (pModelicaEditor->isVisible()) {
+            pModelicaEditor->getPlainTextEdit()->getLineNumberArea()->update();
+          }
+        }
+      }
+      if (pChildLibraryTreeItem->childrenSize() > 0) {
+        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
+      }
+    }
   }
 }
 
@@ -2369,36 +2410,6 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFileHelper(LibraryTreeI
 }
 
 /*!
- * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
- * Updates the class text of child LibraryTreeItems
- * \param pLibraryTreeItem
- * \param contents
- * \param fileName
- */
-void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName)
-{
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
-      pChildLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
-      readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
-      if (pChildLibraryTreeItem->getModelWidget()) {
-        ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
-        if (pModelicaEditor) {
-          pModelicaEditor->setPlainText(pChildLibraryTreeItem->getClassText(this));
-          if (pModelicaEditor->isVisible()) {
-            pModelicaEditor->getPlainTextEdit()->getLineNumberArea()->update();
-          }
-        }
-      }
-      if (pChildLibraryTreeItem->childrenSize() > 0) {
-        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
-      }
-    }
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::updateOMSLibraryTreeItemClassText
  * Updates the OMSimulator model or system contents.
  * \param pLibraryTreeItem
@@ -2411,12 +2422,6 @@ void LibraryTreeModel::updateOMSLibraryTreeItemClassText(LibraryTreeItem *pLibra
     QString contents;
     if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
       pLibraryTreeItem->setClassText(contents);
-      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
-        OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-        if (pOMSimulatorEditor) {
-          pOMSimulatorEditor->setPlainText(contents);
-        }
-      }
     }
   }
 }

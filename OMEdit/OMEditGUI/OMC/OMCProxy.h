@@ -167,7 +167,7 @@ public:
   bool saveModifiedModel(QString modelText);
   bool saveTotalModel(QString fileName, QString className);
   QString list(QString className);
-  QString listFile(QString className);
+  QString listFile(QString className, bool nestedClasses = true);
   QString diffModelicaFileListings(QString before, QString after);
   QString instantiateModel(QString className);
   bool addClassAnnotation(QString className, QString annotation);

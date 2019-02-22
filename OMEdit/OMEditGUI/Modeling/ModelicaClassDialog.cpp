@@ -316,7 +316,7 @@ void ModelicaClassDialog::createModelicaClass()
     parentPackage = QString("Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
   }
   // Check whether model exists or not.
-  if (MainWindow::instance()->getOMCProxy()->existClass(model) || MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(model)) {
+  if (MainWindow::instance()->getOMCProxy()->existClass(model) || pLibraryTreeModel->findLibraryTreeItemOneLevel(model)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                             GUIMessages::MODEL_ALREADY_EXISTS).arg(mpSpecializationComboBox->currentText()).arg(model)
                           .arg(parentPackage), Helper::ok);
@@ -747,8 +747,6 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
-  // save contents in one file
-  mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -768,9 +766,96 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   pMainLayout->addWidget(mpPathLabel, 1, 0);
   pMainLayout->addWidget(mpPathTextBox, 1, 1);
   pMainLayout->addWidget(mpPathBrowseButton, 1, 2);
-  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 2, 0, 1, 3, Qt::AlignLeft);
+  pMainLayout->addWidget(new Label(tr("* Note: This operation can take sometime to finish depending on the size of your library.")), 2, 0, 1, 3, Qt::AlignLeft);
   pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief DuplicateClassDialog::selectFileType
+ * Shows a QDialog which asks for a file type for a class.
+ * \param pLibraryTreeItem - The source LibraryTreeItem.
+ * \param pParentLibraryTreeItem - The parent LibraryTreeItem where the class will be duplicated.
+ * \return
+ */
+DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeItem *pLibraryTreeItem,
+                                                                    LibraryTreeItem *pParentLibraryTreeItem)
+{
+  // if the destination package is saved in one file then we always save in one file
+  if (pLibraryTreeItem->getRestriction() == StringHandler::Package
+      && pParentLibraryTreeItem
+      && !pParentLibraryTreeItem->isRootItem()
+      && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    return OneFile;
+  } else if (pLibraryTreeItem->getRestriction() == StringHandler::Package) {
+    // select dialog
+    QDialog *pSelectFileTypeDialog = new QDialog;
+    pSelectFileTypeDialog->setAttribute(Qt::WA_DeleteOnClose);
+    pSelectFileTypeDialog->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+    // icon
+    int iconSize = this->style()->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, this);
+    QIcon tmpIcon = this->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, this);
+    Label *pPixmapLabel = new Label;
+    pPixmapLabel->setPixmap(tmpIcon.pixmap(iconSize, iconSize));
+    // text
+    Label *pTextLabel = new Label(tr("Select file type for %1").arg(pLibraryTreeItem->getNameStructure()));
+    // buttons
+    QSignalMapper signalMapper;
+    // Keep structure button
+    QPushButton *pKeepStructureButton = new QPushButton(tr("Keep Structure"));
+    pKeepStructureButton->setToolTip(tr("Keeps the same file type structure for the package and its contents recursively."));
+    pKeepStructureButton->setAutoDefault(true);
+    connect(pKeepStructureButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+    // One File button
+    QPushButton *pOneFileButton = new QPushButton(tr("One File"));
+    pOneFileButton->setToolTip(tr("Stores the package and all its contents in one file."));
+    pOneFileButton->setAutoDefault(false);
+    connect(pOneFileButton, SIGNAL(clicked()), pSelectFileTypeDialog, SLOT(reject()));
+    // Directory button
+    QPushButton *pDirectoryButton = new QPushButton(tr("Directory"));
+    pDirectoryButton->setToolTip(tr("Creates a directory for the package."));
+    pDirectoryButton->setAutoDefault(false);
+    connect(pDirectoryButton, SIGNAL(clicked()), pSelectFileTypeDialog, SLOT(accept()));
+    // Directories button
+    QPushButton *pDirectoriesForAllButton = new QPushButton(tr("Directories For All"));
+    pDirectoriesForAllButton->setToolTip(tr("Creates the directories for the package and its contents recursively."));
+    pDirectoriesForAllButton->setAutoDefault(false);
+    connect(pDirectoriesForAllButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+    // set signal mapping
+    signalMapper.setMapping(pDirectoriesForAllButton, 2);
+    signalMapper.setMapping(pKeepStructureButton, 3);
+    connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
+    // layout the buttons
+    QDialogButtonBox *pButtonBox = new QDialogButtonBox;
+    pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);
+    pButtonBox->addButton(pOneFileButton, QDialogButtonBox::ActionRole);
+    pButtonBox->addButton(pDirectoryButton, QDialogButtonBox::ActionRole);
+    pButtonBox->addButton(pDirectoriesForAllButton, QDialogButtonBox::ActionRole);
+    // horizontal layout
+    QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
+    pHorizontalLayout->addWidget(pPixmapLabel, 0, Qt::AlignTop);
+    pHorizontalLayout->addWidget(pTextLabel, 0, Qt::AlignTop);
+    // main layout
+    QGridLayout *pMainLayout = new QGridLayout;
+    pMainLayout->addLayout(pHorizontalLayout, 0, 0, Qt::AlignTop | Qt::AlignLeft);
+    pMainLayout->addWidget(pButtonBox, 1, 0, Qt::AlignRight | Qt::AlignBottom);
+    pSelectFileTypeDialog->setLayout(pMainLayout);
+    int answer = pSelectFileTypeDialog->exec();
+
+    switch (answer) {
+      case 1:
+        return Directory;
+      case 2:
+        return Directories;
+      case 3:
+        return KeepStructure;
+      case 0:
+      default:
+        return OneFile;
+    }
+  } else {
+    return OneFile;
+  }
 }
 
 /*!
@@ -784,31 +869,205 @@ void DuplicateClassDialog::setSaveContentsTypeAsFolderStructure(LibraryTreeItem 
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem->getRestriction() == StringHandler::Package) {
       pChildLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+      pChildLibraryTreeItem->setClassText(QString("within %1;\npackage %2\nend %2;").arg(pLibraryTreeItem->getNameStructure(),
+                                                                                         pChildLibraryTreeItem->getName()));
     }
     setSaveContentsTypeAsFolderStructure(pChildLibraryTreeItem);
   }
 }
 
 /*!
- * \brief DuplicateClassDialog::exec
- * Reimplementation of QDialog::exec
- * \return
+ * \brief DuplicateClassDialog::duplicateClassHelper
+ * Duplicates the classes recursively. Performs the diff to preserve formatting.
+ * \param pDestinationLibraryTreeItem
+ * \param pSourceLibraryTreeItem
+ * \param fileType
  */
-int DuplicateClassDialog::exec()
+void DuplicateClassDialog::duplicateClassHelper(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem,
+                                                FileType fileType)
 {
-  if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
-    mpSaveContentsInOneFileCheckBox->setVisible(true);
-    if (mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-      mpSaveContentsInOneFileCheckBox->setChecked(true);
-    } else {
-      mpSaveContentsInOneFileCheckBox->setChecked(false);
-    }
+  QString classText;
+  if (pDestinationLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile
+      && pSourceLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure && fileType == OneFile) {
+    classText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationLibraryTreeItem->getNameStructure(), false);
+  } else if (!pDestinationLibraryTreeItem->parent()->isRootItem()
+      && pDestinationLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    classText = MainWindow::instance()->getOMCProxy()->list(pDestinationLibraryTreeItem->getNameStructure());
+  } else if (fileType == KeepStructure) {
+    classText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationLibraryTreeItem->getNameStructure(),
+                                                                pSourceLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile);
   } else {
-    mpSaveContentsInOneFileCheckBox->setVisible(false);
+    classText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationLibraryTreeItem->getNameStructure(), fileType == OneFile);
   }
-  return QDialog::exec();
+  QString beforeClassText = pSourceLibraryTreeItem->getClassText(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel());
+  beforeClassText = StringHandler::removeLeadingSpaces(beforeClassText);
+  /* Ticket #3912
+   * In order to preserve the formatting we use OMCProxy::diffModelicaFileListings()
+   */
+  classText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeClassText, classText);
+  // set the class text
+  pDestinationLibraryTreeItem->setClassText(classText);
+
+  if (pDestinationLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile
+      && pSourceLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure && fileType == OneFile) {
+    /* Case 8, 10
+     * If the save type is save in one file and source package is saved as folder structure
+     * then we need to flat the package to one file and then insert it inside the package if within is specified.
+     */
+    classText = StringHandler::removeLine(classText, QString("within %1;").arg(pDestinationLibraryTreeItem->parent()->getNameStructure()));
+    // remove the whitespaces around the string if any
+    classText = classText.trimmed();
+    QString childClassText;
+    folderToOneFilePackage(pDestinationLibraryTreeItem, pSourceLibraryTreeItem, &childClassText);
+    // insert the class in package
+    classText = StringHandler::insertClassAtPosition(classText, childClassText, 1, 2);
+    // set the class text
+    pDestinationLibraryTreeItem->setClassText(classText);
+    if (!pDestinationLibraryTreeItem->parent()->isRootItem()) {
+      insertClassInOneFilePackage(pDestinationLibraryTreeItem);
+    }
+  } else if (!pDestinationLibraryTreeItem->parent()->isRootItem()
+             && pDestinationLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    /* Case 2
+     * If the save type is save in one file then we need to insert the new class inside the package.
+     */
+    insertClassInOneFilePackage(pDestinationLibraryTreeItem);
+  }
+
+  if (fileType == Directory || fileType == Directories
+      || (fileType == KeepStructure && pSourceLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
+    for (int i = 0 ; i < pDestinationLibraryTreeItem->childrenSize() ; i++) {
+      LibraryTreeItem *pDestinationChildLibraryTreeItem = pDestinationLibraryTreeItem->childAt(i);
+      LibraryTreeItem *pSourceChildLibraryTreeItem = pSourceLibraryTreeItem->childAt(i);
+      // save file type
+      FileType saveFileType = fileType;
+      if (fileType == Directory) {
+        fileType = selectFileType(pDestinationChildLibraryTreeItem);
+      }
+      if (fileType == OneFile || pDestinationChildLibraryTreeItem->getRestriction() != StringHandler::Package) {
+        pDestinationChildLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      } else if (fileType == KeepStructure) {
+        pDestinationChildLibraryTreeItem->setSaveContentsType(pSourceChildLibraryTreeItem->getSaveContentsType());
+      } else {
+        pDestinationChildLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+      }
+      duplicateClassHelper(pDestinationChildLibraryTreeItem, pSourceChildLibraryTreeItem, fileType);
+      // restore file type so the next iteration can use the correct file type.
+      fileType = saveFileType;
+    }
+  }
 }
 
+/*!
+ * \brief DuplicateClassDialog::syncDuplicatedModelWithOMC
+ * Send the duplicated model text to OMC to sync the line numbers.
+ * \param pLibraryTreeItem
+ */
+void DuplicateClassDialog::syncDuplicatedModelWithOMC(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* Ticket #3793
+   * We need to call loadString with the new text of the class so that the getClassInformation returns the correct line number information.
+   * Otherwise we have the problems like the one reported in Ticket #3793.
+   */
+  QString filename = pLibraryTreeItem->getNameStructure();
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  if (!pLibraryTreeItem->parent()->isRootItem() && pLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+    filename = pParentLibraryTreeItem->isFilePathValid() ? pParentLibraryTreeItem->getFileName() : pParentLibraryTreeItem->getNameStructure();
+    pLibraryTreeItem = pParentLibraryTreeItem;
+  }
+  QString classText = pLibraryTreeItem->getClassText(pLibraryTreeModel);
+  // load the string in omc so that OMC and OMEdit have same line numbers.
+  MainWindow::instance()->getOMCProxy()->loadString(classText, filename, Helper::utf8, false, false);
+
+  if (pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+    pLibraryTreeModel->updateChildLibraryTreeItemClassText(pLibraryTreeItem, classText, pLibraryTreeItem->getFileName());
+  } else {
+    for (int i = 0 ; i < pLibraryTreeItem->childrenSize() ; i++) {
+      syncDuplicatedModelWithOMC(pLibraryTreeItem->childAt(i));
+    }
+  }
+  pLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief DuplicateClassDialog::folderToOneFilePackage
+ * Takes the package saved in folder structure and flats it out to a string for one file.
+ * \param pDestinationLibraryTreeItem
+ * \param pSourceLibraryTreeItem
+ * \param classText
+ */
+void DuplicateClassDialog::folderToOneFilePackage(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem,
+                                                  QString *classText)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  for (int i = 0 ; i < pSourceLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pSourceChildLibraryTreeItem = pSourceLibraryTreeItem->childAt(i);
+    LibraryTreeItem *pDestinationChildLibraryTreeItem = pDestinationLibraryTreeItem->childAt(i);
+    if (pSourceChildLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+      QString afterChildClassText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationChildLibraryTreeItem->getNameStructure());
+      QString beforeChildClassText = pSourceChildLibraryTreeItem->getClassText(pLibraryTreeModel);
+      QString diffClassText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeChildClassText, afterChildClassText);
+      QString lineToRemove = QString("within %1;").arg(pDestinationLibraryTreeItem->getNameStructure());
+      *classText += StringHandler::removeLine(diffClassText, lineToRemove) + "\n";
+    } else {
+      QString afterChildClassText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationChildLibraryTreeItem->getNameStructure(),
+                                                                                    false);
+      QString beforeChildClassText = pSourceChildLibraryTreeItem->getClassText(pLibraryTreeModel);
+      QString parentClassText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeChildClassText, afterChildClassText);
+      QString lineToRemove = QString("within %1;").arg(pDestinationLibraryTreeItem->getNameStructure());
+      parentClassText = StringHandler::removeLine(parentClassText, lineToRemove);
+      // remove the whitespaces around the string if any
+      parentClassText = parentClassText.trimmed();
+      QString childClassText;
+      folderToOneFilePackage(pDestinationChildLibraryTreeItem, pSourceChildLibraryTreeItem, &childClassText);
+      // insert the class in package
+      *classText += StringHandler::insertClassAtPosition(parentClassText, childClassText, 1, 2);
+    }
+  }
+}
+
+/*!
+ * \brief DuplicateClassDialog::insertClassInOneFilePackage
+ * Takes a class LibraryTreeItem and insert its text inside its parent class.
+ * \param pLibraryTreeItem
+ */
+void DuplicateClassDialog::insertClassInOneFilePackage(LibraryTreeItem *pLibraryTreeItem)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+  QString parentClassText = pParentLibraryTreeItem->getClassText(pLibraryTreeModel);
+  QString childClassText = pLibraryTreeItem->getClassText(pLibraryTreeModel);
+  int linePosition;
+  /* We need to know where to insert the new class.
+   * Note that the new class is already part of the package because of the copyClass but it doesn't have right formatting.
+   * We know that the package always have 1 class so we check from more than 1.
+   * Take the second last since last one is the new class. When taking the second last one insert one line break at top to make it look nice.
+   * When there is only one class then use the lineNumberStart of the package.
+   */
+  if (pLibraryTreeItem->parent()->childrenSize() > 1) {
+    LibraryTreeItem *pLastChildLibraryTreeItem = pLibraryTreeItem->parent()->childAt(pLibraryTreeItem->parent()->childrenSize() - 2);
+    linePosition = pLastChildLibraryTreeItem->mClassInformation.lineNumberEnd;
+    childClassText = "\n" + childClassText;
+  } else {
+    linePosition = pLibraryTreeItem->parent()->mClassInformation.lineNumberStart;
+  }
+  // insert the class in package
+  QString classText = StringHandler::insertClassAtPosition(parentClassText, childClassText, linePosition,
+                                                           pLibraryTreeItem->getNestedLevelInPackage());
+  // update the class text, mark it unsaved
+  pParentLibraryTreeItem->setClassText(classText);
+  pParentLibraryTreeItem->setIsSaved(false);
+  pLibraryTreeModel->updateLibraryTreeItem(pParentLibraryTreeItem);
+  if (pParentLibraryTreeItem->getModelWidget()) {
+    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
+  }
+}
+
+/*!
+ * \brief DuplicateClassDialog::browsePath
+ * Browse the destination path.
+ */
 void DuplicateClassDialog::browsePath()
 {
   LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, MainWindow::instance()->getLibraryWidget());
@@ -839,7 +1098,7 @@ void DuplicateClassDialog::duplicateClass()
   }
   // check if new class already exists
   QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
-  if (MainWindow::instance()->getOMCProxy()->existClass(newClassPath) || MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(newClassPath)) {
+  if (MainWindow::instance()->getOMCProxy()->existClass(newClassPath) || pLibraryTreeModel->findLibraryTreeItemOneLevel(newClassPath)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
@@ -847,11 +1106,15 @@ void DuplicateClassDialog::duplicateClass()
   }
   // check if path is not a system library
   if (!mpPathTextBox->text().isEmpty()) {
-    LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mpPathTextBox->text());
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text());
     if (pLibraryTreeItem && pLibraryTreeItem->isSystemLibrary()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             tr("Cannot duplicate inside system library."), Helper::ok);
+      return;
+    } else if (pLibraryTreeItem->getRestriction() != StringHandler::Package) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Can only duplicate inside a package. <b>%1</b> is not a package.").arg(pLibraryTreeItem->getNameStructure()),
+                            Helper::ok);
       return;
     }
   }
@@ -860,56 +1123,29 @@ void DuplicateClassDialog::duplicateClass()
     // create the new LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
-    if (mpLibraryTreeItem->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
-      QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
-      if (!pParentLibraryTreeItem->isRootItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-        fileName = pParentLibraryTreeItem->getNameStructure();
-      }
-      QString classText = MainWindow::instance()->getOMCProxy()->listFile(fileName);
-      QString beforeClassText;
-      if (mpLibraryTreeItem->getModelWidget() && mpLibraryTreeItem->getModelWidget()->getEditor()) {
-        beforeClassText = mpLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
-      } else {
-        beforeClassText = mpLibraryTreeItem->getClassText(pLibraryTreeModel);
-      }
-      /* Ticket #3912
-       * In order to preserve the formatting we use OMCProxy::diffModelicaFileListings()
-       */
-      classText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeClassText, classText);
-      /* Ticket #3793
-       * We need to call loadString with the new text of the class so that the getClassInformation returns the correct line number information.
-       * Otherwise we have the problems like the one reported in Ticket #3793.
-       */
-      MainWindow::instance()->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
-      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
-        pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(classText);
-      } else {
-        pLibraryTreeItem->setClassText(classText);
-      }
-    }
-    /* Ticket #4350, #4557 and #4594
-     * Set a proper filename for new class
+    /* There are following cases of duplicate
+     * (within - package can be one file or folder structure).
+     * Case 1: The source is non package saved in one file and destination is top level.
+     * Case 2: The source is non package saved in one file and destination is package saved in one file.
+     * Case 3: The source is non package saved in one file and destination is package saved in folder structure.
+     * Case 4: The source is a package saved in one file and destination is top level. The duplicated package saved in one file.
+     * Case 5: // // // // // // // // // // // // // // // // // // // // // // // /. The duplicated package saved as folder structure.
+     * Case 6: The source is a package saved in one file and destination is within. The duplicated package saved in one file.
+     * Case 7: // // // // // // // // // // // // // // // // // // // // // // /. The duplicated package saved as folder structure.
+     * Case 8: The source is a package saved in folder structure and destination is top level. The duplicated package saved in one file.
+     * Case 9: // // // // // // // // // // // // // // // // // // // // // // // // // // . The duplicated package saved as folder structure.
+     * Case 10: The source is a package saved in folder structure and destination is within. The duplicated package saved in one file.
+     * Case 11: // // // // // // // // // // // // // // // // // // // // // // // // //. The duplicated package saved as folder structure.
      */
-    if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-      pLibraryTreeItem->setFileName(pLibraryTreeItem->getNameStructure());
-      pLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->getNameStructure();
-      MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getNameStructure());
+    FileType fileType = selectFileType(mpLibraryTreeItem, pParentLibraryTreeItem);
+    if (fileType == Directory || fileType == Directories
+        || (fileType == KeepStructure && mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure)) {
+      pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
     }
-    // set the save contents type
-    if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
-      if (pParentLibraryTreeItem != pLibraryTreeModel->getRootLibraryTreeItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      } else if (mpSaveContentsInOneFileCheckBox->isChecked()) {
-        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      } else {
-        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-        setSaveContentsTypeAsFolderStructure(pLibraryTreeItem);
-      }
-    } else {
-      pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
-    }
+    duplicateClassHelper(pLibraryTreeItem, mpLibraryTreeItem, fileType);
+    syncDuplicatedModelWithOMC(pLibraryTreeItem);
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-    pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
+    pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     if (mSaveAs) {
       MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
     }
@@ -918,7 +1154,6 @@ void DuplicateClassDialog::duplicateClass()
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to create class <b>%1</b>. %2")
                           .arg(mpNameTextBox->text(), GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
   }
-
 }
 
 /*!

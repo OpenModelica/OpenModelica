@@ -1672,11 +1672,12 @@ QString OMCProxy::list(QString className)
  * \brief OMCProxy::listFile
  * Lists the contents of the file given by the class.
  * \param className
+ * \param nestedClasses
  * \return
  */
-QString OMCProxy::listFile(QString className)
+QString OMCProxy::listFile(QString className, bool nestedClasses)
 {
-  QString result = mpOMCInterface->listFile(className);
+  QString result = mpOMCInterface->listFile(className, nestedClasses);
   printMessagesStringInternal();
   return result;
 }
