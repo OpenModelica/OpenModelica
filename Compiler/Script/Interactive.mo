@@ -17379,12 +17379,26 @@ public function parseFile
   output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
 protected
   Absyn.Program parsed;
+  String dir,filename;
+  Boolean lveStarted;
+  Option<Integer> lveInstance = NONE();
 algorithm
   if not System.regularFileExists(fileName) then
     topClassNamesQualified := {};
     return;
   end if;
-  parsed := Parser.parse(fileName,encoding);
+  (dir,filename) := Util.getAbsoluteDirectoryAndFile(fileName);
+  if filename == "package.moc" then
+    (lveStarted, lveInstance) := Parser.startLibraryVendorExecutable(dir);
+    if not lveStarted then
+      topClassNamesQualified := {};
+      return;
+    end if;
+  end if;
+  parsed := Parser.parse(fileName,encoding,dir,lveInstance);
+  if (lveStarted) then
+    Parser.stopLibraryVendorExecutable(lveInstance);
+  end if;
   parsed := MetaUtil.createMetaClassesInProgram(parsed);
   topClassNamesQualified := getTopQualifiedClassnames(parsed);
   if updateProgram then

@@ -1317,11 +1317,11 @@ algorithm
     case (cache,_,"buildModelFMU", _,_)
       then (cache,Values.STRING(""));
 
-    case (cache,env,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className))},_)
+    case (cache,env,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b)},_)
       algorithm
         p := SymbolTable.getAbsyn();
-        (b, str) := buildEncryptedPackage(className, p);
-      then (cache,Values.TUPLE({Values.BOOL(b),Values.STRING(str)}));
+        (b1, str) := buildEncryptedPackage(className, b, p);
+      then (cache,Values.TUPLE({Values.BOOL(b1),Values.STRING(str)}));
 
     case (cache,_,"buildEncryptedPackage",_,_)
       then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING("")}));
@@ -3559,6 +3559,7 @@ end buildModelFMU;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
+  input Boolean encrypt;
   input Absyn.Program inProgram;
   output Boolean success;
   output String commandOutput;
@@ -3577,7 +3578,7 @@ algorithm
     str2 := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",str1});
     if System.regularFileExists(str2) then
       // create the list of arguments for packagetool
-      str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"true\"";
+      str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
       call := stringAppendList({str2," ",str3});
       logFile := "packagetool.log";
       // remove the logFile if it already exists.

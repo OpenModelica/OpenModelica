@@ -1156,6 +1156,16 @@ external "builtin";
 annotation(preferredView="text");
 end loadFiles;
 
+function parseEncryptedPackage
+  input String fileName;
+  input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  output TypeName names[:];
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Parses the given encrypted package and returns the names of the parsed classes.</p>
+</html>"), preferredView="text");
+end parseEncryptedPackage;
+
 function loadEncryptedPackage
   input String fileName;
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
@@ -2473,6 +2483,7 @@ end buildModelFMU;
 
 function buildEncryptedPackage
   input TypeName className "the class that should encrypted";
+  input Boolean encrypt = true;
   output Boolean success;
   output String commandOutput "Output of the packagetool executable";
 external "builtin";

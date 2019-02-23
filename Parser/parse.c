@@ -383,7 +383,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 #elif defined(ANTLR_C_VERSION_3_4)
   input  = antlr3StringStreamNew((pANTLR3_UINT8)data, ANTLR3_ENC_8BIT, strlen(data), fName);
 #else
-  #error "Neiter ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
+  #error "Neither ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
 #endif
   if ( input == NULL ) {
     fprintf(stderr, "Unable to open file %s\n", members.filename_C); fflush(stderr);
@@ -446,7 +446,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
 #elif defined(ANTLR_C_VERSION_3_4)
   input  = antlr3FileStreamNew(fName, ANTLR3_ENC_8BIT);
 #else
-  #error "Neiter ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
+  #error "Neither ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
 #endif
   if ( input == NULL ) {
     return NULL;
