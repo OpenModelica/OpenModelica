@@ -12,7 +12,7 @@ end ConnectNonConnector2;
 
 // Result:
 // Error processing file: ConnectNonConnector2.mo
-// [flattening/modelica/scodeinst/ConnectNonConnector2.mo:10:3-10:16:writable] Error: Type name 'E' is not allowed in this context.
+// [flattening/modelica/scodeinst/ConnectNonConnector2.mo:10:3-10:16:writable] Error: E is not a valid connector.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

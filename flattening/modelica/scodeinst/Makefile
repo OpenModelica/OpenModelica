@@ -320,6 +320,16 @@ eq10.mo \
 EqualityConstraint1.mo \
 EquationInvalidType1.mo \
 EvaluateAllParams.mo \
+ExpandableConnector1.mo \
+ExpandableConnector2.mo \
+ExpandableConnector3.mo \
+ExpandableConnectorFlow1.mo \
+ExpandableConnectorFlow2.mo \
+ExpandableConnectorNonDecl1.mo \
+ExpandableConnectorNonDecl2.mo \
+ExpandableConnectorNonDecl3.mo \
+ExpandableConnectorPresent1.mo \
+ExpandableConnectorPresent2.mo \
 Extends1.mo \
 Extends2.mo \
 Extends3.mo \

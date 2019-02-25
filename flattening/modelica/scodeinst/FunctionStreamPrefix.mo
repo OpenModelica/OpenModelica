@@ -1,6 +1,6 @@
 // name: FunctionStreamPrefix
 // keywords:
-// status: incorrect
+// status: correct
 // cflags: -d=newInst
 //
 
@@ -14,11 +14,8 @@ algorithm
 end FunctionStreamPrefix;
 
 // Result:
-// Error processing file: FunctionStreamPrefix.mo
-// [flattening/modelica/scodeinst/FunctionStreamPrefix.mo:8:3-8:22:writable] Error: Invalid prefix stream on formal parameter x.
+// class FunctionStreamPrefix
+// end FunctionStreamPrefix;
+// [flattening/modelica/scodeinst/FunctionStreamPrefix.mo:8:3-8:22:writable] Warning: Prefix 'stream' used outside connector declaration.
 //
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
 // endResult
