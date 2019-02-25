@@ -116,7 +116,6 @@ public
   record CONNECT
     Expression lhs;
     Expression rhs;
-    list<Equation> broken "equations which would replace a broken connect in the overconstrained connection graph";
     DAE.ElementSource source;
   end CONNECT;
 
@@ -338,7 +337,6 @@ public
     eq := match eq
       local
         Expression e1, e2, e3;
-        list<Equation> eql;
 
       case EQUALITY()
         algorithm
@@ -360,10 +358,9 @@ public
         algorithm
           e1 := func(eq.lhs);
           e2 := func(eq.rhs);
-          eql := mapExpList(eq.broken, func);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else CONNECT(e1, e2, eql, eq.source);
+            then eq else CONNECT(e1, e2, eq.source);
 
       case FOR()
         algorithm

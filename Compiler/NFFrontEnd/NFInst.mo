@@ -677,7 +677,7 @@ function instDerivedAttributes
   input SCode.Attributes scodeAttr;
   output Component.Attributes attributes;
 protected
-  ConnectorType cty;
+  ConnectorType.Type cty;
   Variability var;
   Direction dir;
 algorithm
@@ -690,7 +690,7 @@ algorithm
 
     else
       algorithm
-        cty := Prefixes.connectorTypeFromSCode(scodeAttr.connectorType);
+        cty := ConnectorType.fromSCode(scodeAttr.connectorType);
         var := Prefixes.variabilityFromSCode(scodeAttr.variability);
         dir := Prefixes.directionFromSCode(scodeAttr.direction);
       then
@@ -738,12 +738,14 @@ protected
   Modifier mod, outer_mod;
   Restriction res;
   Type ty;
+  Component.Attributes attrs;
 algorithm
   () := match cls
-    case Class.EXPANDED_CLASS()
+    case Class.EXPANDED_CLASS(restriction = res)
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
         updateComponentType(parent, node);
+        attributes := updateClassConnectorType(res, attributes);
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
@@ -790,7 +792,8 @@ algorithm
         mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
         mod := Modifier.merge(outer_mod, mod);
-        attributes := mergeDerivedAttributes(attributes, cls.attributes, parent);
+        attrs := updateClassConnectorType(cls.restriction, cls.attributes);
+        attributes := mergeDerivedAttributes(attrs, attributes, parent);
 
         // Mark the base class node as a base class.
         base_node := InstNode.setNodeType(
@@ -863,6 +866,17 @@ algorithm
     component := InstNode.componentApply(component, Component.setClassInstance, cls);
   end if;
 end updateComponentType;
+
+function updateClassConnectorType
+  input Restriction res;
+  input output Component.Attributes attrs;
+algorithm
+  if Restriction.isExpandableConnector(res) then
+    attrs.connectorType := ConnectorType.setExpandable(attrs.connectorType);
+  elseif Restriction.isConnector(res) then
+    attrs.connectorType := ConnectorType.setConnector(attrs.connectorType);
+  end if;
+end updateClassConnectorType;
 
 function instExternalObjectStructors
   "Instantiates the constructor and destructor for an ExternalObject class."
@@ -1303,7 +1317,8 @@ algorithm
 
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
-    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, useBinding, comp_node, parent);
+    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, useBinding,
+      comp_node, parent, isRedeclared = true);
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
     cc_smod := SCode.getConstrainingMod(def);
@@ -1329,6 +1344,7 @@ function instComponentDef
   input Boolean useBinding;
   input InstNode node;
   input InstNode parent;
+  input Boolean isRedeclared = false;
 algorithm
   () := match component
     local
@@ -1340,7 +1356,8 @@ algorithm
       Component inst_comp;
       InstNode ty_node;
       Class ty;
-      Boolean use_binding, in_function;
+      Boolean in_function;
+      Restriction parent_res, res;
 
     case SCode.COMPONENT(info = info)
       algorithm
@@ -1354,16 +1371,14 @@ algorithm
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
         condition := Binding.fromAbsyn(component.condition, false, {node}, parent, info);
 
-        // This is used to ignore the bindings of a component's children when the
-        // component iself has a binding that overrides those. This is to ensure
-        // that constant evaluation of e.g. a record field uses the correct binding.
-        use_binding := useBinding and not Binding.isBound(binding);
-
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
+        parent_res := Class.restriction(InstNode.getClass(parent));
         attr := instComponentAttributes(component.attributes, component.prefixes);
-        attr := mergeComponentAttributes(attributes, attr, node,
-          Class.isFunction(InstNode.getClass(parent)));
+        attr := checkDeclaredComponentAttributes(attr, parent_res, node);
+        //attr := mergeComponentAttributes(attributes, attr, node,
+        //  Restriction.isFunction(parent_res));
+        attr := mergeComponentAttributes(attributes, attr, node, parent_res);
 
         // Create the untyped component and update the node with it. We need the
         // untyped component in instClass to make sure everything is scoped
@@ -1381,6 +1396,10 @@ algorithm
 
         // Update the component's variability based on its type (e.g. Integer is discrete).
         ty_attr := updateComponentVariability(ty_attr, ty, ty_node);
+        // Update the component's connector type now that we have its type.
+        res := Class.restriction(InstNode.getClass(ty_node));
+        ty_attr := updateComponentConnectorType(ty_attr, res, isRedeclared, node);
+
         if not referenceEq(attr, ty_attr) then
           InstNode.componentApply(node, Component.setAttributes, ty_attr);
         end if;
@@ -1388,6 +1407,49 @@ algorithm
         ();
   end match;
 end instComponentDef;
+
+function updateComponentConnectorType
+  input output Component.Attributes attributes;
+  input Restriction restriction;
+  input Boolean isRedeclared;
+  input InstNode component;
+protected
+  ConnectorType.Type cty = attributes.connectorType;
+algorithm
+  if ConnectorType.isConnectorType(cty) then
+    if Restriction.isConnector(restriction) then
+      if Restriction.isExpandableConnector(restriction) then
+        cty := ConnectorType.setPresent(cty);
+      else
+        cty := intBitAnd(cty, intBitNot(ConnectorType.EXPANDABLE));
+      end if;
+    else
+      // The connector type might have the connector or expandable bits set
+      // because of a parent node, but they should be unset if the component
+      // itself isn't a connector.
+      cty := intBitAnd(cty,
+        intBitNot(intBitOr(ConnectorType.CONNECTOR, ConnectorType.EXPANDABLE)));
+    end if;
+
+    // Connector elements that are not flow/stream are potentials.
+    if not ConnectorType.isFlowOrStream(cty) then
+      cty := ConnectorType.setPotential(cty);
+    end if;
+
+    if cty <> attributes.connectorType then
+      attributes.connectorType := cty;
+    end if;
+  elseif ConnectorType.isFlowOrStream(cty) and not isRedeclared then
+    // The Modelica specification forbids using stream outside connector
+    // declarations, but has no such restriction for flow. To compromise we
+    // print a warning for both flow and stream.
+    Error.addSourceMessage(Error.CONNECTOR_PREFIX_OUTSIDE_CONNECTOR,
+      {ConnectorType.toString(cty)}, InstNode.info(component));
+
+    // Remove the erroneous flow/stream prefix and keep going.
+    attributes.connectorType := ConnectorType.unsetFlowStream(cty);
+  end if;
+end updateComponentConnectorType;
 
 function redeclareComponent
   input InstNode redeclareNode;
@@ -1438,10 +1500,8 @@ algorithm
 
         condition := orig_comp.condition;
 
-        // Merge the attributes of the redeclare and the original element, and
-        // then with any outer attributes applied to the scope.
+        // Merge the attributes of the redeclare and the original element.
         attr := mergeRedeclaredComponentAttributes(orig_comp.attributes, rdcl_comp.attributes, redeclareNode);
-        //attr := mergeComponentAttributes(outerAttr, attr, redeclareNode);
 
         // Use the dimensions of the redeclare if any, otherwise take them from the original.
         dims := if arrayEmpty(rdcl_comp.dimensions) then orig_comp.dimensions else rdcl_comp.dimensions;
@@ -1482,7 +1542,7 @@ function instComponentAttributes
   input SCode.Prefixes compPrefs;
   output Component.Attributes attributes;
 protected
-  ConnectorType cty;
+  ConnectorType.Type cty;
   Parallelism par;
   Variability var;
   Direction dir;
@@ -1505,7 +1565,7 @@ algorithm
 
     else
       algorithm
-        cty := Prefixes.connectorTypeFromSCode(compAttr.connectorType);
+        cty := ConnectorType.fromSCode(compAttr.connectorType);
         par := Prefixes.parallelismFromSCode(compAttr.parallelism);
         var := Prefixes.variabilityFromSCode(compAttr.variability);
         dir := Prefixes.directionFromSCode(compAttr.direction);
@@ -1522,27 +1582,29 @@ function mergeComponentAttributes
   input Component.Attributes outerAttr;
   input Component.Attributes innerAttr;
   input InstNode node;
-  input Boolean inFunction;
+  input Restriction parentRestriction;
   output Component.Attributes attr;
 protected
-  ConnectorType cty;
+  ConnectorType.Type cty;
   Parallelism par;
   Variability var;
   Direction dir;
   Boolean fin, redecl;
   Replaceable repl;
 algorithm
-  if referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
+  if referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
     attr := innerAttr;
   elseif referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
-    attr := outerAttr;
-    attr.innerOuter := InnerOuter.NOT_INNER_OUTER;
+    cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
+    attr := Component.Attributes.ATTRIBUTES(cty, outerAttr.parallelism,
+      outerAttr.variability, outerAttr.direction, innerAttr.innerOuter, outerAttr.isFinal,
+      innerAttr.isRedeclare, innerAttr.isReplaceable);
   else
-    cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
+    cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
     par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
     var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
 
-    if inFunction then
+    if Restriction.isFunction(parentRestriction) then
       dir := innerAttr.direction;
     else
       dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
@@ -1555,13 +1617,47 @@ algorithm
   end if;
 end mergeComponentAttributes;
 
+function checkDeclaredComponentAttributes
+  input output Component.Attributes attr;
+  input Restriction parentRestriction;
+  input InstNode component;
+algorithm
+  () := match parentRestriction
+    case Restriction.CONNECTOR()
+      algorithm
+        // Components of a connector may not have prefixes 'inner' or 'outer'.
+        if attr.innerOuter <> InnerOuter.NOT_INNER_OUTER then
+          Error.addSourceMessageAndFail(Error.INVALID_COMPONENT_PREFIX,
+            {Prefixes.innerOuterString(attr.innerOuter), InstNode.name(component)},
+            InstNode.info(component));
+        end if;
+
+        if parentRestriction.isExpandable then
+          // Components of an expandable connector may not have the prefix 'flow'.
+
+          if ConnectorType.isFlowOrStream(attr.connectorType) then
+            Error.addSourceMessageAndFail(Error.INVALID_COMPONENT_PREFIX,
+              {ConnectorType.toString(attr.connectorType), InstNode.name(component), Restriction.toString(parentRestriction)},
+              InstNode.info(component));
+          end if;
+
+          // Mark components in expandable connectors as potentially present.
+          attr.connectorType := intBitOr(attr.connectorType, ConnectorType.POTENTIALLY_PRESENT);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkDeclaredComponentAttributes;
+
 function mergeDerivedAttributes
   input Component.Attributes outerAttr;
   input Component.Attributes innerAttr;
   input InstNode node;
   output Component.Attributes attr;
 protected
-  ConnectorType cty;
+  ConnectorType.Type cty;
   Parallelism par;
   Variability var;
   Direction dir;
@@ -1569,13 +1665,13 @@ protected
   Boolean fin, redecl;
   Replaceable repl;
 algorithm
-  if referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
+  if referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) and outerAttr.connectorType == 0 then
     attr := outerAttr;
-  elseif referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
+  elseif referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) and innerAttr.connectorType == 0 then
     attr := innerAttr;
   else
     Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
-    cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
+    cty := ConnectorType.merge(cty, innerAttr.connectorType, node, isClass = true);
     var := Prefixes.variabilityMin(var, innerAttr.variability);
     dir := Prefixes.mergeDirection(dir, innerAttr.direction, node, allowSame = true);
     attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
@@ -1588,7 +1684,7 @@ function mergeRedeclaredComponentAttributes
   input InstNode node;
   output Component.Attributes attr;
 protected
-  ConnectorType cty, rcty;
+  ConnectorType.Type cty, rcty, cty_fs, rcty_fs;
   Parallelism par, rpar;
   Variability var, rvar;
   Direction dir, rdir;
@@ -1612,12 +1708,12 @@ algorithm
     // final which is always taken from the redeclare (since redeclaring a final
     // element isn't allowed).
 
-    if rcty <> ConnectorType.POTENTIAL then
-      if cty <> ConnectorType.POTENTIAL and cty <> rcty then
-        printRedeclarePrefixError(node, Prefixes.connectorTypeString(rcty), Prefixes.connectorTypeString(cty));
+    rcty_fs := intBitAnd(rcty, ConnectorType.FLOW_STREAM_MASK);
+    cty_fs := intBitAnd(cty, ConnectorType.FLOW_STREAM_MASK);
+    if rcty_fs > 0 then
+      if cty_fs > 0 and rcty_fs <> cty_fs then
+        printRedeclarePrefixError(node, ConnectorType.toString(rcty), ConnectorType.toString(cty));
       end if;
-
-      cty := rcty;
     end if;
 
     if rpar <> Parallelism.NON_PARALLEL then
@@ -1652,7 +1748,7 @@ algorithm
       io := rio;
     end if;
 
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
+    attr := Component.Attributes.ATTRIBUTES(rcty, par, var, dir, io, fin, redecl, repl);
   end if;
 end mergeRedeclaredComponentAttributes;
 
@@ -2558,10 +2654,10 @@ algorithm
           fail();
         end if;
 
-        exp1 := instCref(scodeEq.crefLeft, scope, info);
-        exp2 := instCref(scodeEq.crefRight, scope, info);
+        exp1 := instConnectorCref(scodeEq.crefLeft, scope, info);
+        exp2 := instConnectorCref(scodeEq.crefRight, scope, info);
       then
-        Equation.CONNECT(exp1, exp2, {}, makeSource(scodeEq.comment, info));
+        Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
@@ -2656,6 +2752,26 @@ algorithm
 
   end match;
 end instEEquation;
+
+function instConnectorCref
+  input Absyn.ComponentRef absynCref;
+  input InstNode scope;
+  input SourceInfo info;
+  output Expression outExp;
+protected
+  ComponentRef cref, prefix;
+  InstNode found_scope;
+algorithm
+  (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, info);
+  cref := instCrefSubscripts(cref, scope, info);
+
+  prefix := ComponentRef.fromNodeList(InstNode.scopeList(scope));
+  if not ComponentRef.isEmpty(prefix) then
+    cref := ComponentRef.append(cref, prefix);
+  end if;
+
+  outExp := Expression.CREF(Type.UNKNOWN(), cref);
+end instConnectorCref;
 
 function makeSource
   input SCode.Comment comment;

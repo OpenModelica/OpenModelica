@@ -116,6 +116,16 @@ public
     end match;
   end isExpandableConnector;
 
+  function isNonexpandableConnector
+    input Restriction res;
+    output Boolean isNonexpandable;
+  algorithm
+    isNonexpandable := match res
+      case CONNECTOR() then not res.isExpandable;
+      else false;
+    end match;
+  end isNonexpandableConnector;
+
   function isExternalObject
     input Restriction res;
     output Boolean isExternalObject;
@@ -182,12 +192,15 @@ public
   algorithm
     str := match res
       case CLASS() then "class";
+      case CONNECTOR()
+        then if res.isExpandable then "expandable connector" else "connector";
       case ENUMERATION() then "enumeration";
       case EXTERNAL_OBJECT() then "ExternalObject";
       case FUNCTION() then "function";
       case MODEL() then "model";
       case OPERATOR() then "operator";
       case RECORD() then "record";
+      case RECORD_CONSTRUCTOR() then "record";
       case TYPE() then "type";
       case CLOCK() then "clock";
       else "unknown";

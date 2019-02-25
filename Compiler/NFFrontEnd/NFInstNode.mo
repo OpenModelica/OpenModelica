@@ -413,12 +413,23 @@ uniontype InstNode
     end match;
   end isImplicit;
 
+  function isName
+    input InstNode node;
+    output Boolean isName;
+  algorithm
+    isName := match node
+      case NAME_NODE() then true;
+      else false;
+    end match;
+  end isName;
+
   function isConnector
     input InstNode node;
     output Boolean isConnector;
   algorithm
     isConnector := match node
       case COMPONENT_NODE() then Component.isConnector(component(node));
+      case NAME_NODE() then true;
       else false;
     end match;
   end isConnector;
@@ -1210,6 +1221,12 @@ uniontype InstNode
       else false;
     end match;
   end refEqual;
+
+  function nameEqual
+    input InstNode node1;
+    input InstNode node2;
+    output Boolean equal = InstNode.name(node1) == InstNode.name(node2);
+  end nameEqual;
 
   function isSame
     input InstNode node1;

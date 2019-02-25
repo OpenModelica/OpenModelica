@@ -57,7 +57,7 @@ public
     ComponentRef name;
     Type ty;
     Face face;
-    ConnectorType cty;
+    ConnectorType.Type cty;
     DAE.ElementSource source;
   end CONNECTOR;
 
@@ -76,9 +76,19 @@ public
     output Connector conn;
   protected
     InstNode node = ComponentRef.node(cref);
+    Component comp;
+    ConnectorType.Type cty;
+    Restriction res;
   algorithm
-    conn := CONNECTOR(ComponentRef.simplifySubscripts(cref), ty, face,
-      Component.connectorType(InstNode.component(node)), source);
+    if InstNode.isComponent(node) then
+      comp := InstNode.component(node);
+      res := Class.restriction(InstNode.getClass(Component.classInstance(comp)));
+      cty := Component.connectorType(comp);
+    else
+      cty := intBitOr(ConnectorType.VIRTUAL, ConnectorType.POTENTIAL);
+    end if;
+
+    conn := CONNECTOR(ComponentRef.simplifySubscripts(cref), ty, face, cty, source);
   end fromFacedCref;
 
   function fromExp
@@ -135,6 +145,13 @@ public
     output Boolean isPrefix = ComponentRef.isPrefix(conn1.name, conn2.name);
   end isPrefix;
 
+  function isNodeNameEqual
+    input Connector conn1;
+    input Connector conn2;
+    output Boolean isEqual = InstNode.name(ComponentRef.node(conn1.name)) ==
+                             InstNode.name(ComponentRef.node(conn2.name));
+  end isNodeNameEqual;
+
   function isOutside
     input Connector conn;
     output Boolean isOutside;
@@ -153,10 +170,23 @@ public
     isInside := f == Face.INSIDE;
   end isInside;
 
+  function setOutside
+    input output Connector conn;
+  algorithm
+    if conn.face <> Face.OUTSIDE then
+      conn.face := Face.OUTSIDE;
+    end if;
+  end setOutside;
+
   function isDeleted
     input Connector conn;
     output Boolean isDeleted = ComponentRef.isDeleted(conn.name);
   end isDeleted;
+
+  function isExpandable
+    input Connector conn;
+    output Boolean isExpandable = ConnectorType.isExpandable(conn.cty);
+  end isExpandable;
 
   function name
     input Connector conn;
@@ -205,7 +235,7 @@ protected
     input Type ty;
     input Face face;
     input DAE.ElementSource source;
-    input ConnectorType cty;
+    input ConnectorType.Type cty;
     input Boolean splitArrays;
     input output list<Connector> conns = {};
     input list<Dimension> dims = {} "accumulated dimensions if splitArrays = false";
@@ -264,14 +294,17 @@ protected
     Component c;
     ComponentRef cref;
     Type ty;
-    ConnectorType cty;
+    ConnectorType.Type cty;
   algorithm
     for comp in comps loop
       c := InstNode.component(comp);
       ty := Component.getType(c);
       cty := Component.connectorType(c);
-      cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
-      conns := splitImpl(cref, ty, face, source, cty, splitArrays, conns, dims);
+
+      if not ConnectorType.isPotentiallyPresent(cty) then
+        cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
+        conns := splitImpl(cref, ty, face, source, cty, splitArrays, conns, dims);
+      end if;
     end for;
   end splitImpl2;
 

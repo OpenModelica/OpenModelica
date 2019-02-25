@@ -65,6 +65,7 @@ import Global;
 import BuiltinCall = NFBuiltinCall;
 import ComplexType = NFComplexType;
 import ExpandExp = NFExpandExp;
+import Prefixes = NFPrefixes;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -82,6 +83,7 @@ protected
   list<Equation> set_eql;
   potFunc potfunc;
   Expression flowThreshold;
+  ConnectorType.Type cty;
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
 
@@ -91,17 +93,20 @@ algorithm
   flowThreshold := Expression.REAL(Flags.getConfigReal(Flags.FLOW_THRESHOLD));
 
   for set in sets loop
-    set_eql := match getSetType(set)
-      case ConnectorType.POTENTIAL then potfunc(set);
-      case ConnectorType.FLOW then generateFlowEquations(set);
-      case ConnectorType.STREAM then generateStreamEquations(set, flowThreshold);
-      else
-        algorithm
-          Error.addInternalError("Invalid connector type on set "
-            + List.toString(set, Connector.toString, "", "{", ", ", "}", true), sourceInfo());
-        then
-          fail();
-    end match;
+    cty := getSetType(set);
+
+    if ConnectorType.isPotential(cty) then
+      set_eql := potfunc(set);
+    elseif ConnectorType.isFlow(cty) then
+      set_eql := generateFlowEquations(set);
+    elseif ConnectorType.isStream(cty) then
+      set_eql := generateStreamEquations(set, flowThreshold);
+    else
+      Error.addInternalError(getInstanceName() + " got connection set with invalid type '" +
+        ConnectorType.toDebugString(cty) + "': " +
+        List.toString(set, Connector.toString, "", "{", ", ", "}", true), sourceInfo());
+      fail();
+    end if;
 
     equations := listAppend(set_eql, equations);
   end for;
@@ -155,7 +160,7 @@ end evaluateOperators;
 protected
 function getSetType
   input list<Connector> set;
-  output ConnectorType cty;
+  output ConnectorType.Type cty;
 algorithm
   // All connectors in a set should have the same type, so pick the first.
   Connector.CONNECTOR(cty = cty) :: _ := set;

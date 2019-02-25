@@ -310,6 +310,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFEvalConstants.mo",
     "../NFFrontEnd/NFEvalFunction.mo",
     "../NFFrontEnd/NFEvalFunctionExt.mo",
+    "../NFFrontEnd/NFExpandableConnectors.mo",
     "../NFFrontEnd/NFExpandExp.mo",
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFExpressionIterator.mo",

@@ -50,8 +50,12 @@ public
     list<InstNode> potentials;
     list<InstNode> flows;
     list<InstNode> streams;
-    Boolean isExpandable;
   end CONNECTOR;
+
+  record EXPANDABLE_CONNECTOR
+    list<InstNode> potentiallyPresents;
+    list<InstNode> expandableConnectors;
+  end EXPANDABLE_CONNECTOR;
 
   record RECORD
     InstNode constructor;

@@ -37,6 +37,7 @@ encapsulated uniontype NFVariable
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
   import NFPrefixes.Variability;
+  import NFPrefixes.ConnectorType;
   import Type = NFType;
 
 protected
@@ -89,6 +90,21 @@ public
     input Variable variable;
     output Boolean isEmpty = Type.isEmptyArray(variable.ty);
   end isEmptyArray;
+
+  function isDeleted
+    input Variable variable;
+    output Boolean deleted;
+  protected
+    InstNode node;
+  algorithm
+    node := ComponentRef.node(variable.name);
+    deleted := InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node));
+  end isDeleted;
+
+  function isPresent
+    input Variable variable;
+    output Boolean present = not ConnectorType.isPotentiallyPresent(variable.attributes.connectorType);
+  end isPresent;
 
   function toString
     input Variable var;

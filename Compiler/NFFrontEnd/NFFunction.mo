@@ -1764,7 +1764,7 @@ protected
     input InstNode component;
     output Direction direction;
   protected
-    ConnectorType cty;
+    ConnectorType.Type cty;
     InnerOuter io;
     Visibility vis;
     Variability var;
@@ -1778,9 +1778,9 @@ protected
     var := Component.variability(InstNode.component(component));
 
     // Function components may not be connectors.
-    if cty == ConnectorType.FLOW or cty == ConnectorType.STREAM then
+    if ConnectorType.isFlowOrStream(cty) then
       Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
-        {Prefixes.connectorTypeString(cty), InstNode.name(component)},
+        {ConnectorType.toString(cty), InstNode.name(component)},
         InstNode.info(component));
       fail();
     end if;

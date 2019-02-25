@@ -51,7 +51,7 @@ import Prefixes = NFPrefixes;
 public
 constant Component.Attributes DEFAULT_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.NONE,
@@ -98,7 +98,7 @@ constant Component.Attributes CONSTANT_ATTR =
 
 constant Component.Attributes IMPL_DISCRETE_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.IMPLICITLY_DISCRETE,
     Direction.NONE,
@@ -114,7 +114,7 @@ uniontype Component
 
     record ATTRIBUTES
       // adrpo: keep the order in DAE.ATTR
-      ConnectorType connectorType;
+      ConnectorType.Type connectorType;
       Parallelism parallelism;
       Variability variability;
       Direction direction;
@@ -130,7 +130,7 @@ uniontype Component
       output DAE.Attributes outa;
     algorithm
       outa := DAE.ATTR(
-        connectorTypeToDAE(ina.connectorType),
+        ConnectorType.toDAE(ina.connectorType),
         parallelismToSCode(ina.parallelism),
         variabilityToSCode(ina.variability),
         directionToAbsyn(ina.direction),
@@ -147,12 +147,11 @@ uniontype Component
       str := (if attr.isRedeclare then "redeclare " else "") +
              (if attr.isFinal then "final " else "") +
              Prefixes.unparseInnerOuter(attr.innerOuter) +
-             Prefixes.unparseConnectorType(attr.connectorType) +
              Prefixes.unparseReplaceable(attr.isReplaceable) +
              Prefixes.unparseParallelism(attr.parallelism) +
+             ConnectorType.unparse(attr.connectorType) +
              Prefixes.unparseVariability(attr.variability, ty) +
-             Prefixes.unparseDirection(attr.direction) +
-             Prefixes.unparseConnectorType(attr.connectorType);
+             Prefixes.unparseDirection(attr.direction);
     end toString;
   end Attributes;
 
@@ -647,7 +646,7 @@ uniontype Component
 
   function connectorType
     input Component component;
-    output ConnectorType cty;
+    output ConnectorType.Type cty;
   algorithm
     cty := match component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
@@ -657,21 +656,45 @@ uniontype Component
     end match;
   end connectorType;
 
+  function setConnectorType
+    input ConnectorType.Type cty;
+    input output Component component;
+  algorithm
+    () := match component
+      local
+        Attributes attr;
+
+      case UNTYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.connectorType := cty;
+          component.attributes := attr;
+        then
+          ();
+
+      case TYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.connectorType := cty;
+          component.attributes := attr;
+        then
+          ();
+
+      else ();
+    end match;
+  end setConnectorType;
+
   function isFlow
     input Component component;
-    output Boolean isFlow = connectorType(component) == ConnectorType.FLOW;
+    output Boolean isFlow = ConnectorType.isFlow(connectorType(component));
   end isFlow;
 
   function isConnector
     input Component component;
-    output Boolean isConnector =
-      Class.isConnectorClass(InstNode.getDerivedClass(classInstance(component)));
+    output Boolean isConnector = ConnectorType.isConnectorType(connectorType(component));
   end isConnector;
 
   function isExpandableConnector
     input Component component;
-    output Boolean isExpandableConnector =
-      Class.isExpandableConnectorClass(InstNode.getDerivedClass(classInstance(component)));
+    output Boolean isConnector = ConnectorType.isExpandable(connectorType(component));
   end isExpandableConnector;
 
   function isIdentical

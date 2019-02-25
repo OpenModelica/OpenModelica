@@ -35,12 +35,233 @@ import DAE;
 import NFInstNode.InstNode;
 import Type = NFType;
 
-type ConnectorType = enumeration(
-  POTENTIAL,
-  FLOW,
-  STREAM,
-  NON_CONNECTOR
-);
+package ConnectorType
+  type Type = Integer;
+
+  constant Type NON_CONNECTOR       = 0;
+  constant Type POTENTIAL           = intBitLShift(1, 0) "A connector element without a prefix.";
+  constant Type FLOW                = intBitLShift(1, 1) "A connector element with flow prefix.";
+  constant Type STREAM              = intBitLShift(1, 2) "A connector element with stream prefix.";
+  constant Type POTENTIALLY_PRESENT = intBitLShift(1, 3) "An element declared inside an expandable connector.";
+  constant Type VIRTUAL             = intBitLShift(1, 4) "A virtual connector used in a connection.";
+  constant Type CONNECTOR           = intBitLShift(1, 5) "A non-expandable connector that contains elements.";
+  constant Type EXPANDABLE          = intBitLShift(1, 6) "An expandable connector.";
+
+  // flow/stream
+  constant Type FLOW_STREAM_MASK = intBitOr(FLOW, STREAM);
+  // potential/flow/stream
+  constant Type PREFIX_MASK = intBitOr(POTENTIAL, FLOW_STREAM_MASK);
+  // Some kind of connector, where anything inside an expandable connector also counts.
+  constant Type CONNECTOR_MASK = intBitOr(CONNECTOR, intBitOr(EXPANDABLE, POTENTIALLY_PRESENT));
+  // An element in an expandable connector.
+  constant Type UNDECLARED_MASK = intBitOr(VIRTUAL, POTENTIALLY_PRESENT);
+
+  function fromSCode
+    input SCode.ConnectorType scodeCty;
+    output Type cty;
+  algorithm
+    cty := match scodeCty
+      case SCode.ConnectorType.POTENTIAL() then 0;
+      case SCode.ConnectorType.FLOW() then FLOW;
+      case SCode.ConnectorType.STREAM() then STREAM;
+    end match;
+  end fromSCode;
+
+  function toDAE
+    input Type cty;
+    output DAE.ConnectorType dcty;
+  algorithm
+    if intBitAnd(cty, POTENTIAL) > 0 then
+      dcty := DAE.ConnectorType.POTENTIAL();
+    elseif intBitAnd(cty, FLOW) > 0 then
+      dcty := DAE.ConnectorType.FLOW();
+    elseif intBitAnd(cty, STREAM) > 0 then
+      dcty := DAE.ConnectorType.STREAM(NONE());
+    else
+      dcty := DAE.ConnectorType.NON_CONNECTOR();
+    end if;
+  end toDAE;
+
+  function merge
+    input Type outerCty;
+    input Type innerCty;
+    input InstNode node;
+    input Boolean isClass = false;
+    output Type cty;
+  algorithm
+    // If both the outer and the inner has flow or stream, give an error.
+    if intBitAnd(outerCty, FLOW_STREAM_MASK) > 0 and intBitAnd(innerCty, FLOW_STREAM_MASK) > 0 then
+      printPrefixError(toString(outerCty), toString(innerCty), node);
+    end if;
+
+    cty := intBitOr(outerCty, innerCty);
+  end merge;
+
+  function isPotential
+    input Type cty;
+    output Boolean isPotential;
+  algorithm
+    isPotential := intBitAnd(cty, POTENTIAL) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isPotential;
+
+  function setPotential
+    input output Type cty;
+  algorithm
+    cty := intBitOr(cty, POTENTIAL);
+    annotation(__OpenModelica_EarlyInline = true);
+  end setPotential;
+
+  function isFlow
+    input Type cty;
+    output Boolean isFlow;
+  algorithm
+    isFlow := intBitAnd(cty, FLOW) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isFlow;
+
+  function isStream
+    input Type cty;
+    output Boolean isStream;
+  algorithm
+    isStream := intBitAnd(cty, STREAM) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isStream;
+
+  function isFlowOrStream
+    input Type cty;
+    output Boolean isFlowOrStream;
+  algorithm
+    isFlowOrStream := intBitAnd(cty, FLOW_STREAM_MASK) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isFlowOrStream;
+
+  function unsetFlowStream
+    input output Type cty;
+  algorithm
+    cty := intBitAnd(cty, intBitNot(FLOW_STREAM_MASK));
+    annotation(__OpenModelica_EarlyInline = true);
+  end unsetFlowStream;
+
+  function isConnector
+    "Returns true if the connector type has the connector bit set, otherwise false."
+    input Type cty;
+    output Boolean isConnector;
+  algorithm
+    isConnector := intBitAnd(cty, CONNECTOR) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isConnector;
+
+  function setConnector
+    input output Type cty;
+  algorithm
+    cty := intBitOr(cty, CONNECTOR);
+    annotation(__OpenModelica_EarlyInline = true);
+  end setConnector;
+
+  function isConnectorType
+    "Returns treu if the connector type has the connector, expandable, or
+     potentially present bits set, otherwise false."
+    input Type cty;
+    output Boolean isConnector;
+  algorithm
+    isConnector := intBitAnd(cty, CONNECTOR_MASK) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isConnectorType;
+
+  function isExpandable
+    input Type cty;
+    output Boolean isExpandable;
+  algorithm
+    isExpandable := intBitAnd(cty, EXPANDABLE) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isExpandable;
+
+  function setExpandable
+    input output Type cty;
+  algorithm
+    cty := intBitOr(cty, EXPANDABLE);
+    annotation(__OpenModelica_EarlyInline = true);
+  end setExpandable;
+
+  function isUndeclared
+    "Returns true if the connector type has the potentially present or virtual
+     bits set, otherwise false."
+    input Type cty;
+    output Boolean isExpandableElement;
+  algorithm
+    isExpandableElement := intBitAnd(cty, UNDECLARED_MASK) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isUndeclared;
+
+  function isVirtual
+    input Type cty;
+    output Boolean isVirtual;
+  algorithm
+    isVirtual := intBitAnd(cty, VIRTUAL) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isVirtual;
+
+  function isPotentiallyPresent
+    input Type cty;
+    output Boolean isPotentiallyPresent;
+  algorithm
+    isPotentiallyPresent := intBitAnd(cty, POTENTIALLY_PRESENT) > 0;
+    annotation(__OpenModelica_EarlyInline = true);
+  end isPotentiallyPresent;
+
+  function setPresent
+    input output Type cty;
+  algorithm
+    cty := intBitAnd(cty, intBitNot(POTENTIALLY_PRESENT));
+    annotation(__OpenModelica_EarlyInline = true);
+  end setPresent;
+
+  function toString
+    input Type cty;
+    output String str;
+  algorithm
+    if intBitAnd(cty, FLOW) > 0 then
+      str := "flow";
+    elseif intBitAnd(cty, STREAM) > 0 then
+      str := "stream";
+    elseif intBitAnd(cty, EXPANDABLE) > 0 then
+      str := "expandable";
+    else
+      str := "";
+    end if;
+  end toString;
+
+  function unparse
+    input Type cty;
+    output String str;
+  algorithm
+    if intBitAnd(cty, FLOW) > 0 then
+      str := "flow ";
+    elseif intBitAnd(cty, STREAM) > 0 then
+      str := "stream ";
+    else
+      str := "";
+    end if;
+  end unparse;
+
+  function toDebugString
+    input Type cty;
+    output String str;
+  protected
+    list<String> strl = {};
+  algorithm
+    if intBitAnd(cty, POTENTIAL) > 0           then strl := "potential" :: strl; end if;
+    if intBitAnd(cty, FLOW) > 0                then strl := "flow" :: strl; end if;
+    if intBitAnd(cty, STREAM) > 0              then strl := "stream" :: strl; end if;
+    if intBitAnd(cty, POTENTIALLY_PRESENT) > 0 then strl := "potentially present" :: strl; end if;
+    if intBitAnd(cty, VIRTUAL) > 0             then strl := "virtual" :: strl; end if;
+    if intBitAnd(cty, CONNECTOR) > 0           then strl := "connector" :: strl; end if;
+    if intBitAnd(cty, EXPANDABLE) > 0          then strl := "expandable" :: strl; end if;
+
+    str := stringDelimitList(strl, " ");
+  end toDebugString;
+end ConnectorType;
 
 type Parallelism = enumeration(
   NON_PARALLEL,
@@ -82,66 +303,6 @@ uniontype Replaceable
 
   record NOT_REPLACEABLE end NOT_REPLACEABLE;
 end Replaceable;
-
-function connectorTypeFromSCode
-  input SCode.ConnectorType scodeCty;
-  output ConnectorType cty;
-algorithm
-  cty := match scodeCty
-    case SCode.ConnectorType.POTENTIAL() then ConnectorType.POTENTIAL;
-    case SCode.ConnectorType.FLOW() then ConnectorType.FLOW;
-    case SCode.ConnectorType.STREAM() then ConnectorType.STREAM;
-  end match;
-end connectorTypeFromSCode;
-
-function connectorTypeToDAE
-  input ConnectorType cty;
-  output DAE.ConnectorType dcty;
-algorithm
-  dcty := match cty
-    case ConnectorType.POTENTIAL then DAE.ConnectorType.POTENTIAL();
-    case ConnectorType.FLOW then DAE.ConnectorType.FLOW();
-    case ConnectorType.STREAM then DAE.ConnectorType.STREAM(NONE());
-    case ConnectorType.NON_CONNECTOR then DAE.ConnectorType.NON_CONNECTOR();
-  end match;
-end connectorTypeToDAE;
-
-function connectorTypeString
-  input ConnectorType cty;
-  output String str;
-algorithm
-  str := match cty
-    case ConnectorType.FLOW then "flow";
-    case ConnectorType.STREAM then "stream";
-    else "";
-  end match;
-end connectorTypeString;
-
-function unparseConnectorType
-  input ConnectorType cty;
-  output String str;
-algorithm
-  str := match cty
-    case ConnectorType.FLOW then "flow ";
-    case ConnectorType.STREAM then "stream ";
-    else "";
-  end match;
-end unparseConnectorType;
-
-function mergeConnectorType
-  input ConnectorType outerCty;
-  input ConnectorType innerCty;
-  input InstNode node;
-  output ConnectorType cty;
-algorithm
-  if outerCty == ConnectorType.POTENTIAL then
-    cty := innerCty;
-  elseif innerCty == ConnectorType.POTENTIAL then
-    cty := outerCty;
-  else
-    printPrefixError(connectorTypeString(outerCty), connectorTypeString(innerCty), node);
-  end if;
-end mergeConnectorType;
 
 function parallelismFromSCode
   input SCode.Parallelism scodePar;

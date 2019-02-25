@@ -132,6 +132,9 @@ package ConnectionSets
       // when collecting the connections, but if the connectors themselves
       // contain connectors that have been deleted we need to remove them here.
       if not (Connector.isDeleted(c1) or Connector.isDeleted(c2)) then
+        // TODO: Check variability of connectors. It's an error if either
+        //       connector is constant/parameter while the other isn't.
+
         if listEmpty(broken) then
           sets := merge(c1, c2, sets);
         elseif isBroken(c1, c2, broken) then

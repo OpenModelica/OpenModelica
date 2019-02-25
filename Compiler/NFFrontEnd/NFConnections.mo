@@ -60,6 +60,13 @@ public
     output Connections conns = CONNECTIONS({}, {}, {});
   end new;
 
+  function fromConnectionList
+    input list<Connection> connl;
+    output Connections conns;
+  algorithm
+    conns := CONNECTIONS(connl, {}, {});
+  end fromConnectionList;
+
   function addConnection
     input Connection conn;
     input output Connections conns;

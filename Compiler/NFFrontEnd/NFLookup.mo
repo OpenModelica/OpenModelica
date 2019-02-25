@@ -101,12 +101,40 @@ protected
   LookupState state;
   InstNode node;
 algorithm
-  (foundCref, foundScope, state) := lookupCrefWithError(cref, scope, info,
-    Error.LOOKUP_VARIABLE_ERROR);
-  node := ComponentRef.node(foundCref);
+  try
+    (foundCref, foundScope, state) := lookupCref(cref, scope);
+    node := ComponentRef.node(foundCref);
+    false := InstNode.isName(node);
+  else
+    Error.addSourceMessageAndFail(Error.LOOKUP_VARIABLE_ERROR,
+      {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
+  end try;
+
   state := fixTypenameState(node, state);
   LookupState.assertComponent(state, node, cref, info);
 end lookupComponent;
+
+function lookupConnector
+  input Absyn.ComponentRef cref;
+  input InstNode scope "The scope to look in.";
+  input SourceInfo info;
+  output ComponentRef foundCref;
+  output InstNode foundScope "The scope the cref was found in.";
+protected
+  LookupState state;
+  InstNode node;
+algorithm
+  try
+    (foundCref, foundScope, state) := lookupCref(cref, scope);
+  else
+    Error.addSourceMessageAndFail(Error.LOOKUP_VARIABLE_ERROR,
+      {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
+  end try;
+
+  node := ComponentRef.node(foundCref);
+  state := fixTypenameState(node, state);
+  LookupState.assertComponent(state, node, cref, info);
+end lookupConnector;
 
 function fixTypenameState
   input InstNode component;
@@ -152,9 +180,15 @@ protected
   LookupState state;
   InstNode node;
 algorithm
-  (foundCref, foundScope, state) := lookupCrefWithError(cref, scope, info,
-    Error.LOOKUP_FUNCTION_ERROR);
-  node := ComponentRef.node(foundCref);
+  try
+    (foundCref, foundScope, state) := lookupCref(cref, scope);
+    node := ComponentRef.node(foundCref);
+    false := InstNode.isName(node);
+  else
+    Error.addSourceMessageAndFail(Error.LOOKUP_FUNCTION_ERROR,
+      {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
+  end try;
+
   (foundCref, state) := fixExternalObjectCall(node, foundCref, state);
   LookupState.assertFunction(state, node, cref, info);
 end lookupFunctionName;
@@ -261,18 +295,8 @@ algorithm
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        (node, foundCref, foundScope, state) :=
-          lookupSimpleCref(cref.name, cref.subscripts, scope);
-        if InstNode.isExpandableConnector(ComponentRef.node(foundCref)) then
-          try // it migth not be there!
-            (foundCref, foundScope, state) := lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
-          else
-            // add it if is not there, fake crefs
-             (foundCref, foundScope, state) := createVirtualCrefs(cref.componentRef, node, foundCref, foundScope, state);
-          end try;
-        else
-          (foundCref, foundScope, state) := lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
-        end if;
+        (node, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope);
+        (foundCref, foundScope, state) := lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
       then
         (foundCref, foundScope, state);
 
@@ -286,58 +310,6 @@ algorithm
       then (ComponentRef.WILD(), scope, LookupState.PREDEF_COMP());
   end match;
 end lookupCref;
-
-function createVirtualCrefs
-  "This function will create virtual crefs for the expandable connectors"
-  input Absyn.ComponentRef cref;
-  input InstNode node;
-  input output ComponentRef foundCref;
-  input output InstNode foundScope;
-  input output LookupState state;
-protected
-  SCode.Element definition;
-  InstNode crefNode;
-algorithm
-  (foundCref, foundScope, state) := match cref
-    case Absyn.ComponentRef.CREF_IDENT()
-      algorithm
-        definition :=
-          SCode.COMPONENT(
-            cref.name,
-            SCode.defaultPrefixes,
-            SCode.defaultVarAttr,
-            Absyn.TPATH(Absyn.IDENT("Any"), NONE()),
-            SCode.NOMOD(),
-            SCode.COMMENT(NONE(), SOME("virtual expandable component")),
-            NONE(),
-            Absyn.dummyInfo);
-        crefNode := InstNode.newComponent(definition, node);
-        foundCref := ComponentRef.fromAbsyn(crefNode, cref.subscripts, foundCref);
-        state := LookupState.nodeState(crefNode);
-      then
-        (foundCref, foundScope, state);
-
-    case Absyn.ComponentRef.CREF_QUAL()
-      algorithm
-        definition :=
-          SCode.COMPONENT(
-            cref.name,
-            SCode.defaultPrefixes,
-            SCode.defaultVarAttr,
-            Absyn.TPATH(Absyn.IDENT("Any"), NONE()),
-            SCode.NOMOD(),
-            SCode.COMMENT(NONE(), SOME("virtual expandable component")),
-            NONE(),
-            Absyn.dummyInfo);
-        crefNode := InstNode.newComponent(definition, node);
-        foundCref := ComponentRef.fromAbsyn(crefNode, cref.subscripts, foundCref);
-        state := LookupState.nodeState(crefNode);
-        (foundCref, foundScope, state) :=
-           createVirtualCrefs(cref.componentRef, node, foundCref, foundScope, state);
-      then
-        (foundCref, foundScope, state);
-  end match;
-end createVirtualCrefs;
 
 function lookupLocalCref
   "Looks up a cref in the local scope without going into any enclosing scopes."
@@ -788,6 +760,8 @@ function lookupCrefInNode
 protected
   InstNode scope;
   InstNode n;
+  String name;
+  Class cls;
 algorithm
   if LookupState.isError(state) then
     return;
@@ -795,23 +769,27 @@ algorithm
 
   scope := match node
     case InstNode.CLASS_NODE() then Inst.instPackage(node);
-    case InstNode.COMPONENT_NODE() then node;
+    else node;
   end match;
+
+  name := Absyn.crefFirstIdent(cref);
+  cls := InstNode.getClass(scope);
+
+  try
+    n := Class.lookupElement(name, cls);
+  else
+    n := InstNode.NAME_NODE(name);
+  end try;
+
+  (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
+  state := LookupState.next(n, state);
 
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
-      algorithm
-        n := Class.lookupElement(cref.name, InstNode.getClass(scope));
-        (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
-        state := LookupState.next(n, state);
-      then
-        (ComponentRef.fromAbsyn(n, cref.subscripts, foundCref), foundScope, state);
+      then (ComponentRef.fromAbsyn(n, cref.subscripts, foundCref), foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
-        n := Class.lookupElement(cref.name, InstNode.getClass(scope));
-        (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
-        state := LookupState.next(n, state);
         foundCref := ComponentRef.fromAbsyn(n, cref.subscripts, foundCref);
       then
         lookupCrefInNode(cref.componentRef, n, foundCref, foundScope, state);

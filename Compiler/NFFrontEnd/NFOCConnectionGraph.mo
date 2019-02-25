@@ -102,6 +102,8 @@ import NFTyping.ExpOrigin;
 import Typing = NFTyping;
 import NFPrefixes.Variability;
 import Error;
+import Connections = NFConnections;
+import Connection = NFConnection;
 
 type Edge  = tuple<ComponentRef,ComponentRef> "an edge is a tuple with two component references";
 type Edges = list<Edge> "A list of edges";
@@ -145,77 +147,64 @@ function handleOverconstrainedConnections
    - Connections.uniqueRoot
    - Connections.uniqueRootIndices"
   input output FlatModel flatModel;
+  input Connections conns;
   input String modelNameQualified;
   output FlatEdges outBroken;
 protected
   Type ty1, ty2;
-  ComponentRef lhs, rhs, cref, fcref;
+  ComponentRef lhs, rhs, cref;
   DAE.ElementSource source;
   NFOCConnectionGraph graph = EMPTY;
   list<Equation> eql = {}, eqlBroken, ieql;
   FlatEdges broken, connected;
   Call call;
   list<Expression> lst;
-  Type ty, ty1, ty2;
   ComponentRef lhs, rhs;
   Integer priority;
   Expression root, msg;
   Connector c1, c2, cc1, cc2;
-  list<Connector> cl1, cl2, lhsl, rhsl;
-  Equation replaceEq;
-  Expression exp;
+  list<Connector> lhsl, rhsl;
 algorithm
   // go over all equations, connect, Connection.branch
+  for conn in conns.connections loop
+    Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
+    lhsl := Connector.split(c1, splitArrays = false);
+    rhsl := Connector.split(c2, splitArrays = false);
+
+    for cc1 in lhsl loop
+      cc2 :: rhsl := rhsl;
+      if not (Connector.isDeleted(cc1) or Connector.isDeleted(cc2)) then
+        lhs := Connector.name(cc1);
+        rhs := Connector.name(cc2);
+        if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
+          lhs := getOverconstrainedCref(lhs);
+          rhs := getOverconstrainedCref(rhs);
+
+          eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, ExpOrigin.EQUATION, c1.source);
+          graph := addConnection(graph, lhs, rhs, eqlBroken);
+          break;
+        end if;
+      end if;
+    end for;
+  end for;
+
   for eq in flatModel.equations loop
     eql := match eq
-      case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
-                            rhs = Expression.CREF(ty = ty2, cref = rhs),
-                            source = source)
-        algorithm
-          if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
-            cl1 := NFConnections.makeConnectors(lhs, ty1, source);
-            cl2 := NFConnections.makeConnectors(rhs, ty2, source);
-            for c1 in cl1 loop
-              c2 :: cl2 := cl2;
-
-              lhsl := Connector.split(c1, splitArrays = false);
-              rhsl := Connector.split(c2, splitArrays = false);
-
-              for cc1 in lhsl loop
-                cc2 :: rhsl := rhsl;
-                if not (Connector.isDeleted(cc1) or Connector.isDeleted(cc2)) then
-                  lhs := Connector.name(cc1);
-                  rhs := Connector.name(cc2);
-                  if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
-                    lhs := getOverconstrainedCref(lhs);
-                    rhs := getOverconstrainedCref(rhs);
-
-                    eq.broken := generateEqualityConstraintEquation(eq.lhs, ty1, eq.rhs, ty2, ExpOrigin.EQUATION, source);
-                    graph := addConnection(graph, lhs, rhs, eq.broken);
-                    break;
-                  end if;
-                end if;
-              end for;
-            end for;
-          end if;
-        then
-          eq::eql;
-
       case Equation.NORETCALL(exp = Expression.CALL(call as Call.TYPED_CALL(arguments = lst)), source = source)
         algorithm
           _ := match Function.name(call.fn)
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("root"))
               algorithm
-                {Expression.CREF(ty = ty, cref = cref)} := lst;
+                {Expression.CREF(cref = cref)} := lst;
                 graph := addDefiniteRoot(graph, cref);
               then ();
 
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("potentialRoot"))
               algorithm
                 graph := match lst
-                  case {Expression.CREF(ty = ty, cref = cref)}
+                  case {Expression.CREF(cref = cref)}
                     then addPotentialRoot(graph, cref, 0);
-                  case {Expression.CREF(ty = ty, cref = cref), Expression.INTEGER(priority)}
+                  case {Expression.CREF(cref = cref), Expression.INTEGER(priority)}
                     then addPotentialRoot(graph, cref, priority);
                 end match;
               then ();
@@ -223,16 +212,16 @@ algorithm
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRoot"))
               algorithm
                 graph := match lst
-                  case {root as Expression.CREF(ty = ty, cref = cref)}
+                  case {root as Expression.CREF(cref = cref)}
                     then addUniqueRoots(graph, root, Expression.STRING(""));
-                  case {root as Expression.CREF(ty = ty, cref = cref), msg}
+                  case {root as Expression.CREF(cref = cref), msg}
                     then addUniqueRoots(graph, root, msg);
                 end match;
               then ();
 
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("branch"))
               algorithm
-                {Expression.CREF(ty = ty1, cref = lhs), Expression.CREF(ty = ty2, cref = rhs)} := lst;
+                {Expression.CREF(cref = lhs), Expression.CREF(cref = rhs)} := lst;
                 graph := addBranch(graph, lhs, rhs);
               then ();
           end match;
@@ -257,9 +246,9 @@ algorithm
 end handleOverconstrainedConnections;
 
 function generateEqualityConstraintEquation
-  input Expression elhs;
+  input ComponentRef clhs;
   input Type lhs_ty;
-  input Expression erhs;
+  input ComponentRef crhs;
   input Type rhs_ty;
   input ExpOrigin.Type origin;
   input DAE.ElementSource source;
@@ -269,7 +258,6 @@ protected
   list<Equation> eql = {};
   list<Expression> lst;
   Type ty, ty1, ty2;
-  ComponentRef clhs, crhs;
   Integer priority;
   Expression root, msg;
   Connector c1, c2, cc1, cc2;
@@ -283,12 +271,9 @@ algorithm
     return;
   end if;
 
-  Expression.CREF(ty = ty1, cref = clhs) := elhs;
-  Expression.CREF(ty = ty2, cref = crhs) := erhs;
-  if not (ComponentRef.isDeleted(clhs) or ComponentRef.isDeleted(crhs))
-  then
-    cl1 := NFConnections.makeConnectors(clhs, ty1, source);
-    cl2 := NFConnections.makeConnectors(crhs, ty2, source);
+  if not (ComponentRef.isDeleted(clhs) or ComponentRef.isDeleted(crhs)) then
+    cl1 := NFConnections.makeConnectors(clhs, lhs_ty, source);
+    cl2 := NFConnections.makeConnectors(crhs, rhs_ty, source);
 
     for c1 in cl1 loop
       c2 :: cl2 := cl2;

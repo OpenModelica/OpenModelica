@@ -469,6 +469,45 @@ uniontype Class
     end match;
   end getType;
 
+  function setType
+    input Type ty;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case PARTIAL_BUILTIN()
+        algorithm
+          cls.ty := ty;
+        then
+          ();
+
+      case EXPANDED_DERIVED()
+        algorithm
+          InstNode.classApply(cls.baseClass, setType, ty);
+        then
+          ();
+
+      case INSTANCED_CLASS()
+        algorithm
+          cls.ty := ty;
+        then
+          ();
+
+      case INSTANCED_BUILTIN()
+        algorithm
+          cls.ty := ty;
+        then
+          ();
+
+      case TYPED_DERIVED()
+        algorithm
+          cls.ty := ty;
+        then
+          ();
+
+      else ();
+    end match;
+  end setType;
+
   function restriction
     input Class cls;
     output Restriction res;
@@ -502,6 +541,11 @@ uniontype Class
     input Class cls;
     output Boolean isConnector = Restriction.isConnector(restriction(cls));
   end isConnectorClass;
+
+  function isNonexpandableConnectorClass
+    input Class cls;
+    output Boolean isConnector = Restriction.isNonexpandableConnector(restriction(cls));
+  end isNonexpandableConnectorClass;
 
   function isExpandableConnectorClass
     input Class cls;

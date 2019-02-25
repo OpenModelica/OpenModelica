@@ -384,7 +384,7 @@ uniontype LookupState
     input InstNode node;
     output LookupState state;
   algorithm
-    if InstNode.isComponent(node) then
+    if InstNode.isComponent(node) or InstNode.isName(node) then
       state := COMP();
     else
       state := elementState(InstNode.definition(node));

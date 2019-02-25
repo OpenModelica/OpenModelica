@@ -400,6 +400,45 @@ public
       tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.EMPTY());
     end fromEnumeration;
 
+    function addElementsToFlatTree
+      "Adds a list of class and/or component nodes as elements to a flat class
+       tree, in the same order as they are listed. Name conflicts will result in
+       an duplicate element error, and trying to add nodes that are not pure
+       class or component nodes will result in undefined behaviour."
+      input list<InstNode> elements;
+      input output ClassTree tree;
+    protected
+      LookupTree.Tree ltree;
+      array<InstNode> cls_arr, comp_arr;
+      list<InstNode> cls_lst = {}, comp_lst = {};
+      array<Import> imports;
+      DuplicateTree.Tree duplicates;
+      Integer cls_idx, comp_idx;
+      LookupTree.Entry lentry;
+    algorithm
+      FLAT_TREE(ltree, cls_arr, comp_arr, imports, duplicates) := tree;
+      cls_idx := arrayLength(cls_arr);
+      comp_idx := arrayLength(comp_arr);
+
+      for e in elements loop
+        if InstNode.isComponent(e) then
+          comp_idx := comp_idx + 1;
+          lentry := LookupTree.Entry.COMPONENT(comp_idx);
+          comp_lst := e :: comp_lst;
+        else
+          cls_idx := cls_idx + 1;
+          lentry := LookupTree.Entry.CLASS(cls_idx);
+          cls_lst := e :: cls_lst;
+        end if;
+
+        ltree := addLocalElement(InstNode.name(e), lentry, tree, ltree);
+      end for;
+
+      cls_arr := Array.appendList(cls_arr, listReverseInPlace(cls_lst));
+      comp_arr := Array.appendList(comp_arr, listReverseInPlace(comp_lst));
+      tree := FLAT_TREE(ltree, cls_arr, comp_arr, imports, duplicates);
+    end addElementsToFlatTree;
+
     function expand
       "This function adds all local and inherited class and component names to
        the lookup tree. Note that only their names are added, the elements

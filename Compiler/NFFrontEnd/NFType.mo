@@ -332,6 +332,16 @@ public
     end match;
   end isConnector;
 
+  function isExpandableConnector
+    input Type ty;
+    output Boolean isExpandable;
+  algorithm
+    isExpandable := match ty
+      case COMPLEX(complexTy = ComplexType.EXPANDABLE_CONNECTOR()) then true;
+      else false;
+    end match;
+  end isExpandableConnector;
+
   function isRecord
     input Type ty;
     output Boolean isRecord;

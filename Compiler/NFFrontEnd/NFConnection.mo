@@ -41,5 +41,12 @@ public
     NFConnector rhs;
   end CONNECTION;
 
+  function toString
+    input Connection conn;
+    output String str;
+  algorithm
+    str := "connect(" + Connector.toString(conn.lhs) + ", " + Connector.toString(conn.rhs) + ")";
+  end toString;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFConnection;

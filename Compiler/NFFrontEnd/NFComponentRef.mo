@@ -182,6 +182,20 @@ public
     CREF(ty = ty) := cref;
   end nodeType;
 
+  function updateNodeType
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          cref.ty := InstNode.getType(cref.node);
+        then
+          ();
+
+      else ();
+    end match;
+  end updateNodeType;
+
   function firstName
     input ComponentRef cref;
     output String name;

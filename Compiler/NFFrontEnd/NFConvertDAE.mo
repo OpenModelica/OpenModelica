@@ -63,6 +63,7 @@ import NFPrefixes.Direction;
 import Variable = NFVariable;
 import ComponentReference;
 import Algorithm = NFAlgorithm;
+import NFPrefixes.ConnectorType;
 
 public
 function convert
@@ -158,7 +159,7 @@ algorithm
           dty,
           binding,
           ComponentReference.crefDims(dcref),
-          Prefixes.connectorTypeToDAE(attr.connectorType),
+          ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,
           comment,
