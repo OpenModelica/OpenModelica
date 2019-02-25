@@ -954,7 +954,7 @@ algorithm
 
     case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,_,_,_,_)
       equation
-        ix = System.stringHashDjb2Mod(str,65536);
+        ix = stringHashDjb2Mod(str,65536);
         false = listMember(ix,ixs);
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);

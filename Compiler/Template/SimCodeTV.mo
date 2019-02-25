@@ -185,6 +185,12 @@ package builtin
     output TypeVar head;
   end listHead;
 
+  function stringHashDjb2Mod
+    input String str;
+    input Integer mod;
+    output Integer hash;
+  end stringHashDjb2Mod;
+
   uniontype SourceInfo "The Info attribute provides location information for elements and classes."
     record SOURCEINFO
       String fileName;
@@ -1492,12 +1498,6 @@ package System
     input String s;
     output Integer result;
   end unescapedStringLength;
-
-  function stringHashDjb2Mod
-    input String str;
-    input Integer mod;
-    output Integer hash;
-  end stringHashDjb2Mod;
 
   function escapedString
     input String unescapedString;

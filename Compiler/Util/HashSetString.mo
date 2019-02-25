@@ -88,7 +88,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(System.stringHashDjb2Mod,stringEq,Util.id));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(stringHashDjb2Mod,stringEq,Util.id));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="util");

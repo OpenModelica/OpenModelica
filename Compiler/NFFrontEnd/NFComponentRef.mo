@@ -660,7 +660,7 @@ public
   function hash
     input ComponentRef cref;
     input Integer mod;
-    output Integer hash = System.stringHashDjb2Mod(toString(cref), mod);
+    output Integer hash = stringHashDjb2Mod(toString(cref), mod);
   end hash;
 
   function toPath

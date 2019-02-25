@@ -88,7 +88,7 @@ protected
   String crstr;
 algorithm
   crstr := Dump.printComponentRefStr(cr);
-  res := System.stringHashDjb2Mod(crstr,mod);
+  res := stringHashDjb2Mod(crstr,mod);
 end hashFunc;
 
 public function emptyHashTable

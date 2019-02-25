@@ -106,7 +106,7 @@ protected function calcHashValue
   input Integer imod;
   output Integer value;
 algorithm
-  value := System.stringHashDjb2Mod(ComponentReference.printComponentRefStr(cr),imod);
+  value := stringHashDjb2Mod(ComponentReference.printComponentRefStr(cr),imod);
 end calcHashValue;
 
 annotation(__OpenModelica_Interface="frontend");

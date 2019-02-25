@@ -97,7 +97,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(System.stringHashDjb2Mod, stringEq, Util.id, dummyStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(stringHashDjb2Mod, stringEq, Util.id, dummyStr));
 end emptyHashTableSized;
 
 protected

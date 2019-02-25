@@ -72,7 +72,7 @@ encapsulated package NFCardinalityTable
     input Integer size;
     output Table table;
   algorithm
-    table := BaseHashTable.emptyHashTableWork(size, (System.stringHashDjb2Mod, stringEq, Util.id, intString));
+    table := BaseHashTable.emptyHashTableWork(size, (stringHashDjb2Mod, stringEq, Util.id, intString));
   end emptyCardinalityTable;
 
   function fromConnections

@@ -182,7 +182,7 @@ protected
   String str;
 algorithm
   str := unit2string(inKey);
-  outHash := System.stringHashDjb2Mod(str, inMod);
+  outHash := stringHashDjb2Mod(str, inMod);
 end hashUnitMod;
 
 public function unitEqual
