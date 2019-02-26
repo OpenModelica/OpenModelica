@@ -2765,7 +2765,7 @@ algorithm
   (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, info);
   cref := instCrefSubscripts(cref, scope, info);
 
-  prefix := ComponentRef.fromNodeList(InstNode.scopeList(scope));
+  prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
   if not ComponentRef.isEmpty(prefix) then
     cref := ComponentRef.append(cref, prefix);
   end if;
