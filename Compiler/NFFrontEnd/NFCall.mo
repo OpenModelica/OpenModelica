@@ -990,10 +990,11 @@ protected
           variability := Variability.CONSTANT;
           // The size of the expression must be known unless we're in a function.
           is_structural := ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION);
+          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, origin, is_structural);
+            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, next_origin, is_structural);
 
             if is_structural then
               range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
@@ -1007,7 +1008,7 @@ protected
           iters := listReverseInPlace(iters);
 
           // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
-          next_origin := intBitOr(origin, ExpOrigin.FOR);
+          next_origin := intBitOr(next_origin, ExpOrigin.FOR);
           (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
           ty := Type.liftArrayLeftList(ty, dims);
         then
@@ -1039,6 +1040,7 @@ protected
       case UNTYPED_REDUCTION()
         algorithm
           variability := Variability.CONSTANT;
+          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
@@ -1050,7 +1052,7 @@ protected
           iters := listReverseInPlace(iters);
 
           // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
-          next_origin := intBitOr(origin, ExpOrigin.FOR);
+          next_origin := intBitOr(next_origin, ExpOrigin.FOR);
           (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
