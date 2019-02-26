@@ -713,7 +713,7 @@ uniontype Call
               Function.name(call.fn),
               Absyn.COMBINE(),
               Type.toDAE(call.ty),
-              SOME(Expression.toDAEValue(reductionDefaultValue(call))),
+              Expression.toDAEValueOpt(reductionDefaultValue(call)),
               fold_id,
               res_id,
               Expression.toDAEOpt(reductionFoldExpression(call.fn, call.ty, call.var, fold_id, res_id))),
@@ -730,19 +730,30 @@ uniontype Call
 
   function reductionDefaultValue
     input Call call;
-    output Expression defaultValue;
+    output Option<Expression> defaultValue;
   protected
     Function fn;
     Type ty;
   algorithm
     TYPED_REDUCTION(fn = fn, ty = ty) := call;
 
-    defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
-      case "sum" then Expression.makeZero(ty);
-      case "product" then Expression.makeOne(ty);
-      case "min" then Expression.makeMaxValue(ty);
-      case "max" then Expression.makeMinValue(ty);
-    end match;
+    if Type.isArray(ty) then
+      defaultValue := NONE();
+    else
+      defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
+        case "sum" then SOME(Expression.makeZero(ty));
+        case "product" then SOME(Expression.makeOne(ty));
+        case "min" then SOME(Expression.makeMaxValue(ty));
+        case "max" then SOME(Expression.makeMinValue(ty));
+        else
+          algorithm
+            Error.addSourceMessage(Error.INTERNAL_ERROR,
+              {getInstanceName() + " got unknown reduction name " + Absyn.pathFirstIdent(Function.name(fn))},
+              sourceInfo());
+          then
+            fail();
+      end match;
+    end if;
   end reductionDefaultValue;
 
   function reductionFoldExpression

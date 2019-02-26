@@ -1681,6 +1681,11 @@ public
     end match;
   end toDAE;
 
+  function toDAEValueOpt
+    input Option<Expression> exp;
+    output Option<Values.Value> value = Util.applyOption(exp, toDAEValue);
+  end toDAEValueOpt;
+
   function toDAEValue
     input Expression exp;
     output Values.Value value;
