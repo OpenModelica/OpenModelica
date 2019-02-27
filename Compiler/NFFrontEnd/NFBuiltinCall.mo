@@ -1281,6 +1281,15 @@ protected
     Function fn;
     InstNode node;
   algorithm
+    // cardinality may only be used in a condition of an assert or
+    // if-statement/equation (the specification says only if-statement,
+    // but e.g. the MSL only uses them in if-equations and asserts).
+    if not (ExpOrigin.flagSet(origin, ExpOrigin.CONDITION) and
+       (ExpOrigin.flagSet(origin, ExpOrigin.IF) or
+        ExpOrigin.flagSet(origin, ExpOrigin.ASSERT))) then
+      Error.addSourceMessageAndFail(Error.INVALID_CARDINALITY_CONTEXT, {}, info);
+    end if;
+
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("cardinality", named_args, info);
 

@@ -135,6 +135,7 @@ package ExpOrigin
   constant Type SUBEXPRESSION   = intBitLShift(1, 16); // Part of a larger expression.
   constant Type CONNECT         = intBitLShift(1, 17); // Part of connect argument.
   constant Type NOEVENT         = intBitLShift(1, 18); // Part of noEvent argument.
+  constant Type ASSERT          = intBitLShift(1, 19); // Part of assert argument.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
@@ -2402,9 +2403,11 @@ algorithm
     case Equation.ASSERT()
       algorithm
         info := ElementSource.getInfo(eq.source);
-        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, info);
-        e2 := typeOperatorArg(eq.message, Type.STRING(), origin, "assert", "message", 2, info);
-        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, info);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.ASSERT);
+        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(),
+          ExpOrigin.setFlag(next_origin, ExpOrigin.CONDITION), "assert", "condition", 1, info);
+        e2 := typeOperatorArg(eq.message, Type.STRING(), next_origin, "assert", "message", 2, info);
+        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_origin, "assert", "level", 3, info);
       then
         Equation.ASSERT(e1, e2, e3, eq.source);
 
@@ -2562,7 +2565,7 @@ algorithm
       list<tuple<Expression, list<Statement>>> tybrs;
       InstNode iterator;
       MatchKind mk;
-      Integer next_origin;
+      ExpOrigin.Type next_origin, cond_origin;
       SourceInfo info;
 
     case Statement.ASSIGNMENT()
@@ -2602,11 +2605,14 @@ algorithm
 
     case Statement.IF()
       algorithm
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.IF);
+        cond_origin := ExpOrigin.setFlag(next_origin, ExpOrigin.CONDITION);
+
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, origin, st.source, Error.IF_CONDITION_TYPE_ERROR);
-              sts1 := list(typeStatement(bst, origin) for bst in body);
+              e1 := typeCondition(cond, cond_origin, st.source, Error.IF_CONDITION_TYPE_ERROR);
+              sts1 := list(typeStatement(bst, next_origin) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);
@@ -2631,9 +2637,11 @@ algorithm
     case Statement.ASSERT()
       algorithm
         info := ElementSource.getInfo(st.source);
-        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, info);
-        e2 := typeOperatorArg(st.message, Type.STRING(), origin, "assert", "message", 2, info);
-        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, info);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.ASSERT);
+        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(),
+          ExpOrigin.setFlag(next_origin, ExpOrigin.CONDITION), "assert", "condition", 1, info);
+        e2 := typeOperatorArg(st.message, Type.STRING(), next_origin, "assert", "message", 2, info);
+        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_origin, "assert", "level", 3, info);
       then
         Statement.ASSERT(e1, e2, e3, st.source);
 
@@ -2718,12 +2726,13 @@ protected
   list<Equation> eql;
   Variability accum_var = Variability.CONSTANT, var;
   list<Equation.Branch> bl = {}, bl2 = {};
-  Integer next_origin = origin;
+  ExpOrigin.Type next_origin = ExpOrigin.setFlag(origin, ExpOrigin.IF);
+  ExpOrigin.Type cond_origin = ExpOrigin.setFlag(next_origin, ExpOrigin.CONDITION);
 algorithm
   // Type the conditions of all the branches.
   for b in branches loop
     Equation.Branch.BRANCH(cond, _, eql) := b;
-    (cond, var) := typeCondition(cond, origin, source, Error.IF_CONDITION_TYPE_ERROR);
+    (cond, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
     if var > Variability.PARAMETER or isNonExpandableExp(cond) then
       // If the condition doesn't fulfill the requirements for allowing
