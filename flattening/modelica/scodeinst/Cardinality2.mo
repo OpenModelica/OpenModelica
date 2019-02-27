@@ -15,9 +15,17 @@ model Resistor
   Pin p;
   Pin n;
   Pin q;
-  parameter Integer n_conn = cardinality(p);
+  Integer n_conn;
 equation
   connect(p, q);
+
+  if cardinality(p) == 1 then
+    n_conn = 1;
+  elseif cardinality(p) == 2 then
+    n_conn = 2;
+  else
+    n_conn = 0;
+  end if;
 end Resistor;
 
 model Cardinality2
@@ -37,14 +45,14 @@ end Cardinality2;
 //   Real R1.n.i;
 //   Real R1.q.v;
 //   Real R1.q.i;
-//   parameter Integer R1.n_conn = 2;
+//   Integer R1.n_conn;
 //   Real R2.p.v;
 //   Real R2.p.i;
 //   Real R2.n.v;
 //   Real R2.n.i;
 //   Real R2.q.v;
 //   Real R2.q.i;
-//   parameter Integer R2.n_conn = 1;
+//   Integer R2.n_conn;
 // equation
 //   R1.p.v = R1.q.v;
 //   (-R1.p.i) + (-R1.q.i) = 0.0;
@@ -58,5 +66,7 @@ end Cardinality2;
 //   R2.p.i = 0.0;
 //   R2.n.i = 0.0;
 //   R2.q.i = 0.0;
+//   R1.n_conn = 2;
+//   R2.n_conn = 1;
 // end Cardinality2;
 // endResult

@@ -17,14 +17,16 @@ end A;
 
 model CardinalityInvalidArg2
   A a1[2], a2[2];
-  Integer c = cardinality(a1.c);
 equation
   connect(a1.c, a2.c);
+
+  if cardinality(a1.c) == 0 then
+  end if;
 end CardinalityInvalidArg2;
 
 // Result:
 // Error processing file: CardinalityInvalidArg2.mo
-// [flattening/modelica/scodeinst/CardinalityInvalidArg2.mo:20:3-20:32:writable] Error: Type mismatch for positional argument 1 in cardinality(=a1.c). The argument has type:
+// [flattening/modelica/scodeinst/CardinalityInvalidArg2.mo:23:3-24:9:writable] Error: Type mismatch for positional argument 1 in cardinality(=a1.c). The argument has type:
 //   C[2]
 // expected type:
 //   connector

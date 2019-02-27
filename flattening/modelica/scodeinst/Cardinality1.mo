@@ -13,14 +13,14 @@ model Cardinality1
   end C;
 
   C c;
-  Integer r1 = cardinality(c);
+equation
+  assert(cardinality(c) == 0, "cardinality(c) should be 0");
 end Cardinality1;
 
 // Result:
 // class Cardinality1
 //   Real c.e;
 //   Real c.f;
-//   Integer r1 = 0;
 // equation
 //   c.f = 0.0;
 // end Cardinality1;

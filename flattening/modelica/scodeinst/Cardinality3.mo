@@ -20,10 +20,10 @@ end And;
 model Cardinality3
   BooleanInput u;
   And and1;
-  parameter Integer c = cardinality(u);
-  parameter Integer c1 = cardinality(and1.u1);
-  parameter Integer c2 = cardinality(and1.u2);
 equation
+  assert(cardinality(u) == 2, "cardinality(u) should be 2");
+  assert(cardinality(and1.u1) == 1, "cardinality(and1.u1) should be 1");
+  assert(cardinality(and1.u2) == 1, "cardinality(and1.u2) should be 1");
   connect(u, and1.u1);
   connect(u, and1.u2);
 end Cardinality3;
@@ -34,9 +34,6 @@ end Cardinality3;
 //   Boolean and1.u1;
 //   Boolean and1.u2;
 //   Boolean and1.y;
-//   parameter Integer c = 2;
-//   parameter Integer c1 = 1;
-//   parameter Integer c2 = 1;
 // equation
 //   u = and1.u2;
 //   u = and1.u1;

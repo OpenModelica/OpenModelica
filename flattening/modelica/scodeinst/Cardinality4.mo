@@ -17,8 +17,8 @@ end A;
 
 model Cardinality4
   A a1[2], a2[2];
-  Integer c = cardinality(a1[1].c);
 equation
+  assert(cardinality(a1[1].c) == 1, "cardinality(a1[1].c) should be 1");
   connect(a1.c, a2.c);
 end Cardinality4;
 
@@ -32,7 +32,6 @@ end Cardinality4;
 //   Real a2[1].c.f;
 //   Real a2[2].c.e;
 //   Real a2[2].c.f;
-//   Integer c = 1;
 // equation
 //   a1[1].c.e = a2[1].c.e;
 //   a1[2].c.e = a2[2].c.e;
