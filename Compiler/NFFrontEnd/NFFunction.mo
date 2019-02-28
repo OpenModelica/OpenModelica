@@ -963,28 +963,29 @@ uniontype Function
       (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, allowUnknown = true);
       matched := TypeCheck.isValidArgumentMatch(mk);
 
-      if matched then
-        // TODO: This should be a running reduction of the matches. Not just based on the
-        // last match.
-        if TypeCheck.isCastMatch(mk) then
-          funcMatchKind := CAST_MATCH;
-        elseif TypeCheck.isGenericMatch(mk) then
-          funcMatchKind := GENERIC_MATCH;
-        end if;
-      elseif vectorize then
+      if not matched and vectorize then
         // If the types don't match, try to vectorize the argument.
-        (arg_exp, ty, vect_arg, vect_dims, matched) :=
+        (arg_exp, ty, vect_arg, vect_dims, mk) :=
           matchArgVectorized(arg_exp, arg_ty, input_ty, vect_arg, vect_dims, info);
         vectorized_args := arg_idx :: vectorized_args;
+        matched := TypeCheck.isValidArgumentMatch(mk);
       end if;
 
-      // Print an error if the types don't match neither exactly nor vectorized.
       if not matched then
+        // Print an error if the types match neither exactly nor vectorized.
         Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
           {intString(arg_idx), Absyn.pathString(func.path), InstNode.name(input_node),
            Expression.toString(arg_exp), Type.toString(arg_ty), Type.toString(input_ty)}, info);
         funcMatchKind := NO_MATCH;
         return;
+      end if;
+
+      // TODO: This should be a running reduction of the matches. Not just based on the
+      // last match.
+      if TypeCheck.isCastMatch(mk) then
+        funcMatchKind := CAST_MATCH;
+      elseif TypeCheck.isGenericMatch(mk) then
+        funcMatchKind := GENERIC_MATCH;
       end if;
 
       checked_args := (arg_exp, ty, arg_var) :: checked_args;
@@ -1005,7 +1006,7 @@ uniontype Function
     input output Expression vectArg;
     input output list<Dimension> vectDims;
     input SourceInfo info;
-          output Boolean matched;
+          output TypeCheck.MatchKind matchKind;
   protected
     list<Dimension> arg_dims, input_dims, vect_dims, rest_dims;
     Type rest_ty;
@@ -1018,7 +1019,7 @@ uniontype Function
 
     // Only try to vectorize if the argument has more dimensions than the input parameter.
     if vect_dims_count < 1 then
-      matched := false;
+      matchKind := MatchKind.NOT_COMPATIBLE;
       return;
     end if;
 
@@ -1037,8 +1038,7 @@ uniontype Function
     // Check that the argument and the input parameter are type compatible when
     // the dimensions to vectorize over has been removed from the argument's type.
     rest_ty := Type.liftArrayLeftList(Type.arrayElementType(argTy), rest_dims);
-    (argExp, argTy, mk) := TypeCheck.matchTypes(rest_ty, inputTy, argExp, allowUnknown = false);
-    matched := TypeCheck.isValidArgumentMatch(mk);
+    (argExp, argTy, matchKind) := TypeCheck.matchTypes(rest_ty, inputTy, argExp, allowUnknown = false);
   end matchArgVectorized;
 
   function fillUnknownVectorizedDims
