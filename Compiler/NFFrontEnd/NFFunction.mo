@@ -143,11 +143,11 @@ uniontype FunctionMatchKind
   end GENERIC;
 
   record VECTORIZED "Matched by vectorization"
-    list<Dimension> vect_dims;
+    list<Dimension> vectDims;
     // When vectorizing a call exact argument matches are allowed to not be vectorized
     // Instead they are added to each call as is.
     // This list represents which args should be vectorized.
-    list<Boolean> is_vectorized;
+    list<Integer> vectorizedArgs;
     FunctionMatchKind baseMatch;
   end VECTORIZED;
 
@@ -921,180 +921,147 @@ uniontype Function
     end try;
   end lookupSlotInArray;
 
-  function matchArgsVectorize
-    input Function func;
-    input output list<TypedArg> args;
-    input SourceInfo info;
-          output Boolean correct;
-          output FunctionMatchKind funcMatchKind = EXACT_MATCH;
-  protected
-    Component comp;
-    InstNode inputnode;
-    list<InstNode> inputs;
-    Expression argexp, margexp, vect_arg;
-    Type argty, compty, tmpty, mty;
-    Variability var;
-    list<TypedArg> checked_args;
-    Integer idx;
-    TypeCheck.MatchKind matchKind;
-    list<Dimension> argdims, compdims, vectdims, tmpdims, outvectdims;
-    Boolean has_cast;
-    list<Boolean> vectorized;
-    FunctionMatchKind base_mk = EXACT_MATCH;
-  algorithm
-    checked_args := {};
-    idx := 1;
-    inputs := func.inputs;
-    outvectdims := {};
-    vectorized := {};
-    has_cast := false;
-    vect_arg := Expression.INTEGER(0);
-
-    for arg in args loop
-      (argexp,argty,var) := arg;
-      inputnode :: inputs := inputs;
-      comp := InstNode.component(inputnode);
-      compty := Component.getType(comp);
-      compdims := Type.arrayDims(compty);
-      argdims := Type.arrayDims(argty);
-
-      correct := false;
-      if listLength(argdims) == listLength(compdims) then
-        // We have unvectorized match. Keep it.
-        (margexp, mty, matchKind) := TypeCheck.matchTypes(argty, compty, argexp, false);
-        correct := TypeCheck.isValidArgumentMatch(matchKind);
-        vectorized := false::vectorized;
-
-      elseif listLength(argdims) > listLength(compdims) then
-        // Try vectorized matching since we have more dims in the actual argument.
-        (vectdims, tmpdims) := List.split(argdims, listLength(argdims)-listLength(compdims));
-
-        // make sure the vectorization dims are consistent.
-        if listEmpty(outvectdims) then
-          outvectdims := vectdims;
-          vect_arg := argexp;
-        elseif not List.isEqualOnTrue(outvectdims, vectdims, Dimension.isEqual) then
-          Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH,
-            {"", Expression.toString(vect_arg), "", Expression.toString(argexp),
-             Dimension.toStringList(outvectdims), Dimension.toStringList(vectdims)}, info);
-          fail();
-        end if;
-
-        tmpty := Type.arrayElementType(argty);
-        if not listEmpty(tmpdims) then
-          tmpty := Type.ARRAY(tmpty, tmpdims);
-        end if;
-
-        (margexp, mty, matchKind) := TypeCheck.matchTypes(tmpty, compty, argexp, false);
-        correct := TypeCheck.isValidArgumentMatch(matchKind);
-        vectorized := true::vectorized;
-      end if;
-
-      // Type mismatch, print an error.
-      if not correct then
-        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
-          intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
-          Type.toString(argty), Type.toString(compty)
-        }, info);
-        funcMatchKind := NO_MATCH;
-        return;
-      end if;
-
-      // Variability mismatch, print an error.
-      if var > Component.variability(comp) then
-        correct := false;
-        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
-          InstNode.name(inputnode), Expression.toString(argexp),
-          Absyn.pathString(Function.name(func)),
-          Prefixes.variabilityString(var),
-          Prefixes.variabilityString(Component.variability(comp))
-        }, info);
-        funcMatchKind := NO_MATCH;
-        return;
-      end if;
-
-      if TypeCheck.isCastMatch(matchKind) then
-        base_mk := CAST_MATCH;
-      elseif TypeCheck.isGenericMatch(matchKind) then
-        base_mk := GENERIC_MATCH;
-      end if;
-
-      checked_args := (margexp,mty,var) :: checked_args;
-      idx := idx + 1;
-    end for;
-
-    correct := true;
-    args := listReverse(checked_args);
-    funcMatchKind := VECTORIZED(vectdims, listReverse(vectorized), base_mk);
-  end matchArgsVectorize;
-
   function matchArgs
     input Function func;
     input output list<TypedArg> args;
     input SourceInfo info;
-          output Boolean correct;
+    input Boolean vectorize = true;
           output FunctionMatchKind funcMatchKind = EXACT_MATCH;
   protected
     Component comp;
-    InstNode inputnode;
-    list<InstNode> inputs;
-    Expression argexp, margexp;
-    Type ty, mty;
-    Variability var;
-    list<TypedArg> checked_args;
-    Integer idx;
-    TypeCheck.MatchKind matchKind;
+    list<InstNode> inputs = func.inputs;
+    InstNode input_node;
+    Integer arg_idx = 1;
+    list<TypedArg> checked_args = {};
+    Expression arg_exp;
+    Type arg_ty, input_ty, ty;
+    Variability arg_var;
+    TypeCheck.MatchKind mk;
+    Expression vect_arg = Expression.INTEGER(0);
+    list<Dimension> vect_dims = {};
+    Boolean matched;
+    list<Integer> vectorized_args = {};
   algorithm
-
-    checked_args := {};
-    idx := 1;
-    inputs := func.inputs;
-
     for arg in args loop
-      (argexp,ty,var) := arg;
-      inputnode :: inputs := inputs;
-      comp := InstNode.component(inputnode);
+      (arg_exp, arg_ty, arg_var) := arg;
 
-      (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp, allowUnknown = true);
-      correct := TypeCheck.isValidArgumentMatch(matchKind);
-      // TODO: This should be a running reduction of the matches. Not just based on the
-      // last match.
-      if TypeCheck.isCastMatch(matchKind) then
-        funcMatchKind := CAST_MATCH;
-      elseif TypeCheck.isGenericMatch(matchKind) then
-        funcMatchKind := GENERIC_MATCH;
-      end if;
+      input_node :: inputs := inputs;
+      comp := InstNode.component(input_node);
 
-      // Type mismatch, print an error.
-      if not correct then
-        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
-          intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
-          Type.toString(ty), Type.toString(Component.getType(comp))
-        }, info);
+      // Check that the variability of the argument and input parameter matches.
+      if arg_var > Component.variability(comp) then
+        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
+          {InstNode.name(input_node), Expression.toString(arg_exp),
+           Absyn.pathString(Function.name(func)), Prefixes.variabilityString(arg_var),
+           Prefixes.variabilityString(Component.variability(comp))}, info);
         funcMatchKind := NO_MATCH;
         return;
       end if;
 
-      // Variability mismatch, print an error.
-      if var > Component.variability(comp) then
-        correct := false;
-        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
-          InstNode.name(inputnode), Expression.toString(argexp),
-          Absyn.pathString(name(func)),
-          Prefixes.variabilityString(var),
-          Prefixes.variabilityString(Component.variability(comp))
-        }, info);
+      // Check if the type of the argument and the input parameter matches exactly.
+      input_ty := Component.getType(comp);
+      (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, allowUnknown = true);
+      matched := TypeCheck.isValidArgumentMatch(mk);
+
+      if matched then
+        // TODO: This should be a running reduction of the matches. Not just based on the
+        // last match.
+        if TypeCheck.isCastMatch(mk) then
+          funcMatchKind := CAST_MATCH;
+        elseif TypeCheck.isGenericMatch(mk) then
+          funcMatchKind := GENERIC_MATCH;
+        end if;
+      elseif vectorize then
+        // If the types don't match, try to vectorize the argument.
+        (arg_exp, ty, vect_arg, vect_dims, matched) :=
+          matchArgVectorized(arg_exp, arg_ty, input_ty, vect_arg, vect_dims, info);
+        vectorized_args := arg_idx :: vectorized_args;
+      end if;
+
+      // Print an error if the types don't match neither exactly nor vectorized.
+      if not matched then
+        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+          {intString(arg_idx), Absyn.pathString(func.path), InstNode.name(input_node),
+           Expression.toString(arg_exp), Type.toString(arg_ty), Type.toString(input_ty)}, info);
         funcMatchKind := NO_MATCH;
         return;
       end if;
 
-      checked_args := (margexp,mty,var) :: checked_args;
-      idx := idx + 1;
+      checked_args := (arg_exp, ty, arg_var) :: checked_args;
+      arg_idx := arg_idx + 1;
     end for;
 
-    correct := true;
+    if not listEmpty(vectorized_args) then
+      funcMatchKind := FunctionMatchKind.VECTORIZED(vect_dims, listReverse(vectorized_args), funcMatchKind);
+    end if;
+
     args := listReverse(checked_args);
   end matchArgs;
+
+  function matchArgVectorized
+    input output Expression argExp;
+    input output Type argTy;
+    input Type inputTy;
+    input output Expression vectArg;
+    input output list<Dimension> vectDims;
+    input SourceInfo info;
+          output Boolean matched;
+  protected
+    list<Dimension> arg_dims, input_dims, vect_dims, rest_dims;
+    Type rest_ty;
+    TypeCheck.MatchKind mk;
+    Integer vect_dims_count;
+  algorithm
+    arg_dims := Type.arrayDims(argTy);
+    input_dims := Type.arrayDims(inputTy);
+    vect_dims_count := listLength(arg_dims) - listLength(input_dims);
+
+    // Only try to vectorize if the argument has more dimensions than the input parameter.
+    if vect_dims_count < 1 then
+      matched := false;
+      return;
+    end if;
+
+    (vect_dims, rest_dims) := List.split(arg_dims, vect_dims_count);
+
+    // Make sure the vectorization dimensions are consistent.
+    if listEmpty(vectDims) then
+      vectDims := fillUnknownVectorizedDims(vect_dims, argExp);
+      vectArg := argExp;
+    elseif not List.isEqualOnTrue(vectDims, vect_dims, Dimension.isEqual) then
+      Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH,
+        {"", Expression.toString(vectArg), "", Expression.toString(argExp),
+         Dimension.toStringList(vectDims), Dimension.toStringList(vect_dims)}, info);
+    end if;
+
+    // Check that the argument and the input parameter are type compatible when
+    // the dimensions to vectorize over has been removed from the argument's type.
+    rest_ty := Type.liftArrayLeftList(Type.arrayElementType(argTy), rest_dims);
+    (argExp, argTy, mk) := TypeCheck.matchTypes(rest_ty, inputTy, argExp, allowUnknown = false);
+    matched := TypeCheck.isValidArgumentMatch(mk);
+  end matchArgVectorized;
+
+  function fillUnknownVectorizedDims
+    "Helper function to matchArgVectorized. Replaces unknown dimensions in the
+     list with size(argExp, dimension index), so that vectorized calls involving
+     unknown dimensions (e.g. in functions) can be handled correctly."
+    input list<Dimension> dims;
+    input Expression argExp;
+    output list<Dimension> outDims = {};
+  protected
+    Integer i = 1;
+  algorithm
+    for dim in dims loop
+      if Dimension.isUnknown(dim) then
+        dim := Dimension.EXP(Expression.SIZE(argExp, SOME(Expression.INTEGER(i))), Variability.CONTINUOUS);
+      end if;
+
+      outDims := dim :: outDims;
+      i := i + 1;
+    end for;
+
+    outDims := listReverseInPlace(outDims);
+  end fillUnknownVectorizedDims;
 
   function matchFunction
     input Function func;
@@ -1105,17 +1072,12 @@ uniontype Function
     output list<TypedArg> out_args;
     output FunctionMatchKind matchKind = NO_MATCH;
   protected
-    Boolean slot_matched, matched;
+    Boolean slot_matched;
   algorithm
     (out_args, slot_matched) := fillArgs(args, named_args, func, info);
-    if slot_matched then
-      (out_args, matched, matchKind) := matchArgs(func, out_args, info);
 
-      // If we failed to match a function normally then we try to see if
-      // we can have a vectorized match.
-      if not matched and vectorize then
-        (out_args, matched, matchKind) := matchArgsVectorize(func, out_args, info);
-      end if;
+    if slot_matched then
+      (out_args, matchKind) := matchArgs(func, out_args, info, vectorize);
     end if;
   end matchFunction;
 

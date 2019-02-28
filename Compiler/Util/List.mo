@@ -7309,5 +7309,52 @@ algorithm
   end for;
 end isSorted;
 
+function mapIndices<T>
+  "Applies a function to only the elements given by the sorted list of indices."
+  input list<T> inList;
+  input list<Integer> indices;
+  input MapFunc func;
+  output list<T> outList;
+
+  partial function MapFunc
+    input output T e;
+  end MapFunc;
+protected
+  Integer i = 1, idx;
+  list<Integer> rest_idx;
+  T e;
+  list<T> rest_lst;
+algorithm
+  if listEmpty(indices) then
+    outList := inList;
+    return;
+  end if;
+
+  idx :: rest_idx := indices;
+  rest_lst := inList;
+  outList := {};
+
+  while not listEmpty(rest_lst) loop
+    e :: rest_lst := rest_lst;
+
+    if i == idx then
+      outList := func(e) :: outList;
+
+      if listEmpty(rest_idx) then
+        outList := append_reverse(rest_lst, outList);
+        break;
+      else
+        idx :: rest_idx := rest_idx;
+      end if;
+    else
+      outList := e :: outList;
+    end if;
+
+    i := i + 1;
+  end while;
+
+  outList := listReverseInPlace(outList);
+end mapIndices;
+
 annotation(__OpenModelica_Interface="util");
 end List;

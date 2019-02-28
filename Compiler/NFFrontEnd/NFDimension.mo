@@ -212,6 +212,16 @@ public
     end match;
   end isKnown;
 
+  function isUnknown
+    input Dimension dim;
+    output Boolean isUnknown;
+  algorithm
+    isUnknown := match dim
+      case UNKNOWN() then true;
+      else false;
+    end match;
+  end isUnknown;
+
   function isZero
     input Dimension dim;
     output Boolean isZero;

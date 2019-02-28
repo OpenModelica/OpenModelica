@@ -1211,21 +1211,6 @@ protected
       Type.toDAE(InstNode.getType(iter_node)));
   end iteratorToDAE;
 
-  function matchFunction
-    input Function func;
-    input list<TypedArg> args;
-    input list<TypedNamedArg> named_args;
-    input SourceInfo info;
-    output list<TypedArg> out_args;
-    output Boolean matched;
-    output FunctionMatchKind matchKind;
-  algorithm
-    (out_args, matched) := Function.fillArgs(args, named_args, func, info);
-    if matched then
-      (out_args, matched, matchKind) := Function.matchArgs(func, out_args, info);
-    end if;
-  end matchFunction;
-
   function vectorizeCall
     input Call base_call;
     input FunctionMatchKind mk;
@@ -1237,21 +1222,19 @@ protected
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
-    Integer i;
-    list<Dimension> vect_dims;
-    list<Boolean> arg_is_vected, b_list;
+    Integer i, vect_idx;
     Boolean b;
-    list<Expression> vect_args;
+    list<Expression> call_args, vect_args;
     Subscript sub;
+    list<Integer> vect_idxs;
   algorithm
-    vectorized_call := match base_call
-      case TYPED_CALL()
+    vectorized_call := match (base_call, mk)
+      case (TYPED_CALL(arguments = call_args), FunctionMatchKind.VECTORIZED())
         algorithm
-          FunctionMatchKind.VECTORIZED(vect_dims, arg_is_vected) := mk;
           iters := {};
           i := 1;
 
-          for dim in vect_dims loop
+          for dim in mk.vectDims loop
             Error.assertion(Dimension.isKnown(dim, allowExp = true), getInstanceName() +
               " got unknown dimension for vectorized call", info);
 
@@ -1270,21 +1253,22 @@ protected
             exp := Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER()));
             sub := Subscript.INDEX(exp);
 
-            vect_args := {};
-            b_list := arg_is_vected;
-            for arg in base_call.arguments loop
-              // If the argument is supposed to be vectorized
-              b :: b_list := b_list;
-              vect_args := (if b then Expression.applySubscript(sub, arg) else arg) :: vect_args;
-            end for;
+            call_args := List.mapIndices(call_args, mk.vectorizedArgs,
+              function Expression.applySubscript(subscript = sub, restSubscripts = {}));
 
-            base_call.arguments := listReverse(vect_args);
             i := i + 1;
           end for;
 
-          vect_ty := Type.liftArrayLeftList(base_call.ty, vect_dims);
+          vect_ty := Type.liftArrayLeftList(base_call.ty, mk.vectDims);
+          base_call.arguments := call_args;
         then
           TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, Expression.CALL(base_call), iters);
+
+      else
+        algorithm
+          Error.addInternalError(getInstanceName() + " got unknown call", info);
+        then
+          fail();
 
      end match;
   end vectorizeCall;
