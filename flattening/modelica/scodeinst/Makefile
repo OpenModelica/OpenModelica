@@ -22,6 +22,11 @@ BindingArray5.mo \
 BindingArray6.mo \
 BindingArray7.mo \
 BindingArray8.mo \
+BindingInvalidType1.mo \
+BindingInvalidType2.mo \
+BindingInvalidType3.mo \
+BindingInvalidType4.mo \
+BindingInvalidType5.mo \
 bindings1.mo \
 bindings4.mo \
 bindings7.mo \
@@ -54,6 +59,8 @@ Cardinality3.mo \
 Cardinality4.mo \
 CardinalityInvalidArg1.mo \
 CardinalityInvalidArg2.mo \
+CardinalityInvalidContext1.mo \
+CardinalityInvalidContext2.mo \
 ceval1.mo \
 ceval2.mo \
 ceval3.mo \
