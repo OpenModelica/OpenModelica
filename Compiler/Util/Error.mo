@@ -820,6 +820,10 @@ public constant Message INVALID_COMPONENT_PREFIX = MESSAGE(345, TRANSLATION(), E
   Util.gettext("Prefix ‘%s‘ on component ‘%s‘ not allowed in class specialization ‘%s‘."));
 public constant Message INVALID_CARDINALITY_CONTEXT = MESSAGE(346, TRANSLATION(), ERROR(),
   Util.gettext("cardinality may only be used in the condition of an if-statement/equation or an assert."));
+public constant Message VARIABLE_BINDING_DIMS_MISMATCH = MESSAGE(347, TRANSLATION(), ERROR(),
+  Util.gettext("Type mismatch in binding ‘%s = %s‘, expected array dimensions %s, got %s."));
+public constant Message MODIFIER_NON_ARRAY_TYPE_ERROR = MESSAGE(348, TRANSLATION(), ERROR(),
+  Util.gettext("Non-array modification ‘%s‘ for array component ‘%s‘, possibly due to missing ‘each‘."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

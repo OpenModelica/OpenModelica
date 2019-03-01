@@ -2980,9 +2980,7 @@ algorithm
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
 
         if not isValidAssignmentMatch(ty_match) then
-          Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-            {name, Binding.toString(binding), Type.toString(comp_ty),
-             Type.toString(binding.bindingType)}, {Binding.getInfo(binding), InstNode.info(component)});
+          printBindingTypeError(name, binding, comp_ty, binding.bindingType, component);
           fail();
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.parents, binding.isEach, binding.evaluated, binding.isFlattened, binding.info);
@@ -2999,6 +2997,42 @@ algorithm
         fail();
   end match;
 end matchBinding;
+
+function printBindingTypeError
+  input String name;
+  input Binding binding;
+  input Type componentType;
+  input Type bindingType;
+  input InstNode component;
+protected
+  SourceInfo binding_info, comp_info;
+  String bind_ty_str, comp_ty_str;
+  MatchKind mk;
+algorithm
+  binding_info := Binding.getInfo(binding);
+  comp_info := InstNode.info(component);
+
+  if Type.isScalar(bindingType) and Type.isArray(componentType) then
+    Error.addMultiSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_ERROR,
+      {Binding.toString(binding), name}, {binding_info, comp_info});
+  else
+    (_, _, mk) := matchTypes(Type.arrayElementType(bindingType),
+                             Type.arrayElementType(componentType),
+                             Expression.EMPTY(bindingType), true);
+
+    if isValidAssignmentMatch(mk) then
+      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
+        {name, Binding.toString(binding),
+         Dimension.toStringList(Type.arrayDims(componentType)),
+         Dimension.toStringList(Type.arrayDims(bindingType))},
+        {binding_info, comp_info});
+    else
+      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+        {name, Binding.toString(binding), Type.toString(componentType),
+         Type.toString(bindingType)}, {binding_info, comp_info});
+    end if;
+  end if;
+end printBindingTypeError;
 
 function checkDimensionType
   "Checks that an expression used as a dimension has a valid type for a
