@@ -845,6 +845,42 @@ uniontype Call
     end match;
   end retype;
 
+  function typeCast
+    input output Expression callExp;
+    input Type ty;
+  protected
+    Call call;
+  algorithm
+    Expression.CALL(call = call) := callExp;
+
+    callExp := match call
+      case TYPED_CALL() guard Function.isBuiltin(call.fn)
+        then
+          match Absyn.pathFirstIdent(Function.name(call.fn))
+            // For 'fill' we can type cast the first argument rather than the
+            // whole array that 'fill' constructs.
+            case "fill"
+              algorithm
+                call.arguments := Expression.typeCast(listHead(call.arguments), ty) ::
+                                  listRest(call.arguments);
+              then
+                Expression.CALL(call);
+
+            // For diagonal we can type cast the argument rather than the
+            // matrix that diagonal constructs.
+            case "diagonal"
+              algorithm
+                call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
+              then
+                Expression.CALL(call);
+
+            else Expression.CAST(Type.setArrayElementType(call.ty, ty), callExp);
+          end match;
+
+      else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
+    end match;
+  end typeCast;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;

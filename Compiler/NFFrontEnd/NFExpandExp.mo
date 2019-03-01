@@ -947,7 +947,7 @@ public
     (outExp, expanded) := expand(exp);
 
     if expanded then
-      outExp := Expression.typeCastElements(outExp, ty);
+      outExp := Expression.typeCast(outExp, ty);
     else
       outExp := exp;
     end if;

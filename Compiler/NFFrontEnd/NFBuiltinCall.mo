@@ -593,7 +593,7 @@ protected
 
     if Type.isInteger(ety) then
       ty := Type.setArrayElementType(ty, Type.REAL());
-      arg := Expression.typeCastElements(arg, Type.REAL());
+      arg := Expression.typeCast(arg, Type.REAL());
     elseif not Type.isReal(ety) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg),

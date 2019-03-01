@@ -2155,13 +2155,13 @@ algorithm
     // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
-        exp1 := Expression.typeCastElements(exp1, type2);
+        exp1 := Expression.typeCast(exp1, type2);
       then
         (type2, MatchKind.CAST);
 
     case (Type.REAL(), Type.INTEGER())
       algorithm
-        exp2 := Expression.typeCastElements(exp2, type1);
+        exp2 := Expression.typeCast(exp2, type1);
       then
         (type1, MatchKind.CAST);
 
@@ -2635,7 +2635,7 @@ algorithm
     // Integer can be cast to Real.
     case (Type.INTEGER(), Type.REAL())
       algorithm
-        expression := Expression.typeCastElements(expression, expectedType);
+        expression := Expression.typeCast(expression, expectedType);
       then
         (expectedType, MatchKind.CAST);
 
