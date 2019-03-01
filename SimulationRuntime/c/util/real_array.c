@@ -1368,6 +1368,24 @@ void identity_real_array(int n, real_array_t* dest)
     }
 }
 
+static void diagonal_real_array_impl(const real_array_t *v, real_array_t* dest)
+{
+    size_t i;
+    size_t j;
+    size_t n;
+
+    n = v->dim_size[0];
+
+    for(i = 0; i < (n * n); ++i) {
+        real_set(dest, i, 0);
+    }
+    j = 0;
+    for(i = 0; i < n; ++i) {
+        real_set(dest, j, real_get(*v, i));
+        j += n + 1;
+    }
+}
+
 void diagonal_real_array(const real_array_t * v,real_array_t* dest)
 {
     size_t i;
@@ -1382,35 +1400,20 @@ void diagonal_real_array(const real_array_t * v,real_array_t* dest)
     omc_assert_macro(dest->ndims == 2);
     omc_assert_macro((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
 
-    for(i = 0; i < (n * n); ++i) {
-        real_set(dest, i, 0);
-    }
-    j = 0;
-    for(i = 0; i < n; ++i) {
-        real_set(dest, j, real_get(*v, i));
-        j += n+1;
-    }
+    diagonal_real_array_impl(v, dest);
 }
 
-void diagonal_alloc_real_array(real_array_t* dest, int ndims, ...)
+void diagonal_alloc_real_array(const real_array_t* v, real_array_t* dest)
 {
-    size_t i;
-    size_t j;
-    va_list ap;
+  size_t n;
 
-    alloc_real_array(dest,2,ndims,ndims);
+  /* Assert that v is a vector */
+  omc_assert_macro(v->ndims == 1);
 
-    for(i = 0; i < (ndims * ndims); ++i) {
-        real_set(dest, i, 0);
-    }
-
-    va_start(ap,ndims);
-    j = 0;
-    for(i = 0; i < ndims; ++i) {
-        real_set(dest, j, va_arg(ap, modelica_real));
-        j += ndims+1;
-    }
-    va_end(ap);
+  /* Allocate a n*n matrix and fill it. */
+  n = v->dim_size[0];
+  alloc_real_array(dest, 2, n, n);
+  diagonal_real_array_impl(v, dest);
 }
 
 void fill_real_array(real_array_t* dest,modelica_real s)

@@ -237,7 +237,7 @@ extern void outer_product_alloc_real_array(real_array_t* v1, real_array_t* v2, r
 extern void outer_product_real_array(const real_array_t * v1,const real_array_t * v2, real_array_t* dest);
 extern void identity_real_array(int n, real_array_t* dest);
 extern void diagonal_real_array(const real_array_t * v,real_array_t* dest);
-extern void diagonal_alloc_real_array(real_array_t* dest, int ndims, ...);
+extern void diagonal_alloc_real_array(const real_array_t* v, real_array_t* dest);
 extern void fill_real_array(real_array_t* dest,modelica_real s);
 extern void linspace_real_array(modelica_real x1,modelica_real x2,int n,
                          real_array_t* dest);

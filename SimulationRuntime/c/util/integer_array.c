@@ -1388,10 +1388,26 @@ void identity_alloc_integer_array(int n,integer_array_t* dest)
     identity_integer_array(n,dest);
 }
 
-void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
+static void diagonal_integer_array_impl(const integer_array_t *v, integer_array_t* dest)
 {
     size_t i;
     size_t j;
+    size_t n;
+
+    n = v->dim_size[0];
+
+    for(i = 0; i < (n * n); ++i) {
+        integer_set(dest, i, 0);
+    }
+    j = 0;
+    for(i = 0; i < n; ++i) {
+        integer_set(dest, j, integer_get(*v, i));
+        j += n + 1;
+    }
+}
+
+void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
+{
     size_t n;
 
     /* Assert that v is a vector */
@@ -1402,35 +1418,20 @@ void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
     omc_assert_macro(dest->ndims == 2);
     omc_assert_macro((dest->dim_size[0] == n) && (dest->dim_size[1] == n));
 
-    for(i = 0; i < (n * n); ++i) {
-        integer_set(dest, i, 0);
-    }
-    j = 0;
-    for(i = 0; i < n; ++i) {
-        integer_set(dest, j, integer_get(*v, i));
-        j += n+1;
-    }
+    diagonal_integer_array_impl(v, dest);
 }
 
-void diagonal_alloc_integer_array(integer_array_t* dest, int ndims, ...)
+void diagonal_alloc_integer_array(const integer_array_t* v, integer_array_t* dest)
 {
-    size_t i;
-    size_t j;
-    va_list ap;
+    size_t n;
 
-    alloc_integer_array(dest,2,ndims,ndims);
+    /* Assert that v is a vector */
+    omc_assert_macro(v->ndims == 1);
 
-    for(i = 0; i < (ndims * ndims); ++i) {
-        integer_set(dest, i, 0);
-    }
-
-    va_start(ap,ndims);
-    j = 0;
-    for(i = 0; i < ndims; ++i) {
-        integer_set(dest, j, va_arg(ap, modelica_integer));
-        j += ndims+1;
-    }
-    va_end(ap);
+    /* Allocate a n*n matrix and fill it. */
+    n = v->dim_size[0];
+    alloc_integer_array(dest, 2, n, n);
+    diagonal_integer_array_impl(v, dest);
 }
 
 void fill_integer_array(integer_array_t* dest,modelica_integer s)

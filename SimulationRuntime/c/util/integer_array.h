@@ -254,7 +254,7 @@ extern void identity_integer_array(int n, integer_array_t* dest);
 extern void identity_alloc_integer_array(int n, integer_array_t* dest);
 
 extern void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest);
-extern void diagonal_alloc_integer_array(integer_array_t* dest, int ndims, ...);
+extern void diagonal_alloc_integer_array(const integer_array_t *v, integer_array_t* dest);
 extern void fill_integer_array(integer_array_t* dest,modelica_integer s);
 extern void linspace_integer_array(modelica_integer x1,modelica_integer x2,int n,
                                    integer_array_t* dest);

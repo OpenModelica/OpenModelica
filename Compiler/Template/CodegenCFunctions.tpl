@@ -5922,13 +5922,11 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="diagonal"), expLst={A as ARRAY(__)}) then
+  case CALL(path=IDENT(name="diagonal"), expLst={A}) then
+    let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = expTypeFromExpArray(A)
     let tvar = tempDecl(arr_tp_str, &varDecls)
-    let params = (A.array |> e =>
-      daeExp(e, context, &preExp, &varDecls, &auxFunction)
-    ;separator=", ")
-    let &preExp += 'diagonal_alloc_<%arr_tp_str%>(&<%tvar%>, <%listLength(A.array)%>, <%params%>);<%\n%>'
+    let &preExp += 'diagonal_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
