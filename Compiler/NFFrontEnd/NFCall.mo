@@ -850,11 +850,14 @@ uniontype Call
     input Type ty;
   protected
     Call call;
+    Type cast_ty;
   algorithm
     Expression.CALL(call = call) := callExp;
 
     callExp := match call
       case TYPED_CALL() guard Function.isBuiltin(call.fn)
+        algorithm
+          cast_ty := Type.setArrayElementType(call.ty, ty);
         then
           match Absyn.pathFirstIdent(Function.name(call.fn))
             // For 'fill' we can type cast the first argument rather than the
@@ -863,6 +866,7 @@ uniontype Call
               algorithm
                 call.arguments := Expression.typeCast(listHead(call.arguments), ty) ::
                                   listRest(call.arguments);
+                call.ty := cast_ty;
               then
                 Expression.CALL(call);
 
@@ -871,10 +875,11 @@ uniontype Call
             case "diagonal"
               algorithm
                 call.arguments := {Expression.typeCast(listHead(call.arguments), ty)};
+                call.ty := cast_ty;
               then
                 Expression.CALL(call);
 
-            else Expression.CAST(Type.setArrayElementType(call.ty, ty), callExp);
+            else Expression.CAST(cast_ty, callExp);
           end match;
 
       else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
