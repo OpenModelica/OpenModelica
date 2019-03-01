@@ -4538,10 +4538,16 @@ algorithm
       then
         (cache,res);
 
-    // we have a wholedim, so just pass the whole array on.
+    // we have a wholedim, apply the rest of the subscripts to each element of the array.
     case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(), impl, msg,_)
-      equation
-        (cache, res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
+      algorithm
+        if listEmpty(subs) then
+          // If the wholedim is the last subscript we can just return the value as it is.
+          res := subval;
+        else
+          (cache,lst) := cevalSubscriptValueList(cache, env, subs, subval.valueLst, impl, msg, numIter+1);
+          res := ValuesUtil.makeArray(lst);
+        end if;
       then
         (cache, res);
 
