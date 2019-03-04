@@ -317,6 +317,11 @@ algorithm
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
 
+    // Hack to make arrays work when all elements have the same value.
+    if Expression.arrayAllEqual(exp) then
+      exp := Expression.arrayFirstScalar(exp);
+    end if;
+
     isDeleted := match exp
       case Expression.BOOLEAN() then not exp.value;
       else

@@ -2022,6 +2022,10 @@ protected
 algorithm
   cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
 
+  if Expression.arrayAllEqual(cond_exp) then
+    cond_exp := Expression.arrayFirstScalar(cond_exp);
+  end if;
+
   condBool := match cond_exp
     case Expression.BOOLEAN() then cond_exp.value;
     else
