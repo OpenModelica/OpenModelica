@@ -1285,11 +1285,19 @@ end collectBindingFuncs;
 function collectTypeFuncs
   input Type ty;
   input output FunctionTree funcs;
+protected
 algorithm
-  () := match Type.arrayElementType(ty)
+  () := match ty
     local
       InstNode con, de;
       Function fn;
+
+    case Type.ARRAY()
+      algorithm
+        funcs := Dimension.foldExpList(ty.dimensions, collectExpFuncs_traverse, funcs);
+        funcs := collectTypeFuncs(ty.elementType, funcs);
+      then
+        ();
 
     case Type.FUNCTION(fn = fn)
       algorithm

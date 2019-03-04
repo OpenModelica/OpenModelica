@@ -362,5 +362,38 @@ public
     end match;
   end mapExp;
 
+  function foldExp<ArgT>
+    input Dimension dim;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT outArg;
+
+    partial function FoldFunc
+      input Expression dim;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    outArg := match dim
+      case UNTYPED() then Expression.fold(dim.dimension, func, arg);
+      case EXP() then Expression.fold(dim.exp, func, arg);
+      else arg;
+    end match;
+  end foldExp;
+
+  function foldExpList<ArgT>
+    input list<Dimension> dims;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression dim;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    for dim in dims loop
+      arg := foldExp(dim, func, arg);
+    end for;
+  end foldExpList;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;
