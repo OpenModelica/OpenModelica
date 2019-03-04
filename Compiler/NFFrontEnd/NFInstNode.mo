@@ -362,6 +362,16 @@ uniontype InstNode
     end match;
   end isUserdefinedClass;
 
+  function isDerivedClass
+    input InstNode node;
+    output Boolean isDerived;
+  algorithm
+    isDerived := match node
+      case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS()) then true;
+      else false;
+    end match;
+  end isDerivedClass;
+
   function isFunction
     input InstNode node;
     output Boolean isFunc;

@@ -692,7 +692,7 @@ public
           algorithm
             node := InstNode.setNodeType(
               InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node)), node);
-            (node, _, classCount, compCount) := instantiate(node);
+            (node, instance, classCount, compCount) := instantiate(node, instance, scope);
             cls.baseClass := node;
           then
             ();

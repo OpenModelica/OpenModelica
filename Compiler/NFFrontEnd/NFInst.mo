@@ -743,7 +743,14 @@ algorithm
   () := match cls
     case Class.EXPANDED_CLASS(restriction = res)
       algorithm
-        (node, par) := ClassTree.instantiate(node, parent);
+        // Skip instantiating the class tree if the class is a base class,
+        // it has (hopefully) already been instantiated in that case.
+        if InstNode.isBaseClass(node) then
+          par := parent;
+        else
+          (node, par) := ClassTree.instantiate(node, parent);
+        end if;
+
         updateComponentType(parent, node);
         attributes := updateClassConnectorType(res, attributes);
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
@@ -786,7 +793,8 @@ algorithm
 
     case Class.EXPANDED_DERIVED()
       algorithm
-        node := InstNode.replaceClass(cls, node);
+        (node, par) := ClassTree.instantiate(node, parent);
+        Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
         mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
@@ -795,12 +803,8 @@ algorithm
         attrs := updateClassConnectorType(cls.restriction, cls.attributes);
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
 
-        // Mark the base class node as a base class.
-        base_node := InstNode.setNodeType(
-          InstNodeType.BASE_CLASS(node, InstNode.definition(cls.baseClass)), cls.baseClass);
-
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, parent);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, par);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -842,6 +846,7 @@ algorithm
     case Class.INSTANCED_CLASS()
       algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
+        node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node);
         node := instClass(node, outerMod, attributes, useBinding, parent);
         updateComponentType(parent, node);
@@ -2983,6 +2988,7 @@ protected
   String name, str;
   Class cls;
   ClassTree cls_tree;
+  InstNode base_node;
 algorithm
   CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.getInnerOuterCache(topScope);
 
@@ -3023,9 +3029,10 @@ algorithm
 
   // If we found any components, add them to the component list of the class tree.
   if not listEmpty(inner_comps) then
-    cls := InstNode.getClass(node);
+    base_node := Class.lastBaseClass(node);
+    cls := InstNode.getClass(base_node);
     cls_tree := ClassTree.appendComponentsToInstTree(inner_comps, Class.classTree(cls));
-    InstNode.updateClass(Class.setClassTree(cls_tree, cls), node);
+    InstNode.updateClass(Class.setClassTree(cls_tree, cls), base_node);
   end if;
 end insertGeneratedInners;
 
