@@ -26,7 +26,6 @@ model InnerOuter9
   inner System system;
 end InnerOuter9;
 
-
 // Result:
 // class InnerOuter9
 //   parameter Real pumps.heatTransfer.T_ambient = system.T_ambient;
