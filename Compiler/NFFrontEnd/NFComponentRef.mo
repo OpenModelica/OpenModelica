@@ -262,7 +262,7 @@ public
       case CREF()
         then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts));
       case EMPTY() then Type.UNKNOWN();
-      case WILD() then Type.ANY();
+      case WILD() then Type.UNKNOWN();
     end match;
   end getSubscriptedType;
 

@@ -2589,7 +2589,13 @@ algorithm
   end if;
 
   for ty2 in tyl2 loop
+    // Skip matching if the rhs is _.
+    if Type.isUnknown(ty2) then
+      continue;
+    end if;
+
     ty1 :: tyl1 := tyl1;
+
     (_, _, matchKind) := matchTypes(ty1, ty2, expression, allowUnknown);
 
     if matchKind <> MatchKind.EXACT then
