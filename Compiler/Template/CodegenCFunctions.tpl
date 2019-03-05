@@ -7025,7 +7025,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
   match var
   case SIMVAR(varKind=PARAM())
   case SIMVAR(varKind=OPT_TGRID())
-  then 'data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]'
+  then 'data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
   case SIMVAR(varKind=EXTOBJ()) then 'data->simulationInfo->extObjs[<%index%>]'
   case SIMVAR(__) then '<%if isStart then '<%varAttributes(var)%>.start' else if isPre then 'data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */' else 'data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'%>'
 end varArrayNameValues;
