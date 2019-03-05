@@ -510,7 +510,7 @@ uniontype InstNode
     "Returns the name of a scope, which in the case of a component is the name
      of the component's type, and for a class simply the name of the class."
     input InstNode node;
-    output String outName = name(classScope(node));
+    output String outName = name(classScope(explicitScope(node)));
   end scopeName;
 
   function typeName
