@@ -345,6 +345,16 @@ public
     end match;
   end isCref;
 
+  function isWildCref
+    input Expression exp;
+    output Boolean wild;
+  algorithm
+    wild := match exp
+      case CREF(cref = ComponentRef.WILD()) then true;
+      else false;
+    end match;
+  end isWildCref;
+
   function isCall
     input Expression exp;
     output Boolean isCall;

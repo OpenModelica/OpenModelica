@@ -254,17 +254,7 @@ algorithm
       Dimension dim;
       list<Statement> body;
 
-    case Statement.ASSIGNMENT()
-      algorithm
-        ty := Type.mapDims(stmt.ty, simplifyDimension);
-
-        if not Type.isEmptyArray(ty) then
-          lhs := removeEmptyTupleElements(SimplifyExp.simplify(stmt.lhs));
-          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(stmt.rhs));
-          statements := Statement.ASSIGNMENT(lhs, rhs, ty, stmt.source) :: statements;
-        end if;
-      then
-        statements;
+    case Statement.ASSIGNMENT() then simplifyAssignment(stmt, statements);
 
     case Statement.FOR(range = SOME(e))
       algorithm
@@ -311,6 +301,62 @@ algorithm
     else stmt :: statements;
   end match;
 end simplifyStatement;
+
+function simplifyAssignment
+  input Statement stmt;
+  input output list<Statement> statements;
+protected
+  Expression lhs, rhs, rhs_exp;
+  list<Expression> rhs_rest;
+  Type ty;
+  DAE.ElementSource src;
+algorithm
+  Statement.ASSIGNMENT(lhs = lhs, rhs = rhs, ty = ty, source = src) := stmt;
+  ty := Type.mapDims(ty, simplifyDimension);
+
+  if Type.isEmptyArray(ty) then
+    return;
+  end if;
+
+  lhs := SimplifyExp.simplify(lhs);
+  lhs := removeEmptyTupleElements(lhs);
+  rhs := SimplifyExp.simplify(rhs);
+  rhs := removeEmptyFunctionArguments(rhs);
+
+  statements := match (lhs, rhs)
+    case (Expression.TUPLE(), Expression.TUPLE())
+      then simplifyTupleAssignment(lhs.elements, rhs.elements, ty, src, statements);
+
+    else Statement.ASSIGNMENT(lhs, rhs, ty, src) :: statements;
+  end match;
+end simplifyAssignment;
+
+function simplifyTupleAssignment
+  "Helper function to simplifyAssignment.
+   Handles Expression.TUPLE() := Expression.TUPLE() assignments by splitting
+   them into a separate assignment statement for each pair of tuple elements."
+  input list<Expression> lhsTuple;
+  input list<Expression> rhsTuple;
+  input Type ty;
+  input DAE.ElementSource src;
+  input output list<Statement> statements;
+protected
+  Expression rhs;
+  list<Expression> rest_rhs = rhsTuple;
+  Type ety;
+  list<Type> rest_ty;
+algorithm
+  Type.TUPLE(types = rest_ty) := ty;
+
+  for lhs in lhsTuple loop
+    rhs :: rest_rhs := rest_rhs;
+    ety :: rest_ty := rest_ty;
+
+    if not Expression.isWildCref(lhs) then
+      statements := Statement.ASSIGNMENT(lhs, rhs, ety, src) :: statements;
+    end if;
+  end for;
+end simplifyTupleAssignment;
 
 function removeEmptyTupleElements
   "Replaces tuple elements that has one or more zero dimension with _."
