@@ -1480,10 +1480,12 @@ algorithm
     fail();
   end if;
 
+  orig_comp := InstNode.component(originalNode);
   rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(originalNode));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
+  rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
+  rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
   instComponent(rdcl_node, outerAttr, constrainingMod, true);
-  orig_comp := InstNode.component(originalNode);
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)

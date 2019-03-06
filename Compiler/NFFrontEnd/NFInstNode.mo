@@ -1552,6 +1552,26 @@ uniontype InstNode
       else accumCmts;
     end match;
   end getComments;
+
+  function copyInstancePtr
+    input InstNode srcNode;
+    input output InstNode dstNode;
+  algorithm
+    () := match (srcNode, dstNode)
+      case (COMPONENT_NODE(), COMPONENT_NODE())
+        algorithm
+          dstNode.component := srcNode.component;
+        then
+          ();
+
+      case (CLASS_NODE(), CLASS_NODE())
+        algorithm
+          dstNode.cls := srcNode.cls;
+        then
+          ();
+
+    end match;
+  end copyInstancePtr;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
