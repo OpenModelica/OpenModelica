@@ -1,4 +1,4 @@
-// name: RedeclareMod3
+// name: RedeclareMod4
 // keywords:
 // status: correct
 // cflags: -d=newInst
