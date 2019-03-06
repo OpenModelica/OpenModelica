@@ -710,6 +710,14 @@ metamodelica_string referenceDebugString(modelica_metatype fnptr)
 }
 #endif
 
+metamodelica_string referencePointerString(modelica_metatype ptr)
+{
+  // 2 chars per byte + 3 for "0x" and null terminator.
+  char str[sizeof(void*)*2 + 3];
+  snprintf(str, sizeof(void*)*2 + 3, "%p", ptr);
+  return mmc_mk_scon(str);
+}
+
 const char* SourceInfo_SOURCEINFO__desc__fields[7] = {"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastEditTime"};
 struct record_description SourceInfo_SOURCEINFO__desc = {
   "SourceInfo_SOURCEINFO",

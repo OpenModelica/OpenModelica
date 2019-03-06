@@ -854,6 +854,14 @@ you can use referenceEq instead of structural equality (<a href=\"modelica://Met
 </html>"));
 end referenceEq;
 
+function referencePointerString<A>
+  "Returns the pointer address of a reference as a hexadecimal string that can
+   be used for debugging."
+  input A ref;
+  output String str;
+external "builtin";
+end referencePointerString;
+
 function clock
   "Use the diff to compare two time samples to each other. Not very accurate."
   output Real t;

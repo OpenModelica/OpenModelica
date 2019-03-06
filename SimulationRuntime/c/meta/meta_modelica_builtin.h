@@ -214,6 +214,7 @@ extern modelica_integer intMaxLit(void);
 
 extern modelica_boolean setStackOverflowSignal(modelica_boolean);
 extern metamodelica_string referenceDebugString(modelica_metatype fnptr);
+extern metamodelica_string referencePointerString(modelica_metatype ptr);
 
 #include "meta_modelica_builtin_boxvar.h"
 
