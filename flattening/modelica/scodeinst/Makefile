@@ -709,6 +709,7 @@ RedeclareMod2.mo \
 RedeclareMod3.mo \
 RedeclareMod4.mo \
 RedeclareMod5.mo \
+RedeclareMod6.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
