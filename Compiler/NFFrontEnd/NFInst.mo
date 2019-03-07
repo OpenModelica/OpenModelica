@@ -782,7 +782,7 @@ algorithm
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-                                 useBinding = useBinding));
+                                 originalAttr = NONE(), useBinding = useBinding));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -1026,7 +1026,8 @@ algorithm
           function instExtends(attributes = attributes, useBinding = useBinding, visibility = vis));
 
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(), useBinding = useBinding));
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
+            originalAttr = NONE(), useBinding = useBinding));
       then
         ();
 
@@ -1300,6 +1301,7 @@ function instComponent
   input Component.Attributes attributes "Attributes to be propagated to the component.";
   input Modifier innerMod;
   input Boolean useBinding "Ignore the component's binding if false.";
+  input Option<Component.Attributes> originalAttr = NONE();
 protected
   Component comp;
   SCode.Element def;
@@ -1322,8 +1324,8 @@ algorithm
 
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
-    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, useBinding,
-      comp_node, parent, isRedeclared = true);
+    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR,
+      useBinding, comp_node, parent, originalAttr, isRedeclared = true);
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
     cc_smod := SCode.getConstrainingMod(def);
@@ -1337,7 +1339,7 @@ algorithm
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent);
+    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, originalAttr);
   end if;
 end instComponent;
 
@@ -1349,6 +1351,7 @@ function instComponentDef
   input Boolean useBinding;
   input InstNode node;
   input InstNode parent;
+  input Option<Component.Attributes> originalAttr = NONE();
   input Boolean isRedeclared = false;
 algorithm
   () := match component
@@ -1381,9 +1384,11 @@ algorithm
         parent_res := Class.restriction(InstNode.getClass(parent));
         attr := instComponentAttributes(component.attributes, component.prefixes);
         attr := checkDeclaredComponentAttributes(attr, parent_res, node);
-        //attr := mergeComponentAttributes(attributes, attr, node,
-        //  Restriction.isFunction(parent_res));
         attr := mergeComponentAttributes(attributes, attr, node, parent_res);
+
+        if isSome(originalAttr) then
+          attr := mergeRedeclaredComponentAttributes(Util.getOption(originalAttr), attr, node);
+        end if;
 
         // Create the untyped component and update the node with it. We need the
         // untyped component in instClass to make sure everything is scoped
@@ -1485,7 +1490,7 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true);
+  instComponent(rdcl_node, outerAttr, constrainingMod, true, SOME(Component.getAttributes(orig_comp)));
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
@@ -1506,9 +1511,7 @@ algorithm
         end if;
 
         condition := orig_comp.condition;
-
-        // Merge the attributes of the redeclare and the original element.
-        attr := mergeRedeclaredComponentAttributes(orig_comp.attributes, rdcl_comp.attributes, redeclareNode);
+        attr := rdcl_comp.attributes;
 
         // Use the dimensions of the redeclare if any, otherwise take them from the original.
         dims := if arrayEmpty(rdcl_comp.dimensions) then orig_comp.dimensions else rdcl_comp.dimensions;

@@ -776,7 +776,10 @@ uniontype InstNode
     input InstNode node;
     output InstNodeType nodeType;
   algorithm
-    CLASS_NODE(nodeType = nodeType) := node;
+    nodeType := match node
+      case CLASS_NODE() then node.nodeType;
+      case COMPONENT_NODE() then node.nodeType;
+    end match;
   end nodeType;
 
   function setNodeType
