@@ -1534,3 +1534,66 @@ setting that flag in the *Tools > Options > Simulation* dialog.
   :name: omedit-state-machine-simulation-settings
 
   Ensure (at least) Modelica v3.3 support.
+  
+Using OMEdit as Text Editor
+---------------------------
+OMEdit can be be used as a Text editor. Currently support for editing MetaModelica,Modelica and C/C++ 
+are available with syntax highlighting and autocompletion of keywords and types. Additionaly the Modelica 
+and MetaModelica files are provided with autocompletion of code-snippets along with keywords and types. 
+The users can load the directory from file menu *File > Open Directory*. which opens the Directory structure 
+in the Libraries-browser.
+
+.. figure :: media/omedit-open-directory.png
+   :name: omedit-open-directory
+
+   open-directory 
+  
+After the directory is opened in the Libraries-browser, the users can expand the directory structure and click the file which
+opens in the texteditor.
+
+.. figure :: media/omedit-directory-file.png
+   :name: omedit-directory-file
+
+   openfile in texteditor
+
+Advanced Search
+~~~~~~~~~~~~~~~
+
+Support to search in OMEdit texteditor is available. The search browser can be enabled by selecting 
+View > Windows > Search browser or through shortcut keys (ctrl+h). 
+
+.. figure :: media/omedit-search.png
+  :name: omedit-search
+  
+  Enable omedit search browser
+
+The users can start the search by loading the directory they want to search and fill in the text to be searched for
+and file pattern if needed and click the search button.
+
+
+.. figure :: media/omedit-start-search.png
+  :name: omedit-start-search
+  
+  Start search in search browser
+
+
+After the search is completed the results are presented to the users in a separate window, The search results contains
+the following 
+
+1) The name of the files where the searched word is matched 
+2) The line number and text of the matched word.
+
+The users can click the line number or the matched text and it will automatically open the file in the texteditor and 
+move the cursor to matched line number of the text.
+
+.. figure :: media/omedit-search-results.png
+  :name: omedit-search-results
+  
+  Search Results
+  
+The users can perform multiple searches and go back to old search results using search histroy option.
+
+.. figure :: media/omedit-search-history.png
+  :name: omedit-search-histroy
+
+  Search History

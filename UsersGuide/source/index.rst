@@ -38,6 +38,7 @@ Generated on |date| at |time|
   ompython
   ommatlab
   omjulia
+  jupyteropenmodelica
   scripting_api
   omchelptext
   simulationflags
