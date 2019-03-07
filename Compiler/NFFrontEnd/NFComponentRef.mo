@@ -478,7 +478,7 @@ public
         then
           dstCref;
 
-      case (CREF(), CREF()) guard referenceEq(srcCref.node, dstCref.node)
+      case (CREF(), CREF()) guard InstNode.refEqual(srcCref.node, dstCref.node)
         algorithm
           cref := transferSubscripts(srcCref.restCref, dstCref.restCref);
         then
