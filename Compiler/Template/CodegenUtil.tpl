@@ -219,6 +219,8 @@ template variabilityString(VarKind varKind)
     case ALG_STATE()  then "ALG_STATE"
     case DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR"
     case DAE_AUX_VAR() then "DAE_AUX_VAR"
+    case LOOP_ITERATION() then "LOOP_ITERATION"
+    case LOOP_SOLVED() then "LOOP_SOLVED"
     else "#UNKNOWN_VARKIND"
   end match
 end variabilityString;
