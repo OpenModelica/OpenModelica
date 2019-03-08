@@ -404,8 +404,8 @@ private:
   QAction *mpRenameAction;
   QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportReadonlyPackageAction;
   QAction *mpExportEncryptedPackageAction;
-  QAction *mpExportRealonlyPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpUpdateBindingsAction;

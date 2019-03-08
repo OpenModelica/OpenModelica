@@ -113,27 +113,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   } else {
     setFileName(fileName);
     setReadOnly(!StringHandler::isFileWritAble(fileName));
-  }
-  setIsSaved(isSaved);
-  if (isFilePathValid() && type == LibraryTreeItem::Modelica) {
-    QFileInfo fileInfo(getFileName());
-    // if item has file name as package.mo and is top level then its save folder structure
-    if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
-      setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-    } else if (isTopLevel()) {
-      setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-    } else {
-      if (mpParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      } else if (fileInfo.fileName().compare("package.mo") == 0) {
-        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
-      } else {
-        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
-      }
-    }
-  } else {
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   }
+  setIsSaved(isSaved);
   setClassTextBefore("");
   setClassText("");
   setClassTextAfter("");
@@ -185,6 +167,26 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
       setFileName(classInformation.fileName);
     }
     setReadOnly(classInformation.fileReadOnly);
+    // set save contents type
+    if (isFilePathValid()) {
+      QFileInfo fileInfo(getFileName());
+      // if item has file name as package.mo and is top level then its save folder structure
+      if (isTopLevel() && (fileInfo.fileName().compare("package.mo") == 0)) {
+        setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+      } else if (isTopLevel()) {
+        setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      } else {
+        if (mpParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
+          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+        } else if (fileInfo.fileName().compare("package.mo") == 0) {
+          setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+        } else {
+          setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+        }
+      }
+    } else {
+      setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+    }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
     switch (access) {
@@ -3131,7 +3133,7 @@ void LibraryTreeView::createActions()
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
   // Export FMU Action
-  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
+  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // Export encrypted package Action
@@ -3139,15 +3141,15 @@ void LibraryTreeView::createActions()
   mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
   connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
   // Export read-only package action
-  mpExportRealonlyPackageAction = new QAction(Helper::exportRealonlyPackage, this);
-  mpExportRealonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
-  connect(mpExportRealonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
+  mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
   // Export XML Action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
   // Export Figaro Action
-  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("Figaro"), this);
   mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Update Bindings Action
@@ -3254,6 +3256,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
     LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
     if (pLibraryTreeItem) {
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      QMenu *pExportMenu = new QMenu(tr("Export"), this);
       switch (pLibraryTreeItem->getLibraryType()) {
         case LibraryTreeItem::Modelica:
         default:
@@ -3330,14 +3333,16 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpUnloadClassAction);
           }
           menu.addSeparator();
-          menu.addAction(mpExportFMUAction);
+          // add actions to Export menu
+          pExportMenu->addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
               && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-            menu.addAction(mpExportEncryptedPackageAction);
-            menu.addAction(mpExportRealonlyPackageAction);
+            pExportMenu->addAction(mpExportReadonlyPackageAction);
+            pExportMenu->addAction(mpExportEncryptedPackageAction);
           }
-          menu.addAction(mpExportXMLAction);
-          menu.addAction(mpExportFigaroAction);
+          pExportMenu->addAction(mpExportXMLAction);
+          pExportMenu->addAction(mpExportFigaroAction);
+          menu.addMenu(pExportMenu);
           if (pLibraryTreeItem->isSimulationAllowed()) {
             menu.addSeparator();
             menu.addAction(mpUpdateBindingsAction);

@@ -3234,6 +3234,58 @@ void MainWindow::createActions()
   mpSaveTotalAction = new QAction(Helper::saveTotal, this);
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
   mpSaveTotalAction->setEnabled(false);
+  // import FMU action
+  mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::FMU, this);
+  mpImportFMUAction->setStatusTip(Helper::importFMUTip);
+  connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
+  // import FMU model description action
+  mpImportFMUModelDescriptionAction = new QAction(tr("FMU Model Description"), this);
+  mpImportFMUModelDescriptionAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMU) model description"));
+  connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
+  // import from OMNotebook action
+  mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), tr("From OMNotebook"), this);
+  mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
+  connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
+  // import ngspice netlist action
+  mpImportNgspiceNetlistAction = new QAction(tr("Ngspice netlist"), this);
+  mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
+  connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
+  // export to clipboard action
+  mpExportToClipboardAction = new QAction(tr("To Clipboard"), this);
+  mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
+  connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
+  // export as image action
+  mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Image"), this);
+  mpExportAsImageAction->setStatusTip(Helper::exportAsImageTip);
+  connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
+  // export FMU action
+  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::FMU, this);
+  mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
+  mpExportFMUAction->setEnabled(false);
+  connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  // export read-only package action
+  mpExportReadonlyPackageAction = new QAction(Helper::exportReadonlyPackage, this);
+  mpExportReadonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
+  connect(mpExportReadonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
+  // export encrypted package action
+  mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
+  mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
+  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
+  // export XML action
+  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
+  mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
+  mpExportXMLAction->setEnabled(false);
+  connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
+  // export XML action
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("Figaro"), this);
+  mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
+  mpExportFigaroAction->setEnabled(false);
+  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
+  // export to OMNotebook action
+  mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), tr("To OMNotebook"), this);
+  mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
+  mpExportToOMNotebookAction->setEnabled(false);
+  connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
   // recent files action
   for (int i = 0; i < MaxRecentFiles; ++i) {
     mpRecentFileActions[i] = new QAction(this);
@@ -3375,39 +3427,6 @@ void MainWindow::createActions()
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   mpSimulationSetupAction->setEnabled(false);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
-  // FMI Menu
-  // export FMU action
-  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
-  mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
-  mpExportFMUAction->setEnabled(false);
-  connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
-  // import FMU action
-  mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::importFMU, this);
-  mpImportFMUAction->setStatusTip(Helper::importFMUTip);
-  connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
-  // import FMU model description action
-  mpImportFMUModelDescriptionAction = new QAction(tr("Import FMU Model Description"), this);
-  mpImportFMUModelDescriptionAction->setStatusTip(Helper::importFMUTip);
-  connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
-  // XML Menu
-  // export encrypted package action
-  mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
-  mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
-  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
-  // export read-only package action
-  mpExportRealonlyPackageAction = new QAction(Helper::exportRealonlyPackage, this);
-  mpExportRealonlyPackageAction->setStatusTip(Helper::exportRealonlyPackageTip);
-  connect(mpExportRealonlyPackageAction, SIGNAL(triggered()), SLOT(exportReadonlyPackage()));
-  // export XML action
-  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
-  mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
-  mpExportXMLAction->setEnabled(false);
-  connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
-  // export XML action
-  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::exportFigaro, this);
-  mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
-  mpExportFigaroAction->setEnabled(false);
-  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -3466,19 +3485,6 @@ void MainWindow::createActions()
     mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
     connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
   }
-  // export to OMNotebook action
-  mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), Helper::exportToOMNotebook, this);
-  mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
-  mpExportToOMNotebookAction->setEnabled(false);
-  connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
-  // import from OMNotebook action
-  mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importFromOMNotebook, this);
-  mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
-  connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
-  // import ngspice netlist action
-  mpImportNgspiceNetlistAction = new QAction(Helper::importNgspiceNetlist, this);
-  mpImportNgspiceNetlistAction->setStatusTip(Helper::importNgspiceNetlistTip);
-  connect(mpImportNgspiceNetlistAction, SIGNAL(triggered()), SLOT(importNgspiceNetlist()));
   // open working directory action
   mpOpenWorkingDirectoryAction = new QAction(tr("Open Working Directory"), this);
   mpOpenWorkingDirectoryAction->setStatusTip(tr("Opens the current working directory"));
@@ -3628,15 +3634,6 @@ void MainWindow::createActions()
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
   connect(mpClearPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(clearPlotWindow()));
-  // Other Actions
-  // export as image action
-  mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), Helper::exportAsImage, this);
-  mpExportAsImageAction->setStatusTip(Helper::exportAsImageTip);
-  connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
-  // export to clipboard action
-  mpExportToClipboardAction = new QAction(tr("Export to Clipboard"), this);
-  mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
-  connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
   // simulation parameters
   mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
   mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
@@ -3717,6 +3714,30 @@ void MainWindow::createMenus()
   //menuFile->addAction(saveAllAction);
   pFileMenu->addAction(mpSaveTotalAction);
   pFileMenu->addSeparator();
+  // Import menu
+  QMenu *pImportMenu = new QMenu(menuBar());
+  pImportMenu->setTitle(tr("Import"));
+  // add actions to Import menu
+  pImportMenu->addAction(mpImportFMUAction);
+  pImportMenu->addAction(mpImportFMUModelDescriptionAction);
+  pImportMenu->addAction(mpImportFromOMNotebookAction);
+  pImportMenu->addAction(mpImportNgspiceNetlistAction);
+  pFileMenu->addMenu(pImportMenu);
+  // Export menu
+  QMenu *pExportMenu = new QMenu(menuBar());
+  pExportMenu->setTitle(tr("Export"));
+  // add actions to Export menu
+  pExportMenu->addAction(mpExportToClipboardAction);
+  pExportMenu->addAction(mpExportAsImageAction);
+  pExportMenu->addAction(mpExportFMUAction);
+  pExportMenu->addAction(mpExportReadonlyPackageAction);
+  pExportMenu->addAction(mpExportEncryptedPackageAction);
+  pExportMenu->addAction(mpExportXMLAction);
+  pExportMenu->addAction(mpExportFigaroAction);
+  pExportMenu->addAction(mpExportToOMNotebookAction);
+  pFileMenu->addMenu(pExportMenu);
+  pFileMenu->addSeparator();
+  // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
@@ -3835,25 +3856,6 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
-  // FMI menu
-  QMenu *pFMIMenu = new QMenu(menuBar());
-  pFMIMenu->setTitle(tr("F&MI"));
-  // add actions to FMI menu
-  pFMIMenu->addAction(mpExportFMUAction);
-  pFMIMenu->addAction(mpImportFMUAction);
-  pFMIMenu->addAction(mpImportFMUModelDescriptionAction);
-  // add FMI menu to menu bar
-  menuBar()->addAction(pFMIMenu->menuAction());
-  // Export menu
-  QMenu *pExportMenu = new QMenu(menuBar());
-  pExportMenu->setTitle(tr("E&xport"));
-  // add actions to Export menu
-  pExportMenu->addAction(mpExportEncryptedPackageAction);
-  pExportMenu->addAction(mpExportRealonlyPackageAction);
-  pExportMenu->addAction(mpExportXMLAction);
-  pExportMenu->addAction(mpExportFigaroAction);
-  // add Export menu to menu bar
-  menuBar()->addAction(pExportMenu->menuAction());
   // Debug menu
   QMenu *pDebugMenu = new QMenu(menuBar());
   pDebugMenu->setTitle(tr("&Debug"));
@@ -3919,11 +3921,6 @@ void MainWindow::createMenus()
   if (isDebug()) {
     pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
   }
-  pToolsMenu->addSeparator();
-  pToolsMenu->addAction(mpExportToOMNotebookAction);
-  pToolsMenu->addAction(mpImportFromOMNotebookAction);
-  pToolsMenu->addSeparator();
-  pToolsMenu->addAction(mpImportNgspiceNetlistAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOpenWorkingDirectoryAction);
   pToolsMenu->addAction(mpOpenTerminalAction);

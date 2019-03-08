@@ -172,12 +172,12 @@ public:
   static QString checkAllModelsTip;
   static QString instantiateModel;
   static QString instantiateModelTip;
-  static QString exportFMU;
+  static QString FMU;
   static QString exportFMUTip;
+  static QString exportReadonlyPackage;
+  static QString exportRealonlyPackageTip;
   static QString exportEncryptedPackage;
   static QString exportEncryptedPackageTip;
-  static QString exportRealonlyPackage;
-  static QString exportRealonlyPackageTip;
   static QString importFMU;
   static QString importFMUTip;
   static QString exportXML;

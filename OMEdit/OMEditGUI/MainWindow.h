@@ -165,7 +165,7 @@ public:
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
-  QAction* getExportRealonlyPackageAction() {return mpExportRealonlyPackageAction;}
+  QAction* getExportRealonlyPackageAction() {return mpExportReadonlyPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
   QAction* getExportFigaroAction() {return mpExportFigaroAction;}
   QAction* getLineShapeAction() {return mpLineShapeAction;}
@@ -309,6 +309,18 @@ private:
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
   QAction *mpSaveTotalAction;
+  QAction *mpImportFMUAction;
+  QAction *mpImportFMUModelDescriptionAction;
+  QAction *mpImportFromOMNotebookAction;
+  QAction *mpImportNgspiceNetlistAction;
+  QAction *mpExportToClipboardAction;
+  QAction *mpExportAsImageAction;
+  QAction *mpExportFMUAction;
+  QAction *mpExportReadonlyPackageAction;
+  QAction *mpExportEncryptedPackageAction;
+  QAction *mpExportXMLAction;
+  QAction *mpExportFigaroAction;
+  QAction *mpExportToOMNotebookAction;
   QAction *mpRecentFileActions[MaxRecentFiles];
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
@@ -343,15 +355,6 @@ private:
   QAction *mpSimulateWithAnimationAction;
 #endif
   QAction *mpSimulationSetupAction;
-  // FMI Menu
-  QAction *mpExportFMUAction;
-  QAction *mpImportFMUAction;
-  QAction *mpImportFMUModelDescriptionAction;
-  // Export Menu
-  QAction *mpExportEncryptedPackageAction;
-  QAction *mpExportRealonlyPackageAction;
-  QAction *mpExportXMLAction;
-  QAction *mpExportFigaroAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -367,9 +370,6 @@ private:
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpShowOpenModelicaCommandPromptAction;
   QAction *mpShowOMCDiffWidgetAction;
-  QAction *mpExportToOMNotebookAction;
-  QAction *mpImportFromOMNotebookAction;
-  QAction *mpImportNgspiceNetlistAction;
   QAction *mpOpenWorkingDirectoryAction;
   QAction *mpOpenTerminalAction;
   QAction *mpOptionsAction;
@@ -410,9 +410,6 @@ private:
   QAction *mpDiagramWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
-  // Other Actions
-  QAction *mpExportAsImageAction;
-  QAction *mpExportToClipboardAction;
   // TLM Simulation Action
   QAction *mpSimulationParamsAction;
   QAction *mpFetchInterfaceDataAction;

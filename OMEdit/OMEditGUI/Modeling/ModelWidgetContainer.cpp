@@ -6996,6 +6996,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getInstantiateModelAction()->setEnabled(enabled && modelica && accessAnnotation);
   MainWindow::instance()->getCheckModelAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
+  MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled && modelica);
+  MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);
   bool packageSaveAsFolder = (enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel()
                               && pLibraryTreeItem->getRestriction() == StringHandler::Package

@@ -3005,13 +3005,9 @@ QList<QList<QString > > OMCProxy::getUses(QString className)
  */
 bool OMCProxy::buildEncryptedPackage(QString className, bool encrypt)
 {
-  OMCInterface::buildEncryptedPackage_res result = mpOMCInterface->buildEncryptedPackage(className, encrypt);
+  bool result = mpOMCInterface->buildEncryptedPackage(className, encrypt);
   printMessagesStringInternal();
-  if (!result.success && !result.commandOutput.isEmpty()) {
-    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, result.commandOutput, Helper::scriptingKind, Helper::errorLevel);
-    MessagesWidget::instance()->addGUIMessage(messageItem);
-  }
-  return result.success;
+  return result;
 }
 
 /*!
