@@ -2485,7 +2485,6 @@ function buildEncryptedPackage
   input TypeName className "the class that should encrypted";
   input Boolean encrypt = true;
   output Boolean success;
-  output String commandOutput "Output of the packagetool executable";
 external "builtin";
 annotation(preferredView="text");
 end buildEncryptedPackage;

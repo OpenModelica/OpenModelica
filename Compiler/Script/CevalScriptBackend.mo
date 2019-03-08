@@ -1320,11 +1320,11 @@ algorithm
     case (cache,env,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b)},_)
       algorithm
         p := SymbolTable.getAbsyn();
-        (b1, str) := buildEncryptedPackage(className, b, p);
-      then (cache,Values.TUPLE({Values.BOOL(b1),Values.STRING(str)}));
+        b1 := buildEncryptedPackage(className, b, p);
+      then (cache,Values.BOOL(b1));
 
     case (cache,_,"buildEncryptedPackage",_,_)
-      then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING("")}));
+      then (cache,Values.BOOL(false));
 
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},_)
       equation
@@ -3562,47 +3562,65 @@ protected function buildEncryptedPackage
   input Boolean encrypt;
   input Absyn.Program inProgram;
   output Boolean success;
-  output String commandOutput;
 protected
   Absyn.Class cls;
-  String fileName, omhome, pd, str1, str2, str3, call, logFile;
+  String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
+  Boolean runCommand;
+  String molName, dirPath, rmCommand, cdCommand, mvCommand, dirOrFileName, zipCommand;
 algorithm
   cls := Interactive.getPathedClassInProgram(className, inProgram);
   fileName := Absyn.classFilename(cls);
+  logFile := "buildEncryptedPackage.log";
+  runCommand := true;
   if (System.regularFileExists(fileName)) then
     // get OPENMODELICAHOME
     omhome := Settings.getInstallationDirectoryPath();
     pd := System.pathDelimiter();
-    str1 := if System.os() == "Windows_NT" then ".exe" else "";
-    // create the path till packagetool
-    str2 := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",str1});
-    if System.regularFileExists(str2) then
-      // create the list of arguments for packagetool
-      str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
-      call := stringAppendList({str2," ",str3});
-      logFile := "packagetool.log";
+    ext := if System.os() == "Windows_NT" then ".exe" else "";
+    if encrypt then
+      // create the path till packagetool
+	    packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});
+	    if System.regularFileExists(packageTool) then
+	      // create the list of arguments for packagetool
+	      packageToolArgs := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
+	      command := stringAppendList({packageTool," ",packageToolArgs});
+	    else
+	      Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
+        success := false;
+        runCommand := false;
+	    end if;
+	  else
+	    molName := Absyn.pathString(className) + ".mol";
+	    dirPath := System.dirname(fileName);
+	    // commands
+	    rmCommand := "rm -f \"" + molName + "\"";
+      cdCommand := "cd \"" +  dirPath + "\"";
+      mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
+
+      if (Util.endsWith(fileName, "package.mo")) then
+        dirOrFileName := System.basename(dirPath);
+        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
+        command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});
+      else
+        dirOrFileName := System.basename(fileName);
+        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
+        command := stringAppendList({rmCommand, " && ", cdCommand, " && ", zipCommand});
+      end if;
+    end if;
+
+    if runCommand then
       // remove the logFile if it already exists.
       if System.regularFileExists(logFile) then
         System.removeFile(logFile);
       end if;
-      // run the packagetool command
-      if 0 == System.systemCall(call, logFile) then
-        success := true;
-      else
-        success := false;
+      // run the command
+      success := 0 == System.systemCall(command, logFile);
+      if not(success) then
+        Error.addCompilerError("Command failed: " + command);
       end if;
-      // read the logFile
-      if System.regularFileExists(logFile) then
-        commandOutput := System.readFile(logFile);
-      end if;
-    else
-      Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {str2});
-      commandOutput := "";
-      success := false;
     end if;
   else
     Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
-    commandOutput := "";
     success := false;
   end if;
 end buildEncryptedPackage;
