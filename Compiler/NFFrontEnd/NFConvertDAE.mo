@@ -92,20 +92,37 @@ algorithm
 end convert;
 
 protected
+uniontype VariableConversionSettings
+  record VARIABLE_CONVERSION_SETTINGS
+    Boolean useLocalDirection;
+    Boolean isFunctionParameter;
+    Boolean addTypeToSource;
+  end VARIABLE_CONVERSION_SETTINGS;
+end VariableConversionSettings;
+
+constant VariableConversionSettings FUNCTION_VARIABLE_CONVERSION_SETTINGS =
+  VARIABLE_CONVERSION_SETTINGS(false, true, false);
+
 function convertVariables
   input list<Variable> variables;
   input output list<DAE.Element> elements;
 protected
-  Boolean localDir = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION);
+  VariableConversionSettings settings;
 algorithm
+  settings := VariableConversionSettings.VARIABLE_CONVERSION_SETTINGS(
+    useLocalDirection = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION),
+    isFunctionParameter = false,
+    addTypeToSource = Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)
+  );
+
   for var in listReverse(variables) loop
-    elements := convertVariable(var, localDir) :: elements;
+  elements := convertVariable(var, settings) :: elements;
   end for;
 end convertVariables;
 
 function convertVariable
   input Variable var;
-  input Boolean useLocalDir;
+  input VariableConversionSettings settings;
   output DAE.Element daeVar;
 protected
   Option<DAE.VariableAttributes> var_attr;
@@ -114,7 +131,7 @@ algorithm
   binding_exp := Binding.toDAEExp(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, var.comment, useLocalDir, false, var.info);
+    var.visibility, var_attr, var.comment, settings, var.info);
 end convertVariable;
 
 function makeDAEVar
@@ -125,8 +142,7 @@ function makeDAEVar
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
   input Option<SCode.Comment> comment;
-  input Boolean useLocalDir;
-  input Boolean isFunctionParam;
+  input VariableConversionSettings settings;
   input SourceInfo info;
   output DAE.Element var;
 protected
@@ -136,15 +152,19 @@ protected
   Direction dir;
 algorithm
   dcref := ComponentRef.toDAE(cref);
-  dty := Type.toDAE(if isFunctionParam then Type.arrayElementType(ty) else ty);
+  dty := Type.toDAE(if settings.isFunctionParameter then Type.arrayElementType(ty) else ty);
   source := ElementSource.createElementSource(info);
+
+  if settings.addTypeToSource then
+    source := addComponentTypeToSource(cref, source);
+  end if;
 
   var := match attr
     case Component.Attributes.ATTRIBUTES()
       algorithm
         // Strip input/output from non top-level components unless
         // --useLocalDirection=true has been set.
-        if attr.direction == Direction.NONE or useLocalDir then
+        if attr.direction == Direction.NONE or settings.useLocalDirection then
           dir := attr.direction;
         else
           dir := getComponentDirection(attr.direction, cref);
@@ -174,6 +194,22 @@ algorithm
 
   end match;
 end makeDAEVar;
+
+function addComponentTypeToSource
+  input ComponentRef cref;
+  input output DAE.ElementSource source;
+algorithm
+  source := match cref
+    case ComponentRef.CREF()
+      algorithm
+        source := ElementSource.addElementSourceType(source,
+          InstNode.scopePath(InstNode.classScope(InstNode.parent(cref.node))));
+      then
+        addComponentTypeToSource(cref.restCref, source);
+
+    else source;
+  end match;
+end addComponentTypeToSource;
 
 function getComponentDirection
   "Returns the given direction if the cref refers to a top-level component or to
@@ -1007,7 +1043,8 @@ algorithm
         attr := comp.attributes;
         var_attr := convertVarAttributes(ty_attr, ty, attr);
       then
-        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, comp.comment, true, true, info);
+        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr,
+          comp.comment, FUNCTION_VARIABLE_CONVERSION_SETTINGS, info);
 
     else
       algorithm
