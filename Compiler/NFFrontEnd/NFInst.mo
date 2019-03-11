@@ -1324,10 +1324,11 @@ algorithm
 
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
-    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR,
+    instComponentDef(def, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR,
       useBinding, comp_node, parent, originalAttr, isRedeclared = true);
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
+
     cc_smod := SCode.getConstrainingMod(def);
     if not SCode.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
@@ -1335,7 +1336,6 @@ algorithm
     end if;
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
-    //outer_mod := Modifier.merge(outer_mod, cc_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node);
   else
@@ -1357,7 +1357,7 @@ algorithm
   () := match component
     local
       SourceInfo info;
-      Modifier decl_mod, mod;
+      Modifier decl_mod, mod, cc_mod;
       list<Dimension> dims, ty_dims;
       Binding binding, condition;
       Component.Attributes attr, ty_attr;
@@ -1370,7 +1370,9 @@ algorithm
     case SCode.COMPONENT(info = info)
       algorithm
         decl_mod := Modifier.fromElement(component, {}, parent);
-        mod := Modifier.merge(decl_mod, innerMod);
+        cc_mod := instConstrainingMod(component, parent);
+        mod := Modifier.merge(decl_mod, cc_mod);
+        mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
         mod := Modifier.addParent(node, mod);
         checkOuterComponentMod(mod, component, node);
@@ -1417,6 +1419,27 @@ algorithm
         ();
   end match;
 end instComponentDef;
+
+function instConstrainingMod
+  input SCode.Element element;
+  input InstNode parent;
+  output Modifier ccMod;
+algorithm
+  ccMod := match element
+    local
+      SCode.Mod smod;
+
+    case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+        SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
+      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), {}, parent);
+
+    case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+        SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
+      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), {}, parent);
+
+    else Modifier.NOMOD();
+  end match;
+end instConstrainingMod;
 
 function updateComponentConnectorType
   input output Component.Attributes attributes;
