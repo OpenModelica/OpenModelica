@@ -247,6 +247,8 @@ const5.mo \
 const6.mo \
 const7.mo \
 const8.mo \
+ConstrainingClass1.mo \
+ConstrainingClass2.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
