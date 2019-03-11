@@ -65,10 +65,6 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // 3/5 (3): $cse1 = CSE.f3(time, $cse2)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (2/45)
 // ========================================
 // 1: $cse1 - CSE.f3(time, $cse2) - {}

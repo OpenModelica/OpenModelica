@@ -31,14 +31,6 @@ simulate(CSE.wrapFunctionCalls12); getErrorString();
 // Final Results
 // ###############################################################
 //
-// ########### Updated Variable List (simulation) (0)
-// ========================================
-//
-//
-// ########### Updated Equation List (simulation) (0, 0)
-// ========================================
-//
-//
 // ########### Updated globalKnownVars (simulation) (3)
 // ========================================
 // 1: x:VARIABLE(unit = "s" fixed = true )  = sin(p1)  type: Real 

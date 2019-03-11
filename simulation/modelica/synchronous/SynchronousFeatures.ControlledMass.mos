@@ -76,14 +76,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -100,14 +92,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // ========================================
 // 1/1 (1): xdFast = $getPart(x)   [dynamic |0|0|0|0|]
 // 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -128,14 +112,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
 // 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
 // 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -160,14 +136,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -182,14 +150,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -233,14 +193,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -271,14 +223,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -297,14 +241,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
 // 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
 // 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -329,14 +265,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -351,14 +279,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching

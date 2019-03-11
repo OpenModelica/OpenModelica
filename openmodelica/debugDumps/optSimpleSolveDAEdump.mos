@@ -52,71 +52,11 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
 //
 // BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // pre-optimization done.
@@ -143,14 +83,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -168,58 +100,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -245,71 +125,11 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -335,14 +155,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 3
@@ -362,58 +174,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -439,14 +199,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -464,58 +216,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -541,14 +241,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -566,58 +258,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -643,14 +283,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -668,58 +300,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -745,14 +325,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -770,58 +342,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -847,14 +367,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -872,58 +384,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -949,14 +409,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): x = 0.5 * log((1.0 + 0.9 * sin(10.0 * time)) / (1.0 - 0.9 * sin(10.0 * time)))   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -974,58 +426,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: initialization
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.
@@ -1052,14 +452,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): z = if noEvent(x > 0.0) then y / 3.0 - 0.3333333333333333 else 0.2 * y - 0.4   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -1077,58 +469,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // BackendDAEType: simulation
-//
-//
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.

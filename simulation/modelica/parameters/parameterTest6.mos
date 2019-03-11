@@ -64,14 +64,6 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 3/3 (1): z = a[1] + a[2] + a[3] + s   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -96,54 +88,6 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 13: p3:PARAM()  = 5  type: Integer 
 // 14: p2:PARAM()  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
 // 15: p1:PARAM()  = 2  type: Integer 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -412,14 +356,6 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 3/3 (1): z = 6   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -444,54 +380,6 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 13: p3:PARAM(final = true )  = 5  type: Integer 
 // 14: p2:PARAM(final = true )  = -3  type: Integer 
 // 15: p1:PARAM(final = true )  = 2  type: Integer 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //

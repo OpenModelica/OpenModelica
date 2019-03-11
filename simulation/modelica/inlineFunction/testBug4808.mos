@@ -65,14 +65,6 @@ getErrorString();
 // 6/6 (1): vAt.im = 2.0 * time   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -83,54 +75,6 @@ getErrorString();
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: r:PARAM()  = 10.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult

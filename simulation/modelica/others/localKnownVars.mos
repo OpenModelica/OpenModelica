@@ -51,14 +51,6 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 // 1/1 (1): c = b + a   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -81,14 +73,6 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): der(x) = a   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -115,14 +99,6 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 // 1/1 (1): der(y) = b   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -138,58 +114,10 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (0)
-// ========================================
-//
-//
 // Known variables only depending on states and inputs - localKnownVars (2)
 // ========================================
 // 1: a:VARIABLE()  = sin(x)  type: Real 
 // 2: b:VARIABLE()  = cos(y)  type: Real 
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult

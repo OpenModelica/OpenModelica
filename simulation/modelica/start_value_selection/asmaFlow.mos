@@ -617,14 +617,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 1/1 (1): star.pin_n.i = 0.0   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -647,14 +639,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): ground.p.i = 0.0   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -681,14 +665,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -711,14 +687,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): $DER.ground.p.i = 0.0   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -745,14 +713,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 1/1 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -775,14 +735,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -809,14 +761,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 1/1 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -839,14 +783,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -873,14 +809,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 1/1 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -903,14 +831,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -1135,10 +1055,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 4/1 (0): algorithm
 //   assert(1.0 + aimc.squirrelCageR.alpha * (aimc.thermalAmbient.constTr.k - aimc.squirrelCageR.T_ref) >= 1e-15, "Temperature outside scope of model!");
 //    [dynamic |0|0|0|0|]
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -1572,18 +1488,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 259: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" fixed = true protected = true )  = max(abs(aimc.statorCoreParameters.wRef), aimc.statorCore.coreParameters.wMin)  "Limited angular velocity" type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (281)
 // ========================================
 // 1: const.y:VARIABLE()  = const.k  "Connector of Real output signal" type: Real 
@@ -1869,14 +1773,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 281: aimc.statorCore.w:VARIABLE(unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Remagnetization angular velocity" type: Real 
 //
 //
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
 // Zero Crossings (3)
 // ========================================
 // time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
@@ -1889,22 +1785,6 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
 // time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25]
 // time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26]
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult

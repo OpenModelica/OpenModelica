@@ -55,14 +55,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // end when;   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -77,14 +69,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): busBar1.phi = 0.0   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -103,14 +87,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): busBar1.I = busBar1.i[1]   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -125,14 +101,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): busBar1.V = busBar1.v[1]   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -159,14 +127,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 5/5 (1): system.thetaRef = system.theta   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -181,14 +141,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): fixedVoltageSource1.phi = 0.0   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -235,14 +187,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 //     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -257,14 +201,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): system.receiveFreq.w_h = 0.0   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -283,14 +219,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): system.receiveFreq.h = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -307,14 +235,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): system.receiveFreq.w_H = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -329,14 +249,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): system.receiveFreq.H = 0.0   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -370,56 +282,12 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 20: n:PARAM()  = 3  "number of loads" type: Integer 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
 // Simple Shared Equations (1, 1)
 // ========================================
 // 1/1 (0): for i in 1 : 3 loop 
 //     algorithm
 //   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
 // ; end for;    [dynamic |0|0|0|0|]
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Samples (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -439,14 +307,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): system.receiveFreq.H = 0.0   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -473,14 +333,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): system.receiveFreq.w_H = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -505,14 +357,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): system.receiveFreq.h = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -535,14 +379,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): system.receiveFreq.w_h = 0.0   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -595,14 +431,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 //     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
 // 13/21 (3): for i in 1 : 3 loop 
 //     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -653,14 +481,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): fixedVoltageSource1.phi = 0.0   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -691,14 +511,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
 // 4/4 (1): system.thetaRel = 0.0   [unknown |0|0|0|0|]
 // 5/5 (1): system.theta = system.thetaRef   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -733,14 +545,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): busBar1.V = busBar1.v[1]   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -763,14 +567,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): busBar1.I = busBar1.i[1]   [binding |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -797,14 +593,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): busBar1.phi = 0.0   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -829,14 +617,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 1/1 (1): when false then
 //   system.initime := time;
 // end when;   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -878,56 +658,12 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 20: n:PARAM()  = 3  "number of loads" type: Integer 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
 // Simple Shared Equations (1, 1)
 // ========================================
 // 1/1 (0): for i in 1 : 3 loop 
 //     algorithm
 //   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
 // ; end for;    [dynamic |0|0|0|0|]
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Samples (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult

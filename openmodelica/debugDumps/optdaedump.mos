@@ -92,14 +92,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -113,54 +105,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -206,14 +150,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -227,54 +163,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -320,14 +208,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -341,54 +221,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -434,14 +266,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -455,54 +279,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -546,14 +322,6 @@ buildModel(testOptdaedump); getErrorString();
 // 11/11 (1): v0 = 0.0   [dynamic |0|0|0|0|]
 // 12/12 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Incidence Matrix (row: equation)
@@ -605,54 +373,6 @@ buildModel(testOptdaedump); getErrorString();
 // 4: R1:PARAM()  = 1.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // pre-optimization module clockPartitioning (simulation)
@@ -696,14 +416,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -717,54 +429,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -810,14 +474,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -831,54 +487,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -924,14 +532,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -945,54 +545,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1038,14 +590,6 @@ buildModel(testOptdaedump); getErrorString();
 // 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1059,54 +603,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: L:PARAM()  = 0.5  type: Real 
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: R1:PARAM()  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1142,14 +638,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1166,56 +654,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1251,14 +695,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1275,56 +711,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1360,14 +752,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1384,56 +768,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1469,14 +809,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1493,56 +825,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1578,14 +866,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1602,56 +882,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // pre-optimization done.
@@ -1722,14 +958,6 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): uC = cos(time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 9 variables and equations
@@ -1767,56 +995,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1857,14 +1041,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): v0 = 0.0   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -1878,54 +1054,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: R2:PARAM()  = 2.0  type: Real 
 // 3: L:PARAM()  = 0.5  type: Real 
 // 4: C:PARAM()  = 3.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -1945,14 +1073,6 @@ buildModel(testOptdaedump); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -1988,14 +1108,6 @@ buildModel(testOptdaedump); getErrorString();
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -2009,54 +1121,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2: R2:PARAM()  = 2.0  type: Real 
 // 3: L:PARAM()  = 0.5  type: Real 
 // 4: C:PARAM()  = 3.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -2076,14 +1140,6 @@ buildModel(testOptdaedump); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -2126,14 +1182,6 @@ buildModel(testOptdaedump); getErrorString();
 // 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
 // 9/9 (1): $DER.uC = -sin(time)   [dynamic |0|0|0|0|]
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -2175,54 +1223,6 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // post-optimization module tearingSystem (initialization)
@@ -2240,14 +1240,6 @@ buildModel(testOptdaedump); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -2292,14 +1284,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -2340,54 +1324,6 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // post-optimization module solveSimpleEquations (initialization)
@@ -2405,14 +1341,6 @@ buildModel(testOptdaedump); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -2457,14 +1385,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -2505,54 +1425,6 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // pre-optimization module removeEqualFunctionCalls (jacobian)
@@ -2576,14 +1448,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 // 3/3 (1): u1.$pDERLSJac0.dummyVarLSJac0 = -uL.SeedLSJac0   [dynamic |0|0|0|0|]
 // 4/4 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Incidence Matrix (row: equation)
@@ -2622,54 +1486,6 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // pre-optimization module removeSimpleEquations (jacobian)
@@ -2693,14 +1509,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -2721,53 +1529,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -2793,14 +1557,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -2821,53 +1577,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // pre-optimization done.
@@ -2894,14 +1606,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -2934,53 +1638,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3006,14 +1666,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3046,53 +1698,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3118,14 +1726,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3158,53 +1758,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3230,14 +1786,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3270,53 +1818,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3342,14 +1846,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3382,53 +1878,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3454,14 +1906,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3494,53 +1938,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3566,14 +1966,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3606,53 +1998,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3678,14 +2026,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -3718,53 +2058,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.
@@ -3787,14 +2083,6 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -3837,14 +2125,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -3883,54 +2163,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -3952,14 +2184,6 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -4002,14 +2226,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4048,54 +2264,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4117,14 +2285,6 @@ buildModel(testOptdaedump); getErrorString();
 // 1/1 (1): v0 = 0.0   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -4167,14 +2327,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): iL = $START.iL   [initial |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4213,54 +2365,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3: R2:PARAM()  = 2.0  type: Real 
 // 4: L:PARAM()  = 0.5  type: Real 
 // 5: C:PARAM()  = 3.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.
@@ -4297,14 +2401,6 @@ buildModel(testOptdaedump); getErrorString();
 // 7/7 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
 // 8/8 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 // 9/9 (1): uC = cos(time)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Matching
@@ -4344,56 +2440,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4433,14 +2485,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4480,56 +2524,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4569,14 +2569,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4616,56 +2608,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4705,14 +2653,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4752,56 +2692,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4841,14 +2737,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -4888,56 +2776,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: C:PARAM()  = 3.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -4977,14 +2821,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -5024,56 +2860,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5113,14 +2905,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -5160,56 +2944,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5249,14 +2989,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -5296,56 +3028,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5385,14 +3073,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -5433,56 +3113,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5522,14 +3158,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -5570,56 +3198,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5645,14 +3229,6 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): u1.$pDERLSJac1.dummyVarLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 // 3/3 (1): u1.$pDERLSJac1.dummyVarLSJac1 = -uL.SeedLSJac1   [dynamic |0|0|0|0|]
 // 4/4 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // Incidence Matrix (row: equation)
@@ -5691,54 +3267,6 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
-//
-//
 //
 // ########################################
 // pre-optimization module removeSimpleEquations (jacobian)
@@ -5762,14 +3290,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -5790,53 +3310,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -5862,14 +3338,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -5890,53 +3358,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // pre-optimization done.
@@ -5963,14 +3387,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6003,53 +3419,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6075,14 +3447,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6115,53 +3479,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6187,14 +3507,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6227,53 +3539,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6299,14 +3567,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6339,53 +3599,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6411,14 +3627,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6451,53 +3659,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6523,14 +3687,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6563,53 +3719,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6635,14 +3747,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6675,53 +3779,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -6747,14 +3807,6 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -6787,53 +3839,9 @@ buildModel(testOptdaedump); getErrorString();
 // 9: input i1:VARIABLE()  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (1)
 // ========================================
 // 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.
@@ -6874,14 +3882,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -6922,56 +3922,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7011,14 +3967,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7059,56 +4007,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7148,14 +4052,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7196,56 +4092,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7285,14 +4137,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7333,56 +4177,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7422,14 +4222,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7470,56 +4262,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7559,14 +4307,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7607,56 +4347,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7696,14 +4392,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7744,56 +4432,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -7833,14 +4477,6 @@ buildModel(testOptdaedump); getErrorString();
 // 10/10 (1): $DER.uC = -$cse1   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 10 variables and equations
@@ -7881,56 +4517,12 @@ buildModel(testOptdaedump); getErrorString();
 // 5: v0:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (4)
 // ========================================
 // 1: u0:VARIABLE()  = uC  type: Real 
 // 2: u2:VARIABLE()  = uL  type: Real 
 // 3: v1:VARIABLE()  = uC  type: Real 
 // 4: v2:VARIABLE()  = uL  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // post-optimization done.

@@ -68,10 +68,6 @@ simulate(CSE.FunctionCallTest1); getErrorString();
 // 5/5 (1): x = sin(time * $cse1)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (3/45)
 // ========================================
 // 1: x - sin(time * $cse1) - {}

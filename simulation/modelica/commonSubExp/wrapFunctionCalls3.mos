@@ -55,10 +55,6 @@ simulate(CSE.wrapFunctionCalls3); getErrorString();
 // 2/2 (2): ($cse1, b, _) = CSE.wrapFunctionCalls3.f1(time)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (1/44)
 // ========================================
 // 1: ($cse1, b, _) - CSE.wrapFunctionCalls3.f1(time) - {}

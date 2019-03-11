@@ -57,10 +57,6 @@ simulate(CSE.TestCall7); getErrorString();
 // 2/3 (2): $cse1 = CSE.TestCall7.func(time)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (1/44)
 // ========================================
 // 1: $cse1 - CSE.TestCall7.func(time) - {}

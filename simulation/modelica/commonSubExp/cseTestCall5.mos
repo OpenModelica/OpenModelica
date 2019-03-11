@@ -52,10 +52,6 @@ simulate(CSE.TestCall5); getErrorString();
 // 1/1 (1): a = CSE.TestCall5.f(time)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (1/43)
 // ========================================
 // 1: a - CSE.TestCall5.f(time) - {}

@@ -52,23 +52,11 @@ translateModel(WhenClocks); getErrorString();
 // clocked partition(1)
 // ========================================
 //
-// Variables (0)
-// ========================================
-//
-//
-// Equations (0, 0)
-// ========================================
-//
-//
 // Simple Equations (1, 0)
 // ========================================
 // 1/1 (0): algorithm
 //   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
 //    [dynamic |0|0|0|0|]
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -95,23 +83,11 @@ translateModel(WhenClocks); getErrorString();
 // clocked partition(1)
 // ========================================
 //
-// Variables (0)
-// ========================================
-//
-//
-// Equations (0, 0)
-// ========================================
-//
-//
 // Simple Equations (1, 0)
 // ========================================
 // 1/1 (0): algorithm
 //   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
 //    [dynamic |0|0|0|0|]
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching

@@ -73,14 +73,6 @@ val(y[10], 1.0);
 //     der(integrator1[$i].y) = integrator1[$i].k * integrator1[$i].u; end for;    [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -101,45 +93,9 @@ val(y[10], 1.0);
 // 9: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10]  [10]
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
 // Initial Equations (1, 1)
 // ========================================
 // 1/1 (10): integrator1.y = integrator1.y_start   [dynamic |0|0|0|0|]
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Samples (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
 //
 //
 // Base partitions (1)
@@ -183,14 +139,6 @@ val(y[10], 1.0);
 //     (integrator1[i].y - previous(integrator1[i].y)) / interval() = if firstTick() then 0.0 else $DER.integrator1[i].y; end for;    [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 6 variables and equations
@@ -227,46 +175,6 @@ val(y[10], 1.0);
 // 7: periodicClock1.period:PARAM(unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real 
 // 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true )  type: Real[10]  [10]
 // 9: n:PARAM()  = 10  type: Integer 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Samples (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
 //
 //
 // Base partitions (1)

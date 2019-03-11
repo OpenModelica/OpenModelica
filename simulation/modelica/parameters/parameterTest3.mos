@@ -42,22 +42,6 @@ simulate(parameterTest3); getErrorString();
 // unknown partition
 // ========================================
 //
-// Variables (0)
-// ========================================
-//
-//
-// Equations (0, 0)
-// ========================================
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -70,54 +54,6 @@ simulate(parameterTest3); getErrorString();
 // 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
 // 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
 // 3: b1:PARAM()  = false  type: Boolean 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //

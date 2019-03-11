@@ -60,10 +60,6 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // 2/2 (1): y = CSE.f4(time, $cse1)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (2/43)
 // ========================================
 // 1: y - CSE.f4(time, $cse1) - {}

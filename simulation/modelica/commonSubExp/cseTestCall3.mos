@@ -56,10 +56,6 @@ simulate(CSE.TestCall3); getErrorString();
 // 2/2 (1): b = CSE.TestCall3.f(a)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (1/44)
 // ========================================
 // 1: b - CSE.TestCall3.f(a) - {}

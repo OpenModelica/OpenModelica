@@ -53,10 +53,6 @@ simulate(CSE.TestCall2); getErrorString();
 // 1/1 (2): (f.x, f.y) = CSE.TestCall2.func(time)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (1/44)
 // ========================================
 // 1: (f.x, f.y) - CSE.TestCall2.func(time) - {}

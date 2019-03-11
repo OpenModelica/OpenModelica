@@ -64,10 +64,6 @@ simulate(CSE.TestCall6); getErrorString();
 // 2/3 (1): a = CSE.TestCall6.f2($cse1)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (2/43)
 // ========================================
 // 1: a - CSE.TestCall6.f2($cse1) - {}

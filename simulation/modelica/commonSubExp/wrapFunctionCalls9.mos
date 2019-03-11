@@ -42,14 +42,6 @@ simulate(CSE.wrapFunctionCalls9); getErrorString();
 // Final Results
 // ###############################################################
 //
-// ########### Updated Variable List (simulation) (0)
-// ========================================
-//
-//
-// ########### Updated Equation List (simulation) (0, 0)
-// ========================================
-//
-//
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
 // 1: p1:PARAM()  = 5.0  type: Real 

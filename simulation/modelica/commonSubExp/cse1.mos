@@ -150,10 +150,6 @@ simulate(Tearing15); getErrorString();
 // 10/10 (1): source = sin(time)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (3/50)
 // ========================================
 // 1: source - sin(time) - {}

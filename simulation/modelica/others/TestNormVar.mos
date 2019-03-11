@@ -74,14 +74,6 @@ simulate(foo,stopTime=0);
 // 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 5 variables and equations
@@ -108,54 +100,6 @@ simulate(foo,stopTime=0);
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult
@@ -194,14 +138,6 @@ simulate(foo,stopTime=0);
 // 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 5 variables and equations
@@ -228,54 +164,6 @@ simulate(foo,stopTime=0);
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult
@@ -316,14 +204,6 @@ simulate(foo,stopTime=0);
 // 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 6 variables and equations
@@ -352,54 +232,6 @@ simulate(foo,stopTime=0);
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
 // 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // record SimulationResult

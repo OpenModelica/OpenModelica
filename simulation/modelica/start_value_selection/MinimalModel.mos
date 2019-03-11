@@ -41,22 +41,6 @@ buildModel(MinimalModel); getErrroString();
 // unknown partition
 // ========================================
 //
-// Variables (0)
-// ========================================
-//
-//
-// Equations (0, 0)
-// ========================================
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 0 variables and equations
@@ -76,55 +60,11 @@ buildModel(MinimalModel); getErrroString();
 // 2: b:VARIABLE(fixed = true )  = 0.0  type: Real 
 //
 //
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
 // Alias Variables (3)
 // ========================================
 // 1: d:VARIABLE()  = -(-const_k)  type: Real 
 // 2: c:VARIABLE()  = -const_k  type: Real 
 // 3: a:VARIABLE()  = const_k  type: Real 
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 // {"MinimalModel","MinimalModel_init.xml"}

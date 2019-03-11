@@ -59,14 +59,6 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -83,14 +75,6 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // ========================================
 // 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
 // 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -131,14 +115,6 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -167,14 +143,6 @@ translateModel(SynchronousFeatures.SpeedControl); getErrorString();
 // ========================================
 // 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
 // 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching

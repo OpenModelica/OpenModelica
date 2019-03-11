@@ -95,14 +95,6 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -119,54 +111,6 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 5: b1:PARAM(final = true )  = false  type: Boolean 
 // 6: p2:PARAM()  = 2.0  type: Real 
 // 7: p1:PARAM(final = true )  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //
@@ -330,14 +274,6 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 1/1 (1): x = parameterTest.sub(3.0, 1.0, p5, true)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -354,54 +290,6 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // 5: b1:PARAM(final = true )  = false  type: Boolean 
 // 6: p2:PARAM(final = true )  = 2.0  type: Real 
 // 7: p1:PARAM(final = true )  = 1.0  type: Real 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //

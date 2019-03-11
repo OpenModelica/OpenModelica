@@ -64,10 +64,6 @@ simulate(CSE.wrapFunctionCalls4); getErrorString();
 // 5/6 (1): x = sin($cse1)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (simulation) (0)
-// ========================================
-//
-//
 // ########### CSE Replacements (5/45)
 // ========================================
 // 1: x - sin($cse1) - {}

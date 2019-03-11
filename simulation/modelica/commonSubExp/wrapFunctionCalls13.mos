@@ -123,14 +123,6 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // 1/1 (1): $cse2 = CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1)   [binding |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 1 variables and equations
@@ -161,14 +153,6 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // 4/4 (1): x = $cse1 - CSE.wrapFunctionCalls13.f1(0.0, p1, 2 * p1)   [unknown |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 4 variables and equations
@@ -195,54 +179,6 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // 1: p1:PARAM()  = 5  type: Integer 
 // 2: dat.d1 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
 // 3: dat.d2 in dat:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls13.f2(p1, 2 * p1)  type: Integer 
-//
-//
-// Known variables only depending on states and inputs - localKnownVars (0)
-// ========================================
-//
-//
-// External Objects (0)
-// ========================================
-//
-//
-// Classes of External Objects (0)
-// ========================================
-//
-//
-// Alias Variables (0)
-// ========================================
-//
-//
-// Simple Shared Equations (0, 0)
-// ========================================
-//
-//
-// Initial Equations (0, 0)
-// ========================================
-//
-//
-// Zero Crossings (0)
-// ========================================
-//
-//
-// Relations (0)
-// ========================================
-//
-//
-// Time Events (0)
-// ========================================
-//
-//
-// Constraints (0)
-// ========================================
-//
-//
-// Base partitions (0)
-// ========================================
-//
-//
-// Sub partitions (0)
-// ========================================
 //
 //
 //

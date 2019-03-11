@@ -69,14 +69,6 @@ translateModel(test_subSample); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -95,14 +87,6 @@ translateModel(test_subSample); getErrorString();
 // 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -119,14 +103,6 @@ translateModel(test_subSample); getErrorString();
 // 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -141,14 +117,6 @@ translateModel(test_subSample); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
@@ -191,14 +159,6 @@ translateModel(test_subSample); getErrorString();
 // 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // Matching
 // ========================================
 // 3 variables and equations
@@ -229,14 +189,6 @@ translateModel(test_subSample); getErrorString();
 // 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -253,14 +205,6 @@ translateModel(test_subSample); getErrorString();
 // 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
 //
 //
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
-//
-//
 // no matching
 //
 //
@@ -275,14 +219,6 @@ translateModel(test_subSample); getErrorString();
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
-//
-//
-// Simple Equations (0, 0)
-// ========================================
-//
-//
-// State Sets
-// ========================================
 //
 //
 // no matching
