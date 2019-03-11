@@ -674,18 +674,22 @@ public function dumpBasePartitions
   input array<BackendDAE.BasePartition> basePartitions;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(arrayLength(basePartitions)) + ")\n" + UNDERLINE + "\n");
-  printBasePartitions(basePartitions);
-  print("\n");
+  if arrayLength(basePartitions) > 0 then
+    print("\n" + heading + " (" + intString(arrayLength(basePartitions)) + ")\n" + UNDERLINE + "\n");
+    printBasePartitions(basePartitions);
+    print("\n");
+  end if;
 end dumpBasePartitions;
 
 public function dumpSubPartitions
   input array<BackendDAE.SubPartition> subPartitions;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(arrayLength(subPartitions)) + ")\n" + UNDERLINE + "\n");
-  printSubPartitions(subPartitions);
-  print("\n");
+  if arrayLength(subPartitions) > 0 then
+    print("\n" + heading + " (" + intString(arrayLength(subPartitions)) + ")\n" + UNDERLINE + "\n");
+    printSubPartitions(subPartitions);
+    print("\n");
+  end if;
 end dumpSubPartitions;
 
 
@@ -693,9 +697,11 @@ public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(BackendVariable.varsSize(inVars)) + ")\n" + UNDERLINE + "\n");
-  printVariables(inVars);
-  print("\n");
+  if BackendVariable.varsSize(inVars) > 0 then
+    print("\n" + heading + " (" + intString(BackendVariable.varsSize(inVars)) + ")\n" + UNDERLINE + "\n");
+    printVariables(inVars);
+    print("\n");
+  end if;
 end dumpVariables;
 
 public function dumpVarList "function dumpVarList"
@@ -711,36 +717,44 @@ public function dumpEquationArray "function dumpEquationArray"
   input BackendDAE.EquationArray inEqns;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(BackendEquation.equationList(inEqns))) + ", " + intString(BackendEquation.equationArraySize(inEqns)) + ")\n" + UNDERLINE + "\n");
-  printEquationArray(inEqns);
-  print("\n");
+  if BackendEquation.getNumberOfEquations(inEqns) + BackendEquation.equationArraySize(inEqns) > 0 then
+    print("\n" + heading + " (" + intString(BackendEquation.getNumberOfEquations(inEqns)) + ", " + intString(BackendEquation.equationArraySize(inEqns)) + ")\n" + UNDERLINE + "\n");
+    printEquationArray(inEqns);
+    print("\n");
+  end if;
 end dumpEquationArray;
 
 public function dumpEquationList "function dumpEquationList"
   input list<BackendDAE.Equation> inEqns;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inEqns)) + ")\n" + UNDERLINE + "\n");
-  printEquationList(inEqns);
-  print("\n");
+  if not listEmpty(inEqns) then
+    print("\n" + heading + " (" + intString(listLength(inEqns)) + ")\n" + UNDERLINE + "\n");
+    printEquationList(inEqns);
+    print("\n");
+  end if;
 end dumpEquationList;
 
 protected function dumpExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses inEOC;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inEOC)) + ")\n" + UNDERLINE + "\n");
-  printExternalObjectClasses(inEOC);
-  print("\n");
+  if not listEmpty(inEOC) then
+    print("\n" + heading + " (" + intString(listLength(inEOC)) + ")\n" + UNDERLINE + "\n");
+    printExternalObjectClasses(inEOC);
+    print("\n");
+  end if;
 end dumpExternalObjectClasses;
 
 protected function dumpStateSets
   input BackendDAE.StateSets stateSets;
   input String heading;
 algorithm
-  print("\n" + heading + "\n" + UNDERLINE + "\n");
-  printStateSets(stateSets);
-  print("\n");
+  if not listEmpty(stateSets) then
+    print("\n" + heading + "\n" + UNDERLINE + "\n");
+    printStateSets(stateSets);
+    print("\n");
+  end if;
 end dumpStateSets;
 
 public function dumpZeroCrossingList
@@ -749,11 +763,13 @@ public function dumpZeroCrossingList
 protected
   BackendDAE.ZeroCrossing zeroCrossing;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inZeroCrossingList)) + ")\n" + UNDERLINE + "\n");
-  for zeroCrossing in inZeroCrossingList loop
-    print(zeroCrossingString(zeroCrossing) + "\n");
-  end for;
-  print("\n");
+  if not listEmpty(inZeroCrossingList) then
+    print("\n" + heading + " (" + intString(listLength(inZeroCrossingList)) + ")\n" + UNDERLINE + "\n");
+    for zeroCrossing in inZeroCrossingList loop
+      print(zeroCrossingString(zeroCrossing) + "\n");
+    end for;
+    print("\n");
+  end if;
 end dumpZeroCrossingList;
 
 public function dumpTimeEvents
@@ -762,20 +778,24 @@ public function dumpTimeEvents
 protected
   BackendDAE.TimeEvent timeEvent;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inTimeEvents)) + ")\n" + UNDERLINE + "\n");
-  for timeEvent in inTimeEvents loop
-    print(timeEventString(timeEvent) + "\n");
-  end for;
-  print("\n");
+  if not listEmpty(inTimeEvents) then
+    print("\n" + heading + " (" + intString(listLength(inTimeEvents)) + ")\n" + UNDERLINE + "\n");
+    for timeEvent in inTimeEvents loop
+      print(timeEventString(timeEvent) + "\n");
+    end for;
+    print("\n");
+  end if;
 end dumpTimeEvents;
 
 protected function dumpConstraintList
   input list<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inConstraintArray)) + ")\n" + UNDERLINE + "\n");
-  dumpConstraints(inConstraintArray, 0);
-  print("\n");
+  if not listEmpty(inConstraintArray) then
+    print("\n" + heading + " (" + intString(listLength(inConstraintArray)) + ")\n" + UNDERLINE + "\n");
+    dumpConstraints(inConstraintArray, 0);
+    print("\n");
+  end if;
 end dumpConstraintList;
 
 public function dumpHashSet "author lochel"
