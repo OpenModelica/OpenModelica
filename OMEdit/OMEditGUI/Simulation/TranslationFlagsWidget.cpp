@@ -35,7 +35,7 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "Simulation/SimulationOptions.h"
-#include "util/Utilities.h"
+#include "Util/Utilities.h"
 
 #include <QDesktopServices>
 #include <QMessageBox>
