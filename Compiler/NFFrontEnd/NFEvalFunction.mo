@@ -881,6 +881,7 @@ function isKnownLibraryExp
 algorithm
   isKnown := match exp
     case Absyn.STRING("ModelicaExternalC") then true;
+    case Absyn.STRING("ModelicaIO") then true;
     case Absyn.ARRAY() then List.exist(exp.arrayExp, isKnownLibraryExp);
     else false;
   end match;
@@ -920,6 +921,7 @@ algorithm
       Integer i, i2;
       Boolean b;
       Real r;
+      Integer dims[2];
 
     case ("ModelicaInternal_countLines", {Expression.STRING(s1)})
       then Expression.INTEGER(ModelicaExternalC.Streams_countLines(s1));
@@ -975,6 +977,12 @@ algorithm
       then Expression.STRING(System.substring(s1, i, i2));
 
     case ("OpenModelica_regex", _) then evaluateOpenModelicaRegex(args);
+
+    case ("ModelicaIO_readMatrixSizes", {Expression.STRING(s1), Expression.STRING(s2)})
+      algorithm
+        dims := ModelicaExternalC.Streams_readMatrixSize(s1, s2);
+      then
+        Expression.ARRAY(Type.INTEGER(), {Expression.INTEGER(dims[1]), Expression.INTEGER(dims[2])}, true);
 
     else
       algorithm

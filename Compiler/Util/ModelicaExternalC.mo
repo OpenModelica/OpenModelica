@@ -95,7 +95,6 @@ function Strings_advanced_scanReal
   external "C" ModelicaStrings_scanReal(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
 end Strings_advanced_scanReal;
 
-
 function Strings_advanced_skipWhiteSpace
   input String string;
   input Integer startIndex(min = 1) = 1;
@@ -103,6 +102,14 @@ function Strings_advanced_skipWhiteSpace
 
   external "C" nextIndex = ModelicaStrings_skipWhiteSpace(string,startIndex) annotation(Library = "ModelicaExternalC");
 end Strings_advanced_skipWhiteSpace;
+
+function Streams_readMatrixSize
+  input String fileName;
+  input String matrixName;
+  output Integer[2] dim;
+
+  external "C" ModelicaIO_readMatrixSizes(fileName, matrixName, dim) annotation(Library = {"ModelicaIO", "ModelicaMatIO", "zlib"});
+end Streams_readMatrixSize;
 
 annotation(__OpenModelica_Interface="util");
 end ModelicaExternalC;
