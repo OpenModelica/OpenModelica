@@ -284,7 +284,7 @@ public:
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries();
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
+                                         bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
   LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
@@ -334,7 +334,7 @@ public:
   void updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
 private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
-                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
+                                             bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
   void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                         int row = -1);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);

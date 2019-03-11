@@ -248,17 +248,11 @@ bool LibraryTreeItem::isDocumentationClass()
 LibraryTreeItem::Access LibraryTreeItem::getAccess()
 {
   /* Activate the access annotations if the class is encrypted
-   * OR if the activate access annotations option is set
-   * OR if the LibraryTreeItem's mAccessAnnotations is marked true.
+   * OR if the LibraryTreeItem's mAccessAnnotations is marked true based on the activate access annotation setting.
    */
   bool isEncryptedClass = mFileName.endsWith(".moc");
-  bool activateAccessAnnotations = false;
-  QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-  if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always) {
-    activateAccessAnnotations = true;
-  }
 
-  if (isEncryptedClass || activateAccessAnnotations || isAccessAnnotationsEnabled()) {
+  if (isEncryptedClass || isAccessAnnotationsEnabled()) {
     if (mClassInformation.access.compare("Access.hide") == 0) {
       return LibraryTreeItem::hide;
     } else if (mClassInformation.access.compare("Access.icon") == 0) {
@@ -1352,20 +1346,20 @@ void LibraryTreeModel::addModelicaLibraries()
  * \param row
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                         bool isSystemLibrary, bool load, int row, bool loadingMOL)
+                                                         bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, loadingMOL);
+    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, activateAccessAnnotations);
   } else {
     if (row == -1) {
       row = pParentLibraryTreeItem->childrenSize();
     }
     QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
     beginInsertRows(index, row, row);
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, loadingMOL);
+    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, activateAccessAnnotations);
     endInsertRows();
   }
   return pLibraryTreeItem;
@@ -2600,14 +2594,14 @@ void LibraryTreeModel::updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *p
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved,
-                                                             bool isSystemLibrary, bool load, int row, bool loadingMOL)
+                                                             bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
   if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    pLibraryTreeItem->setAccessAnnotations(loadingMOL);
+    pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
     createNonExistingLibraryTreeItem(pLibraryTreeItem, pParentLibraryTreeItem, isSaved, row);
     if (load) {
       // create library tree items
@@ -2621,7 +2615,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     OMCInterface::getClassInformation_res classInformation = pOMCProxy->getClassInformation(nameStructure);
     pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, classInformation, "", isSaved, pParentLibraryTreeItem);
     pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    pLibraryTreeItem->setAccessAnnotations(loadingMOL);
+    pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
     if (row == -1) {
       row = pParentLibraryTreeItem->childrenSize();
     }
@@ -4218,8 +4212,13 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
+        bool activateAccessAnnotations = true;
+        QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
+        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Never) {
+          activateAccessAnnotations = false;
+        }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1, activateAccessAnnotations);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
@@ -4289,13 +4288,13 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool loadingMOL = false;
+        bool activateAccessAnnotations = true;
         QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Loading) {
-          loadingMOL = true;
+        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Never) {
+          activateAccessAnnotations = false;
         }
         foreach (QString model, classesList) {
-          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, loadingMOL);
+          mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, true, true, -1, activateAccessAnnotations);
           mpLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
