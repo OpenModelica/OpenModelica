@@ -38,6 +38,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QToolButton>
 
 class SimulationOptions;
 class Label;
