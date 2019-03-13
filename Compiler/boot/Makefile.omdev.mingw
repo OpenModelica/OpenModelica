@@ -25,7 +25,7 @@ OMENCRYPTIONLIBS=
 endif
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
--lModelicaExternalC -lModelicaIO -lModelicaMatIO -lm \
+-lModelicaExternalC -lModelicaIO -lModelicaMatIO -lhdf5 -lszip -lm \
 -lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 -lws2_32 -limagehlp \
 -lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
 -Wl,--enable-stdcall-fixup -Bstatic -lstdc++ -Bdynamic -static-libgcc \
