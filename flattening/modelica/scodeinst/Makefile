@@ -688,6 +688,9 @@ RecordExtends1.mo \
 RecordExtends2.mo \
 RecursiveExtends1.mo \
 RecursiveExtends3.mo \
+RecursiveInst1.mo \
+RecursiveInst2.mo \
+RecursiveInst3.mo \
 RedeclareClass1.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
