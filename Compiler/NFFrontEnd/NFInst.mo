@@ -186,7 +186,7 @@ function instantiate
 algorithm
   node := partialInstClass(node);
   node := expandClass(node);
-  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, parent);
+  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
 end instantiate;
 
 function expand
@@ -705,6 +705,7 @@ function instClass
   input Modifier modifier;
   input output Component.Attributes attributes = NFComponent.DEFAULT_ATTR;
   input Boolean useBinding;
+  input Integer instLevel;
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
   Class cls;
@@ -721,7 +722,7 @@ algorithm
     fail();
   end if;
 
-  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent);
+  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel);
 end instClass;
 
 function instClassDef
@@ -731,6 +732,7 @@ function instClassDef
   input Boolean useBinding;
   input output InstNode node;
   input InstNode parent;
+  input Integer instLevel;
 protected
   InstNode par, base_node;
   Class inst_cls;
@@ -768,7 +770,7 @@ algorithm
         applyModifier(mod, cls_tree, InstNode.name(node));
 
         // Apply element redeclares.
-        ClassTree.mapRedeclareChains(cls_tree, redeclareElements);
+        ClassTree.mapRedeclareChains(cls_tree, function redeclareElements(instLevel = instLevel));
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
@@ -777,12 +779,12 @@ algorithm
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = ExtendsVisibility.PUBLIC));
+                               visibility = ExtendsVisibility.PUBLIC, instLevel = instLevel + 1));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-                                 originalAttr = NONE(), useBinding = useBinding));
+                                 originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel + 1));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -804,7 +806,7 @@ algorithm
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
 
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, par);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -848,7 +850,7 @@ algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node);
-        node := instClass(node, outerMod, attributes, useBinding, parent);
+        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent);
         updateComponentType(parent, node);
       then
         ();
@@ -995,6 +997,7 @@ function instExtends
   input Component.Attributes attributes;
   input Boolean useBinding;
   input ExtendsVisibility visibility;
+  input Integer instLevel;
 protected
   Class cls, inst_cls;
   ClassTree cls_tree;
@@ -1023,11 +1026,12 @@ algorithm
         end if;
 
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, useBinding = useBinding, visibility = vis));
+          function instExtends(attributes = attributes, useBinding = useBinding,
+                               visibility = vis, instLevel = instLevel));
 
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-            originalAttr = NONE(), useBinding = useBinding));
+            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel));
       then
         ();
 
@@ -1037,7 +1041,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis);
+        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel);
         node := InstNode.updateClass(cls, node);
       then
         ();
@@ -1160,17 +1164,23 @@ end redeclareClasses;
 
 function redeclareElements
   input list<Mutable<InstNode>> chain;
+  input Integer instLevel;
 protected
   InstNode node;
   Mutable<InstNode> node_ptr;
 algorithm
   node := Mutable.access(listHead(chain));
+  node_ptr := listHead(chain);
 
   if InstNode.isClass(node) then
-    node_ptr := redeclareClassElement(cls_ptr for cls_ptr in chain);
+    for cls_ptr in listRest(chain) loop
+      node_ptr := redeclareClassElement(cls_ptr, node_ptr);
+    end for;
     node := Mutable.access(node_ptr);
   else
-    node_ptr := redeclareComponentElement(comp_ptr for comp_ptr in chain);
+    for comp_ptr in listRest(chain) loop
+      node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel);
+    end for;
     node := Mutable.access(node_ptr);
   end if;
 
@@ -1195,14 +1205,15 @@ end redeclareClassElement;
 function redeclareComponentElement
   input Mutable<InstNode> redeclareComp;
   input Mutable<InstNode> replaceableComp;
+  input Integer instLevel;
   output Mutable<InstNode> outComp;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node);
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node, instLevel);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
 
@@ -1301,6 +1312,7 @@ function instComponent
   input Component.Attributes attributes "Attributes to be propagated to the component.";
   input Modifier innerMod;
   input Boolean useBinding "Ignore the component's binding if false.";
+  input Integer instLevel;
   input Option<Component.Attributes> originalAttr = NONE();
 protected
   Component comp;
@@ -1317,6 +1329,8 @@ algorithm
 
   // Skip already instantiated components.
   if not Component.isDefinition(comp) then
+    // An already instantiated component might be due to an instantiation loop, check it.
+    checkRecursiveDefinition(Component.classInstance(comp), comp_node, limitReached = false);
     return;
   end if;
 
@@ -1325,7 +1339,7 @@ algorithm
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
     instComponentDef(def, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR,
-      useBinding, comp_node, parent, originalAttr, isRedeclared = true);
+      useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared = true);
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
 
@@ -1337,9 +1351,9 @@ algorithm
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, originalAttr);
+    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr);
   end if;
 end instComponent;
 
@@ -1351,6 +1365,7 @@ function instComponentDef
   input Boolean useBinding;
   input InstNode node;
   input InstNode parent;
+  input Integer instLevel;
   input Option<Component.Attributes> originalAttr = NONE();
   input Boolean isRedeclared = false;
 algorithm
@@ -1403,7 +1418,7 @@ algorithm
 
         // Instantiate the type of the component.
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
-          useBinding and not Binding.isBound(binding), parent, node, info);
+          useBinding and not Binding.isBound(binding), parent, node, info, instLevel);
         ty := InstNode.getClass(ty_node);
 
         // Update the component's variability based on its type (e.g. Integer is discrete).
@@ -1491,6 +1506,7 @@ function redeclareComponent
   input Modifier constrainingMod;
   input Component.Attributes outerAttr;
   input InstNode redeclaredNode;
+  input Integer instLevel;
 protected
   Component orig_comp, rdcl_comp, new_comp;
   Binding binding, condition;
@@ -1513,7 +1529,7 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true, SOME(Component.getAttributes(orig_comp)));
+  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)));
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
@@ -1855,6 +1871,7 @@ function instTypeSpec
   input InstNode scope;
   input InstNode parent;
   input SourceInfo info;
+  input Integer instLevel;
   output InstNode node;
   output Component.Attributes outAttributes;
 algorithm
@@ -1862,8 +1879,13 @@ algorithm
     case Absyn.TPATH()
       algorithm
         node := Lookup.lookupClassName(typeSpec.path, scope, info);
+
+        if instLevel >= 100 then
+          checkRecursiveDefinition(node, parent, limitReached = true);
+        end if;
+
         node := expand(node);
-        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, parent);
+        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent);
       then
         node;
 
@@ -1875,6 +1897,48 @@ algorithm
 
   end match;
 end instTypeSpec;
+
+function checkRecursiveDefinition
+  "Prints an error if a component causes a loop in the instance tree, for
+   example because it has the same type as one of its parents. If the depth
+   limit of the instance tree is reached, indicated by limitReached = true, then
+   some error is always given. Otherwise an error is only given if an actual
+   issue can be detected."
+  input InstNode componentType;
+  input InstNode component;
+  input Boolean limitReached;
+protected
+  InstNode parent = InstNode.parent(component);
+  InstNode parent_type;
+algorithm
+  // Functions can contain instances of a parent, e.g. in equalityConstraint
+  // functions, so skip this check for functions.
+  if not Class.isFunction(InstNode.getClass(parent)) then
+    // Check whether any parent of the component has the same type as the component.
+    while not InstNode.isEmpty(parent) loop
+      parent_type := InstNode.classScope(parent);
+
+      // Check equality by comparing the definitions, because comparing the
+      // nodes or instances in the nodes is unreliable due to instantiation
+      // creating new nodes.
+      if referenceEq(InstNode.definition(componentType), InstNode.definition(parent_type)) then
+        Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
+          {InstNode.name(component), InstNode.name(InstNode.classScope(InstNode.parent(component)))},
+          InstNode.info(component));
+        fail();
+      end if;
+
+      parent := InstNode.parent(parent);
+    end while;
+  end if;
+
+  if limitReached then
+    // If we couldn't determine the exact cause of the recursion, print a generic error.
+    Error.addSourceMessage(Error.INST_RECURSION_LIMIT_REACHED,
+      {Absyn.pathString(InstNode.scopePath(component))}, InstNode.info(component));
+    fail();
+  end if;
+end checkRecursiveDefinition;
 
 function instDimension
   input output Dimension dimension;
@@ -3039,7 +3103,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true);
+      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
