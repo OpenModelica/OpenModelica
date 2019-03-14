@@ -1537,7 +1537,7 @@ function evalCast
   input Type castTy;
   output Expression exp;
 algorithm
-  exp := Expression.typeCast(castExp, Type.elementType(castTy));
+  exp := Expression.typeCast(castExp, castTy);
 
   // Expression.typeCast will just create a CAST if it can't typecast
   // the expression, so make sure we actually got something else back.

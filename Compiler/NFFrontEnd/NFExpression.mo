@@ -815,41 +815,74 @@ public
     end match;
   end setType;
 
+  function typeCastOpt
+    input Option<Expression> exp;
+    input Type ty;
+    output Option<Expression> outExp = Util.applyOption(exp, function typeCast(ty = ty));
+  end typeCastOpt;
+
   function typeCast
+    "Converts an expression to the given type. Dimensions of array types can be
+     omitted, and are ignored by this function, since arrays can't be cast to a
+     different size. Only the element type of the type is used, so for example:
+       typeCast({1, 2, 3}, Type.REAL()) => {1.0, 2.0, 3.0}
+
+     The function does not check that the cast is valid, and expressions that
+     can't be converted outright will be wrapped as a CAST expression."
     input output Expression exp;
     input Type ty;
+  protected
+    Type t, ety;
+    list<Expression> el;
   algorithm
-    exp := match (exp, ty)
-      local
-        Type t, ety;
-        list<Expression> el;
+    ety := Type.arrayElementType(ty);
 
+    exp := match (exp, ety)
+      // Integer can be cast to Real.
       case (INTEGER(), Type.REAL())
         then REAL(intReal(exp.value));
 
+      // Real doesn't need to be cast to Real, since we convert e.g. array with
+      // a mix of Integers and Reals to only Reals.
       case (REAL(), Type.REAL()) then exp;
 
+      // For arrays we typecast each element and update the type of the array.
       case (ARRAY(ty = t, elements = el), _)
         algorithm
-          ety := Type.arrayElementType(ty);
           el := list(typeCast(e, ety) for e in el);
-          t := Type.setArrayElementType(t, ty);
+          t := Type.setArrayElementType(t, ety);
         then
           ARRAY(t, el, exp.literal);
 
+      case (RANGE(ty = t), _)
+        algorithm
+          t := Type.setArrayElementType(t, ety);
+        then
+          RANGE(t, typeCast(exp.start, ety), typeCastOpt(exp.step, ety), typeCast(exp.stop, ety));
+
+      // Unary operators (i.e. -) are handled by casting the operand.
       case (UNARY(), _)
-        then UNARY(exp.operator, typeCast(exp.exp, ty));
+        algorithm
+          t := Type.setArrayElementType(Operator.typeOf(exp.operator), ety);
+        then
+          UNARY(Operator.setType(t, exp.operator), typeCast(exp.exp, ety));
 
+      // If-expressions are handled by casting each of the branches.
       case (IF(), _)
-        then IF(exp.condition, typeCast(exp.trueBranch, ty), typeCast(exp.falseBranch, ty));
+        then IF(exp.condition, typeCast(exp.trueBranch, ety), typeCast(exp.falseBranch, ety));
 
+      // Calls are handled by Call.typeCast, which has special rules for some functions.
       case (CALL(), _)
-        then Call.typeCast(exp, ty);
+        then Call.typeCast(exp, ety);
 
+      // Casting a cast expression overrides its current cast type.
+      case (CAST(), _) then typeCast(exp.exp, ty);
+
+      // Other expressions are handled by making a CAST expression.
       else
         algorithm
           t := typeOf(exp);
-          t := Type.setArrayElementType(t, ty);
+          t := Type.setArrayElementType(t, ety);
         then
           CAST(t, exp);
 
