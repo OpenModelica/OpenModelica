@@ -57,7 +57,7 @@ val(grid.P_grid, 0.0);
 // 4/3001 (1000): for i in 1 : 1000 loop 
 //     grid.terms[i].v = grid.V; end for;    [dynamic |0|0|0|0|]
 // 5/4001 (1): 0.0 = grid.P_grid + grid.terms.v * grid.terms.i   [dynamic |0|0|0|0|]
-// 6/4002 (1000): plant.P_solar = /*Real[max(div(n * 100 - 100, 100) + 1, 0)]*/(100:100:100000)   [binding |0|0|0|0|]
+// 6/4002 (1000): plant.P_solar = 100.0:100.0:100000.0   [binding |0|0|0|0|]
 // 7/5002 (1000): plant.on = true   [binding |0|0|0|0|]
 //
 //
