@@ -753,7 +753,7 @@ algorithm
     result := {Expression.REAL(start)};
   else
     result := {Expression.REAL(stop)};
-    for i in steps-1:-1:1 loop
+    for i in steps-2:-1:1 loop
       result := Expression.REAL(start + i * step) :: result;
     end for;
     result := Expression.REAL(start) :: result;

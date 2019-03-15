@@ -398,7 +398,7 @@ function simplifyBinaryOp
   import NFOperator.Op;
 algorithm
   if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
-    outExp := Ceval.evalBinaryOp(exp1, op, exp2);
+    outExp := Ceval.evalBinaryOp(ExpandExp.expand(exp1), op, ExpandExp.expand(exp2));
   else
     outExp := match op.op
       case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
