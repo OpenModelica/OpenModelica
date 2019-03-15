@@ -7857,6 +7857,51 @@ algorithm
   end match;
 end isImpureWork;
 
+public function containsComplexCall "author: kabdelhak
+  Returns true if an expression contains a complex constructor call."
+  input DAE.Exp inExp;
+  output Boolean isCC;
+algorithm
+  (_, isCC) := traverseExpTopDown(inExp, containsComplexCallWork, false);
+end containsComplexCall;
+
+function containsComplexCallWork "author: kabdelhak"
+  input DAE.Exp inExp;
+  input Boolean inCC;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output Boolean outCC;
+algorithm
+  (outExp,cont,outCC) := match (inExp,inCC)
+    local
+      Absyn.Path path;
+      Boolean isCC;
+    case (_, true) then (inExp,true,true);
+    case (DAE.CALL(path = Absyn.FULLYQUALIFIED(path = path)), _)
+      equation
+        true = isComplexCall(path);
+      then (inExp,false,true);
+    else (inExp,true,false);
+  end match;
+end containsComplexCallWork;
+
+function isComplexCall "author: kabdelhak"
+  input Absyn.Path path;
+  output Boolean isCC;
+algorithm
+  isCC := match path
+    local
+      Absyn.Path innerPath;
+    case (Absyn.FULLYQUALIFIED(path = innerPath))
+      then isComplexCall(innerPath);
+    case (Absyn.QUALIFIED(name=".Complex"))
+      then true;
+    case (Absyn.IDENT(name=".Complex"))
+      then true;
+    else false;
+  end match;
+end isComplexCall;
+
 public function isConst
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
