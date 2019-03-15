@@ -110,64 +110,44 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // ########################################
 //
 //
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): $cse2 = CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1)   [binding |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
 // unknown partition
 // ========================================
 //
-// Variables (4)
+// Variables (5)
 // ========================================
 // 1: z:VARIABLE()  type: Real 
 // 2: x:DISCRETE()  type: Integer 
 // 3: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
-// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
-// Equations (4, 4)
+// Equations (5, 5)
 // ========================================
-// 1/1 (1): $cse1 = $cse2   [dynamic |0|0|0|0|]
-// 2/2 (1): $cse3 = sin($cse1)   [unknown |0|0|0|0|]
-// 3/3 (1): z = $cse3 - 1.0   [dynamic |0|0|0|0|]
-// 4/4 (1): x = $cse1 - CSE.wrapFunctionCalls13.f1(0.0, p1, 2 * p1)   [unknown |0|0|0|0|]
+// 1/1 (1): $cse2 = CSE.wrapFunctionCalls13.f1(dat.d1, p1, 2 * p1)   [unknown |0|0|0|0|]
+// 2/2 (1): $cse1 = $cse2   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse3 = sin($cse1)   [unknown |0|0|0|0|]
+// 4/4 (1): z = $cse3 - 1.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x = $cse1 - CSE.wrapFunctionCalls13.f1(0.0, p1, 2 * p1)   [unknown |0|0|0|0|]
 //
 //
 // Matching
 // ========================================
-// 4 variables and equations
-// var 1 is solved in eqn 3
-// var 2 is solved in eqn 4
-// var 3 is solved in eqn 2
+// 5 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 3
 // var 4 is solved in eqn 1
+// var 5 is solved in eqn 2
 //
 //
 // StrongComponents
 // ========================================
 // {1:4}
-// {2:3}
-// {3:1}
-// {4:2}
+// {2:5}
+// {3:3}
+// {4:1}
+// {5:2}
 //
 //
 //
