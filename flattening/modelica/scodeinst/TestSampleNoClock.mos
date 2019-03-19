@@ -12,7 +12,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 // Result:
 // true
 // ""
-// "function Modelica.Blocks.Sources.BooleanTable.getFirstIndex \"Get first index of table and check table\"
+// "function Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex \"Get first index of table and check table\"
 //   input Real[:] table \"Vector of time instants\";
 //   input Real simulationStartTime(quantity = \"Time\", unit = \"s\") \"Simulation start time\";
 //   input Boolean startValue \"Value of y for time < table[1]\";
@@ -52,7 +52,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //     end if;
 //     index := j;
 //   end if;
-// end Modelica.Blocks.Sources.BooleanTable.getFirstIndex;
+// end Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex;
 //
 // function Modelica.Math.BooleanVectors.allTrue \"Returns true, if all elements of the Boolean input vector are true ('and')\"
 //   input Boolean[:] b \"Boolean vector\";
@@ -246,7 +246,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   pre(triggeredAdd.y) = triggeredAdd.y_start;
 //   pre(rSFlipFlop.pre.u) = rSFlipFlop.pre.pre_u_start;
 // initial algorithm
-//   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex(booleanTable.table, time, booleanTable.startValue);
+//   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex(booleanTable.table, time, booleanTable.startValue);
 // equation
 //   showValue.activePort = showValue.showActive;
 //   showValue2.activePort = showValue2.showActive;

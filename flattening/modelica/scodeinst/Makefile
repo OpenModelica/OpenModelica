@@ -485,6 +485,7 @@ FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
+FuncViaComp2.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
@@ -722,6 +723,8 @@ redeclare13.mo \
 redeclare2.mo \
 redeclare3.mo \
 redeclare4.mo \
+redeclare5.mo \
+redeclare6.mo \
 redeclare7.mo \
 redeclare9.mo \
 ReductionInvalidTypeSum.mo \
@@ -883,8 +886,6 @@ loop4.mo \
 PartialInst.mo \
 PropagateRedeclareMod1.mo \
 RecursiveExtends2.mo \
-redeclare5.mo \
-redeclare6.mo \
 redeclare8.mo \
 type4.mo \
 type5.mo \
