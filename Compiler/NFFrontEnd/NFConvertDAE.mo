@@ -1034,13 +1034,12 @@ algorithm
   comp := InstNode.component(node);
 
   element := match comp
-    case Component.TYPED_COMPONENT(ty = ty, info = info)
+    case Component.TYPED_COMPONENT(ty = ty, info = info, attributes = attr)
       algorithm
         cref := ComponentRef.fromNode(node, ty);
         binding := Binding.toDAEExp(comp.binding);
         cls := InstNode.getClass(comp.classInst);
         ty_attr := list((Modifier.name(m), Modifier.binding(m)) for m in Class.getTypeAttributes(cls));
-        attr := comp.attributes;
         var_attr := convertVarAttributes(ty_attr, ty, attr);
       then
         makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr,

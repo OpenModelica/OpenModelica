@@ -79,6 +79,8 @@ uniontype InstNodeType
 
   record ROOT_CLASS
     "The root of the instance tree, i.e. the class that the instantiation starts from."
+    InstNode parent "The parent of the class, e.g. when instantiating a function
+                     in a component where the component is the parent.";
   end ROOT_CLASS;
 
   record NORMAL_COMP
@@ -583,6 +585,28 @@ uniontype InstNode
       else EMPTY_NODE();
     end match;
   end derivedParent;
+
+  function rootParent
+    input InstNode node;
+    output InstNode parent;
+  algorithm
+    parent := match node
+      case CLASS_NODE() then rootTypeParent(node.nodeType, node);
+      else parent(node);
+    end match;
+  end rootParent;
+
+  function rootTypeParent
+    input InstNodeType nodeType;
+    input InstNode node;
+    output InstNode parent;
+  algorithm
+    parent := match nodeType
+      case InstNodeType.ROOT_CLASS() guard not isEmpty(nodeType.parent) then nodeType.parent;
+      case InstNodeType.DERIVED_CLASS() then rootTypeParent(nodeType.ty, node);
+      else parent(node);
+    end match;
+  end rootTypeParent;
 
   function parentScope
     "Returns the parent scope of a node. In the case of a class this is simply

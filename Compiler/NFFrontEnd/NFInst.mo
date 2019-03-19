@@ -131,7 +131,7 @@ algorithm
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), cls);
+  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
@@ -799,7 +799,7 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
+        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.rootParent(node));
         outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
         mod := Modifier.merge(outer_mod, mod);
         attrs := updateClassConnectorType(cls.restriction, cls.attributes);

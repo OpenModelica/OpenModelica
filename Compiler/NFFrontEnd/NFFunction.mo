@@ -313,7 +313,7 @@ uniontype Function
     // If we found a function class we include the root in the prefix, but if we
     // instead found a component (i.e. a functional parameter) we don't.
     is_class := InstNode.isClass(ComponentRef.node(functionRef));
-    prefix := ComponentRef.fromNodeList(InstNode.scopeList(InstNode.classScope(found_scope), includeRoot = is_class));
+    prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope, includeRoot = is_class));
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
 
@@ -338,6 +338,7 @@ uniontype Function
     output Boolean specialBuiltin;
   protected
     CachedData cache;
+    InstNode parent;
   algorithm
     fn_node := InstNode.classScope(ComponentRef.node(fn_ref));
     cache := InstNode.getFuncCache(fn_node);
@@ -345,7 +346,16 @@ uniontype Function
     // Check if a cached instantiation of this function already exists.
     (fn_node, specialBuiltin) := match cache
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
-      else instFunction2(ComponentRef.toPath(fn_ref), fn_node, info);
+      else
+        algorithm
+          parent := if InstNode.isRedeclare(ComponentRef.node(fn_ref)) or ComponentRef.isSimple(fn_ref) then
+            InstNode.EMPTY_NODE() else ComponentRef.node(ComponentRef.rest(fn_ref));
+
+          if not InstNode.isComponent(parent) then
+            parent := InstNode.EMPTY_NODE();
+          end if;
+        then
+          instFunction2(ComponentRef.toPath(fn_ref), fn_node, info, parent);
     end match;
   end instFunctionRef;
 
@@ -371,6 +381,7 @@ uniontype Function
     input Absyn.Path fnPath;
     input output InstNode fnNode;
     input SourceInfo info;
+    input InstNode parent = InstNode.EMPTY_NODE();
           output Boolean specialBuiltin;
   protected
     SCode.Element def = InstNode.definition(fnNode);
@@ -423,7 +434,7 @@ uniontype Function
             OperatorOverloading.checkOperatorRestrictions(fnNode);
           end if;
 
-          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
           fnNode := instFunction3(fnNode);
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
