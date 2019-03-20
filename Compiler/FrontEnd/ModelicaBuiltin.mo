@@ -2293,6 +2293,7 @@ end list;
 
 function listFile "Lists the contents of the file given by the class."
   input TypeName class_;
+  input Boolean nestedClasses = true;
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>

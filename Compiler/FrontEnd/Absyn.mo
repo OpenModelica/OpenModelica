@@ -5582,6 +5582,52 @@ algorithm
   end match;
 end filterAnnotationItem;
 
+public function filterNestedClasses
+  "Filter outs the nested classes from the class if any."
+  input Class cl;
+  output Class o;
+algorithm
+  o := match cl
+    local
+      Ident name;
+      Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
+      Restriction restriction;
+      list<String> typeVars;
+      list<NamedArg> classAttrs;
+      list<ClassPart> classParts;
+      list<Annotation> annotations;
+      Option<String> comment;
+      Info info;
+    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,PARTS(typeVars,classAttrs,classParts,annotations,comment),info)
+      equation
+        (classParts as _::_) = List.fold(listReverse(classParts),filterNestedClassesParts,{});
+      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,PARTS(typeVars,classAttrs,classParts,annotations,comment),info);
+    else cl;
+  end match;
+end filterNestedClasses;
+
+protected function filterNestedClassesParts
+  "Helper funciton for filterNestedClassesParts."
+  input ClassPart classPart;
+  input list<ClassPart> inClassParts;
+  output list<ClassPart> outClassPart;
+algorithm
+  outClassPart := match (classPart, inClassParts)
+    local
+      list<ClassPart> classParts;
+      list<ElementItem> elts;
+    case (PUBLIC(elts), classParts)
+      equation
+        classPart.contents = List.filterOnFalse(elts, isElementItemClass);
+      then classPart::classParts;
+    case (PROTECTED(elts), classParts)
+      equation
+        classPart.contents = List.filterOnFalse(elts, isElementItemClass);
+      then classPart::classParts;
+    else classPart::inClassParts;
+  end match;
+end filterNestedClassesParts;
+
 public function getExternalDecl
   "@author: adrpo
    returns the EXTERNAL form parts if there is any.

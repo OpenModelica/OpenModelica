@@ -781,7 +781,7 @@ algorithm
 
     case (cache,_,"list",_,_) then (cache,Values.STRING(""));
 
-    case (cache,_,"listFile",{Values.CODE(Absyn.C_TYPENAME(className))},_)
+    case (cache,_,"listFile",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b)},_)
       equation
         path = match className
           case Absyn.FULLYQUALIFIED() then className.path;
@@ -790,6 +790,7 @@ algorithm
         // handle encryption
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+        absynClass = if b then absynClass else Absyn.filterNestedClasses(absynClass);
         /* If the class has Access.packageText annotation or higher
          * If the class has Access.nonPackageText annotation or higher and class is not a package
          */
