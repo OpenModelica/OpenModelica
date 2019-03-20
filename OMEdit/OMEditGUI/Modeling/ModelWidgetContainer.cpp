@@ -3829,7 +3829,7 @@ void ModelWidget::createModelWidgetComponents()
                                                     "  <!-- Parameters for the simulation -->\n"
                                                     "  <SimulationParams StartTime=\"0\" StopTime=\"1\" />\n"
                                                     "</Model>").arg(mpLibraryTreeItem->getName());
-        pCompositeModelEditor->setPlainText(defaultCompositeModelText);
+        pCompositeModelEditor->setPlainText(defaultCompositeModelText, false);
         mpLibraryTreeItem->setClassText(defaultCompositeModelText);
       } else {
         pCompositeModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
@@ -4169,10 +4169,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
         pLibraryTreeModel->showModelWidget(pParentLibraryTreeItem, false);
       }
       pParentLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
-      ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
-      if (pModelicaEditor) {
-        pModelicaEditor->setPlainText(stringToLoad);
-      }
+      pParentLibraryTreeItem->setClassText(stringToLoad);
     }
     if (!errorString.isEmpty()) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind,
@@ -4272,10 +4269,6 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
           if (pChildLibraryTreeItem->getModelWidget()) {
             pChildLibraryTreeItem->getModelWidget()->reDrawModelWidget();
             pLibraryTreeModel->readLibraryTreeItemClassText(pChildLibraryTreeItem);
-            ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pChildLibraryTreeItem->getModelWidget()->getEditor());
-            if (pModelicaEditor) {
-              pModelicaEditor->setPlainText(pChildLibraryTreeItem->getClassText(pLibraryTreeModel));
-            }
           }
           updateChildClasses(pChildLibraryTreeItem);
         }
