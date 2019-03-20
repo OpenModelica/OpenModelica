@@ -45,8 +45,13 @@
 #include <math.h>
 #include <ctime>
 #include "omc_config.h"
+
+/* adrpo: MacOS has issues with this, remove it! */
+#if !defined(__APPLE__)
 #include <boost/math/distributions/chi_squared.hpp>
 using boost::math::chi_squared;
+#endif
+
 #include "dataReconciliation.h"
 
 extern "C"
@@ -1005,7 +1010,12 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	myfile << "<tr> \n" << "<th align=right> Final Converged Value(J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Final Value of the objective Function (J*) : </th> \n" << "<td>" << (value*data->modelData->nSetcVars) << "</td> </tr>\n";
+    /* adrpo: MacOS has issues with this, remove it! */
+#if !defined(__APPLE__)
 	myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
+#else
+    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td> not avaliable on MacOS </td> </tr>\n";
+#endif
 	myfile << "<tr> \n" << "<th align=right> Result of Global Test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
 	myfile << "</table>\n";
 
