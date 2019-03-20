@@ -965,7 +965,7 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	// calculate absolute value for this numeric analysis
 	for (unsigned int a=0; a < sizeof(newX); a++)
 	{
-		newX[a]=abs(newX[a]);
+		newX[a] = fabs(newX[a]);
 	}
 	if(ACTIVE_STREAM(LOG_JAC))
 	{
