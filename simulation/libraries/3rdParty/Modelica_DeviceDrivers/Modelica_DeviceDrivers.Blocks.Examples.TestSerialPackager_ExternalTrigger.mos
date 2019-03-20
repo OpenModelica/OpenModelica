@@ -42,8 +42,6 @@ runScript(modelTesting);getErrorString();
 //     packInt1.pkgOut[1].pkg = packInt1.pkgIn.pkg
 //     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
 //     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
-// Warning: Assuming fixed start value for the following 1 variables:
-//          iExp.y:DISCRETE(min = 0 fixed = false )  "Value of Integer output" type: Integer
 //
 // "true
 // "
