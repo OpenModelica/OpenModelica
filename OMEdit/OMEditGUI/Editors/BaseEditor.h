@@ -221,12 +221,10 @@ public:
   QString mSelect;
   QString mDescription;
 
-  // Supposing two items with equal keys and different descriptions are
-  // different enough to show both and hoping that if the above two fields
-  // are identical, then other fields would be identical as well...
+  // Supposing two items with equal keys and different descriptions.
   bool operator<(const CompleterItem &other) const
   {
-    return (mKey < other.mKey) || ((mKey == other.mKey) && (mDescription == other.mDescription));
+    return (mKey < other.mKey) || ((mKey == other.mKey) && (mDescription < other.mDescription));
   }
   bool operator==(const CompleterItem &other) const
   {
