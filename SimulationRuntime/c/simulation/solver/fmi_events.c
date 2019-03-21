@@ -28,7 +28,7 @@
  *
  */
 
-#include "simulation/solver/fmi_events.h"
+#include "fmi_events.h"
 
 #ifdef __cplusplus
 extern "C" {

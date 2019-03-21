@@ -35,7 +35,7 @@
 #ifndef _MIXEDSYSTEM_H_
 #define _MIXEDSYSTEM_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

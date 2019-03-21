@@ -32,7 +32,7 @@
 #define _OPTIMIZER_DATA_H
 
 #include "omc_config.h"
-#include "simulation_data.h"
+#include "../simulation_data.h"
 #include "../simulation/solver/solver_main.h"
 #include <string.h>
 #include <coin/IpStdCInterface.h>

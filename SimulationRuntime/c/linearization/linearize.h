@@ -31,7 +31,7 @@
 #ifndef _LINEARIZE
 #define _LINEARIZE
 
-#include "simulation_data.h"
+#include "../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

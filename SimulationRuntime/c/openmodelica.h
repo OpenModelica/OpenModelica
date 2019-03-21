@@ -41,6 +41,8 @@
 extern "C" {
 #endif
 
+#include "omc_simulation_settings.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>

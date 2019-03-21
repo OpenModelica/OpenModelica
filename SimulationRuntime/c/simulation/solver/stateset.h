@@ -31,7 +31,7 @@
 #ifndef OMC_STATESET_H
 #define OMC_STATESET_H
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 /* initialize jacobians for state selection */
 void initializeStateSetJacobians(DATA *data, threadData_t *threadData);

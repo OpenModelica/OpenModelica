@@ -34,7 +34,7 @@
 #ifndef _NONLINEARSOLVERHYBRD_H_
 #define _NONLINEARSOLVERHYBRD_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

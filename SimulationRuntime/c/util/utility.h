@@ -32,7 +32,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include <math.h>
 
 static inline int in_range_boolean(modelica_integer b,

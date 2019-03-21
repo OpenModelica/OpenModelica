@@ -52,7 +52,7 @@ import CodegenUtilSimulation.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCFunctions.*;
 
-template ModelExchange(SimCode simCode)
+template ModelExchange(SimCode simCode, list<String> sourceFiles)
  "Generates ModelExchange code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -63,9 +63,20 @@ case SIMCODE(__) then
   <ModelExchange
     modelIdentifier="<%modelIdentifier%>"<% if not pdd then '>' %>
     <% if pdd then 'providesDirectionalDerivative="' + pdd + '">' %>
+    <%SourceFiles(sourceFiles)%>
   </ModelExchange>
   >>
 end ModelExchange;
+
+template SourceFiles(list<String> sourceFiles)
+::=
+  if sourceFiles then
+    <<
+    <SourceFiles>
+      <% sourceFiles |> file => '<File name="<%file%>" />' ; separator="\n" %>
+    </SourceFiles>
+    >>
+end SourceFiles;
 
 template providesDirectionalDerivative(SimCode simCode)
  "Returns true if Jacobian is present, returns nothing otherwise"

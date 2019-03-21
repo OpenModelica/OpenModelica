@@ -33,41 +33,40 @@
 
 #include "initialization.h"
 
-#include "simulation_data.h"
-#include "util/omc_error.h"
-#include "openmodelica.h"
-#include "openmodelica_func.h"
-#include "simulation/options.h"
-#include "simulation/solver/model_help.h"
+#include "../../../util/omc_error.h"
+#include "../../../openmodelica.h"
+#include "../../../openmodelica_func.h"
+#include "../../../simulation/options.h"
+#include "../model_help.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
-#include "util/read_matlab4.h"
+#include "../../../util/read_matlab4.h"
 #endif
-#include "simulation/solver/events.h"
-#include "simulation/solver/stateset.h"
-#include "meta/meta_modelica.h"
+#include "../events.h"
+#include "../stateset.h"
+#include "../../../meta/meta_modelica.h"
 
 #if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
 #define check_mixed_solutions(X,Y) 0
 #else
-#include "simulation/solver/mixedSystem.h"
+#include "../mixedSystem.h"
 #endif
 
 #if defined(OMC_NUM_LINEAR_SYSTEMS) && OMC_NUM_LINEAR_SYSTEMS==0
 #define check_linear_solutions(X,Y) 0
 #define updateStaticDataOfLinearSystems(X,Y)
 #else
-#include "simulation/solver/linearSystem.h"
+#include "../linearSystem.h"
 #endif
 
 #if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
 #define check_nonlinear_solutions(X,Y) 0
 #define updateStaticDataOfNonlinearSystems(X,Y)
 #else
-#include "simulation/solver/nonlinearSystem.h"
+#include "../nonlinearSystem.h"
 #endif
 
-#include "simulation/solver/delay.h"
-#include "simulation/solver/synchronous.h"
+#include "../delay.h"
+#include "../synchronous.h"
 
 #include <stdio.h>
 #include <stdlib.h>

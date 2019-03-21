@@ -34,7 +34,7 @@
 #ifndef _NONLINEARSOLVERHOMOTOPY_H_
 #define _NONLINEARSOLVERHOMOTOPY_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 int allocateHomotopyData(int size, void** data);
 int freeHomotopyData(void** data);

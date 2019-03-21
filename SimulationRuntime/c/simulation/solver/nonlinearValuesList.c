@@ -41,8 +41,8 @@
 #include "epsilon.h"
 #include "nonlinearValuesList.h"
 
-#include "util/list.h"
-#include "util/omc_error.h"
+#include "../../util/list.h"
+#include "../../util/omc_error.h"
 
 #include <stdlib.h>
 #include <string.h>

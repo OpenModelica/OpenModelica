@@ -9,6 +9,7 @@
 *.log
 *.stamp
 **/*.dylib.dSYM/
+*.tmp
 
 # autoconf
 autom4te.cache/
@@ -153,9 +154,13 @@ Parser/ParModelica_Lexer.h
 Parser/ParModelica_Lexer_BaseModelica_Lexer.c
 Parser/ParModelica_Lexer_BaseModelica_Lexer.h
 
+SimulationRuntime/c/RuntimeSources.mo
 SimulationRuntime/**/test_files/*.jar
 SimulationRuntime/cpp/build_msvc/
 # Visual Studio 2015/2017 cache/options directory
 SimulationRuntime/cpp/.vs/
 SimulationRuntime/cpp/CMakeSettings.json
 tags
+
+*.plist
+*clang_output*

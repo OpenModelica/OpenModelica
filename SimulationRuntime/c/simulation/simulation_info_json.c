@@ -34,8 +34,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#include "util/rtclock.h"
-#include "util/omc_mmap.h"
+#include "../util/rtclock.h"
+#include "../util/omc_mmap.h"
 #include "solver/model_help.h"
 
 static inline const char* skipSpace(const char* str)

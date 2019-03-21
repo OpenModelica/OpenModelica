@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "openmodelica.h"
-#include "meta/meta_modelica_data.h"
+#include "../openmodelica.h"
+#include "../meta/meta_modelica_data.h"
 #include "modelica_string_lit.h"
 
 extern modelica_string stringAppend(modelica_string s1, modelica_string s2);

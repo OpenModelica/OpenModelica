@@ -32,27 +32,27 @@
 #include "events.h"
 #include "dassl.h"
 
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "openmodelica_func.h"
+#include "../simulation_runtime.h"
+#include "../results/simulation_result.h"
+#include "../../openmodelica_func.h"
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
-#include "meta/meta_modelica.h"
+#include "../../meta/meta_modelica.h"
 #include "dae_mode.h"
 
-#include "util/omc_error.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/options.h"
+#include "../../util/omc_error.h"
+#include "external_input.h"
+#include "../options.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
 #include <float.h>
 
-#include "simulation/solver/synchronous.h"
+#include "synchronous.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
-#include "simulation/solver/embedded_server.h"
-#include "simulation/solver/real_time_sync.h"
+#include "embedded_server.h"
+#include "real_time_sync.h"
 #endif
 
 /*! \fn updateContinuousSystem

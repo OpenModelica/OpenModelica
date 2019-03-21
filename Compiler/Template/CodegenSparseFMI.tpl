@@ -52,7 +52,7 @@ import CodegenFMU.*;
 import CodegenC.*;
 import ExpressionDumpTpl;
 
-template translateModel(SimCode simCode, String FMUVersion, String FMUType)
+template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -61,7 +61,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMI.cpp')
-  let()= textFile(CodegenFMU.fmuModelDescriptionFile(simCode,guid,FMUVersion,FMUType), 'modelDescription.xml')
+  let()= textFile(CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), 'modelDescription.xml')
   "" // Return empty result since result written to files directly
 end translateModel;
 

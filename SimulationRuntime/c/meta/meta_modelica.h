@@ -46,11 +46,11 @@ extern "C" {
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include "gc/omc_gc.h"
-#include "omc_inline.h"
-#include "openmodelica.h"
+#include "../gc/omc_gc.h"
+#include "../omc_inline.h"
+#include "../openmodelica.h"
 #include "meta_modelica_data.h"
-#include "util/omc_init.h"
+#include "../util/omc_init.h"
 
 static inline void* mmc_mk_icon(mmc_sint_t i)
 {
@@ -222,10 +222,10 @@ void* mmc_mk_rcon(double d);
 void* mmc_mk_modelica_array(base_array_t);
 #endif
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "meta_modelica_segv.h"
 #include "meta_modelica_builtin.h"
-#include "util/omc_error.h"
+#include "../util/omc_error.h"
 
 #if defined(__cplusplus)
 }

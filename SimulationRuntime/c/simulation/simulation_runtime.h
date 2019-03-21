@@ -37,18 +37,18 @@
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
-#include "simulation_data.h"
+#include "../simulation_data.h"
 
-#include "util/rtclock.h"
-#include "simulation/omc_simulation_util.h"
+#include "../util/rtclock.h"
+#include "omc_simulation_util.h"
 #include <stdlib.h>
 #include <string.h>
 
-#include "linearization/linearize.h"
-#include "dataReconciliation/dataReconciliation.h"
-#include "simulation/results/simulation_result.h"
+#include "../linearization/linearize.h"
+#include "../dataReconciliation/dataReconciliation.h"
+#include "results/simulation_result.h"
 
 #ifdef __cplusplus
 extern "C" {

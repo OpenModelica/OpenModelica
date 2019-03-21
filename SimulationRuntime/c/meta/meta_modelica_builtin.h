@@ -36,15 +36,15 @@
 #ifndef META_MODELICA_BUILTIN_H_
 #define META_MODELICA_BUILTIN_H_
 
-#include "openmodelica.h"
-#include "util/omc_msvc.h"
+#include "../openmodelica.h"
+#include "../util/omc_msvc.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "meta_modelica_builtin_boxptr.h"
-#include "util/modelica_string_lit.h"
+#include "../util/modelica_string_lit.h"
 
 typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;

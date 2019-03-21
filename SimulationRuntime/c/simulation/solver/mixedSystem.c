@@ -33,10 +33,10 @@
 
 #include <math.h>
 
-#include "util/omc_error.h"
+#include "../../util/omc_error.h"
 #include "mixedSystem.h"
 #include "mixedSearchSolver.h"
-#include "simulation/simulation_info_json.h"
+#include "../simulation_info_json.h"
 
 /*! \fn int initializeMixedSystems(DATA *data)
  *

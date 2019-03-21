@@ -4,7 +4,7 @@
 
 #include <math.h>
 #include <assert.h>
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt

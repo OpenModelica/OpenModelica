@@ -31,7 +31,7 @@
 
 #include "generic_array.h"
 #include "index_spec.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "division.h"
 
 #include <stdio.h>

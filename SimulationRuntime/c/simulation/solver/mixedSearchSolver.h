@@ -34,7 +34,7 @@
 #ifndef _MIXEDSEARCHSOLVER_H_
 #define _MIXEDSEARCHSOLVER_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 
 int allocateMixedSearchData(int size, void **data);

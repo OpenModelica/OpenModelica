@@ -28,7 +28,7 @@
  *
  */
 
-#include "ModelicaUtilities.h"
+#include "../ModelicaUtilities.h"
 #include "modelica_string.h"
 
 #include <stdio.h>

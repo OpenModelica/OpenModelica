@@ -34,7 +34,7 @@
 #ifndef _DELAY_H_
 #define _DELAY_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 typedef struct TIME_AND_VALUE
 {

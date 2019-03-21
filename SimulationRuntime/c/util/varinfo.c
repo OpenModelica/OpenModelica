@@ -29,7 +29,7 @@
  */
 
 #include "omc_error.h"
-#include "simulation_data.h"
+#include "../simulation_data.h"
 #include "varinfo.h"
 
 

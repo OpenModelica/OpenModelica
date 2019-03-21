@@ -41,12 +41,12 @@
 #include "simulation_input_xml.h"
 #include "simulation_runtime.h"
 #include "options.h"
-#include "util/omc_error.h"
-#include "meta/meta_modelica.h"
-#include "util/modelica_string.h"
+#include "../util/omc_error.h"
+#include "../meta/meta_modelica.h"
+#include "../util/modelica_string.h"
 
 #include <limits.h>
-#include "util/uthash.h"
+#include "../util/uthash.h"
 #include <string.h>
 #include <ctype.h>
 #include <expat.h>

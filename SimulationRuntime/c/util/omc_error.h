@@ -32,7 +32,7 @@
 #ifndef OMC_ERROR_H
 #define OMC_ERROR_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "omc_msvc.h"
 
 #include <setjmp.h>

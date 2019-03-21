@@ -35,11 +35,11 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
-#include "simulation_data.h"
-#include "simulation/simulation_info_json.h"
-#include "util/omc_error.h"
+#include "../../simulation_data.h"
+#include "../simulation_info_json.h"
+#include "../../util/omc_error.h"
 #include "omc_math.h"
-#include "util/varinfo.h"
+#include "../../util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"

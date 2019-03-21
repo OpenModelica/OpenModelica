@@ -34,9 +34,9 @@
 #include <limits.h>
 #include <string.h>
 #include "omc_msvc.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include <errno.h>
-#include "util/omc_error.h"
+#include "omc_error.h"
 #define NSEC_PER_SEC 1000000000L
 
 /* If min_time is set, subtract this amount from measured times to avoid

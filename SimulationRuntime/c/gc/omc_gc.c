@@ -37,9 +37,10 @@
  *
  */
 
+#include "../omc_simulation_settings.h"
 #include "omc_gc.h"
-#include "util/omc_error.h"
-#include "util/omc_init.h"
+#include "../util/omc_error.h"
+#include "../util/omc_init.h"
 
 static mmc_GC_state_type x_mmc_GC_state = {0};
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;

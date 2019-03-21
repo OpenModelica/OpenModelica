@@ -38,7 +38,7 @@ extern "C"
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "string_array.h"
-#include "meta/meta_modelica.h"
+#include "../meta/meta_modelica.h"
 #include <string.h>
 
 int getMyBool(const type_description *desc)

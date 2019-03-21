@@ -147,7 +147,7 @@ typedef threadData_t* OpenModelica_threadData_ThreadData;
 typedef threadData_t OpenModelica_threadData_ThreadData;
 #endif
 
-#include "meta/meta_modelica_segv.h"
+#include "../meta/meta_modelica_segv.h"
 void mmc_do_out_of_memory() __attribute__ ((noreturn));
 #define GC_RETURN_REPORT_ALLOC_FAILED(X) { void *res = (X); \
   if (0==res) { \
@@ -194,7 +194,7 @@ size_t omc_GC_get_max_heap_size();
 
 #endif /* #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 
-#include "openmodelica_types.h"
+#include "../openmodelica_types.h"
 
 /* global roots size */
 #define MMC_GC_GLOBAL_ROOTS_SIZE 1024

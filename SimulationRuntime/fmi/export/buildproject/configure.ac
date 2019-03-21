@@ -212,7 +212,7 @@ AC_TRY_LINK([#include <stdio.h>], [fopen("a.txt", "r");], [AC_MSG_RESULT([OK])],
 AC_ARG_WITH(dynamic-om-runtime,  [  --with-dynamic-om-runtime    (uses the OMC runtime as a shared object instead of compiling it statically into the the FMU.)],[OPENMODELICADYNAMIC=yes],[OPENMODELICADYNAMIC=no])
 
 if test "$OPENMODELICADYNAMIC" = "no"; then
-  CPPFLAGS="$CPPFLAGS -DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1"
+  CPPFLAGS="$CPPFLAGS -DCMINPACK_NO_DLL=1"
   NEED_RUNTIME=1
 fi
 

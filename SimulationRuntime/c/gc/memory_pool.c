@@ -28,11 +28,11 @@
  *
  */
 
-
+#include "../omc_simulation_settings.h"
 #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
 #define OMC_NO_GC_MAPPING
 #endif
-#include "gc/omc_gc.h"
+#include "omc_gc.h"
 #include <string.h>
 #if !defined(OMC_NO_THREADS)
 #include <pthread.h>

@@ -32,7 +32,7 @@
 #define STRING_ARRAY_H_
 
 #include <stdarg.h>
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "base_array.h"
 
 /* Indexing */

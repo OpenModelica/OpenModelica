@@ -426,7 +426,9 @@ if true then /* Suppress output */
     "../Util/HashTableUnitToString.mo",
     "../Util/PriorityQueue.mo",
     "../Util/SimulationResults.mo",
-    "../Util/TaskGraphResults.mo"
+    "../Util/TaskGraphResults.mo",
+
+    "../../SimulationRuntime/c/RuntimeSources.mo"
   };
   files := cat(1, alwaysfiles, backendfiles);
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));

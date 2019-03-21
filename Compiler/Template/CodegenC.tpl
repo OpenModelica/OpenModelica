@@ -1045,10 +1045,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     <<
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
-    #include <simulation/solver/perform_simulation.c>
+    #include <simulation/solver/perform_simulation.c.inc>
 
     #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
-    #include <simulation/solver/perform_qss_simulation.c>
+    #include <simulation/solver/perform_qss_simulation.c.inc>
     >>
     %>
 
@@ -5735,6 +5735,7 @@ end simulationLiteralsFile;
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
   <<
+  #include "omc_simulation_settings.h"
   #include "<%filePrefix%>_functions.h"
   #ifdef __cplusplus
   extern "C" {

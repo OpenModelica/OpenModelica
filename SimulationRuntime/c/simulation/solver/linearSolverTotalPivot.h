@@ -34,7 +34,7 @@
 #ifndef _LINEARSOLVERTOTALPIVOT_H_
 #define _LINEARSOLVERTOTALPIVOT_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 typedef struct DATA_TOTALPIVOT
 {

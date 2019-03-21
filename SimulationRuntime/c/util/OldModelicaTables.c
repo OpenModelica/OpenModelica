@@ -34,8 +34,8 @@
 #include <math.h>
 #include <ctype.h>
 
-#include "omc_inline.h"
-#include "ModelicaUtilities.h"
+#include "../omc_inline.h"
+#include "../ModelicaUtilities.h"
 #ifdef _MSC_VER
 #include "omc_msvc.h"
 #endif

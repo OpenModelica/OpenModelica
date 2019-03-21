@@ -32,7 +32,7 @@
 #ifndef OMC_SIMULATION_UTIL_H
 #define OMC_SIMULATION_UTIL_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 
 #ifdef __cplusplus

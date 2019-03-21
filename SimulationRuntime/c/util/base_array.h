@@ -31,7 +31,7 @@
 #ifndef BASE_ARRAY_H_
 #define BASE_ARRAY_H_
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include "omc_msvc.h"

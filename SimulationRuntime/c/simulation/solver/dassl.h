@@ -31,7 +31,7 @@
 #ifndef DASSL_H
 #define DASSL_H
 
-#include "simulation/solver/solver_main.h"
+#include "solver_main.h"
 
 #define DDASKR _daskr_ddaskr_
 

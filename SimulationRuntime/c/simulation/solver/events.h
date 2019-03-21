@@ -34,10 +34,10 @@
 #ifndef _EVENTS_H_
 #define _EVENTS_H_
 
-#include "simulation_data.h"
-#include "simulation/solver/solver_main.h"
-#include "util/list.h"
-#include "simulation/solver/fmi_events.h"
+#include "../../simulation_data.h"
+#include "solver_main.h"
+#include "../../util/list.h"
+#include "fmi_events.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -34,7 +34,7 @@
 #ifndef _OMC_FMI_EVENTS_H_
 #define _OMC_FMI_EVENTS_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

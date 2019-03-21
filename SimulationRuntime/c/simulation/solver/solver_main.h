@@ -37,10 +37,10 @@
 #ifndef OMC_SOLVER_MAIN_H
 #define OMC_SOLVER_MAIN_H
 
-#include "openmodelica.h"
-#include "simulation_data.h"
-#include "util/list.h"
-#include "util/simulation_options.h"
+#include "../../openmodelica.h"
+#include "../../simulation_data.h"
+#include "../../util/list.h"
+#include "../../util/simulation_options.h"
 
 static const unsigned int numStatistics = 5;
 

@@ -37,7 +37,7 @@
 #ifndef _OMC_VALUE_LIST_H
 #define _OMC_VALUE_LIST_H
 
-#include "util/list.h"
+#include "../../util/list.h"
 
 typedef struct VALUES_LIST
 {

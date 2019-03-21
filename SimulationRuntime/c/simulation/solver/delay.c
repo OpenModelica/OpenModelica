@@ -33,11 +33,10 @@
 /*! \file delay.c
  */
 
-#include "simulation/solver/delay.h"
-#include "util/omc_error.h"
-#include "simulation_data.h"
-#include "util/ringbuffer.h"
-#include "openmodelica.h"
+#include "delay.h"
+#include "../../util/omc_error.h"
+#include "../../util/ringbuffer.h"
+#include "../../openmodelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>

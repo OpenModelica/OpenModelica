@@ -31,9 +31,9 @@
 #ifndef INTEGER_ARRAY_H_
 #define INTEGER_ARRAY_H_
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "base_array.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "omc_msvc.h"
 #include "index_spec.h"
 #include <stdarg.h>

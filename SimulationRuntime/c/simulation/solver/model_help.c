@@ -34,22 +34,23 @@
 #include <float.h>
 #include <math.h>
 
-#include "simulation_data.h"
-#include "openmodelica_func.h"
-#include "util/omc_error.h"
-#include "util/varinfo.h"
+#include "../../openmodelica.h"
+#include "../../simulation_data.h"
+#include "../../openmodelica_func.h"
+#include "../../util/omc_error.h"
+#include "../../util/varinfo.h"
 #include "model_help.h"
-#include "simulation/options.h"
-#include "simulation/simulation_info_json.h"
-#include "util/omc_msvc.h" /* for freaking round! */
+#include "../options.h"
+#include "../simulation_info_json.h"
+#include "../../util/omc_msvc.h" /* for freaking round! */
 #include "nonlinearSystem.h"
 #include "linearSystem.h"
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
-#include "simulation/solver/fmi_events.h"
-#include "simulation/solver/stateset.h"
-#include "meta/meta_modelica.h"
+#include "fmi_events.h"
+#include "stateset.h"
+#include "../../meta/meta_modelica.h"
 
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;

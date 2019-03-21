@@ -30,7 +30,7 @@
 
 
 #include "boolean_array.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "omc_error.h"
 
 #include <stdio.h>

@@ -34,8 +34,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "util/simulation_options.h"
-#include "util/omc_error.h"
+#include "../../util/simulation_options.h"
+#include "../../util/omc_error.h"
 #include "nonlinearSystem.h"
 #include "nonlinearValuesList.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -45,13 +45,13 @@
 #include "newtonIteration.h"
 #endif
 #include "nonlinearSolverHomotopy.h"
-#include "simulation/options.h"
-#include "simulation/simulation_info_json.h"
-#include "simulation/simulation_runtime.h"
-#include "simulation/solver/model_help.h"
+#include "../options.h"
+#include "../simulation_info_json.h"
+#include "../simulation_runtime.h"
+#include "model_help.h"
 
 /* for try and catch simulationJumpBuffer */
-#include "meta/meta_modelica.h"
+#include "../../meta/meta_modelica.h"
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
@@ -70,7 +70,7 @@ struct dataMixedSolver
 };
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-#include "util/write_csv.h"
+#include "../../util/write_csv.h"
 /*! \fn int initializeNLScsvData(DATA* data, NONLINEAR_SYSTEM_DATA* systemData)
  *
  *  This function initializes csv files for analysis propose.

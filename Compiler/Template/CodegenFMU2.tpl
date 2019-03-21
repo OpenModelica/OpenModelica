@@ -53,7 +53,7 @@ import CodegenC.*; //unqualified import, no need the CodegenC is optional when c
 import CodegenFMUCommon.*;
 
 // Code for generating modelDescription.xml file for FMI 2.0 ModelExchange.
-template fmiModelDescription(SimCode simCode, String guid, String FMUType)
+template fmiModelDescription(SimCode simCode, String guid, String FMUType, list<String> sourceFiles)
  "Generates code for ModelDescription file for FMU target."
 ::=
 //  <%UnitDefinitions(simCode)%>
@@ -63,8 +63,8 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
-    <%if isFMIMEType(FMUType) then ModelExchange(simCode)%>
-    <%if isFMICSType(FMUType) then CoSimulation(simCode)%>
+    <%if isFMIMEType(FMUType) then ModelExchange(simCode, sourceFiles)%>
+    <%if isFMICSType(FMUType) then CoSimulation(simCode, sourceFiles)%>
     <%fmiTypeDefinitions(simCode, "2.0")%>
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
     <<
@@ -128,7 +128,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributes;
 
-template CoSimulation(SimCode simCode)
+template CoSimulation(SimCode simCode, list<String> sourceFiles)
  "Generates CoSimulation code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -146,7 +146,9 @@ case SIMCODE(__) then
     canNotUseMemoryManagementFunctions="false"
     canGetAndSetFMUstate="false"
     canSerializeFMUstate="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%> />
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"'%>>
+    <%SourceFiles(sourceFiles)%>
+  </CoSimulation>
   >>
 end CoSimulation;
 

@@ -32,7 +32,7 @@
 #define MEMORY_POOL_H_
 
 #include <stdlib.h>
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 #if defined(__cplusplus)
 extern "C" {

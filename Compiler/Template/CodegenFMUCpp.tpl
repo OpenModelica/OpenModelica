@@ -55,7 +55,7 @@ import CodegenCppInit;
 import CodegenFMUCommon;
 import CodegenFMU2;
 
-template translateModel(SimCode simCode, String FMUVersion, String FMUType)
+template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
  "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
   Calls CodegenCpp.translateModel for the actual model code."
 ::=
@@ -79,7 +79,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
   let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
-                   CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType)), 'modelDescription.xml')
+                   CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')

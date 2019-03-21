@@ -28,16 +28,16 @@
  *
  */
 
-#include "simulation_data.h"
-#include "simulation/solver/stateset.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/nonlinearSystem.h"
-#include "simulation/solver/linearSystem.h"
-#include "simulation/solver/mixedSystem.h"
-#include "simulation/solver/delay.h"
-#include "simulation/solver/fmi_events.h"
-#include "simulation/simulation_info_json.h"
-#include "simulation/simulation_input_xml.h"
+#include "../simulation_data.h"
+#include "../simulation/solver/stateset.h"
+#include "../simulation/solver/model_help.h"
+#include "../simulation/solver/nonlinearSystem.h"
+#include "../simulation/solver/linearSystem.h"
+#include "../simulation/solver/mixedSystem.h"
+#include "../simulation/solver/delay.h"
+#include "../simulation/solver/fmi_events.h"
+#include "../simulation/simulation_info_json.h"
+#include "../simulation/simulation_input_xml.h"
 
 /*
 DLLExport pthread_key_t fmu1_thread_data_key;

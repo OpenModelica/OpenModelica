@@ -64,7 +64,7 @@ CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo SimCodeBackendTV.mo Code
 	@echo " ** CodegenFMUCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-CodegenFMU.mo : CodegenFMU.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
+CodegenFMU.mo : CodegenFMU.tpl CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "

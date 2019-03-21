@@ -34,7 +34,7 @@
 #ifndef _INITIALIZATION_H_
 #define _INITIALIZATION_H_
 
-#include "simulation_data.h"
+#include "../../../simulation_data.h"
 
 #ifdef __cplusplus
 #include <cstdlib>

@@ -28,24 +28,10 @@
  *
  */
 
-#ifndef OPTIONS_H
-#define OPTIONS_H
-
-#include "../util/simulation_options.h"
-
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
-extern int omc_flag[FLAG_MAX];
-extern const char *omc_flagValue[FLAG_MAX];
-
-int helpFlagSet(int argc, char** argv);
-int setLogFormat(int argc, char** argv);
-int checkCommandLineArguments(int argc, char **argv);
-
-#ifdef __cplusplus
-  }
-#endif
-
+/* This header is used for FMUs to define settings in the FMU.
+ * It is not used for regular simulations as they don't include all of
+ * the sources.
+ */
+#if !defined(OMC_SIM_SETTINGS_CMDLINE)
+#define OMC_SIM_SETTINGS_CMDLINE
 #endif

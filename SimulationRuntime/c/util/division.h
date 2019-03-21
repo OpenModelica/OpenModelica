@@ -32,7 +32,7 @@
 #ifndef DIVISION_H
 #define DIVISION_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "omc_error.h"
 
 /* #define CHECK_NAN */

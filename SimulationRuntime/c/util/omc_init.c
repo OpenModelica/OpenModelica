@@ -30,7 +30,7 @@
 
 #include <stdio.h>
 #include "omc_init.h"
-#include "meta/meta_modelica_segv.h"
+#include "../meta/meta_modelica_segv.h"
 
 #if !defined(OMC_NO_THREADS)
 pthread_key_t mmc_thread_data_key = 0;
@@ -56,7 +56,7 @@ void mmc_init()
   exit(1);
 }
 #else
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 void mmc_init()
 {
   mmc_init_nogc();

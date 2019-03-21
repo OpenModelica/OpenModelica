@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include "omc_error.h"
 /* For MMC_THROW, so we can end this thing */
-#include "meta/meta_modelica.h"
+#include "../meta/meta_modelica.h"
 
 const int firstOMCErrorStream = 1;
 

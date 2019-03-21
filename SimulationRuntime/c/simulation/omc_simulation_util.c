@@ -30,8 +30,8 @@
 
 
 #include "omc_simulation_util.h"
-#include "simulation_data.h"
-#include "util/utility.h"
+#include "../simulation_data.h"
+#include "../util/utility.h"
 
 extern modelica_string OpenModelica_fmuLoadResource(threadData_t *threadData, modelica_string path)
 {

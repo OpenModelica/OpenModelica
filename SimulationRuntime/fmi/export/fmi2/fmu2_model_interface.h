@@ -32,7 +32,7 @@
 #define __FMU2_MODEL_INTERFACE_H__
 
 #include "fmi2Functions.h"
-#include "simulation_data.h"
+#include "../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

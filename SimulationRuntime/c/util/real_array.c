@@ -31,7 +31,7 @@
 
 #include "real_array.h"
 #include "index_spec.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "division.h"
 #include "integer_array.h"
 #include "omc_error.h"

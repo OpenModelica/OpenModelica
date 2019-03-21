@@ -896,27 +896,52 @@ extern int SystemImpl__createDirectory(const char *str)
 extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
 {
   int rv = 1;
-  char ch;
+  size_t n;
+  char buf[8192];
   FILE *source, *target;
 
-  if (!SystemImpl__directoryExists(str_2))
-  {
-      rv = SystemImpl__createDirectory(str_2);
+  source = fopen(str_1, "r");
+  if (source==0) {
+    const char *msg[2] = {strerror(errno), str_1};
+    c_add_message(NULL,85,
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error opening file for reading %s: %s"),
+      msg,
+      2);
+    return 0;
+  }
+  target = fopen(str_2, "w");
+  if (target==0) {
+    const char *msg[2] = {strerror(errno), str_2};
+    c_add_message(NULL,85,
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error opening file for writing %s: %s"),
+      msg,
+      2);
+    fclose(source);
+    return 0;
   }
 
-  if (strcmp(str_1, "") == 0)
+  while ( n = fread(buf, 1, 8192, source) ) {
+    if (n != fwrite(buf, 1, n, target)) {
+      rv = 0;
+      break;
+    }
+  }
+  if (rv == 0) {
+    const char *msg[2] = {strerror(errno), str_2, str_1};
+    c_add_message(NULL,85,
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error copying file contents %s to %s: %s"),
+      msg,
+      3);
+  }
+  if (!feof(source)) {
     rv = 0;
-
-  char targetFile[100];
-  strcpy(targetFile,str_2);
-  strcat(targetFile,"/");
-  strcat(targetFile,str_1);
-
-  source = fopen(str_1, "r");
-  target = fopen(targetFile, "w");
-
-  while( ( ch = fgetc(source) ) != EOF )
-     rv=rv && fputc(ch, target);
+  }
 
   fclose(source);
   fclose(target);

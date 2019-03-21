@@ -28,9 +28,9 @@
  *
  */
 
-#include "simulation/solver/synchronous.h"
-#include "simulation/solver/epsilon.h"
-#include "simulation/results/simulation_result.h"
+#include "synchronous.h"
+#include "epsilon.h"
+#include "../results/simulation_result.h"
 
 #ifdef __cplusplus
 extern "C" {

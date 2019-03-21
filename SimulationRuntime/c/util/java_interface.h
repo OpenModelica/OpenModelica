@@ -31,8 +31,8 @@
 #ifndef JAVA_INTERFACE__H
 #define JAVA_INTERFACE__H
 
-#include "openmodelica.h"
-#include "meta/meta_modelica.h"
+#include "../openmodelica.h"
+#include "../meta/meta_modelica.h"
 #ifdef __cplusplus
 /*
  *  JNI C++ and C interfaces are different, but we use the same code for

@@ -31,7 +31,7 @@
 
 #include "integer_array.h"
 #include "index_spec.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "division.h"
 
 #include <stdio.h>
@@ -40,7 +40,7 @@
 #include <math.h>
 
 #include "omc_error.h"
-#include "meta/meta_modelica.h"
+#include "../meta/meta_modelica.h"
 
 static OMC_INLINE modelica_integer *integer_ptrget(const integer_array_t *a, size_t i)
 {

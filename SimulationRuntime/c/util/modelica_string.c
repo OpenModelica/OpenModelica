@@ -30,11 +30,11 @@
 
 
 #include "modelica_string.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include "meta/meta_modelica_data.h"
+#include "../meta/meta_modelica_data.h"
 #include "omc_error.h"
 
 #define FMT_BUFSIZE 400

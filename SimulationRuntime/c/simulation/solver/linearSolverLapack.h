@@ -34,7 +34,7 @@
 #ifndef _LINEARSOLVERLAPACK_H_
 #define _LINEARSOLVERLAPACK_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 #include "omc_math.h"
 
 typedef struct DATA_LAPACK

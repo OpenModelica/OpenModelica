@@ -31,7 +31,7 @@
 #ifndef _SIMULATION_RESULT_H
 #define _SIMULATION_RESULT_H
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

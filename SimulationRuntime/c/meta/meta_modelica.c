@@ -28,10 +28,10 @@
  *
  */
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
-#include "util/base_array.h"
+#include "../util/base_array.h"
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>

@@ -41,29 +41,29 @@
 extern "C" {
 #endif
 
-#include "util/omc_msvc.h"
-#include "omc_inline.h"
+#include "omc_msvc.h"
+#include "../omc_inline.h"
 
-#include "util/modelica_string.h"
-#include "gc/omc_gc.h"
-#include "util/index_spec.h"
+#include "modelica_string.h"
+#include "../gc/omc_gc.h"
+#include "index_spec.h"
 
-#include "util/string_array.h"
-#include "util/boolean_array.h"
+#include "string_array.h"
+#include "boolean_array.h"
 
-#include "util/real_array.h"
-#include "util/integer_array.h"
-#include "util/generic_array.h"
+#include "real_array.h"
+#include "integer_array.h"
+#include "generic_array.h"
 
-#include "util/utility.h"
-#include "util/division.h"
+#include "utility.h"
+#include "division.h"
 
 #include <assert.h>
-#include "util/read_write.h"
-#include "simulation_data.h"
-#include "meta/meta_modelica.h"
-#include "meta/meta_modelica_builtin.h"
-#include "util/varinfo.h"
+#include "read_write.h"
+#include "../simulation_data.h"
+#include "../meta/meta_modelica.h"
+#include "../meta/meta_modelica_builtin.h"
+#include "varinfo.h"
 
 #if defined(__cplusplus)
 }

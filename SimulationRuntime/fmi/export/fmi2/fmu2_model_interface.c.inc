@@ -28,22 +28,22 @@
  *
  */
 
-#include "simulation_data.h"
-#include "simulation/solver/stateset.h"
-#include "simulation/solver/model_help.h"
+#include "fmu2_model_interface.h"
+#include "../simulation/solver/stateset.h"
+#include "../simulation/solver/model_help.h"
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-#include "simulation/solver/nonlinearSystem.h"
+#include "../simulation/solver/nonlinearSystem.h"
 #endif
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-#include "simulation/solver/linearSystem.h"
+#include "../simulation/solver/linearSystem.h"
 #endif
 #if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-#include "simulation/solver/mixedSystem.h"
+#include "../simulation/solver/mixedSystem.h"
 #endif
-#include "simulation/solver/delay.h"
-#include "simulation/solver/fmi_events.h"
-#include "simulation/simulation_info_json.h"
-#include "simulation/simulation_input_xml.h"
+#include "../simulation/solver/delay.h"
+#include "../simulation/solver/fmi_events.h"
+#include "../simulation/simulation_info_json.h"
+#include "../simulation/simulation_input_xml.h"
 /*
 DLLExport pthread_key_t fmu2_thread_data_key;
 */

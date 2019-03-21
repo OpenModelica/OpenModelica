@@ -36,8 +36,8 @@
 #ifndef META_MODELICA_DATA_H_
 #define META_MODELICA_DATA_H_
 
-#include "util/omc_init.h"
-#include "util/base_array.h"
+#include "../util/omc_init.h"
+#include "../util/base_array.h"
 
 /*
  *

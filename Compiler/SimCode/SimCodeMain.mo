@@ -93,6 +93,7 @@ import HashTableCrIListArray;
 import HashTableCrILst;
 import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
+import RuntimeSources;
 import SerializeModelInfo;
 import TaskSystemDump;
 import SerializeInitXML;
@@ -510,7 +511,7 @@ algorithm
     then ();
 
     case "sfmi" equation
-      Tpl.tplNoret3(CodegenSparseFMI.translateModel, simCode, "2.0", "me");
+      Tpl.tplNoret(function CodegenSparseFMI.translateModel(in_a_FMUVersion="2.0", in_a_FMUType="me", in_a_sourceFiles={}), simCode);
     then ();
 
     case "C"
@@ -678,6 +679,8 @@ algorithm
       String str, newdir, newpath, resourcesDir, dirname;
       String fmutmp;
       Boolean b;
+      list<String> allFiles, sourceFiles, defaultFiles, extraFiles, runtimeFiles, dgesvFiles;
+      SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
         fmutmp := simCode.fileNamePrefix + ".fmutmp";
@@ -722,15 +725,37 @@ algorithm
           end if;
         end if;
         SimCodeUtil.resetFunctionIndex();
-        Tpl.tplNoret3(CodegenFMU.translateModel, simCode, FMUVersion, FMUType);
-        Tpl.closeFile(Tpl.tplCallWithFailError4(CodegenFMU.fmuMakefile,Config.simulationCodeTarget(),simCode,FMUVersion,SimCodeUtil.getFunctionIndex(),txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
+        varInfo := simCode.modelInfo.varInfo;
+        allFiles := {};
+        allFiles := listAppend(RuntimeSources.commonHeaders, listAppend(RuntimeSources.commonFiles, allFiles));
+        allFiles := listAppend(if FMUVersion=="1.0" then RuntimeSources.fmi1AllFiles else RuntimeSources.fmi2AllFiles, allFiles);
+        if varInfo.numLinearSystems > 0 then
+          allFiles := listAppend(RuntimeSources.lsFiles, allFiles);
+        end if;
+        if varInfo.numNonLinearSystems > 0 then
+          allFiles := listAppend(RuntimeSources.nlsFiles, allFiles);
+        end if;
+        if varInfo.numMixedSystems > 0 then
+          allFiles := listAppend(RuntimeSources.mixedFiles, allFiles);
+        end if;
+        dgesvFiles :=  if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then RuntimeSources.dgesvFiles else {};
+        defaultFiles := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
+        runtimeFiles := list(f for f guard Util.endsWith(f, ".c") in allFiles);
+        sourceFiles := listAppend(defaultFiles, runtimeFiles);
+        Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=sourceFiles), simCode);
+        extraFiles := SimCodeUtil.getFunctionIndex();
+        copyFiles(listAppend(dgesvFiles, allFiles), source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=listAppend(extraFiles, defaultFiles), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in dgesvFiles), a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in runtimeFiles)),
+                      txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
+        Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
+                      txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
       then ();
     case (_,"Cpp")
       equation
         if(Flags.isSet(Flags.HPCOM)) then
           Tpl.tplNoret3(CodegenFMUCppHpcom.translateModel, simCode, FMUVersion, FMUType);
         else
-          Tpl.tplNoret3(CodegenFMUCpp.translateModel, simCode, FMUVersion, FMUType);
+          Tpl.tplNoret(function CodegenFMUCpp.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles={}), simCode);
         end if;
       then ();
     else
@@ -1356,6 +1381,22 @@ algorithm
   (sz,raw_sz,nonSharedStringSize) := System.getSizeOfData(data);
   Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(sz), StringUtil.bytesToReadableUnit(raw_sz), StringUtil.bytesToReadableUnit(nonSharedStringSize)});
 end serializeNotify;
+
+protected function copyFiles
+  input list<String> files;
+  input String source, destination;
+protected
+  String f2, d2;
+algorithm
+  for f in files loop
+    f2 := destination+"/"+f;
+    d2 := System.dirname(f2);
+    if not System.directoryExists(d2) then
+      Error.assertion(Util.createDirectoryTree(d2), "Failed to create directory " + d2, sourceInfo());
+    end if;
+    Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
+  end for;
+end copyFiles;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeMain;

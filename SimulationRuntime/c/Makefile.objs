@@ -29,17 +29,19 @@ UTIL_OBJS_NO_FMI=
 endif
 
 UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) modelica_string$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) cJSON$(OBJ_EXT) rational$(OBJ_EXT) modelica_string_lit$(OBJ_EXT) omc_init$(OBJ_EXT) omc_mmap$(OBJ_EXT) $(UTIL_OBJS_NO_FMI)
+UTIL_HFILES_MINIMAL=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h list.h modelica.h modelica_string.h read_write.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h omc_mmap.h cJSON.h modelica_string_lit.h omc_init.h
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) tinymt64$(OBJ_EXT) write_csv$(OBJ_EXT) rtclock$(OBJ_EXT)
+UTIL_HFILES=$(UTIL_HFILES_MINIMAL) java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h tinymt64.h
 else
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL)
+UTIL_HFILES=$(UTIL_HFILES_MINIMAL)
 endif
-UTIL_HFILES=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h list.h modelica.h modelica_string.h read_write.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h tinymt64.h omc_mmap.h cJSON.h modelica_string_lit.h omc_init.h
 
 # Files for math-support
 MATH_OBJS=pivot$(OBJ_EXT)
-MATH_HFILES = blaswrap.h
+MATH_HFILES =
 
 ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
 SOLVER_OBJS_NONLINEAR_SYSTEMS=
@@ -164,6 +166,7 @@ ifneq ($(NEED_DGESV),)
 LAPACK_OBJS = dgesv dgetrf dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
 BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame
 LIBF2C_OBJS = i_nint pow_di s_cmp s_copy
+DGESV_OBJS = $(LAPACK_OBJS) $(BLAS_OBJS) $(LIBF2C_OBJS)
 endif
 endif
 
@@ -190,4 +193,4 @@ ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*
 
 BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) ./meta/meta_modelica_catch$(OBJ_EXT)
 
-COMMON_HEADERS = util/omc_msvc.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h
+COMMON_HEADERS = util/omc_msvc.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h

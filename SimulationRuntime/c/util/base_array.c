@@ -31,7 +31,7 @@
 
 #include "base_array.h"
 #include "index_spec.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include "omc_error.h"
 
 #include <stdlib.h>

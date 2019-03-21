@@ -30,7 +30,7 @@
 
 
 #include "index_spec.h"
-#include "gc/omc_gc.h"
+#include "../gc/omc_gc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

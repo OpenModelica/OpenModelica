@@ -2095,26 +2095,6 @@ algorithm
   txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB, inArgC=inArgC), txt);
 end tplCallWithFailError3;
 
-function tplCallWithFailError4
-  input Tpl_Fun func;
-  input ArgType1 argA;
-  input ArgType2 argB;
-  input ArgType3 argC;
-  input ArgType4 argD;
-  input output Text txt = emptyTxt;
-
-  partial function Tpl_Fun
-    input Text in_txt;
-    input ArgType1 inArgA;
-    input ArgType2 inArgB;
-    input ArgType3 inArgC;
-    input ArgType4 inArgD;
-    output Text out_txt;
-  end Tpl_Fun;
-algorithm
-  txt := tplCallHandleErrors(function func(inArgA=argA, inArgB=argB, inArgC=argC, inArgD=argD), txt);
-end tplCallWithFailError4;
-
 public function tplString
   input Tpl_Fun inFun;
   input ArgType1 inArg;
@@ -2264,29 +2244,6 @@ algorithm
   _ := tplCallWithFailError3(inFun, inArg, inArg2, inArg3);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret3;
-
-public function tplNoret4
-  input Tpl_Fun inFun;
-  input ArgType1 inArg;
-  input ArgType2 inArg2;
-  input ArgType3 inArg3;
-  input ArgType4 inArg4;
-
-  partial function Tpl_Fun
-    input Text in_txt;
-    input ArgType1 inArgA;
-    input ArgType2 inArgB;
-    input ArgType3 inArgC;
-    input ArgType4 inArgD;
-    output Text out_txt;
-  end Tpl_Fun;
-protected
-  Integer nErr;
-algorithm
-  nErr := Error.getNumErrorMessages();
-  _ := tplCallWithFailError4(inFun, inArg, inArg2, inArg3, inArg4);
-  failIfTrue(Error.getNumErrorMessages() > nErr);
-end tplNoret4;
 
 public function tplNoret2
   input Tpl_Fun inFun;

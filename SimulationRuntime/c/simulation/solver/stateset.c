@@ -31,7 +31,7 @@
 #if !defined(OMC_NO_STATESELECTION)
 
 #include "stateset.h"
-#include "util/omc_error.h"
+#include "../../util/omc_error.h"
 
 /*! \fn initializeStateSetJacobians
  *

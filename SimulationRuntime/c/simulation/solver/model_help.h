@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 /* lochel: I guess this is used for discrete relations */
 #define RELATION(res,exp1,exp2,index,op_w) \

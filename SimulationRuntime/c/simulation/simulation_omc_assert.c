@@ -30,9 +30,9 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include "util/omc_error.h"
-#include "util/utility.h"
-#include "meta/meta_modelica.h"
+#include "../util/omc_error.h"
+#include "../util/utility.h"
+#include "../meta/meta_modelica.h"
 #include "simulation_runtime.h"
 
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */

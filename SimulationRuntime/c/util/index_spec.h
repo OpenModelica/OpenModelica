@@ -31,7 +31,7 @@
 #ifndef INDEX_SPEC_H_
 #define INDEX_SPEC_H_
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 extern int index_spec_ok(const index_spec_t* s);
 extern void alloc_index_spec(index_spec_t* s);

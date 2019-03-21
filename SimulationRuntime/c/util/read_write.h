@@ -36,7 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 
 #if defined(__cplusplus)

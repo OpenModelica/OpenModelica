@@ -31,7 +31,7 @@
 #ifndef _OMC_INIT_H
 #define _OMC_INIT_H
 
-#include "openmodelica.h"
+#include "../openmodelica.h"
 
 #if !defined(OMC_NO_THREADS)
 #include <pthread.h>

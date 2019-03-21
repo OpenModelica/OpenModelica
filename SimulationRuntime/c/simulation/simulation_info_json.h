@@ -31,7 +31,7 @@
 #ifndef SIMULATION_INFO_JSON_H
 #define SIMULATION_INFO_JSON_H
 
-#include "simulation_data.h"
+#include "../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {

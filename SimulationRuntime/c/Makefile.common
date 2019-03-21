@@ -4,7 +4,7 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
-BUILDPATH=build/c
+BUILDPATH?=build/c
 
 # Forces the generation of the dgesv sources
 NEED_DGESV=1
@@ -12,10 +12,13 @@ include Makefile.objs
 
 LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
+INCLUDE_NONFMI=-I$(builddir_inc)/c
 
-CPPFLAGS = -I. -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -I$(builddir_inc)/c
+CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
-override CXXFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
+# CXXFLAGS can include everything as before. For FMI we need to use relative paths since
+# automatic builds might not add the -I., etc
+override CXXFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS) $(INCLUDE_NONFMI) -I.
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 OPTIONAL_LIBS=$(CDASKRDIR)/libcdaskr.a
@@ -34,9 +37,9 @@ LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
-./math-support/blaswrap.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
+./omc_simulation_settings.h \
 ./openmodelica_types.h \
 ./simulation_data.h \
 ./ModelicaUtilities.h
@@ -71,8 +74,8 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/nonlinearSolverHybrd.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/real_time_sync.h \
-./simulation/solver/perform_simulation.c \
-./simulation/solver/perform_qss_simulation.c \
+./simulation/solver/perform_simulation.c.inc \
+./simulation/solver/perform_qss_simulation.c.inc \
 ./simulation/solver/dassl.h \
 ./simulation/solver/embedded_server.h \
 ./simulation/solver/ida_solver.h \
@@ -136,6 +139,8 @@ RUNTIMEINITIALIZATION_HEADERS = \
 # ./simulation/solver/events.h \
 # ./simulation/solver/solver_main.h \
 # ./util/list.h \
+
+ALL_RUNTIME_HEADERS = $(RUNTIME_HEADERS) $(RUNTIMELINEAR_HEADERS) $(RUNTIMEOPTIMZ_HEADERS) $(RUNTIMESIMULATION_HEADERS) $(RUNTIMESIMRESULTS_HEADERS) $(RUNTIMESIMSOLVER_HEADERS) $(RUNTIMEINITIALIZATION_HEADERS) $(RUNTIMEMETA_HEADERS) $(RUNTIMEMETAGC_HEADERS) $(RUNTIMEUTIL_HEADERS) $(RUNTIMEDATARECONCILE_HEADERS)
 
 .PHONY : clean all emcc emcc-clean emcc/libSimulationRuntimeC.so fmi-runtime
 
@@ -215,7 +220,7 @@ $(MATHOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(MATHHFILESPATH) $(COMMON_HEADERS
 
 $(SOLVEROBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) $(INCLUDE_NONFMI) -o $@ $<
 
 $(INITIALIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -223,7 +228,7 @@ $(INITIALIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(IN
 
 $(RESULTSOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) $(INCLUDE_NONFMI) -o $@ $<
 
 $(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp dataReconciliation/dataReconciliation.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -236,7 +241,7 @@ $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 
 $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) -I$(builddir_inc)/c -o $@ $<
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -244,7 +249,7 @@ $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 
 $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) $(CMINPACK_NO_DLL) -o $@ $<
+	$(CC) -c $(CFLAGS) $(CMINPACK_NO_DLL) -I$(top_builddir)/3rdParty/dgesv/include/ -o $@ $<
 
 $(BUILDPATH)/util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
 
@@ -271,7 +276,7 @@ libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
 	$(AR) $@ $(FMI_ME_OBJS_BUILDPATH)
 	ranlib $@
 
-install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime
+install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime RuntimeSources.mo
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
@@ -286,9 +291,9 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fm
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
-	   ../fmi/export/fmi1/fmu1_model_interface.c $(builddir_inc)/c/fmi1
+	   ../fmi/export/fmi1/fmu1_model_interface.c.inc $(builddir_inc)/c/fmi1
 	cp -p ../fmi/export/fmi2/*.h \
-	   ../fmi/export/fmi2/fmu2_model_interface.c $(builddir_inc)/c/fmi2
+	   ../fmi/export/fmi2/fmu2_model_interface.c.inc $(builddir_inc)/c/fmi2
 
 clean:
 	rm -rf $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o build/
@@ -321,3 +326,22 @@ sourcedist_internal:
 	@(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp -p $$D/$$OMCFILE.c $$OMCFILE.c)))
 	cp Makefile.objs $(builddir_inc)/c/
 	rm -r ./external_solvers
+
+RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
+	$(MAKE) sources.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
+	$(MAKE) headers.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
+	$(MAKE) headers.tmp OMC_FMI_RUNTIME=1 OMC_MINIMAL_RUNTIME=1 BUILDPATH=. OMC_NUM_NONLINEAR_SYSTEMS=0 OMC_NUM_LINEAR_SYSTEMS=0 OMC_NUM_MIXED_SYSTEMS=0
+	sed \
+	    -e "s#COMMON_HEADERS#`cat headers.tmp`#" \
+	    -e "s#COMMON_FILES#`cat sources.tmp`#" \
+	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
+	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#CMINPACK_FILES#$(CMINPACK_OBJS:%=,\\\"./external_solvers/%.c\\\")#" \
+	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
+	    RuntimeSources.mo.tpl > $@.tmp
+	mv $@.tmp $@
+sources.tmp: Makefile.common Makefile.objs
+	echo "$(FMI_ME_OBJS_BUILDPATH:%.o=\"%.c\")" | tr " " , > $@
+headers.tmp: Makefile.common Makefile.objs
+	echo "$(ALL_RUNTIME_HEADERS:%=\"%\")" | tr " " , > $@

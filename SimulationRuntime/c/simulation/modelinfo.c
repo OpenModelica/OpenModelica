@@ -28,13 +28,13 @@
  *
  */
 
-#include "util/omc_error.h"
-#include "simulation_data.h"
-#include "util/rtclock.h"
+#include "../util/omc_error.h"
+#include "../simulation_data.h"
+#include "../util/rtclock.h"
 #include "modelinfo.h"
 #include "simulation_info_json.h"
 #include "simulation_runtime.h"
-#include "util/omc_mmap.h"
+#include "../util/omc_mmap.h"
 #include "solver/model_help.h"
 
 
@@ -44,7 +44,7 @@
 #include <time.h>
 #include <assert.h>
 #include <stdint.h>
-#include "util/read_matlab4.h"
+#include "../util/read_matlab4.h"
 
 /* UNDEF to debug the gnuplot file */
 #define NO_PIPE
