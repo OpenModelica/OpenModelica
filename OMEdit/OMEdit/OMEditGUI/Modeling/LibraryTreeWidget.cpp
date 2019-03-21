@@ -710,8 +710,8 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
 
-    const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
+      const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
         if (components[i]->getName().startsWith(lastPart))
           completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));

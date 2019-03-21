@@ -155,6 +155,10 @@ QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(QStringList nameCom
   return result;
 }
 
+/*!
+ * \brief ModelicaEditor::wordUnderCursor
+ * \return
+ */
 QString ModelicaEditor::wordUnderCursor()
 {
   int end = mpPlainTextEdit->textCursor().position();
@@ -240,7 +244,8 @@ void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<Co
       }
       QList<ComponentInfo *> components = pAnnotation->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        annotations << CompleterItem(components[i]->getName() + " = ", components[i]->getHTMLDescription());
+        QString componentName = components[i]->getName();
+        annotations << CompleterItem(componentName, componentName + " = ", componentName, components[i]->getHTMLDescription());
       }
     }
   }
