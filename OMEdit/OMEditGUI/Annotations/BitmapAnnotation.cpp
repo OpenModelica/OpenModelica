@@ -102,7 +102,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphic
   setShapeFlags(true);
 
   setFileName(mClassFileName);
-  if (!mFileName.isEmpty()) {
+  if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
     mImage.load(mFileName);
   } else {
     mImage = QImage(":/Resources/icons/bitmap-shape.svg");
@@ -132,7 +132,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   }
   if (!mImageSource.isEmpty()) {
     mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));
-  } else if (!mFileName.isEmpty()) {
+  } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
     mImage.load(mFileName);
   } else {
     mImage = QImage(":/Resources/icons/bitmap-shape.svg");
