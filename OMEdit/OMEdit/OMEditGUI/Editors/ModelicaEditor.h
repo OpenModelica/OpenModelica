@@ -57,7 +57,7 @@ public:
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter();
-  QString wordUnderCursor();
+  virtual QString wordUnderCursor();
   QString stringAfterWord(const QString &word);
   static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
   QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);

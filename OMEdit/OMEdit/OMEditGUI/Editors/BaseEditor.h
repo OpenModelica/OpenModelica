@@ -285,7 +285,6 @@ private:
   void foldOrUnfold(bool unFold);
   void handleHomeKey(bool keepAnchor);
   void toggleBlockVisible(const QTextBlock &block);
-  QString textUnderCursor() const;
 private slots:
   void showCompletionItemToolTip(const QModelIndex & index);
   void insertCompletionItem(const QModelIndex & index);
@@ -329,6 +328,7 @@ public:
   DocumentMarker* getDocumentMarker() {return mpDocumentMarker;}
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
   virtual void popUpCompleter () = 0;
+  virtual QString wordUnderCursor();
 private:
   void initialize();
   void createActions();

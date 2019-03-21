@@ -1584,7 +1584,6 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   int extra = completionlength[0].length() - mpCompleter->completionPrefix().length();
-  cursor.movePosition(QTextCursor::EndOfWord);
   cursor.insertText(completionlength[0].right(extra));
   // store the cursor position to be used for selecting text when inserting code snippets
   int currentpos = cursor.position();
@@ -1609,13 +1608,6 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
   }
   cursor.endEditBlock();
   setTextCursor(cursor);
-}
-
-QString PlainTextEdit::textUnderCursor() const
-{
-  QTextCursor cursor = textCursor();
-  cursor.select(QTextCursor::WordUnderCursor);
-  return cursor.selectedText();
 }
 
 /*!
@@ -1726,7 +1718,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 
   static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
   bool hasModifier = (pEvent->modifiers() != Qt::NoModifier) && !ctrlOrShift;
-  QString completionPrefix = textUnderCursor();
+  QString completionPrefix = mpBaseEditor->wordUnderCursor();
   if ((!isCompleterShortcut && !isCompleterChar) && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 1 || eow.contains(pEvent->text().right(1)))) {
     mpCompleter->popup()->hide();
     return;
@@ -1980,6 +1972,16 @@ BaseEditor::BaseEditor(QWidget *pParent)
     mpModelWidget = 0;
   }
   initialize();
+}
+
+/*!
+ * \brief BaseEditor::wordUnderCursor
+ */
+QString BaseEditor::wordUnderCursor()
+{
+  QTextCursor cursor = mpPlainTextEdit->textCursor();
+  cursor.select(QTextCursor::WordUnderCursor);
+  return cursor.selectedText();
 }
 
 /*!
