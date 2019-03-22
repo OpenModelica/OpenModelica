@@ -3263,15 +3263,15 @@ algorithm
       // All other parameters are considered structural in this case.
       isStructural := true;
     end if;
-  elseif Component.isFinal(component) and Component.getFixedAttribute(component) then
-    // If a parameter is fixed and final we might also want to evaluate it,
-    // since its binding can't be modified. But only if all parameters it
-    // depends on are also fixed and final.
-    if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
-      isStructural := false;
-    else
-      isStructural := true;
-    end if;
+  //elseif Component.isFinal(component) and Component.getFixedAttribute(component) then
+  //  // If a parameter is fixed and final we might also want to evaluate it,
+  //  // since its binding can't be modified. But only if all parameters it
+  //  // depends on are also fixed and final.
+  //  if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
+  //    isStructural := false;
+  //  else
+  //    isStructural := true;
+  //  end if;
   else
     isStructural := false;
   end if;
