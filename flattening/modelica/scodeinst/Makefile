@@ -329,6 +329,7 @@ eq10.mo \
 EqualityConstraint1.mo \
 EquationInvalidType1.mo \
 EvaluateAllParams.mo \
+EvaluateAllParams2.mo \
 ExpandableConnector1.mo \
 ExpandableConnector2.mo \
 ExpandableConnector3.mo \
@@ -390,6 +391,9 @@ Final4.mo \
 Final5.mo \
 Final6.mo \
 Final7.mo \
+FinalParameter1.mo \
+FinalParameter2.mo \
+FinalParameter3.mo \
 ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \

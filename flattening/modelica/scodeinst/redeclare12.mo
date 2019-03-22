@@ -23,6 +23,6 @@ end MyTestModel;
 // Result:
 // class MyTestModel
 //   parameter Real localPar = 1.0;
-//   parameter Real intModel.internalModel.par = localPar;
+//   final parameter Real intModel.internalModel.par = localPar;
 // end MyTestModel;
 // endResult

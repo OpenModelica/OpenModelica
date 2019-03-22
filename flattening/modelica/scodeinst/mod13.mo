@@ -30,7 +30,7 @@ end A;
 // class A
 //   parameter Real Vdc = 1.0;
 //   parameter Real offset = Vdc;
-//   parameter Real c.offset = offset;
+//   final parameter Real c.offset = offset;
 //   Real c.x;
 //   Real c.y = c.x;
 // equation
