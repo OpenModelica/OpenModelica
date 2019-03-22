@@ -391,9 +391,6 @@ Final4.mo \
 Final5.mo \
 Final6.mo \
 Final7.mo \
-FinalParameter1.mo \
-FinalParameter2.mo \
-FinalParameter3.mo \
 ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \
@@ -836,6 +833,9 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+FinalParameter1.mo \
+FinalParameter2.mo \
+FinalParameter3.mo \
 CevalRecordArray3.mo \
 IfExpression6.mo \
 RedeclareConstant1.mo \

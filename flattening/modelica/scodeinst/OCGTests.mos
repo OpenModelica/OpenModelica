@@ -58,7 +58,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint has 2549 equation(s) and 2549 variable(s).
-// 1961 of these are trivial equation(s)."
+// 1957 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint has 2355 equation(s) and 2355 variable(s).
@@ -98,7 +98,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses has 2299 equation(s) and 2299 variable(s).
-// 1702 of these are trivial equation(s)."
+// 1690 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum has 931 equation(s) and 931 variable(s).
@@ -106,7 +106,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper has 1323 equation(s) and 1323 variable(s).
-// 971 of these are trivial equation(s)."
+// 969 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity has 908 equation(s) and 908 variable(s).
@@ -126,19 +126,19 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving has 2063 equation(s) and 2063 variable(s).
-// 1551 of these are trivial equation(s)."
+// 1547 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling has 2155 equation(s) and 2155 variable(s).
-// 1627 of these are trivial equation(s)."
+// 1623 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.SpringDamperSystem completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.SpringDamperSystem has 1644 equation(s) and 1644 variable(s).
-// 1228 of these are trivial equation(s)."
+// 1227 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem has 1450 equation(s) and 1450 variable(s).
-// 1100 of these are trivial equation(s)."
+// 1098 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass has 949 equation(s) and 949 variable(s).
@@ -146,7 +146,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces has 1247 equation(s) and 1247 variable(s).
-// 979 of these are trivial equation(s)."
+// 977 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings has 1465 equation(s) and 1465 variable(s).
@@ -158,39 +158,39 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a has 2383 equation(s) and 2383 variable(s).
-// 1840 of these are trivial equation(s)."
+// 1839 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b has 2487 equation(s) and 2487 variable(s).
-// 1914 of these are trivial equation(s)."
+// 1913 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic has 2751 equation(s) and 2751 variable(s).
-// 2095 of these are trivial equation(s)."
+// 2081 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 has 11122 equation(s) and 11122 variable(s).
-// 8737 of these are trivial equation(s)."
+// 8731 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic has 9016 equation(s) and 9016 variable(s).
-// 6843 of these are trivial equation(s)."
+// 6759 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 has 2055 equation(s) and 2055 variable(s).
-// 1499 of these are trivial equation(s)."
+// 1497 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2 has 2237 equation(s) and 2237 variable(s).
-// 1601 of these are trivial equation(s)."
+// 1587 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic has 1738 equation(s) and 1738 variable(s).
-// 1325 of these are trivial equation(s)."
+// 1322 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic has 4009 equation(s) and 4009 variable(s).
-// 2906 of these are trivial equation(s)."
+// 2870 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive has 1525 equation(s) and 1525 variable(s).
