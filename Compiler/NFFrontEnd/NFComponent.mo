@@ -826,7 +826,7 @@ uniontype Component
       return;
     end if;
 
-    fixed := fixed and Expression.isTrue(Binding.getTypedExp(binding));
+    fixed := fixed and Expression.isTrue(Binding.getExp(binding));
 
   end getFixedAttribute;
 

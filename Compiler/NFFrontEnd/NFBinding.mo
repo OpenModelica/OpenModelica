@@ -605,6 +605,24 @@ public
     end match;
   end mapExp;
 
+  function containsExp
+    input Binding binding;
+    input PredFunc predFn;
+    output Boolean res;
+
+    partial function PredFunc
+      input Expression exp;
+      output Boolean res;
+    end PredFunc;
+  algorithm
+    res := match binding
+      case UNTYPED_BINDING() then Expression.contains(binding.bindingExp, predFn);
+      case TYPED_BINDING()   then Expression.contains(binding.bindingExp, predFn);
+      case FLAT_BINDING()    then Expression.contains(binding.bindingExp, predFn);
+      case CEVAL_BINDING()   then Expression.contains(binding.bindingExp, predFn);
+      else false;
+    end match;
+  end containsExp;
 end Binding;
 
 annotation(__OpenModelica_Interface="frontend");

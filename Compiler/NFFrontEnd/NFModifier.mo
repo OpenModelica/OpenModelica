@@ -479,6 +479,16 @@ public
     end match;
   end isEach;
 
+  function isFinal
+    input Modifier mod;
+    output Boolean isFinal;
+  algorithm
+    isFinal := match mod
+      case MODIFIER(finalPrefix = SCode.FINAL()) then true;
+      else false;
+    end match;
+  end isFinal;
+
   function map
     input output Modifier mod;
     input FuncT func;

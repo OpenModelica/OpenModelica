@@ -3814,33 +3814,12 @@ public
   algorithm
     res := match cref
       case ComponentRef.CREF()
-        then subscriptsContains(cref.subscripts, func) or
+        then Subscript.listContainsExp(cref.subscripts, func) or
              crefContains(cref.restCref, func);
 
       else false;
     end match;
   end crefContains;
-
-  function subscriptsContains
-    input list<Subscript> subs;
-    input ContainsPred func;
-    output Boolean res;
-  algorithm
-    for s in subs loop
-      res := match s
-        case Subscript.UNTYPED() then contains(s.exp, func);
-        case Subscript.INDEX() then contains(s.index, func);
-        case Subscript.SLICE() then contains(s.slice, func);
-        else false;
-      end match;
-
-      if res then
-        return;
-      end if;
-    end for;
-
-    res := false;
-  end subscriptsContains;
 
   function listContains
     input list<Expression> expl;
@@ -3910,6 +3889,146 @@ public
       case Call.TYPED_REDUCTION() then contains(call.exp, func);
     end match;
   end callContains;
+
+  function containsShallow
+    input Expression exp;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() then crefContainsShallow(exp.cref, func);
+      case ARRAY() then listContainsShallow(exp.elements, func);
+
+      case MATRIX()
+        algorithm
+          res := false;
+
+          for row in exp.elements loop
+            if listContainsShallow(row, func) then
+              res := true;
+              break;
+            end if;
+          end for;
+        then
+          res;
+
+      case RANGE()
+        then func(exp.start) or
+             Util.applyOptionOrDefault(exp.step, func, false) or
+             func(exp.stop);
+
+      case TUPLE() then listContainsShallow(exp.elements, func);
+      case RECORD() then listContainsShallow(exp.elements, func);
+      case CALL() then callContainsShallow(exp.call, func);
+
+      case SIZE()
+        then Util.applyOptionOrDefault(exp.dimIndex, func, false) or
+             func(exp.exp);
+
+      case BINARY() then func(exp.exp1) or func(exp.exp2);
+      case UNARY() then func(exp.exp);
+      case LBINARY() then func(exp.exp1) or func(exp.exp2);
+      case LUNARY() then func(exp.exp);
+      case RELATION() then func(exp.exp1) or func(exp.exp2);
+      case IF() then func(exp.condition) or func(exp.trueBranch) or func(exp.falseBranch);
+      case CAST() then func(exp.exp);
+      case UNBOX() then func(exp.exp);
+
+      case SUBSCRIPTED_EXP()
+        then func(exp.exp) or Subscript.listContainsExpShallow(exp.subscripts, func);
+
+      case TUPLE_ELEMENT() then func(exp.tupleExp);
+      case RECORD_ELEMENT() then func(exp.recordExp);
+      case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
+      case BOX() then func(exp.exp);
+      else false;
+    end match;
+  end containsShallow;
+
+  function crefContainsShallow
+    input ComponentRef cref;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF()
+        then Subscript.listContainsExpShallow(cref.subscripts, func) or
+             crefContainsShallow(cref.restCref, func);
+
+      else false;
+    end match;
+  end crefContainsShallow;
+
+  function listContainsShallow
+    input list<Expression> expl;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    for e in expl loop
+      if func(e) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end listContainsShallow;
+
+  function callContainsShallow
+    input Call call;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match call
+      local
+        Expression e;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          res := listContainsShallow(call.arguments, func);
+
+          if not res then
+            for arg in call.named_args loop
+              (_, e) := arg;
+
+              if func(e) then
+                res := true;
+                break;
+              end if;
+            end for;
+          end if;
+        then
+          res;
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+
+            if func(e) then
+              res := true;
+              return;
+            end if;
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+
+            if func(e) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case Call.TYPED_CALL() then listContainsShallow(call.arguments, func);
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case Call.TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case Call.UNTYPED_REDUCTION() then func(call.exp);
+      case Call.TYPED_REDUCTION() then func(call.exp);
+    end match;
+  end callContainsShallow;
 
   function arrayFirstScalar
     "Returns the first scalar element of an array. Fails if the array is empty."

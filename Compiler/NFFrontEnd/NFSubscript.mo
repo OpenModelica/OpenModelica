@@ -316,6 +316,34 @@ public
     res := false;
   end listContainsExp;
 
+  function containsExpShallow
+    input Subscript subscript;
+    input Expression.ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match subscript
+      case UNTYPED() then func(subscript.exp);
+      case INDEX() then func(subscript.index);
+      case SLICE() then func(subscript.slice);
+      else false;
+    end match;
+  end containsExpShallow;
+
+  function listContainsExpShallow
+    input list<Subscript> subscripts;
+    input Expression.ContainsPred func;
+    output Boolean res;
+  algorithm
+    for s in subscripts loop
+      if containsExpShallow(s, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end listContainsExpShallow;
+
   function applyExp
     input Subscript subscript;
     input ApplyFunc func;

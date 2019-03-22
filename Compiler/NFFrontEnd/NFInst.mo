@@ -1407,6 +1407,10 @@ algorithm
           attr := mergeRedeclaredComponentAttributes(Util.getOption(originalAttr), attr, node);
         end if;
 
+        if not attr.isFinal and Modifier.isFinal(mod) then
+          attr.isFinal := true;
+        end if;
+
         // Create the untyped component and update the node with it. We need the
         // untyped component in instClass to make sure everything is scoped
         // correctly during lookup, but the class node the component should have
@@ -3185,21 +3189,21 @@ algorithm
 
     case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
       algorithm
-        // @adrpo: if Evaluate=true make the parameter a structural parameter
-        // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
-        if c.attributes.variability == Variability.PARAMETER and
-           (Component.getEvaluateAnnotation(c) or evalAllParams) then
+        if isStructuralComponent(c, c.attributes, binding, node, evalAllParams) then
           markStructuralParamsComp(c, node);
         end if;
 
+        // Parameters used in array dimensions are structural.
         for dim in c.dimensions loop
           markStructuralParamsDim(dim);
         end for;
 
+        // Parameters that determine the size of a component binding are structural.
         if Binding.isBound(binding) then
           markStructuralParamsExpSize(Binding.getUntypedExp(binding));
         end if;
 
+        // Parameters used in a component condition are structural.
         if Binding.isBound(condition) then
           markStructuralParamsExp(Binding.getUntypedExp(condition));
         end if;
@@ -3222,6 +3226,128 @@ algorithm
     else ();
   end match;
 end updateImplicitVariabilityComp;
+
+function isStructuralComponent
+  input Component component;
+  input Component.Attributes compAttrs;
+  input Binding compBinding;
+  input InstNode compNode;
+  input Boolean evalAllParams;
+  output Boolean isStructural;
+protected
+  Boolean is_fixed;
+algorithm
+  if compAttrs.variability <> Variability.PARAMETER then
+    // Only parameters can be structural.
+    isStructural := false;
+  elseif evalAllParams or Component.getEvaluateAnnotation(component) then
+    // If -d=evaluateAllParameters is set or the parameter has an Evaluate=true
+    // annotation we should probably evaluate the parameter, which we do by
+    // marking it as structural.
+    if not Component.getFixedAttribute(component) then
+      // Except non-fixed parameters.
+      isStructural := false;
+    elseif Binding.isUnbound(compBinding) then
+      // Except parameters with no bindings.
+      if not evalAllParams then
+        // Print a warning if a parameter has an Evaluate=true annotation but no binding.
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
+          {InstNode.name(compNode)}, InstNode.info(compNode));
+      end if;
+
+      isStructural := false;
+    elseif isBindingNotFixed(compBinding, requireFinal = false) then
+      // Except parameters that depend on non-fixed parameters.
+      isStructural := false;
+    else
+      // All other parameters are considered structural in this case.
+      isStructural := true;
+    end if;
+  elseif Component.isFinal(component) and Component.getFixedAttribute(component) then
+    // If a parameter is fixed and final we might also want to evaluate it,
+    // since its binding can't be modified. But only if all parameters it
+    // depends on are also fixed and final.
+    if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
+      isStructural := false;
+    else
+      isStructural := true;
+    end if;
+  else
+    isStructural := false;
+  end if;
+end isStructuralComponent;
+
+function isBindingNotFixed
+  input Binding binding;
+  input Boolean requireFinal;
+  input Integer depth = 1;
+  output Boolean isNotFixed;
+algorithm
+  if depth > 4 then
+    isNotFixed := true;
+    return;
+  end if;
+
+  isNotFixed := match binding
+    case Binding.UNTYPED_BINDING()
+      then isExpressionNotFixed(binding.bindingExp, requireFinal, depth);
+
+    else false;
+  end match;
+end isBindingNotFixed;
+
+function isExpressionNotFixed
+  input Expression exp;
+  input Boolean requireFinal;
+  input Integer depth;
+  output Boolean isNotFixed;
+algorithm
+  isNotFixed := match exp
+    local
+      InstNode node;
+      Component c;
+      Variability var;
+      Expression e;
+
+    case Expression.CREF()
+      algorithm
+        node := ComponentRef.node(exp.cref);
+
+        if InstNode.isComponent(node) then
+          c := InstNode.component(node);
+          var := Component.variability(c);
+
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            isNotFixed := false;
+          elseif var == Variability.PARAMETER and
+                 (not requireFinal or Component.isFinal(c)) and
+                 Component.getFixedAttribute(c) then
+            isNotFixed := isBindingNotFixed(Component.getBinding(c), requireFinal, depth + 1);
+          else
+            isNotFixed := true;
+          end if;
+        else
+          isNotFixed := true;
+        end if;
+      then
+        isNotFixed or
+        Expression.containsShallow(exp,
+          function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
+
+    case Expression.SIZE()
+      algorithm
+        if isSome(exp.dimIndex) then
+          isNotFixed := isExpressionNotFixed(Util.getOption(exp.dimIndex), requireFinal, depth);
+        else
+          isNotFixed := false;
+        end if;
+      then
+        isNotFixed;
+
+    else Expression.containsShallow(exp,
+      function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
+  end match;
+end isExpressionNotFixed;
 
 function markStructuralParamsDim
   input Dimension dimension;
