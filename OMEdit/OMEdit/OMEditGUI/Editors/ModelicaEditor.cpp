@@ -73,7 +73,10 @@ void ModelicaEditor::popUpCompleter()
   QString word = wordUnderCursor();
   mpPlainTextEdit->clearCompleter();
 
-  if (!word.contains('.')) {
+  QList<CompleterItem> annotations;
+  getCompletionAnnotations(stringAfterWord("annotation"), annotations);
+
+  if (!word.contains('.') && annotations.empty()) {
     QStringList keywords = ModelicaHighlighter::getKeywords();
     mpPlainTextEdit->insertCompleterKeywords(keywords);
     QStringList types = ModelicaHighlighter::getTypes();
@@ -93,8 +96,6 @@ void ModelicaEditor::popUpCompleter()
   mpPlainTextEdit->insertCompleterSymbols(classes, ":/Resources/icons/completerClass.svg");
   mpPlainTextEdit->insertCompleterSymbols(components, ":/Resources/icons/completerComponent.svg");
 
-  QList<CompleterItem> annotations;
-  getCompletionAnnotations(stringAfterWord("annotation"), annotations);
   mpPlainTextEdit->insertCompleterSymbols(annotations, ":/Resources/icons/completerAnnotation.svg");
 
   QCompleter *completer = mpPlainTextEdit->completer();
