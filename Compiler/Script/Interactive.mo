@@ -15736,6 +15736,8 @@ algorithm
       outProgram := Absyn.PROGRAM(classes, wi);
       break;
     end if;
+
+    acc := cls :: acc;
   end while;
 end transformClassInProgram;
 
