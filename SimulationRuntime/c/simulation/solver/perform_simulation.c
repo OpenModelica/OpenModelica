@@ -110,8 +110,11 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
       threadData->currentErrorStage = ERROR_EVENTHANDLING;
       infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
       /* prevent emit if noEventEmit flag is used */
-      if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
+      if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */ {
+        rt_accumulate(SIM_TIMER_EVENT);
         sim_result.emit(&sim_result, data, threadData);
+        rt_tick(SIM_TIMER_EVENT);
+      }
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(LOG_EVENTS);
@@ -125,7 +128,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
       solverInfo->didEventStep = 0;
     }
 
-    if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
+    if (measure_time_flag) { rt_accumulate(SIM_TIMER_EVENT); rt_tick(SIM_TIMER_EVENT); }
     /***** End event handling *****/
 
 
@@ -208,8 +211,8 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     double tmpdbl;
     unsigned int tmpint;
     int total = data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nProfileBlocks;
-    rt_tick(SIM_TIMER_OVERHEAD);
     rt_accumulate(SIM_TIMER_STEP);
+    rt_tick(SIM_TIMER_OVERHEAD);
 
     /* Disable time measurements if we have trouble writing to the file... */
     flag = flag && 1 == fwrite(&mt->stepNo, sizeof(unsigned int), 1, mt->fmtInt);
