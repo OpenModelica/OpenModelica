@@ -2197,7 +2197,9 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
     case "integer" then
-      'pack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);<%\n%>'
+      let var_name = '<%contextCref(c, contextFunction, &auxFunction)%>'
+      let &varDecls += 'integer_array <%var_name%>_packed;<%\n%>'
+      'pack_alloc_integer_array(&<%var_name%>, &<%var_name%>_packed);<%\n%>'
     else ""
   case SIMEXTARG(isInput = false, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
@@ -2223,7 +2225,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
     else
       let &varDecls += '<%extType(ty,true,false,false)%> <%extVarName(c)%>;<%\n%>'
       <<
-      <%extVarName(c)%> = (<%extType(ty,true,false,false)%>)<%match ty case T_COMPLEX(complexClassType=RECORD(__)) then "&" else ""%><%contextCref(c,contextFunction,&auxFunction)%>;
+      <%extVarName(c)%> = (<%extType(ty,true,false,false)%>)<%match ty case T_COMPLEX(complexClassType=RECORD(__)) then "&" else ""%><%contextCref(c,contextFunction,&auxFunction)%>;<%\n%>
       >>
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
@@ -2319,20 +2321,17 @@ template extFunCallVarcopy(SimExtArg arg, Text &auxFunction)
  "Helper to extFunCall."
 ::=
 match arg
-case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
-  // Inputs that have been packed should be unpacked after the external call.
-  match expTypeShort(ty)
-  case "integer" then
-  'unpack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
-  else ""
 case SIMEXTARG(outputIndex=0) then ""
-case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
+case SIMEXTARG(outputIndex=oi, isInput=isInput, isArray=true, cref=c, type_=ty) then
+  let var_name = contextCref(c, contextFunction, &auxFunction)
   match expTypeShort(ty)
-  case "integer" then
-  'unpack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
-  case "string" then
-  'unpack_string_array(&<%contextCref(c,contextFunction,&auxFunction)%>, <%contextCref(c,contextFunction,&auxFunction)%>_c89);'
-  else ""
+    case "integer" then
+      if isInput then
+        'unpack_copy_integer_array(&<%var_name%>_packed, &<%var_name%>);'
+      else
+        'unpack_integer_array(&<%var_name%>);'
+    case "string" then 'unpack_string_array(&<%var_name%>, <%var_name%>_c89);'
+    else ""
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let cr = '<%extVarName(c)%>'
     <<
@@ -2365,11 +2364,13 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
  "Helper to extFunCall."
 ::=
   match extArg
-  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
+  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t, isInput=isInput) then
     let name = contextCref(c,contextFunction,&auxFunction)
     let shortTypeStr = expTypeShort(t)
     let &varDecls += 'void *<%name%>_c89;<%\n%>'
-    let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(&(<%name%>));<%\n%>'
+    //let arg_name = match shortTypeStr case "integer" then '<%name%>_packed' else name
+    let arg_name = if isInput then (match shortTypeStr case "integer" then '<%name%>_packed' else name) else name
+    let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(&(<%arg_name%>));<%\n%>'
     '(<%extType(t,isInput,true,false)%>) <%name%>_c89'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = match t case T_STRING(__) then contextCref(c,contextFunction,&auxFunction) else extVarName(c)

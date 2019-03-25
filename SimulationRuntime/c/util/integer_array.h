@@ -279,6 +279,8 @@ extern void convert_alloc_integer_array_from_f77(const integer_array_t * a,
 
 void pack_integer_array(integer_array_t *a);
 void unpack_integer_array(integer_array_t *a);
+void pack_alloc_integer_array(integer_array_t *a, integer_array_t *dest);
+void unpack_copy_integer_array(const integer_array_t *a, integer_array_t *dest);
 
 /* Note: data_of_integer_array converts from integer_array to int*, for external functions only */
 static inline int* data_of_integer_array(const integer_array_t *a)
