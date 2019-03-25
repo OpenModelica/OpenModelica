@@ -14,17 +14,26 @@ loadString("
   end P1;
 ");
 getErrorString();
+loadString("
+  model M
+  end M;
+");
 
+getClassNames();
 getClassNames(P1.P2);
 moveClass(P1.P2.C2, -1);
 getErrorString();
+getClassNames();
 getClassNames(P1.P2);
 
 // Result:
 // true
 // ""
+// true
+// {M,P1}
 // {C1,C2}
 // true
 // ""
+// {M,P1}
 // {C2,C1}
 // endResult
