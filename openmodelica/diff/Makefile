@@ -21,6 +21,7 @@ ticket3642.mos \
 Ticket4110.mos \
 ticket4153.mos \
 ticket4368.mos \
+ticket5360.mos \
 UTF8.mos
 
 # test that currently fail. Move up when fixed.
