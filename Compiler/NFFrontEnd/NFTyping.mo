@@ -136,6 +136,7 @@ package ExpOrigin
   constant Type CONNECT         = intBitLShift(1, 17); // Part of connect argument.
   constant Type NOEVENT         = intBitLShift(1, 18); // Part of noEvent argument.
   constant Type ASSERT          = intBitLShift(1, 19); // Part of assert argument.
+  constant Type CLOCKED         = intBitLShift(1, 20); // Part of a clocked equation.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
@@ -2348,24 +2349,8 @@ algorithm
       Integer next_origin;
       SourceInfo info;
 
-    case Equation.EQUALITY()
-      algorithm
-        info := ElementSource.getInfo(eq.source);
-        (e1, ty1) := typeExp(eq.lhs, ExpOrigin.setFlag(origin, ExpOrigin.LHS), info);
-        (e2, ty2) := typeExp(eq.rhs, ExpOrigin.setFlag(origin, ExpOrigin.RHS), info);
-        (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
-
-        if TypeCheck.isIncompatibleMatch(mk) then
-          Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
-            {Expression.toString(e1) + " = " + Expression.toString(e2),
-             Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
-          fail();
-        end if;
-      then
-        Equation.EQUALITY(e1, e2, ty, eq.source);
-
-    case Equation.CONNECT()
-      then typeConnect(eq.lhs, eq.rhs, origin, eq.source);
+    case Equation.EQUALITY() then typeEqualityEquation(eq.lhs, eq.rhs, origin, eq.source);
+    case Equation.CONNECT()  then typeConnect(eq.lhs, eq.rhs, origin, eq.source);
 
     case Equation.FOR()
       algorithm
@@ -2385,24 +2370,7 @@ algorithm
         Equation.FOR(eq.iterator, SOME(e1), body, eq.source);
 
     case Equation.IF() then typeIfEquation(eq.branches, origin, eq.source);
-
-    case Equation.WHEN()
-      algorithm
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
-
-        tybrs := list(
-          match br
-            case Equation.Branch.BRANCH(condition = cond, body = body)
-              algorithm
-                (e1, var) := typeCondition(cond, origin, eq.source,
-                  Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
-                eqs1 := list(typeEquation(beq, next_origin) for beq in body);
-              then
-                Equation.makeBranch(e1, eqs1, var);
-          end match
-        for br in eq.branches);
-      then
-        Equation.WHEN(tybrs, eq.source);
+    case Equation.WHEN() then typeWhenEquation(eq.branches, origin, eq.source);
 
     case Equation.ASSERT()
       algorithm
@@ -2542,6 +2510,23 @@ algorithm
     else true;
   end match;
 end checkConnectorForm;
+
+function checkLhsInWhen
+  input Expression exp;
+  output Boolean isValid;
+algorithm
+  isValid := match exp
+    case Expression.CREF() then true;
+    case Expression.TUPLE()
+      algorithm
+        for e in exp.elements loop
+          checkLhsInWhen(e);
+        end for;
+      then
+        true;
+    else false;
+  end match;
+end checkLhsInWhen;
 
 function typeAlgorithm
   input output Algorithm alg;
@@ -2686,34 +2671,61 @@ algorithm
   end match;
 end typeStatement;
 
+function typeEqualityEquation
+  input Expression lhsExp;
+  input Expression rhsExp;
+  input ExpOrigin.Type origin;
+  input DAE.ElementSource source;
+  output Equation eq;
+protected
+  SourceInfo info = ElementSource.getInfo(source);
+  Expression e1, e2;
+  Type ty1, ty2, ty;
+  MatchKind mk;
+algorithm
+  if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) and
+     ExpOrigin.flagNotSet(origin, ExpOrigin.CLOCKED) then
+    if checkLhsInWhen(lhsExp) then
+      Expression.fold(lhsExp, Inst.markStructuralParamsSubs, 0);
+    else
+      Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(lhsExp)}, info);
+      fail();
+    end if;
+  end if;
+
+  (e1, ty1) := typeExp(lhsExp, ExpOrigin.setFlag(origin, ExpOrigin.LHS), info);
+  (e2, ty2) := typeExp(rhsExp, ExpOrigin.setFlag(origin, ExpOrigin.RHS), info);
+  (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
+      {Expression.toString(e1) + " = " + Expression.toString(e2),
+       Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
+    fail();
+  end if;
+
+  eq := Equation.EQUALITY(e1, e2, ty, source);
+end typeEqualityEquation;
+
 function typeCondition
   input output Expression condition;
   input ExpOrigin.Type origin;
   input DAE.ElementSource source;
   input Error.Message errorMsg;
   input Boolean allowVector = false;
+  input Boolean allowClock = false;
+        output Type ty;
         output Variability variability;
 protected
-  Type ty;
-  MatchKind mk;
   SourceInfo info;
+  Type ety;
 algorithm
   info := ElementSource.getInfo(source);
   (condition, ty, variability) := typeExp(condition, origin, info);
 
-  if allowVector and Type.isVector(ty) then
-    (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty), Type.BOOLEAN(), condition);
-    if TypeCheck.isIncompatibleMatch(mk) then
-      (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty), Type.CLOCK(), condition);
-    end if;
-  else
-    (_, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), condition);
-    if TypeCheck.isIncompatibleMatch(mk) then
-      (_, _, mk) := TypeCheck.matchTypes(ty, Type.CLOCK(), condition);
-    end if;
-  end if;
+  ety := if allowVector then Type.arrayElementType(ty) else ty;
 
-  if TypeCheck.isIncompatibleMatch(mk) then
+  if not (Type.isBoolean(ety) or (allowClock and Type.isClock(ety))) then
     Error.addSourceMessage(errorMsg,
       {Expression.toString(condition), Type.toString(ty)}, info);
     fail();
@@ -2736,7 +2748,7 @@ algorithm
   // Type the conditions of all the branches.
   for b in branches loop
     Equation.Branch.BRANCH(cond, _, eql) := b;
-    (cond, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
+    (cond, _, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
     if var > Variability.PARAMETER or isNonExpandableExp(cond) then
       // If the condition doesn't fulfill the requirements for allowing
@@ -2840,6 +2852,45 @@ algorithm
     else false;
   end match;
 end isNonConstantIfCondition;
+
+function typeWhenEquation
+  input list<Equation.Branch> branches;
+  input ExpOrigin.Type origin;
+  input DAE.ElementSource source;
+  output Equation whenEq;
+protected
+  ExpOrigin.Type next_origin = ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
+  list<Equation.Branch> accum_branches = {};
+  Expression cond;
+  list<Equation> body;
+  Type ty;
+  Variability var;
+algorithm
+  for branch in branches loop
+    Equation.Branch.BRANCH(cond, _, body) := branch;
+    (cond, ty, var) := typeCondition(cond, origin, source,
+      Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = true);
+
+    if Type.isClock(ty) then
+      if listLength(branches) <> 1 then
+        if referenceEq(branch, listHead(branches)) then
+          Error.addSourceMessage(Error.ELSE_WHEN_CLOCK, {}, ElementSource.getInfo(source));
+        else
+          Error.addSourceMessage(Error.CLOCKED_WHEN_BRANCH, {}, ElementSource.getInfo(source));
+        end if;
+
+        fail();
+      else
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.CLOCKED);
+      end if;
+    end if;
+
+    body := list(typeEquation(eq, next_origin) for eq in body);
+    accum_branches := Equation.makeBranch(cond, body, var) :: accum_branches;
+  end for;
+
+  whenEq := Equation.WHEN(listReverseInPlace(accum_branches), source);
+end typeWhenEquation;
 
 function typeOperatorArg
   input output Expression arg;

@@ -317,7 +317,7 @@ public constant Message NOT_ARRAY_TYPE_IN_FOR_STATEMENT = MESSAGE(93, TRANSLATIO
 public constant Message NON_CLASS_IN_COMP_FUNC_NAME = MESSAGE(94, TRANSLATION(), ERROR(),
   Util.gettext("Found non-class %s while looking for function via component. The only valid form is c.C1..CN.f where c is a scalar component and C1..CN are classes."));
 public constant Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = MESSAGE(95, SYMBOLIC(), ERROR(),
-  Util.gettext("The same variables must me solved in elsewhen clause as in the when clause."));
+  Util.gettext("The same variables must be solved in elsewhen clause as in the when clause."));
 public constant Message CLASS_IN_COMPOSITE_COMP_NAME = MESSAGE(96, TRANSLATION(), ERROR(),
   Util.gettext("Found class %s during lookup of composite component name '%s', expected component."));
 public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, TRANSLATION(), ERROR(),
@@ -826,6 +826,8 @@ public constant Message MODIFIER_NON_ARRAY_TYPE_ERROR = MESSAGE(348, TRANSLATION
   Util.gettext("Non-array modification ‘%s‘ for array component ‘%s‘, possibly due to missing ‘each‘."));
 public constant Message INST_RECURSION_LIMIT_REACHED = MESSAGE(349, TRANSLATION(), ERROR(),
   Util.gettext("Recursion limit reached while instantiating ‘%s‘."));
+public constant Message WHEN_IF_VARIABLE_MISMATCH = MESSAGE(350, TRANSLATION(), ERROR(),
+  Util.gettext("The branches of an if-equation inside a when-equation must have the same set of component references on the left-hand side."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

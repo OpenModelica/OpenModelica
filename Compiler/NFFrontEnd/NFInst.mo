@@ -100,6 +100,7 @@ import Record = NFRecord;
 import Variable = NFVariable;
 import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
+import VerifyModel = NFVerifyModel;
 
 public
 function instClassInProgram
@@ -159,6 +160,8 @@ algorithm
   flat_model := EvalConstants.evaluate(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
   funcs := Flatten.collectFunctions(flat_model, name);
+
+  VerifyModel.verify(flat_model);
 
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
@@ -2738,11 +2741,6 @@ algorithm
       algorithm
         exp1 := instExp(scodeEq.expLeft, scope, info);
         exp2 := instExp(scodeEq.expRight, scope, info);
-
-        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) and not checkLhsInWhen(exp1) then
-          Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(exp1)}, info);
-          fail();
-        end if;
       then
         Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
 
@@ -3052,23 +3050,6 @@ algorithm
   scope := InstNode.addIterator(iterator, scope);
 end addIteratorToScope;
 
-function checkLhsInWhen
-  input Expression exp;
-  output Boolean isValid;
-algorithm
-  isValid := match exp
-    case Expression.CREF() then true;
-    case Expression.TUPLE()
-      algorithm
-        for e in exp.elements loop
-          checkLhsInWhen(e);
-        end for;
-      then
-        true;
-    else false;
-  end match;
-end checkLhsInWhen;
-
 function insertGeneratedInners
   "Inner elements can be generated automatically during instantiation if they're
    missing, and are stored in the cache of the top scope since that's easily
@@ -3144,7 +3125,7 @@ algorithm
       algorithm
         for c in cls_tree.components loop
           if not InstNode.isEmpty(c) then
-          updateImplicitVariabilityComp(c, evalAllParams);
+            updateImplicitVariabilityComp(c, evalAllParams);
           end if;
         end for;
 

@@ -353,6 +353,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFHashTableCrToUnit.mo",
     "../NFFrontEnd/NFUnit.mo",
     "../NFFrontEnd/NFVariable.mo",
+    "../NFFrontEnd/NFVerifyModel.mo",
 
     "../Lexers/LexerJSON.mo",
     "../Lexers/LexerModelicaDiff.mo",

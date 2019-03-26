@@ -237,6 +237,16 @@ public
     end match;
   end isString;
 
+  function isClock
+    input Type ty;
+    output Boolean isClock;
+  algorithm
+    isClock := match ty
+      case CLOCK() then true;
+      else false;
+    end match;
+  end isClock;
+
   function isScalar
     input Type ty;
     output Boolean isScalar;

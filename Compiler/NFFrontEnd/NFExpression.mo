@@ -133,27 +133,45 @@ public
 	    ock := match ick
 	      local
 	        Expression i, ic, r, c, si, sm;
-	      case (INFERRED_CLOCK()) then DAE.INFERRED_CLOCK();
-	      case (INTEGER_CLOCK(i, r)) then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
-	      case (REAL_CLOCK(i)) then DAE.REAL_CLOCK(Expression.toDAE(i));
-	      case (BOOLEAN_CLOCK(c, si)) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
-	      case (SOLVER_CLOCK(c, sm)) then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
+	      case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
+	      case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+	      case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
+	      case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+	      case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
 	    end match;
 	  end toDAE;
 
-    function toString
+    function toDebugString
       input ClockKind ick;
       output String ock;
     algorithm
       ock := match ick
         local
           Expression i, ic, r, c, si, sm;
-        case (INFERRED_CLOCK()) then "INFERRED_CLOCK()";
-        case (INTEGER_CLOCK(i, r)) then "INTEGER_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
-        case (REAL_CLOCK(i)) then "REAL_CLOCK(" + Expression.toString(i) + ")";
-        case (BOOLEAN_CLOCK(c, si)) then "BOOLEAN_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
-        case (SOLVER_CLOCK(c, sm)) then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
+        case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
+        case INTEGER_CLOCK(i, r)  then "INTEGER_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
+        case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
+        case BOOLEAN_CLOCK(c, si) then "BOOLEAN_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
+        case SOLVER_CLOCK(c, sm)  then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
       end match;
+    end toDebugString;
+
+    function toString
+      input ClockKind ck;
+      output String str;
+    algorithm
+      str := match ck
+        local
+          Expression e1, e2;
+
+        case INFERRED_CLOCK()      then "";
+        case INTEGER_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
+        case REAL_CLOCK(e1)        then Expression.toString(e1);
+        case BOOLEAN_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
+        case SOLVER_CLOCK(e1, e2)  then Expression.toString(e1) + ", " + Expression.toString(e2);
+      end match;
+
+      str := "Clock(" + str + ")";
     end toString;
 	end ClockKind;
 
@@ -1480,7 +1498,7 @@ public
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then Absyn.pathString(t.typePath) + "." + exp.name;
 
-      case CLKCONST(clk) then "CLKCONST(" + ClockKind.toString(clk) + ")";
+      case CLKCONST(clk) then ClockKind.toString(clk);
 
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
