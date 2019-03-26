@@ -183,6 +183,8 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
           setSaveContentsType(LibraryTreeItem::SaveInOneFile);
         }
       }
+    } else {
+      setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
