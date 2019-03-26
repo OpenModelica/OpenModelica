@@ -130,7 +130,6 @@ end evaluateExp;
 function evaluateExpTraverser
   input Expression exp;
   input Boolean changed;
-  input Boolean isExternalArg = false;
   output Expression outExp;
   output Boolean outChanged;
 protected
@@ -141,18 +140,11 @@ algorithm
   outExp := match exp
     case Expression.CREF()
       algorithm
-        (outExp as Expression.CREF(cref = cref, ty = ty), outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(isExternalArg = false), false);
+        (outExp as Expression.CREF(cref = cref, ty = ty), outChanged) :=
+          Expression.mapFoldShallow(exp, evaluateExpTraverser, false);
 
-        // Evaluate constants and structural parameters, except for arrays that
-        // are used as arguments to an external function.
-
-        // TODO: The runtime doesn't handle array literals well when used as
-        //       arguments of external functions, since it sometimes tries to
-        //       write to them (e.g. when trying to pack them). Until that's
-        //       fixed we keep them as they are here.
-        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
-           not (isExternalArg and Type.isArray(ty)) then
+        // Evaluate constants and structural parameters.
+        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
           outChanged := true;
@@ -163,17 +155,9 @@ algorithm
       then
         outExp;
 
-    case Expression.CALL()
-      algorithm
-        (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(isExternalArg = Call.isExternal(exp.call)), false);
-      then
-        if outChanged then Expression.retype(outExp) else outExp;
-
     else
       algorithm
-        (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(isExternalArg = false), false);
+        (outExp, outChanged) := Expression.mapFoldShallow(exp, evaluateExpTraverser, false);
       then
         if outChanged then Expression.retype(outExp) else outExp;
   end match;
