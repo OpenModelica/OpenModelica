@@ -13,7 +13,7 @@ ifeq (clang,$(findstring clang,$(CC)))
 endif
 
 # makefile for Windows MinGW OMDev
-all : .testvariables settings  omc
+all : .testvariables settings omc
 
 autoconfGeneratedFiles =
 
@@ -93,6 +93,9 @@ BOOTSTRAP_FMIL_DEP=fmil
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 
+include Makefile.common
+include Makefile.omsi.common
+
 # For Windows build static FMI lib!
 FMILIB_SHARED = OFF
 # For Windows build static CMinpack lib!
@@ -104,8 +107,6 @@ PLATFORM_ARCH = (32-bit)
 else # mingw64
 PLATFORM_ARCH = (64-bit)
 endif
-
-include Makefile.common
 
 getMSVCversion:
 	echo "Check for given VSVERSION (2010|2012|2013|2015) version: [VSVERSION=$(VSVERSION)]"
@@ -281,9 +282,9 @@ copycppmsvcheader: getMSVCversion
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
 
 ifeq ($(OMENCRYPTION),yes)
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla OMSI
 else
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream OMSI
 endif
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
