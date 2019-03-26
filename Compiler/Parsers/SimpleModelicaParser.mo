@@ -47,6 +47,8 @@ import StringUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
 import DoubleEndedList;
 
+constant Token newlineToken = Token.TOKEN("", TokenId.NEWLINE, "\n", 1, 1, 1, 1, 1, 1);
+
 public
 
 uniontype ParseTree
@@ -87,19 +89,20 @@ function treeDiff
 protected
   list<tuple<Diff,list<ParseTree>>> res1, res2;
   ParseTree within1, within2;
-  list<ParseTree> t2_updated;
+  list<ParseTree> t1_updated, t2_updated;
 algorithm
   within1 := findWithin(t1);
   within2 := findWithin(t2);
   // If the new file lacks a within that was in the first file, pretend it is there
   // The other option is to preserve within in OMEdit...
-  t2_updated := match (within1,within2)
-    case (EMPTY(), EMPTY()) then t2;
-    case (_, EMPTY()) then within1::t2;
-    else t2;
+  (t1_updated, t2_updated) := match (within1,within2)
+    case (EMPTY(), EMPTY()) then (t1,t2);
+    case (_, EMPTY()) then (t1, within1::t2);
+    case (EMPTY(), _) then (within2::LEAF(newlineToken)::LEAF(newlineToken)::t1, t2);
+    else (t1,t2);
   end match;
-  t2_updated := moveComments(t1, t2_updated);
-  res := treeDiffWork1(t1, t2_updated, nTokens);
+  t2_updated := moveComments(t1_updated, t2_updated);
+  res := treeDiffWork1(t1_updated, t2_updated, nTokens);
   res := moveCommentsAfterDiff(res);
 end treeDiff;
 
