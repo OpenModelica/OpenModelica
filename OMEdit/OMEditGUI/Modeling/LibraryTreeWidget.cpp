@@ -183,8 +183,6 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
           setSaveContentsType(LibraryTreeItem::SaveInOneFile);
         }
       }
-    } else {
-      setSaveContentsType(LibraryTreeItem::SaveInOneFile);
     }
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
@@ -2641,6 +2639,7 @@ void LibraryTreeModel::createNonExistingLibraryTreeItem(LibraryTreeItem *pLibrar
   pLibraryTreeItem->setParent(pParentLibraryTreeItem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pLibraryTreeItem->setFileName("");
+  pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   pLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pLibraryTreeItem->getNameStructure()));
   pLibraryTreeItem->setIsSaved(isSaved);
   if (row == -1) {
@@ -4917,7 +4916,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     QString fileName;
     if (pLibraryTreeItem->isTopLevel() && !pLibraryTreeItem->isFilePathValid()) {
       QString name = pLibraryTreeItem->getName();
-      directoryName = StringHandler::getSaveFolderName(this, tr("%1 - Save %2 %3 as Modelica Directorty").arg(Helper::applicationName)
+      directoryName = StringHandler::getSaveFolderName(this, tr("%1 - Save %2 %3 as Modelica Directory").arg(Helper::applicationName)
                                                        .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()),
                                                        NULL, "Directory Files (*)", NULL, &name);
       if (directoryName.isEmpty()) {  // if user press ESC
