@@ -747,6 +747,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int saveJumpState;
   int success = 0;
 
+  if (measure_time_flag) rt_tick(SIM_TIMER_RESIDUALS);
+
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
     setContext(data, t, CONTEXT_ODE);
@@ -796,6 +798,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
     unsetContext(data);
   }
 
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_RESIDUALS);
+
   TRACE_POP
   return 0;
 }
@@ -810,6 +814,8 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   double timeBackup;
   int saveJumpState;
+
+  if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
@@ -836,6 +842,8 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
     unsetContext(data);
   }
+
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
 
   TRACE_POP
   return 0;
@@ -921,7 +929,7 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta, double *matrix
   k = 0;
   for(i=0; i < jacobian->sizeCols; i++)
   {
-	 jacobian->seedVars[i] = 1.0;
+   jacobian->seedVars[i] = 1.0;
 
     data->callback->functionJacA_column(data, threadData, jacobian, NULL);
 

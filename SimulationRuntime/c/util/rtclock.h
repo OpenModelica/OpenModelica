@@ -60,9 +60,12 @@ static inline double rt_tock(int ix) {return 0.0;}
 #define SIM_TIMER_PREINIT        6
 #define SIM_TIMER_OVERHEAD       7
 #define SIM_TIMER_FUNCTION_ODE   8
-#define SIM_TIMER_INIT_XML       9
-#define SIM_TIMER_INFO_XML       10
-#define SIM_TIMER_FIRST_FUNCTION 11
+#define SIM_TIMER_RESIDUALS      9
+#define SIM_TIMER_ALGEBRAICS     10
+#define SIM_TIMER_ZC             11
+#define SIM_TIMER_INIT_XML       12
+#define SIM_TIMER_INFO_XML       13
+#define SIM_TIMER_FIRST_FUNCTION 14
 
 #define SIM_PROF_TICK_FN(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION)
 #define SIM_PROF_ACC_FN(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION)

@@ -4023,7 +4023,9 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   int <%symbolName(modelNamePrefix,"functionODE")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_FUNCTION_ODE);
+  #endif !defined(OMC_MINIMAL_RUNTIME)
 
     <%varDecls%>
 
@@ -4033,7 +4035,9 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, threadData, functionODE_systems);'
     else fncalls %>
 
-    <% if profileFunctions() then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_FUNCTION_ODE);
+  #endif
 
     TRACE_POP
     return 0;
@@ -4061,12 +4065,19 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     TRACE_PUSH
     <%varDecls%>
 
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_ALGEBRAICS);
+  #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, threadData, functionAlg_systems);'
     else fncalls %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
+
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ALGEBRAICS);
+  #endif
 
     TRACE_POP
     return 0;
@@ -4314,9 +4325,16 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
     TRACE_PUSH
     <%varDecls2%>
 
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_ZC);
+  #endif
     data->simulationInfo->callStatistics.functionZeroCrossings++;
 
     <%zeroCrossingsCode%>
+
+  #if !defined(OMC_MINIMAL_RUNTIME)
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ZC);
+  #endif
 
     TRACE_POP
     return 0;
