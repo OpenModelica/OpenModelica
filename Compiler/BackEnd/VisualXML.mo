@@ -551,8 +551,8 @@ algorithm
     case(BackendDAE.VAR(source=source))
       algorithm
        paths := ElementSource.getElementSourceTypes(source);
-       _ := list(Absyn.pathString(p) for p in paths);
-         //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
+       //_ := list(Absyn.pathString(p) for p in paths);
+       //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
        (obj,_) := hasVisPath(paths,1);
     then Util.stringNotEqual(obj,"");
     else
@@ -568,30 +568,29 @@ author:Waurich TUD 2015-04"
   output tuple<list<BackendDAE.Var>,list<DAE.ComponentRef>> tplOut;
 algorithm
   tplOut := matchcontinue(var,tplIn)
-  local
-    Boolean b;
-    Integer idx;
-    BackendDAE.Type varType;
-    DAE.ComponentRef varName, cref;
-    list<DAE.ComponentRef> crefs;
-    DAE.ElementSource source;
-    list<BackendDAE.Var> varLst;
-    String obj;
-    list<Absyn.Path> paths;
-    list<String> paths_lst;
-    case(BackendDAE.VAR(varName=varName,  source=source), (varLst,crefs))
+    local
+      Integer idx;
+      DAE.ComponentRef varName, cref;
+      list<DAE.ComponentRef> crefs;
+      DAE.ElementSource source;
+      list<BackendDAE.Var> varLst;
+      String obj;
+      list<Absyn.Path> paths;
+
+    case (BackendDAE.VAR(varName=varName,  source=source), (varLst,crefs))
       algorithm
-       paths := ElementSource.getElementSourceTypes(source);
-       _ := list(Absyn.pathString(p) for p in paths);
-         //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
-       (obj,idx) := hasVisPath(paths,1);
-       true := Util.stringNotEqual(obj,"");
-         //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
-       cref := ComponentReference.firstNCrefs(varName,idx-1);
-       crefs := List.unique(cref::crefs);
-    then (var::varLst,crefs);
-    else
-      then tplIn;
+        paths := ElementSource.getElementSourceTypes(source);
+        //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
+        //print(List.toString(paths, Absyn.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
+        (obj,idx) := hasVisPath(paths,1);
+        true := Util.stringNotEqual(obj,"");
+        //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
+        cref := ComponentReference.firstNCrefs(varName,idx-1);
+        crefs := List.unique(cref::crefs);
+      then
+        (var::varLst, crefs);
+
+    else tplIn;
   end matchcontinue;
 end isVisualizationVarFold;
 
@@ -617,8 +616,8 @@ algorithm
     then (name,num);
   case(Absyn.QUALIFIED(name="Modelica",path=Absyn.QUALIFIED(name="Mechanics",path=Absyn.QUALIFIED(name="MultiBody",path=Absyn.QUALIFIED(name="Visualizers",path=Absyn.QUALIFIED(name="Advanced",path=Absyn.IDENT(name=name))))))::_,_)
     algorithm
-      shapeIdent := stringAppendList(List.firstN(stringListStringChar(name),6));
-      true := stringEqual(shapeIdent,"Shape$");
+      shapeIdent := substring(name, 1, 5);
+      true := stringEqual(shapeIdent,"Shape");
     then (name,numIn);
   case(_::rest,_)
     algorithm

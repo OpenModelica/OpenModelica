@@ -203,7 +203,7 @@ algorithm
     case ComponentRef.CREF()
       algorithm
         source := ElementSource.addElementSourceType(source,
-          InstNode.scopePath(InstNode.classScope(InstNode.parent(cref.node))));
+          InstNode.scopePath(InstNode.classScope(InstNode.getDerivedNode(InstNode.parent(cref.node)))));
       then
         addComponentTypeToSource(cref.restCref, source);
 

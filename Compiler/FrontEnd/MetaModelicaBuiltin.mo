@@ -611,7 +611,7 @@ function substring
   input String str;
   input Integer start "start index, first character is 1";
   input Integer stop "stop index, first character is 1";
-  output String out "Length is stop-start";
+  output String out "Length is stop-start+1";
 external "builtin";
 end substring;
 
