@@ -818,15 +818,23 @@ When2.mo \
 When3.mo \
 When4.mo \
 When5.mo \
+WhenClocked1.mo \
+WhenClockedElse1.mo \
+WhenClockedElse2.mo \
+WhenClockedStatement1.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
 WhenInitial1.mo \
+WhenInvalidEquation1.mo \
 WhenNested1.mo \
 WhenNested2.mo \
 WhenVariability1.mo \
 WhenVariability2.mo \
+WhenVariableMismatch1.mo \
+WhenVariableMismatch2.mo \
+WhenVariableMismatch3.mo \
 Wild1.mo \
 OCGTests.mos \
 
