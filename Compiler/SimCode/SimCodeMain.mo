@@ -728,7 +728,7 @@ algorithm
         varInfo := simCode.modelInfo.varInfo;
         allFiles := {};
         allFiles := listAppend(RuntimeSources.commonHeaders, listAppend(RuntimeSources.commonFiles, allFiles));
-        allFiles := listAppend(if FMUVersion=="1.0" then RuntimeSources.fmi1AllFiles else RuntimeSources.fmi2AllFiles, allFiles);
+        allFiles := listAppend(if FMUVersion=="1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files, allFiles);
         if varInfo.numLinearSystems > 0 then
           allFiles := listAppend(RuntimeSources.lsFiles, allFiles);
         end if;
@@ -738,6 +738,9 @@ algorithm
         if varInfo.numMixedSystems > 0 then
           allFiles := listAppend(RuntimeSources.mixedFiles, allFiles);
         end if;
+
+        System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
+
         dgesvFiles :=  if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then RuntimeSources.dgesvFiles else {};
         defaultFiles := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
         runtimeFiles := list(f for f guard Util.endsWith(f, ".c") in allFiles);

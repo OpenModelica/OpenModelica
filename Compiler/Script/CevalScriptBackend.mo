@@ -3042,7 +3042,7 @@ algorithm
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
-	ExecStat.execStat("FrontEnd - DAE generated");
+  ExecStat.execStat("FrontEnd - DAE generated");
     odae := SOME(dae);
   else
     // Return odae=NONE(); needed to update cache and symbol table if we fail
@@ -3354,7 +3354,8 @@ protected
   String CC, CFLAGS, LDFLAGS, makefileStr, container, host, nozip,
     dir=fmutmp+"/sources/", cmd="",
     quote="'",
-    dquote = if isWindows then "\"" else "'";
+    dquote = if isWindows then "\"" else "'",
+    includeDefaultFmi;
   list<String> rest;
   Boolean finishedBuild;
   Integer uid;
@@ -3368,6 +3369,7 @@ algorithm
     System.removeFile(logfile);
   end if;
   nozip := System.getMakeCommand()+" -j"+intString(Config.noProc()) + " nozip";
+  includeDefaultFmi := "-I" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi";
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
       algorithm
@@ -3381,7 +3383,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "");
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
         System.writeFile(dir + "Makefile", makefileStr);
@@ -3400,7 +3402,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1");
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1 " + includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
         System.writeFile(dir + "Makefile", makefileStr);
@@ -3409,7 +3411,7 @@ algorithm
       then false;
     case {_}
       algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS= && " +
+        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+includeDefaultFmi+quote+" LDFLAGS= && " +
                nozip;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
@@ -3422,7 +3424,7 @@ algorithm
         uid := System.getuid();
         cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu " +stringDelimitList(rest," ")+ " sh -c " + dquote +
                "cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " && " +
-               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS= && " +
+               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+includeDefaultFmi+quote+" LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
@@ -3529,8 +3531,8 @@ algorithm
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
     if 0 <> System.systemCall("make -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
-	  // do nothing
-	end if;
+    // do nothing
+  end if;
     return;
   end if;
 
@@ -3579,21 +3581,21 @@ algorithm
     ext := if System.os() == "Windows_NT" then ".exe" else "";
     if encrypt then
       // create the path till packagetool
-	    packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});
-	    if System.regularFileExists(packageTool) then
-	      // create the list of arguments for packagetool
-	      packageToolArgs := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
-	      command := stringAppendList({packageTool," ",packageToolArgs});
-	    else
-	      Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
+      packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});
+      if System.regularFileExists(packageTool) then
+        // create the list of arguments for packagetool
+        packageToolArgs := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
+        command := stringAppendList({packageTool," ",packageToolArgs});
+      else
+        Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
         success := false;
         runCommand := false;
-	    end if;
-	  else
-	    molName := Absyn.pathString(className) + ".mol";
-	    dirPath := System.dirname(fileName);
-	    // commands
-	    rmCommand := "rm -f \"" + molName + "\"";
+      end if;
+    else
+      molName := Absyn.pathString(className) + ".mol";
+      dirPath := System.dirname(fileName);
+      // commands
+      rmCommand := "rm -f \"" + molName + "\"";
       cdCommand := "cd \"" +  dirPath + "\"";
       mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
 
@@ -8181,8 +8183,8 @@ algorithm
    if nm == 2 then
      resultFile := f; return;
    end if;
-	else
-	  // do nothing
+  else
+    // do nothing
   end try;
 end selectResultFile;
 

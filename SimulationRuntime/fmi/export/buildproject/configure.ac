@@ -209,6 +209,14 @@ AC_CHECK_LIB([m],[cos],[],[AC_MSG_ERROR([math library not found])])
 AC_MSG_CHECKING([for filesystem access])
 AC_TRY_LINK([#include <stdio.h>], [fopen("a.txt", "r");], [AC_MSG_RESULT([OK])], [AC_MSG_RESULT([no]); CPPFLAGS="$CPPFLAGS -DOMC_NO_FILESYSTEM"])
 
+if test -f isfmi1; then
+AC_CHECK_HEADERS([fmiModelFunctions.h fmiModelTypes.h], [], [AC_MSG_ERROR([FMI headers need to be present in the include path. Try setting CPPFLAGS.])])
+elif test -f isfmi2; then
+AC_CHECK_HEADERS([fmi2Functions.h  fmi2FunctionTypes.h  fmi2TypesPlatform.h], [], [AC_MSG_ERROR([FMI headers need to be present in the include path. Try setting CPPFLAGS.])])
+else
+AC_MSG_ERROR([Neither file isfmi1 or isfmi2 exists in the source directory])
+fi
+
 AC_ARG_WITH(dynamic-om-runtime,  [  --with-dynamic-om-runtime    (uses the OMC runtime as a shared object instead of compiling it statically into the the FMU.)],[OPENMODELICADYNAMIC=yes],[OPENMODELICADYNAMIC=no])
 
 if test "$OPENMODELICADYNAMIC" = "no"; then

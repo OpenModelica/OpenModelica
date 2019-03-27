@@ -290,10 +290,9 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fm
 	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
-	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
-	   ../fmi/export/fmi1/fmu1_model_interface.c.inc $(builddir_inc)/c/fmi1
-	cp -p ../fmi/export/fmi2/*.h \
-	   ../fmi/export/fmi2/fmu2_model_interface.c.inc $(builddir_inc)/c/fmi2
+	mkdir -p $(builddir_inc)/c/fmi-export
+	cp -p ../fmi/export/fmi/*.h $(builddir_inc)/c/fmi
+	cp -p ../fmi/export/openmodelica/*.inc ../fmi/export/openmodelica/*.h $(builddir_inc)/c/fmi-export
 
 clean:
 	rm -rf $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o build/

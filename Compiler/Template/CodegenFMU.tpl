@@ -224,9 +224,9 @@ case SIMCODE(__) then
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
   <%if isFMIVersion20(FMUVersion) then
-  '#include "fmi2/fmu2_model_interface.h"'
+  '#include "fmi-export/fmu2_model_interface.h"'
   else
-  '#include "fmi1/fmu1_model_interface.h"'%>
+  '#include "fmi-export/fmu1_model_interface.h"'%>
 
   #ifdef __cplusplus
   extern "C" {
@@ -271,13 +271,13 @@ case SIMCODE(__) then
     <<
     extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi2/fmu2_model_interface.c.inc"
+    #include "fmi-export/fmu2_model_interface.c.inc"
     >>
   else
     <<
     extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
     #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi1/fmu1_model_interface.c.inc"
+    #include "fmi-export/fmu1_model_interface.c.inc"
     >>
   %>
 
