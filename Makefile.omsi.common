@@ -29,7 +29,7 @@ OMSI-clean: OMSIBaseClean
 # Rules for OMSIBase library
 #############################
 
-OMSIBase: sundials
+OMSIBase: sundials fmil
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \

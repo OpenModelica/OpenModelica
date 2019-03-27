@@ -81,9 +81,9 @@ include Makefile.omsi.common
 settings:
 
 ifeq ($(OMENCRYPTION),yes)
-omc: semla omc-bootstrapped OMSI
+omc: semla omc-bootstrapped
 else
-omc: omc-bootstrapped OMSI
+omc: omc-bootstrapped
 endif
 
 boehm-gc-lib: @LIBGC@

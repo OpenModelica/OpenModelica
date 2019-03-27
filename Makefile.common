@@ -107,7 +107,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables  boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS) OMSI
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
