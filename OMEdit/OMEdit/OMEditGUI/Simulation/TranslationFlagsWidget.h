@@ -55,6 +55,7 @@ public:
   QCheckBox *getPedanticCheckBox() const {return mpPedanticCheckBox;}
   QCheckBox *getParmodautoCheckBox() const {return mpParmodautoCheckBox;}
   QCheckBox *getNewInstantiationCheckBox() const {return mpNewInstantiationCheckBox;}
+  QCheckBox *getDataReconciliationCheckBox() const {return mpDataReconciliationCheckBox;}
   QLineEdit *getAdditionalTranslationFlagsTextBox() const {return mpAdditionalTranslationFlagsTextBox;}
 
   void applySimulationOptions(const SimulationOptions &simulationOptions);
@@ -72,6 +73,7 @@ private:
   QCheckBox *mpPedanticCheckBox;
   QCheckBox *mpParmodautoCheckBox;
   QCheckBox *mpNewInstantiationCheckBox;
+  QCheckBox *mpDataReconciliationCheckBox;
   Label *mpAdditionalTranslationFlagsLabel;
   QLineEdit *mpAdditionalTranslationFlagsTextBox;
   QToolButton *mpTranslationFlagsHelpButton;

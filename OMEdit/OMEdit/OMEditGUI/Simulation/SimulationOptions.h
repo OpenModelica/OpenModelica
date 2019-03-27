@@ -78,6 +78,7 @@ public:
     setPedantic(false);
     setParmodauto(false);
     setNewInstantiation(false);
+    setDataReconciliation(false);
     setAdditionalTranslationFlags("");
     // Simulation
     setModelSetupFile("");
@@ -92,6 +93,9 @@ public:
     setProfiling("none");
     setCPUTime(false);
     setEnableAllWarnings(true);
+    setReconcile(false);
+    setDataReconciliationInputFile("");
+    setDataReconciliationEpsilon("");
     setLogStreams(QStringList() << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
@@ -174,6 +178,8 @@ public:
   bool getParmodauto() const {return mParmodauto;}
   void setNewInstantiation(bool newInstantiation) {mNewInstantiation = newInstantiation;}
   bool getNewInstantiation() const {return mNewInstantiation;}
+  void setDataReconciliation(bool dataReconciliation) {mDataReconciliation = dataReconciliation;}
+  bool getDataReconciliation() const {return mDataReconciliation;}
   void setAdditionalTranslationFlags(QString additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
   QString getAdditionalTranslationFlags() const {return mAdditionalTranslationFlags;}
 
@@ -201,6 +207,12 @@ public:
   bool getCPUTime() {return mCPUTime;}
   void setEnableAllWarnings(bool enableAllWarnings) {mEnableAllWarnings = enableAllWarnings;}
   bool getEnableAllWarnings() {return mEnableAllWarnings;}
+  void setReconcile(bool reconcile) {mReconcile = reconcile;}
+  bool getReconcile() {return mReconcile;}
+  void setDataReconciliationInputFile(QString dataReconciliationInputFile) {mDataReconciliationInputFile = dataReconciliationInputFile;}
+  QString getDataReconciliationInputFile() {return mDataReconciliationInputFile;}
+  void setDataReconciliationEpsilon(QString dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
+  QString getDataReconciliationEpsilon() {return mDataReconciliationEpsilon;}
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
   QStringList getLogStreams() {return mLogStreams;}
   void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
@@ -271,6 +283,7 @@ private:
   bool mPedantic;
   bool mParmodauto;
   bool mNewInstantiation;
+  bool mDataReconciliation;
   QString mAdditionalTranslationFlags;
   // simulation flags
   QString mModelSetupFile;
@@ -285,6 +298,9 @@ private:
   QString mProfiling;
   bool mCPUTime;
   bool mEnableAllWarnings;
+  bool mReconcile;
+  QString mDataReconciliationInputFile;
+  QString mDataReconciliationEpsilon;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
   // output
