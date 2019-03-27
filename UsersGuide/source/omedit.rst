@@ -1031,16 +1031,39 @@ Simulation
 
 -  Simulation
 
-  -  *Matching Algorithm* – sets the matching algorithm for simulation.
+  -  Translation Flags
 
-  -  *Index Reduction Method* – sets the index reduction method for
-     simulation.
+    -  *Matching Algorithm* – sets the matching algorithm for simulation.
+
+    -  *Index Reduction Method* – sets the index reduction method for
+       simulation.
+
+    -  *Show additional information from the initialization process* - prints the
+       information from the initialization process
+
+    -  *Evaluate all parameters at compile time* - makes the simulation more
+       efficient but you have to recompile the model if you want to change the
+       parameter instead of re-simulate.
+
+    -  *Enable analytical jacobian for non-linear strong components* - enables
+        analytical jacobian for non-linear strong components without user-defined
+        function calls.
+
+    -  *Enable pedantic debug-mode, to get much more feedback*
+
+    -  *Enable parallelization of independent systems of equations (Experimental)*
+
+    -  *Enable experimental new instantiation phase*
+
+    -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
   -  *Target Language* – sets the target language in which the code is generated.
 
-  -  *Target Compiler* – sets the target compiler for compiling the generated code.
+  -  *Target Build* – sets the target build that is used to compile the generated code.
 
-  -  *OMC Command Line Options* – sets the OMC command line options for the simulation.
+  -  *C Compiler* – sets the C compiler for compiling the generated code.
+
+  -  *CXX Compiler* – sets the CXX compiler for compiling the generated code.
 
   -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
@@ -1289,8 +1312,8 @@ reduction method instead of the default ones then you can write the following co
 The annotation is a space separated list of options where each option is either just a command line
 flag or a flag with a value.
 
-In OMEdit right click inside the icon/diagram view of the model and choose `Properties`.
-Then `OMC Command Line Options` and in the text field write `--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection`.
+In OMEdit open the Simulation Setup and set the Translation Flags then
+in the bottom check `Save translation flags inside model i.e., __OpenModelica_commandLineOptions annotation` and click on OK.
 
 If you want to ignore this annotation then use `setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true")`.
 In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_commandLineOptions annotation`.
@@ -1312,7 +1335,7 @@ The annotation is a comma separated list of options where each option is a simul
 with a value. For flags that doesn't have any value use `()` (See the above code example).
 
 In OMEdit open the Simulation Setup and set the Simulation Flags then
-in the bottom check `Save __OpenModelica_simulationFlags annotation inside model` and click on OK.
+in the bottom check `Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation` and click on OK.
 
 If you want to ignore this annotation then use `setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true")`.
 In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_simulationFlags annotation`.
