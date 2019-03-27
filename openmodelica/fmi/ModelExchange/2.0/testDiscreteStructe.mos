@@ -48,6 +48,70 @@ readFile("modelDescription.tmp.xml");
 //   <ModelExchange
 //     modelIdentifier=\"testDID\"
 //     providesDirectionalDerivative=\"true\">
+//     <SourceFiles>
+//       <File name=\"testDID.c\" />
+//       <File name=\"testDID_functions.c\" />
+//       <File name=\"testDID_records.c\" />
+//       <File name=\"testDID_01exo.c\" />
+//       <File name=\"testDID_02nls.c\" />
+//       <File name=\"testDID_03lsy.c\" />
+//       <File name=\"testDID_04set.c\" />
+//       <File name=\"testDID_05evt.c\" />
+//       <File name=\"testDID_06inz.c\" />
+//       <File name=\"testDID_07dly.c\" />
+//       <File name=\"testDID_08bnd.c\" />
+//       <File name=\"testDID_09alg.c\" />
+//       <File name=\"testDID_10asr.c\" />
+//       <File name=\"testDID_11mix.c\" />
+//       <File name=\"testDID_12jac.c\" />
+//       <File name=\"testDID_13opt.c\" />
+//       <File name=\"testDID_14lnz.c\" />
+//       <File name=\"testDID_15syn.c\" />
+//       <File name=\"testDID_16dae.c\" />
+//       <File name=\"testDID_17inl.c\" />
+//       <File name=\"testDID_init_fmu.c\" />
+//       <File name=\"testDID_FMU.c\" />
+//       <File name=\"./util/read_matlab4.c\" />
+//       <File name=\"./util/read_csv.c\" />
+//       <File name=\"./util/libcsv.c\" />
+//       <File name=\"gc/memory_pool.c\" />
+//       <File name=\"gc/omc_gc.c\" />
+//       <File name=\"./util/base_array.c\" />
+//       <File name=\"./util/boolean_array.c\" />
+//       <File name=\"./util/omc_error.c\" />
+//       <File name=\"./util/division.c\" />
+//       <File name=\"./util/generic_array.c\" />
+//       <File name=\"./util/index_spec.c\" />
+//       <File name=\"./util/integer_array.c\" />
+//       <File name=\"./util/list.c\" />
+//       <File name=\"./util/modelica_string.c\" />
+//       <File name=\"./util/real_array.c\" />
+//       <File name=\"./util/ringbuffer.c\" />
+//       <File name=\"./util/string_array.c\" />
+//       <File name=\"./util/utility.c\" />
+//       <File name=\"./util/varinfo.c\" />
+//       <File name=\"./util/ModelicaUtilities.c\" />
+//       <File name=\"./util/omc_msvc.c\" />
+//       <File name=\"./util/simulation_options.c\" />
+//       <File name=\"./util/cJSON.c\" />
+//       <File name=\"./util/rational.c\" />
+//       <File name=\"./util/modelica_string_lit.c\" />
+//       <File name=\"./util/omc_init.c\" />
+//       <File name=\"./util/omc_mmap.c\" />
+//       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/simulation_info_json.c\" />
+//       <File name=\"./simulation/options.c\" />
+//       <File name=\"./simulation/simulation_omc_assert.c\" />
+//       <File name=\"./simulation/omc_simulation_util.c\" />
+//       <File name=\"./simulation/solver/delay.c\" />
+//       <File name=\"./simulation/solver/fmi_events.c\" />
+//       <File name=\"./simulation/solver/omc_math.c\" />
+//       <File name=\"./simulation/solver/model_help.c\" />
+//       <File name=\"./simulation/solver/stateset.c\" />
+//       <File name=\"./simulation/solver/synchronous.c\" />
+//       <File name=\"./simulation/solver/initialization/initialization.c\" />
+//       <File name=\"./meta/meta_modelica_catch.c\" />
+//     </SourceFiles>
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>
