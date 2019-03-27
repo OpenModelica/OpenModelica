@@ -32,7 +32,7 @@ include_directories ("${OMSI_SOURCE_DIR}/solver/include")
 IF(WIN32)
     target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} wsock32 ws2_32 ${expat_lib})
 ELSE(WIN32)
-    target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} )
+    target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${expat_lib})
 ENDIF(WIN32)
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
