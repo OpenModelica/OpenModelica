@@ -818,6 +818,7 @@ When2.mo \
 When3.mo \
 When4.mo \
 When5.mo \
+When6.mo \
 WhenClocked1.mo \
 WhenClockedElse1.mo \
 WhenClockedElse2.mo \
