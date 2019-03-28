@@ -254,6 +254,9 @@ protected
         then
           conns;
 
+      case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+        then CONNECTOR(name, Type.liftArrayLeftList(ty, dims), face, cty, source) :: conns;
+
       case Type.COMPLEX()
         algorithm
           tree := Class.classTree(InstNode.getClass(ty.cls));
