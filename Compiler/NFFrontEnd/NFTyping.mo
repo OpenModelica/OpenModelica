@@ -123,20 +123,20 @@ package ExpOrigin
   constant Type LHS             = intBitLShift(1,  4); // On left hand side of equality/assignment.
   constant Type RHS             = intBitLShift(1,  5); // On right hand side of equality/assignment.
   constant Type WHEN            = intBitLShift(1,  6); // In when equation/statement.
-  constant Type FOR             = intBitLShift(1,  7); // In a for loop.
-  constant Type IF              = intBitLShift(1,  8); // In an if equation/statement.
-  constant Type WHILE           = intBitLShift(1,  9); // In a while loop.
-  constant Type NONEXPANDABLE   = intBitLShift(1, 10); // In non-parameter if/for.
-  constant Type ITERATION_RANGE = intBitLShift(1, 11); // In range used for iteration.
-  constant Type DIMENSION       = intBitLShift(1, 12); // In dimension.
-  constant Type BINDING         = intBitLShift(1, 13); // In binding.
-  constant Type CONDITION       = intBitLShift(1, 14); // In conditional expression.
-  constant Type SUBSCRIPT       = intBitLShift(1, 15); // In subscript.
-  constant Type SUBEXPRESSION   = intBitLShift(1, 16); // Part of a larger expression.
-  constant Type CONNECT         = intBitLShift(1, 17); // Part of connect argument.
-  constant Type NOEVENT         = intBitLShift(1, 18); // Part of noEvent argument.
-  constant Type ASSERT          = intBitLShift(1, 19); // Part of assert argument.
-  constant Type CLOCKED         = intBitLShift(1, 20); // Part of a clocked equation.
+  constant Type CLOCKED         = intBitLShift(1,  7); // Part of a clocked when equation.
+  constant Type FOR             = intBitLShift(1,  8); // In a for loop.
+  constant Type IF              = intBitLShift(1,  9); // In an if equation/statement.
+  constant Type WHILE           = intBitLShift(1, 10); // In a while loop.
+  constant Type NONEXPANDABLE   = intBitLShift(1, 11); // In non-parameter if/for.
+  constant Type ITERATION_RANGE = intBitLShift(1, 12); // In range used for iteration.
+  constant Type DIMENSION       = intBitLShift(1, 13); // In dimension.
+  constant Type BINDING         = intBitLShift(1, 14); // In binding.
+  constant Type CONDITION       = intBitLShift(1, 15); // In conditional expression.
+  constant Type SUBSCRIPT       = intBitLShift(1, 16); // In subscript.
+  constant Type SUBEXPRESSION   = intBitLShift(1, 17); // Part of a larger expression.
+  constant Type CONNECT         = intBitLShift(1, 18); // Part of connect argument.
+  constant Type NOEVENT         = intBitLShift(1, 19); // Part of noEvent argument.
+  constant Type ASSERT          = intBitLShift(1, 20); // Part of assert argument.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
