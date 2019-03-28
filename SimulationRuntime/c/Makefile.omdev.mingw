@@ -20,7 +20,7 @@ FC = g77
 CONFIG_CFLAGS = -O2 -falign-functions -mstackrealign -msse2 -mfpmath=sse \
 -I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
 -I$(top_builddir)/3rdParty/sundials/build/include \
--I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ \
+-I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ -I. \
 -Wall -Wno-unused-variable
 CXXFLAGS = $(CFLAGS)
 
