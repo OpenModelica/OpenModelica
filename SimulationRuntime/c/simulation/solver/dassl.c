@@ -486,6 +486,8 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+
   memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
   dasslData->rpar[0] = (double*) (void*) data;
@@ -557,9 +559,11 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     /* rhs final flag is FALSE during for dassl evaluation */
     RHSFinalFlag = 0;
 
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
     DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
             &solverInfo->currentTime, states, stateDer, &tout,
@@ -664,6 +668,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   infoStreamPrint(LOG_DASSL, 0, "Finished DASSL step.");
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -747,6 +752,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int saveJumpState;
   int success = 0;
 
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   if (measure_time_flag) rt_tick(SIM_TIMER_RESIDUALS);
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
@@ -799,6 +805,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   }
 
   if (measure_time_flag) rt_accumulate(SIM_TIMER_RESIDUALS);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return 0;
@@ -815,6 +822,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   double timeBackup;
   int saveJumpState;
 
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
@@ -844,6 +852,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   }
 
   if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return 0;
@@ -1091,6 +1100,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD, do
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   /* profiling */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
@@ -1099,9 +1109,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD, do
     TRACE_POP
     return 1;
   }
-
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
@@ -1118,6 +1125,10 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD, do
   }
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return 0;

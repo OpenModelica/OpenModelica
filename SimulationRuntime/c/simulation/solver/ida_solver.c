@@ -162,6 +162,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   idaData->residualFunction = residualFunctionIDA;
   idaData->N = (long int)data->modelData->nStates;
 
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   /* change parameter for DAE mode */
   if (compiledInDAEMode)
@@ -660,6 +661,8 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
   messageClose(LOG_SOLVER);
 
+  if (measure_time_flag) rt_clear(SIM_TIMER_SOLVER); /* Initialization should not add this timer... */
+
   free(tmp);
   TRACE_POP
   return 0;
@@ -719,8 +722,10 @@ ida_event_update(DATA* data, threadData_t *threadData)
       memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
       /* update inner algebraic get new values from data */
+      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
       evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
       getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
@@ -763,19 +768,23 @@ ida_event_update(DATA* data, threadData_t *threadData)
       IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
       /* update inner algebraic variables */
+      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
       evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
       memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       // and  also algebraic vars
       setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
       /* reset initial step size again to default */
       IDASetInitStep(idaData->ida_mem, 0.0);
     }
   }
   else{
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     data->callback->functionDAE(data, threadData);
+    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
   }
 }
 
@@ -792,6 +801,8 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   static unsigned int stepsOutputCounter = 1;
   int stepsMode;
   int restartAfterLSFail = 0;
+
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   IDA_SOLVER *idaData = (IDA_SOLVER*) solverInfo->solverData;
 
@@ -895,6 +906,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       NV_Ith_S(idaData->y, i) = NV_Ith_S(idaData->y, i) + NV_Ith_S(idaData->yp, i) * solverInfo->currentStepSize;
     }
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     data->callback->functionODE(data, threadData);
     solverInfo->currentTime = sData->timeValue;
 
@@ -932,9 +944,11 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   {
     infoStreamPrint(LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     /* read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
+    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
     if (omc_flag[FLAG_IDA_SCALING])
     {
@@ -1123,6 +1137,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   infoStreamPrint(LOG_SOLVER, 0, "##IDA## Finished Integrator step.");
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -1191,13 +1206,17 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   }
 
   /* read input vars */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   if (idaData->daeMode)
   {
     /* eval residual vars */
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_DYNAMIC);
+    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
     /* get residual variables */
     for(i=0; i < idaData->N; i++)
     {
@@ -1208,7 +1227,9 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   else
   {
     /* eval function ODE */
+    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     data->callback->functionODE(data, threadData);
+    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
@@ -1241,6 +1262,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     unsetContext(data);
   }
   messageClose(LOG_SOLVER_V);
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -1283,6 +1305,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   data->localData[0]->timeValue = time;
 
   /* read input vars */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   /* eval needed equations*/
@@ -1295,6 +1318,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   }
 
   data->callback->function_ZeroCrossings(data, threadData, gout);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   threadData->currentErrorStage = saveJumpState;
 
@@ -1308,6 +1332,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
     unsetContext(data);
   }
   messageClose(LOG_SOLVER_V);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return 0;
@@ -1493,6 +1518,7 @@ static int callDenseJacobian(long int Neq, double tt, double cj,
   int retVal;
 
   /* profiling */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
   if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
@@ -1507,9 +1533,6 @@ static int callDenseJacobian(long int Neq, double tt, double cj,
   {
     throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain jacobian matrix!");
   }
-
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
@@ -1527,6 +1550,10 @@ static int callDenseJacobian(long int Neq, double tt, double cj,
       DENSE_ELEM(Jac, i, i) -= (double) cj;
     }
   }
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return retVal;
@@ -1775,6 +1802,7 @@ static int callSparseJacobian(double tt, double cj,
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->simData)->threadData);
 
   /* profiling */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
   if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
@@ -1785,9 +1813,6 @@ static int callSparseJacobian(double tt, double cj,
   {
     retVal = jacoColoredNumericalSparse(tt, yy, yp, rr, Jac, cj, user_data);
   }
-
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC)){
@@ -1807,6 +1832,10 @@ static int callSparseJacobian(double tt, double cj,
     idaData->tmpJac->colptrs[idaData->N] = idaData->N;
     SlsAddMat(Jac, idaData->tmpJac);
   }
+
+  /* profiling */
+  rt_accumulate(SIM_TIMER_JACOBIAN);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return retVal;
