@@ -12,7 +12,7 @@ include Makefile.objs
 
 LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
-INCLUDE_NONFMI=-I$(builddir_inc)/c
+INCLUDE_NONFMI=-I$(builddir_inc)/c -I.
 
 CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
@@ -228,7 +228,7 @@ $(INITIALIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(IN
 
 $(RESULTSOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CXX) -c $(CXXFLAGS) $(INCLUDE_NONFMI) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 $(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp dataReconciliation/dataReconciliation.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
