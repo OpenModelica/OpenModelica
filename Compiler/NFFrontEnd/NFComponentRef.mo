@@ -568,6 +568,18 @@ public
     end match;
   end isEqual;
 
+  function isLess
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean isLess = compare(cref1, cref2) < 0;
+  end isLess;
+
+  function isGreater
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean isGreater = compare(cref1, cref2) > 0;
+  end isGreater;
+
   function isPrefix
     input ComponentRef cref1;
     input ComponentRef cref2;

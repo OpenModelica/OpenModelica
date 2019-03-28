@@ -175,25 +175,6 @@ algorithm
   end match;
 end isEmpty;
 
-function isEqual
-  input Tree tree1;
-  input Tree tree2;
-  output Boolean isEqual;
-algorithm
-  isEqual := match (tree1, tree2)
-    case (NODE(), NODE())
-      then tree1.height == tree2.height and
-           keyCompare(tree1.key, tree2.key) == 0 and
-           isEqual(tree1.left, tree2.left) and
-           isEqual(tree1.right, tree2.right);
-
-    case (LEAF(), LEAF())
-      then keyCompare(tree1.key, tree2.key) == 0;
-
-    else true;
-  end match;
-end isEqual;
-
 function listKeys
   "Converts the tree to a flat list of keys (in order)."
   input Tree inTree;

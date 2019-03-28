@@ -35,7 +35,6 @@ encapsulated uniontype NFVerifyModel
 protected
   import List;
   import Error;
-  import BaseAvlSet;
   import DAE;
   import ElementSource;
   import ExecStat.execStat;
@@ -55,26 +54,6 @@ public
   end verify;
 
 protected
-  type CrefSet = CrefSetImpl.Tree;
-
-  encapsulated package CrefSetImpl
-    import BaseAvlSet;
-    import ComponentRef = NFComponentRef;
-    extends BaseAvlSet;
-
-    redeclare type Key = ComponentRef;
-
-    redeclare function extends keyStr
-    algorithm
-      outString := ComponentRef.toString(inKey);
-    end keyStr;
-
-    redeclare function extends keyCompare
-    algorithm
-      outResult := ComponentRef.compare(inKey1, inKey2);
-    end keyCompare;
-  end CrefSetImpl;
-
   function verifyEquation
     input Equation eq;
   algorithm
@@ -94,7 +73,7 @@ protected
     input list<Equation.Branch> branches;
     input DAE.ElementSource source;
   protected
-    CrefSet crefs1, crefs2;
+    list<ComponentRef> crefs1, crefs2;
     list<Equation.Branch> rest_branches;
     list<Equation> body;
   algorithm
@@ -110,7 +89,7 @@ protected
       Equation.Branch.BRANCH(body = body) := branch;
       crefs2 := whenEquationBranchCrefs(body);
 
-      if not CrefSet.isEqual(crefs1, crefs2) then
+      if not List.isEqualOnTrue(crefs1, crefs2, ComponentRef.isEqual) then
         Error.addSourceMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,
           {}, ElementSource.getInfo(source));
         fail();
@@ -122,24 +101,25 @@ protected
     "Helper function to verifyWhenEquation, returns the set of crefs that the
      given list of equations contains on the lhs."
     input list<Equation> eql;
-    output CrefSet crefs;
+    output list<ComponentRef> crefs = {};
   algorithm
-    crefs := CrefSet.new();
-
     for eq in eql loop
       crefs := match eq
         case Equation.EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
         case Equation.IF()       then whenEquationIfCrefs(eq.branches, eq.source, crefs);
       end match;
     end for;
+
+    crefs := List.sort(crefs, ComponentRef.isGreater);
+    crefs := List.sortedUnique(crefs, ComponentRef.isEqual);
   end whenEquationBranchCrefs;
 
   function whenEquationEqualityCrefs
     input Expression lhsExp;
-    input output CrefSet crefs;
+    input output list<ComponentRef> crefs;
   algorithm
     crefs := match lhsExp
-      case Expression.CREF() then CrefSet.add(crefs, lhsExp.cref);
+      case Expression.CREF() then lhsExp.cref :: crefs;
       case Expression.TUPLE()
         then List.fold(lhsExp.elements, whenEquationEqualityCrefs, crefs);
     end match;
@@ -150,9 +130,9 @@ protected
      of the same set of crefs, and adds that set to the given set of crefs."
     input list<Equation.Branch> branches;
     input DAE.ElementSource source;
-    input output CrefSet crefs;
+    input output list<ComponentRef> crefs;
   protected
-    CrefSet crefs1, crefs2;
+    list<ComponentRef> crefs1, crefs2;
     list<Equation.Branch> rest_branches;
     list<Equation> body;
   algorithm
@@ -164,14 +144,14 @@ protected
       crefs2 := whenEquationBranchCrefs(body);
 
       // All the branches must have the same set of crefs on the lhs.
-      if not CrefSet.isEqual(crefs1, crefs2) then
+      if not List.isEqualOnTrue(crefs1, crefs2, ComponentRef.isEqual) then
         Error.addSourceMessage(Error.WHEN_IF_VARIABLE_MISMATCH,
           {}, ElementSource.getInfo(source));
         fail();
       end if;
     end for;
 
-    crefs := CrefSet.join(crefs, crefs1);
+    crefs := listAppend(crefs1, crefs);
   end whenEquationIfCrefs;
 
   annotation(__OpenModelica_Interface="frontend");
