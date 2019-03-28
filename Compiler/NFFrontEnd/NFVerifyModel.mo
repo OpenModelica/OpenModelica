@@ -41,6 +41,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Equation = NFEquation;
   import Expression = NFExpression;
+  import ExpandExp = NFExpandExp;
 
 public
   function verify
@@ -89,11 +90,7 @@ protected
       Equation.Branch.BRANCH(body = body) := branch;
       crefs2 := whenEquationBranchCrefs(body);
 
-      if not List.isEqualOnTrue(crefs1, crefs2, ComponentRef.isEqual) then
-        Error.addSourceMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,
-          {}, ElementSource.getInfo(source));
-        fail();
-      end if;
+      checkCrefSetEquality(crefs1, crefs2, Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, source);
     end for;
   end verifyWhenEquation;
 
@@ -105,8 +102,12 @@ protected
   algorithm
     for eq in eql loop
       crefs := match eq
-        case Equation.EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
-        case Equation.IF()       then whenEquationIfCrefs(eq.branches, eq.source, crefs);
+        case Equation.EQUALITY()       then whenEquationEqualityCrefs(eq.lhs, crefs);
+        case Equation.CREF_EQUALITY()  then eq.lhs :: crefs;
+        case Equation.ARRAY_EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
+        case Equation.REINIT()         then whenEquationEqualityCrefs(eq.cref, crefs);
+        case Equation.IF()             then whenEquationIfCrefs(eq.branches, eq.source, crefs);
+        else crefs;
       end match;
     end for;
 
@@ -144,15 +145,56 @@ protected
       crefs2 := whenEquationBranchCrefs(body);
 
       // All the branches must have the same set of crefs on the lhs.
-      if not List.isEqualOnTrue(crefs1, crefs2, ComponentRef.isEqual) then
-        Error.addSourceMessage(Error.WHEN_IF_VARIABLE_MISMATCH,
-          {}, ElementSource.getInfo(source));
-        fail();
-      end if;
+      checkCrefSetEquality(crefs1, crefs2, Error.WHEN_IF_VARIABLE_MISMATCH, source);
     end for;
 
     crefs := listAppend(crefs1, crefs);
   end whenEquationIfCrefs;
+
+  function checkCrefSetEquality
+    input list<ComponentRef> crefs1;
+    input list<ComponentRef> crefs2;
+    input Error.Message errMsg;
+    input DAE.ElementSource source;
+  algorithm
+    // Assume the user isn't mixing different ways of subscripting array
+    // varibles in the different branches, and just check the sets as is.
+    if List.isEqualOnTrue(crefs1, crefs2, ComponentRef.isEqual) then
+      return;
+    end if;
+
+    // If the sets didn't match, expand arrays into scalars and try again.
+    if List.isEqualOnTrue(expandCrefSet(crefs1), expandCrefSet(crefs2), ComponentRef.isEqual) then
+      return;
+    end if;
+
+    // Couldn't get the sets to match, print an error and fail.
+    Error.addSourceMessage(errMsg, {}, ElementSource.getInfo(source));
+    fail();
+  end checkCrefSetEquality;
+
+  function expandCrefSet
+    input list<ComponentRef> crefs;
+    output list<ComponentRef> outCrefs = {};
+  protected
+    Expression exp;
+    list<Expression> expl;
+  algorithm
+    for cref in crefs loop
+      exp := Expression.fromCref(cref);
+      exp := ExpandExp.expandCref(exp);
+
+      if Expression.isArray(exp) then
+        expl := Expression.arrayElements(exp);
+        outCrefs := listAppend(list(Expression.toCref(e) for e in expl), outCrefs);
+      else
+        outCrefs := cref :: outCrefs;
+      end if;
+    end for;
+
+    outCrefs := List.sort(outCrefs, ComponentRef.isGreater);
+    outCrefs := List.sortedUnique(outCrefs, ComponentRef.isEqual);
+  end expandCrefSet;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVerifyModel;

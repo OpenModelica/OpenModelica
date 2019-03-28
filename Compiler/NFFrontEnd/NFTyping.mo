@@ -2943,8 +2943,8 @@ algorithm
 
   // The first argument must be a continuous time variable.
   // Check the variability of the cref instead of the variability returned by
-  // typeExp, since expressions in when-equation count as discrete.
-  if ComponentRef.nodeVariability(cref) <> Variability.CONTINUOUS then
+  // typeExp, since expressions in when-equations count as discrete.
+  if ComponentRef.nodeVariability(cref) < Variability.IMPLICITLY_DISCRETE then
     Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
       {Expression.toString(crefExp),
        Prefixes.variabilityString(ComponentRef.nodeVariability(cref))}, info);

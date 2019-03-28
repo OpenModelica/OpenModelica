@@ -161,8 +161,6 @@ algorithm
   flat_model := SimplifyModel.simplify(flat_model);
   funcs := Flatten.collectFunctions(flat_model, name);
 
-  VerifyModel.verify(flat_model);
-
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
@@ -175,6 +173,8 @@ algorithm
     // Remove empty arrays from variables
     flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
   end if;
+
+  VerifyModel.verify(flat_model);
 
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
