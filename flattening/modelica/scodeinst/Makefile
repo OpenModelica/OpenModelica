@@ -825,6 +825,7 @@ WhenClocked1.mo \
 WhenClockedElse1.mo \
 WhenClockedElse2.mo \
 WhenClockedStatement1.mo \
+WhenClockedTupleCall1.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
