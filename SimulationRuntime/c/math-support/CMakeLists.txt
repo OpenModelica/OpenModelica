@@ -4,7 +4,7 @@
 # Quellen und Header
 SET(math_support_sources pivot.c)
 
-SET(math_support_headers blaswrap.h)
+SET(math_support_headers )
 
 # Library util
 ADD_LIBRARY(math-support ${math_support_sources} ${math_support_headers})
