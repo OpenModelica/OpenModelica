@@ -250,12 +250,12 @@ extern const char* System_platform()
 
 extern const char* System_pathDelimiter()
 {
-  return "#";
+  return "/";
 }
 
 extern const char* System_groupDelimiter()
 {
-  return "#";
+  return ";";
 }
 
 extern const char* System_getCorbaLibs()
