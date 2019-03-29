@@ -4225,8 +4225,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     pLibraryTreeView->selectionModel()->clearSelection();
     pLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
     // update class text
-    pNewLibraryTreeItem->setClassText(modelicaText);
     pNewLibraryTreeItem->setModelWidget(this);
+    pNewLibraryTreeItem->setClassText(modelicaText);
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
