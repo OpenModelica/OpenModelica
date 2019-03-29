@@ -1,14 +1,12 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
 #define CONFIG_DLL_EXT "@SHREXT@"
-#define CONFIG_PLATFORM "Unix"
 #define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "@OPENMODELICA_SPEC_PLATFORM@"
 
 #define DEFAULT_CC "@RUNTIMECC@"
 #define DEFAULT_CXX "@CXX@"
 #define DEFAULT_OMPCC "@CC@ @OMPCFLAGS@"
-#define DEFAULT_TRIPLE "@host_short@"
 
 #if defined(__sparc__)
   #define DEFAULT_LINKER "@RUNTIMECC@ -G"
@@ -29,10 +27,6 @@
 @NO_FMIL@
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"
-#define CONFIG_PATH_DELIMITER "/"
-#define CONFIG_GROUP_DELIMITER ":"
-#define CONFIG_CORBALIBS "@CORBALIBS@"
-#define CONFIG_LPSOLVE55 "@LIBLPSOLVE55@"
 #define CONFIG_REVISION "@SOURCE_REVISION@"
 #define CONFIG_WITH_OPENMP @CONFIG_WITH_OPENMP@
 
@@ -41,27 +35,12 @@
 #define WITH_SUNDIALS
 #define WITH_IPOPT
 @WITH_UMFPACK@
-@WITH_HWLOC@
+#define WITH_HWLOC @WITH_HWLOC@
 @WITH_UUID@
 #endif
 #if !defined(OMC_MINIMAL_RUNTIME)
 #define WITH_DASSL
 #endif
-
-#ifdef WITH_HWLOC
-#define CONFIG_SYSTEMLIBS_HWLOC  mmc_mk_cons(mmc_mk_scon("-lhwloc"), mmc_mk_nil())
-#else
-#define CONFIG_SYSTEMLIBS_HWLOC  mmc_mk_nil()
-#endif
-
-#define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"), \
-  mmc_mk_cons(mmc_mk_scon("-lexpat"), \
-  mmc_mk_cons(mmc_mk_scon("-lsqlite3"), \
-  mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55), \
-  mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS), \
-  mmc_mk_cons(mmc_mk_scon("-lomcgc"), \
-  CONFIG_SYSTEMLIBS_HWLOC \
-  ))))))
 
 #define USE_GRAPH @USE_GRAPH@
 #if USE_GRAPH

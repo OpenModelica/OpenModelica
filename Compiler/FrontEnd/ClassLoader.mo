@@ -43,6 +43,7 @@ encapsulated package ClassLoader
 import Absyn;
 
 protected
+import Autoconf;
 import BaseHashTable;
 import Config;
 import Debug;
@@ -103,7 +104,7 @@ algorithm
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
     case (Absyn.IDENT(name = classname),_,mp,_)
       equation
-        gd = System.groupDelimiter();
+        gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         p = loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
@@ -112,7 +113,7 @@ algorithm
     /* Qualified names: First check if it is defined in a file pack.mo */
     case (Absyn.QUALIFIED(name = pack),_,mp,_)
       equation
-        gd = System.groupDelimiter();
+        gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         p = loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
@@ -190,7 +191,7 @@ algorithm
 
     case (_,_,_,false,_)
       equation
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
@@ -202,7 +203,7 @@ algorithm
     case (_,_,_,true,_)
       equation
         /* Check for path/package.encoding; OpenModelica extension */
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
@@ -236,7 +237,7 @@ protected function getAllFilesFromDirectory
   output list<String> files;
 protected
   list<String> subdirs;
-  String pd = System.pathDelimiter();
+  String pd = Autoconf.pathDelimiter;
 algorithm
   if encrypted then
     files := (dir + pd + "package.moc") :: listAppend(list(dir + pd + f for f in System.mocFiles(dir)), acc);
@@ -275,7 +276,7 @@ algorithm
       list<Absyn.Annotation> ann;
     case (_,pack,mp,within_)
       equation
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,if encrypted then "package.moc" else "package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
@@ -355,7 +356,7 @@ algorithm
 
     case CLASSLOAD(id)
       equation
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         file = mp + pd + id + (if encrypted then "/package.moc" else "/package.mo");
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if bDirectoryAndFileExists then
@@ -534,7 +535,7 @@ algorithm
       String pd,str;
     case (CLASSLOAD(str),_,_)
       equation
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         Error.assertionOrAddSourceMessage(System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str + (if encrypted then ".moc" else ".mo")),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
       then ();
     else ();
@@ -549,7 +550,7 @@ protected function existPackage
 protected
   String pd;
 algorithm
-  pd := System.pathDelimiter();
+  pd := Autoconf.pathDelimiter;
   b := System.regularFileExists(mp + pd + name + pd + (if encrypted then "package.moc" else "package.mo"));
 end existPackage;
 

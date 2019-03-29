@@ -1004,7 +1004,7 @@ public function replaceWindowsBackSlashWithPathDelimiter
   output String outPath;
 algorithm
   if Autoconf.os == "Windows_NT" then
-    outPath := System.stringReplace(inPath, "\\", System.pathDelimiter());
+    outPath := System.stringReplace(inPath, "\\", Autoconf.pathDelimiter);
   else
     outPath := inPath;
   end if;
@@ -1773,7 +1773,7 @@ protected
  String pwd, pd;
 algorithm
  pwd := System.pwd();
- pd := System.pathDelimiter();
+ pd := Autoconf.pathDelimiter;
  outFileName := if System.regularFileExists(inFileName)
                 then inFileName
                 else stringAppendList({pwd,pd,inFileName});

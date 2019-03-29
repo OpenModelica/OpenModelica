@@ -1799,7 +1799,7 @@ protected function lookForExtFunctionLibrary
 protected
   list<String> dirs2;
 algorithm
-  dirs2 := "/usr/lib/"+System.getTriple()::"/lib/"+System.getTriple()::"/usr/lib/"::"/lib/"::dirs; // We could also try to look in ldconfig, etc for system libraries
+  dirs2 := "/usr/lib/"+Autoconf.triple::"/lib/"+Autoconf.triple::"/usr/lib/"::"/lib/"::dirs; // We could also try to look in ldconfig, etc for system libraries
   if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
     _ := match resources
       local
@@ -1902,13 +1902,13 @@ algorithm
   case(_, _,{"-lWinmm"}) guard Autoconf.os=="Windows_NT"
     //Winmm has to be linked from the windows system but not from the resource directories.
     //This is a fix for M_DD since otherwise the dummy pthread.dll that breaks the built will be linked
-    then {(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")};
+    then {(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")};
   case(, _,_)
     equation
       platform1 = uri + "/" + System.openModelicaPlatform();
       platform2 = uri + "/" + System.modelicaPlatform();
     then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::
-      (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + System.getTriple() + "/omc")::{};
+      (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")::{};
   end matchcontinue;
 end getLinkerLibraryPaths;
 
@@ -2071,7 +2071,7 @@ algorithm
     // hack some day, but at least I get an early weekend.
     case Absyn.STRING("OpenModelicaCorba")
       equation
-        str = System.getCorbaLibs();
+        str = Autoconf.corbaLibs;
       then ({str},{});
 
     case Absyn.STRING("fmilib")
@@ -2156,7 +2156,7 @@ algorithm
           str = "-l" + str;
           strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-ltre" :: "-lomniORB420_rt" :: "-lomnithread40_rt" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
         else
-          strs = System.getRuntimeLibs();
+          strs = Autoconf.systemLibs;
         end if;
       then  (strs,{});
 
@@ -2165,7 +2165,7 @@ algorithm
     // hack some day, but at least I get an early weekend.
     case Absyn.STRING("OpenModelicaCorba")
       equation
-        str = System.getCorbaLibs();
+        str = Autoconf.corbaLibs;
       then ({str},{});
 
     case Absyn.STRING("fmilib")
@@ -2531,7 +2531,7 @@ algorithm
   ldflags := System.getLDFlags();
   rtlibs := if isFunction then Autoconf.ldflags_runtime else (if isFMU then Autoconf.ldflags_runtime_fmu else Autoconf.ldflags_runtime_sim);
   platform := System.modelicaPlatform();
-  compileDir :=  System.pwd() + System.pathDelimiter();
+  compileDir :=  System.pwd() + Autoconf.pathDelimiter;
   makefileParams := SimCodeFunction.MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
         omhome, cflags, ldflags, rtlibs, includes, libs,libPaths, platform,compileDir);
 end createMakefileParams;

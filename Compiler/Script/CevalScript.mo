@@ -222,7 +222,7 @@ public function compileModel "Compiles a model given a file-prefix, helper funct
   input list<String> makeVars = {};
 protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
-  String pd = System.pathDelimiter();
+  String pd = Autoconf.pathDelimiter;
   String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd);
   String fileDLL = workDir + fileprefix + Autoconf.dllExt,
          fileEXE = workDir + fileprefix + Autoconf.exeExt,
@@ -316,7 +316,7 @@ algorithm
     // send "" priority if that is it, don't send "default"
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
-    mp := System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
+    mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Config.getRunningTestsuite());
     (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
     return;
   end if;
@@ -376,7 +376,7 @@ algorithm
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
-    thisModelicaPath::_ := System.strtok(modelicaPath, System.groupDelimiter());
+    thisModelicaPath::_ := System.strtok(modelicaPath, Autoconf.groupDelimiter);
   else
     thisModelicaPath := modelicaPath;
   end if;
@@ -3111,7 +3111,7 @@ algorithm
       equation
         (name::names) = System.strtok(name,".");
         failure(_ = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program));
-        gd = System.groupDelimiter();
+        gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         (mp,name,isDir) = System.getLoadModelPath(name, {"default"}, mps);
         mp = if isDir then mp + name else mp;

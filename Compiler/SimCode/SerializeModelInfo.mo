@@ -46,6 +46,7 @@ import SimCode;
 
 protected
 import Algorithm;
+import Autoconf;
 import Config;
 import DAEDump;
 import Error;
@@ -77,7 +78,7 @@ algorithm
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
       equation
         if Config.simCodeTarget() == "omsic" then
-          fileName = code.fullPathPrefix + System.pathDelimiter() + code.fileNamePrefix + "_info.json";
+          fileName = code.fullPathPrefix + Autoconf.pathDelimiter + code.fileNamePrefix + "_info.json";
         else
           fileName = code.fileNamePrefix + "_info.json";
         end if;

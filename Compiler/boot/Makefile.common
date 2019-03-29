@@ -133,14 +133,14 @@ interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
 
 ifeq ($(wildcard $(OMC)),)
 else
-Makefile.sources: LoadCompilerSources.mos MakeSources.mos
+Makefile.sources: LoadCompilerSources.mos MakeSources.mos ../Util/Autoconf.mo
 	$(OMC) -g=MetaModelica -n=1 MakeSources.mos
 	mv Makefile.sources.tmp Makefile.sources
 	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
 
 LoadCompilerInterface.mos: Makefile.sources
 	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
-Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
+Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo) ../Util/Autoconf.mo
 	@rm -f $@
 	$(OMC) -g=MetaModelica -n=1 $<
 endif

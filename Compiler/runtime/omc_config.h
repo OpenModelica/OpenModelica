@@ -41,39 +41,31 @@
 /* Windows */
 #if defined(__MINGW64__)
 
-#define CONFIG_PLATFORM "WIN64"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw64"
 #define CONFIG_GCC_DUMPMACHINE "x86_64-w64-mingw32"
 #define CONFIG_GCC_VERSION "5.3.0" /* adrpo, change here when we upgrade! */
-#define DEFAULT_TRIPLE ""
 
 #elif defined(__MINGW32__)
 
-#define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw32"
 #define CONFIG_GCC_DUMPMACHINE "i686-w64-mingw32"
 #define CONFIG_GCC_VERSION "5.3.0" /* adrpo, change here when we upgrade! */
-#define DEFAULT_TRIPLE ""
 
 #elif defined(_MSV_VER) && defined(_M_IX86)
 
-#define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc32"
 #define CONFIG_GCC_DUMPMACHINE ""
 #define CONFIG_GCC_VERSION ""
-#define DEFAULT_TRIPLE "i686-msvc32"
 
 #elif defined(_MSV_VER) && defined(_M_X64)
 
-#define CONFIG_PLATFORM "WIN64"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "msvc64"
 #define CONFIG_GCC_DUMPMACHINE ""
 #define CONFIG_GCC_VERSION ""
-#define DEFAULT_TRIPLE "i686-msvc64"
 
 #endif
 
@@ -91,11 +83,7 @@
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define CONFIG_DLL_EXT ".dll"
-#define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lomniORB420_rt -lomnithread40_rt"
 #define CONFIG_LPSOLVEINC "lpsolve/lp_lib.h"
-/* Windows is always "special" */
-#define CONFIG_SYSTEMLIBS mmc_mk_nil()
-
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /*
@@ -114,12 +102,10 @@
   #define DEFAULT_LINKER "g++ -shared -Xlinker --export-all-symbols"
 #endif
 
-#define CONFIG_PATH_DELIMITER "/"
-#define CONFIG_GROUP_DELIMITER ";"
-
 #define CONFIG_IPOPT_INC /* Without IPOPT */
 #define CONFIG_IPOPT_LIB /* Without IPOPT */
 
+#define WITH_HWLOC 0
 #define WITH_SUNDIALS
 
 #if defined(__MINGW32__)

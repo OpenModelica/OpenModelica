@@ -242,22 +242,37 @@ extern const char* System_configureCommandLine()
 {
   return "Dummy configure";
 }
-#endif
 
 extern const char* System_platform()
 {
-  return CONFIG_PLATFORM;
+  return "Dummy platform";
 }
 
 extern const char* System_pathDelimiter()
 {
-  return CONFIG_PATH_DELIMITER;
+  return "#";
 }
 
 extern const char* System_groupDelimiter()
 {
-  return CONFIG_GROUP_DELIMITER;
+  return "#";
 }
+
+extern const char* System_getCorbaLibs()
+{
+  return "Dummy CORBA libs";
+}
+
+extern void* System_getRuntimeLibs()
+{
+  return "Dummy system libs";
+}
+
+const char* System_getTriple()
+{
+  return "DEFAULT_TRIPLE";
+}
+#endif
 
 extern int System_strncmp(const char *str1, const char *str2, int len)
 {
@@ -642,16 +657,6 @@ void* System_subDirectories(const char *directory)
   return res;
 }
 #endif
-
-extern const char* System_getCorbaLibs()
-{
-  return CONFIG_CORBALIBS;
-}
-
-extern void* System_getRuntimeLibs()
-{
-  return CONFIG_SYSTEMLIBS;
-}
 
 extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {

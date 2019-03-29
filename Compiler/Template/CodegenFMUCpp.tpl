@@ -766,7 +766,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # native build or cross compilation
   ifeq ($(TARGET_TRIPLET),)
-    TRIPLET=<%getTriple()%>
+    TRIPLET=<%Autoconf.triple%>
     CC=<%makefileParams.ccompiler%>
     CXX=<%makefileParams.cxxcompiler%>
     ABI_CFLAG=

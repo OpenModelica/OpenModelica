@@ -1507,7 +1507,7 @@ algorithm
           result_file := stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
           // result file might have been set by simflags (-r ...)
           result_file := selectResultFile(result_file, simflags);
-          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
+          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
           logFile := stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
           // we should really have different log files for simulation/compilation!
@@ -1672,7 +1672,7 @@ algorithm
           (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
           result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
           logFile = stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
@@ -1758,9 +1758,9 @@ algorithm
         true = b; /* if something goes wrong while initializing */
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
-        s1 = System.tolower(System.platform());
+        s1 = System.tolower(Autoconf.platform);
         str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
         str3 = FMI.getFMIVersion(fmiInfo);
@@ -1802,9 +1802,9 @@ algorithm
         true = b; /* if something goes wrong while initializing */
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
-        s1 = System.tolower(System.platform());
+        s1 = System.tolower(Autoconf.platform);
         str = Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str3 = FMI.getFMIVersion(fmiInfo);
         outputFile = stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"});
@@ -2192,7 +2192,7 @@ algorithm
     case (cache,_,"getAvailableLibraries",{},_)
       equation
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
-        gd = System.groupDelimiter();
+        gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         files = List.flatten(List.map(mps, System.moFiles));
         dirs = List.flatten(List.map(mps, getLibrarySubdirectories));
@@ -2358,7 +2358,7 @@ algorithm
     case (cache,_,"checkTaskGraph",{Values.STRING(filename),Values.STRING(filename_1)},_)
       equation
         pwd = System.pwd();
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
@@ -2372,7 +2372,7 @@ algorithm
     case (cache,_,"checkCodeGraph",{Values.STRING(filename),Values.STRING(filename_1)},_)
       equation
         pwd = System.pwd();
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
@@ -2409,7 +2409,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,msg);
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
         s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
@@ -2470,7 +2470,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,msg);
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
         s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
@@ -2850,7 +2850,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,msg);
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
         s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
@@ -2935,7 +2935,7 @@ protected function getLibrarySubdirectories "author: lochel
   output list<String> outSubdirectories = {};
 protected
   list<String> allSubdirectories = System.subDirectories(inPath);
-  String pd = System.pathDelimiter();
+  String pd = Autoconf.pathDelimiter;
 algorithm
   for dir in allSubdirectories loop
     if System.regularFileExists(inPath + pd + dir + pd + "package.mo") then
@@ -3363,8 +3363,8 @@ protected
 algorithm
   CC := System.getCCompiler();
   CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
-  LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
-                         "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
+  LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
+                         "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
                          System.getLDFlags()+" ");
   if System.regularFileExists(logfile) then
     System.removeFile(logfile);
@@ -3509,7 +3509,7 @@ algorithm
   try
     (success, cache, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
-    outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + System.pathDelimiter() else "") + fmuTargetName + ".fmu");
+    outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     outValue := Values.STRING("");
     return;
@@ -3582,7 +3582,7 @@ algorithm
   if (System.regularFileExists(fileName)) then
     // get OPENMODELICAHOME
     omhome := Settings.getInstallationDirectoryPath();
-    pd := System.pathDelimiter();
+    pd := Autoconf.pathDelimiter;
     ext := if Autoconf.os == "Windows_NT" then ".exe" else "";
     if encrypt then
       // create the path till packagetool
@@ -3645,7 +3645,7 @@ protected
   Boolean success;
 algorithm
   (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt);
-  outValue := Values.STRING(if success then ((if not Config.getRunningTestsuite() then System.pwd() + System.pathDelimiter() else "") + fileNamePrefix+".xml") else "");
+  outValue := Values.STRING(if success then ((if not Config.getRunningTestsuite() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
 
 
@@ -5039,7 +5039,7 @@ algorithm
           end if;
         end if;
 
-        compileDir := System.pwd() + System.pathDelimiter();
+        compileDir := System.pwd() + Autoconf.pathDelimiter;
         (cache,simSettings) := calculateSimulationSettings(cache, env, values, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
@@ -5264,7 +5264,7 @@ algorithm
         p_class = Absyn.crefToPath(class_) "change to the saved files directory" ;
         cdef = Interactive.getPathedClassInProgram(p_class, p);
         filename = Absyn.classFilename(cdef);
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         (pd_1 :: _) = stringListStringChar(pd);
         filename_1 = Util.stringSplitAtChar(filename, pd_1);
         dir = List.stripLast(filename_1);
@@ -5275,7 +5275,7 @@ algorithm
       equation
         omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
         omhome_1 = System.trim(omhome, "\"");
-        pd = System.pathDelimiter();
+        pd = Autoconf.pathDelimiter;
         dir_1 = stringAppendList({"\"",omhome_1,pd,"work","\""});
       then
         dir_1;
@@ -5444,7 +5444,7 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + System.pathDelimiter();
+        compileDir = System.pwd() + Autoconf.pathDelimiter;
         cname_str = Absyn.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
@@ -5484,7 +5484,7 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + System.pathDelimiter();
+        compileDir = System.pwd() + Autoconf.pathDelimiter;
         cname_str = Absyn.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
@@ -5525,7 +5525,7 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + System.pathDelimiter();
+        compileDir = System.pwd() + Autoconf.pathDelimiter;
         cname_str = Absyn.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
@@ -5564,7 +5564,7 @@ algorithm
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
         description = DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + System.pathDelimiter();
+        compileDir = System.pwd() + Autoconf.pathDelimiter;
         cname_str = Absyn.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 

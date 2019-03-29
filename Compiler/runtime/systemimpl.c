@@ -695,13 +695,13 @@ char* System_popen(threadData_t *threadData, const char* command, int *status)
 #endif
 }
 
-#ifdef WITH_HWLOC
+#if WITH_HWLOC==1
 #include <hwloc.h>
 #endif
 
 int System_numProcessors(void)
 {
-#ifdef WITH_HWLOC
+#if WITH_HWLOC==1
   hwloc_topology_t topology;
   if (0==hwloc_topology_init(&topology) && 0==hwloc_topology_load(topology)) {
     int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
@@ -3006,11 +3006,6 @@ const char* SystemImpl__createTemporaryDirectory(const char *templatePrefix)
     c_tokens,
     2);
   MMC_THROW();
-}
-
-const char* System_getTriple()
-{
-  return DEFAULT_TRIPLE;
 }
 
 #if defined(OMC_GENERATE_RELOCATABLE_CODE)

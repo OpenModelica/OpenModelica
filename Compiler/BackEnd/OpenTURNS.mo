@@ -686,9 +686,9 @@ public function getFullSharePath
 algorithm
  strFullSharePath :=
    Settings.getInstallationDirectoryPath() +
-   System.pathDelimiter() +
+   Autoconf.pathDelimiter +
    cStrSharePath +
-   System.pathDelimiter();
+   Autoconf.pathDelimiter;
 end getFullSharePath;
 
 public function getFullShareFileName

@@ -585,9 +585,9 @@ AC_TRY_LINK([
 LIBS=""
 AC_CHECK_HEADERS(hwloc.h,
   [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
-    [WITH_HWLOC="#define WITH_HWLOC 1";OMC_LIBS="$OMC_LIBS -lhwloc"],
-    [WITH_HWLOC="/* Without hwloc */"])],
-  [WITH_HWLOC="/* Without hwloc */"]
+    [WITH_HWLOC="1";OMC_LIBS="$OMC_LIBS -lhwloc"],
+    [WITH_HWLOC="0"])],
+  [WITH_HWLOC="0"]
 )
 
 LIBS=""

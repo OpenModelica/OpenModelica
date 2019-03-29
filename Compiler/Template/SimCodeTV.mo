@@ -289,16 +289,16 @@ end SimCodeVar;
 
 package HashTableCrefSimVar
 
-	type Key = DAE.ComponentRef;
-	type Value = SimCodeVar.SimVar;
+  type Key = DAE.ComponentRef;
+  type Value = SimCodeVar.SimVar;
 
-	type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
-	type HashTable = tuple<
-	  array<list<tuple<Key,Integer>>>,
-	  tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
-	  Integer,
-	  HashTableCrefFunctionsType
-	>;
+  type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
+  type HashTable = tuple<
+    array<list<tuple<Key,Integer>>>,
+    tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
+    Integer,
+    HashTableCrefFunctionsType
+  >;
 
   function FuncHashCref
     input Key cr;
@@ -1614,12 +1614,11 @@ package System
     output Boolean success;
   end covertTextFileToCLiteral;
 
-  function getTriple "For example x86_64-linux-gnu; used to determine the location of lib-files"
-    output String outString;
-  end getTriple;
-
 end System;
 
+package Autoconf
+  constant String triple;
+end Autoconf;
 
 package Tpl
   function redirectToFile

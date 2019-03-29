@@ -256,12 +256,6 @@ public function getLDFlags
   external "C" outString=System_getLDFlags() annotation(Library = "omcruntime");
 end getLDFlags;
 
-public function getTriple "For example x86_64-linux-gnu; used to determine the location of lib-files"
-  output String outString;
-
-  external "C" outString=System_getTriple() annotation(Library = "omcruntime");
-end getTriple;
-
 public function loadLibrary
   input String inLib;
   input Boolean inPrintDebug;
@@ -439,16 +433,6 @@ public function time
   external "C" outReal=SystemImpl__time() annotation(Library = "omcruntime");
 end time;
 
-public function pathDelimiter
-  output String outString;
-  external "C" outString=System_pathDelimiter() annotation(Library = "omcruntime");
-end pathDelimiter;
-
-public function groupDelimiter
-  output String outString;
-  external "C" outString=System_groupDelimiter() annotation(Library = "omcruntime");
-end groupDelimiter;
-
 public function regularFileExists
   input String inString;
   output Boolean outBool;
@@ -494,11 +478,6 @@ protected function removeDirectory_dispatch
   output Boolean outBool;
   external "C" outBool=SystemImpl__removeDirectory(inString) annotation(Library = "omcruntime");
 end removeDirectory_dispatch;
-
-public function platform
-  output String outString;
-  external "C" outString=System_platform() annotation(Library = "omcruntime");
-end platform;
 
 public function getClassnamesForSimulation
   output String outString;
@@ -707,21 +686,6 @@ public function tmpTickMaximum
   output Integer maxIndex;
   external "C" maxIndex=SystemImpl_tmpTickMaximum(OpenModelica.threadData(),index) annotation(Library = "omcruntime");
 end tmpTickMaximum;
-
-public function getCorbaLibs
-"Returns a string containing the compiler flags used for Corba libraries.
-Needed for annotation(Library=\"OpenModelicaCorba\"), a library with special
-semantics."
-  output String corbaLibs;
-  external "C" corbaLibs=System_getCorbaLibs() annotation(Library = "omcruntime");
-end getCorbaLibs;
-
-public function getRuntimeLibs
-"Returns a string containing the compiler flags used for omcruntime libraries.
-Needed for annotation(Library=\"omcruntime\"), a library with special semantics."
-  output list<String> libs;
-  external "C" libs=System_getRuntimeLibs() annotation(Library = "omcruntime");
-end getRuntimeLibs;
 
 public function userIsRoot
 "Returns true if the current user is root.
