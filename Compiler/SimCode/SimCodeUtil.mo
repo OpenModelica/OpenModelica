@@ -60,6 +60,7 @@ import Values;
 // protected imports
 protected
 import Array;
+import Autoconf;
 import AvlSetString;
 import BackendDAEOptimize;
 import BackendDAETransform;

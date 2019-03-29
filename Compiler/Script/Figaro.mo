@@ -1,12 +1,14 @@
 encapsulated package Figaro "Figaro support."
 
 // Imports
-public import Absyn;
-public import Error;
-public import SCode;
-public import System;
+import Absyn;
+import Error;
+import SCode;
+import SCodeUtil;
+protected
 
-protected import SCodeUtil;
+import Autoconf;
+import System;
 
 // Aliases
 public type Ident = Absyn.Ident;
@@ -55,7 +57,7 @@ algorithm
 
   // Temporary (or maybe permanent) fix because the Figaro processor works in an asynchronous way.
 
- if System.os() == "Windows_NT" then
+ if Autoconf.os == "Windows_NT" then
      System.systemCall("timeout 5");
  else
   System.systemCall("sleep 5");

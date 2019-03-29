@@ -42,6 +42,7 @@ encapsulated package Main
 
 protected
 import Absyn;
+import Autoconf;
 import BackendDAE;
 import BackendDAECreate;
 import BackendDAEUtil;
@@ -764,9 +765,9 @@ algorithm
   // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
   // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
   if true then
-    GC.setForceUnmapOnGcollect(if System.os() == "Windows_NT" then true else false);
+    GC.setForceUnmapOnGcollect(if Autoconf.os == "Windows_NT" then true else false);
   else
-    GC.expandHeap(if System.os() == "Windows_NT"
+    GC.expandHeap(if Autoconf.os == "Windows_NT"
                       then 1024*1024*150
                       else 1024*1024*300);
   end if;
@@ -844,7 +845,7 @@ algorithm
   // Setup mingw path only once
   // adrpo: NEVER MOVE THIS CASE FROM HERE OR PUT ANY OTHER CASES BEFORE IT
   //        without asking Adrian.Pop@liu.se
-  if System.os() == "Windows_NT" then
+  if Autoconf.os == "Windows_NT" then
     setWindowsPaths(Settings.getInstallationDirectoryPath());
   end if;
 

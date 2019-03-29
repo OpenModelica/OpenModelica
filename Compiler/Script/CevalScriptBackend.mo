@@ -1608,7 +1608,7 @@ algorithm
         (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
-          executableSuffixedExe = stringAppend(executable, System.getExeExt());
+          executableSuffixedExe = stringAppend(executable, Autoconf.exeExt);
           logFile = stringAppend(executable,".log");
           if System.regularFileExists(logFile) then
             0 = System.removeFile(logFile);
@@ -2412,7 +2412,7 @@ algorithm
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
-        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
         b = System.plotCallBackDefined();
@@ -2473,7 +2473,7 @@ algorithm
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
-        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
         b = System.plotCallBackDefined();
@@ -2853,7 +2853,7 @@ algorithm
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
         str1 = System.pwd() + pd + filename;
-        s1 = if System.os() == "Windows_NT" then ".exe" else "";
+        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
         filename = if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
         b = System.plotCallBackDefined();
@@ -2955,7 +2955,7 @@ algorithm
        then ".bat";
     case ("Cpp","WIN64")
        then ".bat";
-    else System.getExeExt();
+    else Autoconf.exeExt;
   end match;
  end getSimulationExtension;
 
@@ -3369,7 +3369,7 @@ algorithm
   if System.regularFileExists(logfile) then
     System.removeFile(logfile);
   end if;
-  nozip := System.getMakeCommand()+" -j"+intString(Config.noProc()) + " nozip";
+  nozip := Autoconf.make+" -j"+intString(Config.noProc()) + " nozip";
   includeDefaultFmi := "-I" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi";
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
@@ -3378,9 +3378,9 @@ algorithm
         // replace @XX@ variables in the Makefile
         makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
         makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+System.getRTLibsSim());
+        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+Autoconf.ldflags_runtime_sim);
         makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
-        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", System.getDllExt());
+        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
@@ -3399,9 +3399,9 @@ algorithm
         // replace @XX@ variables in the Makefile
         makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
         makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+" -lSimulationRuntimeFMI "+System.getRTLibsFMU());
+        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+" -lSimulationRuntimeFMI "+Autoconf.ldflags_runtime_fmu);
         makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
-        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", System.getDllExt());
+        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
@@ -3518,7 +3518,7 @@ algorithm
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
-  isWindows := System.os() == "Windows_NT";
+  isWindows := Autoconf.os == "Windows_NT";
 
   fmutmp := filenameprefix + ".fmutmp";
   logfile := filenameprefix + ".log";
@@ -3583,7 +3583,7 @@ algorithm
     // get OPENMODELICAHOME
     omhome := Settings.getInstallationDirectoryPath();
     pd := System.pathDelimiter();
-    ext := if System.os() == "Windows_NT" then ".exe" else "";
+    ext := if Autoconf.os == "Windows_NT" then ".exe" else "";
     if encrypt then
       // create the path till packagetool
       packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});

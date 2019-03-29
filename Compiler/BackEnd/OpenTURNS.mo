@@ -46,6 +46,7 @@ import DAE;
 
 protected
 import Array;
+import Autoconf;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendEquation;
@@ -221,7 +222,7 @@ algorithm
   // varLst := listReverse(varLst);
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
-  dllStr := " <path>" + className + cStrWrapperSuffix + System.getDllExt() + "</path>";
+  dllStr := " <path>" + className + cStrWrapperSuffix + Autoconf.dllExt + "</path>";
   funcStr := "   <function provided=\"yes\">" + className + cStrWrapperSuffix + "</function>";
 
   content :=stringDelimitList({

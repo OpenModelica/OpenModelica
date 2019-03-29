@@ -47,6 +47,7 @@ public
 import Values;
 
 protected
+import Autoconf;
 import GraphStreamExt;
 import System;
 import Settings;
@@ -65,7 +66,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         commandWin = "start /b java -jar " + omhome + "/share/omc/java/org.omc.graphstream.jar";
         commandLinux = "java -jar " + omhome + "/share/omc/java/org.omc.graphstream.jar &";
-        command = if "Windows_NT" == System.os() then commandWin else commandLinux;
+        command = if "Windows_NT" == Autoconf.os then commandWin else commandLinux;
         status = System.systemCall(command, "");
         true = status == 0;
       then

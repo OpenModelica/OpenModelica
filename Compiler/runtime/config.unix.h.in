@@ -1,9 +1,5 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
-#define LDFLAGS_RT "@RT_LDFLAGS_GENERATED_CODE@"
-#define LDFLAGS_RT_SIM "@RT_LDFLAGS_GENERATED_CODE_SIM@"
-#define LDFLAGS_RT_SOURCE_FMU "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@"
-#define CONFIG_EXE_EXT ""
 #define CONFIG_DLL_EXT "@SHREXT@"
 #define CONFIG_PLATFORM "Unix"
 #define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
@@ -12,7 +8,6 @@
 #define DEFAULT_CC "@RUNTIMECC@"
 #define DEFAULT_CXX "@CXX@"
 #define DEFAULT_OMPCC "@CC@ @OMPCFLAGS@"
-#define DEFAULT_MAKE "@MAKE@"
 #define DEFAULT_TRIPLE "@host_short@"
 
 #if defined(__sparc__)
@@ -27,7 +22,6 @@
 #endif
 
 #define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
-#define CONFIG_OS "@CONFIG_OS@"
 
 #define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
 @NO_LPLIB@
@@ -73,7 +67,5 @@
 #if USE_GRAPH
 #define USE_PATOH @USE_PATOH@
 #define USE_METIS @USE_METIS@
-#define BDYNAMIC "@BDYNAMIC@"
-#define BSTATIC "@BSTATIC@"
 #endif
 @HAVE_GETTEXT@

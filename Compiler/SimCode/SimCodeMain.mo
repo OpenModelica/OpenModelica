@@ -54,6 +54,7 @@ import SimCode;
 
 // protected imports
 protected
+import Autoconf;
 import AvlSetString;
 import BackendDAECreate;
 import BackendDAEOptimize;
@@ -696,7 +697,7 @@ algorithm
         for path in simCode.modelInfo.resourcePaths loop
           dirname := System.dirname(path);
           // on windows, remove ":" from the path!
-          if System.os() == "Windows_NT" then
+          if Autoconf.os == "Windows_NT" then
             dirname := System.stringReplace(dirname, ":", "");
           end if;
           newdir := resourcesDir + dirname;

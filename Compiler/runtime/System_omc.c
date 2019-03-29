@@ -134,21 +134,6 @@ extern int System_realtimeNtick(int ix)
   return rt_ncall(ix);
 }
 
-extern const char* System_getRTLibs()
-{
-  return LDFLAGS_RT;
-}
-
-extern const char* System_getRTLibsSim()
-{
-  return LDFLAGS_RT_SIM;
-}
-
-extern const char* System_getRTLibsFMU()
-{
-  return LDFLAGS_RT_SOURCE_FMU;
-}
-
 extern const char* System_getCCompiler()
 {
   return cc;
@@ -177,21 +162,6 @@ extern const char* System_getLDFlags()
 extern const char* System_getCFlags()
 {
   return cflags;
-}
-
-extern const char* System_getExeExt()
-{
-  return CONFIG_EXE_EXT;
-}
-
-extern const char* System_getDllExt()
-{
-  return CONFIG_DLL_EXT;
-}
-
-extern const char* System_os()
-{
-  return CONFIG_OS;
 }
 
 extern const char* System_trim(const char* str, const char* chars_to_remove)
@@ -233,9 +203,44 @@ extern const char* System_dirname(const char* str)
 }
 
 #if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+extern const char* System_getRTLibs()
+{
+  return "DUMMY RT LIBS";
+}
+
+extern const char* System_getRTLibsSim()
+{
+  return "DUMMY RT LIBS";
+}
+
+extern const char* System_getRTLibsFMU()
+{
+  return "DUMMY RT LIBS";
+}
+
+extern const char* System_getExeExt()
+{
+  return ".exe";
+}
+
+extern const char* System_getDllExt()
+{
+  return CONFIG_DLL_EXT;
+}
+
+extern const char* System_getMakeCommand()
+{
+  return "make";
+}
+
+extern const char* System_os()
+{
+  return "Windows_NT";
+}
+
 extern const char* System_configureCommandLine()
 {
-  return CONFIGURE_COMMANDLINE;
+  return "Dummy configure";
 }
 #endif
 
@@ -778,11 +783,6 @@ extern void System_getGCStatus(double *used, double *allocated)
 {
   *allocated = GC_get_heap_size();
   *used = *allocated - GC_get_free_bytes();
-}
-
-extern const char* System_getMakeCommand()
-{
-  return DEFAULT_MAKE;
 }
 
 extern const char* System_snprintff(const char *fmt, int len, double d)

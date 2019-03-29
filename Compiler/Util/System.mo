@@ -38,6 +38,9 @@ encapsulated package System
   This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."
 
+protected
+import Autoconf;
+
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
   input String inString;
@@ -252,24 +255,6 @@ public function getLDFlags
 
   external "C" outString=System_getLDFlags() annotation(Library = "omcruntime");
 end getLDFlags;
-
-public function getMakeCommand
-  output String outString;
-
-  external "C" outString=System_getMakeCommand() annotation(Library = "omcruntime");
-end getMakeCommand;
-
-public function getExeExt
-  output String outString;
-
-  external "C" outString=System_getExeExt() annotation(Library = "omcruntime");
-end getExeExt;
-
-public function getDllExt
-  output String outString;
-
-  external "C" outString=System_getDllExt() annotation(Library = "omcruntime");
-end getDllExt;
 
 public function getTriple "For example x86_64-linux-gnu; used to determine the location of lib-files"
   output String outString;
@@ -497,7 +482,7 @@ algorithm
   outBool := System.removeDirectory_dispatch(inString);
   // oh Windows crap: stat fails on very long paths!
   if (not outBool) then
-    if System.os() == "Windows_NT" then
+    if Autoconf.os == "Windows_NT" then
       // try rm as that somehow works on long paths
       outBool := (0 == System.systemCall("rm -r " + inString));
     end if;
@@ -574,16 +559,6 @@ using the asctime() function in time.h (libc)
   output String timeStr;
   external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
-
-public function os "Returns a string with the operating system name
-
-For linux: 'linux'
-For OSX: 'OSX'
-For Windows : 'Windows_NT' (the name of env var OS )
-"
-  output String str;
-  external "C" str = System_os() annotation(Library = "omcruntime");
-end os;
 
 public function readFileNoNumeric
   input String inString;
@@ -732,24 +707,6 @@ public function tmpTickMaximum
   output Integer maxIndex;
   external "C" maxIndex=SystemImpl_tmpTickMaximum(OpenModelica.threadData(),index) annotation(Library = "omcruntime");
 end tmpTickMaximum;
-
-public function getRTLibs
-"Returns a string containing the compiler flags used for real-time libraries"
-  output String libs;
-  external "C" libs=System_getRTLibs() annotation(Library = "omcruntime");
-end getRTLibs;
-
-public function getRTLibsSim
-"Returns a string containing the compiler flags used for simulation real-time libraries"
-  output String libs;
-  external "C" libs=System_getRTLibsSim() annotation(Library = "omcruntime");
-end getRTLibsSim;
-
-public function getRTLibsFMU
-"Returns a string containing the compiler flags used for source-code FMUs"
-  output String libs;
-  external "C" libs=System_getRTLibsFMU() annotation(Library = "omcruntime");
-end getRTLibsFMU;
 
 public function getCorbaLibs
 "Returns a string containing the compiler flags used for Corba libraries.

@@ -931,7 +931,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     }
   }
   if (rv == 0) {
-    const char *msg[2] = {strerror(errno), str_2, str_1};
+    const char *msg[3] = {strerror(errno), str_2, str_1};
     c_add_message(NULL,85,
       ErrorType_scripting,
       ErrorLevel_error,

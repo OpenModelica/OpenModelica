@@ -224,11 +224,11 @@ protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
   String pd = System.pathDelimiter();
   String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd);
-  String fileDLL = workDir + fileprefix + System.getDllExt(),
-         fileEXE = workDir + fileprefix + System.getExeExt(),
+  String fileDLL = workDir + fileprefix + Autoconf.dllExt,
+         fileEXE = workDir + fileprefix + Autoconf.exeExt,
          fileLOG = workDir + fileprefix + ".log";
   Integer numParallel,res;
-  Boolean isWindows = System.os() == "Windows_NT";
+  Boolean isWindows = Autoconf.os == "Windows_NT";
   list<String> makeVarsNoBinding;
 algorithm
   libsfilename := fileprefix + ".libs";
@@ -252,7 +252,7 @@ algorithm
     numParallel := if Config.getRunningTestsuite() then 1 else Config.noProc();
     cdWorkingDir := if stringEmpty(workingDir) then "" else (" -C \"" + workingDir + "\"");
     setMakeVars := sum(" "+var for var in makeVarsNoBinding);
-    s_call := stringAppendList({System.getMakeCommand()," -j",intString(numParallel),cdWorkingDir," -f ",fileprefix,".makefile",setMakeVars});
+    s_call := stringAppendList({Autoconf.make," -j",intString(numParallel),cdWorkingDir," -f ",fileprefix,".makefile",setMakeVars});
   end if;
   if Flags.isSet(Flags.DYN_LOAD) then
     Debug.traceln("compileModel: running " + s_call);
@@ -1692,11 +1692,11 @@ algorithm
                   "CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath(Config.getRunningTestsuite());
-        omcpath = omhome + "/bin/omc" + System.getExeExt();
+        omcpath = omhome + "/bin/omc" + Autoconf.exeExt;
         systemPath = Util.makeValueOrDefault(System.readEnv,"PATH","");
         omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         omcfound = System.regularFileExists(omcpath);
-        os = System.os();
+        os = Autoconf.os;
         touch_file = "omc.checksettings.create_file_test";
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
@@ -1705,7 +1705,7 @@ algorithm
         uname = System.readFile(touch_file);
         rm_res = 0 == System.systemCall("rm " + touch_file, "");
         // _ = System.platform();
-        senddata = System.getRTLibs();
+        senddata = Autoconf.ldflags_runtime;
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
         System.systemCall("rm -f " + touch_file, "");

@@ -84,14 +84,16 @@ public uniontype DateTime
   end DATETIME;
 end DateTime;
 
-protected import ClockIndexes;
-protected import Config;
-protected import Error;
-protected import Flags;
-protected import Global;
-protected import List;
-protected import Print;
-protected import System;
+protected
+import Autoconf;
+import ClockIndexes;
+import Config;
+import Error;
+import Flags;
+import Global;
+import List;
+import Print;
+import System;
 
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public constant String derivativeNamePrefix="$DER";
@@ -125,7 +127,7 @@ end isRealGreater;
 public function linuxDotSlash "If operating system is Linux/Unix, return a './', otherwise return empty string"
   output String str;
 algorithm
-  str := System.os();
+  str := Autoconf.os;
   str := if str == "linux" or str == "OSX" then "./" else "";
 end linuxDotSlash;
 
@@ -1001,7 +1003,7 @@ public function replaceWindowsBackSlashWithPathDelimiter
   input String inPath;
   output String outPath;
 algorithm
-  if System.os() == "Windows_NT" then
+  if Autoconf.os == "Windows_NT" then
     outPath := System.stringReplace(inPath, "\\", System.pathDelimiter());
   else
     outPath := inPath;
@@ -1618,7 +1620,7 @@ algorithm
 
     case (true,_)
       algorithm
-        newName := if System.os() == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
+        newName := if Autoconf.os == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
         (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 6, true, false);
         friendly := listGet(strs,i);
       then
