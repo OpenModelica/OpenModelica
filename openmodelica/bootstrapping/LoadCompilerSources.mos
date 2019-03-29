@@ -221,6 +221,7 @@ if true then /* Suppress output */
 
   // "Util";
     prefixPath + "Util/Array.mo",
+    prefixPath + "Util/Autoconf.mo",
     prefixPath + "Util/AvlSetCR.mo",
     prefixPath + "Util/AvlTreeString.mo",
     prefixPath + "Util/BaseAvlSet.mo",

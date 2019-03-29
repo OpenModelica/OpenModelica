@@ -13,6 +13,8 @@ loadFile(pathPrefix + "Lexers/LexerJSON.mo");
 getErrorString();
 loadFile(pathPrefix + "Parsers/JSON.mo");
 getErrorString();
+loadFile(pathPrefix + "Util/Autoconf.mo");
+getErrorString();
 loadFile(pathPrefix + "Util/BaseAvlSet.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/BaseAvlTree.mo");
@@ -46,6 +48,8 @@ getErrorString();
 // Result:
 // true
 // true
+// true
+// ""
 // true
 // ""
 // true
