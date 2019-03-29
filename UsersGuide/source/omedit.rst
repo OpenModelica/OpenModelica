@@ -1046,8 +1046,8 @@ Simulation
        parameter instead of re-simulate.
 
     -  *Enable analytical jacobian for non-linear strong components* - enables
-        analytical jacobian for non-linear strong components without user-defined
-        function calls.
+       analytical jacobian for non-linear strong components without user-defined
+       function calls.
 
     -  *Enable pedantic debug-mode, to get much more feedback*
 
