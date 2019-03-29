@@ -119,8 +119,6 @@ void OMSSimulationDialog::simulationFinished(OMSSimulationOptions omsSimulationO
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    // close the simulation result file.
-    pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), omsSimulationOptions.getWorkingDirectory(),

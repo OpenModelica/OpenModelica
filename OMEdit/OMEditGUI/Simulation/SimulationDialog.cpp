@@ -1869,8 +1869,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    // close the simulation result file.
-    pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         bool showPlotWindow = true;

@@ -210,8 +210,6 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    // close the simulation result file.
-    pOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
 #if !defined(WITHOUT_OSG)
       // only show the AnimationWindow if we have a visual xml file.

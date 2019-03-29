@@ -639,8 +639,6 @@ void MainWindow::openResultFiles(QStringList fileNames)
   foreach (QString fileName, fileNames) {
     QFileInfo fileInfo(fileName);
     QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
-    // close the simulation result file.
-    mpOMCProxy->closeSimulationResultFile();
     if (list.size() > 0) {
       mpPerspectiveTabbar->setCurrentIndex(2);
       mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
