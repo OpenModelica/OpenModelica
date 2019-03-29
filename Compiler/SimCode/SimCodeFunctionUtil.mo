@@ -2105,7 +2105,7 @@ algorithm
   (strs,names) := matchcontinue exp
     local
       String str, fopenmp;
-      list<String> strs1, strs2, names1, names2;
+      list<String> strs1, strs2, strs3, names1, names2, names3;
 
     // Lapack is always included
     case Absyn.STRING("lapack") then ({},{});
@@ -2173,10 +2173,12 @@ algorithm
     case Absyn.STRING(str)
       algorithm
         if str=="ModelicaStandardTables" then
+          // MSL 3.2.1 did not have the updated annotations...
           (strs1,names1) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaIO"));
           (strs2,names2) := getLibraryStringInGccFormat(Absyn.STRING("ModelicaMatIO"));
-          strs := listAppend(strs1, strs2);
-          names := listAppend(names1, names2);
+          (strs3,names3) := getLibraryStringInGccFormat(Absyn.STRING("zlib"));
+          strs := listAppend(strs1, listAppend(strs2, strs3));
+          names := listAppend(names1, listAppend(names2, names3));
         else
           strs := {};
           names := {};
