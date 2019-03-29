@@ -408,6 +408,10 @@ DocumentationWidget::~DocumentationWidget()
  */
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
+  // We only support documentation of Modelica classes.
+  if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+    return;
+  }
   // if documentation is proctected then do not show it.
   if (pLibraryTreeItem->getAccess() < LibraryTreeItem::documentation) {
     // Remove the class documentation if it is showed previously.
