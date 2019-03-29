@@ -38,6 +38,7 @@ LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 # LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
 # Do not use munmap; it crashes processes...
+MSL321_CONFIG_EXTRA_FLAGS=--enable-static --disable-shared
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark
 LIBFMILIB=@LIBFMILIB@
 LIBCMINPACKLIB=@LIBCMINPACKLIB@
@@ -62,11 +63,11 @@ ifeq ($(WITH_FMIL),yes)
 BOOTSTRAP_FMIL_DEP=fmil
 endif
 LIB_OMC=lib/@host_short@/omc
-LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC@SHREXT@
-LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables@SHREXT@
-LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib@SHREXT@
-LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO@SHREXT@
-LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO@SHREXT@
+LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC$(STAEXT)
+LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables$(STAEXT)
+LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib$(STAEXT)
+LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO$(STAEXT)
+LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO$(STAEXT)
 OMENCRYPTION=@OMENCRYPTION@
 LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
 MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
