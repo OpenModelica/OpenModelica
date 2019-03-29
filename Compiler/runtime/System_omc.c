@@ -232,10 +232,12 @@ extern const char* System_dirname(const char* str)
   return res;
 }
 
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
 extern const char* System_configureCommandLine()
 {
   return CONFIGURE_COMMANDLINE;
 }
+#endif
 
 extern const char* System_platform()
 {

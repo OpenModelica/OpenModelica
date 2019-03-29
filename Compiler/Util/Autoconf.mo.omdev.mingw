@@ -1,0 +1,8 @@
+encapsulated package Autoconf
+
+  constant String bstatic = "-Wl,-Bstatic";
+  constant String bdynamic = "-Wl,-Bdynamic";
+  constant String configureCommandLine = "Manually created Makefiles for OMDev";
+
+annotation(__OpenModelica_Interface="util");
+end Autoconf;

@@ -73,5 +73,7 @@
 #if USE_GRAPH
 #define USE_PATOH @USE_PATOH@
 #define USE_METIS @USE_METIS@
+#define BDYNAMIC "@BDYNAMIC@"
+#define BSTATIC "@BSTATIC@"
 #endif
 @HAVE_GETTEXT@

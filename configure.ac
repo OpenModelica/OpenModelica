@@ -12,6 +12,7 @@ AC_SUBST(with_paradiseo_include)
 AC_SUBST(with_paradiseo_lib)
 AC_SUBST(with_qwt)
 AC_SUBST(with_qwt_suffix)
+AC_SUBST(CONFIGURE_ARGS)
 AC_SUBST(CHECK_C_ERRORS)
 AC_SUBST(EXTRA_CFLAGS_GENERATED_CODE)
 AC_SUBST(HAVE_GETTEXT)
@@ -96,6 +97,7 @@ AC_SUBST(LDFLAGS_LIBSTDCXX)
 AC_SUBST(CPP_RUNTIME_ARGS)
 AC_SUBST(OMENCRYPTION)
 AC_SUBST(MINGW_EXTRA_LIBS)
+AC_SUBST(BSTATIC)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -621,6 +623,11 @@ AS_IF([test "x$with_UMFPACK" = xyes],
   UMFPACK_LDFLAGS=""
 ])
 
+OLD_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,-Bstatic  -Wl,-Bdynamic"
+AC_TRY_LINK([], [return 0;], [BSTATIC="true"],[BSTATIC="false"; AC_MSG_RESULT(["Don't know the flags to force static linking"])])
+LDFLAGS="$OLD_LDFLAGS"
+
 # check for ipopt
 AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOPT (only for bootstrapping; required for simulations)],
 [],[with_ipopt=yes])
@@ -852,7 +859,10 @@ AC_LANG_POP([C++])
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
+CONFIGURE_ARGS="$ac_configure_args"
+
 GENERATED_AUTOCONF_FILES="Makefile \
+Compiler/Util/Autoconf.mo \
 Compiler/Makefile \
 Compiler/Script/Makefile \
 Compiler/Template/Makefile \

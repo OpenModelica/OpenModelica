@@ -52,4 +52,7 @@ LDFLAGS_SHARED_MAIN=-L"$(OMHOME)/$(LIB_OMC)" $(EXTRA_LD_FLAGS)
 
 default: all
 
+../Util/Autoconf.mo: ../Util/Autoconf.mo.omdev.mingw
+	cp -p "$<" "$@"
+
 include Makefile.common

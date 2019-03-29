@@ -1,0 +1,9 @@
+encapsulated package Autoconf
+
+  constant Boolean haveBStatic = @BSTATIC@;
+  constant String bstatic = if haveBStatic then "-Wl,-Bstatic" else "";
+  constant String bdynamic = if haveBStatic then "-Wl,-Bdynamic" else "";
+  constant String configureCommandLine = "Configured @date@ using arguments: @CONFIGURE_ARGS@";
+
+annotation(__OpenModelica_Interface="util");
+end Autoconf;

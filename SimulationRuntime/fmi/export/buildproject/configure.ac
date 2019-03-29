@@ -10,6 +10,8 @@ AC_SUBST(NEED_DGESV)
 AC_SUBST(NEED_RUNTIME)
 AC_SUBST(LIBTYPE_STATIC)
 AC_SUBST(LIBTYPE_DYNAMIC)
+AC_SUBST(BSTATIC)
+AC_SUBST(BDYNAMIC)
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -179,6 +181,25 @@ if test -z "$LD_LAPACK"; then
   NEED_DGESV=1
 else
   LIBS="$LIBS $LD_LAPACK"
+fi
+
+AC_ARG_ENABLE(static-user-libs, [  --disable-static-user-libs], [
+  if test "$enableval" = "yes"; then
+    STATIC_USER_LIBS=1
+  elif test "$enableval" = "no"; then
+    STATIC_USER_LIBS=0
+  else
+    AC_MSG_ERROR([Unknown value --enable-static-user-libs=$withval (use yes or no, or no value)])
+  fi
+], [STATIC_USER_LIBS=1])
+
+if test "$STATIC_USER_LIBS" = "1"; then
+
+  OLD_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -Wl,-Bstatic  -Wl,-Bdynamic"
+  AC_TRY_LINK([], [return 0;], [BSTATIC="-Wl,-Bstatic" ; BDYNAMIC="-Wl,-Bdynamic"],[AC_MSG_RESULT(["Don't know the flags to force static linking"])])
+  LDFLAGS="$OLD_LDFLAGS"
+
 fi
 
 AC_MSG_CHECKING([for static pthreads])

@@ -133,6 +133,7 @@ if true then /* Suppress output */
 
   // "Util";
     "../Util/Array.mo",
+    "../Util/Autoconf.mo",
     "../Util/AvlSetCR.mo",
     "../Util/AvlSetPath.mo",
     "../Util/AvlSetString.mo",

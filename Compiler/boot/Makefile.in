@@ -43,5 +43,8 @@ default: all
 
 include Makefile.common
 
+../Util/Autoconf.mo: ../Util/Autoconf.mo.in
+	(cd "$(TOP_DIR)" && ./config.status)
+
 Makefile: Makefile.in
 	(cd @top_builddir@ && ./config.status)

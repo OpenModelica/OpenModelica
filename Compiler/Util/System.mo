@@ -779,14 +779,6 @@ public function getuid
   external "C" uid=System_getuid() annotation(Library = "omcruntime");
 end getuid;
 
-public function configureCommandLine
-"Returns the date and command used to configure OpenModelica.
-On the platforms that don't configure options, like OMDev, the returned string
-is more generic and does not contain a date."
-  output String cmdLine;
-  external "C" cmdLine=System_configureCommandLine() annotation(Library = "omcruntime");
-end configureCommandLine;
-
 public function realtimeTick
 "Tock returns the time since the last tock; undefined if tick was never called.
 The clock index is 0-31. The function fails if the number is out of range."

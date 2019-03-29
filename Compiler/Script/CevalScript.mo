@@ -61,6 +61,7 @@ import SimCode;
 
 // protected imports
 protected
+import Autoconf;
 import BaseHashSet;
 import CevalScriptBackend;
 import CevalFunction;
@@ -1711,7 +1712,7 @@ algorithm
         gcc_res = 0 == System.systemCall(gcc + " --version", touch_file);
         gccVersion = System.readFile(touch_file);
         System.systemCall("rm -f " + touch_file, "");
-        confcmd = System.configureCommandLine();
+        confcmd = Autoconf.configureCommandLine;
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),
                 Values.STRING(omcpath),

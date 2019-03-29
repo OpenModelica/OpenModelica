@@ -51,6 +51,7 @@ import UnitAbsyn;
 
 // protected imports
 protected
+import Autoconf;
 import BackendDump;
 import BackendDAECreate;
 import BackendDAEUtil;
@@ -3385,6 +3386,8 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
         makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
+        makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
+        makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
         makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
         System.writeFile(dir + "Makefile", makefileStr);
         System.writeFile(dir + "config.log", "Using cached values for dynamic platform");
@@ -3404,6 +3407,8 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
         makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1 " + includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
+        makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
+        makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
         makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
         System.writeFile(dir + "Makefile", makefileStr);
         System.writeFile(dir + "config.log", "Using cached values for static platform");

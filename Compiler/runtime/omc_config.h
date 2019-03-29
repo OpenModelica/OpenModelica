@@ -89,11 +89,6 @@
 #define CONFIG_WITH_OPENMP 1
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL
-#if defined(__MINGW32__)
-  #define CONFIGURE_COMMANDLINE "Manually created Makefiles for OMDev"
-#elif defined(_MSC_VER)
-  #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
-#endif
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define BASIC_LDFLAGS_RT " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -lsundials_idas -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic"
