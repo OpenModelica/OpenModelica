@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Resources/icons/omplot.png</file>
+        <file>Resources/icons/initialize.svg</file>
+        <file>Resources/icons/play_animation.svg</file>
+        <file>Resources/icons/pause.svg</file>
+    </qresource>
+</RCC>

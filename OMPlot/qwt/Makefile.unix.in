@@ -1,0 +1,30 @@
+# @author Adeel Asghar <adeel.asghar@liu.se>
+#
+# RCS: $Id: Makefile.unix.in 150 2015-04-29 15:12:30Z sjoelund.se $
+#
+
+top_builddir=@top_builddir@
+
+QMAKE=@QMAKE@
+NAME=OMPlot
+
+.PHONY: always $(NAME)
+
+all: build
+
+Makefile: qwt.pro
+	@rm -f $@
+	$(QMAKE) QMAKE_CXX=@CXX@ QMAKE_CXXFLAGS="@CXXFLAGS@" QMAKE_LINK="@CXX@" qwt.pro
+clean:
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf build lib Makefile
+	rm -rf src/debug src/moc src/release src/Makefile* src/object_script*
+	rm -rf textengines/Makefile
+
+$(NAME): Makefile
+	$(MAKE) -f Makefile
+
+build: $(NAME) Makefile.unix
+
+Makefile.unix: Makefile.unix.in
+	cd $(top_builddir) && ./config.status

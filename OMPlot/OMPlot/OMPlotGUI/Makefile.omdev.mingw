@@ -1,0 +1,40 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+QMAKE=qmake
+EXE=.exe
+NAME=OMPlot
+LIB=libOMPlot
+LIBEXE=.a
+ifeq ($(CONFIG),)
+CONFIG=release
+endif
+
+.PHONY: always $(NAME) $(LIB)
+
+all: build
+
+Makefile: OMPlotGUI.pro
+	@rm -f $@
+	$(QMAKE) "CONFIG+=$(CONFIG)"
+
+Makefile.lib: Makefile OMPlotLib.pro
+	@rm -f $@
+	$(QMAKE) "CONFIG+=$(CONFIG)" OMPlotLib.pro -o $@
+
+clean: Makefile Makefile.lib
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
+	rm -rf ../bin/$(LIB)$(LIBEXE) ../bin/$(NAME)$(EXE) Makefile Makefile.Debug Makefile.Release Makefile.lib Makefile.lib.Debug Makefile.lib.Release object_script.*
+
+$(NAME): Makefile $(LIB)
+	$(MAKE) -f Makefile
+
+$(LIB): Makefile.lib
+	$(MAKE) -f $<
+	cp -p ../bin/$(LIB)$(LIBEXE) $(OMBUILDDIR)/lib/omc
+
+build: $(NAME) $(LIB)
+	cp -p ../bin/$(NAME)$(EXE) $(OMBUILDDIR)/bin
+	cp -a *.h $(OMBUILDDIR)/include/omplot

@@ -1,0 +1,49 @@
+top_builddir=../../
+
+QMAKE=@QMAKE@
+APP=@APP@
+EXE=@EXE@
+NAME=OMPlot
+LIB=libOMPlot
+OMBUILDDIR=@OMBUILDDIR@
+
+ifeq ($(CONFIG),)
+CONFIG=release
+endif
+
+.PHONY: always $(NAME) $(LIB)
+
+all: build
+
+Makefile: OMPlotGUI.pro OMPlotGUI.config
+	@rm -f $@
+	$(QMAKE) "CONFIG+=$(CONFIG)"
+
+Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
+	@rm -f $@
+	$(QMAKE) "CONFIG+=$(CONFIG)" OMPlotLib.pro -o $@
+clean:
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
+	rm -rf $(NAME) $(NAME)$(APP) Makefile ../bin/
+
+$(NAME)$(APP): Makefile $(LIB)
+	$(MAKE) -f Makefile
+ifeq ($(APP),.app)
+$(NAME): $(NAME)$(APP) always
+	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
+endif
+
+$(LIB): Makefile.lib
+	$(MAKE) -f $<
+	cp -a ../bin/libOMPlot* $(OMBUILDDIR)/lib/@host_short@/omc/
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMPlot.1.0.0.dylib $(OMBUILDDIR)/lib/@host_short@/omc/libOMPlot.1.0.0.dylib
+
+build: $(NAME) $(LIB)
+	cp -p ../bin/$(NAME) $(OMBUILDDIR)/bin
+
+Makefile.unix: Makefile.unix.in
+	cd $(top_builddir) && ./config.status
+
+OMPlotGUI.config: OMPlotGUI.config.in
+	cd $(top_builddir) && ./config.status

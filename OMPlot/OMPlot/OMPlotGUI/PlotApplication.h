@@ -1,0 +1,66 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linkoping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linkoping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linkoping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ * Main Author 2011: Adeel Asghar
+ *
+ */
+
+#ifndef PLOTAPPLICATION_H
+#define PLOTAPPLICATION_H
+
+#include <QApplication>
+#include <QSharedMemory>
+#include <QStringList>
+#include <QDebug>
+
+namespace OMPlot
+{
+class PlotApplication : public QApplication
+{
+    Q_OBJECT
+public:
+    PlotApplication(int &argc, char *argv[], const QString uniqueKey);
+
+    bool isRunning();
+    void sendMessage(QStringList arguments);
+    void launchNewApplication(QStringList arguments);
+    virtual bool notify(QObject *receiver, QEvent *event);
+private:
+    bool mIsRunning;
+    QSharedMemory mSharedMemory;
+    QTimer *mpTimer;
+public slots:
+    void checkForMessage();
+signals:
+    void messageAvailable(QStringList arguments);
+    void newApplicationLaunched(QStringList arguments);
+};
+}
+
+#endif // PLOTAPPLICATION_H

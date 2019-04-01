@@ -1,0 +1,138 @@
+.\" --------------------------------------------------------------------
+.\" Title
+.\" --------------------------------------------------------------------
+.
+.TH OMPlot 1 "The Open Source Modelica Consortium" "1.9.2" "The OpenModelica Project" -*- nroff -*-
+.
+.
+.\" --------------------------------------------------------------------
+.SH "NAME"
+.\" --------------------------------------------------------------------
+.
+OMPlot \- OpenModelica plot viewer
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SYNOPSIS"
+.\" --------------------------------------------------------------------
+.
+.B OMPlot
+[\fIOPTION\fR] [\fIfilename\fR] [\fIvariable-names\fR]
+.
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B OMPlot
+is a plot viewer that handles the file formats used by the OpenModelica
+Compiler:
+.P
+.RS 3
+.IP \(bu 3
+.B MATLAB4
+(binary format with .mat extension)
+.IP \(bu 3
+.B CSV
+(.csv)
+.IP \(bu 3
+.B PLT
+(.csv)
+.RE
+.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+.\" --------------------------------------------------------------------
+.
+.PP
+.PD 0
+.TP
+.B \-\-title=TITLE
+Sets the TITLE of the plot window
+.PP
+.PD 0
+.TP
+.B \-\-filename=NAME
+Sets the NAME of the file to plot
+.PP
+.PD 0
+.TP
+.B \-\-legend=[true|false]
+Display a variable legend in the window
+.PP
+.PD 0
+.TP
+.B \-\-grid=[true|false]
+Enable a grid in the window
+.PP
+.PD 0
+.TP
+.B \-\-logx=[true|false]
+Use log scale for the x-axis
+.PP
+.PD 0
+.TP
+.B \-\-logy=[true|false]
+Use log scale for the y-axis
+.PP
+.PD 0
+.TP
+.B \-\-xlabel=LABEL
+Use LABEL as the label of the x-axis
+.PP
+.PD 0
+.TP
+.B \-\-ylabel=LABEL
+Use LABEL as the label of the y-axis
+.PP
+.PD 0
+.TP
+.B \-\-plot
+Creates a normal plot with the variables given on the command-line
+.PP
+.PD 0
+.TP
+.B \-\-plotAll
+Create a normal plot containing every variable in the result-file
+.PP
+.PD 0
+.TP
+.B \-\-plotParametric
+Create a parametric plot (plot variables as functions of each other)
+.PP
+.PD 0
+.TP
+.B \-\-xrange=LEFT:RIGHT
+Sets the initial range of the x-axis to LEFT:RIGHT
+.PP
+.PD 0
+.TP
+.B \-\-yrange=LEFT:RIGHT
+Sets the initial range of the y-axis to LEFT:RIGHT
+.PP
+.PD 0
+.TP
+.B \-\-new-window=[true|false]
+Create a MDI dialog in the plot-window
+
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+See OpenModelicaUsersGuide.pdf for a full list of contributors to the
+\%OpenModelica project.
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+If you find a bug, please report it at:
+.P
+<\fBhttp://trac.openmodelica.org/OpenModelica/newticket\fR>
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1)
+
