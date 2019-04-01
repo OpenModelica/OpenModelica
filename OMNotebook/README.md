@@ -4,7 +4,7 @@ A Mathematica-style Notebook for OpenModelica.
 ## Dependencies
 
 - [OpenModelica](https://openmodelica.org)
-- [OMPlot](../../../OMPlot)
+- [OMPlot](../../OMPlot)
 
 ## Build instructions
 
@@ -32,4 +32,4 @@ $ make -f Makefile.omdev.mingw omnotebook
 ## Bug Reports
 
 - Submit bugs through the [OpenModelica trac](https://trac.openmodelica.org/OpenModelica/newticket).
-- [Pull requests](../../pulls) are welcome.
+- [Pull requests](../../../pulls) are welcome.
