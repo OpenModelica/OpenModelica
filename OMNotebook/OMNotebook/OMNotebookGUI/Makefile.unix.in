@@ -1,0 +1,43 @@
+top_builddir=../../
+resourcedir=./Resources/nls/
+
+QMAKE=@QMAKE@
+EXE=@EXE@
+APP=@APP@
+NAME=OMNotebook
+LRELEASE=@LRELEASE@
+
+.PHONY: install build always $(NAME)
+
+install: build Resources/nls/qm.stamp
+	mkdir -p @OMBUILDDIR@/share/omnotebook/nls/
+	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omnotebook/nls/
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin/$(NAME); fi
+
+Resources/nls/qm.stamp: OMNotebookGUI.pro Resources/nls/*.ts
+	$(LRELEASE) $<
+	touch $@
+
+Makefile: OMNotebookGUI.pro rc_omnotebook.rc
+	$(QMAKE)
+
+clean: Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) Makefile
+
+$(NAME): Makefile OMNotebook.config
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+	mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/ @OMBUILDDIR@/share/omnotebook/drcontrol/
+	cp -p *.xml @OMBUILDDIR@/share/omnotebook/
+	cp -p ../../OMNotebookHelp.onb @OMBUILDDIR@/share/omnotebook/
+	(cd @DRMODELICADIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
+	(cd @DRMODELICADIR@ && find . -name "*.onb" -exec cp {} @OMBUILDDIR@/share/omnotebook/drmodelica/{} ";")
+	(cd @DRCONTROLDIR@ && find . -type d -exec mkdir -p @OMBUILDDIR@/share/omnotebook/drcontrol/{} ";")
+	(cd @DRCONTROLDIR@ && find . -name "*.onb" -exec cp {} @OMBUILDDIR@/share/omnotebook/drcontrol/{} ";")
+
+Makefile.unix: Makefile.unix.in
+	cd $(top_builddir); ./config.status
+
+OMNotebook.config: OMNotebook.config.in
+	cd $(top_builddir); ./config.status

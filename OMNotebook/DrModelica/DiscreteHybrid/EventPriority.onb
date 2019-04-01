@@ -1,0 +1,189 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Using Event Priority to Avoid Erroneous Multiple Definitions&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Priority in When-Statements&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Two separate &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">when-&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">equations or &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">when-&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">statements in different algorithm sections may not define the same variable. Without this rule a conflict between the equations will occur if both conditions would become true at the same time instant. This would happen for the erroneous model &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WhenConflictX&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below if we would have the same condition, e.g. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">time &amp;gt;= 1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, in both &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">when&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-equations since there are two equations:  x = pre(x) + 1.5 and x = pre(x) + 1 that define the same variable x.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WhenConflictX     // Erroneous model: two equations define x
+   discrete Real x;
+equation
+  when time >= 2 then   // When A: Increase x by 1.5 at time >= 2
+    x = pre(x) + 1.5;
+  end when;
+  when time >= 1 then   // When B: Increase x by 1 at time >= 1
+    x = pre(x) + 1;
+  end when;
+end WhenConflictX;
+</Input>
+          <Output>{WhenConflictX}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(WhenConflictX)</Input>
+          <Output>record SimulationResult
+    resultFile = "",
+    messages = "Simulation failed for model: WhenConflictX
+Error: Too many equations, over-determined system. The model has 2 equation(s) and 1 variable(s).
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+"
+end SimulationResult;</Output>
+        </GraphCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Eliminating the double definition&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The multiple assignment conflict in the above example can be avoided by giving a higher priority to one of the defining equations through the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">elsewhen&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> construct, as in the same example in converted form below. We have put both equations within the same &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">when-&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">equation and ordered the conditions in &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">decreasing&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> priority.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model WhenPriorityX
+   discrete Real x(fixed=true);
+equation
+  when time >= 2 then       // Higher priority
+    x = pre(x) + 1.5;
+  elsewhen time >= 1 then   // Lower priority
+    x = pre(x) + 1;
+  end when;
+end WhenPriorityX;
+</Input>
+            <Output>{WhenPriorityX}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate(WhenPriorityX, stopTime=10)</Input>
+            <Output>record SimulationResult
+    resultFile = "WhenPriorityX_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+              <Curve Title="x" Visible="true" XData="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" YData="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAA" Color="4294901760"/>
+            </OMCPlot>
+            <Input>plot(x)</Input>
+            <Output>[done]</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">&lt;br />Eliminating the double definition conflict between equations in different when-equations in the WhenPriority model by giving the event at time = 2 higher priority than the event at &lt;br />time = 1 through the use of elsewhen in the WhenPriorityX model.&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">However, note that multiple assignments to the same variable within an algorithm section are allowed since only &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">the last assignment to the same variable in an algorithm section is counted&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class MultipleWhen
+  discrete Real x(fixed=true);
+algorithm
+  when time >= 2 then
+    x := pre(x) + 0.75;    // multiple assignments within the same
+    x := x + 0.75;         // when-statement or algorithm section is allowed
+  elsewhen time >= 1 then
+    x := pre(x) + 1;
+  end when;
+end MultipleWhen;
+</Input>
+            <Output>{MultipleWhen}</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate(MultipleWhen,stopTime=10)</Input>
+            <Output>record SimulationResult
+    resultFile = "MultipleWhen_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+              <Curve Title="x" Visible="true" XData="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" YData="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAAQAQAAAAAAABABAAAAAAAAEAEAAAAAAAA" Color="4294901760"/>
+            </OMCPlot>
+            <Input>plot(x)</Input>
+            <Output>[done]</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

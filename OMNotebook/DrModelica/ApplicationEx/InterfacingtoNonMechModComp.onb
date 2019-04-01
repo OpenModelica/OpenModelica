@@ -1,0 +1,292 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Interfacing to Non-Mechanical Model Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />When a multidomain model in Modelica is designed, the mechanical part of the model physically interacts with some other parts of the model. The mechanical part should usually be connected with the part describing the drive train, which is in turn connected to the part describing the energy source, e.g. electrical circuit. There are standard Modelica libraries for all these components. &lt;br />&lt;br />However, sometimes the attention is focused on an isolated mechanical part of the model. In this case the reference positions as well as forces and torques acting on the model can be specified directly. &lt;br />&lt;br />There exist three major ways to set up an interface between the mechanical part of Modelica model and other parts. These ways correspond to three connector types: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Multiboby.Interfaces.Frame, Rotational.Interfaces.Flange&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Translational.Interfaces.Flange&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Using Multibody.Interfaces.Frame&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Any object with connector of type &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Frame_a&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> or &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Frame_b&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can be connected to a model of external force or torque. This external force (or torque) will be applied to the corresponding point on the relevant body. The example below includes a force acting on the end of the pendulum in direction of the local Y-axis (perpendicular to the pendulum bar). When force is attached to the pendulum it does not oscillate;  it rotates instead.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model ExtForcePendulum
+   import Modelica.Mechanics.MultiBody.Parts;
+   import Modelica.Mechanics.MultiBody.Joints;
+   import Modelica.Mechanics.MultiBody.Forces;
+   import Modelica.Mechanics.MultiBody.Frames;
+   import Modelica.Blocks.Sources;
+   inner Modelica.Mechanics.MultiBody.World world;
+   Joints.Revolute revolute1;
+   Parts.BodyCylinder body1(r={1,0,0},diameter=0.2);
+   Forces.WorldForce worldForce1;
+   Sources.Constant constant1(k={0,1190,0});
+equation
+   connect(world.frame_b, revolute1.frame_a);
+   connect(revolute1.frame_b, body1.frame_a);
+   connect(body1.frame_b, worldForce1.frame_b);
+   worldForce1.force = Frames.resolve1(worldForce1.frame_b.R,constant1.y);
+end ExtForcePendulum;
+  </Input>
+          <Output>{ExtForcePendulum}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(ExtForcePendulum)</Input>
+          <Output>record SimulationResult
+    resultFile = "",
+    messages = "Failed to build model: ExtForcePendulum"
+end SimulationResult;
+OMC-ERROR:
+"[&lt;interactive>:11:31-11:43:writable] Error: Type mismatch in binding k = {0, 1190, 0}, expected subtype of Real, got type Integer[3].
+Error: Error occurred while flattening model ExtForcePendulum
+"</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Sometimes it is necessary to specify external force in global coordinates. One connect statement should be replaced by equation (see below). The input signal &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ExtForce&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> object is adjusted according to the orientation matrix &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">S&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ExtForce&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> frame. When such constant force (in direction of vector {1,1,0} in the global coordinate system) is applied to the pendulum, it oscillates near the equilibrium point.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Using Rotational.Interfaces.Flange&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Rotational&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> library describes varius elements for one-dimensional rotational motion. These elements can be attached to the Revolute joint from &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">MultiBody&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> library. A torque, spring, damper or any other component can be attached to the flanges of the revolute joint. The example below illustrates a one-dimensional spring and damper (from &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Rotational&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> library) attached to the revolute joint of a simple pendulum.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model PendulumWithDampedSpring
+   import Modelica.Mechanics.MultiBody.Parts;
+   import Modelica.Mechanics.MultiBody.Joints;
+   import Modelica.Mechanics.MultiBody.Forces;
+   import Modelica.Blocks.Sources;
+   import Modelica.Mechanics.Rotational;
+   inner Modelica.Mechanics.MultiBody.World world;
+   Parts.BodyCylinder body1(r={1,0,0},diameter=0.2);
+   Joints.Revolute revolute1;
+   Rotational.Components.SpringDamper springDamper1(c=500,phi_rel0=1,d=170);
+equation
+   connect(world.frame_b, revolute1.frame_a);
+   connect(springDamper1.flange_a, revolute1.support);
+   connect(springDamper1.flange_b, revolute1.axis);
+   connect(revolute1.frame_b, body1.frame_a);
+end PendulumWithDampedSpring;</Input>
+          <Output>{PendulumWithDampedSpring}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(PendulumWithDampedSpring, stopTime=3)</Input>
+          <Output>record SimulationResult
+    resultFile = "",
+    messages = "Failed to build model: PendulumWithDampedSpring"
+end SimulationResult;
+OMC-ERROR:
+"[C:/OPENMODELICAGIT/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Mechanics/Rotational.mo:6549:5-6605:17:writable] Error: Found equation without time-dependent variables: springDamper1.flange_b.tau = 0.0
+[C:/OPENMODELICAGIT/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Mechanics/Rotational.mo:6607:5-6664:17:writable] Error: Model is structurally singular, error found sorting equations
+ 1: 0.0 = 0.0 ;
+2: 0 = 0.0 ;
+3: 0 = 0 ;
+4: 0.0 = 0 ;
+ for variables
+ springDamper1.flange_b.phi(6), springDamper1.a_rel(10), springDamper1.tau(9), springDamper1.flange_a.phi(8), springDamper1.w_rel(1), springDamper1.phi_rel(2), springDamper1.tau_c(3), springDamper1.lossPower(4)
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+"</Output>
+        </GraphCell>
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Pendulum with Rotational Angle Steering&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Sometimes there is a need to rotate the body connected to the joint to a certain desired angular position.This can be done by the use of an instance of the class Rotational.Position. In the example pendulum with rotation angle steering, the specified value of the angle is given by the step1 instance of the Step signal source from the Modelica.Block.Sources sublibrary. This value is converted to an angular position by the position1 component. In class Position the reference angle is filtered and the second derivative of the filtered curve is used to compute the reference acceleration of the flange. Angular position of the joint is computed from this acceleration. For filtering, a second order Bessel filter is used. The critical frequency (also called cut-off frequency) of the filter is defined via parameter f_crit in [Hz]. This value should be selected in such a way that it is higher as the essential low frequencies in the signal.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Justify</Rule>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model PendulumRotationalSteering
+  import Modelica.Mechanics.MultiBody.Parts;
+  import Modelica.Mechanics.MultiBody.Joints;
+  import Modelica.Blocks.Sources;
+  import Modelica.Mechanics.Rotational;
+  inner Modelica.Mechanics.MultiBody.World world;
+  Parts.BodyCylinder body1(r={1,0,0});
+  Joints.Revolute revolute1;
+  Sources.Step step1(startTime=0.5);
+  Rotational.Sources.Position position1(f_crit=5); // Filter cut-off f_crit
+equation
+  connect(revolute1.frame_b, body1.frame_a);
+  connect(world.frame_b, revolute1.frame_a);
+  connect(step1.y, position1.phi_ref);
+  connect(position1.flange_b, revolute1.axis); // Connect position1 to axis
+end PendulumRotationalSteering;</Input>
+          <Output>{PendulumRotationalSteering}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(PendulumRotationalSteering)</Input>
+          <Output>record SimulationResult
+    resultFile = "PendulumRotationalSteering_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="body1.frame_b.r_0[2]" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(body1.frame_b.r_0[2])</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Computational Steering of a Pendulum through a PD controller&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Another way to steer a joint is to set up a &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Proportional Derivative (PD) controller&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. Instead of computing angular position, the PD controller creates an active torque, which acts on the joint. It behaves like a motor; parameters &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">k&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can be tuned in order to adjust the reaction speed and power.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model RotationalPDController "Input signal acting as reference value for
+    angle, gives external torque on a flange"
+   import Modelica.Blocks;
+   import Modelica.Mechanics.Rotational;
+   parameter Real k=1;
+   parameter Real d=1;
+   Blocks.Interfaces.RealInput u;
+   Rotational.Interfaces.Flange_b flange_b;
+equation
+   flange_b.tau = k*(flange_b.phi-u)+d*der(flange_b.phi);
+end RotationalPDController;</Input>
+          <Output>{RotationalPDController}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model PendulumWithPDController
+  import Modelica.Mechanics.MultiBody.Parts;
+  import Modelica.Mechanics.MultiBody.Joints;
+  import Modelica.Blocks.Sources;
+  inner Modelica.Mechanics.MultiBody.World world;
+  Parts.BodyCylinder body1(r={1,0,0},diameter=0.2);
+  Joints.Revolute revolute1;
+  Sources.Step step1(startTime=0.5);
+  RotationalPDController ctrl(k=5000,d=500);
+equation
+  connect(revolute1.frame_b, body1.frame_a);
+  connect(step1.y, ctrl.u);
+  connect(ctrl.flange_b, revolute1.axis);
+  connect(world.frame_b, revolute1.frame_a);
+end PendulumWithPDController;  </Input>
+          <Output>{PendulumWithPDController}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(PendulumWithPDController)</Input>
+          <Output>record SimulationResult
+    resultFile = "PendulumWithPDController_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="body1.frame_b.r_0[2]" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(body1.frame_b.r_0[2])</Input>
+          <Output>true</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

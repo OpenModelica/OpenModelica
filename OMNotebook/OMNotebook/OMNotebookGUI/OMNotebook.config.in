@@ -1,0 +1,17 @@
+QMAKE_CC  = @CC@
+QMAKE_CXX = @CXX@
+QMAKE_LINK = @CXX@
+
+PLOTLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc -lOMPlot -lomqwt @RPATH_QMAKE@
+PLOTINC = @OPENMODELICAHOME@/include/omplot/qwt @OPENMODELICAHOME@/include/omplot
+OMCLIBS = -L@OPENMODELICAHOME@/lib/@host_short@/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
+OMCINC = @OPENMODELICAHOME@/include/omc/c
+
+QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
+QMAKE_LFLAGS += @LDFLAGS@
+
+# 64MB (0x4000000)
+mac {
+  QMAKE_LFLAGS += -Wl,-stack_size,4000000
+}

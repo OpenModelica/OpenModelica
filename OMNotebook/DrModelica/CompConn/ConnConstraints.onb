@@ -1,0 +1,165 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Connection Constraints regarding Arrays, Subscripts and Constants&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Connecting Arrays of Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Connections between scalar connectors are automatically vectorized, which for example is quite useful when using components from the Modelica.Blocks library, which can be used in both scalar and vector contexts.&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">connect&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> construct can be used to directly connect arrays of connectors. For such array connections the following holds:&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">   * The array dimensions of the connected arrays of connectors must match.&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">   *  Each corresponding pair of elements is connected as a pair of scalar connectors.&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We demonstrate this functionality in the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ArrayConnects&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> class below, for which the connections are graphically depicted:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:\Users\petfr27\AppData\Local\Temp\msohtmlclip1\01\clip_image002.gif" width="471" height="63" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:\Users\petfr27\AppData\Local\Temp\msohtmlclip1\01\clip_image002.gif">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</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Figure. &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">Example of connections between arrays of connectors.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">sinSource&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> signal generator produces a vector of 4 sinusoidal signals, which are connected to the input vector &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">gain44.u&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">gain44&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> block. This gain block multiplies the signal by its gain factor, here 5, which is present in the diagonal elements of the matrix &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">gain44.A&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:\Users\petfr27\AppData\Local\Temp\msohtmlclip1\01\clip_image002.gif" width="331" height="84" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:\Users\petfr27\AppData\Local\Temp\msohtmlclip1\01\clip_image002.gif">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</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Moreover, we connect the output vector gain44.y of length four to the input vector gain42.u of the gain42 block. This block transforms its input signals into the two output signals gain42.y, which we finally connect to the vector x[2]. The corresponding Modelica models:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="true" style="Graph">
+          <Input>connector RealInput  = input Real;
+connector RealOutput = output Real;
+
+block MatrixGain
+  parameter Real     A[:,:] = [1];
+  input RealInput    u[size(A,1)];
+  output RealOutput  y[size(A,2)]
+equation
+  y=A*u;
+end MatrixGain;
+
+model ArrayConnects
+  import Modelica.Math.sin;
+  sin        sinSource[4];
+  MatrixGain gain44(A=5*identity(4)); // 4x4 identity matrix * 7
+  MatrixGain gain42(A=ones(4,2));     // 4x2 matrix of ones
+  RealOutput    x[2];                 // 2-vector
+equation
+  connect(sinSource.y, gain44.u);
+  connect(gain44.y,    gain42.u);
+  connect(gain42.y,    x);
+end ArrayConnects;</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Constant Subscript Constraints&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:13pt; color:#000000;">In order to simplify the analysis of connections and making the generation of connection equations possible at compile time, the following constraint applies:&lt;br />Subscripts in a connector reference must be constant expressions or the special symbol :  (colon).&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model ConnectTest
+  Pin x[3];
+  Pin y[3];
+  Integer i = 2;
+equation
+  connect(x[2], y[2]);    // Ok, constant subscripts.
+  connect(x[i], y[2]);    // Error, non-constant subscript.
+end ConnectTest;</Input>
+          <Output>{ConnectTest,ConnectArray,InPort,SOutPort}</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

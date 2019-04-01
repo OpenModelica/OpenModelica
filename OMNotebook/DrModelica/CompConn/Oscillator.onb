@@ -1,0 +1,276 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">An Oscillating Mass Connected to a Spring&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell closed="false" style="Graph">
+        <Input>loadModel(Modelica) // If not already loaded, you need to load it</Input>
+        <Output>true</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">NOTE: Before simulating the Oscillator model below, you need to introduce some declarations needed, such as the types Mass, Spring, and Fixed. This is done by evaluating the declarations in the Components section below: select the cell marker to the right and push shift-return as usual.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>partial model Compliant      "Compliant coupling of 2 translational 1D flanges"
+  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a      "Driving flange";
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b      "Driven flange";
+  Modelica.SIunits.Distance s_rel   "Relative distance between flange_a and flange_b";
+  flow Modelica.SIunits.Force f     "Force between flanges, positive in direction of N";
+equation
+  s_rel = flange_b.s - flange_a.s;
+  0   = flange_b.f + flange_a.f;
+  f   = flange_b.f;
+end Compliant;</Input>
+          <Output>{Compliant}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Spring     "Linear 1D translational spring"
+  extends Compliant;
+  parameter Modelica.SIunits.Distance s_rel0 = 0  "Unstretched spring length";
+  parameter Real c(unit = "N/m") = 1        "Spring constant";
+equation
+  f = c*(s_rel - s_rel0);              // Spring equation
+end Spring;   </Input>
+          <Output>{Spring}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Mass        "Hanging mass object"
+  extends Rigid;
+  parameter Real m = 1    "Mass of the hanging mass";
+  constant Real  g = 9.81 "Gravitational acceleration";
+  Real        v(fixed=true)           "Absolute velocity of component";
+  Real        a           "Absolute acceleration of component";
+equation
+  v = der(s);
+  a = der(v);
+  flange_b.f = m*a - m*g;
+end Mass;  </Input>
+          <Output>{Mass}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>partial model Rigid  "Rigid connection of two translational 1D flanges"
+  Real s(fixed=true)     "Absolute position s of center of component"+
+             "(s = flange_a.s + L/2 = flange_b.s - L/2)";
+  parameter Real L = 0   "Length L of component from left to right flange"+
+                         "(L = flange_b.s - flange_a.s)";
+  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a;
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
+equation
+  flange_a.s = s - L/2;
+  flange_b.s = s + L/2;
+end Rigid; // From Modelica.Mechanics.Translational.Interfaces</Input>
+          <Output>{Rigid}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Fixed   "Fixed flange at a housing"
+  parameter Real s0 = 0    "Fixed offset position of housing";
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
+equation
+  flange_b.s = s0;
+end Fixed;   // From Modelica.Mechanics.Translational</Input>
+          <Output>{Fixed}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Oscillator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The following model gives rise to some dynamic movement when simulated. A mass is connected to a spring which is connected to a fixed housing. The mass &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">mass1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is subject to the gravitational force &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">-mg&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and the force from the spring. It is given an initial position &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">s&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">=&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">-0.5&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> which is offset from the equilibrium position and therefore starts an oscillating movement up-and-down.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Oscillator
+  Mass     mass1(L = 1, s(start = -0.5));
+  Spring   spring1(s_rel0 = 2, c = 10000);
+  Fixed   fixed1(s0 = 1.0);
+equation
+  connect(spring1.flange_b, fixed1.flange_b);
+  connect(mass1.flange_b, spring1.flange_a);
+end Oscillator;   </Input>
+          <Output>{Oscillator}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of Oscillator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>simulate( Oscillator,stopTime=0.5 )</Input>
+          <Output>record SimulationResult
+    resultFile = "Oscillator_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <OMCPlot XRangeMin="0" YRangeMin="0" YRangeMax="0" CurveWidth="1" AutoScale="true" Title="" PlotType="0" XRangeMax="0" Footer="" YLabel="" XLabel="time" CurveStyle="1" Grid="detailed" LogY="false" LegendPosition="top" LogX="false">
+            <Curve YData="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" Title="mass1.s" Visible="true" Color="4294901760" XData="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"/>
+          </OMCPlot>
+          <Input>plot( mass1.s) </Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">            Diagram 1:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> Plot of the absolute position mass1.s(t) of the center of the haning mass.&lt;br />&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <OMCPlot XRangeMin="0" YRangeMin="0" YRangeMax="0" CurveWidth="1" AutoScale="true" Title="" PlotType="0" XRangeMax="0" Footer="" YLabel="" XLabel="time" CurveStyle="1" Grid="detailed" LogY="false" LegendPosition="top" LogX="false">
+            <Curve YData="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" Title="mass1.v" Visible="true" Color="4294901760" XData="AAAAAAAAAAA/UGJN0vGp/D9gYk3S8an8P2iTdLxqfvo/cGJN0vGp/D90euFHrhR7P3iTdLxqfvo/fKwIMSbpeT+AYk3S8an8P4Jul41P3zs/hHrhR64Uez+GhysCDEm6P4iTdLxqfvo/ip++dsi0OT+MrAgxJul5P464UeuFHrg/kGJN0vGp/D+RaHKwIMScP5Jul41P3zs/k3S8an752z+UeuFHrhR7P5WBBiTdLxs/locrAgxJuj+XjU/fO2RaP5iTdLxqfvo/mZmZmZmZmj+an752yLQ5P5ul41P3ztk/nKwIMSbpeT+dsi0OVgQZP564UeuFHrg/n752yLQ5WD+gYk3S8an8P6DlYEGJN0w/oWhysCDEnD+h64UeuFHsP6Jul41P3zs/ovGp++dsiz+jdLxqfvnbP6P3ztkWhys/pHrhR64Uez+k/fO2RaHLP6WBBiTdLxs/pgQYk3S8aj+mhysCDEm6P6cKPXCj1wo/p41P3ztkWj+oEGJN0vGqP6iTdLxqfvo/qRaHKwIMSj+pmZmZmZmaP6ocrAgxJuk/qp++dsi0OT+rItDlYEGJP6ul41P3ztk/rCj1wo9cKT+srAgxJul5P60vGp++dsk/rbItDlYEGT+uNT987ZFoP664UeuFHrg/rztkWhysCD+vvnbItDlYP7AgxJul41Q/sGJN0vGp/D+wo9cKPXCkP7DlYEGJN0w/sSbpeNT99D+xaHKwIMScP7Gp++dsi0Q/seuFHrhR7D+yLQ5WBBiTP7Jul41P3zs/srAgxJul4z+y8an752yLP7MzMzMzMzM/s3S8an752z+ztkWhysCDP7P3ztkWhys/tDlYEGJN0z+0euFHrhR7P7S8an752yM/tP3ztkWhyz+1P3ztkWhzP7WBBiTdLxs/tcKPXCj1wz+2BBiTdLxqP7ZFocrAgxI/tocrAgxJuj+2yLQ5WBBiP7cKPXCj1wo/t0vGp++dsj+3jU/fO2RaP7fO2RaHKwI/uBBiTdLxqj+4UeuFHrhSP7iTdLxqfvo/uNT987ZFoj+5FocrAgxKP7lYEGJN0vI/uZmZmZmZmj+52yLQ5WBCP7ocrAgxJuk/ul41P3ztkT+6n752yLQ5P7rhR64UeuE/uyLQ5WBBiT+7ZFocrAgxP7ul41P3ztk/u+dsi0OVgT+8KPXCj1wpP7xqfvnbItE/vKwIMSbpeT+87ZFocrAhP70vGp++dsk/vXCj1wo9cT+9si0OVgQZP73ztkWhysE/vjU/fO2RaD++dsi0OVgQP764UeuFHrg/vvnbItDlYD+/O2RaHKwIP7987ZFocrA/v752yLQ5WD/AAAAAAAAAP8AgxJul41Q/wEGJN0vGqD/AYk3S8an8P8CDEm6XjVA/wKPXCj1wpD/AxJul41P4P8DlYEGJN0w/wQYk3S8aoD/BJul41P30P8FHrhR64Ug/wWhysCDEnD/BiTdLxqfwP8Gp++dsi0Q/wcrAgxJumD/B64UeuFHsP8IMSbpeNT8/wi0OVgQYkz/CTdLxqfvnP8Jul41P3zs/wo9cKPXCjz/CsCDEm6XjP8LQ5WBBiTc/wvGp++dsiz/DEm6XjU/fP8MzMzMzMzM/w1P3ztkWhz/DdLxqfvnbP8OVgQYk3S8/w7ZFocrAgz/D1wo9cKPXP8P3ztkWhys/xBiTdLxqfz/EOVgQYk3TP8RaHKwIMSc/xHrhR64Uez/Em6XjU/fPP8S8an752yM/xN0vGp++dz/E/fO2RaHLP8UeuFHrhR8/xT987ZFocz/FYEGJN0vHP8WBBiTdLxs/xaHKwIMSbz/Fwo9cKPXDP8XjU/fO2Rc/xgQYk3S8aj/GJN0vGp++P8ZFocrAgxI/xmZmZmZmZj/GhysCDEm6P8an752yLQ4/xsi0OVgQYj/G6XjU/fO2P8cKPXCj1wo/xysCDEm6Xj/HS8an752yP8dsi0OVgQY/x41P3ztkWj/HrhR64UeuP8fO2RaHKwI/x++dsi0OVj/IEGJN0vGqP8gxJul41P4/yFHrhR64Uj/IcrAgxJumP8iTdLxqfvo/yLQ5WBBiTj/I1P3ztkWiP8j1wo9cKPY/yRaHKwIMSj/JN0vGp++eP8lYEGJN0vI/yXjU/fO2Rj/JmZmZmZmaP8m6XjU/fO4/ydsi0OVgQj/J++dsi0OWP8ocrAgxJuk/yj1wo9cKPT/KXjU/fO2RP8p++dsi0OU/yp++dsi0OT/KwIMSbpeNP8rhR64UeuE/ywIMSbpeNT/LItDlYEGJP8tDlYEGJN0/y2RaHKwIMT/LhR64UeuFP8ul41P3ztk/y8an752yLT/L52yLQ5WBP8wIMSbpeNU/zCj1wo9cKT/MSbpeNT99P8xqfvnbItE/zItDlYEGJT/MrAgxJul5P8zMzMzMzM0/zO2RaHKwIT/NDlYEGJN1P80vGp++dsk/zU/fO2RaHT/NcKPXCj1xP82RaHKwIMU/zbItDlYEGT/N0vGp++dtP83ztkWhysE/zhR64UeuFD/ONT987ZFoP85WBBiTdLw/znbItDlYED/Ol41P3ztkP864UeuFHrg/ztkWhysCDD/O+dsi0OVgP88an752yLQ/zztkWhysCD/PXCj1wo9cP8987ZFocrA/z52yLQ5WBD/PvnbItDlYP8/fO2RaHKw/0AAAAAAAAD/QEGJN0vGqP9AgxJul41Q/0DEm6XjU/j/QQYk3S8aoP9BR64UeuFI/0GJN0vGp/D/QcrAgxJumP9CDEm6XjVA/0JN0vGp++j/Qo9cKPXCkP9C0OVgQYk4/0MSbpeNT+D/Q1P3ztkWiP9DlYEGJN0w/0PXCj1wo9j/RBiTdLxqgP9EWhysCDEo/0SbpeNT99D/RN0vGp++eP9FHrhR64Ug/0VgQYk3S8j/RaHKwIMScP9F41P3ztkY/0Yk3S8an8D/RmZmZmZmaP9Gp++dsi0Q/0bpeNT987j/RysCDEm6YP9HbItDlYEI/0euFHrhR7D/R++dsi0OWP9IMSbpeNT8/0hysCDEm6T/SLQ5WBBiTP9I9cKPXCj0/0k3S8an75z/SXjU/fO2RP9Jul41P3zs/0n752yLQ5T/Sj1wo9cKPP9KfvnbItDk/0rAgxJul4z/SwIMSbpeNP9LQ5WBBiTc/0uFHrhR64T/S8an752yLP9MCDEm6XjU/0xJul41P3z/TItDlYEGJP9MzMzMzMzM/00OVgQYk3T/TU/fO2RaHP9NkWhysCDE/03S8an752z/ThR64UeuFP9OVgQYk3S8/06XjU/fO2T/TtkWhysCDP9PGp++dsi0/09cKPXCj1z/T52yLQ5WBP9P3ztkWhys/1AgxJul41T/UGJN0vGp/P9Qo9cKPXCk/1DlYEGJN0z/USbpeNT99P9RaHKwIMSc/1Gp++dsi0T/UeuFHrhR7P9SLQ5WBBiU/1Jul41P3zz/UrAgxJul5P9S8an752yM/1MzMzMzMzT/U3S8an753P9TtkWhysCE/1P3ztkWhyz/VDlYEGJN1P9UeuFHrhR8/1S8an752yT/VP3ztkWhzP9VP3ztkWh0/1WBBiTdLxz/VcKPXCj1xP9WBBiTdLxs/1ZFocrAgxT/VocrAgxJvP9WyLQ5WBBk/1cKPXCj1wz/V0vGp++dtP9XjU/fO2Rc/1fO2RaHKwT/WBBiTdLxqP9YUeuFHrhQ/1iTdLxqfvj/WNT987ZFoP9ZFocrAgxI/1lYEGJN0vD/WZmZmZmZmP9Z2yLQ5WBA/1ocrAgxJuj/Wl41P3ztkP9an752yLQ4/1rhR64UeuD/WyLQ5WBBiP9bZFocrAgw/1ul41P3ztj/W+dsi0OVgP9cKPXCj1wo/1xqfvnbItD/XKwIMSbpeP9c7ZFocrAg/10vGp++dsj/XXCj1wo9cP9dsi0OVgQY/13ztkWhysD/XjU/fO2RaP9edsi0OVgQ/164UeuFHrj/XvnbItDlYP9fO2RaHKwI/1987ZFocrD/X752yLQ5WP9gAAAAAAAA/2BBiTdLxqj/YIMSbpeNUP9gxJul41P4/2EGJN0vGqD/YUeuFHrhSP9hiTdLxqfw/2HKwIMSbpj/YgxJul41QP9iTdLxqfvo/2KPXCj1wpD/YtDlYEGJOP9jEm6XjU/g/2NT987ZFoj/Y5WBBiTdMP9j1wo9cKPY/2QYk3S8aoD/ZFocrAgxKP9km6XjU/fQ/2TdLxqfvnj/ZR64UeuFIP9lYEGJN0vI/2WhysCDEnD/ZeNT987ZGP9mJN0vGp/A/2ZmZmZmZmj/ZqfvnbItEP9m6XjU/fO4/2crAgxJumD/Z2yLQ5WBCP9nrhR64Uew/2fvnbItDlj/aDEm6XjU/P9ocrAgxJuk/2i0OVgQYkz/aPXCj1wo9P9pN0vGp++c/2l41P3ztkT/abpeNT987P9p++dsi0OU/2o9cKPXCjz/an752yLQ5P9qwIMSbpeM/2sCDEm6XjT/a0OVgQYk3P9rhR64UeuE/2vGp++dsiz/bAgxJul41P9sSbpeNT98/2yLQ5WBBiT/bMzMzMzMzP9tDlYEGJN0/21P3ztkWhz/bZFocrAgxP9t0vGp++ds/24UeuFHrhT/blYEGJN0vP9ul41P3ztk/27ZFocrAgz/bxqfvnbItP9vXCj1wo9c/2+dsi0OVgT/b987ZFocrP9wIMSbpeNU/3BiTdLxqfz/cKPXCj1wpP9w5WBBiTdM/3Em6XjU/fT/cWhysCDEnP9xqfvnbItE/3HrhR64Uez/ci0OVgQYlP9ybpeNT988/3KwIMSbpeT/cvGp++dsjP9zMzMzMzM0/3N0vGp++dz/c7ZFocrAhP9z987ZFocs/3Q5WBBiTdT/dHrhR64UfP90vGp++dsk/3T987ZFocz/dT987ZFodP91gQYk3S8c/3XCj1wo9cT/dgQYk3S8bP92RaHKwIMU/3aHKwIMSbz/dsi0OVgQZP93Cj1wo9cM/3dLxqfvnbT/d41P3ztkXP93ztkWhysE/3gQYk3S8aj/eFHrhR64UP94k3S8an74/3jU/fO2RaD/eRaHKwIMSP95WBBiTdLw/3mZmZmZmZj/edsi0OVgQP96HKwIMSbo/3peNT987ZD/ep++dsi0OP964UeuFHrg/3si0OVgQYj/e2RaHKwIMP97peNT987Y/3vnbItDlYD/fCj1wo9cKP98an752yLQ/3ysCDEm6Xj/fO2RaHKwIP99LxqfvnbI/31wo9cKPXD/fbItDlYEGP9987ZFocrA/341P3ztkWj/fnbItDlYEP9+uFHrhR64/3752yLQ5WD/fztkWhysCP9/fO2RaHKw/3++dsi0OVj/gAAAAAAAAP+AAAAAAAAA="/>
+          </OMCPlot>
+          <Input>plot( mass1.v ) </Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">            Diagram 2:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> Plot of the absolute velocity mass1.v(t) of the center of the hanging mass.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot instead to X axis range 0.3:&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <OMCPlot XRangeMin="0" YRangeMin="0" YRangeMax="0" CurveWidth="1" AutoScale="true" Title="" PlotType="0" XRangeMax="0.3" Footer="" YLabel="" XLabel="time" CurveStyle="1" Grid="detailed" LogY="false" LegendPosition="top" LogX="false">
+            <Curve YData="AAAAAAAAAADAI/J1D4UeBsAz2PL2jxewwD2F55ZJxeHAQ3Osby49bcBH8qPBUAs8wEw0WaCw3M7AUBb1L1+PPMBR6pWk+z6LwFOQYkJsNwXAVQQkF2WtS8BWQiQ33PjjwFdHNUK1rMjAWBC7cAUtr8BYnLNGQtlfwFjptsF3xe3AWPcA49WDxcBYxG+vH1ROwFhShHu7nP/AV6JirVEhmMBWtczJs2gTwFWPH/iHR8PAVDFN90NgCMBSn9WRQ3dlwFDeua8FUdPATeTuJuUw7sBJv/HDAuwRwEVZGA8Aku3AQLujYHbU7cA35sNys2IGwCwyOlhNLrDAEJ2dHLRxwkAXU7mbtaPpQC+EstLu5QJAOYd1NnNO/kBBhaIP0vNQQEYat9lDjClASndDYuVtfUBOkBywS+olQFEtZHh3salAUubKpb1jwkBUb9fVcRbLQFXEnqf+H4pAVuG3dDUpLUBXxEj8s5xuQFhqD7lT1QxAWNFjoYfRH0BY+Txo7exNQFjhNCNgr3VAWImISays90BX8xkcomRVQFcfZ2aVxRhAVhCQo/UY+EBUyUmZ+XtBQFNM12qi8atAUZ8HN3HnYEBPiEjQhja3QEuB215aQE5ARzURyvDH7UBCrOvBejmdQDvqAYdVpyxAMjLFBnqqGUAgmff8Duprv/rgjl1Q/3fAJ0mCsuLpdMA1fbFH2qPbwD8fqLiLSa/ARDkB8PPbD8BIrnVobIJJwEzkxxlLtpzAUGiYZqWRI8BSNNSuwbJzwFPSfyzLnfjAVT11xjZoUMBWchgRsHrnwFdtUJ0BalHAWCycqfAd7MBYrhMdLDFFwFjwaSO3AY7AWPL0z5XbBcBYta80G1gCwFg5NUiPoITAV37F1zI7qMBWiD2A8ILcwFVYEl99YqzAU/FOuPPIucBSV4jOkGzbwFCO2H011UDATTeaehdUzMBJBsevrywrwESV8jKA4QjAP+Dqpy8sy8A2RGPZR5DYwCjdzTHcwgHAA8zqL/rlz0AeB/8WbRh7QDFqaSbGiylAOyZGl89RkEBCTljRb9eDQEbauyCowuNASyyn1bC5h0BPORJ6iY1cQFF6z/KdZLVAUyxhHwBe8UBUrOc7FfSpQFX4inqrRrVAVwv6j+6h+0BX5HckiUGyQFh/1xPCzkRAWNyM3obphEBY+aq/FDgjQFjW5gKVl3tAWHSX3hgn0kBX07vnTvySQFb17f1K8NtAVd1lBt7iG0BUjO9LF8apQFMH6KRYI4pAUVIz2GCszkBO4GE+vgGBQErNYJFZZahARnXSPHoZLUBB5NFi7qfoQDpMFpPxWJdAMItFoKjMXkAagI9k71YCwArffu8RVzzAKp7YtRQ8EsA3IN0YIe14wEBbknKOzSrARPzfHlBdVsBJaHyo15ftwE2THFR5sHfAULkK3BqRb8BSfcEP+VFBwFQTKtk7+v3AVXU7QfPOXMBWoGij4ZXiwFeRtas7ncHAWEa5MSPY88BYvaQ+DYPHwFj1RqZm5grAWO0SHTxLe8BYpRugUwQQwFgeGzrXrMjAV1lqOuwp28BWWP/boamPwFUfa/t0fjjAU6/QsHzV/cBSDdpEzbw+wFA9tdFEF6PATIgM/L2/gsBIS7PGsflUwEPRNaEaNz7APkgONOZNBsA0oDzjM7VlwCWHVFP7BrW/6XHiOxe7HUAiXSi8n1kaQDMROxN45z5APMMb13XNiEBDFbUj8tSoQEeZCyWkB/lAS+AEwR5ZXEBP37E1be62QFHG6whTDhxAU3CEvPRwDEBU6GUUFiz+QFYqyqK+6t5AVzR8wbDHNkBYAtPZez61QFiTwB6z0KJAWOXO5HwyAEBY+C5GqWO5QFjKr0q4AF1AWF3GUdrwTEBXsony+fhyQFbKsC8IoVZAVaiKErQkfUBUTv3MB5lkQFLBfzqVaNpAUQQHHjvCCEBONhHYSh48QEoWztzFmAJARbTQhOWtjUBBG0y+L97BQDisDvAZoQVALcTSPAl3d0ATysSZbBXSwBQmuYx+6efALfJVLdh3dsA4wloSnqe+wEEmGntEGTTARb8qlBXResBKIJqTDL7kwE4/NgIV3FHAUQg5qG+0fsBSxUdtN7iuwFRSUesJgfLAVathkJFQfsBWzQO8GnNewFe0U5ehrQfAWF8BeSe+78BYy1jMNaLBwFj4RHRDGOXAWOVRh534NcBYkrCB9yY/wFgBNLtHn+rAVzJSVf2yBsBWKBqBgMhYwFTlNi+OSJPAU2zfTSuJA8BRwth3vN8EwE/WxtUJpRfAS9ZsIVZ7M8BHjtz/ta+iwEMLC7zrRqjAPK0JiJs1hMAy+qI8cucMwCIvXnIxalI/7FC1CgFypUAltO4tgSMiQDS2pYmt4p5APl3YXyand0BD268elw5VQEhVpmoC+yVATJFehKwhNkBQQgGo6ue4QFIRvfglZyZAU7NB/VLmw0BVImHN9j7DQFZbckZ+2idAV1tSuzPAJ0BYH3TEIhMlQFil4q39EVVAWO1EnceRlEBY9OPbkpJiQFi8rSZFMPpAWEUwU68vt0BXj58AxJwYQFadyZncBopAVXIajlXe0EBUD5EFfVpwQFJ5uCrWzvRAULSdjgPZgUBNiY8fu0Q3QEleVXdsYWhARPI4mtTYf0BAUIjVI1wMQDcKPEr1ZnpAKnDwQxj5rkAKJxpUGZe/wBrcNzHcnM/AMKHRocAGvsA6Ygp7UTh9wEHvY3WT7hHARn/haFHlZ8BK1tG8AzMOwE7pG7EbVqPAUVYqAiexD8BTC273Z8i5wFSP/NlKQrPAVd/x4VTRHMBW9/L/6f//wFfVNBjUBqrAWHV/HswQBsBY1zoGYikKwFj5atiLx/XAWNu6KkxztsBYfnPrE7gNwFfihq73/hXAVwmBT23/qcBV9Y7kyWySwFSpcUjr+jHAUyh5/k7nmcBRdoG3XJyRwE8vvPvobcDASyKxM4BwfcBG0Dy7qADuwEJDbb/2AYzAOw/PXXurqsAxU4rjLq/gwB2r08gBfEBABITRh21HAkApCzN6On4CQDZakbOHHEpAP/ZcAg8oH0BEoDJq4+rUQEkQdL7QlddATUCal4I+2UBQkvbG1vNSQFJbO0vjcbZAU/SLyN0kK0BVWtFGOBieQFaKd1vvSe9AV4B1WkjU60BYOlYFYv3OQFi2Pe0e1WRAWPLwI2baz0BY79FpCHdZQFis6bo9O6FAWCrkNFkVbUBXaw1vaO9uQFZvUB9m0kBAVTowMFM/ukBTzsRVXJjkQFIwriCsiVVAUGQQw3iKI0BM2wzfTWanQEikKSlYNA9ARC4+Czh/UkA/CWjGYOTdQDVm8jy4z3dAJxt6u41TFj/5b7E8p6WowCDHsEYWFG3AMkk1Xg4l7MA7/8yZjC4bwEK3YrwCbELARz7/Z1bJB8BLiyYqKbZZwE+Q2Pp3X6zAUaLnAmLL4sBTUET+O6tjwFTMPC6oz+HAVhMAqKRCusBXIU6bLyvJwFf0cqAR3T/AWIpQptUnHsBY4WlZN/FOwFj43equtrzAWNByYCcCNcBYaI4ecpodwFfCOuTWFp7AVt8iIxBKK8BVwYi4EIWlwFRsSS3QiqTAUuLMY4gLNsBRKQDXnkkCwE6GoSy++pbASm0r5Mq64sBGEB48DBm1wEF6oXokPebAOXDegJJIKsAvVs4e1laXwBb3bDiT4hpAEPmCPOyLr0AsX4KOkCuEQDf82F4Zy0ZAQMZJ85kUT0BFYz90L3DJQEnJf/TuQOxATe3KqZEd0UBQ4sO/Iiv/QFKjcRPoeZNAVDRxrR+LPkBVkcPVnZmnQFa36gpsZElAV6Pz5y9URUBYU4WmsqspQFjE3jcGhXtAWPbbrM0NokBY6P4rb3DLQFibaSmUqjlAWA7jFibuc0BXRNNljJkaQFY/PvGQtQZAVQDC0eoxi0BTjI2pJ+IUQFHmV4UwJVVAUBJYXqnu70BMKnqSrPJuQEfoOP+qONtAQ2jQuu0WCEA9b4XXi+6fQDPCH2906BBAI8ReNu2iBL+3CQIS/VffwCQgDEH969jAM+9GCFe6rcA9m4he+yufwEN+B5jDhgTAR/xvINPtqsBMPXw1AFpGwFAbJpdDb0fAUe5clewo88BTk7UIDebzwFUG+iz4bYvAVkR2XKfl6cBXSP2EFYtCwFgR9Trr7THAWJ1bdpg7OMBY6cupcV9EwFj2gkp4PlrAWMNe1+S3BcBYUOQikNSxwFegNvi4oOXAVrMbSDO59MBVi++Q5qmBwFQtptDRECDAUpvBBmc4jcBQ2kIza0YdwE3bUClEMeXASbW9X2R3lsBFTmdoMLeywECwkdLL02fAN9AXOjTgf8AsBEPNsWx8wBBBXy4GSfJAF69dI5ygIUAvscHrT1LRQDmdYZFrcipAQZAubZvsZkBGJL8KucevQEqAq1er451ATpjMoI4BTUBRMVU2/VpWQFLqSgsWBX1AVHLdCswN20BVxyHOszR0QFbjsYuBVpFAV8W0qDpfgkBYaulqk4FSQFjRqXJTo+1AWPjts2NqL0BY4FEf7Vv9QFiIEyBpGzlAV/EV0oMgTEBXHNtuhDcXQFYNgnG/JwRAVMXAh7OYGEBTSNyWxDPjQFGapUcrUX1AT37Obq4fZEBLd8MtaIUnQEcqdQvR255AQqHk283vn0A701gzX+1EQDIbu/sEz1VAIGueOO4qh7/8Ud6xbpL1wCd3B8KWh1PANZPnDzaBH8A/NRir4rRTwERDO5s2G/vASLgWnAd3bMBM7bciUL3BwFBsrF+XVyvAUjh6KZpYlcBT1azTP+CwwFVAI3JP66DAVnQ+4piOdcBXbusOFpMAwFgtpsZTP7bAWK6KLS5jwcBY8EuVkt05wFjyQs9Buy7AWLRq05uaAsBYN2HO2qRfwFd8Z5ftC1/AVoVacyf7H8BVVLJOQs21wFPtem/WEe7AUlNJrgkEmcBQijlATh2gwE0ttH49tzvASPxUAWmjS8BEiwqaccVdwD/KaqOdgGbANi1vL9I9t8Aor3NxIA9BwAMTkauDjFpAHmO6j6b7/kAxgOB/+ZMPQDs8DMC9iuxAQljHp7pYk0BG5JsjKTEWQEs13+nrAb5AT0GK3AckjUBRfqFv1gCwQFMvvaueKzBAVK/GTJGuyUBV+uUEqRwFQFcNyt6uA7ZAV+W4tKgk7kBYgIY2cK9oQFjcp25BMkdAWPkwr0mbKUBY1dkAEDNqQFhy+shETW1AV9GS7RT9W0BW8z5KT11iQFXaNZJP2utAVIlHn1NBSEBTA9JAc/X+QFFNuaY9afBATta81CDniEBKwyS00zvHQEZrGFAfkKVAQdm0ICXo7EA6NU6XYeVOQDo1Tpdh5U4=" Title="mass1.v" Visible="true" Color="4294901760" XData="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"/>
+          </OMCPlot>
+          <Input>plot( mass1.v, xRange={0,0.3} )</Input>
+          <Output>true</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

@@ -1,0 +1,704 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Using the Object Oriented Component-Based Approach&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Tank System with a Continuous PI Controller&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now we show the tank model using the object oriented component-based approach. The structure of the tank system model using this approach is clearly visible in Figure 1 below.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/14.png" width="265" height="141" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:////tmp/OpenModelica/14.png">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</Image>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> A tank system with a continuous PI controller and a source for liquid.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The three components of the tank system: the tank, the PI controller and the source of liquid are explicit in Figure 1 and in the declaration of the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPI&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below. Tank instances of t&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ank&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">source&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">piContinuous&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are connected to controllers and liquid sources through their connectors.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model TankPI
+  LiquidSource           source(flowLevel=0.02);
+  PIcontinuousController piContinuous(ref=0.25);
+  Tank                   tank(area=1);
+equation
+  connect(source.qOut, tank.qIn);
+  connect(tank.tActuator, piContinuous.cOut);
+  connect(tank.tSensor, piContinuous.cIn);
+end TankPI;</Input>
+          <Output>{TankPI}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Tank&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The tank has four connectors: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">qIn&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> for input flow, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">qOut&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> for output flow, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">tSensor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> for providing fluid level measurements, and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">tActuator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> for setting the position of the valve at the outlet of the tank.&lt;br />&lt;br />The central equation regulating the behavior of the tank is the mass balance equation, which in the current simple form assumes constant pressure. The output flow is related to the valve position by a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">flowGain&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> parameter, and by a limiter that guarantees that the flow does not exceed what corresponds to the open/closed positions of the valve.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model Tank
+  ReadSignal     tSensor     "Connector, sensor reading tank level (m)";
+  ActSignal      tActuator   "Connector, actuator controlling input flow";
+  LiquidFlow     qIn         "Connector, flow (m3/s) through input valve";
+  LiquidFlow     qOut        "Connector, flow (m3/s) through output valve";
+  parameter Real area(unit = "m2")       =  0.5;
+  parameter Real flowGain(unit = "m2/s") = 0.05;
+  parameter Real minV= 0, maxV = 10;    // Limits for output valve flow
+  Real           h(start = 0.0,fixed=true, unit = "m")   "Tank level";
+ equation
+  assert(minV>=0,"minV - minimum Valve level must be >= 0 ");
+  der(h)      = (qIn.lflow - qOut.lflow)/area;    // Mass balance equation
+  qOut.lflow  = limitValue(minV, maxV, -flowGain*tActuator.act);
+  tSensor.val = h;
+end Tank;</Input>
+          <Output>{Tank}</Output>
+        </GraphCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">limitValue&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A limiter function is needed in the model to reflect minimum and maximum flows through the output valve:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>function limitValue
+  input  Real pMin;
+  input  Real pMax;
+  input  Real p;
+  output Real pLim;
+ algorithm
+  pLim := if p>pMax then pMax
+          else if p&lt;pMin then pMin
+          else p;
+end limitValue;</Input>
+            <Output>{limitValue}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">As already stated, the tank has four connectors. These are instances of the following three connector classes:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>connector ReadSignal     "Reading fluid level"
+  Real val(unit = "m");
+end ReadSignal;</Input>
+            <Output>{ReadSignal}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>connector ActSignal     "Signal to actuator for setting valve position"
+  Real act;
+end ActSignal;</Input>
+            <Output>{ActSignal}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>connector LiquidFlow    "Liquid flow at inlets or outlets"
+  Real lflow(unit = "m3/s");
+end LiquidFlow;</Input>
+            <Output>{LiquidFlow}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">LiquidSource&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The fluid entering the tank must come from somewhere. Therefore we have a liquid source component in the tank system. The flow increases sharply at time = 150 to factor of three of the previous flow level, which creates an interesting control problem that the controller of the tank has to handle.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model LiquidSource
+  LiquidFlow qOut;
+  parameter Real flowLevel = 0.02;
+equation
+  qOut.lflow = if time > 150 then 3*flowLevel else flowLevel;
+end LiquidSource;</Input>
+            <Output>{LiquidSource}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">PIcontinuousController&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The controller needs to be specified. We will initially choose a PI controller but later replace this by other kinds of controllers. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model PIcontinuousController
+  extends BaseController(K = 2, T = 10);
+  Real  x (fixed=true) "State variable of continuous PI controller";
+equation
+  der(x) = error/T;
+  outCtr = K*(error + x);
+end PIcontinuousController;</Input>
+            <Output>{PIcontinuousController}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">BaseController&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Both the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PI controller&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PID controller&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> to be defined later inherit the partial controller class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">BaseController&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, containing common parameters, state variables, and two connectors: one to read the sensor and one to control the valve actuator.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>partial model BaseController
+  parameter Real Ts(unit = "s") = 0.1  "Time period between discrete samples";
+  parameter Real K = 2          "Gain";
+  parameter Real T(unit = "s") = 10    "Time constant";
+  ReadSignal cIn            "Input sensor level, connector";
+  ActSignal  cOut            "Control to actuator, connector";
+  parameter Real ref          "Reference level";
+  Real error              "Deviation from reference level";
+  Real outCtr              "Output control signal";
+equation
+  error = ref - cIn.val;
+  cOut.act = outCtr;
+end BaseController;</Input>
+            <Output>{BaseController}</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of TankPI&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We simulate the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPI&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model and obtain the same response as for the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FlatTank&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model, which is not surprising given that both models have the same basic equations. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( TankPI, stopTime=250 )</Input>
+          <Output>record SimulationResult
+    resultFile = "TankPI_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="tank.h" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( tank.h )</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Tank with PID Continuous Controller&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We define a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPID&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> system which is the same as the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPI&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> system except that the PI controller has been the replaced by a PID controller. Here we see a clear advantage of the object oriented component-based approach over the traditional modeling approach, since system components can easily be replaced and changed in a plug-and-play manner.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/15.png" width="262" height="141" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:////tmp/OpenModelica/15.png">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</Image>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The tank system with the PI controller replaced by a PID controller.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The Modelica class declaration for the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TankPID&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> system appears as follows:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model TankPID
+  LiquidSource            source(flowLevel  = 0.02);
+  PIDcontinuousController pidContinuous(ref = 0.25);
+  Tank                    tank(area = 1);
+equation
+  connect(source.qOut, tank.qIn);
+  connect(tank.tActuator, pidContinuous.cOut);
+  connect(tank.tSensor, pidContinuous.cIn);
+end TankPID;</Input>
+          <Output>{TankPID}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We create a &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PIDcontinuousController&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> class in Modelica containing the three defining equations:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model PIDcontinuousController
+  extends BaseController(K = 2, T = 10);
+  Real  x(fixed=true);       // State variable of continuous PID controller
+  Real  y;                   // State variable of continuous PID controller
+equation
+  der(x) = error/T;
+  y      = T*der(error);
+  outCtr = K*(error + x + y);
+end PIDcontinuousController;</Input>
+          <Output>{PIDcontinuousController}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of TankPID&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We simulate the tank model once more but now including the PID controller:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( TankPID, stopTime=250 )</Input>
+          <Output>record SimulationResult
+    resultFile = "TankPID_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+Warning: Iteration variables with default zero start attribute in torn nonlinearequation system:
+         pidContinuous.outCtr:VARIABLE()  "Output control signal".TankPID, .PIDcontinuousController, .Real type: Real 
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="tank.h" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( tank.h )</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Two Tanks Connected Together&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////tmp/OpenModelica/16.png" width="474" height="148" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="GeneratedCell">False</Rule>
+          <Rule name="CellAutoOverwrite">False</Rule>
+          <Image name="file:////tmp/OpenModelica/16.png">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</Image>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Two connected tanks with PI controllers and a source for liquid connected to the first tank. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The Modelica model &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TanksConnectedPI&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> corresponding to Figure 3 appears as follows:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model TanksConnectedPI
+  LiquidSource  source(flowLevel = 0.02);
+  Tank          tank1(area = 1);
+  Tank          tank2(area = 1.3);
+  PIcontinuousController piContinuous1(ref = 0.25);
+  PIcontinuousController piContinuous2(ref = 0.4);
+ equation
+  connect(source.qOut,tank1.qIn);
+  connect(tank1.tActuator,piContinuous1.cOut);
+  connect(tank1.tSensor,piContinuous1.cIn);
+  connect(tank1.qOut,tank2.qIn);
+  connect(tank2.tActuator,piContinuous2.cOut);
+  connect(tank2.tSensor,piContinuous2.cIn);
+end TanksConnectedPI;</Input>
+          <Output>{TanksConnectedPI}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We simulate the connected tank system. We clearly see the tank level responses of the first and second tank to the changes in fluid flow from the source, where the response from the first tank of course appears earlier in time than the response of the second tank.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of TanksConnectedPI&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( TanksConnectedPI, stopTime=400 )</Input>
+          <Output>record SimulationResult
+    resultFile = "TanksConnectedPI_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .LiquidFlow is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:15:writable] Warning: Connector .ReadSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+[&lt;interactive>:1:1-3:14:writable] Warning: Connector .ActSignal is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
+            <Curve Title="tank1.h" Visible="true" XData="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" YData="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" Color="4294901760"/>
+            <Curve Title="tank2.h" Visible="true" XData="AAAAAAAAAAA/6ZmZmZmZmj/5mZmZmZmaQAMzMzMzMzRACZmZmZmZmkAQAAAAAAAAQBMzMzMzMzNAFmZmZmZmZkAZmZmZmZmZQBzMzMzMzMxAH////////0AhmZmZmZmZQCMzMzMzMzNAJMzMzMzMzUAmZmZmZmZnQCgAAAAAAAFAKZmZmZmZm0ArMzMzMzM1QCzMzMzMzM9ALmZmZmZmaUAwAAAAAAABQDDMzMzMzM5AMZmZmZmZm0AyZmZmZmZoQDMzMzMzMzVANAAAAAAAAkA0zMzMzMzPQDWZmZmZmZxANmZmZmZmaUA3MzMzMzM2QDgAAAAAAANAOMzMzMzM0EA5mZmZmZmdQDpmZmZmZmpAOzMzMzMzN0A8AAAAAAAEQDzMzMzMzNFAPZmZmZmZnkA+ZmZmZmZrQD8zMzMzMzhAQAAAAAAAAkBAZmZmZmZoQEDMzMzMzM5AQTMzMzMzNEBBmZmZmZmaQEIAAAAAAABAQmZmZmZmZkBCzMzMzMzMQEMzMzMzMzJAQ5mZmZmZmEBD///////+QERmZmZmZmRARMzMzMzMykBFMzMzMzMwQEWZmZmZmZZARf///////EBGZmZmZmZiQEbMzMzMzMhARzMzMzMzLkBHmZmZmZmUQEf///////pASGZmZmZmYEBIzMzMzMzGQEkzMzMzMyxASZmZmZmZkkBJ///////4QEpmZmZmZl5ASszMzMzMxEBLMzMzMzMqQEuZmZmZmZBAS///////9kBMZmZmZmZcQEzMzMzMzMJATTMzMzMzKEBNmZmZmZmOQE3///////RATmZmZmZmWkBOzMzMzMzAQE8zMzMzMyZAT5mZmZmZjEBP///////yQFAzMzMzMyxAUGZmZmZmX0BQmZmZmZmSQFDMzMzMzMVAUP//////+EBRMzMzMzMrQFFmZmZmZl5AUZmZmZmZkUBRzMzMzMzEQFH///////dAUjMzMzMzKkBSZmZmZmZdQFKZmZmZmZBAUszMzMzMw0BS///////2QFMzMzMzMylAU2ZmZmZmXEBTmZmZmZmPQFPMzMzMzMJAU///////9UBUMzMzMzMoQFRmZmZmZltAVJmZmZmZjkBUzMzMzMzBQFT///////RAVTMzMzMzJ0BVZmZmZmZaQFWZmZmZmY1AVczMzMzMwEBV///////zQFYzMzMzMyZAVmZmZmZmWUBWmZmZmZmMQFbMzMzMzL9AVv//////8kBXMzMzMzMlQFdmZmZmZlhAV5mZmZmZi0BXzMzMzMy+QFf///////FAWDMzMzMzJEBYZmZmZmZXQFiZmZmZmYpAWMzMzMzMvUBY///////wQFkzMzMzMyNAWWZmZmZmVkBZmZmZmZmJQFnMzMzMzLxAWf//////70BaMzMzMzMiQFpmZmZmZlVAWpmZmZmZiEBazMzMzMy7QFr//////+5AWzMzMzMzIUBbZmZmZmZUQFuZmZmZmYdAW8zMzMzMukBb///////tQFwzMzMzMyBAXGZmZmZmU0BcmZmZmZmGQFzMzMzMzLlAXP//////7EBdMzMzMzMfQF1mZmZmZlJAXZmZmZmZhUBdzMzMzMy4QF3//////+tAXjMzMzMzHkBeZmZmZmZRQF6ZmZmZmYRAXszMzMzMt0Be///////qQF8zMzMzMx1AX2ZmZmZmUEBfmZmZmZmDQF/MzMzMzLZAX///////6UBgGZmZmZmOQGAzMzMzMyhAYEzMzMzMwkBgZmZmZmZcQGB///////ZAYJmZmZmZkEBgszMzMzMqQGDMzMzMzMRAYOZmZmZmXkBg///////4QGEZmZmZmZJAYTMzMzMzLEBhTMzMzMzGQGFmZmZmZmBAYX//////+kBhmZmZmZmUQGGzMzMzMy5AYczMzMzMyEBh5mZmZmZiQGH///////xAYhmZmZmZlkBiMzMzMzMwQGJMzMzMzMpAYmZmZmZmZEBif//////+QGKZmZmZmZhAYrMzMzMzMkBiwAAACBt1QGLAAAAIG3VAYszMzMzMzEBi5mZmZmZmQGMAAAAAAABAYxmZmZmZmkBjMzMzMzM0QGNMzMzMzM5AY2ZmZmZmaEBjgAAAAAACQGOZmZmZmZxAY7MzMzMzNkBjzMzMzMzQQGPmZmZmZmpAZAAAAAAABEBkGZmZmZmeQGQzMzMzMzhAZEzMzMzM0kBkZmZmZmZsQGSAAAAAAAZAZJmZmZmZoEBkszMzMzM6QGTMzMzMzNRAZOZmZmZmbkBlAAAAAAAIQGUZmZmZmaJAZTMzMzMzPEBlTMzMzMzWQGVmZmZmZnBAZYAAAAAACkBlmZmZmZmkQGWzMzMzMz5AZczMzMzM2EBl5mZmZmZyQGYAAAAAAAxAZhmZmZmZpkBmMzMzMzNAQGZMzMzMzNpAZmZmZmZmdEBmgAAAAAAOQGaZmZmZmahAZrMzMzMzQkBmzMzMzMzcQGbmZmZmZnZAZwAAAAAAEEBnGZmZmZmqQGczMzMzM0RAZ0zMzMzM3kBnZmZmZmZ4QGeAAAAAABJAZ5mZmZmZrEBnszMzMzNGQGfMzMzMzOBAZ+ZmZmZmekBoAAAAAAAUQGgZmZmZma5AaDMzMzMzSEBoTMzMzMziQGhmZmZmZnxAaIAAAAAAFkBomZmZmZmwQGizMzMzM0pAaMzMzMzM5EBo5mZmZmZ+QGkAAAAAABhAaRmZmZmZskBpMzMzMzNMQGlMzMzMzOZAaWZmZmZmgEBpgAAAAAAaQGmZmZmZmbRAabMzMzMzTkBpzMzMzMzoQGnmZmZmZoJAagAAAAAAHEBqGZmZmZm2QGozMzMzM1BAakzMzMzM6kBqZmZmZmaEQGqAAAAAAB5AapmZmZmZuEBqszMzMzNSQGrMzMzMzOxAauZmZmZmhkBrAAAAAAAgQGsZmZmZmbpAazMzMzMzVEBrTMzMzMzuQGtmZmZmZohAa4AAAAAAIkBrmZmZmZm8QGuzMzMzM1ZAa8zMzMzM8EBr5mZmZmaKQGwAAAAAACRAbBmZmZmZvkBsMzMzMzNYQGxMzMzMzPJAbGZmZmZmjEBsgAAAAAAmQGyZmZmZmcBAbLMzMzMzWkBszMzMzMz0QGzmZmZmZo5AbQAAAAAAKEBtGZmZmZnCQG0zMzMzM1xAbUzMzMzM9kBtZmZmZmaQQG2AAAAAACpAbZmZmZmZxEBtszMzMzNeQG3MzMzMzPhAbeZmZmZmkkBuAAAAAAAsQG4ZmZmZmcZAbjMzMzMzYEBuTMzMzMz6QG5mZmZmZpRAboAAAAAALkBumZmZmZnIQG6zMzMzM2JAbszMzMzM/EBu5mZmZmaWQG8AAAAAADBAbxmZmZmZykBvMzMzMzNkQG9MzMzMzP5Ab2ZmZmZmmEBvgAAAAAAyQG+ZmZmZmcxAb7MzMzMzZkBvzMzMzM0AQG/mZmZmZppAcAAAAAAAGkBwDMzMzMznQHAZmZmZmbRAcCZmZmZmgUBwMzMzMzNOQHBAAAAAABtAcEzMzMzM6EBwWZmZmZm1QHBmZmZmZoJAcHMzMzMzT0BwgAAAAAAcQHCMzMzMzOlAcJmZmZmZtkBwpmZmZmaDQHCzMzMzM1BAcMAAAAAAHUBwzMzMzMzqQHDZmZmZmbdAcOZmZmZmhEBw8zMzMzNRQHEAAAAAAB5AcQzMzMzM60BxGZmZmZm4QHEmZmZmZoVAcTMzMzMzUkBxQAAAAAAfQHFMzMzMzOxAcVmZmZmZuUBxZmZmZmaGQHFzMzMzM1NAcYAAAAAAIEBxjMzMzMztQHGZmZmZmbpAcaZmZmZmh0BxszMzMzNUQHHAAAAAACFAcczMzMzM7kBx2ZmZmZm7QHHmZmZmZohAcfMzMzMzVUByAAAAAAAiQHIMzMzMzO9AchmZmZmZvEByJmZmZmaJQHIzMzMzM1ZAckAAAAAAI0ByTMzMzMzwQHJZmZmZmb1AcmZmZmZmikByczMzMzNXQHKAAAAAACRAcozMzMzM8UBymZmZmZm+QHKmZmZmZotAcrMzMzMzWEBywAAAAAAlQHLMzMzMzPJActmZmZmZv0By5mZmZmaMQHLzMzMzM1lAcwAAAAAAJkBzDMzMzMzzQHMZmZmZmcBAcyZmZmZmjUBzMzMzMzNaQHNAAAAAACdAc0zMzMzM9EBzWZmZmZnBQHNmZmZmZo5Ac3MzMzMzW0BzgAAAAAAoQHOMzMzMzPVAc5mZmZmZwkBzpmZmZmaPQHOzMzMzM1xAc8AAAAAAKUBzzMzMzMz2QHPZmZmZmcNAc+ZmZmZmkEBz8zMzMzNdQHQAAAAAACpAdAzMzMzM90B0GZmZmZnEQHQmZmZmZpFAdDMzMzMzXkB0QAAAAAArQHRMzMzMzPhAdFmZmZmZxUB0ZmZmZmaSQHRzMzMzM19AdIAAAAAALEB0jMzMzMz5QHSZmZmZmcZAdKZmZmZmk0B0szMzMzNgQHTAAAAAAC1AdMzMzMzM+kB02ZmZmZnHQHTmZmZmZpRAdPMzMzMzYUB1AAAAAAAuQHUMzMzMzPtAdRmZmZmZyEB1JmZmZmaVQHUzMzMzM2JAdUAAAAAAL0B1TMzMzMz8QHVZmZmZmclAdWZmZmZmlkB1czMzMzNjQHWAAAAAADBAdYzMzMzM/UB1mZmZmZnKQHWmZmZmZpdAdbMzMzMzZEB1wAAAAAAxQHXMzMzMzP5AddmZmZmZy0B15mZmZmaYQHXzMzMzM2VAdgAAAAAAMkB2DMzMzMz/QHYZmZmZmcxAdiZmZmZmmUB2MzMzMzNmQHZAAAAAADNAdkzMzMzNAEB2WZmZmZnNQHZmZmZmZppAdnMzMzMzZ0B2gAAAAAA0QHaMzMzMzQFAdpmZmZmZzkB2pmZmZmabQHazMzMzM2hAdsAAAAAANUB2zMzMzM0CQHbZmZmZmc9AduZmZmZmnEB28zMzMzNpQHcAAAAAADZAdwzMzMzNA0B3GZmZmZnQQHcmZmZmZp1AdzMzMzMzakB3QAAAAAA3QHdMzMzMzQRAd1mZmZmZ0UB3ZmZmZmaeQHdzMzMzM2tAd4AAAAAAOEB3jMzMzM0FQHeZmZmZmdJAd6ZmZmZmn0B3szMzMzNsQHfAAAAAADlAd8zMzMzNBkB32ZmZmZnTQHfmZmZmZqBAd/MzMzMzbUB4AAAAAAA6QHgMzMzMzQdAeBmZmZmZ1EB4JmZmZmahQHgzMzMzM25AeEAAAAAAO0B4TMzMzM0IQHhZmZmZmdVAeGZmZmZmokB4czMzMzNvQHiAAAAAADxAeIzMzMzNCUB4mZmZmZnWQHimZmZmZqNAeLMzMzMzcEB4wAAAAAA9QHjMzMzMzQpAeNmZmZmZ10B45mZmZmakQHjzMzMzM3FAeQAAAAAAAEB5AAAAAAAA" YData="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" Color="4278190335"/>
+          </OMCPlot>
+          <Input>plot( {tank1.h,tank2.h} )</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

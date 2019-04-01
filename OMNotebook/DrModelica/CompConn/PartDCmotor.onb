@@ -1,0 +1,668 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Hierarchically Structured Components with Inside and Outside Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/petfr27/AppData/Local/Temp/OpenModelica/1.png" width="536" height="273" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+        <Rule name="CellTags">Model1</Rule>
+        <Image name="file:///C:/Users/petfr27/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">NOTE: In order to simulate the PartialDCMotor. model below, you first need to evaluate the declarations in sections 1-5 below. This is easily done by selecting these cells (to the right) and pushing shift-return as usual.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p align="right" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p align="right" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Left</Rule>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Types from Modelica.SIunits&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The following are different types from the library &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Modelica.SIunits&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> used by the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PartDCMotorCircuit&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>type ElectricPotential     = Real;
+type ElectricCurrent     = Real(quantity = "ElectricCurrent", unit = "A");
+type Resistance       = Real(quantity = "Resistance", unit = "Ohm", min = 0);
+type Inductance       = Real(quantity = "Inductance", unit = "H", min = 0);
+type Voltage         = ElectricPotential;
+type Current         = ElectricCurrent;</Input>
+            <Output>{ElectricPotential,ElectricCurrent,Resistance,Inductance,Voltage,Current}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Mechanical units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>type Force           = Real(quantity = "Force", unit = "N");
+type Angle           = Real(quantity = "Angle", unit = "rad", displayUnit = "deg");
+type Torque         = Real(quantity = "Torque", unit = "N.m");
+type AngularVelocity     = Real(quantity = "AngularVelocity", unit = "rad/s", displayUnit = "rev/min");
+type AngularAcceleration   = Real(quantity = "AngularAcceleration", unit = "rad/s2");
+type MomentOfInertia     = Real(quantity = "MomentOfInertia", unit = "kg.m2");</Input>
+            <Output>{Force,Angle,Torque,AngularVelocity,AngularAcceleration,MomentOfInertia}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Other units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>type Length         = Real(quantity = "Length", unit = "m");
+type Time            = Real(quantity = "Time", unit = "s");
+type Distance        = Length(min = 0);
+type Position         = Length;</Input>
+            <Output>{Length,Time,Distance,Position}</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector Pin         "Pin of an electrical component"
+   Voltage v         "Potential at the pin";
+   flow Current i       "Current flowing into the pin";
+end Pin;            //From Modelica.Electrical.Analog.Interfaces</Input>
+          <Output>{Pin}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector PositivePin     "Positive pin of an electrical component"
+   Voltage v         "Potential at the pin";
+   flow Current i       "Current flowing into the pin";
+end PositivePin;        //From Modelica.Electrical.Analog.Interfaces</Input>
+          <Output>{PositivePin}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector NegativePin     "Negative pin of an electrical component"
+   Voltage v         "Potential at the pin";
+   flow Current i       "Current flowing into the pin";
+end NegativePin;        //From Modelica.Electrical.Analog.Interfaces</Input>
+          <Output>{NegativePin}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Mechanical Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector RotFlange_a     "1D rotational flange (filled square)"
+   Angle phi        "Absolute rotational angle of flange";
+   flow Torque tau       "Torque in the flange";
+end RotFlange_a;      //From Modelica.Mechanics.Rotational.Interfaces</Input>
+          <Output>{RotFlange_a}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector RotFlange_b     "1D rotational flange (filled square)"
+   Angle phi            "Absolute rotational angle of flange";
+   flow Torque tau       "Torque in the flange";
+end RotFlange_b;      //From Modelica.Mechanics.Rotational.Interfaces</Input>
+          <Output>{RotFlange_b}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Block Signal Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector InPort        "Connector with input signals of type Real"
+  parameter Integer n = 1    "Dimension of signal vector";
+  input Real     signal[n]  "Real input signals";
+end InPort;            // From Modelica.Blocks.Interfaces</Input>
+          <Output>{InPort}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>connector OutPort        "Connector with output signals of type Real"
+  parameter Integer n = 1    "Dimension of signal vector";
+  output Real     signal[n]  "Real output signals";
+end OutPort;          // From Modelica.Blocks.Interfaces</Input>
+          <Output>{OutPort}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electrical Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>partial model TwoPin          // Same as OnePort in Modelica.Electrical.Analog.Interfaces
+                    "Component with two electrical pins p and n and current i from p to n"
+  Voltage v                "Voltage drop between the two pins (= p.v - n.v)";
+  Current i(fixed=true)            "Current flowing from pin p to pin n";
+  PositivePin p;
+  NegativePin n;
+equation
+  v = p.v - n.v;
+  0 = p.i + n.i;
+  i = p.i;
+end TwoPin;          </Input>
+            <Output>{TwoPin}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model Resistor               "Ideal linear electrical Resistor"
+  extends TwoPin;            // Same as OnePort
+  parameter Real R(unit = "Ohm")     "Resistance";
+equation
+  R*i = v;
+end Resistor;                // From Modelica.Electrical.Analog.Basic </Input>
+            <Output>{Resistor}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model Inductor               "Ideal linear electrical Inductor"
+  extends TwoPin;            // Same as OnePort
+  parameter Real L(unit = "H")       "Inductance";
+equation
+  v = L*der(i);
+end Inductor;              // From Modelica.Electrical.Analog.Basic </Input>
+            <Output>{Inductor}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model Ground               "Ground node"
+  Pin p;
+equation
+  p.v = 0;
+end Ground;                // From Modelica.Electrical.Analog.Basic </Input>
+            <Output>{Ground}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model SignalVoltage            "Generic Voltage source using the input signal as source Voltage"
+  extends TwoPin;            // Same as OnePort
+  InPort inPort(n=1);
+equation
+  inPort.signal[1] = v;
+end SignalVoltage;            // From Modelica.Electrical.Analog.Sources</Input>
+            <Output>{SignalVoltage}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Mechanical Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>partial model Rigid           // Rotational class Rigid
+                    "Base class for the rigid connection of two rotational 1D flanges"
+  Angle phi(fixed=true)           "Absolute rotation angle of component";
+  RotFlange_a rotFlange_a        "(left) driving flange (axis directed into plane)";
+  RotFlange_b rotFlange_b        "(right) driven flange (axis directed out of plane)";
+equation
+  rotFlange_a.phi = phi;
+  rotFlange_b.phi = phi;
+end Rigid;                // From Modelica.Mechanics.Rotational.Interfaces
+</Input>
+            <Output>{Rigid}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model Inertia              "1D rotational component with inertia"
+  extends Rigid;
+  parameter MomentOfInertia J = 1    "Moment of inertia";
+  AngularVelocity     w(fixed=true)          "Absolute angular velocity of component";
+  AngularAcceleration a          "Absolute angular acceleration of component";
+equation
+  w = der(phi);
+  a = der(w);
+  J*a = rotFlange_a.tau + rotFlange_b.tau;
+end Inertia;              //From Modelica.Mechanics.Rotational</Input>
+            <Output>{Inertia}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Electromechanical Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>model EMF                 "Electromotoric force (electric/mechanic transformer)"
+  extends TwoPin;
+  parameter Real   k(unit = "N.m/A") = 1  "Transformation coefficient";
+  AngularVelocity    w          "Angular velocity of rotFlange_b";
+  RotFlange_b    rotFlange_b;    // Rotational Flange_b
+equation
+  w = der(rotFlange_b.phi);
+  v = k*w;
+  rotFlange_b.tau = - k*i;
+end EMF;                // From Modelica.Electrical.Analog.Basic </Input>
+            <Output>{EMF}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Signal Block Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>partial block MO             "Multiple Output continuous control block"
+  parameter Integer nout = 1      "Number of outputs";
+  OutPort       outPort(n = nout)  "Connector of Real output signals";
+protected
+  Real n[nout] = outPort.signal;
+end MO;                  // From Modelica.Blocks.Interfaces</Input>
+            <Output>{MO}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell closed="false" style="Graph">
+            <Input>block Step                "Generate step signals of type Real"
+  extends MO(nout = 1);
+  parameter Real height = 1        "Height of steps";
+  parameter Real offset = 0        "Offset of output signals";
+  parameter Time startTime = 0      "Output = offset for time &lt; startTime";
+equation
+  outPort.signal[1] = offset + (if time &lt; startTime then 0 else height);
+end Step;                // Version simplified from Step in Modelica.Blocks.Sources</Input>
+            <Output>{Step}</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Partial DC Motor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Complex systems are naturally described as hierachical structures often many levels deep. We would like to create a structured library component class that captures most of the essentials of DC motor circuit. This is done in the incomplete &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">PartialDCMotor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model PartialDCMotor
+  InPort     inPort;            // Outside signal connector
+  RotFlange_b   rotFlange_b;        // Outside rotational flange connector
+  Inductor     inductor1(L=0.2);
+  Resistor     resistor1(R=10);
+  Ground     ground1;
+  EMF       emf1;
+  SignalVoltage signalVoltage1;
+equation
+  connect(inPort, signalVoltage1.inPort);
+  connect(signalVoltage1.p, resistor1.p);
+  connect(resistor1.n, inductor1.p);
+  connect(signalVoltage1.n, ground1.p);
+  connect(ground1.p, emf1.n);
+  connect(inductor1.n, emf1.p);
+  connect(emf1.rotFlange_b, rotFlange_b);
+end PartialDCMotor;</Input>
+          <Output>{PartialDCMotor}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model PartDCMotorCircuit
+  Step         step1;
+  PartialDCMotor   partialDCMotor1;
+  Inertia       inertia1(J=1);
+equation
+  connect(step1.outPort, partialDCMotor1.inPort);
+  connect(partialDCMotor1.rotFlange_b, inertia1.rotFlange_a);
+end PartDCMotorCircuit;    </Input>
+          <Output>{PartDCMotorCircuit}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of PartDCMotorCircuit &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>simulate( PartDCMotorCircuit, stopTime=100 ) </Input>
+          <Output>record SimulationResult
+    resultFile = "PartDCMotorCircuit_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <OMCPlot Grid="detailed" YLabel="" YRangeMax="0" LegendPosition="top" XRangeMin="0" Footer="" Title="Plot by OpenModelica" LogY="false" CurveStyle="0" XRangeMax="0" YRangeMin="0" PlotType="0" CurveWidth="0" LogX="false" XLabel="time" AutoScale="false">
+            <Curve YData="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" Title="inertia1.w" Visible="true" Color="4294901760" XData="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"/>
+          </OMCPlot>
+          <Input>plot( inertia1.w )</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

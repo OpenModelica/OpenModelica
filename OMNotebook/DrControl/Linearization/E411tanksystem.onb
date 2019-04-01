@@ -1,0 +1,238 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 4.1.1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <GroupCell closed="false">
+          <TextCell style="Section">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">/*should be updated only works with OM 1.6.0 and later&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We have a tank system containing 5 tanks that are described with the following state space model.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/577.png" width="464" height="132" />&lt;span style=" font-size:8pt;">*/&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/OMNotebook_tempfiles/577.png">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</Image>
+          </TextCell>
+          <GroupCell closed="false">
+            <TextCell style="Subsection">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">/*Taking the above values from the above example and implementing it with the Modelica standard library components leads to the following model. */&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GroupCell closed="false">
+              <GroupCell closed="false">
+                <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                  <Input>setCommandLineOptions({"+d=linearization"}) // omc +s +d=linearization model.mo
+//setCommandLineOptions({"+s","+d=linearization","file.mo"})</Input>
+                  <Output>true</Output>
+                </GraphCell>
+                <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="8.29391918203635e-264" Antialiasing="false" MinorY="8.30797194912779e-264" Title="Plot title" LogX="false" LogY="false" MajorX="8.28689279849064e-264" MajorY="8.30094556558207e-264" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                  <Input>model twoflattankmodel
+  Real h1(start=2);
+  Real h2(start=1);
+  Real F1;
+  parameter Real A1=2,A2=0.5;
+  parameter Real R1=2,R2=1;
+  input Real F;
+  output Real F2;
+equation
+  der(h1) = (F/A1) - (F1/A1);
+  der(h2) = (F1/A2) - (F2/A2);
+  F1 = R1 * sqrt(h1-h2);
+  F2 = R2 * sqrt(h2);
+end twoflattankmodel;</Input>
+                  <Output>{twoflattankmodel}</Output>
+                </GraphCell>
+              </GroupCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>buildModel(twoflattankmodel)</Input>
+                <Output>{"twoflattankmodel","twoflattankmodel_init.txt"}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>system("twoflattankmodel.exe -l 0.0 -v >log.out") //system("twoflattankmodel.exe -l 0.5 -v >log.out") </Input>
+                <Output>0</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="2.78138476304982e-308" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>readFile("log.out")</Input>
+                <Output>" jac flag set : 0
+read start = 0 from init file.
+read stop = 1 from init file.
+read stepSize = 0.002 from init file.
+read tolerance = 1e-06 from init file.
+read method = dassl from init file.
+read outputFormat = plt from init file.
+read h1 = 2 from init file.
+read h2 = 1 from init file.
+read der(h1) = 0 from init file.
+read der(h2) = 0 from init file.
+read F1 = 0 from init file.
+read F2 = 0 from init file.
+read F = 0 from init file.
+read A1 = 2 from init file.
+read A2 = 0.5 from init file.
+read R1 = 2 from init file.
+read R2 = 1 from init file.
+Read parameter data from file twoflattankmodel_init.txt
+Notice: Calculated time of sample events is not yet used!
+Number of sorted, unique sample events: 0
+Linearization will performed at point of time: 0
+Allocated simulation result data storage for method 'plt' and file='twoflattankmodel_res.plt'
+Recognized solver: dassl2.
+Calculated bound parameters
+Initialization by method: simplex
+fixed attribute for states:
+h1(fixed=true)
+h2(fixed=true)
+number of non-fixed variables: 0
+No initial values to calculate
+Simulation done!
+model linear_twoflattankmodel
+  parameter Integer n = 2; // states 
+  parameter Integer k = 1; // top-level inputs 
+  parameter Integer l = 1; // top-level outputs 
+  parameter Real x0[2] = {2,1};
+  parameter Real u0[1] = {0};
+  parameter Real A[2,2] = [-0.5,0.5;2,-3];
+  parameter Real B[2,1] = [0.5;0];
+  parameter Real C[1,2] = [0,0.5];
+  parameter Real D[1,1] = [0];
+  Real x[2](start=x0);
+  input Real u[1](start= u0);
+  output Real y[1];
+
+  Real x_Ph1 = x[1];
+  Real x_Ph2 = x[2];
+    Real u_PF = u[1];
+    Real y_PF2 = y[1];
+  
+equation
+  der(x) = A * x + B * u;
+  y = C * x + D * u;
+end linear_twoflattankmodel;
+
+Linear model is created!
+"</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="2.78138476304982e-308" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model linear_twoflattankmodel
+  parameter Integer n = 2; // states 
+  parameter Integer k = 1; // top-level inputs 
+  parameter Integer l = 1; // top-level outputs 
+  parameter Real x0[2] = {2,1};
+  parameter Real u0[1] = {0};
+  parameter Real A[2,2] = [-0.5,0.5;2,-3];
+  parameter Real B[2,1] = [0.5;0];
+  parameter Real C[1,2] = [0,0.5];
+  parameter Real D[1,1] = [0];
+  Real x[2](start=x0);
+  input Real u[1](start= u0);
+  output Real y[1];
+
+  Real x_Ph1 = x[1];
+  Real x_Ph2 = x[2];
+    Real u_PF = u[1];
+    Real y_PF2 = y[1];
+  
+equation
+  der(x) = A * x + B * u;
+  y = C * x + D * u;
+end linear_twoflattankmodel;
+</Input>
+                <Output>{linear_twoflattankmodel}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="2.50324628674484e-308" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>simulate(linear_twoflattankmodel)
+</Input>
+                <Output>record SimulationResult
+    resultFile = "linear_twoflattankmodel_res.plt",
+    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_twoflattankmodel', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
+    messages = "",
+    timeFrontend = 0.326314098579568,
+    timeBackend = 0.0116073411564878,
+    timeSimCode = 0.0529020448129581,
+    timeTemplates = 0.0285904353765632,
+    timeCompile = 4.7428131228969,
+    timeSimulation = 0.253102419441577,
+    timeTotal = 5.41544602735823
+end SimulationResult;</Output>
+              </GraphCell>
+            </GroupCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <GroupCell closed="false">
+          <TextCell style="Section">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now introduce noise in the above model.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

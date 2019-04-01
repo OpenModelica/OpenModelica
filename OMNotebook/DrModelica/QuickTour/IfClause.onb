@@ -1,0 +1,194 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">If-Equation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Electrical units&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>type Voltage = Real(unit = "V");</Input>
+          <Output>{Voltage}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>type Current = Real(unit = "A");</Input>
+          <Output>{Current}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>connector Pin
+  Voltage v;
+  flow Current i;
+end Pin;  </Input>
+          <Output>{Pin}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Electrical Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">TwoPin is a partial class, which means that it is not possible to make instances of it but it can be extended.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>partial class TwoPin      "Superclass of elements with two electrical pins"
+  Pin p, n;
+  Voltage v;
+  Current i;
+equation
+  v = p.v - n.v;
+  p.i + n.i = 0;
+  i = p.i;
+end TwoPin;</Input>
+          <Output>{TwoPin}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Diode&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Conditional expressions or equations describe discontinuous and conditional models. When writing conditional expressions no &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">end if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is needed. If the condition has more than two options then it is not enough with an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statement to express this, so we have to add one or more &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">elseif&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statements. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model Diode            "Ideal diode"
+  extends TwoPin;
+  Real s;
+  Boolean off;
+equation
+  off = s &lt; 0;
+  if off then
+    v = s;
+  else
+    v = 0;            // Conditional equations
+  end if;
+  i = if off then 0 else s;    // Conditional expression
+end Diode;</Input>
+          <Output>{Diode}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Load the Modelica Standard Library in order to be able to import as below.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We construct a circuit with a diode.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model Circuit
+  import Modelica.Electrical.Analog.Basic.*;
+  import Modelica.Electrical.Analog.Sources.*;
+  Diode d(s(start = 0));  
+  Resistor R1 (R = 2.0);
+  Ground G;
+  SineVoltage src (V = 3.0, freqHz = 5.0);
+equation
+  connect(G.p,src.n);
+  connect(src.p,R1.n);
+  connect(R1.p,d.n);
+  connect(d.p,src.n);
+end Circuit;</Input>
+          <Output>{Circuit}</Output>
+        </GraphCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of circuit&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate( Circuit, stopTime=10 ) </Input>
+            <Output>record SimulationResult
+    resultFile = "Circuit_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+              <Curve Title="d.off" Visible="true" XData="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" YData="AAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" Color="4294901760"/>
+            </OMCPlot>
+            <Input>plot(d.off)</Input>
+            <Output>true</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

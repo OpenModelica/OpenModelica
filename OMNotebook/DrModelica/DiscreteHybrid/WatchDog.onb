@@ -1,0 +1,357 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">WatchDog System&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="true">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Event Generator Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>connector eventPort
+  discrete Boolean signal;
+end eventPort;</Input>
+          <Output>{eventPort}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model EventGenerator
+   parameter Real eventTime = 1;
+   eventPort dOutput;
+equation
+   dOutput.signal = time > eventTime;
+end EventGenerator;</Input>
+          <Output>{EventGenerator}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>connector EventPortInput = input Boolean;</Input>
+        <Output>{EventPortInput}</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>connector EventPortOutput = output Boolean;</Input>
+        <Output>{EventPortOutput}</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>model EventGenerator
+  parameter Real eventTime=1;
+  EventPortOutput dOutput;
+equation
+  dOutput = time>eventTime;
+end EventGenerator;</Input>
+        <Output>{EventGenerator}</Output>
+      </GraphCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WatchDog 1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The watchdog system shown in Figure 1 consists of the watchdog itself and three event generators, emitting On events, Off events and deadlineSignal events.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/1.png" width="402" height="180" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">WatchDog System&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A Modelica model of the watchdog system follows below, consisting of the watchdog itself and the three event generators. The watchdog is formulated using an algorithm section since otherwise the multiple &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">when&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-equations would cause multiple assignments to be reported for the variable &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">watchdogActive.&lt;br />&lt;br />&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This version of the WatchDog receives three events: two commands to switch the watchdog on and off, and a &amp;quot;deadline&amp;quot; event. The watchdog must emit an &amp;quot;alarm&amp;quot; whenewer the deadline occurs when the watchdog is on. Initially it is turned of.&lt;br />This is the algorithmic implementation.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WatchDogSystem
+   EventGenerator turnOff(eventTime=0.25);
+   EventGenerator turnOn(eventTime=1);
+   EventGenerator deadlineEmitter(eventTime=1.5);
+   WatchDog watchdog;
+equation
+   connect(turnOn.dOutput, watchdog.dOn);
+   connect(turnOff.dOutput, watchdog.dOff);
+   connect(deadlineEmitter.dOutput, watchdog.dDeadline);
+end WatchDogSystem;</Input>
+          <Output>{WatchDogSystem}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WatchDog
+   EventPortInput dOn;
+   EventPortInput dOff;
+   EventPortInput dDeadline;
+   EventPortOutput dAlarm;
+   Boolean watchdogActive(start=false); // Initially turned off
+algorithm
+   when dOn then // Event watchdog on
+     watchdogActive := true;
+   end when;
+   when dOff then // Event watchdog off
+     watchdogActive := false;
+     dAlarm := false;
+   end when;
+   when dDeadline and watchdogActive then // Event Alarm!
+     dAlarm := true;
+   end when;
+end WatchDog;</Input>
+          <Output>{WatchDog}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WatchDogSystem&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( WatchDogSystem, stopTime=2 ) </Input>
+          <Output>record SimulationResult
+    resultFile = "WatchDogSystem_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="watchdog.dAlarm" Visible="true" XData="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P/xqfvnbItE//HrhR64Uez/8i0OVgQYlP/ybpeNT988//KwIMSbpeT/8vGp++dsjP/zMzMzMzM0//N0vGp++dz/87ZFocrAhP/z987ZFocs//Q5WBBiTdT/9HrhR64UfP/0vGp++dsk//T987ZFocz/9T987ZFodP/1gQYk3S8c//XCj1wo9cT/9gQYk3S8bP/2RaHKwIMU//aHKwIMSbz/9si0OVgQZP/3Cj1wo9cM//dLxqfvnbT/941P3ztkXP/3ztkWhysE//gQYk3S8aj/+FHrhR64UP/4k3S8an74//jU/fO2RaD/+RaHKwIMSP/5WBBiTdLw//mZmZmZmZj/+dsi0OVgQP/6HKwIMSbo//peNT987ZD/+p++dsi0OP/64UeuFHrg//si0OVgQYj/+2RaHKwIMP/7peNT987Y//vnbItDlYD//Cj1wo9cKP/8an752yLQ//ysCDEm6Xj//O2RaHKwIP/9LxqfvnbI//1wo9cKPXD//bItDlYEGP/987ZFocrA//41P3ztkWj//nbItDlYEP/+uFHrhR64//752yLQ5WD//ztkWhysCP//fO2RaHKw//++dsi0OVkAAAAAAAAAAQAAAAAAAAAA=" YData="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA=" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( watchdog.dAlarm)</Input>
+          <Output>true</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WatchDog 2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This version of the WatchDog receives three events: two commands to switch the watchdog on and off, and a &amp;quot;deadline&amp;quot; event. The watchdog must emit an &amp;quot;alarm&amp;quot; whenewer the deadline occurs when the watchdog is on. Initially it is turned off. This is the equation-based inplementation of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">watchdog1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WatchDog2
+   EventPortInput dOn;
+   EventPortInput dOff;
+   EventPortInput dDeadline;
+   EventPortOutput dAlarm;
+
+   Real internalTime1(fixed=true), internalTime2(fixed=true);
+
+equation
+   when change(dOn)then
+     internalTime1 = time;
+   end when;
+
+   when change(dOff)then
+     internalTime2 = time;
+   end when;
+
+   when change(dDeadline) and time>internalTime1 and internalTime1>internalTime2 then
+     dAlarm=true;
+   end when;
+end WatchDog2;</Input>
+          <Output>{WatchDog2}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WatchDogSystem2
+  EventGenerator  turnOn(eventTime=1);
+  EventGenerator  turnOff(eventTime=0.25);
+  EventGenerator  deadlineEmitter(eventTime=1.5);
+  WatchDog2       watchdog;
+equation
+    connect(turnOn.dOutput,watchdog.dOn);
+    connect(turnOff.dOutput,watchdog.dOff);
+    connect(deadlineEmitter.dOutput, watchdog.dDeadline);
+end WatchDogSystem2;</Input>
+          <Output>{WatchDogSystem2}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WatchDogSystem2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( WatchDogSystem2, stopTime=4 ) </Input>
+          <Output>record SimulationResult
+    resultFile = "WatchDogSystem2_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="watchdog.dAlarm" Visible="true" XData="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P/wIMSbpeNU//Cj1wo9cKT/8SbpeNT99P/xqfvnbItE//ItDlYEGJT/8rAgxJul5P/zMzMzMzM0//O2RaHKwIT/9DlYEGJN1P/0vGp++dsk//U/fO2RaHT/9cKPXCj1xP/2RaHKwIMU//bItDlYEGT/90vGp++dtP/3ztkWhysE//hR64UeuFD/+NT987ZFoP/5WBBiTdLw//nbItDlYED/+l41P3ztkP/64UeuFHrg//tkWhysCDD/++dsi0OVgP/8an752yLQ//ztkWhysCD//XCj1wo9cP/987ZFocrA//52yLQ5WBD//vnbItDlYP//fO2RaHKxAAAAAAAAAAEAAEGJN0vGqQAAgxJul41RAADEm6XjU/kAAQYk3S8aoQABR64UeuFJAAGJN0vGp/EAAcrAgxJumQACDEm6XjVBAAJN0vGp++kAAo9cKPXCkQAC0OVgQYk5AAMSbpeNT+EAA1P3ztkWiQADlYEGJN0xAAPXCj1wo9kABBiTdLxqgQAEWhysCDEpAASbpeNT99EABN0vGp++eQAFHrhR64UhAAVgQYk3S8kABaHKwIMScQAF41P3ztkZAAYk3S8an8EABmZmZmZmaQAGp++dsi0RAAbpeNT987kABysCDEm6YQAHbItDlYEJAAeuFHrhR7EAB++dsi0OWQAIMSbpeNT9AAhysCDEm6UACLQ5WBBiTQAI9cKPXCj1AAk3S8an750ACXjU/fO2RQAJul41P3ztAAn752yLQ5UACj1wo9cKPQAKfvnbItDlAArAgxJul40ACwIMSbpeNQALQ5WBBiTdAAuFHrhR64UAC8an752yLQAMCDEm6XjVAAxJul41P30ADItDlYEGJQAMzMzMzMzNAA0OVgQYk3UADU/fO2RaHQANkWhysCDFAA3S8an7520ADhR64UeuFQAOVgQYk3S9AA6XjU/fO2UADtkWhysCDQAPGp++dsi1AA9cKPXCj10AD52yLQ5WBQAP3ztkWhytABAgxJul41UAEGJN0vGp/QAQo9cKPXClABDlYEGJN00AESbpeNT99QARaHKwIMSdABGp++dsi0UAEeuFHrhR7QASLQ5WBBiVABJul41P3z0AErAgxJul5QAS8an752yNABMzMzMzMzUAE3S8an753QATtkWhysCFABP3ztkWhy0AFDlYEGJN1QAUeuFHrhR9ABS8an752yUAFP3ztkWhzQAVP3ztkWh1ABWBBiTdLx0AFcKPXCj1xQAWBBiTdLxtABZFocrAgxUAFocrAgxJvQAWyLQ5WBBlABcKPXCj1w0AF0vGp++dtQAXjU/fO2RdABfO2RaHKwUAGBBiTdLxqQAYUeuFHrhRABiTdLxqfvkAGNT987ZFoQAZFocrAgxJABlYEGJN0vEAGZmZmZmZmQAZ2yLQ5WBBABocrAgxJukAGl41P3ztkQAan752yLQ5ABrhR64UeuEAGyLQ5WBBiQAbZFocrAgxABul41P3ztkAG+dsi0OVgQAcKPXCj1wpABxqfvnbItEAHKwIMSbpeQAc7ZFocrAhAB0vGp++dskAHXCj1wo9cQAdsi0OVgQZAB3ztkWhysEAHjU/fO2RaQAedsi0OVgRAB64UeuFHrkAHvnbItDlYQAfO2RaHKwJAB987ZFocrEAH752yLQ5WQAgAAAAAAABACBBiTdLxqkAIIMSbpeNUQAgxJul41P5ACEGJN0vGqEAIUeuFHrhSQAhiTdLxqfxACHKwIMSbpkAIgxJul41QQAiTdLxqfvpACKPXCj1wpEAItDlYEGJOQAjEm6XjU/hACNT987ZFokAI5WBBiTdMQAj1wo9cKPZACQYk3S8aoEAJFocrAgxKQAkm6XjU/fRACTdLxqfvnkAJR64UeuFIQAlYEGJN0vJACWhysCDEnEAJeNT987ZGQAmJN0vGp/BACZmZmZmZmkAJqfvnbItEQAm6XjU/fO5ACcrAgxJumEAJ2yLQ5WBCQAnrhR64UexACfvnbItDlkAKDEm6XjU/QAocrAgxJulACi0OVgQYk0AKPXCj1wo9QApN0vGp++dACl41P3ztkUAKbpeNT987QAp++dsi0OVACo9cKPXCj0AKn752yLQ5QAqwIMSbpeNACsCDEm6XjUAK0OVgQYk3QArhR64UeuFACvGp++dsi0ALAgxJul41QAsSbpeNT99ACyLQ5WBBiUALMzMzMzMzQAtDlYEGJN1AC1P3ztkWh0ALZFocrAgxQAt0vGp++dtAC4UeuFHrhUALlYEGJN0vQAul41P3ztlAC7ZFocrAg0ALxqfvnbItQAvXCj1wo9dAC+dsi0OVgUAL987ZFocrQAwIMSbpeNVADBiTdLxqf0AMKPXCj1wpQAw5WBBiTdNADEm6XjU/fUAMWhysCDEnQAxqfvnbItFADHrhR64Ue0AMi0OVgQYlQAybpeNT989ADKwIMSbpeUAMvGp++dsjQAzMzMzMzM1ADN0vGp++d0AM7ZFocrAhQAz987ZFoctADQ5WBBiTdUANHrhR64UfQA0vGp++dslADT987ZFoc0ANT987ZFodQA1gQYk3S8dADXCj1wo9cUANgQYk3S8bQA2RaHKwIMVADaHKwIMSb0ANsi0OVgQZQA3Cj1wo9cNADdLxqfvnbUAN41P3ztkXQA3ztkWhysFADgQYk3S8akAOFHrhR64UQA4k3S8an75ADjU/fO2RaEAORaHKwIMSQA5WBBiTdLxADmZmZmZmZkAOdsi0OVgQQA6HKwIMSbpADpeNT987ZEAOp++dsi0OQA64UeuFHrhADsi0OVgQYkAO2RaHKwIMQA7peNT987ZADvnbItDlYEAPCj1wo9cKQA8an752yLRADysCDEm6XkAPO2RaHKwIQA9LxqfvnbJAD1wo9cKPXEAPbItDlYEGQA987ZFocrBAD41P3ztkWkAPnbItDlYEQA+uFHrhR65AD752yLQ5WEAPztkWhysCQA/fO2RaHKxAD++dsi0OVkAQAAAAAAAAQBAAAAAAAAA=" YData="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA=" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( watchdog.dAlarm)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WatchDog Clocked&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt;">A clocked version of the model called WatchDogSystemClocked, is shown below. The main difference is that a global clocked timer variable has been introduced, and that the event generator detects when to emit a clocked signal synchronized with the clock ticks of the global clock by the equation dOutput = timecmp==true and previous(timecmp)==false. An if-then-else statement is used instead of the when-statements in the unclocked version since clocked when-statements are currently not available in the Modelica language.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Justify</Rule>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model WatchDogClocked "Version with equation section, if-then-else"
+   EventPortInput dOn;
+   EventPortInput dOff;
+   EventPortInput dDeadline;
+   EventPortOutput dAlarm(signal(start=false));
+   Boolean watchdogActive(start=false); // Initially turned off
+equation
+   if dOn then // Event watchdog on
+     watchdogActive =true;
+     dAlarm = previous(dAlarm);
+  elseif dOff then // Event watchdog off
+    watchdogActive =false;
+    dAlarm =false;
+  elseif dDeadline and previous(watchdogActive) then //Event Alarm!
+    watchdogActive = previous(watchdogActive);
+    dAlarm =true;
+  else
+    watchdogActive = previous(watchdogActive);
+    dAlarm = previous(dAlarm);
+  end if;
+end WatchDogClocked;</Input>
+          <Output>{WatchDogClocked}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This model contains clocked synchronous constructs that are not yet fully supported by OpenModelica as of October 2015, but may start working within the near future.Hence the Simulation of this models does not work&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>setCommandLineOptions("+std=3.3")</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(WatchDogClocked)</Input>
+          <Output>record SimulationResult
+    resultFile = "",
+    messages = "Failed to build model: WatchDogClocked"
+end SimulationResult;
+OMC-ERROR:
+"Error: Error occurred while flattening model WatchDogClocked
+"</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

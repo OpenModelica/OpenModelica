@@ -1,0 +1,383 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Partial Classes Describe Common Properties&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Types from Modelica.SIunits&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>type Voltage = Real(unit = "V");</Input>
+          <Output>{Voltage}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>type Current = Real(unit = "A");</Input>
+          <Output>{Current}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>connector Pin
+  Voltage v;
+  flow Current i;
+end Pin;  </Input>
+          <Output>{Pin}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">TwoPin&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The class prefix &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">partial&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is used to indicate that a class is incomplete such that it cannot be instatiated. The class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">TwoPin&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can be used to define our own &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Resistor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Capacitor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Inductor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, Voltage source AC and Ground classes.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>partial model TwoPin        "Superclass of elements with two electrical pins"
+  Pin p, n;
+  Voltage v;
+  Current i;
+equation
+  v = p.v - n.v;
+  p.i + n.i = 0;
+  i = p.i;
+end TwoPin;</Input>
+            <Output>{TwoPin}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Resistor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model Resistor             "Ideal electrical Resistor"
+  extends TwoPin;
+  parameter Real R(unit = "Ohm")   "Resistance";
+equation
+  R*i = v;
+end Resistor;</Input>
+            <Output>{Resistor}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Capacitor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model Capacitor           "Ideal electrical Capacitor"
+  extends TwoPin;
+  parameter Real C(unit = "F")     "Capacitance";
+equation
+  C*der(v) = i;
+end Capacitor;</Input>
+            <Output>{Capacitor}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Inductor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model Inductor             "Ideal electrical Inductor"
+  extends TwoPin;
+  parameter Real L(unit = "H")     "Inductance";
+equation
+  v = L*der(i);
+end Inductor;</Input>
+            <Output>{Inductor}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">VsourceAC&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model VsourceAC           "Sin-wave voltage source"
+  extends TwoPin;
+  parameter Voltage VA      = 220 "Amplitude";
+  parameter Real f(unit = "Hz") = 50 "Frequency";
+  constant Real PI        = 3.141592653589793;
+  input    Voltage u;
+equation
+  v = u;
+  u = VA*sin(2*PI*f*time);
+end VsourceAC;  </Input>
+            <Output>{VsourceAC}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Ground&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>model Ground
+  Pin p;
+equation
+  p.v = 0;
+end Ground;</Input>
+            <Output>{Ground}</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">SimpleCircuit&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Based on these classes we can declare the Simple Circuit Model: &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model SimpleCircuit
+  Resistor     R1(R = 10);
+  Capacitor   C(C = 0.01, v(fixed = true));
+  Resistor     R2(R = 100);
+  Inductor     L(L = 0.1, i(fixed = true));
+  VsourceAC   AC(f = 1);
+  Ground     G;
+equation
+  connect(AC.p, R1.p);      // 1, Capacitor circuit
+  connect(R1.n, C.p);      //    Wire 2
+  connect(C.n, AC.n);      //     Wire 3
+  connect(R1.p, R2.p);      // 2, Inductor circuit
+  connect(R2.n, L.p);      //    Wire 5
+  connect(L.n, C.n);      //     Wire 6
+  connect(AC.n, G.p);      // 7, Ground
+end SimpleCircuit;    </Input>
+          <Output>{SimpleCircuit}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">SimpleCircuit Simulation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( SimpleCircuit )</Input>
+          <Output>record SimulationResult
+    resultFile = "SimpleCircuit_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot YRangeMax="0" XLabel="time" YLabel="" Title="" LogX="false" CurveStyle="1" AutoScale="true" PlotType="0" Grid="detailed" CurveWidth="1" LegendPosition="top" LogY="false" YRangeMin="0" Footer="" XRangeMin="0" XRangeMax="0">
+            <Curve XData="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" Title="R1.v" YData="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" Color="4294901760" Visible="true"/>
+            <Curve XData="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" Title="R2.v" YData="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" Color="4278190335" Visible="true"/>
+          </OMCPlot>
+          <Input>plot( {R1.v, R2.v } )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p align="right" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p align="right" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot YRangeMax="0" XLabel="time" YLabel="" Title="" LogX="false" CurveStyle="1" AutoScale="true" PlotType="0" Grid="detailed" CurveWidth="1" LegendPosition="top" LogY="false" YRangeMin="0" Footer="" XRangeMin="0" XRangeMax="0">
+            <Curve XData="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" Title="R1.i" YData="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" Color="4294901760" Visible="true"/>
+            <Curve XData="AAAAAAAAAAA/YGJN0vGp/D9wYk3S8an8P3iTdLxqfvo/gGJN0vGp/D+EeuFHrhR7P4iTdLxqfvo/jKwIMSbpeT+QYk3S8an8P5Jul41P3zs/lHrhR64Uez+WhysCDEm6P5iTdLxqfvo/mp++dsi0OT+crAgxJul5P564UeuFHrg/oGJN0vGp/D+haHKwIMScP6Jul41P3zs/o3S8an752z+keuFHrhR7P6WBBiTdLxs/pocrAgxJuj+njU/fO2RaP6iTdLxqfvo/qZmZmZmZmj+qn752yLQ5P6ul41P3ztk/rKwIMSbpeT+tsi0OVgQZP664UeuFHrg/r752yLQ5WD+wYk3S8an8P7DlYEGJN0w/sWhysCDEnD+x64UeuFHsP7Jul41P3zs/svGp++dsiz+zdLxqfvnbP7P3ztkWhys/tHrhR64Uez+0/fO2RaHLP7WBBiTdLxs/tgQYk3S8aj+2hysCDEm6P7cKPXCj1wo/t41P3ztkWj+4EGJN0vGqP7iTdLxqfvo/uRaHKwIMSj+5mZmZmZmaP7ocrAgxJuk/up++dsi0OT+7ItDlYEGJP7ul41P3ztk/vCj1wo9cKT+8rAgxJul5P70vGp++dsk/vbItDlYEGT++NT987ZFoP764UeuFHrg/vztkWhysCD+/vnbItDlYP8AgxJul41Q/wGJN0vGp/D/Ao9cKPXCkP8DlYEGJN0w/wSbpeNT99D/BaHKwIMScP8Gp++dsi0Q/weuFHrhR7D/CLQ5WBBiTP8Jul41P3zs/wrAgxJul4z/C8an752yLP8MzMzMzMzM/w3S8an752z/DtkWhysCDP8P3ztkWhys/xDlYEGJN0z/EeuFHrhR7P8S8an752yM/xP3ztkWhyz/FP3ztkWhzP8WBBiTdLxs/xcKPXCj1wz/GBBiTdLxqP8ZFocrAgxI/xocrAgxJuj/GyLQ5WBBiP8cKPXCj1wo/x0vGp++dsj/HjU/fO2RaP8fO2RaHKwI/yBBiTdLxqj/IUeuFHrhSP8iTdLxqfvo/yNT987ZFoj/JFocrAgxKP8lYEGJN0vI/yZmZmZmZmj/J2yLQ5WBCP8ocrAgxJuk/yl41P3ztkT/Kn752yLQ5P8rhR64UeuE/yyLQ5WBBiT/LZFocrAgxP8ul41P3ztk/y+dsi0OVgT/MKPXCj1wpP8xqfvnbItE/zKwIMSbpeT/M7ZFocrAhP80vGp++dsk/zXCj1wo9cT/Nsi0OVgQZP83ztkWhysE/zjU/fO2RaD/Odsi0OVgQP864UeuFHrg/zvnbItDlYD/PO2RaHKwIP8987ZFocrA/z752yLQ5WD/QAAAAAAAAP9AgxJul41Q/0EGJN0vGqD/QYk3S8an8P9CDEm6XjVA/0KPXCj1wpD/QxJul41P4P9DlYEGJN0w/0QYk3S8aoD/RJul41P30P9FHrhR64Ug/0WhysCDEnD/RiTdLxqfwP9Gp++dsi0Q/0crAgxJumD/R64UeuFHsP9IMSbpeNT8/0i0OVgQYkz/STdLxqfvnP9Jul41P3zs/0o9cKPXCjz/SsCDEm6XjP9LQ5WBBiTc/0vGp++dsiz/TEm6XjU/fP9MzMzMzMzM/01P3ztkWhz/TdLxqfvnbP9OVgQYk3S8/07ZFocrAgz/T1wo9cKPXP9P3ztkWhys/1BiTdLxqfz/UOVgQYk3TP9RaHKwIMSc/1HrhR64Uez/Um6XjU/fPP9S8an752yM/1N0vGp++dz/U/fO2RaHLP9UeuFHrhR8/1T987ZFocz/VYEGJN0vHP9WBBiTdLxs/1aHKwIMSbz/Vwo9cKPXDP9XjU/fO2Rc/1gQYk3S8aj/WJN0vGp++P9ZFocrAgxI/1mZmZmZmZj/WhysCDEm6P9an752yLQ4/1si0OVgQYj/W6XjU/fO2P9cKPXCj1wo/1ysCDEm6Xj/XS8an752yP9dsi0OVgQY/141P3ztkWj/XrhR64UeuP9fO2RaHKwI/1++dsi0OVj/YEGJN0vGqP9gxJul41P4/2FHrhR64Uj/YcrAgxJumP9iTdLxqfvo/2LQ5WBBiTj/Y1P3ztkWiP9j1wo9cKPY/2RaHKwIMSj/ZN0vGp++eP9lYEGJN0vI/2XjU/fO2Rj/ZmZmZmZmaP9m6XjU/fO4/2dsi0OVgQj/Z++dsi0OWP9ocrAgxJuk/2j1wo9cKPT/aXjU/fO2RP9p++dsi0OU/2p++dsi0OT/awIMSbpeNP9rhR64UeuE/2wIMSbpeNT/bItDlYEGJP9tDlYEGJN0/22RaHKwIMT/bhR64UeuFP9ul41P3ztk/28an752yLT/b52yLQ5WBP9wIMSbpeNU/3Cj1wo9cKT/cSbpeNT99P9xqfvnbItE/3ItDlYEGJT/crAgxJul5P9zMzMzMzM0/3O2RaHKwIT/dDlYEGJN1P90vGp++dsk/3U/fO2RaHT/dcKPXCj1xP92RaHKwIMU/3bItDlYEGT/d0vGp++dtP93ztkWhysE/3hR64UeuFD/eNT987ZFoP95WBBiTdLw/3nbItDlYED/el41P3ztkP964UeuFHrg/3tkWhysCDD/e+dsi0OVgP98an752yLQ/3ztkWhysCD/fXCj1wo9cP9987ZFocrA/352yLQ5WBD/fvnbItDlYP9/fO2RaHKw/4AAAAAAAAD/gEGJN0vGqP+AgxJul41Q/4DEm6XjU/j/gQYk3S8aoP+BR64UeuFI/4GJN0vGp/D/gcrAgxJumP+CDEm6XjVA/4JN0vGp++j/go9cKPXCkP+C0OVgQYk4/4MSbpeNT+D/g1P3ztkWiP+DlYEGJN0w/4PXCj1wo9j/hBiTdLxqgP+EWhysCDEo/4SbpeNT99D/hN0vGp++eP+FHrhR64Ug/4VgQYk3S8j/haHKwIMScP+F41P3ztkY/4Yk3S8an8D/hmZmZmZmaP+Gp++dsi0Q/4bpeNT987j/hysCDEm6YP+HbItDlYEI/4euFHrhR7D/h++dsi0OWP+IMSbpeNT8/4hysCDEm6T/iLQ5WBBiTP+I9cKPXCj0/4k3S8an75z/iXjU/fO2RP+Jul41P3zs/4n752yLQ5T/ij1wo9cKPP+KfvnbItDk/4rAgxJul4z/iwIMSbpeNP+LQ5WBBiTc/4uFHrhR64T/i8an752yLP+MCDEm6XjU/4xJul41P3z/jItDlYEGJP+MzMzMzMzM/40OVgQYk3T/jU/fO2RaHP+NkWhysCDE/43S8an752z/jhR64UeuFP+OVgQYk3S8/46XjU/fO2T/jtkWhysCDP+PGp++dsi0/49cKPXCj1z/j52yLQ5WBP+P3ztkWhys/5AgxJul41T/kGJN0vGp/P+Qo9cKPXCk/5DlYEGJN0z/kSbpeNT99P+RaHKwIMSc/5Gp++dsi0T/keuFHrhR7P+SLQ5WBBiU/5Jul41P3zz/krAgxJul5P+S8an752yM/5MzMzMzMzT/k3S8an753P+TtkWhysCE/5P3ztkWhyz/lDlYEGJN1P+UeuFHrhR8/5S8an752yT/lP3ztkWhzP+VP3ztkWh0/5WBBiTdLxz/lcKPXCj1xP+WBBiTdLxs/5ZFocrAgxT/locrAgxJvP+WyLQ5WBBk/5cKPXCj1wz/l0vGp++dtP+XjU/fO2Rc/5fO2RaHKwT/mBBiTdLxqP+YUeuFHrhQ/5iTdLxqfvj/mNT987ZFoP+ZFocrAgxI/5lYEGJN0vD/mZmZmZmZmP+Z2yLQ5WBA/5ocrAgxJuj/ml41P3ztkP+an752yLQ4/5rhR64UeuD/myLQ5WBBiP+bZFocrAgw/5ul41P3ztj/m+dsi0OVgP+cKPXCj1wo/5xqfvnbItD/nKwIMSbpeP+c7ZFocrAg/50vGp++dsj/nXCj1wo9cP+dsi0OVgQY/53ztkWhysD/njU/fO2RaP+edsi0OVgQ/564UeuFHrj/nvnbItDlYP+fO2RaHKwI/5987ZFocrD/n752yLQ5WP+gAAAAAAAA/6BBiTdLxqj/oIMSbpeNUP+gxJul41P4/6EGJN0vGqD/oUeuFHrhSP+hiTdLxqfw/6HKwIMSbpj/ogxJul41QP+iTdLxqfvo/6KPXCj1wpD/otDlYEGJOP+jEm6XjU/g/6NT987ZFoj/o5WBBiTdMP+j1wo9cKPY/6QYk3S8aoD/pFocrAgxKP+km6XjU/fQ/6TdLxqfvnj/pR64UeuFIP+lYEGJN0vI/6WhysCDEnD/peNT987ZGP+mJN0vGp/A/6ZmZmZmZmj/pqfvnbItEP+m6XjU/fO4/6crAgxJumD/p2yLQ5WBCP+nrhR64Uew/6fvnbItDlj/qDEm6XjU/P+ocrAgxJuk/6i0OVgQYkz/qPXCj1wo9P+pN0vGp++c/6l41P3ztkT/qbpeNT987P+p++dsi0OU/6o9cKPXCjz/qn752yLQ5P+qwIMSbpeM/6sCDEm6XjT/q0OVgQYk3P+rhR64UeuE/6vGp++dsiz/rAgxJul41P+sSbpeNT98/6yLQ5WBBiT/rMzMzMzMzP+tDlYEGJN0/61P3ztkWhz/rZFocrAgxP+t0vGp++ds/64UeuFHrhT/rlYEGJN0vP+ul41P3ztk/67ZFocrAgz/rxqfvnbItP+vXCj1wo9c/6+dsi0OVgT/r987ZFocrP+wIMSbpeNU/7BiTdLxqfz/sKPXCj1wpP+w5WBBiTdM/7Em6XjU/fT/sWhysCDEnP+xqfvnbItE/7HrhR64Uez/si0OVgQYlP+ybpeNT988/7KwIMSbpeT/svGp++dsjP+zMzMzMzM0/7N0vGp++dz/s7ZFocrAhP+z987ZFocs/7Q5WBBiTdT/tHrhR64UfP+0vGp++dsk/7T987ZFocz/tT987ZFodP+1gQYk3S8c/7XCj1wo9cT/tgQYk3S8bP+2RaHKwIMU/7aHKwIMSbz/tsi0OVgQZP+3Cj1wo9cM/7dLxqfvnbT/t41P3ztkXP+3ztkWhysE/7gQYk3S8aj/uFHrhR64UP+4k3S8an74/7jU/fO2RaD/uRaHKwIMSP+5WBBiTdLw/7mZmZmZmZj/udsi0OVgQP+6HKwIMSbo/7peNT987ZD/up++dsi0OP+64UeuFHrg/7si0OVgQYj/u2RaHKwIMP+7peNT987Y/7vnbItDlYD/vCj1wo9cKP+8an752yLQ/7ysCDEm6Xj/vO2RaHKwIP+9LxqfvnbI/71wo9cKPXD/vbItDlYEGP+987ZFocrA/741P3ztkWj/vnbItDlYEP++uFHrhR64/7752yLQ5WD/vztkWhysCP+/fO2RaHKw/7++dsi0OVj/wAAAAAAAAP/AAAAAAAAA=" Title="R2.i" YData="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" Color="4278190335" Visible="true"/>
+          </OMCPlot>
+          <Input>plot( {R1.i,R2.i} )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

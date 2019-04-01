@@ -1,0 +1,35 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Variability Prefixes&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The prefixes &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">constant, parameter, discrete&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of a variable declaration are called variability prefixes and define in which situations the value of a variable may change and when it is kept constant.  A &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">constant&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> has the least variability. A &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">parameter&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> has some more variability since it can be changed between simulations. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Discrete&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> variables are variables that change value only at &lt;/span>&lt;a href="../DiscreteHybrid/SampleClock.onb">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; text-decoration: underline; color:#0000ff;">event instants&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Boolean&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Integer&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">String&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> variables are discrete-time by default. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>model VariabilityPref
+  constant   Real     PI  = 3.14159;
+  parameter  Real     p   = 36.7;
+  discrete   Boolean  bo(start = false);
+end VariabilityPref;</Input>
+        <Output>{VariabilityPref}</Output>
+      </GraphCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

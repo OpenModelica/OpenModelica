@@ -1,0 +1,375 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Array Indexing&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The indexing operator ....[....] takes two or more operands, where the first operand is the array to be indexed and the rest of the operands are index expressions. It is used to access array elements for retrieval of their values or for updating these values. In class ArrayIndex:&lt;br />&lt;br />&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">arrayname[indexexpr1, indexexpr2, ......];&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">ArrayIndex Class&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class ArrayIndex
+  Real[2, 2] A = {{2, 3}, {4, 5}};   // Definition of array A
+  Real A_Retrieval = A[2, 2];        // Retrieves the array element value 5
+  Real B[2, 2];
+  Real c;
+algorithm
+  B := fill(1,2,2);            // B will have the values {{1, 1}, {1, 1}}
+  B[2, 1] := 8;                // Assignment to the array element B[2, 1]
+  c := A[1, 1];
+end ArrayIndex;</Input>
+            <Output>{ArrayIndex}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of ArrayIndex&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here we simulate the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ArrayIndex&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> above.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulate( ArrayIndex )  </Input>
+            <Output>record SimulationResult
+    resultFile = "ArrayIndex_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+          </GraphCell>
+          <TextCell style="Output">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We see that &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">B[2, 1]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> now has the value 8.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+              <Curve Title="B[2,1]" Visible="true" XData="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" YData="QCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAAA=" Color="4294901760"/>
+              <Curve Title="c" Visible="true" XData="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" YData="QAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAA=" Color="4278190335"/>
+            </OMCPlot>
+            <Input>plot( { c, B[2,1] } )</Input>
+            <Output>true</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Indexing with Scalar Index Expressions &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Array indexing using scalar integer index expressions is usually used to retrieve or update single array elements. The value of the index expression for the i:th dimension of an array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">X&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> must be within the bounds of the size of that dimension, i.e. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">1 . Since multi-dimensional arrays are defined as arrays of arrays in Modelica, it is also possible to access sub-arrays using simple scalar indexing. For example, the array b can also be regarded as a one-dimensional array of vectors.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class ScalarIndex
+  Real[2, 2] b     = {{1, 2}, {4, 5}};
+  Real[2]    v     = {10, 11};
+  Real[4, 2] m;
+
+  Real b_Ret1 = b[1, 2];      // Retrieves the value 2
+  //Real b_Ret2[2] = b[2];      // Retrieves b[2] giving {4, 5}
+
+  Real v_Ret1  = v[2];        // Retrieves the value 11
+  // Real v_Ret2  = v[4];      // Error, index out of range!
+
+algorithm
+  m := fill(5, 4, 2);
+  m[4] := v;            // Updates m to become
+                    // {{5, 5}, {5, 5}, {5, 5}, {10, 11}}
+end ScalarIndex;
+</Input>
+          <Output>{ScalarIndex}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(ScalarIndex)</Input>
+          <Output>record SimulationResult
+    resultFile = "ScalarIndex_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>{val(m[4,1],1.0), val(m[4,2],1.0)}</Input>
+          <Output>{10.0,11.0}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Accessing Array Slices with Index Vectors &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">When at least one of the index expressions in an array indexing operation is a vector expression, a subsection (slice) of the array is accessed rather than a single element. Such an index vector must be a vector of integer values, where each value must be within the size bounds for the particular array dimension. An index vector can be constructed in any way but it is often convenient to use the colon operator to construct a range vector of index values. A single colon without operands used as an index expression at a dimension k of an array of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">X&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> denotes all indices of that dimension and is equivalent to the index vector &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">1:size(X, k)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>class ArraySlice
+  Real x1    = X[2, 1];        // Retrieves the value 3
+  Real x2[3] = X[:, 1];  // Gets the first column of X as the vector {1,3,8}
+  Real x3[2] = X[2, :];  // Gets the second row of X as the vector {3, 4}
+  Real x4[2] = X[2, 1:2];      // Same as above, i.e. {3, 4}
+  Real x5[2] = X[2, {1, 2}];    // Same as above, i.e. {3, 4}
+  Real x6[1] = X[2, {2}];      // Half of the above vector, i.e. {4}
+  Real x7[3, 1] = X[:, 1:1];    // Gets the first column of X as
+                    // column matrix {{1}, {3}, {8}}
+  Real x8[1, 2] = X[{2}, :];    // Gets the second row of X as the row matrix {{3, 4}}
+  Real x9[2, 2] = X[{2, 3}, {1, 2}];  // Extract submatrix given {{3, 4}, {8, 9}}
+
+  Real w1[3] = w[2:4];  // Get the 2:nd through 4:th elements as {16,17,18}
+  Real w2[2] = w[{1, 3}];      // Get the 1:st and 3:rd elements as {15, 17}
+  Real w3[2] = w[1:2:4];  // Get the 1:st to 4:th step 2 elements as {15,17}
+
+  Real X[3, 2] = {{1, 2}, {3, 4}, {8, 9}};
+  Real w[4]    = {15, 16, 17, 18};
+  Real[4] y = fill(1, 4);
+end ArraySlice;</Input>
+          <Output>{ArraySlice}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(ArraySlice)</Input>
+          <Output>record SimulationResult
+    resultFile = "ArraySlice_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Array Field Slices of Record Arrays &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">If &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is an array of records and m is a field of that record type, the expression &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A.m&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is interpreted as an array field slice operation of that record array. It returns the array of fields: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">{A[1].m, A[2].m, A[3].m, ...}&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. For example, given a record &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Person&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with three fields: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">name&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">age&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">children&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Record Person, Function mkperson and Class p&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>record Person
+  String       name;
+  Integer       age;
+  String[2]      children;
+end Person;  </Input>
+            <Output>{Person}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We have defined a record constructor function: &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">mkperson(name, age, children)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> in Modelica returning a Person record, which is used to define the contents of a small array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">persons&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> consisting of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Person&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> records. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>function mkperson
+  input String     name;
+  input Integer   age;
+  input String[2]  children;
+  output Person p;
+algorithm
+  p.name       := name;
+  p.age       := age;
+  p.children     := children;
+end mkperson;    </Input>
+            <Output>{mkperson}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Calling mkperson&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>mkperson("John",35,{"Carl","Eva"})</Input>
+            <Output>record Person
+    name = "John",
+    age = 35,
+    children = {"Carl","Eva"}
+end Person;</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Classes PersonList and getPerson&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class PersonList
+  Person[3] persons = {mkperson("John", 35, {"Carl", "Eva"} ),
+              mkperson("Karin", 40, {"Anders", "Dan"} ),
+               mkperson("Lisa", 37, {"John", "Daniel"} )
+        };
+end PersonList;</Input>
+            <Output>{PersonList}</Output>
+          </GraphCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Ubuntu'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The field slices &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">persons.name,&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">persons.age and persons.children &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> give the following results:&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>class getPerson
+  PersonList pList;
+  String name[3];
+  Integer age[3];
+  String[3, 2] children;
+equation
+  name     = pList.persons.name;      // Returns: {"John", "Karin", "Lisa"}
+  age     = pList.persons.age;        // Returns: {35, 40, 37}
+  children   = pList.persons.children;  // Returns: {{"Carl", "Eva"},
+                                            //       {"Anders", "Dan"},
+                                            //       {"John", "Daniel"}}
+end getPerson;  </Input>
+            <Output>{getPerson}</Output>
+          </GraphCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

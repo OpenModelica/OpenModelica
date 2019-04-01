@@ -1,0 +1,298 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Finite State Automata&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Sample Signal Generator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The following is an example of a simple generator model that produces periodic sampling signals. The state transitions of the finite state automaton are hidden inside the implementation of the built-in function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">sample&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model SampleSignalGenerator
+  parameter Real  startTime = 0;
+  parameter Real  period = 1;
+  output Boolean  outSignal;
+ equation
+  outSignal = sample(startTime, period);
+end SampleSignalGenerator;</Input>
+          <Output>{SampleSignalGenerator}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(SampleSignalGenerator)</Input>
+          <Output>record SimulationResult
+    resultFile = "SampleSignalGenerator_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="period" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="P/AAAAAAAAA/8AAAAAAAAA==" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(period)</Input>
+          <Output>true</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Clocked-State Machines&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Starting with the Modelica language version 3.3, constructs for directly creating state machines to model finite state automata applications are available in the Modelica language. This section gives a short introduction to the use of such clocked state machines.&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">There are many similarities between finite state automata and clocked state machines, but also some differences:&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">    1) Self-transitions are not needed in Modelica clocked state machines. The reason is that a clocked state machine stays in its current state if the transition conditions to other states are not fulfilled.&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">    2) Transitions in state machines are made at clock ticks whereas transitions in finite state automata happen at the arrival of events. However, events can be modeled by Boolean transition conditions which may become true and cause a transition at the next clock tick.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">We first define a simple state machine model called CountingStateMachine1. It has two states, the initial state state1 and a second state state2. The default clock with interval 1 applies since there is no explicit clock declaration.&lt;/span>&lt;/p>
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">It has a counting variable cn, initially zero, which is declared inner at the model level, and outer in each state so that it can be referred to locally within each state. In state1, cn is increased by 1 at each clock tick, whereas in state2, cn is decreased by 3 at each clock tick. When the transition condition for the first transition fulfills previous(cn&amp;gt;7)=true (since immediate=false) there is a transition to state2 according to the transition(…) equation.&lt;/span>&lt;/p>
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In state2, when the condition previous(cn&amp;lt;3)=true is fulfilled, there is a transition back to state1.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Justify</Rule>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>setCommandLineOptions("+std=3.3")</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model CountingStateMachine1
+   inner Integer cn(start=0);
+   block State1 "The initial state"
+     outer output Integer cn;
+   equation
+     cn = previous(cn) + 1; // Increase at each clock tick
+   end State1;
+   State1 state1;
+   block State2
+     outer output Integer cn;
+   equation
+     cn = previous(cn) - 3; // Decrease at each clock tick
+   end State2;
+   State2 state2;
+equation
+  initialState(state1); // Make state1 the initial state starting at time 0
+  transition(state1, state2, cn > 7, immediate=false); //transfer to state2
+  transition(state2, state1, cn &lt; 3, immediate=false); //transfer to state1
+end CountingStateMachine1;</Input>
+          <Output>{CountingStateMachine1}</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate(CountingStateMachine1,stopTime=18)</Input>
+          <Output>record SimulationResult
+    resultFile = "CountingStateMachine1_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="cn" Visible="true" XData="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" YData="P/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAIAAAAAAAAQAgAAAAAAABACAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAQAAAAAAAAQBAAAAAAAABAEAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAGAAAAAAAAEAYAAAAAAAAQBgAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAHAAAAAAAAEAcAAAAAAAAQBwAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAIAAAAAAAAEAgAAAAAAAAQCAAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAFAAAAAAAAEAUAAAAAAAAQBQAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAgAAAAAAABACAAAAAAAAA==" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot(cn)</Input>
+          <Output>true</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+    <TextCell style="Section">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simple Server&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="justify" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">One of the simplest possible examples of an input/output process modeled as a finite state automaton is the simple server.The simple server finite automaton has two states, denoted Active and Passive, and a set of values {Start, Done} which is an alphabet of two symbols. The system becomes active and provides some service after receiving a Start event. After finishing the service item, the system emits a Done event and returns to the Passive state.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      <Rule name="TextAlignment">Justify</Rule>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model SimpleServer
+    function doService "Dummy function to perform service"
+       protected
+       Integer i,sum = 0;
+    algorithm
+       for i in 1:10 loop
+         sum := sum+i;
+       end for;
+   end doService;
+   Boolean start(start=false);
+   Integer i(start=0);
+   inner Boolean done(start=false);
+   inner Integer state(start=0);
+
+   model Passive "State Passive"
+     outer output Integer state;
+   equation
+     state = 1; // indicate passive state
+  end Passive;
+  Passive passive;
+
+  model Service "State Service"
+    outer output Boolean done;
+    outer output Integer state;
+    Integer timer(start=0);
+  equation
+    state = 2; // indicate service state
+    timer = previous(timer) + 1;
+    done = timer >= 3;
+    doService();
+  end Service;
+  Service service;
+equation
+  transition(passive, service, start, immediate=true,
+  reset=true, synchronize=false, priority=1);
+  transition(service, passive, done, immediate=false,
+  reset=false, synchronize=false, priority=1);
+  i = previous(i) + 1;
+  start = (mod(i,2) == 0); // Generate a start service event every 2 ticks
+  initialState(passive);
+end SimpleServer;</Input>
+      <Output>{SimpleServer}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>simulate(SimpleServer)</Input>
+      <Output>record SimulationResult
+    resultFile = "",
+    messages = "Simulation execution failed for model: SimpleServer
+assert            | debug   | ERROR: Too many event iterations. System is inconsistent. Simulation terminate.
+assert            | info    | simulation terminated by an assertion at initialization
+"
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+    </GraphCell>
+    <TextCell style="Section">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Assignment Recognizer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text">
+      <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The assignment regocnizer is an example of a common application, a string acceptor in lexical analysis of text, typically in compiler frontends. Input events are the arrival of characters in an input stream.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>model AssignmentRecognizer
+    type Chartypes = enumeration(colon, equals, space);
+    constant Chartypes chars[:] = {Chartypes.colon, Chartypes.equals,
+    Chartypes.space};
+    inner Integer i(start=0);
+    block State0 "The initial state"
+      outer output Integer i;
+    equation
+      i = 0;
+    end State0;
+    State0 state0;
+    block State1 "State1, colon has been seen"
+       outer output Integer i;
+    equation
+       i = 1;
+    end State1;
+    State1 state1;
+    block State2 "The final state, := has been recognized"
+      outer output Integer i;
+    equation
+      i = 2;
+    end State2;
+    State2 state2;
+equation
+    initialState(state0); // Make state0 the initial state starting at time 0
+    transition(state0, state1, chars[i+1]==Chartypes.colon,
+    immediate=false); // transfer to state1, seen colon
+    transition(state1, state2, chars[i+1]==Chartypes.equals,
+    immediate=false); // transfer to final state2, seen equal sign
+    transition(state2, state0, true,
+    immediate=false); // transfer back to initial state0
+end AssignmentRecognizer;</Input>
+      <Output>{AssignmentRecognizer}</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <Input>simulate(AssignmentRecognizer,stopTime=6)</Input>
+      <Output>record SimulationResult
+    resultFile = "AssignmentRecognizer_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR:
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
+    </GraphCell>
+    <GraphCell style="Graph" closed="false">
+      <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+        <Curve Title="i" Visible="true" XData="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" YData="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAD/wAAAAAAAAP/AAAAAAAAA/8AAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" Color="4294901760"/>
+      </OMCPlot>
+      <Input>plot(i)</Input>
+      <Output>true</Output>
+    </GraphCell>
+  </GroupCell>
+</Notebook>

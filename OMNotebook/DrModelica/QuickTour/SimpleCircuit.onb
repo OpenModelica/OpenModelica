@@ -1,0 +1,235 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Acausal Physical Modeling - Simple Circuit &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png" width="407" height="318" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+        <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">Diagram 1:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">  Connection diagram of the acausal simple circuit  model.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Rule name="TextAlignment">Center</Rule>
+        <Rule name="CellTags">Model1</Rule>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>loadModel(Modelica)  // Load if not already loaded</Input>
+        <Output>true</Output>
+      </GraphCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>model SimpleCircuit
+  Modelica.Electrical.Analog.Basic.Resistor Resistor1;
+  Modelica.Electrical.Analog.Basic.Inductor Inductor1;
+  Modelica.Electrical.Analog.Basic.Ground Ground1;
+  Modelica.Electrical.Analog.Basic.Resistor Resistor2;
+  Modelica.Electrical.Analog.Basic.Capacitor Capacitor1;
+  Modelica.Electrical.Analog.Sources.SineVoltage SineVoltage1;
+
+equation
+  connect(SineVoltage1.p, Resistor2.p);
+  connect(Resistor1.n, Inductor1.p);
+  connect(Resistor2.n, Capacitor1.p);
+  connect(Inductor1.n, Ground1.p);
+  connect(Capacitor1.n, Ground1.p);
+  connect(Resistor1.p, Resistor2.p);
+  connect(SineVoltage1.n, Ground1.p);
+end SimpleCircuit;  </Input>
+        <Output>{SimpleCircuit}</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Flatten the model before simulation. (This command is not really needed since flattening is part of the compilation of the model performed by the simulate command).&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>instantiateModel(SimpleCircuit)  // Take a look at the flattened model - not needed  </Input>
+        <Output>"class SimpleCircuit
+  Real Resistor1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Resistor1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Resistor1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Resistor1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Boolean Resistor1.useHeatPort = false \"=true, if HeatPort is enabled\";
+  Real Resistor1.LossPower(quantity = \"Power\", unit = \"W\") \"Loss power leaving component via HeatPort\";
+  Real Resistor1.T_heatPort(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature of HeatPort\";
+  parameter Real Resistor1.R(quantity = \"Resistance\", unit = \"Ohm\", start = 1.0) \"Resistance at temperature T_ref\";
+  parameter Real Resistor1.T_ref(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 300.15 \"Reference temperature\";
+  parameter Real Resistor1.alpha(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\") = 0.0 \"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\";
+  Real Resistor1.R_actual(quantity = \"Resistance\", unit = \"Ohm\") \"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\";
+  parameter Real Resistor1.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = Resistor1.T_ref \"Fixed device temperature if useHeatPort = false\";
+  Real Inductor1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Inductor1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Inductor1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Inductor1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Inductor1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Inductor1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Real Inductor1.L(quantity = \"Inductance\", unit = \"H\", start = 1.0) \"Inductance\";
+  parameter Real Inductor1.IC(quantity = \"ElectricCurrent\", unit = \"A\") = 0.0 \"Initial Value\";
+  parameter Boolean Inductor1.UIC = false;
+  Real Ground1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Ground1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Resistor2.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Resistor2.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Resistor2.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor2.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Resistor2.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Resistor2.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Boolean Resistor2.useHeatPort = false \"=true, if HeatPort is enabled\";
+  Real Resistor2.LossPower(quantity = \"Power\", unit = \"W\") \"Loss power leaving component via HeatPort\";
+  Real Resistor2.T_heatPort(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature of HeatPort\";
+  parameter Real Resistor2.R(quantity = \"Resistance\", unit = \"Ohm\", start = 1.0) \"Resistance at temperature T_ref\";
+  parameter Real Resistor2.T_ref(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 300.15 \"Reference temperature\";
+  parameter Real Resistor2.alpha(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\") = 0.0 \"Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))\";
+  Real Resistor2.R_actual(quantity = \"Resistance\", unit = \"Ohm\") \"Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))\";
+  parameter Real Resistor2.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = Resistor2.T_ref \"Fixed device temperature if useHeatPort = false\";
+  Real Capacitor1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real Capacitor1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real Capacitor1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Capacitor1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real Capacitor1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real Capacitor1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Real Capacitor1.C(quantity = \"Capacitance\", unit = \"F\", min = 0.0, start = 1.0) \"Capacitance\";
+  parameter Real Capacitor1.IC(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Initial Value\";
+  parameter Boolean Capacitor1.UIC = false;
+  Real SineVoltage1.v(quantity = \"ElectricPotential\", unit = \"V\") \"Voltage drop between the two pins (= p.v - n.v)\";
+  Real SineVoltage1.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing from pin p to pin n\";
+  Real SineVoltage1.p.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real SineVoltage1.p.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  Real SineVoltage1.n.v(quantity = \"ElectricPotential\", unit = \"V\") \"Potential at the pin\";
+  Real SineVoltage1.n.i(quantity = \"ElectricCurrent\", unit = \"A\") \"Current flowing into the pin\";
+  parameter Real SineVoltage1.offset(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Voltage offset\";
+  parameter Real SineVoltage1.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time offset\";
+  parameter Real SineVoltage1.V(quantity = \"ElectricPotential\", unit = \"V\", start = 1.0) \"Amplitude of sine wave\";
+  parameter Real SineVoltage1.phase(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Phase of sine wave\";
+  parameter Real SineVoltage1.freqHz(quantity = \"Frequency\", unit = \"Hz\", start = 1.0) \"Frequency of sine wave\";
+  output Real SineVoltage1.signalSource.y \"Connector of Real output signal\";
+  parameter Real SineVoltage1.signalSource.amplitude = SineVoltage1.V \"Amplitude of sine wave\";
+  parameter Real SineVoltage1.signalSource.freqHz(quantity = \"Frequency\", unit = \"Hz\", start = 1.0) = SineVoltage1.freqHz \"Frequency of sine wave\";
+  parameter Real SineVoltage1.signalSource.phase(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = SineVoltage1.phase \"Phase of sine wave\";
+  parameter Real SineVoltage1.signalSource.offset = SineVoltage1.offset \"Offset of output signal\";
+  parameter Real SineVoltage1.signalSource.startTime(quantity = \"Time\", unit = \"s\") = SineVoltage1.startTime \"Output = offset for time &lt; startTime\";
+  protected constant Real SineVoltage1.signalSource.pi = 3.141592653589793;
+equation
+  assert(1.0 + Resistor1.alpha * (Resistor1.T_heatPort - Resistor1.T_ref) >= 0.000000000000001,\"Temperature outside scope of model!\");
+  Resistor1.R_actual = Resistor1.R * (1.0 + Resistor1.alpha * (Resistor1.T_heatPort - Resistor1.T_ref));
+  Resistor1.v = Resistor1.R_actual * Resistor1.i;
+  Resistor1.LossPower = Resistor1.v * Resistor1.i;
+  Resistor1.v = Resistor1.p.v - Resistor1.n.v;
+  0.0 = Resistor1.p.i + Resistor1.n.i;
+  Resistor1.i = Resistor1.p.i;
+  Resistor1.T_heatPort = Resistor1.T;
+  Inductor1.L * der(Inductor1.i) = Inductor1.v;
+  Inductor1.v = Inductor1.p.v - Inductor1.n.v;
+  0.0 = Inductor1.p.i + Inductor1.n.i;
+  Inductor1.i = Inductor1.p.i;
+  Ground1.p.v = 0.0;
+  assert(1.0 + Resistor2.alpha * (Resistor2.T_heatPort - Resistor2.T_ref) >= 0.000000000000001,\"Temperature outside scope of model!\");
+  Resistor2.R_actual = Resistor2.R * (1.0 + Resistor2.alpha * (Resistor2.T_heatPort - Resistor2.T_ref));
+  Resistor2.v = Resistor2.R_actual * Resistor2.i;
+  Resistor2.LossPower = Resistor2.v * Resistor2.i;
+  Resistor2.v = Resistor2.p.v - Resistor2.n.v;
+  0.0 = Resistor2.p.i + Resistor2.n.i;
+  Resistor2.i = Resistor2.p.i;
+  Resistor2.T_heatPort = Resistor2.T;
+  Capacitor1.i = Capacitor1.C * der(Capacitor1.v);
+  Capacitor1.v = Capacitor1.p.v - Capacitor1.n.v;
+  0.0 = Capacitor1.p.i + Capacitor1.n.i;
+  Capacitor1.i = Capacitor1.p.i;
+  SineVoltage1.signalSource.y = SineVoltage1.signalSource.offset + (if time &lt; SineVoltage1.signalSource.startTime then 0.0 else SineVoltage1.signalSource.amplitude * sin(6.283185307179586 * SineVoltage1.signalSource.freqHz * (time - SineVoltage1.signalSource.startTime) + SineVoltage1.signalSource.phase));
+  SineVoltage1.v = SineVoltage1.signalSource.y;
+  SineVoltage1.v = SineVoltage1.p.v - SineVoltage1.n.v;
+  0.0 = SineVoltage1.p.i + SineVoltage1.n.i;
+  SineVoltage1.i = SineVoltage1.p.i;
+  Resistor1.p.i + Resistor2.p.i + SineVoltage1.p.i = 0.0;
+  Resistor1.n.i + Inductor1.p.i = 0.0;
+  Inductor1.n.i + Ground1.p.i + Capacitor1.n.i + SineVoltage1.n.i = 0.0;
+  Resistor2.n.i + Capacitor1.p.i = 0.0;
+  Resistor1.p.v = Resistor2.p.v;
+  Resistor1.p.v = SineVoltage1.p.v;
+  Inductor1.p.v = Resistor1.n.v;
+  Capacitor1.p.v = Resistor2.n.v;
+  Capacitor1.n.v = Ground1.p.v;
+  Capacitor1.n.v = Inductor1.n.v;
+  Capacitor1.n.v = SineVoltage1.n.v;
+end SimpleCircuit;
+"</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate it:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <Input>simulate(SimpleCircuit, startTime=0, stopTime=5) </Input>
+        <Output>record SimulationResult
+    messages = "",
+    simulationTime = 0.32052168997106245
+end SimulationResult;</Output>
+      </GraphCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot it:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell style="Graph" closed="false">
+        <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time">
+          <Curve Title="Resistor1.i" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          <Curve Title="Resistor2.i" Visible="true" XData="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" YData="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" Color="4278190335"/>
+        </OMCPlot>
+        <Input>plot({Resistor1.i,Resistor2.i})</Input>
+        <Output>[done]</Output>
+      </GraphCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

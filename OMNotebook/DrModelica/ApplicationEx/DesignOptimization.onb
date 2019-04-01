@@ -1,0 +1,162 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Design Optimization&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />An important use for modeling and simulation is to improve a system design, usually before it is physically realized and manufactured. In this process it is customary to perform a number of simulations for different values of the design parameters, until a design has been obtained that best fulfills a given set of design criteria. To automate this process it is very useful if the simulation environment has programmable scripting facilities that provide the glue between optimization algorithms, executing simulations and various computational functions.&lt;br />&lt;br />The following example demonstrates the solution of a small but non-trivial design optimization problem containing dynamic system simulations. First we define a Modelica model of a &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">linear actuator&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> with a spring damped stopping, as well as a first order system that will be used to generate a kind of &amp;quot;reference&amp;quot; response. The goal is to find a damping for the translational spring-damper that minimizes the deviation between the step response of the linear actuator system and the step response from our &amp;quot;reference&amp;quot; first order system. &lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">See Section 15.7 in the Modelica Book&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">LinearActuator Model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In this example we use the MathModelica environment with Mathematica as the scripting language providing the built-in optimization function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">FindMinimum&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. //??Change to OpenModelica&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/13.png" width="357" height="265" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/13.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAFlAAABCQgDAAAAe23GqAAAAANzQklUCAgI2+FP4AAAAwBQTFRFAAAADQ0NFxcXICAgKysrNDM0PDw8RkZGUE9QW1lbaGhoa21rdHR0dnR2e317fXt9AL8AAAD/gYGBkI6QnJycnZqdn5yfq6irtLS0tbK1vbq9xsPGz8/P1tbW3d3d6Ojo7u7u9/f3+/v7////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfaBGAAAAAAlwSFlzAAALEwAACxMBAJqcGAAACXJJREFUeJztnYt62ygQRqfbdpuut22y3TRt3b2V93/HTWwDMwNIQsD4ov98+WJZSAM6RoBkbJMD46FzF2ATwLIFG7dsdPhbt0y5xf7ZjAt9BRA7fhroYuuWgwByA2Vs2jIzS+z/mIw6RruGF42I11/hl2jMEXQMeijhoGL2hJTZuCiX+mbZO9Klaw7tBKnnzrlLt0zZxdagBdqCnv6xajGk8DrL3nH6vXT0+teEX37ZqmWafLo+LL1+9+6PPzm/9bEsOmpKUjvTGPTl9H14xjdxYlzEuX9mcdSw7dHy169//X3kh7B8XxU0lGH6kKm2sDJ4OWgDtNvRw+Pj0XJsMjOWD38LSS3/+/zk589/lGVXE7TGcl1cX5gKy6UOp8Sz5Q8f5i3XBb0/ES3/90KwHNMruQ9FLArxW1VTZ3myEJkyxRYjHEL3FkNZjjH71OVdXLRpMdYNk2Z7v7kqVAh7svzD06/3E+wOlFJXhy2nrRyMzo3k6ONqy78L+lhWJ/tuFz2vDW5ieWY0tNpyyqi6XE5eG7actvrCKg7ycxHWWi50NC1kLU8mrw1bTmu2nN9/neUhzBTksi27yXoGy3LFylzCZR/JFf7h9izPD6DLMVeO5Ojjx8Oe4fFlQay/LMtlNZXl1DcVsg1nH8vzr2prl9WReAWVrXl15dQ3cPK9k41ldQKdl5PlvWSd5VJFnrtKW2f54zw3aHlRa5FfcfuWj82vtlx/ximphdYiu+b2W4wjxbq8PMLy9R3Hy+PZ8Wu0Rtot12SWrLhsy91Ew3JAtTm7fpptm7XLtqzoV5ONuSrLVwssW1BnWY3CxepyqxZbPDpdbIfnuRxCJoXBfbmAcxUkKXddS5zbvbRZhyvsnGUq7xvk+O2ScXwudG7YOZHJZEpph0I+C8OXKlW6bX1dPt22ErVTVDOecqiRogqyI1O1lYei037xJDg+iwU8hef/c5XtsJoVRATUhT5u6jcX6zPhKcQQPnLbVls+FYPCM18GHpFtEJoInqF4IvYjlonIxh8txQgk/qcHE23FQouAxDbjjvXmhfkPfpMYIFSFDpZ9nTi9hFFHWBNSeAlYflnLxErq7amXjJ8ah4xZVU4PJkTMRYoVjmK4dPOwPuOKHZ4/6sILvtpy3J3VZeZTllbpzVl2rP7OW2aHx/6nBaYkRNayPCn0YS6xLI66h2XZYpA6ZSm3nco7W5f9gfKwOhi3THUthnNJQFEwVZfVy51z5TdJj7rZctL7heP2J67qB1iFSEZwIq9s7ycyjelhjWgyEg2i93NJQNZfyJ4s7BUKlQ0vFPOjbrN8TtaWq7jfZMC+Fq7Dcst9nOyOswG3aPnagWULdLd8ce8c3QTJ4AeWBwDLFqDFsACWLdCWHx9huT+wbEG4o3C6c3e0PPqd862h7op5y7lksJqZFgOWuwDLFsyM5GC5C6L3S+eMwXIXguW3b99/fnr6vt/vv3378unu7s0rWO4GLFsAyxbAsgWwbAEsWwDLFsCyBbBsQY3lnHK1EV6VLK11Wc0Hg+UsdXVZfD4kPA+T8UZ+tfxVU2nZ8YmTyZx8tBgF1llO59njHt4Uq+uyE5ZRlydpajEcX0RdLlNzF19PPD8uhUdYLoJ3pCzAu6sWwLIFol12mFs0BpLLem4R6AIsW5Bvl2G5LzMjOdAFWLZAW97B8gBg2QK0GBYkTmF5ALBsASxbAMsWwLIFsGwBLFsAyxbAsgWwbAEsWwDLFsCyBbBsAe58WqAtoy6PAJYtQIthQdr7naMUtw4sWxCk5qaJo/XoBCUL+WTQQtkyxbVw3QipR5UCy10g8ZCkwHIXji5zGmG5H+XZyrDcD/+ZvXwKLPfhpDHXLmPY3I34Gakkxei3ordAFKg9w3I/xGek5AcqYbkbUqxwvsyyTqtrxzfS5rODVAe8si6zocmyjbegmd2T0yl5y/4Lio6C5n+X1/EfjVXfeiRLcMP4K+zMfYysZebNhQfnH4ir86uFYxLrWQlumokr7LzlzM9rigdZl4kLD3rDercNybxS6ZRSu1z3u7wZyyFntxHJ9XXZZc798JD5XV5uOdlrI5Kr2+Xq3+UVdVn2fs5t5fK9eowh91qcMJt40yQdW3xaa3m2XsJy+gxX2P2g8hPc+eyGaDEmk8F6KLOUTQYNULKQTwYtwLIFbLyc6+hguQvpUBjTEfuz/LIOrAeWLdDtMBqJEWjL+KazEcCyBWgxLMiM5M5RjBsHli2AZQtg2QJYtgCWLYBlC2DZAli2AJYtgGULYNkCWLYAli2AZQtg2QLcxbcgmeUCywNI5xLBcn9g2QK0yxZoy+qXmkEXSC7jd1eHAMsWeJ/41fGRkFzUdRmWuzDT+8FyF2DZAtEup592yFkurWMfakN7LgmW3759//np6ft+v//27cunu7s3r2oGG8kJAM2cFZaJfVERsefkWC2GZc46yy7c8SDHv2ok7gLLnCbL+ouJ4n0QSBa01mUnLHPhINKjxXB8kX29FvC0WBZfQBQexVcXgQOdRnJgEli2AJYtgGULYNkCWLYAli2AZQtg2QJYtmDFeyWgGv2+n/7iWsuy3C4klzFTYAiwbIG/E4+5RSOZqcugC7r3w8zaEcCyBTMjOdAFbRnf2jcCWLYALYYFiVNYHgAsWwDLFlyu5YeFnLucS7hgy/Ob7Jdtdn6u2/IelhuZ1/fyc22w3MYyy3tYbgKWp0P2uYBE71eMEwS3e4blTBw/I781UOAhM31BbbI1ywcFes82zxl9sJxti1s0w3IapvCOd0N1huV0p+LEgtWaYTndqTx7Y61mWE72mRoji/XL76HBcrLP5HVITKq5UwnLyT7TO51S6+4H37jlWha8MC8bPAuevMTgFF6O27FcvfviCPq9jcmXDpb57nONBQcthg2wbAMsmwDLFwUsWwDLFsCyBbBsEReWF8Ql/yYV7nwOrsvtlvdpUAYsH+/UNVk+zNBSQQWwfBTcbFmi7yld7dyiXnFPNzdr7iZJMi1GcbNL56pGcg2bnRdYtgCWLbhgy7f8uRIwAFi2oH1O+Llyuab6YWK5w/z+ATENaS0rnaaHhyu9cL1HMbUll3htE4I1xzSnSy2LR3/07Ff6tIZcYiS/RM0x7elp2Wm9YQpRg+UQwF+yO1hWlrvk4s8Rmd/GLacNB1qMdsus93O+94sP1JqL715V77cxyyYhzaIPApYtuMpCXx2wbAEsWwDLFsCyBbBsASxbAMsW/A+HxoqCFtggbQAAAABJRU5ErkJggg==</Image>
+        </TextCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A LinearActuator model containing a spring damped connection to an anchoring point.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Consider the following model of a linear actuator, depicted in Figure 1, with a spring-damped connection to an anchoring point:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model LinearActuator
+  import Modelica.Mechanics.Translational;
+  import Modelica.Mechanics.Rotational;
+  import Modelica.Blocks.Sources;
+  Translational.Components.Mass mass1(m=0.5);
+  Translational.Components.SpringDamper springDamper1(d=3, c=20, v_rel(fixed = true), s_rel(fixed = true));
+  Translational.Components.Fixed fixed1;
+  Rotational.Components.IdealGearR2T idealGearR2T1(ratio = 1.0);
+  Rotational.Components.Inertia inertia1(J=0.1);
+  Rotational.Components.SpringDamper springDamper2(c=15, d=2, phi_rel(fixed = true), w_rel(fixed = true));
+  Rotational.Components.Inertia inertia2(J=0.1);
+  Rotational.Sources.Torque torque1;
+  Sources.Step step1;
+equation
+  connect(inertia1.flange_b, idealGearR2T1.flangeR);
+  connect(idealGearR2T1.flangeT, mass1.flange_a);
+  connect(mass1.flange_b, springDamper1.flange_a);
+  connect(springDamper1.flange_b, fixed1.flange);
+  connect(inertia1.flange_a, springDamper2.flange_b);
+  connect(springDamper2.flange_a, inertia2.flange_b);
+  connect(inertia2.flange_a, torque1.flange);
+  connect(torque1.tau, step1.y);
+end LinearActuator;</Input>
+          <Output>{LinearActuator}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />We first make a simulation of the step response for the above linear actuator with damping &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">d=2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and store the result in the scripting language variable called &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">resLinActFirst&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. Then we plot the simulated position of the sliding mass as a function of time to take a closer look at the response.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of LinearActuator&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>loadModel(Modelica)</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( LinearActuator, stopTime=5 )</Input>
+          <Output>record SimulationResult
+    resultFile = "LinearActuator_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" AutoScale="true" Grid="detailed" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" Footer="" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
+            <Curve Title="mass1.s" Visible="true" XData="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" YData="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" Color="4294901760"/>
+          </OMCPlot>
+          <Input>plot( mass1.s )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">                                                      &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Plot of step response from the linear actuator.&lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

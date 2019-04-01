@@ -1,0 +1,465 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Order of evaluation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">GuardTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Only constructs like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statements and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expressions can be used to guard expressions against evaluation since the bodies of these constructs are only evaluated if the corresponding condition is &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">true&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. &lt;br />&lt;br />The equation is correct since the use of an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression guarantees that the condition &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">(y&amp;gt;=1 and y&amp;lt;=n)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is always evaluated before &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">then&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> or &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-parts of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model GuardTest
+  Boolean v[n] = fill(false,n);
+  Boolean b;
+  Integer y = 4;
+  parameter Integer n = 5;
+equation
+  b = if (y>=1 and y&lt;= n) then v[y] else false;      // Correct
+end GuardTest;</Input>
+          <Output>{GuardTest}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( GuardTest )  </Input>
+          <Output>record SimulationResult
+    resultFile = "GuardTest_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="true">
+          <Input>val(b)</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">GuardTestInvalid&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Boolean operators such as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">and&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> cannot be used for evaluation protection. The equation in the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">GuardTestInvalid&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below can generate an error such as index out of bounds (if y is not in the interval 1 to 5), see the simulation below. Even if the boolean expression (&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y&amp;gt;=1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y&amp;lt;=n)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> evaluates to &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">false&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, the evaluation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">v[y]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is not necessarily prevented.&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model GuardTestInvalid
+  Boolean v[n] = fill(false,n);
+  Boolean b;
+  Integer y = 10;
+  parameter Integer n = 5;
+equation
+  b = v[y] and (y>=1 and y&lt;=n);            // Invalid!!
+end GuardTestInvalid;</Input>
+          <Output>{GuardTestInvalid}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTestInvalid&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( GuardTestInvalid )</Input>
+          <Output>record SimulationResult
+    resultFile = "GuardTestInvalid_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Guards with Continuous-Time Conditions&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">One problem with the iterative zero-crossing search is that &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expressions in Modelica do not behave exactly as most people expect based on experience with conventional programming languages. During this iterative process small negative values of h can actually be supplied to the body of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression, e.g. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">-c*sqrt(h)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below, causing an attempt to compute the square root of a negative number, which is an error.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model GuardContinuousVar
+  Real h(start = 1,fixed=true);
+  parameter Real c=1;
+equation
+  der(h) = if h > 0 then -c*sqrt(h) else 0;          // Incorrect!!
+end GuardContinuousVar;</Input>
+          <Output>{GuardContinuousVar}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">NoEvent&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> operator is used to avoid events from being generated by the expression it is applied to. The operator should be used if the expression is continuous during a discrete switch.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>model GuardContinuousVarCorrect
+  Real h(start = 1,fixed=true);
+  parameter Real c=1;
+equation
+  der(h) = if noEvent(h > 0) then -c*sqrt(h) else 0;    // Correct!!
+end GuardContinuousVarCorrect;</Input>
+          <Output>{GuardContinuousVarCorrect}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVar&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The first simulation is is&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The simulation shows that the value of h decreases and at t=2 is becomes a small negative number.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( GuardContinuousVar, stopTime = 2.5, /* outputInterval=1, */ numberOfIntervals=5 )   </Input>
+          <Output>record SimulationResult
+    resultFile = "",
+    messages = "Simulation execution failed for model: GuardContinuousVar
+assert            | warning | The following assertion has been violated at time 2.097151
+assert            | debug   | Model error: Argument of sqrt(h) was -0.00592709 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.883583
+assert            | debug   | Model error: Argument of sqrt(h) was -0.149664 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.097151
+assert            | debug   | Model error: Argument of sqrt(h) was -0.00370656 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.031615
+assert            | debug   | Model error: Argument of sqrt(h) was -0.000484081 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.129919
+assert            | debug   | Model error: Argument of sqrt(h) was -0.00256767 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.031615
+assert            | debug   | Model error: Argument of sqrt(h) was -0.000158549 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.007039
+assert            | debug   | Model error: Argument of sqrt(h) was -9.26018e-006 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000895
+assert            | debug   | Model error: Argument of sqrt(h) was -2.83595e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000383
+assert            | debug   | Model error: Argument of sqrt(h) was -5.72968e-008 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000127
+assert            | debug   | Model error: Argument of sqrt(h) was -7.72298e-009 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000511
+assert            | debug   | Model error: Argument of sqrt(h) was -3.92907e-008 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000127
+assert            | debug   | Model error: Argument of sqrt(h) was -2.44974e-009 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000000
+assert            | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000000
+assert            | debug   | Model error: Argument of sqrt(h) was -1.09244e-011 should be >= 0
+stdout            | warning | Integrator attempt to handle a problem with a called assert.
+assert            | warning | The following assertion has been violated at time 2.057054
+assert            | debug   | Model error: Argument of sqrt(h) was -0.00167626 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.265950
+assert            | debug   | Model error: Argument of sqrt(h) was -0.0113973 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.057054
+assert            | debug   | Model error: Argument of sqrt(h) was -0.000646546 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.004830
+assert            | debug   | Model error: Argument of sqrt(h) was -1.06404e-005 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000478
+assert            | debug   | Model error: Argument of sqrt(h) was -1.53897e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.007006
+assert            | debug   | Model error: Argument of sqrt(h) was -9.96523e-006 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000478
+assert            | debug   | Model error: Argument of sqrt(h) was -1.14687e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.002110
+assert            | debug   | Model error: Argument of sqrt(h) was -7.00805e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000478
+assert            | debug   | Model error: Argument of sqrt(h) was -4.14408e-008 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000070
+assert            | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000070
+assert            | debug   | Model error: Argument of sqrt(h) was -1.53679e-009 should be >= 0
+stdout            | warning | Integrator attempt to handle a problem with a called assert.
+assert            | warning | The following assertion has been violated at time 2.016236
+assert            | debug   | Model error: Argument of sqrt(h) was -0.000156937 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.116076
+assert            | debug   | Model error: Argument of sqrt(h) was -0.00246952 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.016236
+assert            | debug   | Model error: Argument of sqrt(h) was -8.63145e-005 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.007916
+assert            | debug   | Model error: Argument of sqrt(h) was -2.09025e-005 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.003756
+assert            | debug   | Model error: Argument of sqrt(h) was -4.88455e-006 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.001676
+assert            | debug   | Model error: Argument of sqrt(h) was -1.04858e-006 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000636
+assert            | debug   | Model error: Argument of sqrt(h) was -1.76157e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000116
+assert            | debug   | Model error: Argument of sqrt(h) was -8.15526e-009 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000896
+assert            | debug   | Model error: Argument of sqrt(h) was -1.4951e-007 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000116
+assert            | debug   | Model error: Argument of sqrt(h) was -4.69379e-009 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000051
+assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
+assert            | warning | The following assertion has been violated at time 2.000051
+assert            | debug   | Model error: Argument of sqrt(h) was -9.85466e-010 should be >= 0
+stdout            | info    | model terminate | Simulation terminated by an assert at time: 2.00005
+"
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(h,0.1)</Input>
+          <Output>NaN
+OMC-ERROR:
+"Error: h not found in C:/Users/petfr27/AppData/Local/Temp/OpenModelica/GuardTestInvalid_res.mat
+"</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot YRangeMin="0" CurveWidth="1" PlotType="0" YLabel="" AutoScale="true" XRangeMin="0" LogY="false" LegendPosition="top" LogX="false" XRangeMax="0" Grid="detailed" YRangeMax="0" Footer="" CurveStyle="1" Title="" XLabel="time"/>
+          <Input>plot( h ) // plot( h, xrange={1,5} );  </Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(h,2)</Input>
+          <Output>NaN
+OMC-ERROR: 
+"Error: h not found in C:/Users/petfr27/AppData/Local/Temp/OpenModelica/GuardTestInvalid_res.mat
+"</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(h,4)</Input>
+          <Output>NaN
+OMC-ERROR:
+"Error: h not found in C:/Users/petfr27/AppData/Local/Temp/OpenModelica/GuardTestInvalid_res.mat
+"</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVarCorrect&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulate( GuardContinuousVarCorrect, stopTime = 5, numberOfIntervals=5 ) </Input>
+          <Output>record SimulationResult
+    resultFile = "GuardContinuousVarCorrect_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <OMCPlot YRangeMin="0" CurveWidth="1" PlotType="0" YLabel="" AutoScale="true" XRangeMin="0" LogY="false" LegendPosition="top" LogX="false" XRangeMax="0" Grid="detailed" YRangeMax="0" Footer="" CurveStyle="1" Title="" XLabel="time">
+            <Curve Color="4294901760" XData="AAAAAAAAAAA/8AAAAAAAAEAAAAAAAAAAQAgAAAAAAABAEAAAAAAAAEAUAAAAAAAAQBQAAAAAAAA=" Title="h" Visible="true" YData="P/AAAAAAAAA/0AAAAAHwXb6M59o9V8g3vqNJ4NejOjG+o0ng16M6Mb6jSeDXozoxvqNJ4NejOjE="/>
+          </OMCPlot>
+          <Input>plot( h )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(h,2.5)</Input>
+          <Output>-3.951043714186143e-007</Output>
+        </GraphCell>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(h,5.0)</Input>
+          <Output>-5.748446903155132e-007</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

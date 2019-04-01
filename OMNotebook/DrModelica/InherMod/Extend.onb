@@ -1,0 +1,359 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Modifiers in Extends Clauses&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">LowPassFilter with Extends Clause&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Modifiers may also occur in &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">extends&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> clauses, and are applied to inherited element declarations in a similar way as modifiers in short class definitions. We inherit the contents of the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">LowPassFilter1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> into the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">LowPassFilter20C&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, and give the same modifiers as in the short class definition of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">LowPassFilter20&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> above. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model LowPassFilter1
+  constant  Real ystart = 1;
+  parameter Real T      = 1;
+  parameter Real u      = 5;
+  Real           y(start = ystart,fixed=true);
+equation
+  T*der(y) + y = u;
+end LowPassFilter1;</Input>
+          <Output>{LowPassFilter1}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model LowPassFilter20C
+  extends LowPassFilter1(ystart = 0, T = 20);
+end LowPassFilter20C;</Input>
+          <Output>{LowPassFilter20C}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of LowPassFilter &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>simulate(LowPassFilter20C, stopTime=20 )</Input>
+          <Output>record SimulationResult
+    resultFile = "LowPassFilter20C_res.mat",
+    messages = ""
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Ubuntu'; font-size:9pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <OMCPlot AutoScale="true" YRangeMax="0" Footer="" LogY="false" XLabel="time" CurveWidth="1" Title="" LogX="false" XRangeMax="0" YRangeMin="0" YLabel="" XRangeMin="0" Grid="detailed" PlotType="0" CurveStyle="1" LegendPosition="top">
+            <Curve Color="4294901760" YData="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" Visible="true" Title="y" XData="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"/>
+          </OMCPlot>
+          <Input>plot( y)  </Input>
+          <Output>true</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Voltage&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Another example demonstrates that modifiers in extends clauses can be applied to elements that are local classes such as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Voltage&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> within the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">LowVoltage&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model LowVoltage
+
+  type Voltage = Real(unit = "V");      // Local class
+
+  Voltage v1;
+  Voltage v2;
+end LowVoltage;</Input>
+          <Output>{LowVoltage}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model HighVoltage
+  extends LowVoltage(Voltage(unit = "kV"));
+end HighVoltage;</Input>
+          <Output>{HighVoltage}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Notice that the variables&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> vhigh.v1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">vhigh.v2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> have the unit &amp;quot;kV&amp;quot;.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model HighVoltageInst
+  HighVoltage vhigh;
+end HighVoltageInst;</Input>
+          <Output>{HighVoltageInst}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Nested Extends Clauses&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The possibilities to apply modifiers are not limited to declared elements that are variables or local classes. It is actually possible to modify elements that are extends clauses in superclasses, so-called nested extends clauses, even though such clauses dissappear in the expanded subclass.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model A
+  parameter Real a;
+  parameter Real b;
+end A;</Input>
+          <Output>{A}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model B
+  extends A(b = 3);
+end B;</Input>
+          <Output>{B}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The classes &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">B&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> can be combined and expressed as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Bexpanded&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Bexpanded
+  parameter Real a;
+  parameter Real b = 3;
+end Bexpanded;</Input>
+          <Output>{Bexpanded}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">C&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below modifies the nested extends clause of class B, which can be considered to be nested one level down in the inheritance chain (where &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">C&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> inherits B which inherits A). The most recent, i.e. &amp;quot;outermost&amp;quot;, modifiers in the inheritance chain have priority over previous modifiers.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model C
+  extends B(a = 1, b = 2);
+end C;</Input>
+          <Output>{C}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Expand the class C:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>instantiateModel(C)</Input>
+          <Output>"class C
+  parameter Real a = 1.0;
+  parameter Real b = 2.0;
+end C;
+"</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The classes &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A, B&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">C&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are equivalent to the single class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Cexpanded&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model Cexpanded
+  parameter Real a = 1;
+  parameter Real b = 2;
+end Cexpanded;</Input>
+          <Output>{Cexpanded}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">The Rule of the Most Recent Modification&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">C2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below illustrates the rule that the most recently applied modifications like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">b = 1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> overrides modifications like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">A(b = 2)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of a nested extends clause, since  &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">b = 1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is further down in the modification chain. The instance bcomp has &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">bcomp.b = 1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, which overrides &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">b = 2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> from the nested modifier.&lt;br /> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>model C2
+  B bcomp(b = 1);
+end C2;</Input>
+          <Output>{C2}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Look at the expanded class:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell closed="false" style="Graph">
+          <Input>instantiateModel(C2)</Input>
+          <Output>"class C2
+  parameter Real bcomp.a;
+  parameter Real bcomp.b = 1.0;
+end C2;
+"</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>
