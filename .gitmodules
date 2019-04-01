@@ -1,6 +1,3 @@
-[submodule "OMEdit"]
-	path = OMEdit
-	url = ../OMEdit.git
 [submodule "doc"]
 	path = doc
 	url = ../OpenModelica-doc.git
