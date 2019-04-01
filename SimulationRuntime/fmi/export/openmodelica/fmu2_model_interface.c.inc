@@ -193,6 +193,8 @@ static inline void resetThreadData(ModelInstance* comp)
   if (comp->threadDataParent) {
     pthread_setspecific(mmc_thread_data_key, comp->threadDataParent);
   }
+  /* Clear the extra memory pools */
+  omc_alloc_interface.collect_a_little();
 }
 
 static inline void setThreadData(ModelInstance* comp)
@@ -362,23 +364,23 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   * The problem is that we might overwrite the main simulation's copy of the interface...
   */
   threadData_t *threadDataParent = (threadData_t*) pthread_getspecific(mmc_thread_data_key);
+  ModelInstance *comp;
+  if (!functions->logger) {
+    return NULL;
+  }
+  if (!functions->allocateMemory || !functions->freeMemory) {
+    functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Missing callback function.");
+    return NULL;
+  }
   if (0==threadDataParent) {
     /* We can only disable GC if the parent is not OM */
     omc_alloc_interface = omc_alloc_interface_pooled;
+    /* TODO: omc_alloc_interface.malloc_uncollectable = functions->allocateMemory; // Note that the interface is wrong. Should pass threadData to all allocations instead, and have the interface in there. */
   }
   mmc_init_nogc();
   omc_alloc_interface.init();
 
   // ignoring arguments: fmuResourceLocation, visible
-  ModelInstance *comp;
-  if (!functions->logger) {
-    return NULL;
-  }
-
-  if (!functions->allocateMemory || !functions->freeMemory) {
-    functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Missing callback function.");
-    return NULL;
-  }
   if (!instanceName || strlen(instanceName) == 0) {
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Missing instance name.");
     return NULL;
@@ -544,6 +546,7 @@ void fmi2FreeInstance(fmi2Component c)
   if (comp->functions) comp->functions->freeMemory((void*)comp->functions);
   /* free comp */
   freeMemory(comp);
+  free_memory_pool();
 }
 
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)

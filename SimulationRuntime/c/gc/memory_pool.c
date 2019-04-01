@@ -61,10 +61,10 @@ static list *memory_pools = NULL;
 
 static void pool_init(void)
 {
-  memory_pools = (list*) malloc(sizeof(list));
+  memory_pools = (list*) omc_alloc_interface.malloc_uncollectable(sizeof(list));
   memory_pools->used = 0;
   memory_pools->size = 2*1024*1024; /* 2MB pool by default */
-  memory_pools->memory = malloc(memory_pools->size);
+  memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
   memory_pools->next = NULL;
 }
 
@@ -95,12 +95,12 @@ static inline void pool_expand(size_t len)
   if (memory_pools->size - memory_pools->used >= len) {
     return;
   }
-  newlist = (list*) malloc(sizeof(list));
+  newlist = (list*) omc_alloc_interface.malloc_uncollectable(sizeof(list));
   newlist->next = memory_pools;
   memory_pools = newlist;
   memory_pools->used = 0;
   memory_pools->size = upper_power_of_two(3*memory_pools->next->size/2 + len); /* expand by 1.5x the old memory pool. More if we request a very large array. */
-  memory_pools->memory = malloc(memory_pools->size);
+  memory_pools->memory = omc_alloc_interface.malloc_uncollectable(memory_pools->size);
 }
 
 static void* pool_malloc(size_t sz)
@@ -120,18 +120,28 @@ static void* pool_malloc(size_t sz)
   return res;
 }
 
-static int pool_free(void)
+static int pool_free_extra_list(void)
 {
   list *freelist = memory_pools->next;
   while (freelist) {
     list *next = freelist->next;
-    free(freelist->memory);
-    free(freelist);
+    omc_alloc_interface.free_uncollectable(freelist->memory);
+    omc_alloc_interface.free_uncollectable(freelist);
     freelist = next;
   }
   memory_pools->used = 0;
   memory_pools->next = 0;
   return 0;
+}
+
+void free_memory_pool()
+{
+  pool_free_extra_list();
+  if (memory_pools) {
+    omc_alloc_interface.free_uncollectable(memory_pools->memory);
+    omc_alloc_interface.free_uncollectable(memory_pools);
+    memory_pools = NULL;
+  }
 }
 
 static void nofree(void* ptr)
@@ -148,7 +158,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_malloc,
   (char*(*)(size_t)) malloc,
   strdup,
-  pool_free,
+  pool_free_extra_list,
   malloc_zero,
   free,
   malloc,
@@ -215,7 +225,7 @@ omc_alloc_interface_t omc_alloc_interface = {
   pool_malloc,
   (char*(*)(size_t)) malloc,
   strdup,
-  pool_free,
+  pool_free_extra_list,
   malloc_zero /* calloc, but with malloc interface */,
   free,
   malloc,

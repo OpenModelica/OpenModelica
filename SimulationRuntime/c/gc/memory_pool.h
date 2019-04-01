@@ -48,6 +48,8 @@ extern _index_t** index_alloc(int n);
 
 void* generic_alloc(int n, size_t sze);
 
+void free_memory_pool();
+
 #if defined(__cplusplus)
 } /* end extern "C" */
 #endif
