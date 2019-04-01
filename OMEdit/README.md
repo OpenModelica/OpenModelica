@@ -4,8 +4,8 @@ A Modelica connection editor for OpenModelica.
 ## Dependencies
 
 - [OpenModelica](https://openmodelica.org)
-- [OMPlot](../../../OMPlot)
-- [OMSimulator](../../../OMSimulator)
+- [OMPlot](../../OMPlot)
+- [OMSimulator](../../../../OMSimulator)
 
 ## Build instructions
 
@@ -42,4 +42,4 @@ $ make -f Makefile.omdev.mingw omedit
 ## Bug Reports
 
 - Submit bugs through the [OpenModelica trac](https://trac.openmodelica.org/OpenModelica/newticket).
-- [Pull requests](../../pulls) are welcome.
+- [Pull requests](../../../pulls) are welcome.
