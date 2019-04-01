@@ -1,0 +1,38 @@
+all: release
+
+CC=@CC@
+CXX=@CXX@
+
+EXEEXT=@EXEEXT@
+
+CFLAGS = @CFLAGS@ -Wall -I../../../build/include/omc/c
+CPPFLAGS = @CPPFLAGS@
+CXXFLAGS = $(CFLAGS)
+LDFLAGS = @LDFLAGS@ $(LIBS)
+
+LIBS = @LIBREADLINE@ -lncurses -lm -lpthread -L@OMBUILDDIR@/lib/@host_short@/omc @RPATH@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib_shared -lModelicaExternalC -lomcgc -lomantlr3
+
+
+OBJS += mosh.o omcinteractiveenvironment.o options.o
+
+PROG = OMShell-terminal
+
+release: $(PROG)$(EXEEXT)
+	cp $(PROG)$(EXEEXT) @OMBUILDDIR@/bin
+
+$(PROG)$(EXEEXT) : $(OBJS)
+	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LDFLAGS)
+
+clean:
+	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
+
+
+mosh.o : mosh.cpp options.h omcinteractiveenvironment.h
+options.o: options.cpp options.h
+omcinteractiveenvironment.o: omcinteractiveenvironment.cpp options.h omcinteractiveenvironment.h
+
+
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	cd @top_builddir@ && ./config.status

@@ -1,0 +1,28 @@
+QMAKE=@QMAKE@
+APP=@APP@
+EXE=@EXE@
+NAME=OMShell
+
+.PHONY: always $(NAME)
+
+all: build
+
+Makefile: OMShell.config
+	$(QMAKE)
+
+clean: Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) Makefile
+
+$(NAME): Makefile OMShell.config
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+	mkdir -p @OMBUILDDIR@/share/omshell/nls/
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/$(NAME)$(APP) @OMBUILDDIR@/Applications/ ; else cp -p ../bin/$(NAME) @OMBUILDDIR@/bin; fi
+	cp -p commands.xml @OMBUILDDIR@/share/omshell/
+	cp -p OMShell_*.qm @OMBUILDDIR@/share/omshell/nls/
+
+Makefile.unix: Makefile.unix.in
+	cd @top_builddir@ && ./config.status
+OMShell.config: OMShell.config.in
+	cd @top_builddir@ && ./config.status

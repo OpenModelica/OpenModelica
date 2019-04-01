@@ -1,0 +1,6 @@
+<RCC>
+    <qresource>
+        <file>Resources/omshell-large.svg</file>
+        <file>Resources/OMS.ico</file>
+    </qresource>
+</RCC>

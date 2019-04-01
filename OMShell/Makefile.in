@@ -1,0 +1,37 @@
+all: omshell @OMSHELL_TERMINAL@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+CMAKE=CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake
+CMAKE_TARGET = "Unix Makefiles"
+
+ifeq (@APP@,)
+install:
+	mkdir -p ${DESTDIR}/@bindir@
+	cp -a build/bin/OMShell@EXE@ ${DESTDIR}/@bindir@
+else
+install:
+	mkdir -p ${DESTDIR}/Applications/
+	cp -a build/Applications/OMShell@APP@ ${DESTDIR}/Applications/
+endif
+	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omshell/nls/
+	cp -a build/lib/@host_short@/omc/* ${DESTDIR}/lib/@host_short@/omc/
+
+mkbuilddirs:
+	mkdir -p @OMBUILDDIR@/bin @OMBUILDDIR@/lib/@host_short@/omc
+omshell: mkbuilddirs
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
+mosh: mkbuilddirs
+	$(MAKE) -C mosh/src
+clean:
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
+	$(MAKE) -C mosh/src clean
+distclean: clean
+	rm -f config.status configure Makefile OMShell/OMShellGUI/Makefile.unix
+Makefile: Makefile.in config.status
+	./config.status
+config.status: configure
+	./config.status -recheck
+configure: configure.ac common/m4/omhome.m4 common/m4/qmake.m4
+	autoconf

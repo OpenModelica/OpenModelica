@@ -1,0 +1,3 @@
+Terminal Icon (omshell-small.svg, original name utilities-terminal.svg) is in
+  public domain and was taken from http://tango.freedesktop.org/. The large
+  icon is based on this image.

@@ -1,0 +1,31 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_share=$(OMBUILDDIR)/share/
+
+QMAKE=qmake
+EXE=.exe
+NAME=OMShell
+
+.PHONY: always $(NAME)
+
+all: build
+
+Makefile: OMShellGUI.pro
+	$(QMAKE) "CONFIG+=release"
+
+clean: Makefile
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf ../bin/$(NAME)$(EXE) Makefile Makefile.Debug Makefile.Release object_script.*
+
+$(NAME): Makefile
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+	mkdir -p $(builddir_share)/omshell/nls/
+	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin)
+	cp -p commands.xml $(builddir_share)/omshell/
+	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
+	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
