@@ -7,9 +7,6 @@
 [submodule "OMOptim"]
 	path = OMOptim
 	url = ../OMOptim.git
-[submodule "OMPlot"]
-	path = OMPlot
-	url = ../OMPlot.git
 [submodule "OMNotebook"]
 	path = OMNotebook
 	url = ../OMNotebook.git
