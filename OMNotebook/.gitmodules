@@ -1,3 +1,0 @@
-[submodule "common"]
-	path = common
-	url = ../OpenModelica-common.git
