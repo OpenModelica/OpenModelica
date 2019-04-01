@@ -1,0 +1,12 @@
+builddir=$(OMBUILDDIR)
+ANTLRJAR=$(OMBUILDDIR)/share/omc/java/antlr-3.2.jar
+
+CC=gcc
+CXX=g++
+#CFLAGS=-c -g -O0
+CFLAGS=-c -O3
+CPPFLAGS=-I. -I$(OMBUILDDIR)/include/omc/antlr3
+LDFLAGS=-L$(OMBUILDDIR)/lib/omc -lomantlr3
+EXE=GDBMIParser.exe
+
+include Makefile.common

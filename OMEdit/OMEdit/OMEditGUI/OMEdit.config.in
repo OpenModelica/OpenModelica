@@ -1,0 +1,19 @@
+# @author Martin Sjölund <martin.sjolund@liu.se>
+
+QMAKE_CC  = @CC@
+QMAKE_CXX = @CXX@
+QMAKE_LINK = @CXX@
+
+OPENMODELICAHOME = @OPENMODELICAHOME@
+
+LIBS += -L @OPENMODELICAHOME@/lib/@host_short@/omc -lOMPlot -lomqwt -lfmilib_shared -L../OMEditGUI/Debugger/Parser -lGDBMIParser -lomantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcgc -L@OMBUILDDIR@/lib/@host_short@/omc @LIBOSG@ -lomopcua -L@OMBUILDDIR@/lib -lOMSimulator -lomtlmsimulator @LIB_BOOST_REGEX@
+INCLUDEPATH += @OPENMODELICAHOME@/include/omc/scripting-API @OPENMODELICAHOME@/include/omplot @OPENMODELICAHOME@/include/omplot/qwt @OPENMODELICAHOME@/include/@host_short@/omc/antlr3 @OPENMODELICAHOME@/include/omc/c ../../qjson-0.8.1/build/include @OPENMODELICAHOME@/include
+
+QMAKE_CXXFLAGS_RELEASE -= -O1
+QMAKE_CXXFLAGS_RELEASE -= -O2
+
+QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
+QMAKE_LFLAGS += @LDFLAGS@
+
+@QMAKE_CONFIG_OSG@

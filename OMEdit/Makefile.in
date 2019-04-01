@@ -1,0 +1,46 @@
+all: omedit
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+CMAKE=CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" cmake
+CMAKE_TARGET = "Unix Makefiles"
+
+ifeq (@APP@,)
+install:
+	mkdir -p ${DESTDIR}/@bindir@
+	cp -a build/bin/OMEdit@EXE@ ${DESTDIR}/@bindir@
+else
+install:
+	mkdir -p ${DESTDIR}/Applications/
+	cp -a build/Applications/OMEdit@APP@ ${DESTDIR}/Applications/
+endif
+	mkdir -p ${DESTDIR}/lib/@host_short@/omc/ ${DESTDIR}/share/omedit/nls/
+	cp -a build/lib/@host_short@/omc/* ${DESTDIR}/lib/@host_short@/omc/
+	cp -a build/share/omedit/nls/* ${DESTDIR}/share/omedit/nls/
+
+mkbuilddirs:
+	mkdir -p build/bin @OMBUILDDIR@/share/omedit/nls @OMBUILDDIR@/lib/@host_short@/omc
+omedit: mkbuilddirs qjson-build
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
+clean:
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
+	test ! -f qjson/build/Makefile || $(MAKE) -C qjson/build clean
+	rm -rf qjson/build
+distclean: clean
+	rm -f config.status configure Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config
+Makefile: Makefile.in config.status
+	./config.status
+config.status: configure
+	./config.status -recheck
+configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m4
+	autoconf
+
+qjson-build:
+	test -d qjson
+	mkdir -p qjson/build/include/qjson
+	(cd qjson/build && test -f Makefile || CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" $(CMAKE) .. @QT4BUILD@ -G $(CMAKE_TARGET))
+	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libqjson.0.dylib qjson/build/lib/libqjson.0.dylib
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
+	cp -a qjson/src/*.h qjson/build/include/qjson

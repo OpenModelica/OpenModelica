@@ -1,0 +1,14 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+builddir=$(OMBUILDDIR)
+ANTLRJAR=$(OMBUILDDIR)/share/omc/java/antlr-3.2.jar
+
+CC=gcc
+CXX=g++
+#CFLAGS=-c -g -O0
+CFLAGS=-c -O3
+CPPFLAGS=-I. -I$(OMBUILDDIR)/include/omc/antlr3
+
+include Makefile.lib.common

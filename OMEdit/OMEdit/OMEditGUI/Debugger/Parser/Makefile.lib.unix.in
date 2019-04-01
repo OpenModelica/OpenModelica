@@ -1,0 +1,18 @@
+OMBUILDDIR=@OMBUILDDIR@
+ANTLRJAR=@OPENMODELICAHOME@/share/omc/java/antlr-3.2.jar
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=-c @CFLAGS@
+CPPFLAGS=@CPPFLAGS@ -I@OPENMODELICAHOME@/include/@host_short@/omc/antlr3
+ifeq (x86_64,@target_cpu@)
+ANTLR64=--enable-64bit
+endif
+ifeq (arm,@target_cpu@)
+ANTLRDEBUG="--disable-antlrdebug --disable-abiflags"
+endif
+
+include Makefile.lib.common
+
+Makefile.lib.unix: Makefile.lib.unix.in
+	(cd @top_builddir@ && ./config.status)

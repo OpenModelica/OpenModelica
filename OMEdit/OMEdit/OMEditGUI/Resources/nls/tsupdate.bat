@@ -1,0 +1,1 @@
+lupdate -noobsolete ../../OMEditGUI.pro 

@@ -1,0 +1,17 @@
+OMBUILDDIR=@OMBUILDDIR@
+ANTLRJAR=@ANTLRJAR@
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@
+LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc -lantlr3
+EXE=GDBMIParser
+ifeq (x86_64,@target_cpu@)
+ANTLR64=--enable-64bit
+endif
+ifeq (arm,@target_cpu@)
+ANTLRDEBUG="--disable-antlrdebug --disable-abiflags"
+endif
+
+include Makefile.common

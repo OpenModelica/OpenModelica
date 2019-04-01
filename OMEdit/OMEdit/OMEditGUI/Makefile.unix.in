@@ -1,0 +1,49 @@
+# @author Martin Sjölund <martin.sjolund@liu.se>
+#
+# RCS: $Id: Makefile.unix.in 13565 2012-10-23 01:07:41Z adeas31 $
+#
+
+.PHONY: install build $(NAME) always
+
+top_builddir=@top_builddir@
+resourcedir=./Resources/nls/
+
+NAME=OMEdit
+EXE=@EXE@
+APP=@APP@
+QMAKE=@QMAKE@
+LRELEASE=@LRELEASE@
+
+install: build Resources/nls/qm.stamp
+	mkdir -p ../../build/share/omedit/nls/
+	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omedit/nls/
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp ../bin/OMEdit.app @OMBUILDDIR@/Applications/ ; else cp -p ../bin/OMEdit @OMBUILDDIR@/bin/OMEdit; fi
+
+Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
+	$(LRELEASE) $<
+	@touch $@
+
+always:
+
+$(NAME): parsergen Makefile OMEdit.config omc_config.h
+	$(MAKE) -f Makefile
+
+clean:
+	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix clean
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -f ../bin/*.o
+
+parsergen:
+	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix
+
+build: $(NAME)
+
+Makefile: OMEditGUI.pro OMEdit.config
+	@test ! -f $@ || rm $@
+	$(QMAKE)
+Makefile.unix: Makefile.unix.in
+	(cd @top_builddir@; ./config.status)
+OMEdit.config: OMEdit.config.in
+	(cd @top_builddir@ && ./config.status)
+omc_config.h: omc_config.h.in
+	(cd @top_builddir@ && ./config.status)

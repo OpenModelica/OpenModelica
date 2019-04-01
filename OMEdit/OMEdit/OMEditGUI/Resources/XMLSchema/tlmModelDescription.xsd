@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+  <xs:annotation>
+    <xs:documentation>
+       * This file is part of OpenModelica.
+       *
+       * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+       * c/o Linköpings universitet, Department of Computer and Information Science,
+       * SE-58183 Linköping, Sweden.
+       *
+       * All rights reserved.
+       *
+       * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+       * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+       * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+       * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+       * ACCORDING TO RECIPIENTS CHOICE.
+       *
+       * The OpenModelica software and the Open Source Modelica
+       * Consortium (OSMC) Public License (OSMC-PL) are obtained
+       * from OSMC, either from the above address,
+       * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+       * http://www.openmodelica.org, and in the OpenModelica distribution.
+       * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+       *
+       * This program is distributed WITHOUT ANY WARRANTY; without
+       * even the implied warranty of  MERCHANTABILITY or FITNESS
+       * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+       * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+       *
+       * See the full OSMC Public License conditions for more details.
+       *
+       */
+      /*
+       *
+       * @author Alachew Shitahun (alachew.mengist@liu.se)
+       *
+      
+       *
+      </xs:documentation>
+  </xs:annotation>
+  <xs:simpleType name="causalitytype">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Bidirectional" />
+      <xs:enumeration value="Input" />
+      <xs:enumeration value="Output" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="Model">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="SubModels" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>List of connected sub-models</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+              <xs:element name="SubModel" type="SubModel"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Connections" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>List of TLM connections</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+              <xs:element name="Connection" type="Connection"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="SimulationParams" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>Parameters for the simulation</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="ManagerPort" type="xs:double"/>
+            <xs:attribute name="StartTime" type="xs:double" use="required"/>
+            <xs:attribute name="StopTime" type="xs:double" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Name" type="xs:normalizedString" use="required"/>
+    </xs:complexType>
+  </xs:element>
+    <xs:complexType name="SubModel">
+      <xs:sequence>
+        <xs:element name="Annotation" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>Annotation for each SubModel</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="Origin" type="xs:string" use="required"/>
+            <xs:attribute name="Extent" type="xs:string" use="required"/>
+            <xs:attribute name="Rotation" type="xs:string" use="required"/>
+            <xs:attribute name="Visible" type="xs:boolean" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="InterfacePoint" minOccurs="0" maxOccurs="unbounded">
+          <xs:annotation>
+            <xs:documentation>TLM interface points for SubModel</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="Name" type="xs:string" use="required"/>
+            <xs:attribute name="Dimensions" type="xs:integer" use="optional"/>
+            <xs:attribute name="Domain" type="xs:string" use="optional"/>
+            <xs:attribute name="Causality" type="causalitytype" use="optional"/>
+            <xs:attribute name="Position" type="xs:string" use="optional"/>
+            <xs:attribute name="Angle321" type="xs:string" use="optional"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Parameter" minOccurs="0" maxOccurs="unbounded">
+          <xs:annotation>
+            <xs:documentation>TLM parameter for SubModel</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="Name" type="xs:string" use="required"/>
+            <xs:attribute name="Value" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Name" type="xs:string" use="required"/>
+      <xs:attribute name="StartCommand" type="xs:string" use="required"/>
+      <xs:attribute name="ExactStep" type="xs:boolean" use="optional"/>
+      <xs:attribute name="ModelFile" type="xs:string" use="required"/>
+      <xs:attribute name="Position" type="xs:string" use="optional"/>
+      <xs:attribute name="Angle321" type="xs:string" use="optional"/>
+      <xs:attribute name="GeometryFile" type="xs:string" use="optional"/>
+    </xs:complexType>
+    <xs:complexType name="Connection">
+      <xs:sequence>
+        <xs:element name="Annotation" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>Annotation for each connection</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="Points" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="From" type="xs:string" use="required"/>
+      <xs:attribute name="To" type="xs:string" use="required"/>
+      <xs:attribute name="Delay" type="xs:string" use="required"/>
+      <xs:attribute name="Zf" type="xs:string" use="optional"/>
+      <xs:attribute name="Zfr" type="xs:string" use="optional"/>
+      <xs:attribute name="alpha" type="xs:string" use="optional"/>
+  </xs:complexType>
+</xs:schema>

@@ -1,0 +1,88 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+/*
+ * @author Adeel Asghar <adeel.asghar@liu.se>
+ */
+
+QMainWindow::separator {
+  width: 4px; /* when vertical */
+  height: 4px; /* when horizontal */
+}
+
+QLineEdit {
+  border: 1px solid gray;
+}
+QLineEdit:disabled {
+  background-color: #f0f0f0;
+}
+
+QPlainTextEdit {
+  border: 1px solid gray;
+}
+QPlainTextEdit#BaseEditor {
+  selection-background-color: #3399FF;
+  selection-color: white;
+}
+
+QStatusBar#ModelStatusBar {
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
+  border: 1px solid gray;
+}
+QStatusBar#ModelStatusBar::item {
+  margin-top: -5px;
+  padding: 0px;
+  border-left: 1px solid gray;
+}
+QStatusBar#ModelStatusBar QLabel {
+  margin: 0px;
+  padding: 0px 0px 0px 1px;
+}
+
+QListWidget#RecentItemsList::item:hover, QListWidget#LatestNewsList::item:hover{
+  border: 1px solid gray;
+  color: blue;
+}
+
+QTabBar::scroller { /* the width of the scroll buttons */
+  width: 15px;
+}
+QTabBar QToolButton { /* the scroll buttons are tool buttons */
+  background-color: palette(window);
+}
+
+QToolButton#ShapePointsButton {
+  padding: 3px;
+}
+
+QLabel#LabelWithBorder {
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
+  border: 1px solid gray;
+}

@@ -1,0 +1,46 @@
+ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
+
+all: parsergen $(EXE) libantlr3.a
+
+$(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
+	(cd $(ANTLR) && ./configure $(ANTLR64) $(ANTLRDEBUG) CC="$(CC)" LDFLAGS="" CFLAGS="" CPPFLAGS="")
+libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
+	# build the library
+	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
+	rm -f $@
+	ar -ru libantlr3.a antlr3*.o
+	ranlib libantlr3.a
+	rm -f antlr3*.o
+
+parsergen: GDBMIOutput.g
+	$(ANTLRCMD) GDBMIOutput.g
+
+OBJS = GDBMIOutputLexer.o \
+GDBMIOutputParser.o \
+GDBMIParser.o \
+main.o
+
+GDBMIOutputLexer.c: parsergen
+GDBMIOutputParser.c: parsergen
+GDBMIParser.cpp: GDBMIOutputLexer.c GDBMIOutputParser.c
+
+GDBMIOutputLexer.o: GDBMIOutputLexer.c $(ANTLR)/antlr3config.h
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+GDBMIOutputParser.o: GDBMIOutputParser.c $(ANTLR)/antlr3config.h
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+GDBMIParser.o: GDBMIParser.cpp $(ANTLR)/antlr3config.h
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+main.o: main.cpp
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(EXE): $(OBJS)
+	$(CXX) $(CPPFLAGS) $(OBJS) $(LDFLAGS) -o $@
+
+clean:
+	rm -f *.o $(EXE) \
+	GDBMIOutput.tokens \
+	GDBMIOutputLexer.c GDBMIOutputLexer.h \
+	GDBMIOutputParser.c GDBMIOutputParser.h

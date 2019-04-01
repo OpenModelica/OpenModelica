@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   width="16.770395mm"
+   height="18.149693mm"
+   viewBox="0 0 16.770395 18.149693"
+   version="1.1"
+   id="svg8">
+  <defs
+     id="defs2">
+    <linearGradient
+       id="linearGradient4653">
+      <stop
+         id="stop4649"
+         offset="0"
+         style="stop-color:#000000;stop-opacity:1;" />
+      <stop
+         id="stop4651"
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0;" />
+    </linearGradient>
+    <marker
+       style="overflow:visible"
+       id="marker4463"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(0.8,0,0,0.8,10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4465" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lend"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4164" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lstart"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(0.8,0,0,0.8,10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4161" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4463-9"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(0.8,0,0,0.8,10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4465-9" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lend-7"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(-0.8,0,0,-0.8,-10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4164-9" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lstart-8"
+       refX="0"
+       refY="0"
+       orient="auto">
+      <path
+         transform="matrix(0.8,0,0,0.8,10,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path4161-9" />
+    </marker>
+    <linearGradient
+       id="linearGradient2240">
+      <stop
+         id="stop2242"
+         offset="0"
+         style="stop-color:#99b00b;stop-opacity:1;" />
+      <stop
+         id="stop2244"
+         offset="1"
+         style="stop-color:#99b00b;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2232">
+      <stop
+         id="stop2234"
+         offset="0"
+         style="stop-color:#788600;stop-opacity:1;" />
+      <stop
+         id="stop2236"
+         offset="1"
+         style="stop-color:#788600;stop-opacity:0;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient4991">
+      <stop
+         id="stop4993"
+         offset="0"
+         style="stop-color:#ffffff;stop-opacity:1;" />
+      <stop
+         id="stop4995"
+         offset="1"
+         style="stop-color:#ffffff;stop-opacity:0;" />
+    </linearGradient>
+    <radialGradient
+       cx="24.837126"
+       cy="36.421127"
+       fx="24.837126"
+       fy="36.421127"
+       gradientTransform="matrix(1,0,0,0.536723,0,16.87306)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient8668"
+       r="15.644737"
+       xlink:href="#linearGradient4653" />
+    <linearGradient
+       gradientTransform="matrix(0,-1.171926,1.171926,0,1.782801,54.10111)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1764"
+       x1="17.060806"
+       x2="12.624337"
+       xlink:href="#linearGradient4991"
+       y1="11.39502"
+       y2="12.583769" />
+    <radialGradient
+       cx="16.563837"
+       cy="11.132236"
+       fx="16.563837"
+       fy="11.132236"
+       gradientTransform="matrix(-0.01290127,1.685197,1.713082,0.01311475,-1.041499,-10.11571)"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient4997"
+       r="19.0625"
+       xlink:href="#linearGradient4991" />
+    <linearGradient
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient2238"
+       x1="33"
+       x2="31.5"
+       xlink:href="#linearGradient2232"
+       y1="35.75"
+       y2="42.5" />
+    <linearGradient
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient2246"
+       x1="33"
+       x2="31.5"
+       xlink:href="#linearGradient2240"
+       y1="35.75"
+       y2="42.5" />
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(0.00290527,8.684247e-4)"
+     id="layer1">
+    <g
+       id="layer1-4"
+       transform="translate(-31.739597,-26.097514)">
+      <g
+         style="stroke:#000000;stroke-width:12.42287064;stroke-miterlimit:4;stroke-dasharray:24.84574145, 24.84574145;stroke-dashoffset:0;stroke-opacity:1"
+         id="g3345"
+         transform="matrix(0.05679489,0,0,0.05679489,20.56822,9.6824691)">
+        <path
+           id="path5222"
+           d="m 341.42857,602.3622 142.85714,-74.28571 1.42858,-162.85715 -141.42857,-70 -141.42857,74.28572 v 161.42857 z"
+           style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:12.42287064;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:24.84574145, 24.84574145;stroke-dashoffset:0;stroke-opacity:1" />
+        <path
+           id="path5228"
+           d="m 344.28571,443.79078 144.28572,-80"
+           style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:12.42287064;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:24.84574145, 24.84574145;stroke-dashoffset:0;stroke-opacity:1" />
+      </g>
+      <path
+         id="path4803"
+         d="m 32.089468,30.668468 8.032422,4.219048 -0.162272,9.006046"
+         style="fill:none;stroke:#000000;stroke-width:0.70555556;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:1.41111115, 1.41111115;stroke-dashoffset:0;stroke-opacity:1" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,36 @@
+ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
+PARSERGEN=GDBMIOutputLexer.c GDBMIOutputLexer.h GDBMIOutputParser.c GDBMIOutputParser.h
+
+all: $(PARSERGEN) libGDBMIParser.a
+
+GDBMIOutputParser.c: GDBMIOutputLexer.c
+GDBMIOutputLexer.h: GDBMIOutputLexer.c
+GDBMIOutputParser.h: GDBMIOutputLexer.c
+GDBMIOutputLexer.c: GDBMIOutput.g
+	$(ANTLRCMD) $<
+
+OBJS = GDBMIOutputLexer.o \
+GDBMIOutputParser.o \
+GDBMIParser.o
+
+GDBMIParser.cpp: GDBMIOutputLexer.c GDBMIOutputParser.c
+
+GDBMIOutputLexer.o: GDBMIOutputLexer.c
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+GDBMIOutputParser.o: GDBMIOutputParser.c
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+GDBMIParser.o: GDBMIParser.cpp
+	$(CXX) $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+libGDBMIParser.a: $(OBJS)
+	rm -f $@
+	ar -ru $@ $(OBJS)
+	ranlib $@
+
+clean:
+	rm -f *.o *.a \
+	GDBMIOutput.tokens \
+	GDBMIOutputLexer.c GDBMIOutputLexer.h \
+	GDBMIOutputParser.c GDBMIOutputParser.h

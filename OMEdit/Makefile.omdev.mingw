@@ -1,0 +1,45 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+buildbin=$(OMBUILDDIR)/bin
+buildlib=$(OMBUILDDIR)/lib/omc
+
+OMDEVMSYS=$(shell cygpath $$OMDEV)
+
+all: omedit
+
+CC = gcc
+CXX = g++
+
+ifeq (gcc,$(findstring gcc,$(CC)))
+	override CFLAGS +=-falign-functions -fstack-protector-all
+endif
+AR = ar
+CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE_TARGET = "MSYS Makefiles"
+SHREXT=.dll
+
+mkbuilddirs:
+	mkdir -p $(OMBUILDDIR)/share/omedit/nls
+	mkdir -p $(buildlib)
+	mkdir -p $(buildbin)
+
+omedit: mkbuilddirs qjson-build
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw
+	cp -puf common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
+
+clean:
+	cd qjson && rm -rf build
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw clean
+
+qjson-build:
+	test -d qjson
+	mkdir -p qjson/build/include/qjson
+	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -D CMAKE_AR:String="$(AR)" .. -DQT4_BUILD:Boolean=OFF -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH=`pwd`)
+	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build install
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
+	cp -a qjson/build/bin/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/bin/
+	cp -a qjson/build/bin/libqjson*$(SHREXT)* $(OMBUILDDIR)/bin/
+	cp -a qjson/src/*.h qjson/build/include/qjson
