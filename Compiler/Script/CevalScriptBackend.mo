@@ -3352,7 +3352,7 @@ protected function configureFMU
   input String logfile;
   input Boolean isWindows;
 protected
-  String CC, CFLAGS, LDFLAGS, makefileStr, container, host, nozip,
+  String CC, CFLAGS, LDFLAGS, makefileStr, container, host, nozip, path1, path2,
     dir=fmutmp+"/sources/", cmd="",
     quote="'",
     dquote = if isWindows then "\"" else "'",
@@ -3427,8 +3427,15 @@ algorithm
     case host::"docker"::"run"::rest
       algorithm
         uid := System.getuid();
-        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
-               "(cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " || (ls -lh ; false)) && " +
+        path1 := System.realpath(fmutmp+"/..");
+        path2 := path1 + "/" + System.basename(fmutmp);
+        for path in {path1, path2} loop
+          if not System.directoryExists(path) then
+            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {path + " does not exist, but we should have just created it..."});
+          end if;
+        end for;
+        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+path1+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
+               "(cd " + dquote + path2 + "/sources" + dquote + " || (ls -lh ; false)) && " +
                "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmiInclude LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
