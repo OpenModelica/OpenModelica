@@ -24,7 +24,7 @@ pipeline {
           }
           steps {
             buildOMC('gcc', 'g++')
-            stash name: 'omc-gcc', includes: 'build/**, config.status'
+            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
         stage('clang') {
@@ -37,7 +37,7 @@ pipeline {
           }
           steps {
             buildOMC('clang', 'clang++')
-            stash name: 'omc-clang', includes: 'build/**, config.status'
+            stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
         stage('checks') {
@@ -492,7 +492,7 @@ void partest(cache=true, extraArgs='') {
 
 void patchConfigStatus() {
   // Running on nodes with different paths for the workspace
-  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status'
+  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status OMCompiler/config.status'
 }
 
 void makeLibsAndCache(libs='core') {
@@ -503,10 +503,8 @@ void makeLibsAndCache(libs='core') {
   sh "mkdir -p '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git'"
   sh "find libraries"
   sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
-  patchConfigStatus()
-  sh "./config.status"
-  sh "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
   generateTemplates()
+  sh "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
 }
 
 void buildOMC(CC, CXX) {
@@ -530,8 +528,11 @@ void buildGUI(stash) {
 }
 
 void generateTemplates() {
+  patchConfigStatus()
   // Runs Susan again, for bootstrapping tests, etc
   sh 'make -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=$PWD/build/bin/omc'
+  sh 'cd OMCompiler && ./config.status'
+  sh './config.status'
 }
 
 def getVersion() {
