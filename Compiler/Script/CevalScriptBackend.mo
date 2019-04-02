@@ -3435,7 +3435,7 @@ algorithm
           end if;
         end for;
         cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+path1+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
-               "(cd " + dquote + path2 + "/sources" + dquote + " || (ls -lh ; false)) && " +
+               "(cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " || (ls -lh /fmu ; false)) && " +
                "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmiInclude LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
