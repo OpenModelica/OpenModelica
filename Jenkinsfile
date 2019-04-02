@@ -136,6 +136,8 @@ pipeline {
                     makeLibsAndCache()
                     writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
+                    sh 'ls -lh `pwd`'
+                    sh 'df -h .'
                     sh 'docker run -v `pwd`:/fmu ubuntu ls -lh /fmu'
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
                     stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
