@@ -3370,7 +3370,7 @@ algorithm
     System.removeFile(logfile);
   end if;
   nozip := Autoconf.make+" -j"+intString(Config.noProc()) + " nozip";
-  includeDefaultFmi := "-I" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi";
+  includeDefaultFmi := Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi";
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
       algorithm
@@ -3384,7 +3384,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", includeDefaultFmi);
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-I" + includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
         makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
@@ -3405,7 +3405,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1 " + includeDefaultFmi);
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1 -I" + includeDefaultFmi);
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
         makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
@@ -3416,7 +3416,7 @@ algorithm
       then false;
     case {_}
       algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+includeDefaultFmi+quote+" LDFLAGS= && " +
+        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+"-I"+includeDefaultFmi+quote+" LDFLAGS= && " +
                nozip;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
@@ -3427,12 +3427,12 @@ algorithm
     case host::"docker"::"run"::rest
       algorithm
         uid := System.getuid();
-        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu " +stringDelimitList(rest," ")+ " sh -c " + dquote +
+        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
                "cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " && " +
-               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+includeDefaultFmi+quote+" LDFLAGS= && " +
+               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmiInclude LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
           System.removeFile(dir + logfile);
           fail();
         end if;
