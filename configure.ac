@@ -449,10 +449,10 @@ if test -z "$RUNTIMECFLAGS"; then
   AC_TRY_LINK([], [return 0;], [AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
+  RUNTIMECFLAGS="$FPIC"
   for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers; do
-    RUNTIMECFLAGS="$CFLAGS"
-    CFLAGS="$RUNTIMECFLAGS $flag -Werror"
-    AC_TRY_LINK([], [return 0;], [CFLAGS="$RUNTIMECFLAGS $flag"],[CFLAGS="$RUNTIMECFLAGS"])
+    CFLAGS="$FPIC $flag -Werror"
+    AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $flag"],[])
   done
 else
   CFLAGS="$RUNTIMECFLAGS $FPIC -Werror"
@@ -460,13 +460,13 @@ else
 fi
 AC_MSG_RESULT([$RUNTIMECFLAGS])
 
+CC="$CC_OLD"
+CFLAGS="$CFLAGS_OLD"
+
 LIBS=""
 AC_SEARCH_LIBS(dlopen,dl)
 LIBDL="$LIBS"
 LIBS=""
-
-CC="$CC_OLD"
-CFLAGS="$CFLAGS_OLD"
 
 dnl check for lpsolve55
 

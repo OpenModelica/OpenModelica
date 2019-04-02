@@ -607,7 +607,7 @@ template funArgName(Variable var)
   let &auxFunction = buffer ""
   match var
   case VARIABLE(__) then contextCref(name,contextFunction,&auxFunction)
-  case FUNCTION_PTR(__) then '_' + name
+  case FUNCTION_PTR(__) then '_' + System.unquoteIdentifier(name)
 end funArgName;
 
 template funArgDefinition(Variable var)
@@ -615,7 +615,7 @@ template funArgDefinition(Variable var)
   let &auxFunction = buffer ""
   match var
   case VARIABLE(__) then ('<%varType(var)%> <%contextCref(name,contextFunction,&auxFunction)%>' + (if var.instDims then " = {0}"))
-  case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'
+  case FUNCTION_PTR(__) then 'modelica_fnptr _<%System.unquoteIdentifier(name)%>'
 end funArgDefinition;
 
 template funArgDefinitionKernelFunctionInterface(Variable var)
@@ -777,7 +777,7 @@ template funArgBoxedDefinition(Variable var)
   let &auxFunction = buffer ""
   match var
   case VARIABLE(__) then 'modelica_metatype <%contextCref(name,contextFunction,&auxFunction)%>'
-  case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'
+  case FUNCTION_PTR(__) then 'modelica_fnptr _<%System.unquoteIdentifier(name)%>'
 end funArgBoxedDefinition;
 
 template extFunDef(Function fn)
@@ -4205,9 +4205,9 @@ template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then "_" + name
-  case PARALLEL_FUNCTION_CONTEXT(__) then "_" + name
-  else "$P" + name
+  case FUNCTION_CONTEXT(__)
+  case PARALLEL_FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(name)
+  else System.forceQuotedIdentifier(name)
 end contextIteratorName;
 
 /* public */ template cref(ComponentRef cr)
@@ -4253,7 +4253,7 @@ end crefPre;
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case WILD(__) then ''
-  else "$P" + crefToCStrDefine(cr)
+  else System.forceQuotedIdentifier(crefStrNoUnderscore(cr))
 end crefDefine;
 
 template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
@@ -4279,8 +4279,9 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   case SIMVAR(varKind=DAE_AUX_VAR())
   case SIMVAR(index=-2)
   then
-    if intEq(ix,0) then (if isPre then "$P$PRE")+crefDefine(cr)
-    else '_<%if isPre then "$P$PRE"%><%crefDefine(cr)%>(<%ix%>)'
+    (let s = (if isPre then crefDefine(crefPrefixPre(cr)) else crefDefine(cr))
+    if intEq(ix,0) then s
+    else '_<%s%>(<%ix%>)')
   case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
   case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre, isStart)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -4374,8 +4375,8 @@ end contextArrayCref;
 template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%>._<%arrayCrefStr(componentRef)%>'
+  case CREF_IDENT(__) then System.unquoteIdentifier(ident)
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%>._<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
@@ -5656,11 +5657,7 @@ end daeExpIteratedCref;
 
 template iteratedCrefStr(ComponentRef cref)
 ::=
-match cref
-case (CREF_IDENT(__)) then
-    <<$P<%ident%>>>
-case (CREF_QUAL(__)) then
-    <<$P<%ident%><%iteratedCrefStr(componentRef)%>>>
+  System.forceQuotedIdentifier(crefStrNoUnderscore(cref))
 end iteratedCrefStr;
 
 template resultVarAssignment(DAE.Type ty, Text lhs, Text rhs) "Tuple need to be considered"
@@ -6295,16 +6292,16 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
         // adrpo: ignore _x = _x!
         if stringEq(v, crefStr(cr))
         then '<%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls, &auxFunction)%>'
-        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls, &auxFunction)%>'
+        else '_<%System.unquoteIdentifier(v)%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls, &auxFunction)%>'
       case _ then
         (if anyExpHasCrefName(erest, v) then
           /* We might overwrite a value with something else, so make an extra copy of it */
           let tmp = tempDecl(expTypeFromExpModelica(e),&varDecls)
-          let &postExp += '_<%v%> = <%tmp%>;<%\n%>'
+          let &postExp += '_<%System.unquoteIdentifier(v)%> = <%tmp%>;<%\n%>'
           '<%tmp%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls, &auxFunction)%>'
         else
           let restText = daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls, &auxFunction)
-          let v2 = '_<%v%>'
+          let v2 = '_<%System.unquoteIdentifier(v)%>'
           if stringEq(v2, exp)
             then restText
             else '<%v2%> = <%exp%>;<%\n%><%restText%>')
@@ -6703,7 +6700,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let identType = expTypeFromExpModelica(iter.exp)
     let arrayType = expTypeFromExpArray(iter.exp)
     let iteratorName = contextIteratorName(iter.id, context)
-    let loopVar = match iter.exp case RANGE(__) then iteratorName else '<%iter.id%>_loopVar'
+    let loopVar = match iter.exp case RANGE(__) then iteratorName else '<%iteratorName%>_loopVar'
     let stepVar = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls)
     let stopVar = match iter.exp case RANGE(__) then tempDecl(identType,&tmpVarDecls)
     let &guardExpPre = buffer ""
@@ -6731,12 +6728,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       case RANGE(step=SOME(DAE.ICONST(__))) then ""
       else check)
     let isArrayWithLength = if rangeExpStop then (match ri.path case IDENT(name="array") then "1" else "") else ""
-    let &tmpVarDecls += if isArrayWithLength then 'modelica_integer <%iter.id%>_length;<%\n%>'
+    let &tmpVarDecls += if isArrayWithLength then 'modelica_integer <%iteratorName%>_length;<%\n%>'
     let &rangeExpPre += match iter.exp case RANGE(__) then "" else (if firstIndex then '<%firstIndex%> = 1;<%\n%>')
     let guardCond = (match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls, &auxFunction) else "")
     let &tmpVarDecls += '<%identType%> <%iteratorName%>;<%\n%>'
     let &rangeExpPre += if isArrayWithLength then
-      '<%iter.id%>_length = ((<%stopVar%>-<%if firstIndex then firstIndex else iteratorName %>)/<%stepVar%>)+1;<%\n%>'
+      '<%iteratorName%>_length = ((<%stopVar%>-<%if firstIndex then firstIndex else iteratorName %>)/<%stepVar%>)+1;<%\n%>'
     let &rangeExpPre += match iter.exp case RANGE(__) then '<%iteratorName%> = (<%rangeExp%>)-<%stepVar%>;<%\n%>' /* We pre-increment the counter, so subtract the step for the first variable for ranges */
     let guardExp =
       <<
@@ -6821,9 +6818,10 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let length = tempDecl("int",&tmpVarDecls)
        let &rangeExpPre += '<%length%> = 0;<%\n%>'
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
-         let loopVar = '<%iter.id%>_loopVar'
+         let iteratorName = contextIteratorName(iter.id, context)
+         let loopVar = '<%iteratorName%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else match iter.exp case RANGE(__) then '<%iter.id%>_length' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then 'arrayLength(<%loopVar%>)' else 'listLength(<%loopVar%>)') else match iter.exp case RANGE(__) then '<%iteratorName%>_length' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;

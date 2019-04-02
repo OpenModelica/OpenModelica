@@ -1506,12 +1506,12 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     /* <%crefStrNoUnderscore(c)%> */
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(c)%> _<%cref(c)%>(0)
-    #define $P$PRE<%cref(c)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define <%cref(crefPrefixPre(c))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define <%cref(crefPrefixPre(name))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
@@ -1519,8 +1519,8 @@ template globalDataVarDefine(SimVar simVar, String arrayName) "template globalDa
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%index%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define $P$PRE<%cref(name)%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
-    #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
+    #define <%cref(crefPrefixPre(name))%> data->simulationInfo-><%arrayName%>Pre[<%index%>]
+    #define _<%cref(crefPrefixPre(name))%>(i) <%cref(crefPrefixPre(name))%>
 
     >>
   end match
@@ -4025,7 +4025,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     TRACE_PUSH
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_FUNCTION_ODE);
-  #endif !defined(OMC_MINIMAL_RUNTIME)
+  #endif
 
     <%varDecls%>
 
@@ -4239,7 +4239,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     <%addRootsTempArray()%>
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_DAE);
-  #endif !defined(OMC_MINIMAL_RUNTIME)
+  #endif
 
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
@@ -4250,7 +4250,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
 
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_DAE);
-  #endif !defined(OMC_MINIMAL_RUNTIME)
+  #endif
     TRACE_POP
     return 0;
   }

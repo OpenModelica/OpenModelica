@@ -1592,6 +1592,11 @@ package System
     output String outStr;
   end unquoteIdentifier;
 
+  function forceQuotedIdentifier
+    input String str;
+    output String outStr;
+  end forceQuotedIdentifier;
+
   function dirname
     input String str;
     output String outStr;
@@ -3438,6 +3443,11 @@ package ComponentReference
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef outCref;
   end crefPrefixDer;
+
+  function crefPrefixPre
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end crefPrefixPre;
 
   function makeUntypedCrefIdent
     input DAE.Ident ident;

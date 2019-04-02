@@ -121,8 +121,8 @@ template crefStr(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStr(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%>_<%subscriptsStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%ident%>_<%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%>_<%subscriptsStr(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%>_<%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
 
@@ -153,7 +153,7 @@ case CREF_QUAL(ident = "$PRE") then
  else
   let &varDeclsCref = buffer "" /*BUFD*/
   match context
-  case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
+  case FUNCTION_CONTEXT(__) then crefStr(cr)
   else '<%cref1(cr,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
 end contextCref;
 

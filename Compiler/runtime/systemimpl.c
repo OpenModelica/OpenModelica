@@ -1670,20 +1670,19 @@ extern char* SystemImpl__unescapedString(const char* str)
   return res;
 }
 
-extern char* SystemImpl__unquoteIdentifier(const char* str)
+extern char* System_forceQuotedIdentifier(const char* str)
 {
   const char lookupTbl[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
   char *res,*cur;
   int len,i;
   const int offset = 10;
   const char _omcQuot[]="_omcQuot_";
-  if (*str != '\'') return NULL;
-  len = strlen(str)-2;
+  len = strlen(str);
   res = (char*) omc_alloc_interface.malloc_atomic(2*len+offset+64);
   cur = res;
   cur += sprintf(cur,"%s",_omcQuot);
   for (i=0; i<len; i++) {
-    unsigned char c = str[i+1];
+    unsigned char c = str[i];
     *cur = lookupTbl[c/16];
     cur++;
     *cur = lookupTbl[c%16];
@@ -1691,6 +1690,20 @@ extern char* SystemImpl__unquoteIdentifier(const char* str)
   }
   *cur = '\0';
   return res;
+}
+
+extern char* SystemImpl__unquoteIdentifier(const char* str)
+{
+  char c = *str;
+  if ((c == '\'')
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+   || strstr(str, "$")
+#endif
+  )
+  {
+    return System_forceQuotedIdentifier(str);
+  }
+  return NULL;
 }
 
 #define TIMER_MAX_STACK  1000
