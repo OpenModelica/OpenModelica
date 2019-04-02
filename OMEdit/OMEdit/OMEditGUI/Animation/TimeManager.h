@@ -109,6 +109,7 @@ class TimeManager
   //! This variable indicates if the simulation/visualization currently pauses.
   bool _pause;
   double mSpeedUp;
+  int mTimeDiscretization;
   rtclock_t _visualTimer;
   QTimer *mpUpdateSceneTimer;
 };

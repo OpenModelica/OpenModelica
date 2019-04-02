@@ -74,7 +74,8 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpPerspectiveDropDownBox(nullptr),
     mpRotateCameraLeftAction(nullptr),
     mpRotateCameraRightAction(nullptr),
-    mCameraInitialized(false)
+    mCameraInitialized(false),
+	mSliderRange(1000)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   setObjectName(QString("animationWindow"));
@@ -171,7 +172,7 @@ void AbstractAnimationWindow::createActions()
   // animation slide
   mpAnimationSlider = new QSlider(Qt::Horizontal);
   mpAnimationSlider->setMinimum(0);
-  mpAnimationSlider->setMaximum(100);
+  mpAnimationSlider->setMaximum(mSliderRange);
   mpAnimationSlider->setSliderPosition(0);
   mpAnimationSlider->setEnabled(false);
   connect(mpAnimationSlider, SIGNAL(valueChanged(int)),this, SLOT(sliderSetTimeSlotFunction(int)));
@@ -611,7 +612,7 @@ void AbstractAnimationWindow::sliderSetTimeSlotFunction(int value)
 {
   float time = (mpVisualizer->getTimeManager()->getEndTime()
                 - mpVisualizer->getTimeManager()->getStartTime())
-      * (float) (value / 100.0);
+      * (float) (value / (float)mSliderRange);
   mpVisualizer->getTimeManager()->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpVisualizer->getTimeManager()->getVisTime()));
   mpVisualizer->updateScene(time);
