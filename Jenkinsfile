@@ -119,7 +119,7 @@ pipeline {
           stages {
             stage('cross-build-fmu') {
               agent {
-                label 'linux'
+                label 'kubernetes'
               }
               environment {
                 RUNTESTDB = "/cache/runtest/"
