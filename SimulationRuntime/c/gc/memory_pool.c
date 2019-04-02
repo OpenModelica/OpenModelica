@@ -122,7 +122,11 @@ static void* pool_malloc(size_t sz)
 
 static int pool_free_extra_list(void)
 {
-  list *freelist = memory_pools->next;
+  list *freelist;
+  if (NULL == memory_pools) {
+    return 0;
+  }
+  freelist = memory_pools->next;
   while (freelist) {
     list *next = freelist->next;
     omc_alloc_interface.free_uncollectable(freelist->memory);

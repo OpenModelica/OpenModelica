@@ -3384,7 +3384,7 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-I" + includeDefaultFmi);
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-I" + includeDefaultFmi + " -DOMC_SIM_SETTINGS_CMDLINE -DOMC_FMI_RUNTIME=1");
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
         makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
