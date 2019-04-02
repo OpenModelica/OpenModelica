@@ -1,6 +1,6 @@
 // name: OMCC
 // status: correct
-// 
+//
 
 // setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
 
@@ -12,6 +12,7 @@ files := {
   //"Absyn.mo",
   "AbsynMat.mo",
   "../../../OMCompiler/Compiler/FrontEnd/Absyn.mo",
+  "../../../OMCompiler/Compiler/Util/Autoconf.mo",
   "../../../OMCompiler/Compiler/Util/Error.mo",
   "../../../OMCompiler/Compiler/Util/ErrorExt.mo",
   "../../../OMCompiler/Compiler/Util/Print.mo",
