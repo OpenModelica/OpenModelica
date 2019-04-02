@@ -131,7 +131,6 @@ public:
   QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
                                            const QModelIndex &parentIndex) const;
   void parseInitXml(QXmlStreamReader &xmlReader);
-  QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   bool removeVariableTreeItem(QString variable);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
@@ -140,7 +139,8 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
-  QHash<QString, QHash<QString,QString> > mScalarVariablesList;
+  QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:

@@ -484,58 +484,32 @@ QModelIndex VariablesTreeModel::variablesTreeItemIndexHelper(const VariablesTree
   return QModelIndex();
 }
 
+/*!
+ * \brief VariablesTreeModel::parseInitXml
+ * Parses the model_init.xml file and returns the scalar variables information.
+ * \param xmlReader
+ * \return
+ */
 void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader)
 {
-  mScalarVariablesList.clear();
   /* We'll parse the XML until we reach end of it.*/
-  while(!xmlReader.atEnd() && !xmlReader.hasError())
-  {
+  while (!xmlReader.atEnd() && !xmlReader.hasError()) {
     /* Read next element.*/
     QXmlStreamReader::TokenType token = xmlReader.readNext();
     /* If token is just StartDocument, we'll go to next.*/
-    if(token == QXmlStreamReader::StartDocument)
+    if (token == QXmlStreamReader::StartDocument) {
       continue;
+    }
     /* If token is StartElement, we'll see if we can read it.*/
-    if(token == QXmlStreamReader::StartElement)
-    {
+    if (token == QXmlStreamReader::StartElement) {
       /* If it's named ScalarVariable, we'll dig the information from there.*/
-      if(xmlReader.name() == "ScalarVariable")
-      {
+      if (xmlReader.name() == "ScalarVariable") {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
-        mScalarVariablesList.insert(scalarVariable.value("name"),scalarVariable);
+        mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
       }
     }
   }
   xmlReader.clear();
-}
-
-QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
-{
-  QHash<QString, QString> scalarVariable;
-  /* Let's check that we're really getting a ScalarVariable. */
-  if(xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == "ScalarVariable")
-    return scalarVariable;
-  /* Let's get the attributes for ScalarVariable */
-  QXmlStreamAttributes attributes = xmlReader.attributes();
-  /* Read the ScalarVariable attributes. */
-  scalarVariable["name"] = attributes.value("name").toString();
-  scalarVariable["description"] = attributes.value("description").toString();
-  scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
-  scalarVariable["variability"] = attributes.value("variability").toString();
-  /* Read the next element i.e Real, Integer, Boolean etc. */
-  xmlReader.readNext();
-  while(!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable"))
-  {
-    if(xmlReader.tokenType() == QXmlStreamReader::StartElement)
-    {
-      QXmlStreamAttributes attributes = xmlReader.attributes();
-      scalarVariable["start"] = attributes.value("start").toString();
-      scalarVariable["unit"] = attributes.value("unit").toString();
-      scalarVariable["displayUnit"] = attributes.value("displayUnit").toString();
-    }
-    xmlReader.readNext();
-  }
-  return scalarVariable;
 }
 
 /*!
@@ -573,6 +547,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     pTopVariablesTreeItem->setActive();
   }
   /* open the model_init.xml file for reading */
+  mScalarVariablesHash.clear();
   QString initFileName;
   if (simulationOptions.isValid()) {
     initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
@@ -851,6 +826,41 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
 }
 
 /*!
+ * \brief VariablesTreeModel::parseScalarVariable
+ * Parses the scalar variable.
+ * Helper function for VariablesTreeModel::parseInitXml
+ * \param xmlReader
+ * \return
+ */
+QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
+{
+  QHash<QString, QString> scalarVariable;
+  /* Let's check that we're really getting a ScalarVariable. */
+  if (xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == "ScalarVariable") {
+    return scalarVariable;
+  }
+  /* Let's get the attributes for ScalarVariable */
+  QXmlStreamAttributes attributes = xmlReader.attributes();
+  /* Read the ScalarVariable attributes. */
+  scalarVariable["name"] = attributes.value("name").toString();
+  scalarVariable["description"] = attributes.value("description").toString();
+  scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
+  scalarVariable["variability"] = attributes.value("variability").toString();
+  /* Read the next element i.e Real, Integer, Boolean etc. */
+  xmlReader.readNext();
+  while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
+    if (xmlReader.tokenType() == QXmlStreamReader::StartElement) {
+      QXmlStreamAttributes attributes = xmlReader.attributes();
+      scalarVariable["start"] = attributes.value("start").toString();
+      scalarVariable["unit"] = attributes.value("unit").toString();
+      scalarVariable["displayUnit"] = attributes.value("displayUnit").toString();
+    }
+    xmlReader.readNext();
+  }
+  return scalarVariable;
+}
+
+/*!
  * \brief VariablesTreeModel::getVariableInformation
  * Returns the variable information like value, unit, displayunit and description.
  * \param pMatReader
@@ -865,7 +875,7 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
 void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
                                                 QString *variability, QString *unit, QString *displayUnit, QString *description)
 {
-  QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
+  QHash<QString, QString> hash = mScalarVariablesHash.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0) {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
     *variability = hash["variability"];
