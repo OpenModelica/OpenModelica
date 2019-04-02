@@ -20,6 +20,7 @@
 /OMPlot/OMPlotGUI/OMPlotGUI.pro.*
 /OMPlot/OMPlotGUI/OMPlotLib.pro.*
 /qmake.sh
+/qwt/.qmake.stash
 /qwt/build
 /qwt/lib
 /qwt/Makefile
