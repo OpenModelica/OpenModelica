@@ -66,7 +66,7 @@ AR = ar
 # LIBGC configuration is different for Windows (this file) and Linux (Makefile.in)
 MINGW_EXTRA_LIBS=lpsolve sundials
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-munmap=1 #--disable-parallel-mark
-MSL321_CONFIG_EXTRA_FLAGS=--enable-static --disable-shared
+MSL_EXTRA_ARGS=--enable-static --disable-shared
 LIBFMILIB=libfmilib.a
 LIBCMINPACKLIB=libcminpack.a
 LIBZMQLIB=libzmq.dll

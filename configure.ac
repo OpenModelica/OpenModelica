@@ -678,7 +678,6 @@ if test "$DARWIN" = "1"; then
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
-  MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --enable-shared"
   OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
@@ -757,6 +756,7 @@ else
   UMFPACK_SHARED=ON
   CONFIG_OS=`echo $host_os | sed s/-gnu//`
 fi
+MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
 
 AC_ARG_WITH(FMIL, [  --with-FMIL                 Link omc to FMIL (only disable when cross-compiling)],
 [
