@@ -44,7 +44,8 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
     _startTime(startTime),
     _endTime(endTime),
     _pause(true),
-    mSpeedUp(1.0)
+    mSpeedUp(1.0),
+	mTimeDiscretization(1000)
 {
   mpUpdateSceneTimer = new QTimer;
   mpUpdateSceneTimer->setInterval(100);
@@ -58,7 +59,7 @@ void TimeManager::updateTick()
 
 int TimeManager::getTimeFraction()
 {
-  return int(_visTime / (_endTime - _startTime)*100);
+  return int(_visTime / (_endTime - _startTime)*mTimeDiscretization);
 }
 
 double TimeManager::getEndTime() const

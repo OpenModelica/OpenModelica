@@ -105,6 +105,7 @@ protected:
   QVector<QLabel*> mStateLabels;
   osg::Matrixd mStashedViewMatrix;
   bool mCameraInitialized;
+  int mSliderRange;
 
   void resetCamera();
   void cameraPositionIsometric();
