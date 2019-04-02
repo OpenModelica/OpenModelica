@@ -130,12 +130,13 @@ pipeline {
                   def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
                   // deps.pull() // Already built...
                   def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
-                  deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}'") {
+                  deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --privileged --group-add '${dockergid}'") {
                     standardSetup()
                     unstash 'omc-clang'
                     makeLibsAndCache()
                     writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
+                    sh 'docker run -v `pwd`:/fmu ubuntu ls -lh /fmu'
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
                     stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
                     stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
