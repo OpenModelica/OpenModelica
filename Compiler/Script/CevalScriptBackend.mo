@@ -3428,7 +3428,7 @@ algorithm
       algorithm
         uid := System.getuid();
         cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
-               "cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " && " +
+               "(cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " || (ls -lh ; false)) && " +
                "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmiInclude LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
