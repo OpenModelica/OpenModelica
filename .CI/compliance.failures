@@ -6,6 +6,7 @@ ModelicaCompliance.Algorithms.For.StringRange
 ModelicaCompliance.Algorithms.For.VarArrayRange
 ModelicaCompliance.Arrays.Declarations.BoolArray
 ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize4
+ModelicaCompliance.Arrays.Indexing.EnumArrayInvalidIndexing
 ModelicaCompliance.Classes.Balancing.CorrectBalance3
 ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
 ModelicaCompliance.Classes.Declarations.Short.PartialClass
@@ -92,7 +93,6 @@ ModelicaCompliance.Equations.For.BoolRange
 ModelicaCompliance.Equations.For.BoolTypeRange
 ModelicaCompliance.Equations.For.ImplicitBoolIterator
 ModelicaCompliance.Equations.For.ImplicitMultiMixedIterator
-ModelicaCompliance.Functions.Calls.Vectorization.VectorizationMultiInputIllegal
 ModelicaCompliance.Functions.Derivative.PartialDerivative
 ModelicaCompliance.Functions.Restrictions.FunctionInnerOuter
 ModelicaCompliance.Functions.Restrictions.FunctionMultipleAlgorithm
