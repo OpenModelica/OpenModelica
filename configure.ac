@@ -582,13 +582,17 @@ AC_TRY_LINK([
   AC_MSG_RESULT([gettext headers not found])
 ])
 
-LIBS=""
-AC_CHECK_HEADERS(hwloc.h,
-  [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
-    [WITH_HWLOC="1";OMC_LIBS="$OMC_LIBS -lhwloc"],
-    [WITH_HWLOC="0"])],
-  [WITH_HWLOC="0"]
-)
+AC_ARG_WITH(hwloc,  [  --without-hwloc        (default to looking for it)],[
+  LIBS=""
+  AC_CHECK_HEADERS(hwloc.h,
+    [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
+      [WITH_HWLOC="1";OMC_LIBS="$OMC_LIBS -lhwloc"],
+      [WITH_HWLOC="0"])],
+    [WITH_HWLOC="0"]
+  )
+],[
+  WITH_HWLOC="0"
+])
 
 LIBS=""
 AC_CHECK_HEADERS(uuid/uuid.h,
