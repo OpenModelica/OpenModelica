@@ -3356,10 +3356,10 @@ protected
     dir=fmutmp+"/sources/", cmd="",
     quote="'",
     dquote = if isWindows then "\"" else "'",
-    includeDefaultFmi;
+    includeDefaultFmi, volumeID, cidFile, containerID;
   list<String> rest;
   Boolean finishedBuild;
-  Integer uid;
+  Integer uid, status;
 algorithm
   CC := System.getCCompiler();
   CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
@@ -3427,22 +3427,66 @@ algorithm
     case host::"docker"::"run"::rest
       algorithm
         uid := System.getuid();
-        path1 := System.realpath(fmutmp+"/..");
-        path2 := path1 + "/" + System.basename(fmutmp);
-        for path in {path1, path2} loop
-          if not System.directoryExists(path) then
-            Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {path + " does not exist, but we should have just created it..."});
-          end if;
-        end for;
-        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+path1+quote+":/fmu -v "+quote+System.realpath(includeDefaultFmi)+quote+":/fmiInclude "+stringDelimitList(rest," ")+ " sh -c " + dquote +
-               "(cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " || (ls -lh /fmu ; false)) && " +
-               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmiInclude LDFLAGS= && " +
+        // Create a docker volume for the FMU since we can't forward volumes
+        // to the docker run command depending on where the FMU was generated (inside another volume)
+        cmd := "docker volume create";
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+          fail();
+        end if;
+        cidFile := fmutmp+".cidfile";
+        if System.regularFileExists(cidFile) then
+          System.removeFile(cidFile);
+        end if;
+        volumeID := System.trim(System.readFile(logfile));
+        cmd := "docker run --cidfile "+cidFile+" -v "+volumeID+":/data busybox true";
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+          // Cleanup
+          System.systemCall("docker volume rm " + volumeID);
+          fail();
+        end if;
+        containerID := System.trim(System.readFile(cidFile));
+        System.removeFile(cidFile);
+        // Copy the FMU contents to the container
+        cmd := "docker cp "+fmutmp+" "+containerID+":/data";
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+          // Cleanup
+          System.systemCall("docker rm " + containerID);
+          System.systemCall("docker volume rm " + volumeID);
+          fail();
+        end if;
+        // Copy the FMI headers to the container
+        cmd := "docker cp "+includeDefaultFmi+" "+containerID+":/data/fmiInclude";
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
+          // Cleanup
+          System.systemCall("docker rm " + containerID);
+          System.systemCall("docker volume rm " + volumeID);
+          fail();
+        end if;
+        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+volumeID+":/fmu "+stringDelimitList(rest," ")+ " sh -c " + dquote +
+               "cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " && " +
+               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmu/fmiInclude LDFLAGS= && " +
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
           System.removeFile(dir + logfile);
+          // Cleanup
+          System.systemCall("docker rm " + containerID);
+          System.systemCall("docker volume rm " + volumeID);
           fail();
         end if;
+        // Copy the files back from the volume (via the container) to the filesystem
+        cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " " + quote + fmutmp + quote;
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
+          fail();
+        end if;
+        // Cleanup
+        System.systemCall("docker rm " + containerID);
+        System.systemCall("docker volume rm " + volumeID);
       then true;
     else
       algorithm
