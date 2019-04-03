@@ -23,7 +23,7 @@ pipeline {
             QTDIR = "/usr/lib/qt4"
           }
           steps {
-            buildOMC('gcc', 'g++')
+            buildOMC('gcc', 'g++', '')
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
@@ -36,7 +36,7 @@ pipeline {
             }
           }
           steps {
-            buildOMC('clang', 'clang++')
+            buildOMC('clang', 'clang++', '--without-hwloc')
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
@@ -507,11 +507,11 @@ void makeLibsAndCache(libs='core') {
   sh "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
 }
 
-void buildOMC(CC, CXX) {
+void buildOMC(CC, CXX, extraFlags) {
   standardSetup()
   sh 'autoconf'
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d"
+  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
   sh "make -j${numPhysicalCPU()} --output-sync omc omc-diff"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
 }
