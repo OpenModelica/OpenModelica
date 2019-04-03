@@ -3479,7 +3479,7 @@ algorithm
           fail();
         end if;
         // Copy the files back from the volume (via the container) to the filesystem
-        cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " " + quote + fmutmp + quote;
+        cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " .";
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
           fail();
