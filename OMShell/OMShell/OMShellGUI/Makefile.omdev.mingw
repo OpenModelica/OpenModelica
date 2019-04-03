@@ -28,3 +28,4 @@ build: $(NAME)
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin)
 	cp -p commands.xml $(builddir_share)/omshell/
 	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
+	cp -puf ../../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit

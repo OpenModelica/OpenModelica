@@ -27,6 +27,7 @@ mkbuilddirs:
 
 omedit: mkbuilddirs qjson-build
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.omdev.mingw
+	cp -puf ../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 clean:
 	cd qjson && rm -rf build
