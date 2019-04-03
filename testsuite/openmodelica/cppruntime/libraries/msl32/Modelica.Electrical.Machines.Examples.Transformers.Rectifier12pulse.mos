@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse);
+compareVars :=
+{
+  "cDC1.v",
+  "cDC2.v",
+  "transformer1.l2sigma.inductor[1].i",
+  "transformer1.l2sigma.inductor[3].i",
+  "transformer2.l2sigma.inductor[1].i",
+  "transformer2.l2sigma.inductor[2].i",
+  "transformer2.l2sigma.inductor[3].i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse
+// {"cDC1.v","cDC2.v","transformer1.l2sigma.inductor[1].i","transformer1.l2sigma.inductor[3].i","transformer2.l2sigma.inductor[1].i","transformer2.l2sigma.inductor[2].i","transformer2.l2sigma.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.Transformers.Rectifier12pulse_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

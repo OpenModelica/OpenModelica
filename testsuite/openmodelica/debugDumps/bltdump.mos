@@ -1,0 +1,103 @@
+// name: bltdump.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=bltdump
+// 
+
+// TODO: change this model to test the dump +d=bltdump
+loadString("
+model test_bltdump
+end test_bltdump;
+"); getErrorString();
+
+setDebugFlags("bltdump"); getErrorString();
+buildModel(test_bltdump); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// State Order: (0)
+// =============
+//
+// bltdump:
+//
+// unspecified partition
+// ========================================
+//
+// Variables (0)
+// ========================================
+//
+//
+// Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 0 variables and equations
+//
+//
+// StrongComponents
+// ========================================
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+// State Order: (0)
+// =============
+//
+// {"test_bltdump","test_bltdump_init.xml"}
+// ""
+// endResult

@@ -1,0 +1,145 @@
+// name:     TestAssertPackages
+// keywords: assert
+// status: correct
+// teardown_command: rm -rf TestAssert.Test* output.log
+// 
+
+//print(\"What's up with x = \" + realString(y) + \" at time \" + realString(time) + \"\n\");
+loadString("
+package TestAssert
+  model M
+    Real x = 0;
+  equation
+    assert(x < 10, \"Variable x is too big\");
+    assert(x < 5, \"Variable x is probably too big\", AssertionLevel.warning);
+  end M;
+
+  model TestWarningConstant
+    M m1(x = 3);
+    M m2(x = 4);
+    M m3(x = 6);
+    Real y;
+  equation
+    der(y) = 1;
+  end TestWarningConstant;
+
+  model TestWarningVariable 
+    M m1(x = 3 * time);
+    M m2(x = 4 * time);
+    M m3(x = 6 * time);
+  equation
+
+  end TestWarningVariable;
+
+  model TestWarningRecurring
+    M m1(x = 3 * time);
+    M m2(x = 4 * time);
+    M m3(x = 6 * sin(6.28 * time));
+  equation
+
+  end TestWarningRecurring;
+
+  model TestErrorConstant
+    M m1(x = 4);
+    M m2(x = 20);
+    M m3(x = 2);
+  equation
+
+  end TestErrorConstant;
+
+  model TestErrorVariable
+    M m1(x = 4 * time);
+    M m2(x = 20 * time);
+    M m3(x = 2 * time);
+  equation
+
+  end TestErrorVariable;
+end TestAssert;
+"); getErrorString();
+
+
+simulate(TestAssert.TestWarningConstant); getErrorString();
+
+simulate(TestAssert.TestWarningVariable); getErrorString();
+
+simulate(TestAssert.TestWarningRecurring); getErrorString();
+
+simulate(TestAssert.TestErrorConstant); getErrorString();
+
+simulate(TestAssert.TestErrorVariable); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestAssert.TestWarningConstant_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | false
+// assert            | warning | Variable x is probably too big
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | false
+// assert            | warning | Variable x is probably too big
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// record SimulationResult
+//     resultFile = "TestAssert.TestWarningVariable_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.834000
+// |                 | |       | m3.x < 5.0
+// assert            | warning | Variable x is probably too big
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "TestAssert.TestWarningRecurring_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestWarningRecurring', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.158000
+// |                 | |       | m3.x < 5.0
+// assert            | warning | Variable x is probably too big
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestErrorConstant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: TestAssert.TestErrorConstant
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | false
+// assert            | error   | Variable x is too big
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestAssert.TestErrorVariable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: TestAssert.TestErrorVariable
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.250000
+// |                 | |       | m2.x < 5.0
+// assert            | warning | Variable x is probably too big
+// assert            | warning | The following assertion has been violated at time 0.500000
+// |                 | |       | m2.x < 10.0
+// assert            | error   | Variable x is too big
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// assert            | warning | The following assertion has been violated at time 0.502000
+// |                 | |       | m2.x < 10.0
+// assert            | error   | Variable x is too big
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// assert            | warning | The following assertion has been violated at time 0.500500
+// |                 | |       | m2.x < 10.0
+// assert            | error   | Variable x is too big
+// stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.5005
+// "
+// end SimulationResult;
+// ""
+// endResult

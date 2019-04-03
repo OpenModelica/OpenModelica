@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.HydrogenIodide.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.HydrogenIodide
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.HydrogenIodide.* DrModelicaForTesting.HydrogenIodide_* DrModelicaForTesting.HydrogenIodide DrModelicaForTesting.HydrogenIodide.exe DrModelicaForTesting.HydrogenIodide.cpp DrModelicaForTesting.HydrogenIodide.makefile DrModelicaForTesting.HydrogenIodide.libs DrModelicaForTesting.HydrogenIodide.log DrModelicaForTesting.HydrogenIodide.c DrModelicaForTesting.HydrogenIodide.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.HydrogenIodide, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.HydrogenIodide_res.mat",
+  "ReferenceFiles/HydrogenIodide_ref.mat","DrModelicaForTesting.HydrogenIodide_diff.csv",0.01,0.013,
+  {"k1","k2","I2","HI"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.HydrogenIodide_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.HydrogenIodide', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

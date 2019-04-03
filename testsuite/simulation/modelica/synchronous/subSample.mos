@@ -1,0 +1,241 @@
+// name: test_subSample
+// keywords: synchronous features
+// status: correct
+
+
+// base-clock partitions #1 (clocked partition): {vd, u, u2, u3}
+// sub-clock partitions #1.1: {vd, u}
+// sub-clock partitions #1.2: {u2}
+// sub-clock partitions #1.3: {u3}
+//
+// base-clock partitions #2 (continuous time partition): {f, der(x), der(v)}
+// sub-clock partitions #2.1: {f, der(x), der(v)}
+
+loadString("
+model test_subSample
+  parameter Real m = 1.0;
+  parameter Real k = 1.0;
+  parameter Real d = 0.1;
+  Real x(start = 1.0, fixed = true);
+  Real v(start = 0.0, fixed = true);
+  Real f;
+  parameter Real K = 20.0;
+  parameter Real vref = 100.0;
+  discrete Real vd;
+  discrete Real u(start = 0.0);
+  discrete Real u2, u3;
+equation
+  vd = sample(v, Clock(0.01));
+  u = K * (vref - vd);
+  f = hold(u);
+  der(x) = v;
+  m * der(v) = f + (-k) * x - d * v;
+
+  u2 = subSample(u, 2);
+  u3 = subSample(u2, 3);
+end test_subSample;
+"); getErrorString();
+
+setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
+translateModel(test_subSample); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (4 partitions)
+// ########################################
+//
+//
+// continuous time partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: f:VARIABLE()  type: Real 
+// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 3: x:STATE(1)(start = 1.0 fixed = true )  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): f = $getPart(u)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: u:DISCRETE(start = 0.0 )  type: Real 
+// 2: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
+// 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: u2:DISCRETE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: u3:DISCRETE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)[3]
+//
+//
+// Sub clocks (3)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(true)
+// 2: factor(2/1) shift(0/1)  event(false)
+// 3: factor(6/1) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (4 partitions)
+// ########################################
+//
+//
+// continuous time partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: f:VARIABLE()  type: Real 
+// 2: v:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 3: x:STATE(1,v)(start = 1.0 fixed = true )  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): f = $getPart(u)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:3}
+// {1:1}
+// {3:2}
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: u:DISCRETE(start = 0.0 )  type: Real 
+// 2: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
+// 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: u2:DISCRETE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: u3:DISCRETE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)[3]
+//
+//
+// Sub clocks (3)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(true)
+// 2: factor(2/1) shift(0/1)  event(false)
+// 3: factor(6/1) shift(0/1)  event(false)
+//
+// true
+// ""
+// endResult

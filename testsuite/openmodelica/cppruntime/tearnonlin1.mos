@@ -1,0 +1,20 @@
+// name:     Tearnonlin1
+// keywords: events
+// status: correct
+// teardown_command: rm -rf  BouncingBall.log libModelica.dll tearnonlin1.cpp tearnonlin1.libs tearnonlin1.h tearnonlin1.makefile  tearnonlin1Algloop4.cpp tearnonlin1Algloop4.h output.log Functions.h Functions.cpp
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Algebraic loop
+//
+loadFile("tearnonlin1.mo");
+simulate(tearnonlin1, method="dassl",stopTime=3.0, tolerance=1e-10, numberOfIntervals=400,outputFormat="csv");
+echo(false);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "tearnonlin1_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 400, tolerance = 0.0000000001, method = 'dassl', fileNamePrefix = 'tearnonlin1', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

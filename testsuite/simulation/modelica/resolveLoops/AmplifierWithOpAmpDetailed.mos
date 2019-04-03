@@ -1,0 +1,60 @@
+// name:      AmplifierWithOpAmpDetailed
+// keywords:  resolveLoops
+// status:    incorrect
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+setDebugFlags("resolveLoops,backenddaeinfo,stateselection"); getErrorString();
+simulate(Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mat",
+  "Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_diff.csv",0.01,0.0001,
+{
+   "opAmp.v_in",
+   "opAmp.q_fr1",
+   "opAmp.q_fr2",
+   "opAmp.q_fr3",
+   "opAmp.q_fp1",
+   "opAmp.v_source",
+   "opAmp.x"
+});
+
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.003, numberOfIntervals = 2500, tolerance = 0.0000002, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 79
+//  * Number of variables: 79
+// Notification: Model statistics after passing the back-end:
+//  * Number of independent subsystems: 1
+//  * Number of states: 7 (opAmp.v_in,opAmp.q_fr1,opAmp.q_fr2,opAmp.q_fr3,opAmp.q_fp1,opAmp.v_source,opAmp.x)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics (23):
+//  * Single equations (assignments): 22
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 4}
+// "
+// {"Files not Equal!","opAmp.x","opAmp.v_source","opAmp.q_fp1","opAmp.q_fr3","opAmp.q_fr2","opAmp.q_fr1","opAmp.v_in"}
+// endResult

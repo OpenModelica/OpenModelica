@@ -1,0 +1,28 @@
+// name: Bug2633.mos
+// keywords: division zero
+// status: correct
+
+loadString("
+model Bug2633
+  parameter Real p = -1.0;
+  Real a = (p + time * time) / (p + time);
+  annotation(experiment(StartTime = 0, StopTime = 2, Tolerance = 1e-006, Interval = 0.004));
+end Bug2633;
+"); getErrorString();
+
+simulate(Bug2633); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Bug2633_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Bug2633', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | debug   | division by zero at time 1, (a=0) / (b=0), where divisor b expression is: p + time
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

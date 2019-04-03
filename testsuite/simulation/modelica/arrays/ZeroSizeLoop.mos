@@ -1,0 +1,39 @@
+// name:     ZeroSizeLoop.mos
+// keywords: for loops of zero size
+// status: correct
+// teardown_command: rm -rf ZeroSizeLoopTest*
+// 
+// 
+
+loadFile("ZeroSizeLoop.mo"); getErrorString();
+instantiateModel(ZeroSizeLoopTest); getErrorString();
+checkModel(ZeroSizeLoopTest); getErrorString();
+simulate(ZeroSizeLoopTest); getErrorString();
+
+// Result:
+// true
+// ""
+// "class ZeroSizeLoopTest
+//   parameter Integer activation.nIn = 0;
+//   parameter Integer activation.nOut = 0;
+//   Boolean activation.firingCon = false;
+//   Boolean activation.active;
+// algorithm
+//   activation.active := true;
+//   activation.active := activation.active and activation.firingCon;
+// end ZeroSizeLoopTest;
+// "
+// ""
+// "Check of ZeroSizeLoopTest completed successfully.
+// Class ZeroSizeLoopTest has 2 equation(s) and 2 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "ZeroSizeLoopTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ZeroSizeLoopTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,46 @@
+// name: bug2808
+// keywords: event, string
+// status: correct
+// cflags:
+// teardown_command: rm -rf eventTests.bug2808*  output.log
+//
+//
+
+loadString("
+package eventTests
+model bug2808
+function compare
+  input String string1;
+  input String string2;
+  input Boolean caseSensitive=true;
+  output Boolean result;
+external \"C\" result = ModelicaStrings_compare(string1, string2, caseSensitive) annotation(Library=\"ModelicaExternalC\");
+end compare;
+  Real x; 
+equation
+  der(x) = if compare(\"test\",\"Test\",false) and x < 0.5 then 1.0 else 0.5;
+end bug2808;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.bug2808); getErrorString();
+val(der(x),0.0);
+val(der(x),0.5);
+val(der(x),1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.bug2808_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventTests.bug2808', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.0
+// 1.0
+// 0.5
+// endResult

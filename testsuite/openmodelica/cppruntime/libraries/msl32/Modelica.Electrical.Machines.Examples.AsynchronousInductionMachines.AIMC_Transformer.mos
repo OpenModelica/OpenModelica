@@ -1,0 +1,53 @@
+// name:     Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer);
+compareVars :=
+{
+  "aimc.idq_rr[1]",
+  "aimc.idq_rr[2]",
+  "aimc.lssigma.i_[1]",
+  "aimc.lssigma.i_[2]",
+  "aimc.lszero.i",
+  "loadInertia.phi",
+  "loadInertia.w",
+  "transformer.l1sigma.inductor[2].i",
+  "transformer.l1sigma.inductor[3].i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer
+// {"aimc.idq_rr[1]","aimc.idq_rr[2]","aimc.lssigma.i_[1]","aimc.lssigma.i_[2]","aimc.lszero.i","loadInertia.phi","loadInertia.w","transformer.l1sigma.inductor[2].i","transformer.l1sigma.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 2500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_Transformer_res.mat
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13319:7-13321:41:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

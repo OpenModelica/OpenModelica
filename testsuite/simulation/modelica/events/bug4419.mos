@@ -1,0 +1,37 @@
+// name: bug4419
+// keywords: events
+// status: correct
+
+loadString("
+package bug4419
+  model test
+    Real x(start=0,fixed=true);
+    Real y1,y2;
+  equation
+    der(x)=10;
+    y1 = rem(x,2);
+    y2 = rem(x+1,2);
+  end test;
+end bug4419;
+"); getErrorString();
+
+simulate(bug4419.test); getErrorString();
+val(y1, {0.01, 0.09, 0.91, 0.99}); getErrorString();
+val(y2, {0.01, 0.09, 0.91, 0.99}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug4419.test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug4419.test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.1,0.9000000000000001,1.1,1.899999999999999}
+// ""
+// {1.1,1.9,0.09999999999999964,0.8999999999999986}
+// ""
+// endResult

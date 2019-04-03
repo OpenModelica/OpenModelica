@@ -1,0 +1,35 @@
+// name:     PlanarMechanicsForTesting.Examples.ControlledCraneCrab.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.ControlledCraneCrab.* PlanarMechanicsForTesting.Examples.ControlledCraneCrab_* PlanarMechanicsForTesting.Examples.ControlledCraneCrab PlanarMechanicsForTesting.Examples.ControlledCraneCrab.exe PlanarMechanicsForTesting.Examples.ControlledCraneCrab.cpp PlanarMechanicsForTesting.Examples.ControlledCraneCrab.makefile PlanarMechanicsForTesting.Examples.ControlledCraneCrab.libs PlanarMechanicsForTesting.Examples.ControlledCraneCrab.log PlanarMechanicsForTesting.Examples.ControlledCraneCrab.c PlanarMechanicsForTesting.Examples.ControlledCraneCrab.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.ControlledCraneCrab); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.ControlledCraneCrab_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//ControlledCraneCrab.mat","PlanarMechanicsForTesting.Examples.ControlledCraneCrab_diff.csv",0.01,0.0001,
+  {"actuatedPrismatic.v", "actuatedPrismatic.s", "actuatedRevolute.phi", "actuatedRevolute.w"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.ControlledCraneCrab_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.ControlledCraneCrab', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

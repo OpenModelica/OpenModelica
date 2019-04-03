@@ -1,0 +1,17 @@
+// name:     PartialFn14
+// keywords: PartialFn
+// cflags:   -g=MetaModelica -d=gen
+// status:   correct
+// teardown_command: rm -rf PartialFn14_*
+//
+// Partial Function Testing
+//
+loadFile("PartialFn14.mo");
+PartialFn14.printLst({"this"," is ","fun"});
+getErrorString();
+
+// Result:
+// true
+// this is fun
+// ""
+// endResult

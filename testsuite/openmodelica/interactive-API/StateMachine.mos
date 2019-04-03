@@ -1,0 +1,47 @@
+// name: StateMachine
+// keywords: 
+// status: correct
+//
+// Tests the getTransitions, addTransition and deleteTransition APIs.
+//
+
+loadFile("StateMachine.mo"); getErrorString();
+getTransitions(StateMachine); getErrorString();
+addTransition(StateMachine, "state1", "state2", "a > 1", annotate = Line(points={{-20,50},{22,34},{-20,6}},color={175,175,175},thickness=0.25,smooth=Smooth.Bezier)); getErrorString();
+getTransitions(StateMachine); getErrorString();
+updateTransition(StateMachine, "state1", "state2", "a > 1", true, true, false, 1, "a < 1", false, false, true, 2, annotate = Line(points={{-20,50},{22,34},{-20,6}},color={175,175,175},thickness=0.25,smooth=Smooth.Bezier)); getErrorString();
+getTransitions(StateMachine); getErrorString();
+deleteTransition(StateMachine, "state1", "state2", "a < 1", false, false, true, 2); getErrorString();
+getTransitions(StateMachine); getErrorString();
+
+addInitialState(StateMachine, "state2", annotate = Line(points={{-8,6},{0,72}},color={175,175,175},thickness=0.25,smooth=Smooth.Bezier)); getErrorString();
+updateInitialState(StateMachine, "state2", annotate = Line(points={{-18,26},{10,37}},color={175,175,175},thickness=0.5,smooth=Smooth.Bezier)); getErrorString();
+deleteInitialState(StateMachine, "state1"); getErrorString();
+getInitialStates(StateMachine); getErrorString();
+
+// Result:
+// true
+// ""
+// {{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"},{"state2","state1","b > 10","true","false","false","1",""},{"state2","state1","c > 20","false","false","true","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"}}
+// ""
+// true
+// ""
+// {{"state1","state2","a > 1","true","true","false","1","Line(true, {0.0, 0.0}, 0, {{-20, 50}, {22, 34}, {-20, 6}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier)"},{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"},{"state2","state1","b > 10","true","false","false","1",""},{"state2","state1","c > 20","false","false","true","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"}}
+// ""
+// true
+// ""
+// {{"state1","state2","a < 1","false","false","true","2","Line(true, {0.0, 0.0}, 0, {{-20, 50}, {22, 34}, {-20, 6}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier)"},{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"},{"state2","state1","b > 10","true","false","false","1",""},{"state2","state1","c > 20","false","false","true","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"}}
+// ""
+// true
+// ""
+// {{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"},{"state2","state1","b > 10","true","false","false","1",""},{"state2","state1","c > 20","false","false","true","1","Line(true, {0.0, 0.0}, 0, {{-8, 6}, {0, 72}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.Filled, Arrow.None}, 3, Smooth.None)"}}
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {{"state2","Line(true, {0.0, 0.0}, 0, {{-18, 26}, {10, 37}}, {175, 175, 175}, LinePattern.Solid, 0.5, {Arrow.None, Arrow.None}, 3, Smooth.Bezier)"}}
+// ""
+// endResult

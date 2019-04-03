@@ -1,0 +1,44 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization);
+compareVars :=
+{
+  "M1.Dinternal",
+  "M1.Sinternal"
+};
+
+runScript(modelTesting);getErrorString();
+
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization
+// {"M1.Dinternal","M1.Sinternal"}
+// Simulation options: startTime = 0.0, stopTime = 0.0000001, numberOfIntervals = 99, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkMosfetCharacterization_res.mat
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:4627:5-4628:139:writable] Error: Variable M1.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity="InversePotential", unit="1/V"), C_CONST), value: 0.0 on component m_lambda.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:4627:5-4628:139:writable] Error: Variable M1.p: Duplicate modification of element  {start  =(untyped) 0.00002}  and final  = (typed)0.00002 DAE.PROP(Real(quantity="Transconductance", unit="A/V2"), C_CONST), value: 0.00002 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity="InversePotential", unit="1/V"), C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 0.00002}  and final  = (typed)0.00002 DAE.PROP(Real(quantity="Transconductance", unit="A/V2"), C_CONST), value: 0.00002 on component m_transconductance.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,105 @@
+// name:      parameterTest17
+// keywords:  parameter evaluation, globalKnownVars, cse
+// status:    correct
+
+loadString("
+model parameterTest17
+  Integer a,b,c,d;
+  input Integer x;
+  parameter Integer p1 = 1;
+  parameter Integer p2 = p1;
+  parameter Integer p3 = c1;
+  parameter Integer p4 (fixed=false);
+  final constant Integer c1 = 5;
+  constant Integer c2;
+  final parameter Integer p5 = 1;
+  final parameter Integer p6 = p5;
+  final parameter Integer p7 (start=1);
+  parameter Integer p8 (start=2*p3);
+  parameter Integer p9 = 2*p4;
+protected
+  parameter Integer pr1 = 5;
+  parameter Integer pr2 = pr1;
+initial equation
+  2 * p4 * sin(a) = b;
+equation
+  a = p1 + sin(p2);
+  b = a + c1 + p5 + sin(p2);
+  c = p1 + p2 + p3 + p5 + p6 + p7 + p8 + pr1 + pr2 + c1 + c2;
+  d = p9;
+end parameterTest17;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpCSE"); getErrorString();
+simulate(parameterTest17); getErrorString();
+
+val(a,0.0);
+val(b,0.0);
+val(c,0.0);
+val(d,0.0);
+val(p4,0.0);
+val(p9,0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (1)
+// ========================================
+// 1: b:DISCRETE()  type: Integer 
+//
+//
+// ########### Updated Equation List (simulation) (1, 1)
+// ========================================
+// 1/1 (1): /*Real*/(b) = /*Real*/(5 + a + 1) + $cse1   [dynamic |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (17)
+// ========================================
+// 1: a:DISCRETE(fixed = true )  = sin(/*Real*/(p2)) + /*Real*/(p1)  type: Integer 
+// 2: c:DISCRETE(fixed = false )  = 7 + p1 + p2 + p3 + p7 + p8 + pr1 + pr2 + c2  type: Integer 
+// 3: input x:VARIABLE(fixed = true )  type: Integer 
+// 4: p1:PARAM()  = 1  type: Integer 
+// 5: p2:PARAM()  = p1  type: Integer 
+// 6: p3:PARAM()  = 5  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: c1:CONST(final = true )  = 5  type: Integer 
+// 9: c2:CONST()  type: Integer 
+// 10: p5:PARAM(final = true )  = 1  type: Integer 
+// 11: p6:PARAM(final = true )  = 1  type: Integer 
+// 12: p7:PARAM(start = 1 final = true )  type: Integer 
+// 13: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 14: p9:PARAM(fixed = false )  = 2 * p4  type: Integer 
+// 15: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 16: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 17: $cse1:VARIABLE(fixed = true protected = true )  = sin(/*Real*/(p2))  type: Real  unreplaceable
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse1 - sin(/*Real*/(p2)) - {}
+// record SimulationResult
+//     resultFile = "parameterTest17_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest17', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:14:3-14:36:writable] Warning: Parameter p8 has no value, and is fixed during initialization (fixed=true), using available start value (start=2 * p3) as default value.
+// [<interactive>:13:3-13:39:writable] Warning: Parameter p7 has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// "
+// 1.0
+// 7.0
+// 42.0
+// 8.0
+// 4.0
+// 8.0
+// endResult

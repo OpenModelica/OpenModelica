@@ -1,0 +1,42 @@
+// name:     Modelica.Media.Examples.MoistAir
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.MoistAir);
+compareVars :=
+{
+   "medium.p",
+   "medium.T"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.MoistAir
+// {"medium.p","medium.T"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.MoistAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.MoistAir_res.mat
+// Files Equal!
+// Warning: Alias set with several free start values
+//  * candidate: medium.Xi[1](start = 0.01)
+//  * candidate: medium.X[1](start = 0.95)
+// => select value from medium.Xi[1](start = 0.01) for variable: medium.Xi[1]
+//
+// "true
+// "
+// ""
+// endResult

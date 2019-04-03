@@ -1,0 +1,38 @@
+// name: ExternalLibraryFunction
+// status: correct
+// setup_command: gcc -o ./TestLibrary/Resources/Library/ext1.o -c ./TestLibrary/Resources/Library/ext1.c && ar -cr ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/Library/ext1.o && gcc -o ./TestLibrary/Resources/SpecialLib/ext2.o -c ./TestLibrary/Resources/SpecialLib/ext2.c && ar -cr ./TestLibrary/Resources/SpecialLib/libext2.a ./TestLibrary/Resources/SpecialLib/ext2.o
+// teardown_command: rm -f ./TestLibrary/Resources/Library/ext1.o ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/ext2.o ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext*
+// depends: TestLibrary
+
+setModelicaPath("./TestLibrary/");
+loadModel(Test);getErrorString();
+echo(false);
+libs:=getLoadedLibraries();getErrorString();
+echo(true);
+libs[1,1];
+testsuiteFriendlyName(libs[1,2]);
+testsuiteFriendlyName(OpenModelica.Scripting.uriToFilename("modelica://Test")); // Don't print the full path
+setCommandLineOptions("-d=gen,noevalfunc");
+Test.ext1();getErrorString();
+Test.ext2();getErrorString();
+Test.ext3();getErrorString();
+Test.ext4();getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// "Test"
+// "flattening/modelica/mosfiles/TestLibrary"
+// "flattening/modelica/mosfiles/TestLibrary"
+// true
+// 42.1
+// ""
+// 42.2
+// ""
+// 42.3
+// ""
+// 42.4
+// ""
+// endResult

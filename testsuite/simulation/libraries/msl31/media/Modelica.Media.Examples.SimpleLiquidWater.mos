@@ -1,0 +1,27 @@
+//name:        simulate(Modelica.Media.Examples.SimpleLiquidWater)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Media.Examples.SimpleLiquidWater);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: setMatchingAlgorithm("PFPlusExt")
+// true
+// Evaluating: setIndexReductionMethod("dynamicStateSelection")
+// true
+// Evaluating: simulate(Modelica.Media.Examples.SimpleLiquidWater)
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.SimpleLiquidWater_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.SimpleLiquidWater', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

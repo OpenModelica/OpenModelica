@@ -1,0 +1,111 @@
+Solution of the exercise 03_assignment:
+
+
+Assignments.mo file changes:
+============================
+
+Add the folowing functions to Assignments.mo and call them within function evalprogram:
+
+function printAssignments
+  input ExpLst assignList;
+algorithm
+  _ := matchcontinue(assignList)
+    local ExpLst expLst; Exp exp;
+    case ({}) then (); // if nothing is in the list don't print anything
+    case (exp::{}) 
+      equation
+        printExp(exp);
+        print("\n");
+      then ();
+    case (exp::expLst) 
+      equation
+        printExp(exp);
+        print(", ");
+        printAssignments(expLst);
+      then ();
+  end matchcontinue;
+end printAssignments;
+  
+function printExp
+  input Exp exp;
+algorithm
+  _ := matchcontinue(exp)
+    local   
+      Integer i;
+      Exp exp1, exp2, exp;
+      Ident id;
+    case(INT(i)) 
+      equation print(intString(i));
+      then ();
+    case(BINARY(exp1, op, exp2)) 
+      local BinOp op;
+      equation
+        printExp(exp1);
+        printBinaryOp(op);
+        printExp(exp2);
+      then ();
+    case (UNARY(op, exp))
+      local UnOp op;
+      equation
+        printUnaryOp(op);
+        printExp(exp);
+      then ();
+    case(ASSIGN(id, exp))
+      equation
+        print(id);
+        print(" = ");
+        printExp(exp);
+      then ();
+    case(IDENT(id)) 
+      equation print(id);
+      then ();
+  end matchcontinue;
+end printExp;
+
+function printBinaryOp
+  input BinOp op;
+algorithm
+  _ := matchcontinue (op)
+    case (ADD()) equation print("+"); then ();
+    case (SUB()) equation print("-"); then ();
+    case (MUL()) equation print("*"); then ();
+    case (DIV()) equation print("/"); then ();
+  end matchcontinue;   
+end printBinaryOp;
+
+function printUnaryOp
+  input UnOp op;
+algorithm
+  _ := matchcontinue (op)
+    case (NEG()) equation print("-"); then ();
+  end matchcontinue;   
+end printUnaryOp;
+//--------------
+
+// your code here
+function printEnvironment
+  input Env varBndList;
+algorithm
+  _ := matchcontinue(varBndList)
+    local 
+      Ident id;
+      Value val; 
+      Env varBndLstRest; 
+    case ({}) then (); // if nothing is in the list don't print anything
+    case ((id, val)::{}) 
+      equation
+        print(id);
+        print(" = ");
+        print(intString(val));
+        print("\n");
+      then ();
+    case ((id, val)::varBndLstRest) 
+      equation
+        print(id);
+        print(" = ");
+        print(intString(val));
+        print(", ");
+        printEnvironment(varBndLstRest);
+      then ();
+  end matchcontinue;
+end printEnvironment;

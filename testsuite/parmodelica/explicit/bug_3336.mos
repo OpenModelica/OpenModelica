@@ -1,0 +1,29 @@
+// name: bug_3336
+// status: correct
+
+// setGrammarParModelica();
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
+
+setDefaultOpenCLDevice(1);
+getErrorString();
+
+loadFile("bug_3336.mo");
+getErrorString();
+
+x:=ParArg.Test(5);
+getErrorString();
+
+y:=ParArg.TestParArg(5);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// {5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0}
+// ""
+// {5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0}
+// ""
+// endResult

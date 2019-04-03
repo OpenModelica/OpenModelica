@@ -1,0 +1,38 @@
+// name:     ArrayReduce
+// keywords: array
+// status: correct
+// teardown_command: rm -rf ArrayReduce_* ArrayReduce ArrayReduce.exe ArrayReduce.cpp ArrayReduce.makefile ArrayReduce.libs ArrayReduce.log output.log
+// 
+// ??Error - not yet implemented
+// Drmodelica: 7.7 Built-in Functions (p. 225)
+// 
+
+loadFile("ArrayReduce.mo");
+simulate(ArrayReduce,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("ArrayReduce_res.mat");
+res:=readSimulationResult("ArrayReduce_res.mat",{minimum,maximum,summ,prod},size); 
+minimum:=res[1,1];
+maximum:=res[2,1];
+summ:=res[3,1];
+prod:=res[4,1];
+echo(true); // turns on output
+minimum;
+maximum;
+summ;
+prod;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArrayReduce_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ArrayReduce', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// -1.0
+// 6.0
+// 21.0
+// 12.56
+// endResult

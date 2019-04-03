@@ -1,0 +1,346 @@
+// name: TestInputIteration
+// status: correct
+//
+// Ticket 4046, 4446
+//
+
+loadString("
+model TestInputIteration
+  Real x1[2],z1;
+  Real x2[2],y2,z2;
+  Real x3[2],y3,z3;
+  Real x4[5],y4,z4;
+  Real x5,y5,z5;
+equation
+  // Case 1 (Ticket 4446): x1[1]=5,x1[2]=7,z1=5
+  x1[1] = 5+time;
+  (x1[1],x1[2]) = f1(z1);
+
+  // Case 2: x2[1]=5,x2[2]=0,y2=7,z2=5
+  x2 = {5+time, time};
+  (x2[1], y2) = f1(z2);
+
+  // Case 3: x3[1]=5,x3[2]=1,y3=5,z3=5
+  y3 = 5+time;
+  (y3,x3) = f3(z3);
+
+  // Case 4: x4[1]=4,x4[2]=5,x4[3]=6,x4[4]=7,x4[5]=8,y4=9,z4=4
+  x4[4] = 7+time;
+  (x4, y4) = f4(z4);
+
+  // Case 5: x5=5,y5=7,z5=5
+  x5 = 5+time;
+  (x5,y5) = f1(z5);
+end TestInputIteration;
+
+function f1
+  input Real z;
+  output Real x1;
+  output Real x2;
+algorithm
+  x1 := z;
+  x2 := z+2;
+end f1;
+
+function f3
+  input Real z;
+  output Real y;
+  output Real x[2];
+algorithm
+  y := z;
+  x := {z,1};
+end f3;
+
+function f4
+  input Real z;
+  output Real x[5];
+  output Real y;
+algorithm
+  x[1] := z;
+  x[2] := z+1;
+  x[3] := z+2;
+  x[4] := z+3;
+  x[5] := z+4;
+  y := z + x[2];
+end f4;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+simulate(TestInputIteration, stopTime=0, simflags="-output=x1[1],x1[2],z1,x2[1],x2[2],y2,z2,x3[1],x3[2],y3,z3,x4[1],x4[2],x4[3],x4[4],x4[5],y4,z4,x5,y5,z5"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations: 
+// ========================================
+//
+// 26: x1[1]=5.0 + time [Real ]
+// 29:  (NONLINEAR) index:5 jacobian: false
+// crefs: z1
+// 	27:   ($TMP_f127.x1[1], x1[2]) := f1(z1);
+//
+// 	28: $TMP_f127.x1[1] - x1[1] (RESIDUAL)
+//
+// 30: x2[2]=time [Real ]
+// 31: x2[1]=5.0 + time [Real ]
+// 34:  (NONLINEAR) index:6 jacobian: false
+// crefs: z2
+// 	32:   ($TMP_f132.x2[1], y2) := f1(z2);
+//
+// 	33: $TMP_f132.x2[1] - x2[1] (RESIDUAL)
+//
+// 35: y3=5.0 + time [Real ]
+// 38:  (NONLINEAR) index:7 jacobian: false
+// crefs: z3
+// 	36:   ($TMP_f336.y3, x3) := f3(z3);
+//
+// 	37: $TMP_f336.y3 - y3 (RESIDUAL)
+//
+// 39: x4[4]=7.0 + time [Real ]
+// 46:  (NONLINEAR) index:8 jacobian: false
+// crefs: z4
+// 	40:   ($TMP_f440.x4, y4) := f4(z4);
+//
+// 	41: x4[5]=$TMP_f440.x4[5] [Real ]
+// 	42: x4[3]=$TMP_f440.x4[3] [Real ]
+// 	43: x4[2]=$TMP_f440.x4[2] [Real ]
+// 	44: x4[1]=$TMP_f440.x4[1] [Real ]
+// 	45: $TMP_f440.x4[4] - x4[4] (RESIDUAL)
+//
+// 47: x5=5.0 + time [Real ]
+// 50:  (NONLINEAR) index:9 jacobian: false
+// crefs: z5
+// 	48:   ($TMP_f148.x5, y5) := f1(z5);
+//
+// 	49: $TMP_f148.x5 - x5 (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems): 
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems): 
+// ========================================
+// 47: x5=5.0 + time [Real ]
+// 50:  (NONLINEAR) index:9 jacobian: false
+// crefs: z5
+// 	48:   ($TMP_f148.x5, y5) := f1(z5);
+//
+// 	49: $TMP_f148.x5 - x5 (RESIDUAL)
+//
+// 39: x4[4]=7.0 + time [Real ]
+// 46:  (NONLINEAR) index:8 jacobian: false
+// crefs: z4
+// 	40:   ($TMP_f440.x4, y4) := f4(z4);
+//
+// 	41: x4[5]=$TMP_f440.x4[5] [Real ]
+// 	42: x4[3]=$TMP_f440.x4[3] [Real ]
+// 	43: x4[2]=$TMP_f440.x4[2] [Real ]
+// 	44: x4[1]=$TMP_f440.x4[1] [Real ]
+// 	45: $TMP_f440.x4[4] - x4[4] (RESIDUAL)
+//
+// 35: y3=5.0 + time [Real ]
+// 38:  (NONLINEAR) index:7 jacobian: false
+// crefs: z3
+// 	36:   ($TMP_f336.y3, x3) := f3(z3);
+//
+// 	37: $TMP_f336.y3 - y3 (RESIDUAL)
+//
+// 31: x2[1]=5.0 + time [Real ]
+// 34:  (NONLINEAR) index:6 jacobian: false
+// crefs: z2
+// 	32:   ($TMP_f132.x2[1], y2) := f1(z2);
+//
+// 	33: $TMP_f132.x2[1] - x2[1] (RESIDUAL)
+//
+// 30: x2[2]=time [Real ]
+// 26: x1[1]=5.0 + time [Real ]
+// 29:  (NONLINEAR) index:5 jacobian: false
+// crefs: z1
+// 	27:   ($TMP_f127.x1[1], x1[2]) := f1(z1);
+//
+// 	28: $TMP_f127.x1[1] - x1[1] (RESIDUAL)
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (11)
+// ========================================
+// 1: alias of 26
+// 4:  (NONLINEAR) index:0 jacobian: false
+// crefs: z1
+// 	2:   ($TMP_f12.x1[1], x1[2]) := f1(z1);
+//
+// 	3: $TMP_f12.x1[1] - x1[1] (RESIDUAL)
+//
+// 5: alias of 30
+// 6: alias of 31
+// 9:  (NONLINEAR) index:1 jacobian: false
+// crefs: z2
+// 	7:   ($TMP_f17.x2[1], y2) := f1(z2);
+//
+// 	8: $TMP_f17.x2[1] - x2[1] (RESIDUAL)
+//
+// 10: alias of 35
+// 13:  (NONLINEAR) index:2 jacobian: false
+// crefs: z3
+// 	11:   ($TMP_f311.y3, x3) := f3(z3);
+//
+// 	12: $TMP_f311.y3 - y3 (RESIDUAL)
+//
+// 14: alias of 39
+// 21:  (NONLINEAR) index:3 jacobian: false
+// crefs: z4
+// 	15:   ($TMP_f415.x4, y4) := f4(z4);
+//
+// 	16: x4[5]=$TMP_f415.x4[5] [Real ]
+// 	17: x4[3]=$TMP_f415.x4[3] [Real ]
+// 	18: x4[2]=$TMP_f415.x4[2] [Real ]
+// 	19: x4[1]=$TMP_f415.x4[1] [Real ]
+// 	20: $TMP_f415.x4[4] - x4[4] (RESIDUAL)
+//
+// 22: alias of 47
+// 25:  (NONLINEAR) index:4 jacobian: false
+// crefs: z5
+// 	23:   ($TMP_f123.x5, y5) := f1(z5);
+//
+// 	24: $TMP_f123.x5 - x5 (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations: 
+// ========================================
+//
+// startValueEquations: 
+// ========================================
+//
+// nominalValueEquations: 
+// ========================================
+//
+// minValueEquations: 
+// ========================================
+//
+// maxValueEquations: 
+// ========================================
+//
+// parameterEquations: 
+// ========================================
+//
+// removedEquations: 
+// ========================================
+//
+// algorithmAndEquationAsserts: 
+// ========================================
+//
+// equationsForZeroCrossings: 
+// ========================================
+//
+// jacobianEquations: 
+// ========================================
+//
+// jacobianMatrices: 
+// ========================================
+// 	Jacobian idx: 0
+// 	
+// 	Jacobian idx: 1
+// 	
+// 	Jacobian idx: 2
+// 	
+// 	Jacobian idx: 3
+// 	
+// 	Jacobian idx: 4
+// 	
+//
+// modelInfo: 
+// ========================================
+// algVars (39)
+// ----------------------
+// index: 0: $TMP_f12.x1[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f12.x1 index:(1) [] 
+// index: 1: $TMP_f123.x5 (no alias)  protected  hideResult  initial: 	no arrCref index:(2) [] 
+// index: 2: $TMP_f127.x1[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f127.x1 index:(3) [] 
+// index: 3: $TMP_f132.x2[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f132.x2 index:(4) [] 
+// index: 4: $TMP_f148.x5 (no alias)  protected  hideResult  initial: 	no arrCref index:(5) [] 
+// index: 5: $TMP_f17.x2[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f17.x2 index:(6) [] 
+// index: 6: $TMP_f311.y3 (no alias)  protected  hideResult  initial: 	no arrCref index:(7) [] 
+// index: 7: $TMP_f336.y3 (no alias)  protected  hideResult  initial: 	no arrCref index:(8) [] 
+// index: 8: $TMP_f415.x4[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f415.x4 index:(9) [] 
+// index: 9: $TMP_f415.x4[2] (no alias)  protected  hideResult  initial: 	no arrCref index:(10) [] 
+// index: 10: $TMP_f415.x4[3] (no alias)  protected  hideResult  initial: 	no arrCref index:(11) [] 
+// index: 11: $TMP_f415.x4[4] (no alias)  protected  hideResult  initial: 	no arrCref index:(12) [] 
+// index: 12: $TMP_f415.x4[5] (no alias)  protected  hideResult  initial: 	no arrCref index:(13) [] 
+// index: 13: $TMP_f440.x4[1] (no alias)  protected  hideResult  initial:  	arrCref:$TMP_f440.x4 index:(14) [] 
+// index: 14: $TMP_f440.x4[2] (no alias)  protected  hideResult  initial: 	no arrCref index:(15) [] 
+// index: 15: $TMP_f440.x4[3] (no alias)  protected  hideResult  initial: 	no arrCref index:(16) [] 
+// index: 16: $TMP_f440.x4[4] (no alias)  protected  hideResult  initial: 	no arrCref index:(17) [] 
+// index: 17: $TMP_f440.x4[5] (no alias)  protected  hideResult  initial: 	no arrCref index:(18) [] 
+// index: 18: x1[1] (no alias)  initial: 5.0 	arrCref:x1 index:(19) [2] 
+// index: 19: x1[2] (no alias)  initial: 	no arrCref index:(20) [2] 
+// index: 20: x2[1] (no alias)  initial: 5.0 	arrCref:x2 index:(21) [2] 
+// index: 21: x2[2] (no alias)  initial: 0.0	no arrCref index:(22) [2] 
+// index: 22: x3[1] (no alias)  initial:  	arrCref:x3 index:(23) [2] 
+// index: 23: x3[2] (no alias)  initial: 	no arrCref index:(24) [2] 
+// index: 24: x4[1] (no alias)  initial:  	arrCref:x4 index:(25) [5] 
+// index: 25: x4[2] (no alias)  initial: 	no arrCref index:(26) [5] 
+// index: 26: x4[3] (no alias)  initial: 	no arrCref index:(27) [5] 
+// index: 27: x4[4] (no alias)  initial: 7.0	no arrCref index:(28) [5] 
+// index: 28: x4[5] (no alias)  initial: 	no arrCref index:(29) [5] 
+// index: 29: x5 (no alias)  initial: 5.0	no arrCref index:(30) [] 
+// index: 30: y2 (no alias)  initial: 	no arrCref index:(31) [] 
+// index: 31: y3 (no alias)  initial: 5.0	no arrCref index:(32) [] 
+// index: 32: y4 (no alias)  initial: 	no arrCref index:(33) [] 
+// index: 33: y5 (no alias)  initial: 	no arrCref index:(34) [] 
+// index: 34: z1 (no alias)  initial: 	no arrCref index:(35) [] 
+// index: 35: z2 (no alias)  initial: 	no arrCref index:(36) [] 
+// index: 36: z3 (no alias)  initial: 	no arrCref index:(37) [] 
+// index: 37: z4 (no alias)  initial: 	no arrCref index:(38) [] 
+// index: 38: z5 (no alias)  initial: 	no arrCref index:(39) [] 
+// functions:
+// -----------
+//
+// Function: f1
+// 	outVars: x1 (Real, )  , x2 (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: x1 (Real, )  , x2 (Real, )  , 
+// Function: f3
+// 	outVars: y (Real, )  , x (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: y (Real, )  , x (Real, )  , 
+// Function: f4
+// 	outVars: x (Real, )  , y (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: x (Real, )  , y (Real, )  , 
+// record SimulationResult
+//     resultFile = "TestInputIteration_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'TestInputIteration', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=x1[1],x1[2],z1,x2[1],x2[2],y2,z2,x3[1],x3[2],y3,z3,x4[1],x4[2],x4[3],x4[4],x4[5],y4,z4,x5,y5,z5'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,x1[1]=5,x1[2]=7,z1=5,x2[1]=5,x2[2]=0,y2=7,z2=5,x3[1]=5,x3[2]=1,y3=5,z3=5,x4[1]=4,x4[2]=5,x4[3]=6,x4[4]=7,x4[5]=8,y4=9,z4=4,x5=5,y5=7,z5=5
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

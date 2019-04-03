@@ -1,0 +1,42 @@
+// name:     HelloFMIWorldEvent
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log
+//
+
+loadString("
+model HelloFMI20WorldEvent
+  Real x(start=1);
+  parameter Real a=2;
+equation
+  der(x) = if x > 1.5 then 0 else  a * x;
+end HelloFMI20WorldEvent;
+");
+
+translateModelFMU(HelloFMI20WorldEvent, version="2.0");
+getErrorString();
+importFMU("HelloFMI20WorldEvent.fmu");
+loadFile("HelloFMI20WorldEvent_me_FMU.mo");
+getErrorString();
+simulate(HelloFMI20WorldEvent_me_FMU, stepSize=0.4);
+val(x,0);
+val(x,1);
+
+// Result:
+// true
+// "HelloFMI20WorldEvent.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "HelloFMI20WorldEvent_me_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HelloFMI20WorldEvent_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HelloFMI20WorldEvent_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 1.500000000000002
+// endResult

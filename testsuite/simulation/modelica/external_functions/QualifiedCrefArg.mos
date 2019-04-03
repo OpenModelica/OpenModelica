@@ -1,0 +1,56 @@
+// name: QualifiedCrefArg
+// keyword: external function, qualified cref
+// status: correct
+// setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o QualifiedCrefArg-f.o QualifiedCrefArg-f.c
+// teardown_command: rm -f QualifiedCrefArg-f.o QualifiedCrefArg_*
+//
+//
+//
+
+loadFile("QualifiedCrefArg.mo");
+instantiateModel(QualifiedCrefArg);
+simulate(QualifiedCrefArg, numberOfIntervals=1);
+val(r1.x, 0.0);
+val(r1.y, 0.0);
+val(r2.x, 0.0);
+val(r2.y, 0.0);
+getErrorString();
+
+// Result:
+// true
+// "function QualifiedCrefArg.R \"Automatically generated record constructor for QualifiedCrefArg.R\"
+//   input Real x;
+//   input Real y;
+//   output R res;
+// end QualifiedCrefArg.R;
+//
+// impure function QualifiedCrefArg.f
+//   input QualifiedCrefArg.R ri = QualifiedCrefArg.R(1.0, 2.0);
+//   output QualifiedCrefArg.R r;
+//
+//   external \"C\" r.y = f_ext(ri.x, ri.y, r);
+// end QualifiedCrefArg.f;
+//
+// class QualifiedCrefArg
+//   Real r1.x;
+//   Real r1.y;
+//   Real r2.x;
+//   Real r2.y;
+// equation
+//   r1 = QualifiedCrefArg.f(QualifiedCrefArg.R(2.0, 3.0));
+//   r2 = QualifiedCrefArg.f(QualifiedCrefArg.R(1.0, 2.0));
+// end QualifiedCrefArg;
+// "
+// record SimulationResult
+//     resultFile = "QualifiedCrefArg_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'QualifiedCrefArg', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 6.0
+// 42.0
+// 3.0
+// 42.0
+// ""
+// endResult

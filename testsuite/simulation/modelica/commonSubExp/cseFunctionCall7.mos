@@ -1,0 +1,125 @@
+// name: cseFunctionCall7
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package types
+    record R
+      Real r1;
+      Integer r2;
+    end R;
+  end types;
+  
+  package functions
+    function f6
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := x1*x2;
+      y.r2 := 42+23;
+    end f6;
+    
+    function f5
+      input Real x1;
+      input Real x2;
+      input types.R r;
+      output Real y1;
+      output Real y2[2];
+    protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y1 := y1+x1*x2+r.r1*r.r2;
+      end for;
+      y2 := {r.r1,r.r2};
+    end f5;
+  end functions;
+  
+ model FunctionCallTest7
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    Real y,z;
+    Real a[2],b[2];
+    R r;
+  equation
+    x = sin(time*cos(time))*r.r1;
+    (y,a) = f5(time, x, f6(time, x));
+    (z,b) = f5(time, x, f6(time, x));
+    r = f6(time,time);
+  end FunctionCallTest7;
+
+end CSE;
+"); getErrorString();
+
+//setCommandLineOptions("--preOptModules=unitChecking,evaluateReplaceProtectedFinalEvaluateParameters,stateMachineElab,simplifyIfEquations,expandDerOperator,clockPartitioning,CSE_EachCall,findStateOrder,introduceDerAlias,inputDerivativesForDynOpt,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,comSubExp,sortEqnsVars"); getErrorString();
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest7); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (12)
+// ========================================
+// 1: r.r1:VARIABLE()  type: Real 
+// 2: b[2]:VARIABLE()  type: Real  [2]
+// 3: b[1]:VARIABLE()  type: Real  [2]
+// 4: a[2]:VARIABLE()  type: Real  [2]
+// 5: a[1]:VARIABLE()  type: Real  [2]
+// 6: z:VARIABLE()  type: Real 
+// 7: y:VARIABLE()  type: Real 
+// 8: x:VARIABLE()  type: Real 
+// 9: $cse3.r2:DISCRETE(protected = true )  type: Integer  unreplaceable
+// 10: $cse3.r1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 11: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 12: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (7, 12)
+// ========================================
+// 1/1 (1): x = $cse1 * r.r1   [dynamic |0|0|0|0|]
+// 2/2 (3): (z, b) = (y, a)   [dynamic |0|0|0|0|]
+// 3/5 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [unknown |0|0|0|0|]
+// 4/6 (2): $cse3 = CSE.functions.f6(time, x)   [unknown |0|0|0|0|]
+// 5/8 (3): (y, a) = CSE.functions.f5(time, x, $cse3)   [unknown |0|0|0|0|]
+// 6/11 (1): $cse2 = cos(time)   [unknown |0|0|0|0|]
+// 7/12 (1): $cse1 = sin(time * $cse2)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: r.r2:DISCRETE(fixed = true )  = 65  type: Integer 
+//
+//
+// ########### CSE Replacements (5/50)
+// ========================================
+// 1: $cse1 - sin(time * $cse2) - {}
+// 2: $cse2 - cos(time) - {}
+// 3: (y, a) - CSE.functions.f5(time, x, $cse3) - {}
+// 4: $cse3 - CSE.functions.f6(time, x) - {}
+// 5: r.r1 - CSE.functions.f6_eval4(time, time) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

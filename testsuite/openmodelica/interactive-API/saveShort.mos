@@ -1,0 +1,23 @@
+// status: correct
+
+loadString("package Test
+  model Testa
+    replaceable function func = Functiona;
+  end Testa;
+end Test;");
+if regularFileExists("func.mo") then remove("func.mo") else true;
+setSourceFile(Test.Testa.func, "func.mo");
+save(Test.Testa.func);getErrorString();
+readFile("func.mo");getErrorString();
+
+// Result:
+// true
+// true
+// true
+// true
+// ""
+// "within Test.Testa;
+//
+// function func = Functiona;"
+// ""
+// endResult

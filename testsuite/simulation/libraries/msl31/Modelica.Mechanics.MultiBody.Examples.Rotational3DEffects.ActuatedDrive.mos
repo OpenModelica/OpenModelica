@@ -1,0 +1,43 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive);
+compareVars :=
+{
+   "revolute.phi",
+   "revolute.w",
+   "rotor1D.phi",
+   "rotor1D.w",
+   "revolute.a",
+   "rotor1D.a"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive
+// {"revolute.phi","revolute.w","rotor1D.phi","rotor1D.w","revolute.a","rotor1D.a"}
+// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive', options = '', outputFormat = 'mat', variableFilter = 'time|revolute.phi|revolute.w|rotor1D.phi|rotor1D.w|revolute.a|rotor1D.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

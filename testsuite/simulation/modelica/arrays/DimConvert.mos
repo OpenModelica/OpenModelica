@@ -1,0 +1,36 @@
+// name:     DimConvert
+// keywords: array
+// status:   correct
+// teardown_command: rm -rf DimConvert_* DimConvert.exe DimConvert.cpp DimConvert.makefile DimConvert.libs DimConvert.log output.log 
+
+// Drmodelica: 7.7 Built-in Functions (p. 225)
+//
+loadFile("DimConvert.mo");
+simulate(DimConvert,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("DimConvert_res.mat");
+res:=readSimulationResult("DimConvert_res.mat",{m1[3,1],v2[3],s1,m4[2,1]},size); 
+m1:=res[1,1];
+v2:=res[2,1];
+s1:=res[3,1];
+m4:=res[4,1];
+echo(true); // turns on output
+m1;
+v2;
+s1;
+m4;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DimConvert_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DimConvert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 3.0
+// 3.0
+// 4.0
+// 3.0
+// endResult

@@ -1,0 +1,67 @@
+// name:     RedeclarePackage [BUG: https://openmodelica.org:8443/cb/issue/1652]
+// keywords: correct parameters in the .mat file
+// status:   correct
+// teardown_command: rm -rf Test.exe Test Test_*
+// Test correct writing of parameters to the mat file.
+// Fix for bug #1652: https://openmodelica.org:8443/cb/issue/1652
+// 
+
+loadFile("RedeclarePackage.mo"); getErrorString();
+instantiateModel(Test); getErrorString();
+simulate(Test); getErrorString();
+"mod.result1@0";
+val(mod.result1, 0);
+"mod.result2@0";
+val(mod.result2, 0);
+"mod.value@0";
+val(mod.value, 0);
+"mod.result1@0.5";
+val(mod.result1, 0.5);
+"mod.result2@0.5";
+val(mod.result2, 0.5);
+"mod.value@0.5";
+val(mod.value, 0.5);
+
+// Result:
+// true
+// ""
+// "function TestModel$mod.Function.func
+//   input Real value;
+//   output Real result;
+// algorithm
+//   result := value;
+// end TestModel$mod.Function.func;
+//
+// class Test
+//   parameter Real mod.value = 1.0;
+//   parameter Real mod.result1(fixed = false) = TestModel$mod.Function.func(mod.value);
+//   parameter Real mod.result2 = 1.0;
+//   Real mod.x;
+// equation
+//   mod.x = TestModel$mod.Function.func(1.0 + time);
+// end Test;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[simulation/modelica/packages/RedeclarePackage.mo:21:3-21:63:writable] Warning: The parameter mod.result1 has fixed = false and a binding equation mod.result1 = TestModel$mod.Function.func(mod.value), which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// "
+// "mod.result1@0"
+// 1.0
+// "mod.result2@0"
+// 1.0
+// "mod.value@0"
+// 1.0
+// "mod.result1@0.5"
+// 1.0
+// "mod.result2@0.5"
+// 1.0
+// "mod.value@0.5"
+// 1.0
+// endResult

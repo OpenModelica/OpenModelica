@@ -1,0 +1,30 @@
+// name:     Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature
+// teardown_command: rm -f Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature.mat",
+  "Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature_diff.csv",0.01,0.0001,
+  {"heatCapacitor.T"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

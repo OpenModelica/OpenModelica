@@ -1,0 +1,34 @@
+// name:     PlanarMechanicsForTesting.Examples.Pendulum.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.Pendulum.* PlanarMechanicsForTesting.Examples.Pendulum_* PlanarMechanicsForTesting.Examples.Pendulum PlanarMechanicsForTesting.Examples.Pendulum.exe PlanarMechanicsForTesting.Examples.Pendulum.cpp PlanarMechanicsForTesting.Examples.Pendulum.makefile PlanarMechanicsForTesting.Examples.Pendulum.libs PlanarMechanicsForTesting.Examples.Pendulum.log PlanarMechanicsForTesting.Examples.Pendulum.c PlanarMechanicsForTesting.Examples.Pendulum.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.Pendulum); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.Pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//Pendulum.mat","PlanarMechanicsForTesting.Examples.Pendulum_diff.csv",0.01,0.013,
+  {"revolute.phi", "revolute.w", "revolute.z", "body.r[1]", "body.r[2]"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.Pendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

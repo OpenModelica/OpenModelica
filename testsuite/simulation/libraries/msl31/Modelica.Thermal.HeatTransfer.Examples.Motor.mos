@@ -1,0 +1,27 @@
+// name:     Modelica.Thermal.HeatTransfer.Examples.Motor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Thermal.HeatTransfer.Examples.Motor,stopTime=7200.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.HeatTransfer.Examples.Motor_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.HeatTransfer.Examples.Motor.mat","Modelica.Thermal.HeatTransfer.Examples.Motor_diff.csv",0.01,0.00001,
+  {"core.T","winding.T"});
+  
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Thermal.HeatTransfer.Examples.Motor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 7200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.HeatTransfer.Examples.Motor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

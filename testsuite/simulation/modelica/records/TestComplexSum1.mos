@@ -1,0 +1,23 @@
+// status: correct
+
+loadFile("TestComplexSum.mo");getErrorString();
+loadModel(Complex,{"3.2.2"});getErrorString();
+simulate(TestComplexSum1,simflags="-output sum1.re,sum1.im,sum2.re,sum2.im");getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestComplexSum1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestComplexSum1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output sum1.re,sum1.im,sum2.re,sum2.im'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,sum1.re=3,sum1.im=5,sum2.re=3,sum2.im=5
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to initial equation section and setting fixed attribute of sum1.re to false.
+// [simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to initial equation section and setting fixed attribute of sum1.im to false.
+// "
+// endResult

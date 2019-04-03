@@ -1,0 +1,31 @@
+// name:     TupleInteractive
+// keywords: Tuple
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Tuple Testing
+//
+loadFile("TupleInteractive.mo");
+i:=1;
+(1,1.5);
+(1,i+2.5);
+res := TupleInteractive.tupleToInt((3,7.5));
+res := TupleInteractive.tupleToInt((3,7.0 /*TODO:Allow Integer here again?*/));
+res := TupleInteractive.tupleIdent((1,1.5));
+res := TupleInteractive.intRealToTuple(2,2.5);
+TupleInteractive.tupleToMultipleCompiled((2,3.5));
+
+// Problems: Algoritm:385 type conversions of several output args are not clearly defined
+
+
+// Result:
+// true
+// 1
+// (1,1.5)
+// (1,3.5)
+// 2
+// 2
+// (1,1.5)
+// (2,2.5)
+// (1,1.5)
+// endResult

@@ -1,0 +1,203 @@
+// name:     testVectorizedBlocks
+// keywords: vectorized components, array equations, for loops
+// status: correct
+// teardown_command: rm -f *VectorizedBlocksTest*
+
+setCommandLineOptions("--std=3.3"); getErrorString();
+setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
+setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model VectorizedBlocksTest
+  parameter Integer n = 10;
+  Modelica.Blocks.Interfaces.RealInput u[n](start = 1:n);
+  Modelica_Synchronous.ClockSignals.Clocks.PeriodicRealClock periodicClock1(period = 0.1, useSolver=true, solverMethod=\"ImplicitEuler\");
+  Modelica_Synchronous.RealSignals.Sampler.AssignClockVectorized assignClock1(n = n);
+  Modelica.Blocks.Continuous.Integrator integrator1[n](y_start = 1:n);
+  Modelica.Blocks.Interfaces.RealOutput y[n];
+equation
+  connect(u, assignClock1.u);
+  connect(periodicClock1.y, assignClock1.clock);
+  connect(assignClock1.y, integrator1.u);
+  connect(integrator1.y, y);
+  annotation(
+    uses(Modelica(version = \"3.2.2\"), Modelica_Synchronous(version = \"0.92.1\")));
+end VectorizedBlocksTest;
+"); getErrorString();
+
+simulate(VectorizedBlocksTest); getErrorString();
+
+val(y[5], 1.0);
+val(y[10], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: output y:VARIABLE(flow=false )  type: Real[10]  [10]
+// 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10]  [10]
+// 3: integrator1.y:VARIABLE(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10]  [10]
+// 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10]  [10]
+// 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10]  [10]
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (10): u = assignClock1.u   [dynamic |0|0|0|0|]
+// 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
+// 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
+// 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
+// 5/41 (10): for $i in 1 : 10 loop 
+//     der(integrator1[$i].y) = integrator1[$i].k * integrator1[$i].u; end for;    [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (9)
+// ========================================
+// 1: n:PARAM()  = 10  type: Integer 
+// 2: input u:VARIABLE(flow=false start = 1.0:10.0 )  type: Real[10]  [10]
+// 3: periodicClock1.period:PARAM(unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real 
+// 4: periodicClock1.useSolver:PARAM(final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean 
+// 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String 
+// 6: assignClock1.n:PARAM(min = 1 )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer 
+// 7: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10]  [10]
+// 8: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10]  [10]
+// 9: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10]  [10]
+//
+//
+// Initial Equations (1, 1)
+// ========================================
+// 1/1 (10): integrator1.y = integrator1.y_start   [dynamic |0|0|0|0|]
+//
+//
+// Base partitions (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub partitions (1)
+// ========================================
+// 1: factor(1/1) shift(0/1) solver(ImplicitEuler) event(false)
+//
+//
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: output y:VARIABLE(flow=false )  type: Real[10]  [10]
+// 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10]  [10]
+// 3: integrator1.y:CLOCKED_STATE(flow=false start = integrator1.y_start fixed = true )  "Connector of Real output signal" type: Real[10]  [10]
+// 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10]  [10]
+// 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10]  [10]
+// 6: $DER.integrator1.y:VARIABLE()  type: Real[10]  [10]
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (10): u = assignClock1.u   [dynamic |0|0|0|0|]
+// 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
+// 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
+// 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
+// 5/41 (10): for $i in 1 : 10 loop 
+//     $DER.integrator1[$i].y = integrator1[$i].k * integrator1[$i].u; end for;    [dynamic |0|0|0|0|]
+// 6/51 (10): for i in 1 : 10 loop 
+//     (integrator1[i].y - previous(integrator1[i].y)) / interval() = if firstTick() then 0.0 else $DER.integrator1[i].y; end for;    [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 6
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 1
+// var 6 is solved in eqn 5
+//
+//
+// StrongComponents
+// ========================================
+// Array  {{1:5}}
+// Array  {{4:4}}
+// Array  {{2:2}}
+// {5:6}
+// {6:3}
+// Array  {{3:1}}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (9)
+// ========================================
+// 1: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10]  [10]
+// 2: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10]  [10]
+// 3: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10]  [10]
+// 4: assignClock1.n:PARAM(min = 1 )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer 
+// 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String 
+// 6: periodicClock1.useSolver:PARAM(final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean 
+// 7: periodicClock1.period:PARAM(unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real 
+// 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true )  type: Real[10]  [10]
+// 9: n:PARAM()  = 10  type: Integer 
+//
+//
+// Base partitions (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub partitions (1)
+// ========================================
+// 1: factor(1/1) shift(0/1) solver(ImplicitEuler) event(false)
+//
+//
+// record SimulationResult
+//     resultFile = "VectorizedBlocksTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VectorizedBlocksTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Modelica_Synchronous 0.92.1 due to uses annotation.
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 10.0
+// 20.0
+// endResult

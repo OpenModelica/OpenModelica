@@ -1,0 +1,71 @@
+// status: correct
+// teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log temp-outputState/
+
+loadString("
+model outputState
+  output Real y(start=y_start, fixed=true);
+  parameter Real y_start = 1.0;
+equation
+  der(y) = -1.0;
+end outputState;
+
+model sink
+  input Real u;
+end sink;
+"); getErrorString();
+
+buildModelFMU(outputState, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+buildModelFMU(sink, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("outputState.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-outputState/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"outputState.fmu\")
+oms_addSubModel(\"test.root.B\", \"sink.fmu\")
+oms_addConnection(\"test.root.A.y\", \"test.root.B.u\")
+oms_setResultFile(\"test\", \"\")
+
+oms_instantiate(\"test\")
+oms_setReal(\"test.root.A.y_start\", 1.5)
+
+oms_initialize(\"test\")
+print(\"info:    Initialization\")
+print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
+print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+
+oms_simulate(\"test\")
+print(\"info:    Simulation\")
+print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
+print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua");
+
+// Result:
+// true
+// ""
+// "outputState.fmu"
+// ""
+// "sink.fmu"
+// ""
+// true
+// ""
+// info:    maximum step size for 'test.root': 0.100000
+// info:    No result file will be created
+// info:    Initialization
+// info:      A.y: 1.5
+// info:      B.u: 1.5
+// info:    Simulation
+// info:      A.y: 0.5
+// info:      B.u: 0.5
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
+//          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// 0
+// endResult

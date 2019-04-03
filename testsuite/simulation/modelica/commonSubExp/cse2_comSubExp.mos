@@ -1,0 +1,140 @@
+// name: cse2_comSubExp
+// keywords: cse
+// status: correct
+
+loadString("
+model Tearing3 \"Example from Book Continous System Simulation by F. Cellier page 277\"
+  Real u0;
+  Real u1;
+  Real u2;
+  Real uL;
+  Real uC;
+  Real i0;
+  Real i1;
+  Real i2(start=0,fixed=true);
+  Real iL;
+  Real iC;
+  parameter Real R1=1;
+  parameter Real R2=2;
+  parameter Real L=0.5;
+  parameter Real C=3;
+equation
+  u0 = sin(time);
+  u1 = R1*i1;
+  u2 = R2*i2;
+  uL = L*der(iL);
+  iC = C*der(uC);
+  u0 = u1 + uL;
+  uC = u1 + u2;
+  uL = u2;
+  i0 = i1 + iC;
+  i1 = i2 + iL;
+end Tearing3;
+"); getErrorString();
+
+//test the CSE of binary terms without introducing cse variables
+
+setDebugFlags("dumpCSE"); getErrorString();
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+simulate(Tearing3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (11)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE(start = 0.0 fixed = true )  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+// 9: u0:DUMMY_STATE()  type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+// 11: $DER.u0:DUMMY_DER(fixed = false )  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (11, 11)
+// ========================================
+// 1/1 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
+// 2/2 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
+// 3/3 (1): $DER.uC = $DER.u0   [dynamic |0|0|0|0|]
+// 4/4 (1): u0 = u1 + uL   [dynamic |0|0|0|0|]
+// 5/5 (1): iC = C * $DER.uC   [dynamic |0|0|0|0|]
+// 6/6 (1): uL = L * der(iL)   [dynamic |0|0|0|0|]
+// 7/7 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
+// 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
+// 9/9 (1): uC = u0   [dynamic |0|0|0|0|]
+// 10/10 (1): u0 = sin(time)   [unknown |0|0|0|0|]
+// 11/11 (1): $DER.u0 = cos(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (4)
+// ========================================
+// 1: R1:PARAM()  = 1.0  type: Real 
+// 2: R2:PARAM()  = 2.0  type: Real 
+// 3: L:PARAM()  = 0.5  type: Real 
+// 4: C:PARAM()  = 3.0  type: Real 
+//
+//
+// ########### CSE Replacements (2/53)
+// ========================================
+// 1: $DER.u0 - cos(time) - {}
+// 2: u0 - sin(time) - {}
+//
+// ########### Updated Variable List ########### (11)
+// ========================================
+// 1: iC:VARIABLE()  type: Real 
+// 2: iL:STATE(1)()  type: Real 
+// 3: i2:VARIABLE(start = 0.0 fixed = true )  type: Real 
+// 4: i1:VARIABLE()  type: Real 
+// 5: i0:VARIABLE()  type: Real 
+// 6: uC:DUMMY_STATE()  type: Real 
+// 7: uL:VARIABLE()  type: Real 
+// 8: u1:VARIABLE()  type: Real 
+// 9: u0:DUMMY_STATE()  type: Real 
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
+// 11: $DER.u0:DUMMY_DER(fixed = false )  type: Real 
+//
+//
+// ########### Updated Equation List ########### (11, 11)
+// ========================================
+// 1/1 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
+// 2/2 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
+// 3/3 (1): $DER.uC = $DER.u0   [dynamic |0|0|0|0|]
+// 4/4 (1): u0 = u1 + uL   [dynamic |0|0|0|0|]
+// 5/5 (1): iC = C * $DER.uC   [dynamic |0|0|0|0|]
+// 6/6 (1): uL = L * der(iL)   [dynamic |0|0|0|0|]
+// 7/7 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
+// 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
+// 9/9 (1): uC = u0   [dynamic |0|0|0|0|]
+// 10/10 (1): u0 = sin(time)   [unknown |0|0|0|0|]
+// 11/11 (1): $DER.u0 = cos(time)   [unknown |0|0|0|0|]
+//
+// record SimulationResult
+//     resultFile = "Tearing3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Deprecated flag --cseBinary detected. Use --postOptModules+=cseBinary instead.
+// Warning: Deprecated flag --cseCall detected. Use --postOptModules+=wrapFunctionCalls instead.
+// "
+// endResult

@@ -1,0 +1,23 @@
+// name:     Modelica.Electrical.Machines.Examples.AIMC_DOL
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.AIMC_DOL,stopTime=1.5);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.AIMC_DOL_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.AIMC_DOL.mat","Modelica.Electrical.Machines.Examples.AIMC_DOL_diff.csv",0.01,0.00001,
+  {"aimc.i_0_s","aimc.idq_rr[1]","aimc.idq_rr[2]","aimc.idq_sr[1]","imc.idq_sr[2]","loadInertia.phi","loadInertia.w"});
+  
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.AIMC_DOL_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AIMC_DOL', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

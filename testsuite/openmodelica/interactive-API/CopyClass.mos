@@ -1,0 +1,138 @@
+// name:      CopyClass
+// keywords:  copyClass
+// status:    correct
+//
+// Tests the copyClass API.
+//
+
+loadFile("TestFilePkg.mo");
+getErrorString();
+loadFile("TestDirPkg/package.mo");
+getErrorString();
+
+// Top file package to top.
+copyClass(TestFilePkg, "TestFilePkgcopy");
+getClassInformation(TestFilePkgcopy);
+
+// Top dir package to top.
+copyClass(TestDirPkg, "TestDirPkgcopy");
+getClassInformation(TestDirPkgcopy);
+
+// Class in top file package to top.
+copyClass(TestFilePkg.A, "Acopy");
+getClassInformation(Acopy);
+
+// Class in top dir package to top.
+copyClass(TestDirPkg.B, "Bcopy");
+getClassInformation(Bcopy);
+
+// Package in nested file package to top.
+copyClass(TestDirPkg.M1, "M1copy");
+getClassInformation(M1copy);
+
+// Package in nested dir package to top.
+copyClass(TestDirPkg.SubDirPkg, "SubDirPkgcopy");
+getClassInformation(SubDirPkgcopy);
+
+// Class in nested file package to top.
+copyClass(TestDirPkg.SubFilePkg.SFPA, "SFPAcopy");
+getClassInformation(SFPAcopy);
+
+// Class in nested dir package to top.
+copyClass(TestDirPkg.SubDirPkg.SDPA, "SDPAcopy");
+getClassInformation(SDPAcopy);
+
+// Top file package to within.
+copyClass(TestFilePkg, "TestFilePkgcopy", TestDirPkg);
+getClassInformation(TestDirPkg.TestFilePkgcopy);
+
+// Top dir package to within.
+copyClass(TestDirPkg, "TestDirPkgcopy", TestDirPkg);
+getClassInformation(TestDirPkg.TestDirPkgcopy);
+
+// Class in top file package to within.
+copyClass(TestFilePkg.A, "Acopy", TestDirPkg);
+getClassInformation(TestDirPkg.Acopy);
+
+// Class in top dir package to within.
+copyClass(TestDirPkg.A, "Acopy", TestDirPkg.SubDirPkg);
+getClassInformation(TestDirPkg.SubDirPkg.Acopy);
+
+// Nested file package to same scope.
+copyClass(TestDirPkg.SubFilePkg, "SubFilePkgcopy", TestDirPkg);
+getClassInformation(TestDirPkg.SubFilePkgcopy);
+
+// Nested dir package to same scope.
+copyClass(TestDirPkg.SubDirPkg, "SubDirPkgcopy", TestDirPkg);
+getClassInformation(TestDirPkg.SubDirPkgcopy);
+
+// Nested file package to different scope.
+copyClass(TestDirPkg.SubFilePkg, "SubFilePkgcopy", TestDirPkg.SubDirPkg);
+getClassInformation(TestDirPkg.SubDirPkg.SubFilePkgcopy);
+
+// Nested dir package to different scope.
+copyClass(TestDirPkg.SubDirPkg, "SubDirPkgcopy", TestDirPkg.SubFilePkg);
+getClassInformation(TestDirPkg.SubFilePkg.SubDirPkgcopy);
+
+// Nested class in file package to same scope.
+copyClass(TestDirPkg.SubFilePkg.SFPA, "SFPAcopy", TestDirPkg.SubFilePkg);
+getClassInformation(TestDirPkg.SubFilePkg.SFPAcopy);
+
+// Nested class in dir package to same scope.
+copyClass(TestDirPkg.SubDirPkg.SDPA, "SDPAcopy", TestDirPkg.SubDirPkg);
+getClassInformation(TestDirPkg.SubDirPkg.SDPAcopy);
+
+// Nested class in file package to different scope.
+copyClass(TestDirPkg.SubFilePkg.SFPA, "SFPAcopy", TestDirPkg.SubDirPkg);
+getClassInformation(TestDirPkg.SubDirPkg.SFPAcopy);
+
+// Nested class in dir package to different scope.
+copyClass(TestDirPkg.SubDirPkg.SDPA, "SDPAcopy", TestDirPkg.SubFilePkg);
+getClassInformation(TestDirPkg.SubFilePkg.SDPAcopy);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ("package","",false,false,false,"<interactive>",false,1,1,11,16,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"<interactive>",false,1,1,11,15,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"<interactive>",false,8,3,10,8,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"<interactive>",false,7,3,10,8,{},false,false,"","",false,"")
+// true
+// ("model","",false,false,false,"<interactive>",false,3,1,6,7,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"<interactive>",false,3,1,7,14,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"<interactive>",false,4,3,6,11,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"<interactive>",false,4,3,6,11,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/package.mo",false,1,1,11,16,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/package.mo",false,1,1,11,15,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/package.mo",false,8,3,10,8,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubDirPkg/package.mo",false,2,3,5,8,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/package.mo",false,3,1,7,15,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/package.mo",false,3,1,7,14,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubDirPkg/package.mo",false,3,1,7,15,{},false,false,"","",false,"")
+// true
+// ("package","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubFilePkg.mo",false,3,1,7,14,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubFilePkg.mo",false,4,3,6,11,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubDirPkg/package.mo",false,4,3,6,11,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubDirPkg/package.mo",false,4,3,6,11,{},false,false,"","",false,"")
+// true
+// ("class","",false,false,false,"openmodelica/interactive-API/TestDirPkg/SubFilePkg.mo",false,4,3,6,11,{},false,false,"","",false,"")
+// endResult

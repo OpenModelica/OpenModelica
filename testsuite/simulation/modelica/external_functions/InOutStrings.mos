@@ -1,0 +1,49 @@
+// name:     String array arguments
+// keywords: array, string, external function
+// status:   correct
+// teardown_command: rm -rf c1.makefile c1.log c1.libs c1_init.xml c1_functions.cpp c1.cpp ext1.so ext1.makefile ext1.log ext1.libs ext1.c c2.makefile c2.log c2.libs c2_init.xml c2_functions.cpp c2.cpp c1_res.mat c1 output.log c2_res.plt c2 ext2.so ext2.makefile ext2.log ext2.libs ext2.c libInOutStrings1.o libInOutStrings2.o c1_functions.h c1_records.c c2_functions.h c2_records.c ext1.h ext1_records.c ext2.h ext2_records.c c2_res.mat ext1.conv.c ext2.conv.c c1.conv.cpp c2.conv.cpp
+
+// We need -fPIC to build on 64-bit Linux, but this prints warnings
+// in Windows. GCC is supposed to not output warnings since we use
+// the -w flag. If it doesn't work, do some nice work-around that
+// keeps -fPIC. Adding the source files instead of o-files in the
+// annotation usually works.
+system("g++ -c -w -fPIC -o libInOutStrings1.o InOutStrings_fkn1.cc");
+system("g++ -c -w -fPIC -o libInOutStrings2.o InOutStrings_fkn2.cc");
+loadFile("InOutStrings.mo");
+simulate(c1);
+echo(false);
+s:=readSimulationResultSize("c1_res.mat");
+res:=readSimulationResult("c1_res.mat",{x},s);
+echo(true);
+res[1,1];
+ext1({1,2,3});
+
+simulate(c2);
+echo(false);
+s:=readSimulationResultSize("c2_res.mat");
+res:=readSimulationResult("c2_res.mat",{x},s);
+echo(true);
+res[1,1];
+ext2({"a","b","c"});
+// Result:
+// 0
+// 0
+// true
+// record SimulationResult
+//     resultFile = "c1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'c1', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// 4.0
+// 3
+// record SimulationResult
+//     resultFile = "c2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'c2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// 4.0
+// 3
+// endResult

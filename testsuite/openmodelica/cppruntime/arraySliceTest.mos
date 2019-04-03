@@ -1,0 +1,46 @@
+// name: arraySliceTest
+// keywords: slice array
+// status: correct
+// teardown_command: rm -f *ArraySlice.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+package ArraySlice
+model Test
+  Real[:,:] m = [1; 2; 3; 4; 5];
+  Real[:] w = reverse(m);
+  annotation(experiment(StopTime = 0));
+end Test;
+function reverse
+  input Real[:,1] m;
+  output Real[size(m, 1) - 1] w;
+protected
+  Real[:,:] m2 = m[:,:];   // test all indices if size(dim) is 1
+  Real[:] v = m2[:,1];     // test reduction if size(dim) is 1
+algorithm
+  w := v[size(w, 1):-1:1]; // test slice with negative step
+end reverse;
+end ArraySlice;
+");
+getErrorString();
+
+simulate(ArraySlice.Test);
+getErrorString();
+
+val(w[1], 0);
+val(w[4], 0);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArraySlice.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArraySlice.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 4.0
+// 1.0
+// endResult

@@ -1,0 +1,24 @@
+// name: bug_3349
+// status: correct
+
+// setGrammarParModelica();
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
+
+setDefaultOpenCLDevice(1);
+getErrorString();
+
+loadFile("bug_3349.mo");
+getErrorString();
+
+x:=ParTmp.test(4);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// {8.0,16.0}
+// ""
+// endResult

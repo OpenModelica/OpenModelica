@@ -1,0 +1,45 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump);
+compareVars :=
+{
+   "speed.phi",
+   "speed.w",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]",
+   "smee.idq_rr[1]",
+   "smee.idq_rr[2]",
+   "smee.lesigma.i",
+   "voltageController.I.y"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// {"speed.phi","speed.w","smee.idq_sr[1]","smee.idq_sr[2]","smee.idq_rr[1]","smee.idq_rr[2]","smee.lesigma.i","voltageController.I.y"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump', options = '', outputFormat = 'mat', variableFilter = 'time|speed.phi|speed.w|smee.idq_sr.1.|smee.idq_sr.2.|smee.idq_rr.1.|smee.idq_rr.2.|smee.lesigma.i|voltageController.I.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

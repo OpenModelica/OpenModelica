@@ -1,0 +1,37 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance);
+compareVars :=
+{
+   "converter_m.Phi.re",
+   "inductor_e.i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance
+// {"converter_m.Phi.re","inductor_e.i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

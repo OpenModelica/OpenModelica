@@ -1,0 +1,45 @@
+// name: gaspropreties
+// keywords: #BUG-1721, initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf gaspropreties.intake1* _gaspropreties.intake1* output.log
+//
+//  case for #BUG-1721
+//
+
+loadString("
+within ;
+package gaspropreties
+  model gaspropreties1
+  protected
+    Real pco1;
+  equation
+    when initial() then
+      pco1=14.39;
+    end when;
+  end gaspropreties1;
+
+  model intake1
+    extends gaspropreties1;
+  protected
+    Real var;
+  equation
+    var=1/pco1;
+  end intake1;
+end gaspropreties;
+"); getErrorString();
+
+simulate(gaspropreties.intake1, startTime=0.0, stopTime=0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "gaspropreties.intake1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'gaspropreties.intake1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

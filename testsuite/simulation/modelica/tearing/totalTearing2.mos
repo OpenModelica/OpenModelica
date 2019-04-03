@@ -1,0 +1,649 @@
+// name:      totalTearing2
+// keywords:  total tearing
+// status:    correct
+
+loadString("
+model totalTearing2
+   Real x,y,z;
+   parameter Real a=10, b=5, c=2;
+equation
+   a*x = b*z;
+   a*x + b* sin(z) = y - c;
+   c*y + time = x;
+end totalTearing2;
+"); getErrorString();
+
+setCommandLineOptions("+d=backenddaeinfo,totaltearingdump, --totalTearing=2"); getErrorString();
+simulate(totalTearing2); getErrorString();
+
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// Power Set:
+// ========================================
+// {1}
+// {2}
+// {2,1}
+// {3}
+// {3,1}
+// {3,2}
+// {3,2,1}
+// {4}
+// {4,1}
+// {4,2}
+// {4,2,1}
+// {4,3}
+// {4,3,1}
+// {4,3,2}
+// {4,3,2,1}
+//
+//
+//
+// ###BEGIN TO LOOP#####################
+// ****************************************
+//
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 3,4,1
+// *
+// * resEq: 3,4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 3,4,1
+// *
+// * resEq: 2,4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,4,1
+// *
+// * resEq: 3,2,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,4,1
+// *
+// * resEq: 3,4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:3}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,4,1
+// *
+// * resEq: 2,4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:3}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 4,1
+// *
+// * resEq: 3,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 4,1
+// *
+// * resEq: 2,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,3,1
+// *
+// * resEq: 3,2,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {4:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,3,1
+// *
+// * resEq: 3,4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 3,1
+// *
+// * resEq: 3,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {4:4}, {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 3,1
+// *
+// * resEq: 2,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {4:4}, {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 3,1
+// *
+// * resEq: 4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:2}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,1
+// *
+// * resEq: 3,2
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {4:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,1
+// *
+// * resEq: 3,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,1
+// *
+// * resEq: 3,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {4:4}, {2:3}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,1
+// *
+// * resEq: 2,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {4:4}, {3:3}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,1
+// *
+// * resEq: 4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:3}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 1
+// *
+// * resEq: 3
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {4:4}, {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 1
+// *
+// * resEq: 2
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {4:4}, {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 1
+// *
+// * resEq: 4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:3}, {3:2}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 3
+// *
+// * tVars: 2,3,4
+// *
+// * resEq: 3,2,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 3,4
+// *
+// * resEq: 3,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 3,4
+// *
+// * resEq: 2,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,4
+// *
+// * resEq: 3,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:3}, {1:1}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,4
+// *
+// * resEq: 2,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:3}, {1:1}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,3
+// *
+// * resEq: 3,2
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {4:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 2,3
+// *
+// * resEq: 3,4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 3
+// *
+// * resEq: 3
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {4:4}, {2:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 3
+// *
+// * resEq: 2
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {4:4}, {3:2}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 3
+// *
+// * resEq: 4
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:1}, {3:2}, {2:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 2
+// *
+// * resEq: 2
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:3}, {1:1}, {4:4}
+// *
+// *****************************************
+//
+//
+// ****************************************
+// * TEARING RESULTS:
+// * (Global Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 2
+// *
+// * resEq: 4
+// *
+// * innerEquations ({eqn,vars}):
+// * {3:3}, {1:1}, {2:4}
+// *
+// *****************************************
+//
+//
+//
+// Total number of different tearing sets: 32
+//
+// record SimulationResult
+//     resultFile = "totalTearing2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'totalTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 3
+//  * Number of variables: 3
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 2}
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {3 1}
+// "
+// endResult

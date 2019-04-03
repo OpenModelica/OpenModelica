@@ -1,0 +1,46 @@
+// name:     ModelicaTest.MultiBody.Joints.FreeMotion
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Joints.FreeMotion);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Joints.FreeMotion_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Joints.FreeMotion.mat",
+  "ModelicaTest.MultiBody.Joints.FreeMotion_diff.csv",0.01,0.0001,
+  {"freeMotion.Q.set[3]",
+"freeMotion.Q.set[2]",
+"freeMotion.Q.set[1]",
+"body.frame_a.r_0[1]",
+"body.frame_a.r_0[2]",
+"body.frame_a.r_0[3]",
+"body.v_0[1]",
+"body.v_0[2]",
+"body.v_0[3]",
+"body.w_a[1]",
+"body.w_a[2]",
+"body.w_a[3]"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Joints.FreeMotion_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Joints.FreeMotion\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>%NAME%</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>full,incremental,</triggers>
+			<arguments>
+				<dictionary>
+					<key>LaunchConfigHandle</key>
+					<value>&lt;project&gt;/.externalToolBuilders/OMC.launch</value>
+				</dictionary>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.modelica.mdt.core.ModelicaNature</nature>
+	</natures>
+</projectDescription>

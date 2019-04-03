@@ -1,0 +1,55 @@
+// name:     Modelica.Electrical.Analog.Examples.ShowVariableResistor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.ShowVariableResistor);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ShowVariableResistor_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ShowVariableResistor.mat","Modelica.Electrical.Analog.Examples.ShowVariableResistor_diff.csv",0.01,0.00001,
+  {"VariableResistor.v",
+  "VariableResistor.p.v",
+  "VariableResistor.n.v",
+  "VariableResistor.LossPower",
+  "VariableResistor.R_actual",
+  "VariableResistor.R",
+  "Ground2.p.i",
+  "R1.v",
+  "R1.LossPower",
+  "R2.v",
+  "R2.p.v",
+  "R2.LossPower",
+  "R3.p.v",
+  "R3.n.i",
+  "R4.v",
+  "R4.LossPower",
+  "R5.n.i",
+  "R5.LossPower",
+  "SineVoltage1.p.i",
+  "SineVoltage1.n.v",
+  "Ground1.p.v",
+  "Ground2.p.v",
+  "R3.n.v",
+  "R5.n.v",
+  "SineVoltage1.p.v",
+  "R5.R_actual",
+  "R4.R_actual",
+  "R3.R_actual",
+  "R2.R_actual",
+  "R1.R_actual"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ShowVariableResistor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowVariableResistor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

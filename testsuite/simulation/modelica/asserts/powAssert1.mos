@@ -1,0 +1,35 @@
+// name: powAssert1
+// status: correct
+
+setCommandLineOptions("-d=gendebugsymbols");
+loadString("\n\n\n\n
+package AssertTests
+  model powAssert1
+    parameter Real base = -1.0;
+    Real exponent(start=1.0, fixed=true);
+    Real y;
+  equation
+    y = base^exponent;
+    when time > 0.5 then
+      exponent = pre(exponent) + 0.1;
+    end when;
+  end powAssert1;
+end AssertTests;
+","powAssert1.mos"); getErrorString();
+
+simulate(AssertTests.powAssert1); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTests.powAssert1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertTests.powAssert1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | debug   | powAssert1.mos:12: Invalid root: (-1)^(1.1)
+// "
+// end SimulationResult;
+// ""
+// endResult

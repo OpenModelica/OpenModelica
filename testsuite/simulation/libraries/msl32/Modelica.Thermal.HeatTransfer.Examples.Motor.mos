@@ -1,0 +1,37 @@
+// name:     Modelica.Thermal.HeatTransfer.Examples.Motor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Thermal.HeatTransfer.Examples.Motor);
+compareVars :=
+{
+   "winding.T",
+   "core.T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Thermal.HeatTransfer.Examples.Motor
+// {"winding.T","core.T"}
+// Simulation options: startTime = 0.0, stopTime = 7200.0, numberOfIntervals = 720000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.HeatTransfer.Examples.Motor', options = '', outputFormat = 'mat', variableFilter = 'time|winding.T|core.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Thermal.HeatTransfer.Examples.Motor_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

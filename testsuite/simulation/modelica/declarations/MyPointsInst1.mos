@@ -1,0 +1,39 @@
+// name:     MyPointsInst1
+// keywords: <insert keywords here>
+// status: correct
+// teardown_command: rm -rf MyPointsInst1_* MyPointsInst1 MyPointsInst1.exe MyPointsInst1.cpp MyPointsInst1.makefile MyPointsInst1.libs MyPointsInst1.log output.log
+//
+//  <insert description here>
+// Drmodelica: 2.2  Declaring Instances of Classes (p. 26)
+//
+loadFile("MyPointsInst1.mo");
+simulate(MyPointsInst1,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+val(x,0.0);
+val(x,0.5);
+val(x,1.0);
+val(y,0.0);
+val(y,0.5);
+val(y,1.0);
+val(z,0.0);
+val(z,0.5);
+val(z,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "MyPointsInst1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'MyPointsInst1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 1.0
+// 1.0
+// 2.0
+// 2.0
+// 2.0
+// 3.0
+// 3.0
+// 3.0
+// endResult

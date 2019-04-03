@@ -1,0 +1,39 @@
+// name:     Modelica.Thermal.FluidHeatFlow.Examples.OneMass
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Thermal.FluidHeatFlow.Examples.OneMass);
+compareVars :=
+{
+   "pipe.T",
+   "heatCapacitor.T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Thermal.FluidHeatFlow.Examples.OneMass
+// {"pipe.T","heatCapacitor.T"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.OneMass', options = '', outputFormat = 'mat', variableFilter = 'time|pipe.T|heatCapacitor.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Thermal.FluidHeatFlow.Examples.OneMass_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,31 @@
+// name:     Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest.mat",
+  "Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_diff.csv",0.01,0.0001,
+  {"thyristor_v4_1.vControl",
+   "inductor.i"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0002, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

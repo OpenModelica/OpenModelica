@@ -1,0 +1,55 @@
+// name: Bug3687.mos
+// keywords: inline
+// status: correct
+//
+// test for #3687
+//
+
+loadString("
+model Bug3687
+  function f
+    input Real z;
+    output Real y;
+  protected
+    Real a[2];
+  algorithm
+    a := {2 * z, z};
+    y := sum(a)/3;
+    annotation(Inline = true);
+  end f;
+  function f1
+    input Real z;
+    output Real y;
+  protected
+    Real a[2];
+  algorithm
+    a := {2 * z, z};
+    y := sum(a)/3;
+  end f1;
+
+  Real y(start = 0, fixed = true);
+  Real z1, z2;
+  Real a[2] = {sin(time),cos(time)};
+equation
+  z1 = f(5 + time);
+  z2 = f1(5 + time);
+  der(y) = abs(z1-z2);
+end Bug3687;
+"); getErrorString();
+
+simulate(Bug3687); getErrorString();
+val(y, {0.0,1.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Bug3687_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Bug3687', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,0.0}
+// endResult

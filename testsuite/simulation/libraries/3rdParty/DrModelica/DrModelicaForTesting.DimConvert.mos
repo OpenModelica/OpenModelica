@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.DimConvert.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.DimConvert
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.DimConvert.* DrModelicaForTesting.DimConvert_* DrModelicaForTesting.DimConvert DrModelicaForTesting.DimConvert.exe DrModelicaForTesting.DimConvert.cpp DrModelicaForTesting.DimConvert.makefile DrModelicaForTesting.DimConvert.libs DrModelicaForTesting.DimConvert.log DrModelicaForTesting.DimConvert.c DrModelicaForTesting.DimConvert.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.DimConvert, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.DimConvert_res.mat",
+  "ReferenceFiles/DimConvert_ref.mat","DrModelicaForTesting.DimConvert_diff.csv",0.01,0.013,
+  {"s1","v1[1]","m1[1,1]","v1[1]"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.DimConvert_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.DimConvert', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.WhenStat3.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.WhenStat3
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.WhenStat3.* DrModelicaForTesting.WhenStat3_* DrModelicaForTesting.WhenStat3 DrModelicaForTesting.WhenStat3.exe DrModelicaForTesting.WhenStat3.cpp DrModelicaForTesting.WhenStat3.makefile DrModelicaForTesting.WhenStat3.libs DrModelicaForTesting.WhenStat3.log DrModelicaForTesting.WhenStat3.c DrModelicaForTesting.WhenStat3.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.WhenStat3, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WhenStat3_res.mat",
+  "ReferenceFiles/WhenStat3_ref.mat","DrModelicaForTesting.WhenStat3_diff.csv",0.01,0.013,
+  {"x","y1", "y2", "y3"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.WhenStat3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WhenStat3', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,7 @@
+// name:      HpcOm_Syn_NPendulum_10
+// keywords:  hpcom
+// Simulation to create the _prof.xml-File.
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("../HpcOm_Syn_NPendulum.mo"); getErrorString();
+simulate(NPendulum,  measureTime=true, simflags="-clock=CYC"); getErrorString();

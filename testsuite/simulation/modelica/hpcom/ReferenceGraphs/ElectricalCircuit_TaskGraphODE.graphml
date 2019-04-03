@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+
+    <key for="node" id="gi1" yfiles.type="nodegraphics"/>
+    <key attr.name="description" attr.type="string" for="node" id="ddesc" />
+    <key for="edge" id="gi2" yfiles.type="edgegraphics"/>
+    
+    <key attr.name="Name" attr.type="string" for="node" id="cust1">
+        <default></default>
+    </key>
+    <key attr.name="Operations" attr.type="int" for="node" id="cust2">
+        <default>-1</default>
+    </key>
+    <key attr.name="CalcTime" attr.type="double" for="node" id="cust3">
+        <default>-1</default>
+    </key>
+    <key attr.name="TaskID" attr.type="string" for="node" id="cust4">
+        <default></default>
+    </key>
+    <key attr.name="Components" attr.type="string" for="node" id="cust5">
+        <default></default>
+    </key>
+    <key attr.name="yCoord" attr.type="int" for="node" id="cust6">
+        <default>17</default>
+    </key>
+    <key attr.name="SimCodeEqs" attr.type="string" for="node" id="cust7">
+        <default></default>
+    </key>
+    <key attr.name="ThreadId" attr.type="string" for="node" id="cust8">
+        <default></default>
+    </key>
+    <key attr.name="TaskNumber" attr.type="int" for="node" id="cust9">
+        <default>-1</default>
+    </key>
+    <key attr.name="CommCost" attr.type="double" for="edge" id="cust10">
+        <default>-1</default>
+    </key>
+    <key attr.name="CommVars" attr.type="int" for="edge" id="cust11">
+        <default>-1</default>
+    </key>
+    <key attr.name="CommVarsInt" attr.type="int" for="edge" id="cust12">
+        <default>-1</default>
+    </key>
+    <key attr.name="CommVarsFloat" attr.type="int" for="edge" id="cust13">
+        <default>-1</default>
+    </key>
+    <key attr.name="CommVarsBool" attr.type="int" for="edge" id="cust14">
+        <default>-1</default>
+    </key>
+    <key attr.name="Annotations" attr.type="string" for="node" id="cust15">
+        <default>annotation</default>
+    </key>
+    <key attr.name="CriticalPath" attr.type="string" for="graph" id="cust16">
+        <default></default>
+    </key>
+    <key attr.name="isPartOfZeroFuncSystem" attr.type="boolean" for="node" id="cust17">
+        <default>false</default>
+    </key>
+    <key attr.name="IsPartOfOdeSystem" attr.type="boolean" for="node" id="cust18">
+        <default>false</default>
+    </key>
+    <key attr.name="IsRemovedComponent" attr.type="boolean" for="node" id="cust19">
+        <default>false</default>
+    </key>
+    
+    <!-- Graph Idx: 1 -->
+    <graph edgedefault="directed" id="TaskGraph">
+        <data key="cust16"><![CDATA[ ;; critical path with costs of 868.0 cycles -- 1,2,3,4critical path' with costs of 646.0 cycles -- 1,2,3,4 sum: (646.0 ; 13)]]></data>
+        <node id="Node4">
+            <data key="cust1"><![CDATA[{5:1}]]></data>
+            <data key="cust3">72</data>
+            <data key="cust2">0</data>
+            <data key="cust4"><![CDATA[ 4 ]]></data>
+            <data key="cust5"><![CDATA[{4}]]></data>
+            <data key="cust6">0</data>
+            <data key="cust7"><![CDATA[13]]></data>
+            <data key="cust8"><![CDATA[Th -1]]></data>
+            <data key="cust9">-1</data>
+            <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
+            <data key="cust17">false</data>
+            <data key="cust18">false</data>
+            <data key="cust19">false</data>
+            <data key="ddesc"><![CDATA[der(capacitor.v) = sineVoltage.i / capacitor.C FOR  der(capacitor.v)]]></data>
+            <data key="gi1">
+                <y:ShapeNode>
+                  <y:Fill color="#FFCC00" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">72</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 4 </y:NodeLabel>
+                  <y:Shape type="rectangle"/>
+                </y:ShapeNode>
+            </data>
+        </node>
+        <node id="Node3">
+            <data key="cust1"><![CDATA[{2:4}]]></data>
+            <data key="cust3">72</data>
+            <data key="cust2">0</data>
+            <data key="cust4"><![CDATA[ 3 ]]></data>
+            <data key="cust5"><![CDATA[{3}]]></data>
+            <data key="cust6">0</data>
+            <data key="cust7"><![CDATA[12]]></data>
+            <data key="cust8"><![CDATA[Th -1]]></data>
+            <data key="cust9">-1</data>
+            <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
+            <data key="cust17">false</data>
+            <data key="cust18">false</data>
+            <data key="cust19">false</data>
+            <data key="ddesc"><![CDATA[sineVoltage.i = resistor.v / resistor.R_actual FOR sineVoltage.i]]></data>
+            <data key="gi1">
+                <y:ShapeNode>
+                  <y:Fill color="#FFCC00" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">72</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 3 </y:NodeLabel>
+                  <y:Shape type="rectangle"/>
+                </y:ShapeNode>
+            </data>
+        </node>
+        <node id="Node2">
+            <data key="cust1"><![CDATA[{4:3}]]></data>
+            <data key="cust3">59</data>
+            <data key="cust2">2</data>
+            <data key="cust4"><![CDATA[ 2 ]]></data>
+            <data key="cust5"><![CDATA[{2}]]></data>
+            <data key="cust6">0</data>
+            <data key="cust7"><![CDATA[11]]></data>
+            <data key="cust8"><![CDATA[Th -1]]></data>
+            <data key="cust9">-1</data>
+            <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
+            <data key="cust17">false</data>
+            <data key="cust18">false</data>
+            <data key="cust19">false</data>
+            <data key="ddesc"><![CDATA[resistor.v = (-sineVoltage.v) - capacitor.v FOR resistor.v]]></data>
+            <data key="gi1">
+                <y:ShapeNode>
+                  <y:Fill color="#FFCC00" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">59</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 2 </y:NodeLabel>
+                  <y:Shape type="rectangle"/>
+                </y:ShapeNode>
+            </data>
+        </node>
+        <node id="Node1">
+            <data key="cust1"><![CDATA[{1:5}]]></data>
+            <data key="cust3">443</data>
+            <data key="cust2">11</data>
+            <data key="cust4"><![CDATA[ 1 ]]></data>
+            <data key="cust5"><![CDATA[{1}]]></data>
+            <data key="cust6">0</data>
+            <data key="cust7"><![CDATA[10]]></data>
+            <data key="cust8"><![CDATA[Th -1]]></data>
+            <data key="cust9">-1</data>
+            <data key="cust15"><![CDATA[uncomment in HpcOmTaskGraph and +showAnnotations]]></data>
+            <data key="cust17">false</data>
+            <data key="cust18">false</data>
+            <data key="cust19">false</data>
+            <data key="ddesc"><![CDATA[sineVoltage.v = sineVoltage.signalSource.offset + (if time < sineVoltage.signalSource.startTime then 0.0 else sineVoltage.signalSource.amplitude * sin(6.283185307179586 * sineVoltage.signalSource.freqHz * (time - sineVoltage.signalSource.startTime) + sineVoltage.signalSource.phase)) FOR sineVoltage.v]]></data>
+            <data key="gi1">
+                <y:ShapeNode>
+                  <y:Fill color="#FFCC00" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#FFFF00" fontFamily="Dialog" fontSize="12" fontStyle="bold" hasLineColor="false" modelName="corners" modelPosition="se" textColor="#000000" visible="true">443</y:NodeLabel>
+                  <y:NodeLabel alignment="center" autoSizePolicy="content"  fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" modelName="internal" modelPosition="c" textColor="#000000" visible="true"> 1 </y:NodeLabel>
+                  <y:Shape type="rectangle"/>
+                </y:ShapeNode>
+            </data>
+        </node>
+
+        <edge id="Edge34" source="Node3" target="Node4">
+          <data key="cust10">74</data>
+          <data key="cust11">1</data>
+          <data key="cust12">0</data>
+          <data key="cust13">1</data>
+          <data key="cust14">0</data>
+          <data key="gi2">
+            <y:PolyLineEdge>
+              <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+              <y:LineStyle color="#C0C0C0" type="line" width="4.0"/>
+              <y:Arrows source="none" target="standard"/>
+              <y:BendStyle smoothed="false"/>
+              <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#C0C0C0" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
+            </y:PolyLineEdge>
+          </data>
+        </edge>
+        <edge id="Edge23" source="Node2" target="Node3">
+          <data key="cust10">74</data>
+          <data key="cust11">1</data>
+          <data key="cust12">0</data>
+          <data key="cust13">1</data>
+          <data key="cust14">0</data>
+          <data key="gi2">
+            <y:PolyLineEdge>
+              <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+              <y:LineStyle color="#C0C0C0" type="line" width="4.0"/>
+              <y:Arrows source="none" target="standard"/>
+              <y:BendStyle smoothed="false"/>
+              <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#C0C0C0" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
+            </y:PolyLineEdge>
+          </data>
+        </edge>
+        <edge id="Edge12" source="Node1" target="Node2">
+          <data key="cust10">74</data>
+          <data key="cust11">1</data>
+          <data key="cust12">0</data>
+          <data key="cust13">1</data>
+          <data key="cust14">0</data>
+          <data key="gi2">
+            <y:PolyLineEdge>
+              <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+              <y:LineStyle color="#C0C0C0" type="line" width="4.0"/>
+              <y:Arrows source="none" target="standard"/>
+              <y:BendStyle smoothed="false"/>
+              <y:EdgeLabel alignment="center" distance="2.0" fontFamily="Dialog" backgroundColor="#C0C0C0" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" modelName="side_slider" preferredPlacement="anywhere" visible="true">74</y:EdgeLabel>
+            </y:PolyLineEdge>
+          </data>
+        </edge>
+    </graph>
+</graphml>

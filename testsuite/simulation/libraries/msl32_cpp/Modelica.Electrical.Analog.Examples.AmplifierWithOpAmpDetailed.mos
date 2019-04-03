@@ -1,0 +1,41 @@
+// name:     Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed);
+compareVars :=
+{
+   "opAmp.v_in",
+   "opAmp.q_fr1",
+   "opAmp.q_fr2",
+   "opAmp.q_fr3",
+   "opAmp.q_fp1",
+   "opAmp.v_source",
+   "opAmp.x"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed
+// {"opAmp.v_in","opAmp.q_fr1","opAmp.q_fr2","opAmp.q_fr3","opAmp.q_fp1","opAmp.v_source","opAmp.x"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 0.003, numberOfIntervals = 2500, tolerance = 2e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed_res.mat
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.SynchCounters.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.SynchCounters
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.SynchCounters.* DrModelicaForTesting.SynchCounters_* DrModelicaForTesting.SynchCounters DrModelicaForTesting.SynchCounters.exe DrModelicaForTesting.SynchCounters.cpp DrModelicaForTesting.SynchCounters.makefile DrModelicaForTesting.SynchCounters.libs DrModelicaForTesting.SynchCounters.log DrModelicaForTesting.SynchCounters.c DrModelicaForTesting.SynchCounters.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.SynchCounters, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.SynchCounters_res.mat",
+  "ReferenceFiles/SynchCounters_ref.mat","DrModelicaForTesting.SynchCounters_diff.csv",0.01,0.013,
+  {"slowPulses", "fastPulses","count","slowCount"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.SynchCounters_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.SynchCounters', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

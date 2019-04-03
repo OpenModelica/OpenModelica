@@ -1,0 +1,38 @@
+// status: correct
+
+loadString("package ModelicaCompliance
+package Operators
+package If
+model IfExpression
+annotation(__ModelicaAssociation(TestCase(shouldPass=true)));
+end IfExpression;
+model BadIfExpression
+annotation(__ModelicaAssociation(TestCase(shouldPass=false)));
+end BadIfExpression;
+end If;
+end Operators;
+end ModelicaCompliance;");getErrorString();
+classAnnotationExists(ModelicaCompliance.Operators.If.IfExpression,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+classAnnotationExists(ModelicaCompliance.Operators.If.BadIfExpression,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+classAnnotationExists(ModelicaCompliance.Operators.If,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+getBooleanClassAnnotation(ModelicaCompliance.Operators.If.IfExpression,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+getBooleanClassAnnotation(ModelicaCompliance.Operators.If.BadIfExpression,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+getBooleanClassAnnotation(ModelicaCompliance.Operators.If,__ModelicaAssociation.TestCase.shouldPass);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// ""
+// true
+// ""
+// false
+// ""
+// 
+// "Error: Could not find class annotation __ModelicaAssociation.TestCase.shouldPass in class ModelicaCompliance.Operators.If.
+// "
+// endResult

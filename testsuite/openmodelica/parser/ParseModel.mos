@@ -1,0 +1,45 @@
+// name:     ParseModel-WriteModel-ParseModel
+// keywords: check that the parsing/saving/parsing cycle works fine
+// status:   correct
+// depends:  ParseModel-saved.mo
+//
+// Parsing: check that the parsing/saving/parsing cycle works fine
+//
+
+system("cp ./ParseModel-saved.mo ./ParseModel.mo"); /* copy the saved model */
+getErrorString();
+loadFile("ParseModel.mo");
+list();
+save(A);
+loadFile("ParseModel.mo"); getErrorString();
+/* see that there are no differences (other than the line endings*) */
+system("diff -w ParseModel.mo ParseModel-saved.mo > parseDiff.txt"); getErrorString();
+readFile("parseDiff.txt"); getErrorString();
+system("rm -f ./ParseModel.mo"); /* copy the saved model again */
+getErrorString();
+deleteFile("parseDiff.txt"); getErrorString();
+
+// Result:
+// 0
+// ""
+// true
+// "model A
+//   annotation(
+//     Documentation(info = \"line1
+//
+//   line2\"));
+// end A;"
+// true
+// true
+// ""
+// 1
+// ""
+// "6a7
+// > 
+// "
+// ""
+// 0
+// ""
+// true
+// ""
+// endResult

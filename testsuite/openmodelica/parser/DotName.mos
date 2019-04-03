@@ -1,0 +1,26 @@
+// name: DotName
+// status: correct
+//
+// Tests parsing for the Modelica 3.2 .A.B.C = (Fully-Qualified) A.B.C
+//
+
+loadFile("DotName.mo");
+getErrorString();
+list();
+
+// Result:
+// true
+// ""
+// "record R
+//   Real r;
+// end R;
+// 
+// class DotName
+//   constant .R r = .R(1.5);
+//   .DotName.Real r2 = .DotName.r;
+// 
+//   class R
+//     Integer r;
+//   end R;
+// end DotName;"
+// endResult

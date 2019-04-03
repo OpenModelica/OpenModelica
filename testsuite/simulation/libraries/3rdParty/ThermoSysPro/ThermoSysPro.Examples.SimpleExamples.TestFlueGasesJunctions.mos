@@ -1,0 +1,55 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.exe ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.cpp ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.makefile ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.libs ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.log ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.c ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions, stopTime=200); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_diff.csv",
+0.01, 0.0001,
+{"splitter2.Ce.Q", "splitter2.Cs1.Q", "splitter2.Cs2.Q",
+ "mixer2_1.Ce1.Q", "mixer2_1.Ce2.Q", "mixer2_1.Cs.Q"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,33 @@
+// name: HashTable Unit Testing
+// status: correct
+// teardown_command: rm -f HashTableTest_*
+
+runScript("LoadCompilerSources.mos");getErrorString();
+loadFile("HashTableTest.mo");getErrorString();
+setCommandLineOptions("-d=rml,noevalfunc,gen");
+
+HashTableTest.fn(1);
+getErrorString();
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+// ({record DAE.Exp.ICONST
+//     integer = 7
+// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+//     integer = 3
+// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+//     integer = 2
+// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+//     integer = 1
+// end DAE.Exp.ICONST;},{record DAE.Exp.ICONST
+//     integer = 2
+// end DAE.Exp.ICONST;,record DAE.Exp.ICONST
+//     integer = 7
+// end DAE.Exp.ICONST;})
+// ""
+// endResult

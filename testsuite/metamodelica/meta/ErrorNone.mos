@@ -1,0 +1,15 @@
+// name: ErrorNone
+// cflags: +g=MetaModelica
+// status: correct
+
+match NONE()
+  case NONE then 1;
+  else 2;
+end match;
+getErrorString();
+
+// Result:
+//
+// "[metamodelica/meta/ErrorNone.mos:6:8-6:13:writable] Error: NONE is not acceptable syntax. Use NONE() instead.
+// "
+// endResult

@@ -1,0 +1,84 @@
+// name: whenTest2
+// keywords: event, when
+// status: correct
+// teardown_command: rm -rf eventTests.whenTest2* output.log
+//
+// example for when equation without equations, just with statements e.g. reinit, terminate
+//
+
+loadString("
+within ;
+package eventTests
+  model whenTest2
+    Real x(start=1);
+  equation
+    der(x) = 10*sin(time);
+    when x>1.5 then
+      reinit(x,1);
+    end when;
+    when sample(0,0.1) then
+      print(\"Time : \" + String(time) + \"\\n\");
+      print(\"x : \" + String(x) + \"\\n\");
+    end when;
+    when time >= 0.9 then
+      terminate(\"Terminate the model.\");
+    end when;
+    when x > 1.1 then
+      assert(time<0.5, \"Assert does trigger.\", AssertionLevel.warning);
+    elsewhen x > 1.2 then
+      assert(time<0.55, \"Assert does triggered again .\", AssertionLevel.warning);
+    end when;
+  end whenTest2;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.whenTest2); getErrorString();
+val(x, 0.0);
+val(x, 0.5);
+val(x, 0.9);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.whenTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventTests.whenTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// Time : 0
+// x : 1
+// Time : 0.1
+// x : 1.04996
+// Time : 0.2
+// x : 1.19933
+// Time : 0.3
+// x : 1.44663
+// Time : 0.4
+// x : 1.28938
+// Time : 0.5
+// x : 1.22416
+// assert            | warning | The following assertion has been violated at time 0.573517
+// |                 | |       | time < 0.5
+// assert            | warning | Assert does trigger.
+// assert            | warning | The following assertion has been violated at time 0.591693
+// |                 | |       | time < 0.55
+// assert            | warning | Assert does triggered again .
+// Time : 0.6
+// x : 1.24662
+// Time : 0.7
+// x : 1.35155
+// Time : 0.8
+// x : 1.0329
+// Time : 0.9
+// x : 1.28387
+// [<interactive>:16:7-16:40:writable]
+// stdout            | info    | Simulation call terminate() at time 0.900000
+// |                 | |       | Message : Terminate the model.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.0
+// 1.224156088965564
+// 1.283865558908968
+// endResult

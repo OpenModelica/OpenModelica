@@ -1,0 +1,25 @@
+// name: MatchCaseGuard
+// cflags: -g=MetaModelica -d=tail,gen
+// status: correct
+
+loadString("function fac
+  input Integer i;
+  input Integer acc = 1;
+  output Integer res;
+algorithm
+  res := match SOME(i)
+    local
+      Integer ii;
+    case SOME(ii) guard(ii > 1) then fac(ii-1, acc*ii);
+    else acc;
+  end match;
+end fac;");getErrorString();
+fac({1,2,3,4,5,100000});getErrorString();
+
+// Result:
+// true
+// ""
+// {1,2,6,24,120,0}
+// "[<interactive>:6:3-11:12:writable] Notification: Tail recursion of: fac(-1 + ii, acc * ii) with input vars: i,acc
+// "
+// endResult

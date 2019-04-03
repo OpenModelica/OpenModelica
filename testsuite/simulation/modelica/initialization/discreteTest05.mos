@@ -1,0 +1,68 @@
+// name: discreteTest5
+// keywords: initialization, discrete
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.discreteTest5* _initializationTests.discreteTest5* output.log
+//
+//  case for discrete variables during initialization
+//
+
+loadString("
+within ;
+package initializationTests
+  model discreteTest5_baseModel
+    Real x;
+    Boolean free;
+
+  initial equation 
+    x = if free then 1.0 else 2.0;
+
+  equation 
+    der(x) = if free then 1.0 else 2.0;
+    free = false;
+  end discreteTest5_baseModel;
+  
+  model discreteTest5
+    discreteTest5_baseModel bm;
+    Real y;
+
+  initial equation 
+    y = if pre(bm.free) then 1.0 else 2.0;
+
+  equation 
+    der(y) = if bm.free then 1.0 else 2.0;
+  end discreteTest5;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.discreteTest5_baseModel, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest5_baseModel_res.mat", {time, x, free}, 2); getErrorString();
+
+simulate(initializationTests.discreteTest5, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest5_res.mat", {time, y, bm.x, bm.free}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.discreteTest5_baseModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5_baseModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{2.0,2.0},{0.0,0.0}}
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.discreteTest5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{2.0,2.0},{2.0,2.0},{0.0,0.0}}
+// ""
+// endResult

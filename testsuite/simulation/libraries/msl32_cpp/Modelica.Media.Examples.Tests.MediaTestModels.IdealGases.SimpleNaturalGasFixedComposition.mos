@@ -1,0 +1,47 @@
+// name:     Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition);
+compareVars :=
+{
+   "volume.U",
+   "volume.m"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition
+// {"volume.U","volume.m"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.SimpleNaturalGasFixedComposition_res.mat
+// Files Equal!
+// Warning: Alias set with different nominal values
+//  * candidate: volume.medium.state.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.medium.state.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.medium.p(nominal = 100000.0)
+//  * candidate: shortPipe.port_a.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.port.p(nominal = 1000000.0)
+//  * candidate: volume.port.p(nominal = 1000000.0)
+//  * candidate: volume.medium.p(nominal = 100000.0)
+// => select value from volume.medium.p(nominal = 100000.0) for variable: volume.medium.p
+//
+// "true
+// "
+// ""
+// endResult

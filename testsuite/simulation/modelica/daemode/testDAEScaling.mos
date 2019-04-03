@@ -1,0 +1,63 @@
+// name: testDAEScaling
+// status: correct
+// teardown_command: rm -f Test1* Test2* Test3 output.log
+
+loadString("
+model Test
+  parameter Integer N = 20;
+  parameter Real k_min = 1;
+  parameter Real k_max = 2;
+  parameter Real d_0 = 10;
+  Real d_tot(start = 0, fixed = true);
+  final parameter Real s_0 = d_0/N;
+  Real d[N+1];
+  Real s[N];
+  Real F[N];
+  Real k[N];
+equation
+  der(d_tot) = 1;
+  d[1] = 0;
+  for i in 1:N loop
+    d[i+1] = d[i] + s[i];
+    s[i]*(1 + abs(s[i])/s_0)*k[i]*N = F[i];
+    k[i] = k_min + (k_max-k_min)/(N-1)*(i-1);
+  end for;
+  for i in 1:N-1 loop
+    F[i] = F[i+1];
+  end for;
+  d[end] = d_tot;
+end Test;
+");getErrorString();
+
+setCommandLineOptions("--maxSizeNonlinearTearing=0 --daeMode");getErrorString();
+
+// Test 1 well-scaled model
+//loadString("model Test1 extends Test(N=100); end Test1;");
+//simulate(Test1, stopTime = 2, simflags="-noEquidistantTimeGrid");getErrorString();
+
+// Test 2 badly scaled model
+//loadString("model Test2 extends Test(N=100,k_min = 1e8, k_max = 2e8); end Test2;");
+//simulate(Test2, stopTime = 2, simflags="-noEquidistantTimeGrid");getErrorString();
+
+// Test 3 badly scaled model with nominal attributes
+loadString("model Test3 extends Test(N=100,k_min = 1e8, k_max = 2e8, F(each nominal=1e8)); end Test3;");
+simulate(Test3, stopTime = 2, simflags="-noEquidistantTimeGrid");getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "Test3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Test3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Tearing is skipped for strong component 1 because system size of 199 exceeds maximum system size for tearing of nonlinear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

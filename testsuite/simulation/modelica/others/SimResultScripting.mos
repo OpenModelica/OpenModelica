@@ -1,0 +1,36 @@
+// name: SimResultScripting
+// status: correct
+// teardown_command: rm -rf SimResultScripting_* SimResultScripting SimResultScripting.exe SimResultScripting.cpp SimResultScripting.makefile SimResultScripting.libs SimResultScripting.log output.log
+//
+// Tests that you can get the fields of a SimulationResult (or any record),
+// and use it to script a program flow.
+// Note that you can't use the fields directly in expressions; only in
+// assignments (or as a simple path; no array indexing directly).
+//
+
+loadFile("SimResultScripting.mo");
+b:=SimResultScripting.R(1);
+c:=b.r;
+b.r;
+sr:=simulate(SimResultScripting);
+sr.resultFile;
+rf:=sr.resultFile;
+rf + " " + String(c);
+// Result:
+// true
+// record SimResultScripting.R
+//     r = 1.0
+// end SimResultScripting.R;
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "SimResultScripting_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SimResultScripting', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "SimResultScripting_res.mat"
+// "SimResultScripting_res.mat"
+// "SimResultScripting_res.mat 1"
+// endResult

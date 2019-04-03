@@ -1,0 +1,49 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+//
+
+loadString("
+model ModelTestSolve10
+  Real x(start=-1);
+  Real y(start=-4);
+  Real z(start=-10);
+  Real w;
+equation
+  sin(x) = time;
+  sin(y) = time;
+  sin(z) = time;
+  w = asin(time);
+end ModelTestSolve10;
+"); getErrorString();
+
+simulate(ModelTestSolve10, simflags="-lv LOG_NLS_V"); getErrorString();
+val(x,0.5);
+val(y,0.5);
+val(z,0.5);
+val(w,0.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelTestSolve10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
+//     messages = "LOG_NLS           | info    | initialize mixed system solvers
+// |                 | |       | | 0 mixed systems
+// LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 0 non-linear systems
+// LOG_NLS           | info    | update static data of non-linear system solvers
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | info    | free mixed system solvers
+// LOG_NLS           | info    | free non-linear system solvers
+// "
+// end SimulationResult;
+// ""
+// 0.5235987755982989
+// -3.665191429188092
+// -9.948376736367678
+// 0.5235987755982989
+// endResult

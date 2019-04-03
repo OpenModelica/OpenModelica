@@ -1,0 +1,21 @@
+// name:     ABCDsystem.empty
+// keywords: array
+// status: correct
+// teardown_command: rm -rf ABCDsystem_* ABCDsystem ABCDsystem.exe ABCDsystem.cpp ABCDsystem.makefile ABCDsystem.libs ABCDsystem.log output.log
+//
+// Using empty arrays
+// Drmodelica: 7.9 Empty Arrays (p. 231)
+//
+loadFile("ABCDsystem.mo");
+simulate(ABCDsystem,startTime=0.0, stopTime=1.0, method="euler", numberOfIntervals=2, tolerance=1e-4, outputFormat="empty"); // 2 intervals == 3 values
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ABCDsystem_res.empty",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.0001, method = 'euler', fileNamePrefix = 'ABCDsystem', options = '', outputFormat = 'empty', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

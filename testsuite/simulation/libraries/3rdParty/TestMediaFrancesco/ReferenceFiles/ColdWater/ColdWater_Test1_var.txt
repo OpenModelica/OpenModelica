@@ -1,0 +1,8 @@
+TestMedia.TestModels.ColdWater.Test1
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+state1.T
+d1
+d2

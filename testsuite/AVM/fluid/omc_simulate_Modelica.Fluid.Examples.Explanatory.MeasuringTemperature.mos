@@ -1,0 +1,6 @@
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Fluid.Examples.Explanatory.MeasuringTemperature);
+getErrorString();

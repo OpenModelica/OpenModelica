@@ -1,0 +1,60 @@
+// name: bug_3014
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_3014* _initializationTests.bug_3014* output.log bug_3014.mat
+
+loadString("
+within ;
+package initializationTests
+  model bug_3014
+    Real a \"= -1\";
+    Real b \"= -2\";
+    Real x(start=1) \"= -2\";
+  initial equation
+    a = x+1;
+    x = 2*a;
+    b = 2*a;
+  equation
+    der(x) = 1;
+    der(a) = sin(time);
+    der(b) = cos(time);
+  end bug_3014;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.bug_3014, simflags="-lv=LOG_SOTI"); getErrorString();
+val(a, 0.0); getErrorString();
+val(b, 0.0); getErrorString();
+val(x, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_3014_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_3014', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = -1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -2 (pre: 0)
+// |                 | |       | | | [3] Real x(start=1, nominal=1) = -2 (pre: 1)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [4] Real der(a) = 0 (pre: 0)
+// |                 | |       | | | [5] Real der(b) = 1 (pre: 0)
+// |                 | |       | | | [6] Real der(x) = 1 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [7] Real $cse1(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [8] Real $cse2(start=0, nominal=1) = 0 (pre: 0)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -1.0
+// ""
+// -2.0
+// ""
+// -2.0
+// ""
+// endResult

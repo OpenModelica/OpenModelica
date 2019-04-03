@@ -1,0 +1,15 @@
+// name:     RunScript
+// keywords: runScript
+// status:   correct
+// depends:  strings.mo
+//
+runScript("strings.mos");
+// Result:
+// "\"foo\"
+// \"bar\"
+// \"foobar\"
+// true
+// \"foobar\"
+// 0
+// "
+// endResult

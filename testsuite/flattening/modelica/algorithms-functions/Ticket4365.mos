@@ -1,0 +1,29 @@
+// name:     Ticket4365.mos
+// keywords: equation,when,inner/outer
+// status:   correct
+//
+// Test for handling of inner/outer in algorithms
+//
+
+loadFile("Ticket4365.mo"); getErrorString();
+instantiateModel(Ticket4365.Top); getErrorString();
+
+// Result:
+// true
+// ""
+// "class Ticket4365.Top
+//   Real a;
+// initial algorithm
+//   a := 0.0;
+// algorithm
+//   when time > 2.0 then
+//     a := 2.0;
+//   end when;
+// algorithm
+//   when time > 1.0 then
+//     a := 1.0;
+//   end when;
+// end Ticket4365.Top;
+// "
+// ""
+// endResult

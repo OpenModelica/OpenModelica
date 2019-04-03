@@ -1,0 +1,72 @@
+// name:     MinimalModel.mos [BUG: #2429]
+// keywords: remove simple equation bug testing
+// status:   correct
+// teardown_command: rm -rf MinimalModel_* MinimalModel MinimalModel.exe
+
+setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
+loadFile("MinimalModel.mo"); getErrorString();
+buildModel(MinimalModel); getErrroString();
+
+
+// Result:
+// {true}
+// ""
+// true
+// ""
+//
+// Unreplaceable Crefs: (0)
+// ========================================
+//
+//
+// Replacements: (4)
+// ========================================
+// d -> -(-const_k)
+// b -> 0.0
+// c -> -const_k
+// a -> const_k
+//
+// ExtendReplacements: (0)
+// ========================================
+//
+//
+// Unreplaceable Crefs: (0)
+// ========================================
+//
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Matching
+// ========================================
+// 0 variables and equations
+//
+//
+// StrongComponents
+// ========================================
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (2)
+// ========================================
+// 1: const_k:PARAM(start = 1.0 )  = -15.0  type: Real 
+// 2: b:VARIABLE(fixed = true )  = 0.0  type: Real 
+//
+//
+// Alias Variables (3)
+// ========================================
+// 1: d:VARIABLE()  = -(-const_k)  type: Real 
+// 2: c:VARIABLE()  = -const_k  type: Real 
+// 3: a:VARIABLE()  = const_k  type: Real 
+//
+//
+// {"MinimalModel","MinimalModel_init.xml"}
+//
+// endResult

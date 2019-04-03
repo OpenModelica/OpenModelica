@@ -1,0 +1,72 @@
+// name:  TestConstraintsAlias
+// status: correct
+
+loadModel(Modelica, {"3.2.1"});
+getErrorString();
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString("
+
+model emission
+ parameter Real electricity = 999;
+
+ input Real u(start=0, min=0,max=1, nominal=1e-2);
+ Real emissions(start=0, nominal=1e5, fixed = true, min = 0);
+
+ Real y1;
+
+ Modelica.Blocks.Sources.TimeTable solarThermal(table =  [0,300;3590,295;3600,200;7195,201;7200,300;10795,299;10800,200]);
+ Modelica.Blocks.Sources.TimeTable heatDemand(table = [0,300;3590,295;3600,250;7195,251;7200,300;10800,300]);
+equation
+ 0 = u*electricity + y1*solarThermal.y - heatDemand.y;
+ der(emissions) = 0.13*u*electricity;
+end emission;
+
+optimization emissionOpt(objectiveIntegrand = emissions)
+  extends emission;
+constraint
+  y1 <= 1;
+  y1 >= 0;
+end emissionsOpt;
+
+");
+getErrorString();
+
+
+optimize(emissionOpt, numberOfIntervals=500, tolerance = 1e-8, stopTime = 10000);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "emissionOpt_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10000.0, numberOfIntervals = 500, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'emissionOpt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:emissions(start = 0, nominal = 100000, min = 0, max = +Inf, init = 0)
+// Input[1]:u(start = 0, nominal = 0.01, min = 0, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 2
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

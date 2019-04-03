@@ -1,0 +1,37 @@
+// name:     Simulation
+// keywords: Simulate, readSimulationData
+// status: correct
+// teardown_command: rm -rf LinSys LinSys.* LinSys_* output.log
+// 
+//  Simulate models and read in data.
+//
+loadFile("SmallLinsys.mo");
+simulate(LinSys, tolerance=1e-7, numberOfIntervals=100);
+val(x,0.0);
+val(x,0.5);
+val(x,1.0);
+val(y,0.0);
+val(y,0.5);
+val(y,1.0);
+val(z,0.0);
+val(z,0.5);
+val(z,1.0);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "LinSys_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'LinSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 2.400705486538689
+// 3.418818938108018
+// 2.0
+// 2.0
+// 2.0
+// 3.0
+// 2.09929451346131
+// 1.581181061891981
+// endResult

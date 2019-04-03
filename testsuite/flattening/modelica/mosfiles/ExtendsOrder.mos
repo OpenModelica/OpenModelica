@@ -1,0 +1,31 @@
+// name:     Extends Order
+// keywords: extends
+// status:   correct
+//
+// Verifies that no error messages are printed based on the order
+// of the parameter (this used to fail and produce very long error
+// messages for large models).
+
+loadFile("ExtendsOrder.mo");
+instantiateModel(Order1);
+getErrorString();
+instantiateModel(Order2);
+getErrorString();
+
+// Result:
+// true
+// "class Order1
+//   parameter Integer m.nXi = 2;
+//   Real m.Xi[1](start = 1.0);
+//   Real m.Xi[2](start = 2.0);
+// end Order1;
+// "
+// ""
+// "class Order2
+//   parameter Integer m.nXi = 2;
+//   Real m.Xi[1](start = 1.0);
+//   Real m.Xi[2](start = 2.0);
+// end Order2;
+// "
+// ""
+// endResult

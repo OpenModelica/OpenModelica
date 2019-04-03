@@ -1,0 +1,25 @@
+// status: correct
+// Based on ticket #3653
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+loadString("function stringRealTest
+  input list<String> args;
+  output Boolean res;
+protected
+  list<Real> r_arr;
+  list<String> s_arr;
+algorithm
+  r_arr := list(stringReal(s) for s in args);
+  s_arr := list(String(r) for r in r_arr);
+  res := min(s1==s2 threaded for s1 in args, s2 in s_arr);
+end stringRealTest;");getErrorString();
+stringRealTest({"1","2","3","4","5","6","7","8"});getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult

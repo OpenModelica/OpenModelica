@@ -1,0 +1,38 @@
+module Absyn:
+    type Ident		= string
+    datatype Constant	= INTcon of int
+			| REALcon of real
+			| IDENTcon of Ident
+    datatype ConBnd	= CONBND of Ident * Constant
+    datatype Ty		= NAME of Ident
+			| PTR of Ty
+			| ARR of Constant * Ty
+			| REC of VarBnd list
+    and VarBnd		= VARBND of Ident * Ty
+    datatype TyBnd	= TYBND of Ident * Ty
+    datatype UnOp	= ADDR | INDIR | NOT
+    datatype BinOp	= ADD | SUB | MUL | RDIV | IDIV | IMOD | IAND | IOR
+    datatype RelOp	= LT | LE
+    datatype Exp	= INT of int
+			| REAL of real
+			| IDENT of Ident
+			| CAST of Ty * Exp
+			| FIELD of Exp * Ident
+			| UNARY of UnOp * Exp
+			| BINARY of Exp * BinOp * Exp
+			| RELATION of Exp * RelOp * Exp
+			| EQUALITY of Exp * Exp
+			| FCALL of Ident * Exp list
+    datatype Stmt	= ASSIGN of Exp * Exp
+			| PCALL of Ident * Explist
+			| FRETURN of Exp
+			| PRETURN
+			| WHILE of Exp * Stmt
+			| IF of Exp * Stmt * Stmt
+			| SEQ of Stmt * Stmt
+			| SKIP
+    datatype SubBnd	= FUNCBND of Ident * VarBndlist * Ty * Block option
+			          |PROCBND of Ident * VarBndlist * Block option
+    and Block		= BLOCK of ConBnd list * TyBnd list * VarBndlist * SubBnd list * Stmt
+    datatype Prog	= PROG of Ident * Block
+end

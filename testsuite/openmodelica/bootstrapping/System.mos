@@ -1,0 +1,43 @@
+// name: System
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=rml,noevalfunc,gen");
+loadFile("../../../OMCompiler/Compiler/Util/System.mo");
+loadFile("SystemTest.mo");
+
+"System.getCurrentTimeStr";""<>System.getCurrentTimeStr();getErrorString();
+"SystemTest.substringTest";SystemTest.substringTest("abc def ghi",1,4,7);getErrorString();
+"SystemTest.substringTest";SystemTest.substringTest("abc def ghi",1,1,1);getErrorString();
+"SystemTest.substringTest";SystemTest.substringTest("abc def ghi",13,13,13);getErrorString();
+SystemTest.timerTest()>=0;getErrorString();
+"SystemTest.randTest";
+SystemTest.randTest(1000,4);getErrorString();
+SystemTest.randTest(1000,5);getErrorString();
+SystemTest.randTest(1000,6);getErrorString();
+
+// Result:
+// true
+// true
+// true
+// "System.getCurrentTimeStr"
+// true
+// ""
+// "SystemTest.substringTest"
+// ("abc "," def","abc def")
+// ""
+// "SystemTest.substringTest"
+// ("a","a","a")
+// ""
+// "SystemTest.substringTest"
+// fail()
+// ""
+// true
+// ""
+// "SystemTest.randTest"
+// "1: 248, 2: 259, 3: 254, 4: 239"
+// ""
+// "1: 178, 2: 185, 3: 216, 4: 202, 5: 219"
+// ""
+// "1: 184, 2: 159, 3: 168, 4: 164, 5: 143, 6: 182"
+// ""
+// endResult

@@ -1,0 +1,38 @@
+// name:     HideVariableForEquations
+// keywords: for
+// status: correct
+// 
+// Drmodelica: 8.2 Repetitive Equation Structures with for-Equations (p. 241)
+// 
+loadFile("HideVariableForEquations.mo");
+simulate(HideVariableForEquations,startTime = 0.0, stopTime = 1.0 ,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("HideVariableForEquations_res.mat");
+res:=readSimulationResult("HideVariableForEquations_res.mat",{x[1],x[2],x[3],x[4],x[5]},size); 
+x1:=res[1,:];
+x2:=res[2,:];
+x3:=res[3,:];
+x4:=res[4,:];
+x5:=res[5,:];
+echo(true); // turns on output
+x1[1];
+x2[1];
+x3[1];
+x4[1];
+x5[1];
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "HideVariableForEquations_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'HideVariableForEquations', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// endResult

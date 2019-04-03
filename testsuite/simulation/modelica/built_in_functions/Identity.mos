@@ -1,0 +1,25 @@
+// name:     Identity Matrix
+// keywords: identity, matrix
+// status: correct
+// teardown_command: rm -rf Identity Identity.exe Identity_* Identity.cpp Identity.makefile Identity.log Identity.libs output.log
+// 
+//  Generate code for identity matrix and type conversion
+//
+loadFile("Identity.mo");
+simulate(Identity);
+val(x[1,1],0.0);
+val(x[1,2],0.0);
+val(x[3,3],0.0);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Identity_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Identity', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.0
+// 1.0
+// endResult

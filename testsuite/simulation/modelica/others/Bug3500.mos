@@ -1,0 +1,72 @@
+// name: Bug3500.mos
+// keywords: solver error, state selection, non-linear solver start values
+// status: correct
+//  
+// test for #3500
+// 
+
+
+loadModel(Modelica);
+getErrorString();
+
+loadString("
+model FourBarLinkage
+  constant Real pi = Modelica.Constants.pi;
+  parameter Modelica.SIunits.Thickness thick = 0.008;
+  parameter Modelica.SIunits.Diameter diam = 0.075;
+  parameter Modelica.SIunits.RotationalDampingConstant bd = 0.0;
+  parameter Modelica.SIunits.Length len1 = 0.15, len3 = 0.25, len4 = 0.3;
+  parameter Modelica.SIunits.Breadth beamWidth = 0.01;
+  Modelica.Mechanics.MultiBody.Parts.Fixed fixed1 annotation(Placement(visible = true, transformation(origin = {-80, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(phi(fixed = true), w(fixed = true, start = 1.5)) annotation(Placement(visible = true, transformation(origin = {-52, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox bodyBox1(r = {0, len1, 0}, widthDirection = {1, 0, 0}, width = beamWidth) annotation(Placement(visible = true, transformation(origin = {-24, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute2 annotation(Placement(visible = true, transformation(origin = {4, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox bodyBox2(r = {len4, len3 - len1, 0}, width = beamWidth, widthDirection = {1, 0, 0}) annotation(Placement(visible = true, transformation(origin = {32, 12}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.BodyBox bodyBox3(r = {0, -len3, 0}, widthDirection = {1, 0, 0}, width = beamWidth) annotation(Placement(visible = true, transformation(origin = {16, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  inner Modelica.Mechanics.MultiBody.World world annotation(Placement(visible = true, transformation(origin = {-80, -22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.Fixed fixed2(r = {len4, 0, 0}) annotation(Placement(visible = true, transformation(origin = {72, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute4 annotation(Placement(visible = true, transformation(origin = {44, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.RevolutePlanarLoopConstraint revolute annotation(Placement(visible = true, transformation(origin = {-14, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+equation
+  connect(bodyBox2.frame_b, revolute.frame_a) annotation(Line(points = {{42, 12}, {50, 12}, {50, -2}, {-32, -2}, {-32, -20}, {-24, -20}, {-24, -20}}, color = {95, 95, 95}));
+  connect(revolute.frame_b, bodyBox3.frame_a) annotation(Line(points = {{-4, -20}, {6, -20}, {6, -22}, {6, -22}, {6, -22}}, color = {95, 95, 95}));
+  connect(revolute4.frame_b, fixed2.frame_b) annotation(Line(points = {{54, -20}, {62, -20}, {62, -20}, {62, -20}, {62, -20}, {62, -20}}, color = {95, 95, 95}));
+  connect(bodyBox3.frame_b, revolute4.frame_a) annotation(Line(points = {{26, -20}, {34, -20}, {34, -20}, {34, -20}}, color = {95, 95, 95}));
+  connect(revolute2.frame_b, bodyBox2.frame_a) annotation(Line(points = {{14, 12}, {22, 12}, {22, 12}, {22, 12}}, color = {95, 95, 95}));
+  connect(bodyBox1.frame_b, revolute2.frame_a) annotation(Line(points = {{-14, 12}, {-6, 12}, {-6, 12}, {-6, 12}}, color = {95, 95, 95}));
+  connect(revolute1.frame_b, bodyBox1.frame_a) annotation(Line(points = {{-42, 12}, {-34, 12}, {-34, 12}, {-34, 12}}, color = {95, 95, 95}));
+  connect(fixed1.frame_b, revolute1.frame_a) annotation(Line(points = {{-70, 12}, {-62, 12}, {-62, 12}, {-62, 12}}, color = {95, 95, 95}));
+  annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), experiment(StartTime = 0, StopTime = 100, Tolerance = 1e-06, Interval = 0.2));
+end FourBarLinkage;
+");
+getErrorString();
+
+
+simulate(FourBarLinkage, tolerance=1e-8);
+getErrorString();
+val(revolute1.angle, 100);
+
+system("./FourBarLinkage -override=stepSize=0.02");
+getErrorString();
+val(revolute1.angle, 100);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FourBarLinkage_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'FourBarLinkage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 674.2415492543812
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// 674.2853013251839
+// endResult

@@ -1,0 +1,76 @@
+// name: wrapFunctionCalls7
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+model wrapFunctionCalls7
+  function foo
+    input Real x1;
+    input Real x2;
+    output Real y1;
+    output Real y2;
+    output Real y3;
+  algorithm
+    y1 := 1;
+    y2 := x1;
+    y3 := x2;
+  end foo;
+  Real a, b, x;
+equation
+  (,b,) = foo(x, sin(cos(time)));
+  a = sin(foo(x, x)) + 5.0;
+  x = sin(cos(time));
+end wrapFunctionCalls7;
+"); getErrorString();
+
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls -d=dumpCSE"); getErrorString();
+
+simulate(wrapFunctionCalls7); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (6)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+// 2: b:VARIABLE()  type: Real 
+// 3: a:VARIABLE()  type: Real 
+// 4: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (5, 6)
+// ========================================
+// 1/1 (1): a = 5.0 + $cse3   [dynamic |0|0|0|0|]
+// 2/2 (2): ($cse4, b, _) = wrapFunctionCalls7.foo(x, x)   [unknown |0|0|0|0|]
+// 3/4 (1): $cse3 = sin($cse4)   [unknown |0|0|0|0|]
+// 4/5 (1): $cse2 = cos(time)   [unknown |0|0|0|0|]
+// 5/6 (1): x = sin($cse2)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (5/45)
+// ========================================
+// 1: (_, b, _) - ($cse4, b, _) - {}
+// 2: x - sin($cse2) - {}
+// 3: $cse2 - cos(time) - {}
+// 4: $cse3 - sin($cse4) - {}
+// 5: ($cse4, b, _) - wrapFunctionCalls7.foo(x, x) - {}
+// record SimulationResult
+//     resultFile = "wrapFunctionCalls7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'wrapFunctionCalls7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,53 @@
+// name: discreteTest6
+// keywords: initialization, discrete
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.discreteTest6* _initializationTests.discreteTest6* output.log
+//
+//  case for an ineffective  initial()-call inside a when-condition
+//
+
+loadString("
+within ;
+package initializationTests
+  model discreteTest6
+    Real x(fixed=true);
+    Real y;
+
+  initial equation
+    pre(y) = 0;
+
+  equation
+    der(x) = y;
+
+    // Disallowed in MLS 3.2r1
+    when initial() or time > 0.5 then
+      y = pre(y) + 1.0;
+    end when;
+  end discreteTest6;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setCommandLineOptions("--std=3.1"); getErrorString();
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+simulate(initializationTests.discreteTest6, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest6_res.mat", {time, x, y}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.discreteTest6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{0.0,0.0},{0.0,0.0}}
+// ""
+// endResult

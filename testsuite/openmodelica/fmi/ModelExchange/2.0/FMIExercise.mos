@@ -1,0 +1,26 @@
+// name: FMIExercise
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml FMIExercise_Components_PI* FMIExercise.TestPIFMU* output.log
+//
+
+echo(false);
+loadModel(Modelica); getErrorString();
+loadFile("FMIExercise.mo"); getErrorString();
+translateModelFMU(FMIExercise.Components.PI, version="2.0"); getErrorString();
+importFMU("FMIExercise.Components.PI.fmu"); getErrorString();
+loadFile("FMIExercise_Components_PI_me_FMU.mo"); getErrorString();
+simulate(FMIExercise.TestPIFMU); getErrorString();
+echo(true);
+val(PI.y,0);
+val(PI.y,1);
+val(fMIExercise_Components_PI_me_FMU1.y,0);
+val(fMIExercise_Components_PI_me_FMU1.y,1);
+
+// Result:
+// true
+// 0.0
+// 4.043
+// 0.0
+// 4.043
+// endResult

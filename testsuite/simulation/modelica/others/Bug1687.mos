@@ -1,0 +1,36 @@
+// name:     ActuatorMechanics[Bug1687.mos]
+// keywords: algorithms, reinit, 
+// status: correct
+// teardown_command: rm -rf ActuatorMechanics_* ActuatorMechanics ActuatorMechanics.exe ActuatorMechanics.c _ActuatorMechanics.h ActuatorMechanics.log ActuatorMechanics.libs ActuatorMechanics.makefile output.log
+// 
+// tests reported Bug 1687
+// 
+
+loadFile("Bug1687.mo");
+simulate(ActuatorMechanics,stopTime=0.1);
+val(mass.s,0);
+val(mass.s,0.05);
+val(mass.s,0.06);
+val(mass.v,0);
+val(mass.v,0.05);
+val(mass.v,0.06);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ActuatorMechanics_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ActuatorMechanics', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | spring.s_rel >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= spring.s_rel, has value: -0.01
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.005
+// 0.08372954131218348
+// 0.095
+// 0.0
+// 2.514865593769396
+// 0.0
+// endResult

@@ -1,0 +1,12 @@
+This is a dummy test of the external Java interface
+We will test all possible input types and simply print the value
+org.modelica.ModelicaInteger: 157
+org.modelica.ModelicaReal: 15.7
+org.modelica.ModelicaBoolean: false
+org.modelica.ModelicaString: "OpenModelica"
+org.modelica.OMCModelicaRecord: dummy(field1=2.5,field2=12)
+org.modelica.ModelicaOption: SOME({dummy(field1=2.5,field2=12)})
+org.modelica.ModelicaArray: {dummy(field1=2.5,field2=12)}
+org.modelica.ModelicaTuple: (4,"3.X")
+org.modelica.ModelicaOption: NONE()
+org.modelica.ModelicaArray: {}

@@ -1,0 +1,57 @@
+// name:     IntegerZeroCrossings
+// keywords: events, zerossings, integer
+// status: correct
+// teardown_command: rm -rf IntZC* output.log
+// 
+// Check for interger valued zerocrossings function
+// 
+
+loadString("
+model IntZC
+  Integer count(start=0, fixed=true);
+equation
+  when integer(time/0.1) > pre(count) then
+    count = pre(count)+1;
+  end when;
+end IntZC;
+"); getErrorString();
+
+simulate(IntZC,numberOfIntervals=10); getErrorString();
+
+val(count,0.09); // 0
+val(count,0.10); // 1
+val(count,0.11); // 1
+val(count,0.19); // 1
+val(count,0.20); // 2
+val(count,0.21); // 2
+val(count,0.59); // 5
+val(count,0.60); // 6
+val(count,0.61); // 6
+val(count,0.89); // 8
+val(count,0.90); // 9
+val(count,0.91); // 9
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IntZC_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IntZC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// 2.0
+// 2.0
+// 5.000000000000001
+// 6.0
+// 6.0
+// 8.0
+// 9.0
+// 9.0
+// endResult

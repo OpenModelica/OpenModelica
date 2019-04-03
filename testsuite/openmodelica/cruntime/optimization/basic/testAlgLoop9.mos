@@ -1,0 +1,62 @@
+// name: testAlgLoop9
+// status: correct
+
+setCommandLineOptions("+gDynOpt +loop2con=noLin");
+//setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model testAlgLoop9
+  Real x1(fixed=true,start=1,min=-2,max=2),x2(min=-2,max=2,start = -1, fixed=true);
+  input Real u(min=-1,max=1,start=1);
+  Real con(min=0,max=3) = (der(x2)+der(x1)+x1) annotation(isConstraint=true);
+  Real cost = (x1^2+x2^2) annotation(isMayer=true);
+equation
+  log(der(x1) + der(x2)+x1) = u*x1;
+  sin(der(x1))/(2+cos(der(x2))) = x2;
+end testAlgLoop9;
+");
+getErrorString();
+
+optimize(testAlgLoop9, numberOfIntervals=100, tolerance = 1e-12, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_max_iter -1 -iif ReferenceFiles/testAlgLoop7_ref.mat -ipopt_init FILE -iim none",stopTime=0.5);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop9_res.mat","ReferenceFiles/testAlgLoop7_ref.mat","testFinalCon_diff.csv",0.01,0.0001,{"x1","x2"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop9_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 100, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_max_iter -1 -iif ReferenceFiles/testAlgLoop7_ref.mat -ipopt_init FILE -iim none'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$x2 >= 0.0 and $EqCon$x2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: 3
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$x1 >= 0.0 and $EqCon$x1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x1 <= 0.0, has value: 0.864672
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -2, max = 2, init = 1)
+// State[1]:x2(start = -1, nominal = 2, min = -2, max = 2, init = -1)
+// Input[2]:$x1(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[3]:$x2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[4]:u(start = 0.864672, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 3
+// ========================================================
+// stdout            | info    | Using values from file as initial guess.
+//
+// max_iter = -1LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

@@ -1,0 +1,52 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis);
+compareVars :=
+{
+   "axis.gear.spring.phi_rel",
+   "axis.gear.spring.w_rel",
+   "axis.motor.La.i",
+   "axis.motor.C.v",
+   "axis.controller.PI.x",
+   "axis.initializeFlange.phi_flange",
+   "axis.initializeFlange.w_flange",
+   "der(axis.gear.spring.phi_rel)",
+   "der(axis.gear.spring.w_rel)",
+   "der(axis.motor.La.i)",
+   "der(axis.motor.C.v)",
+   "der(axis.controller.PI.x)"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
+// {"axis.gear.spring.phi_rel","axis.gear.spring.w_rel","axis.motor.La.i","axis.motor.C.v","axis.controller.PI.x","axis.initializeFlange.phi_flange","axis.initializeFlange.w_flange","der(axis.gear.spring.phi_rel)","der(axis.gear.spring.w_rel)","der(axis.motor.La.i)","der(axis.motor.C.v)","der(axis.controller.PI.x)"}
+// Simulation options: startTime = 0.0, stopTime = 1.6, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis', options = '', outputFormat = 'mat', variableFilter = 'time|axis.gear.spring.phi_rel|axis.gear.spring.w_rel|axis.motor.La.i|axis.motor.C.v|axis.controller.PI.x|axis.initializeFlange.phi_flange|axis.initializeFlange.w_flange|der[(]axis.gear.spring.phi_rel[)]|der[(]axis.gear.spring.w_rel[)]|der[(]axis.motor.La.i[)]|der[(]axis.motor.C.v[)]|der[(]axis.controller.PI.x[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// [Modelica 3.2.1/Blocks/Logical.mo:1058:7-1058:33:writable]
+// stdout            | info    | Simulation call terminate() at time 1.498132
+// |                 | |       | Message : ... End condition reached
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

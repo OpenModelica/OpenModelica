@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir)
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir","Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_init.xml"}
+// endResult

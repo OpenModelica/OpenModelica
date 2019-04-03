@@ -1,0 +1,54 @@
+// name:     Record arguments
+// keywords: array, record
+// status:   correct
+// teardown_command: rm -rf TestPkg.subm* m m.* m_* _m.h _TestPkg* output.log
+
+
+loadFile("InOutRecord.mo"); getErrorString();
+
+test := TestPkg.mk_r(true, "not");
+TestPkg.fkn(test);
+
+simulate(m); getErrorString();
+echo(false);
+s:=readSimulationResultSize("m_res.mat");
+res:=readSimulationResult("m_res.mat",{q},s);
+echo(true);
+res[1,1];
+
+simulate(TestPkg.subm); getErrorString();
+echo(false);
+s:=readSimulationResultSize("TestPkg.subm_res.mat");
+res:=readSimulationResult("TestPkg.subm_res.mat",{q},s);
+echo(true);
+res[1,1];
+
+// Result:
+// true
+// ""
+// record TestPkg.R
+//     a = true,
+//     tmp = "not"
+// end TestPkg.R;
+// true
+// record SimulationResult
+//     resultFile = "m_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 1.0
+// record SimulationResult
+//     resultFile = "TestPkg.subm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestPkg.subm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 0.0
+// endResult

@@ -1,0 +1,26 @@
+// name:     VariableRangeSubscript
+// keywords: array range subscript bug2192
+// status:   correct
+// teardown_command: rm -rf VariableRangeSubscript VariableRangeSubscript_* VariableRangeSubscript.exe VariableRangeSubscript.cpp VariableRangeSubscript.makefile VariableRangeSubscript.libs VariableRangeSubscript.log output.log
+// 
+// Tests code generation for a range with variable length used as a subscript.
+// 
+
+loadFile("VariableRangeSubscript.mo"); getErrorString();
+simulate(VariableRangeSubscript, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+val(c[1], 1.0);
+val(c[2], 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "VariableRangeSubscript_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'VariableRangeSubscript', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.1
+// 2.1
+// endResult

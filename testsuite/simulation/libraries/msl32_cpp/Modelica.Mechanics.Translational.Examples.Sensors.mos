@@ -1,0 +1,43 @@
+// name:     Modelica.Mechanics.Translational.Examples.Sensors
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Sensors);
+compareVars :=
+{
+   "forceSensor.f",
+   "accSensor1.a",
+   "speedSensor1.v",
+   "positionSensor1.s",
+   "positionSensor2.s",
+   "mass.s",
+   "mass.v",
+   "mass.a"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Translational.Examples.Sensors
+// {"forceSensor.f","accSensor1.a","speedSensor1.v","positionSensor1.s","positionSensor2.s","mass.s","mass.v","mass.a"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Translational.Examples.Sensors_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

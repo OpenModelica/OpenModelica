@@ -1,0 +1,266 @@
+// name: cse1
+// keywords: cse
+// status: correct
+
+loadString("
+model Tearing15
+  \"System to test unsolvables as tVars in Cellier Algorithm\"
+  Real source;
+  Real v1(start=7);
+  Real v2(start=1);
+  Real v3(start=1);
+  Real v4(start=1);
+  Real v5(start=1);
+  Real v6(start=50);
+  Real v7(start=3);
+
+equation
+  source = sin(time);
+  v1*sin(v1) + v2 - 4  + source = 0;
+  2*v1*sin(v1) + v2 - v3 - source +v7= 0;
+  3*v1*sin(v1) - 7*v2 - 2*v3 + 3 * source *v7= 0;
+  v1* sin(v1) + v2+source -v3*source -v7= 0;
+  3*v2 - v4 - v5 + 2 - source/2 *v7 = 0;
+  v5 + v6*sin(v6) * source +v3 = 0;
+  3*v5 - v6*sin(v6) - source = 0;
+end Tearing15;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls,cseBinary"); getErrorString();
+simulate(Tearing15); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (6)
+// ========================================
+// 1: v7.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE(start = 3.0 )  type: Real 
+// 2: v2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE(start = 1.0 )  type: Real 
+// 3: $res2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
+// 4: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
+// 5: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (6, 6)
+// ========================================
+// 1/1 (1): $res2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
+// 3/3 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3.SeedNLSJac0) * source - v7.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): $cse2 = sin(v1)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse1 = cos(v1)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (7)
+// ========================================
+// 1: input v1.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
+// 2: input v3.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
+// 3: input source:VARIABLE()  type: Real 
+// 4: input $res1:VARIABLE()  type: Real 
+// 5: input $res2:VARIABLE()  type: Real 
+// 6: input v2:VARIABLE(start = 1.0 )  type: Real 
+// 7: input v7:VARIABLE(start = 3.0 )  type: Real 
+//
+//
+// ########### CSE Replacements (2/46)
+// ========================================
+// 1: $cse1 - cos(v1) - {}
+// 2: $cse2 - sin(v1) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (4)
+// ========================================
+// 1: v5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(start = 1.0 )  type: Real 
+// 2: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (4, 4)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic |0|0|0|0|]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac1.dummyVarNLSJac1 + (-v6) * $cse3 * v6.SeedNLSJac1 - v6.SeedNLSJac1 * $cse4 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse4 = sin(v6)   [unknown |0|0|0|0|]
+// 4/4 (1): $cse3 = cos(v6)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (5)
+// ========================================
+// 1: input v6.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 2: input v3:VARIABLE(start = 1.0 )  type: Real 
+// 3: input source:VARIABLE()  type: Real 
+// 4: input $res1:VARIABLE()  type: Real 
+// 5: input v5:VARIABLE(start = 1.0 )  type: Real 
+//
+//
+// ########### CSE Replacements (2/44)
+// ========================================
+// 1: $cse3 - cos(v6) - {}
+// 2: $cse4 - sin(v6) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (10)
+// ========================================
+// 1: v7:VARIABLE(start = 3.0 )  type: Real 
+// 2: v6:VARIABLE(start = 50.0 )  type: Real 
+// 3: v5:VARIABLE(start = 1.0 )  type: Real 
+// 4: v4:VARIABLE(start = 1.0 )  type: Real 
+// 5: v3:VARIABLE(start = 1.0 )  type: Real 
+// 6: v2:VARIABLE(start = 1.0 )  type: Real 
+// 7: v1:VARIABLE(start = 7.0 )  type: Real 
+// 8: source:VARIABLE()  type: Real 
+// 9: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+// 10: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (10, 10)
+// ========================================
+// 1/1 (1): -4.0 + v1 * $cse5 + v2 + source = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): 2.0 * v1 * $cse5 + v2 + v7 + (-source) - v3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): 3.0 * v1 * $cse5 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * source * v7 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): v1 * $cse5 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * source * v7 + (-v5) - v4 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): $cse6 = sin(v6)   [unknown |0|0|0|0|]
+// 9/9 (1): $cse5 = sin(v1)   [unknown |0|0|0|0|]
+// 10/10 (1): source = sin(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (3/50)
+// ========================================
+// 1: source - sin(time) - {}
+// 2: $cse5 - sin(v1) - {}
+// 3: $cse6 - sin(v6) - {}
+//
+// ########### Updated Variable List ########### (12)
+// ========================================
+// 1: v7:VARIABLE(start = 3.0 )  type: Real 
+// 2: v6:VARIABLE(start = 50.0 )  type: Real 
+// 3: v5:VARIABLE(start = 1.0 )  type: Real 
+// 4: v4:VARIABLE(start = 1.0 )  type: Real 
+// 5: v3:VARIABLE(start = 1.0 )  type: Real 
+// 6: v2:VARIABLE(start = 1.0 )  type: Real 
+// 7: v1:VARIABLE(start = 7.0 )  type: Real 
+// 8: source:VARIABLE()  type: Real 
+// 9: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+// 10: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 11: $cseb17:VARIABLE(protected = true )  type: Real  unreplaceable
+// 12: $cseb3:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List ########### (12, 12)
+// ========================================
+// 1/1 (1): -4.0 + $cseb3 + v2 + source = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): 2.0 * $cseb3 + v2 + v7 + (-source) - v3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): 3.0 * $cseb3 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * $cseb17 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): $cseb3 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * $cseb17 + (-v5) - v4 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): $cse6 = sin(v6)   [unknown |0|0|0|0|]
+// 9/9 (1): $cse5 = sin(v1)   [unknown |0|0|0|0|]
+// 10/10 (1): source = sin(time)   [unknown |0|0|0|0|]
+// 11/11 (1): $cseb17 = source * v7   [binding |0|0|0|0|]
+// 12/12 (1): $cseb3 = v1 * $cse5   [binding |0|0|0|0|]
+//
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (3)
+// ========================================
+// 1: $cse5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 2: $res1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real  unreplaceable
+// 3: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (3, 3)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding |0|0|0|0|]
+// 2/2 (1): $cse5.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v1.SeedNLSJac3   [unknown |0|0|0|0|]
+// 3/3 (1): $cse7 = cos(v1)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (4)
+// ========================================
+// 1: input v1.SeedNLSJac3:STATE_DER()  type: Real  unreplaceable
+// 2: input $cseb3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: input $res1:VARIABLE()  type: Real 
+// 4: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: $cse7 - cos(v1) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (4)
+// ========================================
+// 1: v5.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(start = 1.0 )  type: Real 
+// 2: $cse6.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: $res1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real  unreplaceable
+// 4: $cse8:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (4, 4)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown |0|0|0|0|]
+// 4/4 (1): $cse8 = cos(v6)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (6)
+// ========================================
+// 1: input v6.SeedNLSJac4:STATE_DER()  type: Real  unreplaceable
+// 2: input v3:VARIABLE(start = 1.0 )  type: Real 
+// 3: input source:VARIABLE()  type: Real 
+// 4: input $res1:VARIABLE()  type: Real 
+// 5: input $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: input v5:VARIABLE(start = 1.0 )  type: Real 
+//
+//
+// ########### CSE Replacements (1/45)
+// ========================================
+// 1: $cse8 - cos(v6) - {}
+// record SimulationResult
+//     resultFile = "Tearing15_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

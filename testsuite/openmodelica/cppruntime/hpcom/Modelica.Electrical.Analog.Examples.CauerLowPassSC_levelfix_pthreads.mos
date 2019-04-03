@@ -1,0 +1,66 @@
+// name:     Modelica.Electrical.Analog.Examples.CauerLowPassSC_HPCOM_Levelfix_pThreads
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
+timeout := 600;
+compareVars :=
+{
+   "R4.Capacitor1.v",
+   "R5.Capacitor1.v",
+   "R8.Capacitor1.v",
+   "R9.Capacitor1.v",
+   "R1.Capacitor1.v",
+   "R2.Capacitor1.v",
+   "R3.Capacitor1.v",
+   "Rp1.Capacitor1.v",
+   "R7.Capacitor1.v",
+   "R10.Capacitor1.v",
+   "R11.Capacitor1.v",
+   "C3.v",
+   "C7.v",
+   "C1.v",
+   "C4.v",
+   "C8.v"
+};
+
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=1 +hpcomCode=pthreads +hpcomScheduler=levelfix"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "\"true
+// \"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"mat\"
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CauerLowPassSC
+// 600
+// {"R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v","R7.Capacitor1.v","R10.Capacitor1.v","R11.Capacitor1.v","C3.v","C7.v","C1.v","C4.v","C8.v"}
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Electrical.Analog.Examples.CauerLowPassSC_eqs_prof-file is missing.
+// Using fixed level Scheduler (experimental) for the DAE system
+// Using fixed level Scheduler (experimental) for the ODE system
+// Using fixed level Scheduler (experimental) for the ZeroFunc system
+// HpcOm is still under construction.
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,52 @@
+// name:     Xpowers1
+// keywords: events
+// status: correct
+// teardown_command: rm -rf Xpowers1_* Xpowers1 Xpowers1.exe Xpowers1.cpp Xpowers1.makefile Xpowers1.libs Xpowers1.log output.log
+//
+// Event handling
+//
+// Drmodelica: 8.2 XPowers (p. 242)
+// 
+loadFile("Xpowers1.mo");
+simulate(Xpowers1, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5, outputFormat="mat");
+echo(false);
+size:=readSimulationResultSize("Xpowers1_res.mat");
+res:=readSimulationResult("Xpowers1_res.mat",{xpowers[1],xpowers[2], xpowers[3],xpowers[4],xpowers[5]},size);
+x1 := res[1,1];
+x1 := 1000*x1;
+x1 := floor(x1);
+x2 := res[2,1];
+x2 := 1000*x2;
+x2 := floor(x2);
+x3 := res[3,1];
+x3 := 1000*x3;
+x3 := floor(x3);
+x4 := res[4,1];
+x4 := 1000*x4;
+x4 := floor(x4);
+x5 := res[5,1];
+x5 := 1000*x5;
+x5 := floor(x5);
+echo(true);
+x1/1000.0;
+x2/1000.0;
+x3/1000.0;
+x4/1000.0;
+x5/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Xpowers1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Xpowers1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 10.0
+// 100.0
+// 1000.0
+// 10000.0
+// endResult

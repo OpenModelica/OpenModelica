@@ -1,0 +1,76 @@
+//name:         HeatingRectifier
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.HeatingResistor, stopTime=5, method="dassl");
+
+"heatingResistor.v:";
+val(heatingResistor.v,0.0);
+val(heatingResistor.v,0.75);
+val(heatingResistor.v,1.25);
+val(heatingResistor.v,2.25);
+val(heatingResistor.v,3.75);
+val(heatingResistor.v,5);
+
+"heatingResistor.i:";
+val(heatingResistor.i,0.0);
+val(heatingResistor.i,0.75);
+val(heatingResistor.i,1.25);
+val(heatingResistor.i,2.25);
+val(heatingResistor.i,3.75);
+val(heatingResistor.i,5);
+
+"heatingResistor.heatPort.T:";
+val(heatingResistor.heatPort.T,0.0);
+val(heatingResistor.heatPort.T,0.75);
+val(heatingResistor.heatPort.T,1.25);
+val(heatingResistor.heatPort.T,2.25);
+val(heatingResistor.heatPort.T,3.75);
+val(heatingResistor.heatPort.T,5);
+
+"thermalConductor.dT:";
+val(thermalConductor.dT,0.0);
+val(thermalConductor.dT,0.75);
+val(thermalConductor.dT,1.25);
+val(thermalConductor.dT,2.25);
+val(thermalConductor.dT,3.75);
+val(thermalConductor.dT,5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Simulation Failed. Model: Modelica.Electrical.Analog.Examples.HeatingResistor does not exists! Please load it first before simulation."
+// end SimulationResult;
+// "heatingResistor.v:"
+// 
+// 
+// 
+// 
+// 
+// 
+// "heatingResistor.i:"
+// 
+// 
+// 
+// 
+// 
+// 
+// "heatingResistor.heatPort.T:"
+// 
+// 
+// 
+// 
+// 
+// 
+// "thermalConductor.dT:"
+// 
+// 
+// 
+// 
+// 
+// 
+// endResult

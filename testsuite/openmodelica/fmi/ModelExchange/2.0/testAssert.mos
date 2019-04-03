@@ -1,0 +1,61 @@
+// name:     testAssert
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml testAssertFMI* output.log testAssertFMI/*
+
+loadString("
+model testAssertFMI
+  Real x(start=1);
+  parameter Real a = 2;
+equation
+  der(x) = a*x;
+  assert(x < 1.5, \"x is too big at time = \" + String(time));
+end testAssertFMI;
+");
+translateModelFMU(testAssertFMI, version="2.0");
+getErrorString();
+importFMU("testAssertFMI.fmu");
+loadFile("testAssertFMI_me_FMU.mo");
+getErrorString();
+simulate(testAssertFMI_me_FMU);
+getErrorString();
+
+// Result:
+// true
+// "testAssertFMI.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "testAssertFMI_me_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testAssertFMI_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: testAssertFMI_me_FMU
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.204000
+// x < 1.5
+// assert            | error   | x is too big at time = 0.204
+// module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
+// assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.204000
+// x < 1.5
+// assert            | error   | x is too big at time = 0.204
+// module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
+// assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.202853
+// x < 1.5
+// assert            | error   | x is too big at time = 0.202853
+// module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
+// assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.202853
+// x < 1.5
+// assert            | error   | x is too big at time = 0.202853
+// module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
+// assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
+// stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.202853
+// "
+// end SimulationResult;
+// ""
+// endResult

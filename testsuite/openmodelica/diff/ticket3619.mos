@@ -1,0 +1,32 @@
+// status: correct
+// depends: ticket3619.mo
+// depends: ticket3619.expected
+
+echo(false);
+s1 := readFile("ticket3619.mo");
+
+loadString(s1);
+
+deleteClass(withFolder.OLD);
+
+s2 := list();
+
+answer := readFile("ticket3619.expected");
+
+res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>res then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nSecond model:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  writeFile("Ticket3619.res", res);
+  print("Compare files Ticket3619.res and Ticket3619.expected\n");
+  exit(1);
+end if;
+print(getErrorString());
+print("OK\n");
+
+// Result:
+// OK
+// endResult

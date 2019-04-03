@@ -1,0 +1,49 @@
+// name:     Modelica.Electrical.Analog.Examples.OvervoltageProtection
+// keywords: simulation MSL Examples
+// status: correct
+// depends: Modelica.Electrical.Analog.Examples.OvervoltageProtection_eqs_prof.json
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
+simulate(Modelica.Electrical.Analog.Examples.OvervoltageProtection);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat",
+  "Modelica.Electrical.Analog.Examples.OvervoltageProtection_diff.csv",0.01,0.0001,
+  {"CL.v"});
+
+// Result:
+// true
+// true
+// true
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Electrical.Analog.Examples.OvervoltageProtection_eqs_prof-file is missing.
+// Using list Scheduler for the DAE system
+// Using list Scheduler for the ODE system
+// Using list Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.OvervoltageProtection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

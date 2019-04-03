@@ -1,0 +1,25 @@
+// name:     ParameterCycle
+// keywords: parameter cycle, bound expressions
+// status: correct
+// teardown_command: rm -rf ParameterCycle.makefile ParameterCycle.c ParameterCycle.log ParameterCycle ParameterCycle.exe ParameterCycle_* output.log
+//
+// Test for Bug [# 1651].
+//
+
+loadFile("ParameterCycle.mo"); getErrorString();
+simulate(ParameterCycle); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ParameterCycle', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: ParameterCycle"
+// end SimulationResult;
+// "Error: Cyclically dependent parameters found:
+//          var2:PARAM(start = 0.1 )  = if bool then var0 / var1 else var0  type: Real 
+//          var1:PARAM(start = 0.1 )  = if bool then var0 else var0 / var2  type: Real
+// Error: No system for the symbolic initialization was generated
+// "
+// endResult

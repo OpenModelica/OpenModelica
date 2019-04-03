@@ -1,0 +1,22 @@
+// name:     ParameterModel
+// keywords: instantiation, bound expressions
+// status: correct
+// teardown_command: rm -rf M1.makefile M1.plt M1.libs M1.log M1.cpp M1 M1.exe M1_* output.log
+//
+// Test so that overloading (or rather replacing) a function works.
+//
+
+loadFile("ParameterModel.mo");
+simulate(M1);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "M1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

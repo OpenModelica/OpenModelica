@@ -1,0 +1,220 @@
+// name:     Modelica.Fluid.Examples.InverseParameterization
+// teardown_command: rm -f Modelica.Fluid.Examples.InverseParameterization_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.InverseParameterization);
+compareVars :=
+{
+   "source.ports[1].m_flow",
+   "source.ports[1].p",
+   "source.ports[1].h_outflow",
+   "sink.ports[1].m_flow",
+   "sink.ports[1].p",
+   "sink.ports[1].h_outflow",
+   "sink1.ports[1].m_flow",
+   "sink1.ports[1].p",
+   "sink1.ports[1].h_outflow",
+   "sink2.ports[1].m_flow",
+   "sink2.ports[1].p",
+   "sink2.ports[1].h_outflow"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.InverseParameterization
+// {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.InverseParameterization', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.InverseParameterization_res.mat
+// Messages: stdout            | warning | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | While solving non-linear system an assert was called.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// 
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Continue ....
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Machines.mo:144:13-144:57:writable] Error: Variable V_flow_op not found in scope Modelica.Fluid.Machines.ControlledPump.
+// 
+// "true
+// "
+// ""
+// endResult

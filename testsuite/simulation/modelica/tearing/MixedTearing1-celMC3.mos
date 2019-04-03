@@ -1,0 +1,103 @@
+// name: MixedTearing1-celMC3
+// keywords: tearing, mixed system
+// status: correct
+// cflags:
+// teardown_command: rm -rf tearingTests.mixedTest1* _tearingTests.mixedTest1* output.log
+//
+//  
+//
+
+// loadString("
+// within ;
+// package tearingTests
+  // model mixedTest1
+    // Real a(start=0);
+    // Integer b;
+    // Boolean c;
+  // algorithm
+    // c := a > 0;
+  // algorithm
+    // b := if c then integer(time*10) else -integer(time*10);
+  // algorithm
+    // a := b * time;
+  // end mixedTest1;
+// end tearingTests;
+// "); getErrorString();
+
+loadString("
+within ;
+model mixedTest1
+  Real a(start=0);
+  Integer b;
+  Boolean c;
+equation
+  a = b * time;
+  c = a > 0;
+  b = if c then integer(time*10) else -integer(time*10);
+end mixedTest1;
+"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp"); getErrorString();
+simulate(mixedTest1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "mixedTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mixedTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 3
+//  * Number of variables: 3
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 2}
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 2}
+// "
+// endResult

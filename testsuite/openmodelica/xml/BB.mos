@@ -1,0 +1,281 @@
+// name: BB.mos
+// keywords: xml, dump
+// status: correct
+// teardown_command: rm -f BB.BouncingBall.xml
+// 
+// Tests that reinit works
+//
+
+loadFile("BB.mo"); getErrorString();
+instantiateModel(BB.BouncingBall); getErrorString();
+dumpXMLDAE(BB.BouncingBall, addMathMLCode = true); getErrorString();
+readFile("BB.BouncingBall.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "class BB.BouncingBall
+//   parameter Real e(start = 0.9);
+//   Real b1.y(start = 5.0);
+//   Real b1.vy(start = 0.0);
+//   Real b1.ay;
+//   Real bounce_time(start = 0.0);
+// equation
+//   der(b1.y) = b1.vy;
+//   der(b1.vy) = b1.ay;
+//   b1.ay = -9.800000000000001;
+//   when b1.y <= 0.0 and b1.vy <= 0.0 then
+//     bounce_time = time;
+//     reinit(b1.vy, (-e) * pre(b1.vy));
+//   end when;
+// end BB.BouncingBall;
+// "
+// ""
+// (true,"BB.BouncingBall.xml")
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
+//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+// <variables dimension=\"6\">
+// <orderedVariables dimension=\"4\">
+// <variablesList>
+// <variable id=\"1\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </math>
+// </MathML>
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"2\" name=\"b1.vy\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </math>
+// </MathML>
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"5.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 5.0 
+// </cn>
+// </math>
+// </MathML>
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"b1.y &lt;= 0.0 and b1.vy &lt;= 0.0\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </orderedVariables>
+// <knownVariables dimension=\"2\">
+// <variablesList>
+// <variable id=\"1\" name=\"b1.ay\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <bindExpression string=\"-9.800000000000001\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> -9.800000000000001 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// </variable>
+// <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <attributesValues>
+// <initialValue string=\"0.9\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.9 
+// </cn>
+// </math>
+// </MathML>
+// </initialValue>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </knownVariables>
+// </variables>
+// <equations dimension=\"4\">
+// <whenEquation id=\"1\">
+// <WhenOperator>
+// bounce_time := time
+// </WhenOperator>
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> bounce_time 
+// </ci>
+// <ci> time 
+// </ci>
+// </apply>
+// </math>
+// </MathML>
+// <whenEquationCondition>
+// $whenCondition1
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <ci> $whenCondition1 
+// </ci>
+// </math>
+// </MathML>
+// </whenEquationCondition>
+// </whenEquation>
+// <equation id=\"2\">der(b1.vy) = -9.800000000000001
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <apply>
+// <diff/>
+// <ci> b1.vy 
+// </ci>
+// </apply>
+// <cn type=\"real\"> -9.800000000000001 
+// </cn>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"3\">der(b1.y) = b1.vy
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <apply>
+// <diff/>
+// <ci> b1.y 
+// </ci>
+// </apply>
+// <ci> b1.vy 
+// </ci>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"4\">$whenCondition1 = b1.y &lt;= 0.0 and b1.vy &lt;= 0.0
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition1 
+// </ci>
+// <apply>
+// <and/>
+// <apply>
+// <leq/>
+// <ci> b1.y 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// <apply>
+// <leq/>
+// <ci> b1.vy 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// </equations>
+// <simpleEquations dimension=\"1\">
+// <whenEquation id=\"1\">
+// <WhenOperator>
+// reinit(b1.vy, (-e) * pre(b1.vy))
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <reinit/>
+// <ci> b1.vy 
+// </ci>
+// <apply>
+// <times/>
+// <apply>
+// <minus/>
+// <ci> e 
+// </ci>
+// </apply>
+// <apply>
+// <pre/>
+// <ci> b1.vy 
+// </ci>
+// </apply>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </WhenOperator>
+// <whenEquationCondition>
+// $whenCondition1
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <ci> $whenCondition1 
+// </ci>
+// </math>
+// </MathML>
+// </whenEquationCondition>
+// </whenEquation>
+// </simpleEquations>
+// <zeroCrossingList dimension=\"1\">
+// <zeroCrossingElement string=\"b1.y &lt;= 0.0 and b1.vy &lt;= 0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <and/>
+// <apply>
+// <leq/>
+// <ci> b1.y 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// <apply>
+// <leq/>
+// <ci> b1.vy 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// <involvedEquations>
+// <equationId>
+// 4
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// </zeroCrossingList>
+// <functions>
+// </functions>
+// </dae>"
+// ""
+// endResult

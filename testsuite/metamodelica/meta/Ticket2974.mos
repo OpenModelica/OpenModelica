@@ -1,0 +1,62 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+loadString("
+package P
+  replaceable type T1 subtypeof Any;
+  replaceable type T2 subtypeof Any;
+  type Tup = tuple<T1, T2>;
+
+  function f
+    input Tup inTup;
+  protected
+    T1 t1;
+    T2 t2;
+  algorithm
+    (t1, t2) := inTup;
+    print(\"t1 = \" + anyString(t1) + \"\n\");
+    print(\"t2 = \" + anyString(t2) + \"\n\");
+  end f;
+
+  function f2
+    input Tup inTup;
+  protected
+    T1 t1;
+  algorithm
+    (t1, _) := inTup;
+    f(t1);  // *** Calling f with wrong type ***
+  end f2;
+end P;
+
+function test
+protected
+  tuple<Integer, String> tup = (3, \"test\");
+algorithm
+  P.f2(tup);
+end test;
+");getErrorString();
+test();getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// "[<interactive>:26:5-26:10:writable] Error: Type mismatch for positional argument 1 in P.f(inTup=t1). The argument has type:
+//   polymorphic<T1>
+// expected type:
+//   tuple<polymorphic<T1>, polymorphic<T2>>
+// [SimCode/SimCodeFunctionUtil.mo:0:0-0:0:writable] Error: Internal error function getCalledFunctionsInFunction2: Class P.f2 not found in global scope.
+// [<interactive>:26:5-26:10:writable] Error: Type mismatch for positional argument 1 in P.f(inTup=t1). The argument has type:
+//   polymorphic<T1>
+// expected type:
+//   tuple<polymorphic<T1>, polymorphic<T2>>
+// [SimCode/SimCodeFunctionUtil.mo:0:0-0:0:writable] Error: Internal error function getCalledFunctionsInFunction2: Class P.f2 not found in global scope.
+// [<interactive>:26:5-26:10:writable] Error: Type mismatch for positional argument 1 in P.f(inTup=t1). The argument has type:
+//   polymorphic<T1>
+// expected type:
+//   tuple<polymorphic<T1>, polymorphic<T2>>
+// [SimCode/SimCodeFunctionUtil.mo:0:0-0:0:writable] Error: Internal error function getCalledFunctionsInFunction2: Class P.f2 not found in global scope.
+// "
+// endResult

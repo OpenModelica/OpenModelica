@@ -1,0 +1,34 @@
+// name:     02b Exp2
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Exp2.mo");
+loadFile("Parse.mo");
+getErrorString();
+print("[Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
+");
+if true then
+  syntree := Parse.parse();
+end if;
+// syntree; // Uncomment if you want to debug the AST
+getErrorString();
+i := Exp2.eval(syntree);
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// ""
+// [Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
+//
+//
+// ""
+// 8
+// ""
+// endResult

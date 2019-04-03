@@ -1,0 +1,40 @@
+// name: bug_2566
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_2566* _initializationTests.bug_2566* output.log
+
+loadString("
+within ;
+package initializationTests
+  model bug_2566
+    parameter Real p(fixed = false) = 2;
+  initial equation
+    p = 4;
+  end bug_2566;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+simulate(initializationTests.bug_2566, startTime=0.0, stopTime=0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2566', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: initializationTests.bug_2566
+// LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 2 = 4.0 - p
+// stdout            | warning | Error in initialization. Storing results and exiting.
+// |                 | |       | Use -lv=LOG_INIT -w for more information.
+// "
+// end SimulationResult;
+// "[<interactive>:5:5-5:40:writable] Warning: The parameter p has fixed = false and a binding equation p = 2.0, which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// Error: The initialization problem is inconsistent due to the following equation: p = 4.0 (2.0 = 4.0)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

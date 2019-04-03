@@ -1,0 +1,43 @@
+// name:     Delta
+// keywords: builtin
+// status: correct
+// 
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("Delta.mo"); getErrorString();
+simulate(Delta, variableFilter = "time|x", numberOfIntervals=10, fileNamePrefix = "Delta_reference");getErrorString();
+
+buildModel(Delta); getErrorString();
+
+for a in {0,1,2,3} loop
+  str_a := String(a); getErrorString();
+  str_cmd := "./Delta -override a=" + str_a;
+  system(str_cmd, "output.txt"); getErrorString();
+  res := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "1norm", {"x"});getErrorString();
+  res1 := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "2norm", {"x"});getErrorString();
+  res2 := deltaSimulationResults("Delta_res.mat","Delta_reference_res.mat", "maxerr", {"x"});getErrorString();
+
+  print("for parameter a = "+String(a)+", the results are res1= "+String(res)+" res2= "+String(res1)+" res3="+String(res2)+"\n");
+  closeSimulationResultFile();
+end for;
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Delta_reference_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Delta_reference', options = '', outputFormat = 'mat', variableFilter = 'time|x', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Delta","Delta_init.xml"}
+// ""
+// for parameter a = 0, the results are res1= 13 res2= 4.40454 res3=2
+// for parameter a = 1, the results are res1= 0 res2= 0 res3=0
+// for parameter a = 2, the results are res1= 13 res2= 4.40454 res3=2
+// for parameter a = 3, the results are res1= 26 res2= 8.80909 res3=4
+//
+// endResult

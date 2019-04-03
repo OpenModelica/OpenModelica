@@ -1,0 +1,53 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+//
+
+loadString("
+model ModelTestSolve15
+  Real x(start=-1);
+  Real y(start=1);
+  Real z(start=6);
+  Real v(start=-6);
+  Real w(start = 5);
+equation
+  (z)^4 = exp(time)^2;
+  (y)^2 = exp(cos(z));
+  (log(abs(x+z+w)))^(exp(z)+1) = exp(time);
+  (log(abs(x+v+w)))^(exp(z)+1) = exp(time);
+  abs(w) = exp(acos(time));
+end ModelTestSolve15;
+"); getErrorString();
+
+simulate(ModelTestSolve15, simflags="-lv LOG_NLS_V"); getErrorString();
+val(x,0.5);
+val(y,0.5);
+val(z,0.5);
+val(w,0.5);
+val(v,0.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelTestSolve15_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
+//     messages = "LOG_NLS           | info    | initialize mixed system solvers
+// |                 | |       | | 0 mixed systems
+// LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 0 non-linear systems
+// LOG_NLS           | info    | update static data of non-linear system solvers
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | info    | free mixed system solvers
+// LOG_NLS           | info    | free non-linear system solvers
+// "
+// end SimulationResult;
+// ""
+// -1.085543757874853
+// 1.151917842006256
+// 1.284025416687741
+// 2.849653908226362
+// -4.812245717390759
+// endResult

@@ -1,0 +1,25 @@
+// name:     MatchNoRetCall
+// keywords: match noretcall #3633
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Checks that using a match as a non-returning call works.
+//
+
+loadString("
+  function test
+    input Integer n;
+  algorithm
+    _ := match n
+      case 1 then n;
+    end match;
+  end test;
+");
+test(1);
+getErrorString();
+
+// Result:
+// true
+//
+// ""
+// endResult

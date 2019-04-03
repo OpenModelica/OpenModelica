@@ -1,0 +1,64 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestFan.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestFan.* ThermoSysPro.Examples.SimpleExamples.TestFan_* ThermoSysPro.Examples.SimpleExamples.TestFan ThermoSysPro.Examples.SimpleExamples.TestFan.exe ThermoSysPro.Examples.SimpleExamples.TestFan.cpp ThermoSysPro.Examples.SimpleExamples.TestFan.makefile ThermoSysPro.Examples.SimpleExamples.TestFan.libs ThermoSysPro.Examples.SimpleExamples.TestFan.log ThermoSysPro.Examples.SimpleExamples.TestFan.c ThermoSysPro.Examples.SimpleExamples.TestFan.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestFan, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestFan_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestFan.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestFan_diff.csv",
+0.01, 0.0001,
+{"staticFan.Q", "staticFan.deltaH", "staticFan.deltaP",
+ "staticFan1.Q", "staticFan1.deltaH", "staticFan1.deltaP"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestFan_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestFan', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "[ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:55:3-105:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/FlueGases/Connectors.mo:3:3-53:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// "
+// {"Files not Equal!","staticFan1.deltaP","staticFan1.deltaH","staticFan1.Q","staticFan.deltaP","staticFan.deltaH","staticFan.Q"}
+// endResult

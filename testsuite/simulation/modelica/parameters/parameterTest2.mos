@@ -1,0 +1,227 @@
+// name:      parameterTest2
+// keywords:  parameter evaluation, final
+// status:    correct
+
+loadString("
+model parameterTest2
+  final parameter Real a = b + c + e;
+  parameter Real b = 5;
+  parameter Real c = 2*b;
+  parameter Real d = a+b;
+  parameter Real e = 5+b;
+equation
+
+end parameterTest2;
+"); getErrorString();
+
+setCommandLineOptions("--evaluateFinalParameters -d=evalParameterDump"); getErrorString();
+simulate(parameterTest2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: e:PARAM()  = 5.0 + b  type: Real 
+// 2: d:PARAM()  = a + b  type: Real 
+// 3: c:PARAM()  = 2.0 * b  type: Real 
+// 4: b:PARAM()  = 5.0  type: Real 
+// 5: a:PARAM(final = true )  = b + c + e  type: Real 
+//
+//
+//
+// Structural parameters, final parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 5
+// Number of parameters selected for evaluation: 1
+// Selected parameters for evaluation:
+// 5
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 5
+// 1: 4
+// 2: 5 4
+// 3: 4
+// 4:
+// 5: 4 3 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 5
+// 1: 5 1
+// 2: 2
+// 3: 5 3
+// 4: 5 4 3 2 1
+// 5: 5 2
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (4)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (4)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+//
+// globalKnownVars (5)
+// ========================================
+// 1: e:PARAM(final = true )  = 5.0 + b  type: Real 
+// 2: d:PARAM()  = a + b  type: Real 
+// 3: c:PARAM(final = true )  = 2.0 * b  type: Real 
+// 4: b:PARAM(final = true )  = 5.0  type: Real 
+// 5: a:PARAM(final = true )  = 25.0  type: Real 
+//
+//
+// mark: 1
+// markarr: 1,-1,1,1,1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 4
+// 3
+// 1
+// 5
+// 2
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (5)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+// d -> 30.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (5)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+// d -> 30.0
+//
+// globalKnownVars (5)
+// ========================================
+// 1: e:PARAM(final = true )  = 10.0  type: Real 
+// 2: d:PARAM(final = true )  = 30.0  type: Real 
+// 3: c:PARAM(final = true )  = 10.0  type: Real 
+// 4: b:PARAM(final = true )  = 5.0  type: Real 
+// 5: a:PARAM(final = true )  = 25.0  type: Real 
+//
+//
+// mark: 1
+// markarr: 1,-1,1,1,1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (5)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+// d -> 30.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (5)
+// ========================================
+// b -> 5.0
+// c -> 10.0
+// e -> 10.0
+// a -> 25.0
+// d -> 30.0
+//
+// globalKnownVars (5)
+// ========================================
+// 1: e:PARAM(final = true )  = 10.0  type: Real 
+// 2: d:PARAM(final = true )  = 30.0  type: Real 
+// 3: c:PARAM(final = true )  = 10.0  type: Real 
+// 4: b:PARAM(final = true )  = 5.0  type: Real 
+// 5: a:PARAM(final = true )  = 25.0  type: Real 
+//
+//
+// mark: 1
+// markarr: 1,-1,1,1,1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (5)
+// ========================================
+// 1: e:PARAM(final = true )  = 10.0  type: Real 
+// 2: d:PARAM(final = true )  = 30.0  type: Real 
+// 3: c:PARAM(final = true )  = 10.0  type: Real 
+// 4: b:PARAM(final = true )  = 5.0  type: Real 
+// 5: a:PARAM(final = true )  = 25.0  type: Real 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

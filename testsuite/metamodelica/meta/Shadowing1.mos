@@ -1,0 +1,23 @@
+// name:     Shadowing1
+// keywords: Shadowing
+// status:   incorrect
+// cflags:   +g=MetaModelica
+//
+// Local Declaration Shadowing
+//
+loadFile("Shadowing1.mo");
+getErrorString();
+a:=Shadowing1.test(1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// Error processing file: Shadowing1.mos
+// [metamodelica/meta/Shadowing1.mo:9:9-9:20:writable] Error: Local variable 'y' shadows another variable.
+// 
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+// 
+// Execution failed!
+// endResult

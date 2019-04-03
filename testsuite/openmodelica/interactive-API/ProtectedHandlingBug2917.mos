@@ -1,0 +1,154 @@
+// name: ProtectedHandlingBug2917.mos[BUG: #2917]
+// keywords: Graphical API
+// status:   correct
+// teardown_command: rm -f p1.mo
+// 
+// test that handling of protected section is correct
+//
+
+setCommandLineOptions("+d=showStatement"); getErrorString();
+
+loadString("package p1
+  protected
+  package p2
+    model m1 end m1;
+  end p2;  
+end p1;");
+getErrorString();
+
+"Lets try to add a new model in p1.p2";
+loadString("within p1.p2; model m2 end m2;");
+getErrorString();
+list(p1);
+getErrorString();
+
+"Lets try to add a variable Real var in p1.p2.m1";
+loadString("within p1.p2; model m1 Real var; end m1;");
+getErrorString();
+list(p1);
+"Even adding a variable via addComponent fails but surprisingly addComponent returns true.";
+addComponent(var, Real, p1.p2.m1, annotate=Placement());
+getErrorString();
+list(p1);
+getErrorString();
+
+"Lets try to delete the protected class. deleteClass returns true but actually the class is not deleted.";
+deleteClass(p1.p2.m1);
+getErrorString();
+list(p1);
+getErrorString();
+
+setSourceFile(p1, "p1.mo");
+getErrorString();
+save(p1);
+getErrorString();
+readFile("p1.mo");
+getErrorString();
+
+// Result:
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadString("package p1
+//   protected
+//   package p2
+//     model m1 end m1;
+//   end p2;  
+// end p1;")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: "Lets try to add a new model in p1.p2"
+// "Lets try to add a new model in p1.p2"
+// Evaluating: loadString("within p1.p2; model m2 end m2;")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(p1)
+// "package p1
+// protected
+//   package p2
+//     model m1
+//     end m1;
+//
+//     model m2
+//     end m2;
+//   end p2;
+// end p1;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: "Lets try to add a variable Real var in p1.p2.m1"
+// "Lets try to add a variable Real var in p1.p2.m1"
+// Evaluating: loadString("within p1.p2; model m1 Real var; end m1;")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(p1)
+// "package p1
+// protected
+//   package p2
+//     model m1
+//       Real var;
+//     end m1;
+//
+//     model m2
+//     end m2;
+//   end p2;
+// end p1;"
+// Evaluating: "Even adding a variable via addComponent fails but surprisingly addComponent returns true."
+// "Even adding a variable via addComponent fails but surprisingly addComponent returns true."
+// Evaluating: addComponent(var, Real, p1.p2.m1, annotate = Placement())
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(p1)
+// "package p1
+// protected
+//   package p2
+//     model m1
+//       Real var;
+//       Real var annotation(
+//         Placement);
+//     end m1;
+//
+//     model m2
+//     end m2;
+//   end p2;
+// end p1;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: "Lets try to delete the protected class. deleteClass returns true but actually the class is not deleted."
+// "Lets try to delete the protected class. deleteClass returns true but actually the class is not deleted."
+// Evaluating: deleteClass(p1.p2.m1)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(p1)
+// "package p1
+// protected
+//   package p2
+//     model m2
+//     end m2;
+//   end p2;
+// end p1;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setSourceFile(p1, "p1.mo")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: save(p1)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: readFile("p1.mo")
+// "package p1
+// protected
+//   package p2
+//     model m2
+//     end m2;
+//   end p2;
+// end p1;"
+// Evaluating: getErrorString()
+// ""
+// endResult

@@ -1,0 +1,66 @@
+// name:     Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses);
+compareVars :=
+{
+  "PI.x",
+  "aimc.i_0_s",
+  "aimc.idq_sr[1]",
+  "aimc.idq_sr[2]",
+  "aimc.idq_rr[1]",
+  "aimc.idq_rr[2]",
+  "loadInertia.phi",
+  "loadInertia.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses
+// {"PI.x","aimc.i_0_s","aimc.idq_sr[1]","aimc.idq_sr[2]","aimc.idq_rr[1]","aimc.idq_rr[2]","loadInertia.phi","loadInertia.w"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses_res.mat
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13308:7-13310:41:writable] Error: Variable aimc.frictionParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)387.9 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 387.9 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)387.9 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 387.9 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13455:7-13457:41:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)18.96595634287921 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 18.96595634287921 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13455:7-13457:41:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)18.96595634287921 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 18.96595634287921 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13308:7-13310:41:writable] Error: Variable aimc.frictionParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)387.9 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 387.9 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13449:7-13454:41:writable] Error: Variable aimc.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)387.9 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 387.9 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13455:7-13457:41:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)18.96595634287921 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 18.96595634287921 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13455:7-13457:41:writable] Error: Variable aimc.strayLoadParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)18.96595634287921 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 18.96595634287921 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)153.1526418625024 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 153.1526418625024 on component wRef.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

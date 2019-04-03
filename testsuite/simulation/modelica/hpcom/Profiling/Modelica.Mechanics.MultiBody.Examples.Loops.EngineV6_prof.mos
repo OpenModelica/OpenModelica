@@ -1,0 +1,11 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
+// keywords: simulation MSL Examples
+// Simulation to create the _prof.xml-File.
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+setCompiler("gcc"); getErrorString();
+setCXXCompiler("g++"); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6, measureTime=true, simflags="-clock=CYC"); getErrorString();

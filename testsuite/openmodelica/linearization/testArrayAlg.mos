@@ -1,0 +1,77 @@
+// name:     testArrayAlgDiff
+// keywords: differentiation linearization array algorithm
+// status:   correct
+// teardown_command: rm -rf ticket4545* output.log linear_ticket4545*
+//
+//
+
+loadString("
+package ticket4545
+  model Test_vector
+    Real x[2](each start = 0, each fixed = true);
+    discrete Real u[2](each start = 0, each fixed = true);
+    Real y[2];
+  equation 
+    for i in 1:2 loop 
+      der(x[i]) = u[i]+y[i];
+      y[i] = 0.5*x[i];
+    end for;
+  algorithm
+    when sample(0,1) then
+      for i in 1:2 loop
+        u[i] := 1 - y[i];
+      end for;
+    end when;
+    annotation(experiment(StopTime = 10));
+  end Test_vector;
+end ticket4545;
+");
+getErrorString();
+
+setCommandLineOptions("--generateSymbolicLinearization");
+getErrorString();
+linearize(ticket4545.Test_vector, stopTime=0);
+getErrorString();
+loadFile("linear_ticket4545.Test_vector.mo");
+list(linear_ticket4545_Test__vector);
+getErrorString();
+
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ticket4545.Test_vector_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ticket4545.Test_vector', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// ""
+// true
+// "model linear_ticket4545_Test__vector
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {0, 0};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0.5, 0; 0, 0.5];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   Real 'x_x[1]' = x[1];
+//   Real 'x_x[2]' = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_ticket4545_Test__vector;"
+// ""
+// endResult

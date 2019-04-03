@@ -1,0 +1,43 @@
+// name:     Modelica.Electrical.Spice3.Examples.Nor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Nor);
+compareVars :=
+{
+   "mp1.Dinternal",
+   "mp1.Sinternal",
+   "mp2.Dinternal",
+   "mp2.Sinternal",
+   "mn1.Dinternal",
+   "mn1.Sinternal",
+   "mn2.Dinternal",
+   "mn2.Sinternal"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.Nor
+// {"mp1.Dinternal","mp1.Sinternal","mp2.Dinternal","mp2.Sinternal","mn1.Dinternal","mn1.Sinternal","mn2.Dinternal","mn2.Sinternal"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Nor', options = '', outputFormat = 'mat', variableFilter = 'time|mp1.Dinternal|mp1.Sinternal|mp2.Dinternal|mp2.Sinternal|mn1.Dinternal|mn1.Sinternal|mn2.Dinternal|mn2.Sinternal', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Nor_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

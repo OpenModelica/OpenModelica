@@ -1,0 +1,37 @@
+// name:     StringParameters
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml StringParameters.fmu StringParameters_* StringParameters.libs StringParameters.lib StringParameters.so StringParameters.dll StringParameters.c StringParameters.makefile
+// Event handling in FMU Import
+//
+setCFlags(getCFlags() + " -g"); getErrorString();
+loadFile("StringParameters.mo"); getErrorString();
+translateModelFMU(StringParameters, version="1.0"); getErrorString();
+importFMU("StringParameters.fmu"); getErrorString();
+loadFile("StringParameters_me_FMU.mo"); getErrorString();
+simulate(StringParameters_me_FMU, stopTime=3.0, simflags="-output=sball,eball"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "StringParameters.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "StringParameters_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StringParameters_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'StringParameters_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=sball,eball'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=3,sball=\"RedBall\",eball=\"BlueBall\"
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[openmodelica/fmi/ModelExchange/1.0/StringParameters_me_FMU.mo:15:3-15:42:writable] Warning: Parameter sball has no value, and is fixed during initialization (fixed=true), using available start value (start="RedBall") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/StringParameters_me_FMU.mo:14:3-14:43:writable] Warning: Parameter eball has no value, and is fixed during initialization (fixed=true), using available start value (start="BlueBall") as default value.
+// "
+// endResult

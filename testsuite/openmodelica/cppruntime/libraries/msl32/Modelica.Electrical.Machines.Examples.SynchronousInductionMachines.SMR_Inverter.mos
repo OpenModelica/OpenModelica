@@ -1,0 +1,44 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter.mat",
+  "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter_diff.csv",0.01,0.0001,
+  {"smr.idq_sr[1]",
+   "smr.idq_sr[2]",
+   "smr.idq_rr[1]",
+   "smr.idq_rr[2]",
+   "vfController.x",
+   "loadInertia.phi",
+   "loadInertia.w"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMR_Inverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "[lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smr.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smr.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smr.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13319:7-13321:41:writable] Error: Variable smr.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:1457:14-1457:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

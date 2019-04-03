@@ -1,0 +1,23 @@
+//name:         CauerLowPassSC2
+//keyword:      simulation msl221
+//status:       correct
+// cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem
+//
+// instantiate and simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC,stopTime=60,numberOfIntervals=1500,method="dassl");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
+  "Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat",
+  "Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff.csv",0.01,0.00001,{"C5.i","C5.v","Op2.out.v","Op2.out.i"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

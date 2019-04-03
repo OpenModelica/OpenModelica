@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start);
+compareVars :=
+{
+   "dcse.lesigma.i",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
+// {"dcse.lesigma.i","loadInertia.phi","loadInertia.w"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,28 @@
+// name:     LocalVariableInit
+// keywords: events
+// status: correct
+// teardown_command: rm -rf LocalVariableInit_* LocalVariableInit LocalVariableInit.exe LocalVariableInit.cpp LocalVariableInit.makefile LocalVariableInit.libs LocalVariableInit.log output.log
+//
+// Checks that local variables are initialized.
+//
+
+loadFile("LocalVariableInit.mo");
+simulate(LocalVariableInit, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+echo(false);
+size:=readSimulationResultSize("LocalVariableInit_res.mat");
+res:=readSimulationResult("LocalVariableInit_res.mat",{r},size);
+echo(true);
+res[1,1];
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "LocalVariableInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'LocalVariableInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// -42.0
+// endResult

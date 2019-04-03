@@ -1,0 +1,71 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint);
+compareVars :=
+{
+   "bodyOfJoint.v_0[2]",
+   "bodyOfJoint.v_0[3]",
+   "bodyOfJoint.body.frame_a.r_0[2]",
+   "bodyOfJoint.body.frame_a.r_0[3]",
+   "bodyOfConstraint.v_0[2]",
+   "bodyOfConstraint.v_0[3]",
+   "bodyOfConstraint.body.frame_a.r_0[2]",
+   "bodyOfConstraint.body.frame_a.r_0[3]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint
+// {"bodyOfJoint.v_0[2]","bodyOfJoint.v_0[3]","bodyOfJoint.body.frame_a.r_0[2]","bodyOfJoint.body.frame_a.r_0[3]","bodyOfConstraint.v_0[2]","bodyOfConstraint.v_0[3]","bodyOfConstraint.body.frame_a.r_0[2]","bodyOfConstraint.body.frame_a.r_0[3]"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|bodyOfJoint.v_0.2.|bodyOfJoint.v_0.3.|bodyOfJoint.body.frame_a.r_0.2.|bodyOfJoint.body.frame_a.r_0.3.|bodyOfConstraint.v_0.2.|bodyOfConstraint.v_0.3.|bodyOfConstraint.body.frame_a.r_0.2.|bodyOfConstraint.body.frame_a.r_0.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: The linear system: 
+// 1 : bodyOfConstraint.v_0[1] = 0.2148655148851041 * freeMotionScalarInit.v_rel_a_1 + (-0.5318108111446446) * freeMotionScalarInit.v_rel_a_2 + 0.8191520442889918 * freeMotionScalarInit.v_rel_a_3
+// 2 : 0.0 = 0.8191520442889918 * bodyOfConstraint.v_0[1] + (-0.09960050292505122) * bodyOfConstraint.v_0[2] + 0.5648625214636235 * bodyOfConstraint.v_0[3]
+// 3 : bodyOfConstraint.v_0[2] = 0.9663834860128886 * freeMotionScalarInit.v_rel_a_1 + 0.2370288965055821 * freeMotionScalarInit.v_rel_a_2 + (-0.09960050292505122) * freeMotionScalarInit.v_rel_a_3
+// 4 : bodyOfConstraint.v_0[3] = (-0.1411940808771254) * freeMotionScalarInit.v_rel_a_1 + 0.8130157214783864 * freeMotionScalarInit.v_rel_a_2 + 0.5648625214636235 * freeMotionScalarInit.v_rel_a_3
+// [
+//   0.0 , -0.2148655148851041 , 0.0 , 1.0 ;
+//   -0.5648625214636235 , 0.0 , 0.09960050292505122 , -0.8191520442889918 ;
+//   0.0 , -0.9663834860128886 , 1.0 , 0.0 ;
+//   1.0 , 0.1411940808771254 , 0.0 , 0.0
+// ]
+//   *
+// [
+//   bodyOfConstraint.v_0[3] ;
+//   freeMotionScalarInit.v_rel_a_1 ;
+//   bodyOfConstraint.v_0[2] ;
+//   bodyOfConstraint.v_0[1]
+// ]
+//   =
+// [
+//   (-0.5318108111446446) * freeMotionScalarInit.v_rel_a_2 + 0.8191520442889918 * freeMotionScalarInit.v_rel_a_3 ;
+//   -0.0 ;
+//   0.2370288965055821 * freeMotionScalarInit.v_rel_a_2 + (-0.09960050292505122) * freeMotionScalarInit.v_rel_a_3 ;
+//   0.8130157214783864 * freeMotionScalarInit.v_rel_a_2 + 0.5648625214636235 * freeMotionScalarInit.v_rel_a_3
+// ]
+//  might be structurally or numerically singular for variable bodyOfConstraint.v_0[1] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
+//
+// "true
+// "
+// ""
+// endResult

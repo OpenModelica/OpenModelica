@@ -1,0 +1,43 @@
+// status: correct
+
+echo(false);
+a1 := "model M\n  FixedBoundary boundary(use_p = false, //some comment\n                                                use_T = false) annotation();\nequation\n  connect(a, bb);\nend M;";
+a2 := "model M\n  FixedBoundary boundary(use_p = false, use_T //some comment\n                                                 = false) annotation();\nequation\n  connect(a, bb);\nend M;";
+b := "model M\n  FixedBoundary boundary(use_p = false, use_T = false) annotation();\n  //some comment\nequation\n  connect(a,b);\nend M;";
+
+b1 := "model M\n  FixedBoundary boundary(use_p = false, //some comment\n                                                use_T = false) annotation();\nequation\n  connect(a, b);\nend M;";
+b2 := "model M\n  FixedBoundary boundary(use_p = false, use_T //some comment\n                                                 = false) annotation();\nequation\n  connect(a, b);\nend M;";
+
+echo(true);
+"a1";
+diffModelicaFileListings(
+  a1,
+  b,
+  OpenModelica.Scripting.DiffFormat.color);
+getErrorString();
+"a2";
+diffModelicaFileListings(
+  a2,
+  b,
+  OpenModelica.Scripting.DiffFormat.color);
+getErrorString();
+
+// Result:
+// true
+// "a1"
+// "model M
+//   FixedBoundary boundary(use_p = false, //some comment
+//                                                 use_T = false) annotation();
+// equation
+//   connect(a,[9;31m bb[0m[4;32mb[0m);
+// end M;"
+// ""
+// "a2"
+// "model M
+//   FixedBoundary boundary(use_p = false, use_T //some comment
+//                                                  = false) annotation();
+// equation
+//   connect(a,[9;31m bb[0m[4;32mb[0m);
+// end M;"
+// ""
+// endResult

@@ -1,0 +1,30 @@
+// status: correct
+
+loadModel(Modelica);getErrorString();
+loadString("model TestCrossFunction
+  import Modelica.Mechanics.MultiBody.Frames;
+  Frames.Orientation R = Frames.nullRotation();
+  Real v1[3], v2[3];
+
+  function f
+    input Frames.Orientation R;
+    input Real v1[3];
+    output Real v2[3];
+  algorithm
+    v2 :=  Frames.resolveRelative(cross(Frames.angularVelocity2(R), v1), R, R);
+  end f;
+
+equation
+  v1 = {0, 0, 0};
+  v2 = f(R, v1);
+end TestCrossFunction;");getErrorString();
+buildModel(TestCrossFunction);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"TestCrossFunction","TestCrossFunction_init.xml"}
+// ""
+// endResult

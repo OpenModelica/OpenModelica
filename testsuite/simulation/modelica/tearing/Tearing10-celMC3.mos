@@ -1,0 +1,83 @@
+// name:      Tearing10-celMC3
+// keywords:  tearing
+// status:    correct
+// cflags:   +d=backenddaeinfo
+
+
+loadModel(Modelica,{"3.2.2"}); getErrorString();
+loadFile("Tearing10.mo"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
+simulate(Tearing10);getErrorString(); getErrorString();
+
+val(R1.i,0.2); getErrorString();
+val(R1.v,0.2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Tearing10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 54
+//  * Number of variables: 54
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (15):
+//  * Single equations (assignments): 14
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(1,100.0%) 9}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (9):
+//  * Single equations (assignments): 8
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(1,100.0%) 9}
+//  * Non-linear torn systems: 0
+// "
+// ""
+// -2.842170943040401e-14
+// ""
+// -2.842170943040401e-13
+// ""
+// endResult

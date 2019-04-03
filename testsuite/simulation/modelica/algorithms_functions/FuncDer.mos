@@ -1,0 +1,51 @@
+// name:     FuncDer
+// keywords: Function Annotations
+// status: correct
+// teardown_command: rm -rf FuncDer_* FuncDer FuncDer.exe FuncDer.cpp FuncDer.makefile FuncDer.libs FuncDer.log h0.c h0.exe output.log
+// 
+//  undefined reference to `read_modelica_boolean'
+// Drmodelica: 11.1 Function Annotations (p. 372)
+// 
+//loadModel(Modelica);
+loadFile("FuncDer.mo");
+simulate(FuncDer,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+size:=readSimulationResultSize("FuncDer_res.mat");
+
+res:=readSimulationResult("FuncDer_res.mat",{fn0,fn1,fn2},size); 
+
+fn0:=res[1,1];
+fn1:=res[2,1];
+fn2:=res[3,1];
+
+fn0:=1000*fn0;
+fn1:=1000*fn1;
+//fn2:=1000*fn2; // blir tydligen för stor värde eller nått för att köra floor på
+
+fn0:=floor(fn0);
+
+fn1:=floor(fn1);
+
+fn2:=floor(fn2);
+
+echo(true); // turns on output
+fn0/1000.0;
+fn1/1000.0;
+fn2;
+// fn2/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "FuncDer_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'FuncDer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 150.413
+// 22323.292
+// 6670787.0
+// endResult

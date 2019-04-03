@@ -1,0 +1,6 @@
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+setCompiler("gcc"); getErrorString();
+setCXXCompiler("g++"); getErrorString();
+setDebugFlags("TEMPLATE_DEBUGFLAGS"); getErrorString();
+setCommandLineOptions("TEMPLATE_COMPILERFLAGS"); getErrorString();
+simulate(TEMPLATE_MODEL, outputFormat="empty"); getErrorString();

@@ -1,0 +1,194 @@
+// name: SimplifyTest
+// status: correct
+
+runScript("LoadCompilerSources.mos");getErrorString();
+loadFile("SimplifyTest.mo");getErrorString();
+setCommandLineOptions("-d=rml,noevalfunc,gen");
+
+SimplifyTest.test();
+getErrorString();
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+// simplify(1) = 1
+// simplify(2) = 2
+// simplify(3) = 3
+// simplify(1 + 2) = 3
+// simplify(1.0) = 1.0
+// simplify(x) = x
+// simplify(x * 1.0) = x
+// simplify(1.0 * x) = x
+// simplify(x * 1.0 + 1.0 * x) = 2.0 * x
+// simplify((x * 1.0 + 1.0 * x) * x) = 2.0 * x ^ 2.0
+// simplify(1.0 + 1.0) = 2.0
+// simplify(1.0 + 1.0 + 1.0) = 3.0
+// simplify(1.0 + 1.0 + 1.0 + 1.0) = 4.0
+// simplify(1.0 + 1.0 + 1.0 + 1.0 + 1.0) = 5.0
+// simplify(x * x) = x ^ 2.0
+// simplify(x * x * 1.0) = x ^ 2.0
+// simplify(x * 1.0 + 1.0 * x + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 + x * 1.0 + 1.0 * x + x * x * 1.0 + (x * 1.0 + 1.0 * x) * x + 1.0 + 1.0 + 1.0) = 2.0 * x + 5.0 + 2.0 * x + x ^ 2.0 + 2.0 * x ^ 2.0 + 3.0
+// simplify((-x) / y - x / z) = (-x) * (1.0 / y + 1.0 / z)
+// simplify(x * y + x * z) = x * (y + z)
+// simplify(x * y + z * x) = x * (y + z)
+// simplify(y * x + z * x) = x * (y + z)
+// simplify(y * x + x * z) = x * (y + z)
+// simplify(y ^ x * z ^ x) = (y * z) ^ x
+// simplify(x ^ y * x ^ z) = x ^ (y + z)
+// simplify(x ^ y / x ^ z) = x ^ (y - z)
+// simplify(y / x + z / x) = (y + z) / x
+// simplify(y * x + z * x) = x * (y + z)
+// simplify(y * x - z * x) = (y - z) * x
+// simplify(y / x - z / x) = (y - z) / x
+// simplify(x * y - x / z) = (y - 1.0 / z) * x
+// simplify(x * y + x / z) = (y + 1.0 / z) * x
+// simplify(x / y - x * z) = (1.0 / y - z) * x
+// simplify(x / y + x * z) = (1.0 / y + z) * x
+// simplify(x * z + y * z) = z * (x + y)
+// simplify(x * z - y * z) = (x - y) * z
+// simplify(x / z + y / z) = (x + y) / z
+// simplify(x / z - y / z) = (x - y) / z
+// simplify(y / x * z - w / x) = (y * z - w) / x
+// simplify(y / x * z + w / x) = (y * z + w) / x
+// simplify(y * x * z - w * x) = (y * z - w) * x
+// simplify(y * x * z + w * x) = (y * z + w) * x
+// simplify(y * x * z + w * x * v) = (y * z + w * v) * x
+// simplify(y * x * z - w * x * v) = (y * z - w * v) * x
+// simplify(y / x * z + w / x * v) = (y * z + w * v) / x
+// simplify(y / x * z - w / x * v) = (y * z - w * v) / x
+// simplify(y * x - z * x * w) = (y - z * w) * x
+// simplify(y * x + z * x * w) = (y + z * w) * x
+// simplify(y / x - z / x * w) = (y - z * w) / x
+// simplify(y / x + z / x * w) = (y + z * w) / x
+// simplify(x * y - x * z) = x * (y - z)
+// simplify(x * y - z * y) = (x - z) * y
+// simplify(y * x * z - w * x) = (y * z - w) * x
+// simplify(y * x * z + w * x) = (y * z + w) * x
+// simplify(y * x / z - w * x) = x * (y / z - w)
+// simplify(y * x / z + w * x) = x * (y / z + w)
+// simplify(y * x * z - x * w) = x * (y * z - w)
+// simplify(y * x * z + x * w) = x * (y * z + w)
+// simplify(y * x / z - x * w) = x * (y / z - w)
+// simplify(y * x / z + x * w) = x * (y / z + w)
+// simplify(y * x * z - w * x) = x * (y * z - w)
+// simplify(y * x * z + w * x) = x * (y * z + w)
+// simplify(y * x / z - w * x) = x * (y / z - w)
+// simplify(y * x / z + w * x) = x * (y / z + w)
+// simplify(y * x * z - x * w) = x * (y * z - w)
+// simplify(y * x * z + x * w) = x * (y * z + w)
+// simplify(y * x / z - x * w) = x * (y / z - w)
+// simplify(y * x / z + x * w) = x * (y / z + w)
+// simplify(y * x * z - w * x * v) = x * (y * z - w * v)
+// simplify(y * x * z + w * x * v) = x * (y * z + w * v)
+// simplify(y * x * z + w * x * v) = x * (y * z + w * v)
+// simplify(y * x / z - w * x * v) = x * (y / z - w * v)
+// simplify(y * x / z + w * x * v) = x * (y / z + w * v)
+// simplify(y * x * z - w * x / v) = x * (y * z - w / v)
+// simplify(y * x * z + w * x / v) = x * (y * z + w / v)
+// simplify(y * x / z - w * x / v) = x * (y / z - w / v)
+// simplify(y * x / z + w * x / v) = x * (y / z + w / v)
+// simplify(y * x - z * x * w) = x * (y - z * w)
+// simplify(y * x + z * x * w) = x * (y + z * w)
+// simplify(y * x - z * x / w) = x * (y - z / w)
+// simplify(y * x + z * x / w) = x * (y + z / w)
+// simplify(x / y ^ (-z)) = x * y ^ z
+// simplify((y * x + z) / x) = y + z / x
+// simplify((y * x - z) / x) = y - z / x
+// simplify((y + z * x) / x) = y / x + z
+// simplify((y - z * x) / x) = y / x - z
+// simplify(abs(x) * abs(y)) = abs(x * y)
+// simplify(abs(x) / abs(y)) = abs(x / y)
+// simplify(y / exp(x)) = y * exp(-x)
+// simplify(exp(x) * exp(y)) = exp(x + y)
+// simplify(exp(x) / exp(y)) = exp(x - y)
+// simplify(x - x) = 0.0
+// simplify(x + x) = 2.0 * x
+// simplify(x * x) = x ^ 2.0
+// simplify(x / x) = 1.0
+// simplify(0.0 / 0.0) = 0.0 / 0.0
+// simplify(sqrt(x) * x) = x ^ 1.5
+// simplify(x / sqrt(x)) = sqrt(x)
+// simplify(x / abs(x)) = sign(x)
+// simplify(abs(x) / x) = sign(x)
+// simplify(x / abs(x) * abs(x) / x) = sign(x) ^ 2.0
+// simplify(sin(x) * cos(x)) = 0.5 * sin(2.0 * x)
+// simplify(sin(x) * cos(x)) = 0.5 * sin(2.0 * x)
+// simplify(sin(x) ^ 2.0 + cos(x) ^ 2.0) = 1.0
+// simplify(cos(x) ^ 2.0 + sin(x) ^ 2.0) = 1.0
+// simplify(cos(x) * tan(x)) = sin(x)
+// simplify(tan(x) * cos(x)) = sin(x)
+// simplify(cosh(x) ^ 2.0 + (-sinh(x) ^ 2.0)) = 1.0
+// simplify((-sinh(x) ^ 2.0) + cosh(x) ^ 2.0) = 1.0
+// simplify(cos(x) * tan(x)) = sin(x)
+// simplify(tan(x) * cos(x)) = sin(x)
+// simplify(x + (-y)) = x - y
+// simplify((-y) + x) = x - y
+// simplify(x + (-y) * z) = x - y * z
+// simplify(x + (-y) / z) = x - y / z
+// simplify(x * y * x) = y * x ^ 2.0
+// simplify(x * x * y) = y * x ^ 2.0
+// simplify(y + x * y) = y * (1.0 + x)
+// simplify(y + y * x) = y * (1.0 + x)
+// simplify(x * y + y) = y * (1.0 + x)
+// simplify(y * x + y) = y * (1.0 + x)
+// simplify(x * x ^ y) = x ^ (1.0 + y)
+// simplify(x ^ y * x) = x ^ (1.0 + y)
+// simplify(x * sqrt(x)) = x ^ 1.5
+// simplify(sqrt(x) * x) = x ^ 1.5
+// simplify((y * z * x + w) / x) = y * z + w / x
+// simplify((y * z * x - w) / x) = y * z - w / x
+// simplify(x - (-y) * z) = x + y * z
+// simplify(x - (-y) / z) = x + y / z
+// simplify((-x) * (x - z)) = x * (z - x)
+// simplify((-x) / (x - z)) = x / (z - x)
+// simplify((-x) ^ 2.0) = x ^ 2.0
+// simplify(sqrt(x) ^ 2.0) = x
+// simplify(sqrt(x) ^ y) = x ^ (0.5 * y)
+// simplify(x / x ^ y) = x ^ (1.0 - y)
+// simplify(log(1.0 / x) + log(x)) = 0.0
+// simplify(log(1.0 / x)) = -log(x)
+// simplify(log(sqrt(x))) = 0.5 * log(x)
+// simplify(log(1.0 / x) - log(x) + 4.0 * log(sqrt(x))) = (-log(x)) - log(x) + 2.0 * log(x)
+// simplify(exp(log(x) * y)) = x ^ y
+// simplify(exp(z * log(x) * y)) = x ^ (y * z)
+// simplify(exp(log(x) / y)) = x ^ (1.0 / y)
+// simplify(exp(z * log(x) * y) * exp(log(x) * y)) = x ^ (y * (1.0 + z))
+// simplify(exp(z * log(x) * y / w)) = x ^ (y * z / w)
+// simplify(exp(z * log(x) * y) * exp(log(x) * y) * exp(z * log(x) * y / w)) = x ^ (y * (1.0 + z) + y * z / w)
+// simplify(exp(z * (-log(x) * y) / w)) = x ^ ((-y) * z / w)
+// simplify(exp(z * (-log(x) * y) / w) ^ exp(z * (-log(x) * y) / w)) = x ^ ((-y) * z / w * x ^ ((-y) * z / w))
+// simplify(if abs(x) <= 0.0 then x else y) = if abs(x) <= 0.0 then x else y
+// simplify(if 0.0 < abs(x) then x else y) = if 0.0 < abs(x) then x else y
+// simplify(if abs(x) >= 0.0 then x else y) = x
+// simplify(if 0.0 > abs(x) then x else y) = y
+// simplify(if exp(x) + abs(x) <= 0.0 then x else y) = if exp(x) + abs(x) <= 0.0 then x else y
+// simplify(if 0.0 < exp(x) + abs(x) then x else y) = if 0.0 < exp(x) + abs(x) then x else y
+// simplify(if exp(x) + abs(x) >= 0.0 then x else y) = x
+// simplify(if 0.0 > exp(x) + abs(x) then x else y) = y
+// simplify(if exp(x) <= abs(x) then x else y) = if exp(x) <= abs(x) then x else y
+// simplify(if abs(x) < exp(x) then x else y) = if abs(x) < exp(x) then x else y
+// simplify(if abs(x) >= exp(x) then x else y) = if abs(x) >= exp(x) then x else y
+// simplify(if abs(x) > exp(x) then x else y) = if abs(x) > exp(x) then x else y
+// simplify(if (-y) + abs(x) <= 0.0 then x else y) = if abs(x) - y <= 0.0 then x else y
+// simplify(if 0.0 < (-y) + abs(x) then x else y) = if 0.0 < abs(x) - y then x else y
+// simplify(if (-y) + abs(x) >= 0.0 then x else y) = if abs(x) - y >= 0.0 then x else y
+// simplify(if 0.0 > (-y) + abs(x) then x else y) = if 0.0 > abs(x) - y then x else y
+// simplify(if x + 1.0 <= x then x else y) = if x + 1.0 <= x then x else y
+// simplify(if x < x + 1.0 then x else y) = if x < x + 1.0 then x else y
+// simplify(if x + 1.0 >= x then x else y) = x
+// simplify(if x > x + 1.0 then x else y) = y
+// simplify(if (-exp(x)) * abs(x) * cosh(x) <= 0.0 then x else y) = x
+// simplify(if 0.0 < (-exp(x)) * abs(x) * cosh(x) then x else y) = y
+// simplify(if (-exp(x)) * abs(x) * cosh(x) >= 0.0 then x else y) = if (-exp(x)) * abs(x) * cosh(x) >= 0.0 then x else y
+// simplify(if 0.0 > (-exp(x)) * abs(x) * cosh(x) then x else y) = if 0.0 > (-exp(x)) * abs(x) * cosh(x) then x else y
+// simplify(if 0.0 <= (-exp(x)) * abs(x) * cosh(x) then x else y) = if 0.0 <= (-exp(x)) * abs(x) * cosh(x) then x else y
+// simplify(if (-exp(x)) * abs(x) * cosh(x) < 0.0 then x else y) = if (-exp(x)) * abs(x) * cosh(x) < 0.0 then x else y
+// simplify(if 0.0 >= (-exp(x)) * abs(x) * cosh(x) then x else y) = x
+// simplify(if (-exp(x)) * abs(x) * cosh(x) > 0.0 then x else y) = y
+//
+// ""
+// endResult

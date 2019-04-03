@@ -1,0 +1,29 @@
+// name:     DAEexample2
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf DAEexample_* DAEexample DAEexample.exe DAEexample.cpp DAEexample.makefile DAEexample.libs DAEexample.log output.log
+//
+// Equation handling
+// Drmodelica: 2.1 Differential Algebraic Equation System (p. 19)
+//
+loadFile("DAEexample2.mo");
+simulate(DAEexample, startTime=0.0, stopTime=1.0, numberOfIntervals=3, tolerance=1e-5);
+val(x,0.0);
+val(x,0.33);
+val(x,0.66);
+val(x,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DAEexample_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 3, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DAEexample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.9
+// 0.9364731633761999
+// 1.039515875580045
+// 1.201667507446918
+// endResult

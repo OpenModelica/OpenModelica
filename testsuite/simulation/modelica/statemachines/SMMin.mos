@@ -1,0 +1,18 @@
+// name:     SMMin
+// keywords: state machines
+// status: correct
+//
+
+loadFile("SMMin.mo");
+echo(false);
+simulate(SMMin, startTime=0, stopTime=4, numberOfIntervals=0); getErrorString();
+echo(true);
+val(state1.active,4);
+val(state2.active,4);
+
+// Result:
+// true
+// true
+// 1.0
+// 0.0
+// endResult

@@ -1,0 +1,146 @@
+// name:     parFuncDiffZero
+// keywords: differentiation partial functions matrix argument
+// status:   correct
+// teardown_command: rm -rf A* output.log linear_A*
+//  
+//
+
+
+loadString("
+model A
+ function f
+   input Real x;
+   input Real y[1,2];
+   output Real y2;
+ protected
+   Real y1;
+ algorithm
+   for i in {1} loop
+     y1 := sin(x)+cos(sum(y));
+     y2 := cos(y1*x);
+  end for;
+ end f;
+  Real x(start=-2),y(start=1);
+  Real z1;
+equation
+  z1 = if x>0 then f(time*x*y, {{1.0,0.0}}) else f(x, {{0.0,1.0}});
+  der(x) = 2*sin(z1);
+  der(y) = cos(5*z1);
+end A;
+");
+getErrorString();
+
+// 
+//  Case for numeric linearization
+//
+//linearize with numeric linearization and data recovery
+simulate(A, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_A.mo");
+list(linear_A);
+simulate(linear_A);
+getErrorString();
+readFile("linear_A.log"); // Check that output log is empty
+
+// Symbolically linearize
+setCommandLineOptions("+generateSymbolicLinearization");
+linearize(A,stopTime=0);
+getErrorString();
+loadFile("linear_A.mo");
+list(linear_A);
+getErrorString();
+readFile("linear_A.log"); // Check that output log is empty
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "A_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_A
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 3 \"data recovery variables\";
+//   parameter Real x0[2] = {-2, 1};
+//   parameter Real u0[0] = zeros(0);
+//   parameter Real z0[3] = {0.6741566175213496, -0.8485706626022138, 0.7398222220154177};
+//   parameter Real A[n, n] = [-0.4604482876736256, 0; -0.8245962493467056, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [-0.2302241438368128, 0; -0.8245962493467056, 0; -0.3117082989521443, 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+//   Real 'z_$cse1' = z[1];
+//   Real 'z_$cse2' = z[2];
+//   Real 'z_z1' = z[3];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_A;"
+// record SimulationResult
+//     resultFile = "linear_A_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// record SimulationResult
+//     resultFile = "A_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_A
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {-2, 1};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [-0.4604484021611328, -0; -0.8245965690721939, -0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_A;"
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// endResult

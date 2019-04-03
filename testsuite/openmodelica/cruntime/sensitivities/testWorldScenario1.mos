@@ -1,0 +1,26 @@
+// name: testSensWorldScenario1
+// status: correct
+
+loadFile("Scenario_1Total.mo");
+getErrorString();
+//simulate(SystemDynamics_WorldDynamics_World3_Scenario_1);
+//getErrorString();
+
+setCommandLineOptions("+calculateSensitivities");
+simulate(SystemDynamics_WorldDynamics_World3_Scenario_1, stopTime= 1920, method="ida", simflags="-idaSensitivity");
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "SystemDynamics_WorldDynamics_World3_Scenario_1_res.mat",
+//     simulationOptions = "startTime = 1900.0, stopTime = 1920.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'SystemDynamics_WorldDynamics_World3_Scenario_1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaSensitivity'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Requested package SystemDynamics of version 2.1, but this package was already loaded with version unknown. You might experience problems if these versions are incompatible.
+// "
+// endResult

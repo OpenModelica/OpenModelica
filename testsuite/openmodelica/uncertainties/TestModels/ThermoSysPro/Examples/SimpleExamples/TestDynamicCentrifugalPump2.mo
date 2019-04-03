@@ -1,0 +1,36 @@
+within ThermoSysPro.Examples.SimpleExamples;
+model TestDynamicCentrifugalPump2
+  annotation(Diagram);
+  ThermoSysPro.InstrumentationAndControl.Blocks.Logique.Pulse Pulse1(width=200, period=400) annotation(Placement(transformation(x=-50.0, y=-50.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.ElectroMechanics.Machines.SynchronousMotor Motor1 annotation(Placement(transformation(x=-30.0, y=-70.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.Machines.DynamicCentrifugalPump DynamicCentrifugalPump1(continuous_flow_reversal=true, J=10, Cf0=1000) annotation(Placement(transformation(x=30.0, y=-30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=true, flipVertical=false)));
+  ThermoSysPro.WaterSteam.Volumes.Tank Tank(ze2=10, zs2=10) annotation(Placement(transformation(x=30.0, y=30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.PressureLosses.ControlValve Valve annotation(Placement(transformation(x=-70.0, y=30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.ElectroMechanics.Machines.Shaft Shaft1 annotation(Placement(transformation(x=10.0, y=-70.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Blocks.Sources.Rampe rampe(Starttime=200, Duration=100, Initialvalue=0.5, Finalvalue=0) annotation(Placement(transformation(x=-90.0, y=70.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.PressureLosses.DynamicReliefValve dynamicReliefValve(dPOuvert=700000.0, dPFerme=600000.0, Cmin=1e-20) annotation(Placement(transformation(x=-10.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.Volumes.VolumeA volumeA annotation(Placement(transformation(x=-10.0, y=-30.0, scale=0.1, aspectRatio=1.0, flipHorizontal=true, flipVertical=true)));
+  ThermoSysPro.WaterSteam.BoundaryConditions.SinkP sinkP annotation(Placement(transformation(x=30.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.PressureLosses.ControlValve Valve1 annotation(Placement(transformation(x=-10.0, y=42.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.WaterSteam.BoundaryConditions.SourceP sourceP annotation(Placement(transformation(x=-50.0, y=36.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Blocks.Sources.Constante constante(k=15) annotation(Placement(transformation(x=-50.0, y=90.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Blocks.Math.Feedback feedback annotation(Placement(transformation(x=-10.0, y=90.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Blocks.Continu.PIsat pIsat annotation(Placement(transformation(x=30.0, y=90.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+equation
+  connect(Pulse1.yL,Motor1.marche) annotation(Line(points={{-39,-50},{-30,-50},{-30,-65.6}}));
+  connect(Motor1.C,Shaft1.C1) annotation(Line(points={{-19.8,-70},{-1,-70}}));
+  connect(DynamicCentrifugalPump1.M,Shaft1.C2) annotation(Line(points={{30,-41},{30,-70},{21,-70}}));
+  connect(rampe.y,Valve.Ouv) annotation(Line(points={{-79,70},{-70,70},{-70,41}}));
+  connect(DynamicCentrifugalPump1.C2,volumeA.Ce1) annotation(Line(points={{20,-30.2},{10,-30.2},{10,-30},{0,-30}}, color={0,0,255}));
+  connect(dynamicReliefValve.C1,volumeA.Cs2) annotation(Line(points={{-10,-9.8},{-10,-20}}));
+  connect(dynamicReliefValve.C2,sinkP.C) annotation(Line(points={{0,-0.2},{10,-0.2},{10,0},{20,0}}, color={0,0,255}));
+  connect(volumeA.Cs1,Valve.C1) annotation(Line(points={{-20,-30},{-100,-30},{-100,24},{-80,24}}, color={0,0,255}));
+  connect(Valve.C2,Tank.Ce2) annotation(Line(points={{-60,24},{20,24}}, color={0,0,255}));
+  connect(Tank.Cs2,DynamicCentrifugalPump1.C1) annotation(Line(points={{40,24},{80,24},{80,-30},{40,-30}}, color={0,0,255}));
+  connect(Valve1.C2,Tank.Ce1) annotation(Line(points={{0,36},{20,36}}, color={0,0,255}));
+  connect(sourceP.C,Valve1.C1) annotation(Line(points={{-40,36},{-20,36}}, color={0,0,255}));
+  connect(constante.y,feedback.u1) annotation(Line(points={{-39,90},{-21,90}}));
+  connect(Tank.yLevel,feedback.u2) annotation(Line(points={{41,32},{60,32},{60,70},{-10,70},{-10,79}}));
+  connect(feedback.y,pIsat.u) annotation(Line(points={{1,90},{19,90}}));
+  connect(pIsat.y,Valve1.Ouv) annotation(Line(points={{41,90},{80,90},{80,60},{-10,60},{-10,53}}));
+end TestDynamicCentrifugalPump2;

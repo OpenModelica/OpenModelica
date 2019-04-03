@@ -1,0 +1,47 @@
+// name: nmpcOilShalePyrolysis2
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("OilShalePyrolysis.mo");
+getErrorString();
+
+optimize(nmpcOilShalePyrolysis, stopTime=10.0, numberOfIntervals=350, tolerance = 1e-12, simflags="-ipopt_init=const -optimizerNP 1");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("nmpcOilShalePyrolysis_res.mat","ReferenceFiles/nmpcOilShalePyrolysis2_ref.mat","diff_OSP2.csv",0.01,0.0001); 
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcOilShalePyrolysis_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 350, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'nmpcOilShalePyrolysis', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_init=const -optimizerNP 1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:x3(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[3]:x4(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[4]:T(start = 700, nominal = 748.15, min = 698.15, max = 748.15)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,25 @@
+// name:     translate ParallelFlowEvaporator
+// keywords: SiemensPower ParallelFlowEvaporator
+// status:   correct
+// env:      LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia* _SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia* output.log
+//
+//  Test SiemensPower component ParallelFlowEvaporator
+//
+
+loadModel(SiemensPower,{"2.1 beta"});
+getErrorString();
+
+// test simple model
+translateModel(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat");
+
+// test full model
+translateModel(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/ParallelFlowEvaporatorOwnMedia_test.mat");
+
+
+// Result:
+// true
+// ""
+// true
+// true
+// endResult

@@ -1,0 +1,47 @@
+// name:     InOutTest
+// keywords: FMU Export Import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml InOutTest.fmu InOutTest_* testInOut_* InOutTest_me_FMU.mo InOutTest.libs testInOut.libs InOutTest.lib testInOut.lib InOutTest.so testInOut.so InOutTest.dll testInOut.dll InOutTest.c testInOut.c testInOut.makefile
+// Simulation Results
+//
+
+loadModel(Modelica, {"3.2.1"});getErrorString();
+loadFile("InOutTest.mo");getErrorString();
+translateModelFMU(InOutTest, version="1.0");getErrorString();
+importFMU("InOutTest.fmu");getErrorString();
+loadFile("InOutTest_me_FMU.mo");getErrorString();
+loadFile("testInOut.mo");getErrorString();
+simulate(testInOut);
+
+// add.y should be zero all the time
+val(add.y,0);
+val(add.y,0.5);
+val(add.y,1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "InOutTest.fmu"
+// "[Modelica 3.2.1/Blocks/Continuous.mo:565:5-566:37:writable] Warning: Parameter PI.T has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.1/Blocks/Continuous.mo:330:5-330:54:writable] Warning: Parameter firstOrder.T has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "InOutTest_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testInOut_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testInOut', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// -0.0004791584189069997
+// -0.0003682169574288491
+// endResult

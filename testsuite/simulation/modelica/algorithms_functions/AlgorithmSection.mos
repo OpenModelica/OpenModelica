@@ -1,0 +1,37 @@
+// name:     AlgorithmSection
+// keywords: algorithm
+// status: correct
+// teardown_command: rm -rf AlgorithmSection_* AlgorithmSection AlgorithmSection.exe AlgorithmSection.cpp AlgorithmSection.makefile AlgorithmSection.libs AlgorithmSection.log output.log
+// 
+// Drmodelica: 9.1 Algorithm Sections (p. 285)
+//
+loadFile("AlgorithmSection.mo");
+simulate(AlgorithmSection,startTime=0.0, stopTime=1.0,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("AlgorithmSection_res.mat");
+res:=readSimulationResult("AlgorithmSection_res.mat",{x1,x2,x3,u},size); 
+x1:=res[1,1];
+x2:=res[2,1];
+x3:=res[3,1];
+u:=res[4,1];
+
+echo(true); // turns on output
+x1; // rounded value to 3 digits
+x2;
+x3;
+u;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "AlgorithmSection_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'AlgorithmSection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 7.0
+// -3.0
+// -1.0
+// 4.0
+// endResult

@@ -1,0 +1,33 @@
+// name:     TestMedia.TestModels.FlueGas.Test2.mos [simulation checking]
+// keywords: simulation TestMedia.TestModels.FlueGas.Test2
+// status: correct
+// teardown_command: rm -rf _TestMedia.TestModels.FlueGas.Test2.* TestMedia.TestModels.FlueGas.Test2_* TestMedia.TestModels.FlueGas.Test2 TestMedia.TestModels.FlueGas.Test2.exe TestMedia.TestModels.FlueGas.Test2.cpp TestMedia.TestModels.FlueGas.Test2.makefile TestMedia.TestModels.FlueGas.Test2.libs TestMedia.TestModels.FlueGas.Test2.log TestMedia.TestModels.FlueGas.Test2.c TestMedia.TestModels.FlueGas.Test2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+
+simulate(TestMedia.TestModels.FlueGas.Test2, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.FlueGas.Test2_res.mat",
+  "ReferenceFiles/FlueGas/FlueGas_Test2_ref.mat","TestMedia.TestModels.FlueGas.Test2_diff.csv",0.01,0.013,
+  {"state1.T","completeState1.d","completeState1.T","completeState2.d","completeState1.h"});
+  
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.FlueGas.Test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.FlueGas.Test2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

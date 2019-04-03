@@ -1,0 +1,39 @@
+// name:     ListMultilineComment
+// keywords: list multiline comment dump #2879
+// status:   correct
+// teardown_command: rm -rf ListMultilineComment_tmp.mo
+// 
+// Tests that multiline comments are dumped properly with the list command.
+//
+
+loadFile("ListMultilineComment.mo"); getErrorString();
+str1 := list(test);
+writeFile("ListMultilineComment_tmp.mo", str1); getErrorString();
+deleteClass(test); list();
+loadFile("ListMultilineComment_tmp.mo"); getErrorString();
+str2 := list(test);
+x := str1 == str2;
+
+// Result:
+// true
+// ""
+// "model test \"Line 1
+// Line2\"
+//   annotation(
+//     test = \"Line1
+// Line2\");
+// end test;"
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "model test \"Line 1
+// Line2\"
+//   annotation(
+//     test = \"Line1
+// Line2\");
+// end test;"
+// true
+// endResult

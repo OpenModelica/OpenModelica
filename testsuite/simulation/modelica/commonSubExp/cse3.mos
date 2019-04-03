@@ -1,0 +1,191 @@
+// name: cse3
+// keywords: cse
+// status: correct
+
+loadString("
+model testCSE
+  function f1
+    input Real x;
+    input Integer n;
+    output Real y;
+  protected
+     Real a;
+  algorithm
+    a:=1/2;
+    y := 0;
+    for i in 1:n loop
+      y := y+a;
+      a := a/2;
+    end for;
+    y := y+x;
+  end f1;
+
+  function f2
+    input Real x;
+    input Integer n;
+    output Real y;
+  protected
+     Real a;
+  algorithm
+    a:=1/2;
+    y := 0;
+    for i in 1:n loop
+      y := y+a;
+      a := a/2;
+    end for;
+    y := y+x;
+  end f2;
+
+  function f3
+    input Real x;
+    input Integer n;
+    output Real y;
+  protected
+     Real a;
+  algorithm
+    a:=1/2;
+    y := 0;
+    for i in 1:n loop
+      y := y+a;
+      a := a/2;
+    end for;
+    y := y+x;
+  end f3;
+
+  function f4
+    input Real x;
+    input Integer n;
+    output Real y;
+  protected
+     Real a;
+  algorithm
+    a:=1/2;
+    y := 0;
+    for i in 1:n loop
+      y := y+a;
+      a := a/2;
+    end for;
+    y := y+x;
+  end f4;
+  Real x(start=0, fixed=true),y(start=1),z(start=0);
+  Real w;
+  parameter Integer n=100000;
+equation
+  w = f3(x,n);
+  f1(x,n)*y+1.1*f2(x,n)*sinh(z) = 2;
+  f4(x,n)*sinh(y) +1.1* f4(x,n)*z = 1;
+  der(x) = y*z;
+end testCSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls --postOptModules-=cseBinary"); getErrorString();
+simulate(testCSE); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (9)
+// ========================================
+// 1: w:VARIABLE()  type: Real 
+// 2: z:VARIABLE(start = 0.0 )  type: Real 
+// 3: y:VARIABLE(start = 1.0 )  type: Real 
+// 4: x:STATE(1)(start = 0.0 fixed = true )  type: Real 
+// 5: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 8: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (9, 9)
+// ========================================
+// 1/1 (1): $cse1 * y + 1.1 * $cse2 * $cse3 = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse4 * $cse5 + 1.1 * $cse4 * z = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = y * z   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse5 = sinh(y)   [unknown |0|0|0|0|]
+// 5/5 (1): $cse4 = testCSE.f4(x, n)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse3 = sinh(z)   [unknown |0|0|0|0|]
+// 7/7 (1): $cse2 = testCSE.f2(x, n)   [unknown |0|0|0|0|]
+// 8/8 (1): $cse1 = testCSE.f1(x, n)   [unknown |0|0|0|0|]
+// 9/9 (1): w = testCSE.f3(x, n)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: n:PARAM()  = 100000  type: Integer 
+//
+//
+// ########### CSE Replacements (6/46)
+// ========================================
+// 1: w - testCSE.f3(x, n) - {}
+// 2: $cse1 - testCSE.f1(x, n) - {}
+// 3: $cse2 - testCSE.f2(x, n) - {}
+// 4: $cse3 - sinh(z) - {}
+// 5: $cse4 - testCSE.f4(x, n) - {}
+// 6: $cse5 - sinh(y) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (6)
+// ========================================
+// 1: $cse5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 2: $cse3.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: $res2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
+// 4: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
+// 5: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (6, 6)
+// ========================================
+// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = y.SeedNLSJac1 * $cse6   [unknown |0|0|0|0|]
+// 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = z.SeedNLSJac1 * $cse7   [unknown |0|0|0|0|]
+// 5/5 (1): $cse7 = cosh(z)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse6 = cosh(y)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (9)
+// ========================================
+// 1: input y.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 2: input z.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 3: input $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: input $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: input $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: input $res1:VARIABLE()  type: Real 
+// 7: input $res2:VARIABLE()  type: Real 
+// 8: input $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 9: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### CSE Replacements (2/46)
+// ========================================
+// 1: $cse6 - cosh(y) - {}
+// 2: $cse7 - cosh(z) - {}
+// record SimulationResult
+//     resultFile = "testCSE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testCSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

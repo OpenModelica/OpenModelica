@@ -1,0 +1,145 @@
+// name: FlagParsing
+// keywords: command line flag
+// status: correct
+//
+// Tests the parsing of command line flags. This test uses actual compiler
+// flags, so it might need to be updated if the flags change.
+//
+
+// Should work, long flags.
+setCommandLineOptions("--debug"); getErrorString();
+setCommandLineOptions("--debug="); getErrorString();
+setCommandLineOptions("--debug=failtrace"); getErrorString();
+setCommandLineOptions("--debug=failtrace,ceval"); getErrorString();
+
+// Shouldn't work, fish is not a valid debug flag (hopefully...).
+setCommandLineOptions("--debug=fish"); getErrorString();
+
+// Should work, short flags.
+setCommandLineOptions("-d"); getErrorString();
+setCommandLineOptions("-d="); getErrorString();
+setCommandLineOptions("-d=failtrace"); getErrorString();
+setCommandLineOptions("-d=failtrace,ceval"); getErrorString();
+
+// Shouldn't work, fish is not a valid debug flag.
+setCommandLineOptions("-d=fish"); getErrorString();
+
+// Shouldn't work, only long flags use --.
+setCommandLineOptions("--d"); getErrorString();
+setCommandLineOptions("--d="); getErrorString();
+setCommandLineOptions("--d=fish"); getErrorString();
+
+// Shouldn't work, long flags must use --.
+setCommandLineOptions("-debug"); getErrorString();
+setCommandLineOptions("-debug=failtrace"); getErrorString();
+
+// Shouldn't work, not valid flags.
+setCommandLineOptions("-fish"); getErrorString();
+setCommandLineOptions("-failtrace"); getErrorString();
+
+// Should work, legacy +-flags makes no difference between short and long flags.
+setCommandLineOptions("+debug"); getErrorString();
+setCommandLineOptions("+debug="); getErrorString();
+setCommandLineOptions("+debug=failtrace"); getErrorString();
+setCommandLineOptions("+debug=failtrace,ceval"); getErrorString();
+setCommandLineOptions("+d"); getErrorString();
+setCommandLineOptions("+d="); getErrorString();
+setCommandLineOptions("+d=failtrace"); getErrorString();
+setCommandLineOptions("+d=failtrace,ceval"); getErrorString();
+
+// Shouldn't work, fish is not a valid debug flag.
+setCommandLineOptions("+debug=fish"); getErrorString();
+setCommandLineOptions("+d=fish"); getErrorString();
+
+// Shouldn't work, only -, -- or + is allowed.
+setCommandLineOptions("++d"); getErrorString();
+setCommandLineOptions("+-d"); getErrorString();
+setCommandLineOptions("-+d"); getErrorString();
+
+// Shouldn't work, fish is not a flag at all.
+setCommandLineOptions("fish"); getErrorString();
+
+// Shouldn't work, flag parsing stops at -- and setCommandLineOptions should
+// only take flags.
+setCommandLineOptions("-- -d=failtrace"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// "Error: Unknown debug flag fish.
+// "
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// "Error: Unknown debug flag fish.
+// "
+// false
+// "Error: Unknown option --d.
+// "
+// false
+// "Error: Unknown option --d.
+// "
+// false
+// "Error: Unknown option --d.
+// "
+// false
+// "Error: Unknown option -debug.
+// "
+// false
+// "Error: Unknown option -debug.
+// "
+// false
+// "Error: Unknown option -fish.
+// "
+// false
+// "Error: Unknown option -failtrace.
+// "
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// false
+// "Error: Unknown debug flag fish.
+// "
+// false
+// "Error: Unknown debug flag fish.
+// "
+// false
+// "Error: Unknown option ++d.
+// "
+// false
+// "Error: Unknown option +-d.
+// "
+// false
+// "Error: Unknown option -+d.
+// "
+// false
+// ""
+// false
+// ""
+// endResult

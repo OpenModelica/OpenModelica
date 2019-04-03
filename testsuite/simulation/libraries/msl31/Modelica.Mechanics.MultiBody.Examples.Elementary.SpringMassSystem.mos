@@ -1,0 +1,41 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem);
+compareVars :=
+{
+   "p1.s",
+   "p1.v",
+   "p2.s",
+   "p2.v"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem
+// {"p1.s","p1.v","p2.s","p2.v"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem', options = '', outputFormat = 'mat', variableFilter = 'time|p1.s|p1.v|p2.s|p2.v', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

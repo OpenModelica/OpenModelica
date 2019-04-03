@@ -1,0 +1,48 @@
+// name:     Modelica.Electrical.MultiPhase.Examples.TransformerYY
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.MultiPhase.Examples.TransformerYY);
+compareVars :=
+{
+   "transformerL.inductor[1].i",
+   "transformerL.inductor[2].i",
+   "transformerL.inductor[3].i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.MultiPhase.Examples.TransformerYY
+// {"transformerL.inductor[1].i","transformerL.inductor[2].i","transformerL.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TransformerYY', options = '', outputFormat = 'mat', variableFilter = 'time|transformerL.inductor.1..i|transformerL.inductor.2..i|transformerL.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/MultiPhase.mo:1425:7-1425:58:writable] Warning: Parameter idealTransformer.n[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

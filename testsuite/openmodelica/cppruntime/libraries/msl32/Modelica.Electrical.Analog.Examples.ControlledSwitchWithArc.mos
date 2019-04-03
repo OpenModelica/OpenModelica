@@ -1,0 +1,35 @@
+// name:     Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+setDebugFlags("initialization"); getErrorString();
+simulate(Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc.mat",
+  "Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_diff.csv",0.01,0.0001,
+  {"inductor1.i",
+   "inductor2.i"});
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 6.0, numberOfIntervals = 24000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          switch2.tSwitch:DISCRETE(start = -1e+60 fixed = false protected = true ) .Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc, .Modelica.Electrical.Analog.Ideal.ControlledCloserWithArc, .Modelica.SIunits.Time type: Real 
+// "
+// {"Files Equal!"}
+// endResult

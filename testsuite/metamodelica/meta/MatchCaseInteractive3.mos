@@ -1,0 +1,25 @@
+// name:     MatchCaseInteractive3
+// keywords: MatchCase
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// MatchCase Testing
+//
+loadFile("MatchCaseInteractive3.mo");
+a:=MatchCaseInteractive3.myConst;
+a:=MatchCaseInteractive3.retMyConst();
+MatchCaseInteractive3.printSelect(MatchCaseInteractive3.mySelect);getErrorString();
+
+// Result:
+// true
+// record MatchCaseInteractive3.UT.REC1
+//     x = 3
+// end MatchCaseInteractive3.UT.REC1;
+// record MatchCaseInteractive3.UT.REC1
+//     x = 3
+// end MatchCaseInteractive3.UT.REC1;
+// ThirdAlternative(SecondAlternative(FirstAlternative("one", "First"), FirstAlternative("two", "Second")))
+// "[metamodelica/meta/MatchCaseInteractive3.mo:58:5-68:5:writable] Warning: case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.
+// [metamodelica/meta/MatchCaseInteractive3.mo:68:5-76:3:writable] Warning: case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.
+// "
+// endResult

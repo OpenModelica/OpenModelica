@@ -1,0 +1,68 @@
+// name: recordTupleReturnTest
+// keywords: return tuple record array
+// status: correct
+// teardown_command: rm -f *RecordTupleReturn*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica);
+loadString("
+model RecordTupleReturn
+  record R // record with array member
+    Real u;
+    Real[3] a;
+  end R;
+
+  function f // return two values, one of them a record
+    input Real u;
+    output Real y;
+    output R r;
+  algorithm
+    y := 2*u;
+    r.u := u;
+    r.a := {1, 2, 3};
+  end f;
+
+  function g // process tuple return with record in a function
+    input Real u;
+    output Real y;
+    output R r;
+  protected
+    R r2;
+  algorithm
+    (y, r2) := f(u);
+    r.u := r2.u;
+    r.a := u*r2.a;
+  end g;
+
+  model Test // process tuple return with a record in a model
+    input Real u = 0; // prevent presolving
+    Real y;
+    R r;
+  equation
+    (y, r) = g(u + 1);
+    annotation(experiment(StopTime = 0));
+  end Test;
+end RecordTupleReturn;
+");
+getErrorString();
+
+simulate(RecordTupleReturn.Test);
+val(y, 0);
+val(r.a[3], 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "RecordTupleReturn.Test_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RecordTupleReturn.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 2.0
+// 3.0
+// ""
+// endResult

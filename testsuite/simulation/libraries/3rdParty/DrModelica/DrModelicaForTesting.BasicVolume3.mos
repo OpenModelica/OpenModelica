@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.BasicVolume3.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.BasicVolume3
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.BasicVolume3.* DrModelicaForTesting.BasicVolume3_* DrModelicaForTesting.BasicVolume3 DrModelicaForTesting.BasicVolume3.exe DrModelicaForTesting.BasicVolume3.cpp DrModelicaForTesting.BasicVolume3.makefile DrModelicaForTesting.BasicVolume3.libs DrModelicaForTesting.BasicVolume3.log DrModelicaForTesting.BasicVolume3.c DrModelicaForTesting.BasicVolume3.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.BasicVolume3, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.BasicVolume3_res.mat",
+  "ReferenceFiles/BasicVolume3_ref.mat","DrModelicaForTesting.BasicVolume3_diff.csv",0.01,0.013,
+  {"u_o", "c_v","R", "T_o"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.BasicVolume3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.BasicVolume3', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

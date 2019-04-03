@@ -1,0 +1,39 @@
+// name: startValue2
+// keywords: initialization, start-value, algebraic variables
+// status: correct
+
+loadString("
+model startValue2
+  parameter Real a(fixed=false);
+  parameter Real b(fixed=false);
+  Real w(start=a);
+  Real y(start=b);
+initial equation
+  a=4;
+  b=6;
+equation
+  sin(w*y)+cos(w)*y=time;
+  sin(w*y)+sin(y)+w=(a+b)*time;
+end startValue2;
+"); getErrorString();
+
+simulate(startValue2, startTime=0.1, stopTime=0.2); getErrorString();
+val(w, 0.1); getErrorString();
+val(y, 0.1); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "startValue2_res.mat",
+//     simulationOptions = "startTime = 0.1, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'startValue2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.492275940961305
+// ""
+// -0.9661771347533338
+// ""
+// endResult

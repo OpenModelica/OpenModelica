@@ -1,0 +1,31 @@
+// name:     Modelica.Electrical.Analog.Examples.ShowSaturatingInductor
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.ShowSaturatingInductor.mat",
+  "Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_diff.csv",0.01,0.0001,
+  {"Inductance1.i",
+   "SaturatingInductance1.Psi"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

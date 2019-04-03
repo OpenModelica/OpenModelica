@@ -1,0 +1,82 @@
+// name: wrapFunctionCalls4
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls4
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+      output Real y3;
+    algorithm
+      y1 := x1;
+      y2 := x1 + y1;
+      y1 := y2+1.0;
+      y2 := x1 * y2;
+      y3 := x2*x1;
+    end f1;
+
+    Real x;
+    Real b;
+    Real c;
+  equation
+    x = sin(cos(time));
+    (,b,) = f1(x, x);
+    c = sin(f1(x, sin(cos(time)))) + 5;
+  end wrapFunctionCalls4;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls --preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (6)
+// ========================================
+// 1: c:VARIABLE()  type: Real 
+// 2: b:VARIABLE()  type: Real 
+// 3: x:VARIABLE()  type: Real 
+// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (5, 6)
+// ========================================
+// 1/1 (1): c = 5.0 + $cse2   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse2 = sin($cse3)   [unknown |0|0|0|0|]
+// 3/3 (2): ($cse3, b, _) = CSE.wrapFunctionCalls4.f1(x, x)   [unknown |0|0|0|0|]
+// 4/5 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 5/6 (1): x = sin($cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (5/45)
+// ========================================
+// 1: x - sin($cse1) - {}
+// 2: $cse1 - cos(time) - {}
+// 3: ($cse3, b, _) - CSE.wrapFunctionCalls4.f1(x, x) - {}
+// 4: $cse2 - sin($cse3) - {}
+// 5: ($cse3, _, _) - ($cse3, b, _) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,35 @@
+// name:     Modelica.Mechanics.Translational.Examples.Sensors
+// teardown_command: rm -f Modelica.Mechanics.Translational.Examples.Sensors_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Sensors, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Sensors_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Sensors.mat","Modelica.Mechanics.Translational.Examples.Sensors_diff.csv",0.01,0.0001,
+  {"forceSensor.f",
+  "accSensor1.a",
+  "speedSensor1.v",
+  "positionSensor1.s",
+  "positionSensor2.s",
+  "mass.s",
+  "mass.v",
+  "mass.a"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Sensors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

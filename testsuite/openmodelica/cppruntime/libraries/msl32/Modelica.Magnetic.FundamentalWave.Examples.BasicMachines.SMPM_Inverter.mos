@@ -1,0 +1,81 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter
+// teardown_command: rm -f Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter);
+compareVars :=
+{
+   "loadInertiaE.phi",
+   "loadInertiaE.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w",
+   "smpmE.idq_dr[1]",
+   "smpmE.idq_rr[2]",
+   "smpmE.idq_sr[1]",
+   "smpmE.idq_sr[2]",
+   "smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smpmM.stator.strayReluctance.port_p.Phi.im",
+   "smpmM.stator.strayReluctance.port_p.Phi.re",
+   "vfController.x"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// true
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter
+// {"loadInertiaE.phi","loadInertiaE.w","loadInertiaM.phi","loadInertiaM.w","smpmE.idq_dr[1]","smpmE.idq_rr[2]","smpmE.idq_sr[1]","smpmE.idq_sr[2]","smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smpmM.stator.strayReluctance.port_p.Phi.im","smpmM.stator.strayReluctance.port_p.Phi.re","vfController.x"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 3000, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_res.mat
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6692:7-6698:42:writable] Error: Variable smpmM.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6692:7-6698:42:writable] Error: Variable smpmM.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6692:7-6698:42:writable] Error: Variable smpmM.statorCoreParameters: Duplicate modification of element  = (typed)6.283185307179586 * smpmM.fsNominal / /*Real*/(smpmM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966 and  = (typed)314.1592653589793 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 314.1592653589793 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6692:7-6698:42:writable] Error: Variable smpmM.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// Error: Duplicate modification of element  = (typed)6.283185307179586 * smpmM.fsNominal / /*Real*/(smpmM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966 and  = (typed)314.1592653589793 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 314.1592653589793 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6699:7-6701:62:writable] Error: Variable smpmM.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4853:9-4857:44:writable] Error: Variable smpmM.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4853:9-4857:44:writable] Error: Variable smpmM.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpmM.fsNominal / /*Real*/(smpmM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpmM.fsNominal / /*Real*/(smpmM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:2274:14-2274:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6200:7-6201:62:writable] Error: Variable smpmM.permanentMagnet.V_m: Duplicate modification of element (redeclare .Modelica.SIunits.MagneticPotentialDifference re) and final  = (typed)505.5276115222151 DAE.PROP(Real, C_CONST), value: 505.5276115222151 on component re.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6200:7-6201:62:writable] Error: Variable smpmM.permanentMagnet.V_m: Duplicate modification of element (redeclare .Modelica.SIunits.MagneticPotentialDifference im) and final  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component im.
+// Error: Duplicate modification of element (redeclare .Modelica.SIunits.MagneticPotentialDifference re) and final  = (typed)505.5276115222151 DAE.PROP(Real, C_CONST), value: 505.5276115222151 on component re.
+// Error: Duplicate modification of element (redeclare .Modelica.SIunits.MagneticPotentialDifference im) and final  = (typed)0.0 DAE.PROP(Real, C_CONST), value: 0.0 on component im.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smpmE.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smpmE.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13313:7-13318:41:writable] Error: Variable smpmE.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13319:7-13321:41:writable] Error: Variable smpmE.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5413:9-5416:43:writable] Error: Variable smpmE.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5413:9-5416:43:writable] Error: Variable smpmE.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpmE.fsNominal / /*Real*/(smpmE.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpmE.fsNominal / /*Real*/(smpmE.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:2305:14-2305:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

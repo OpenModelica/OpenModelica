@@ -1,0 +1,183 @@
+// name: gc.mos [bug: #2980]
+// keywords: array string variable GC
+// status: correct
+// teardown_command: rm -rf gctest* 
+//
+//  test issues with GC
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("gc.mo"); getErrorString();
+
+// use DLL loading!
+setCommandLineOptions("-d=noevalfunc,gen"); getErrorString();
+
+instantiateModel(gctest); getErrorString();
+simulate(gctest, numberOfIntervals=2); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "function Modelica.Utilities.Streams.close \"Close file\"
+//   input String fileName \"Name of the file that shall be closed\";
+//
+//   external \"C\" ModelicaStreams_closeFile(fileName);
+// end Modelica.Utilities.Streams.close;
+//
+// function Modelica.Utilities.Streams.countLines \"Returns the number of lines in a file\"
+//   input String fileName \"Name of the file that shall be read\";
+//   output Integer numberOfLines \"Number of lines in file\";
+//
+//   external \"C\" numberOfLines = ModelicaInternal_countLines(fileName);
+// end Modelica.Utilities.Streams.countLines;
+//
+// function Modelica.Utilities.Streams.readFile \"Read content of a file and return it in a vector of strings\"
+//   input String fileName \"Name of the file that shall be read\";
+//   output String[Modelica.Utilities.Streams.countLines(fileName)] stringVector \"Content of file\";
+// algorithm
+//   for i in 1:size(stringVector, 1) loop
+//     stringVector[i] := Modelica.Utilities.Streams.readLine(fileName, i)[1];
+//   end for;
+//   Modelica.Utilities.Streams.close(fileName);
+// end Modelica.Utilities.Streams.readFile;
+//
+// function Modelica.Utilities.Streams.readLine \"Reads a line of text from a file and returns it in a string\"
+//   input String fileName \"Name of the file that shall be read\";
+//   input Integer lineNumber(min = 1) \"Number of line to read\";
+//   output String string \"Line of text\";
+//   output Boolean endOfFile \"If true, end-of-file was reached when trying to read line\";
+//
+//   external \"C\" string = ModelicaInternal_readLine(fileName, lineNumber, endOfFile);
+// end Modelica.Utilities.Streams.readLine;
+//
+// class gctest
+//   String str[1];
+//   String str[2];
+//   String str[3];
+//   String str[4];
+//   String str[5];
+//   String str[6];
+//   String str[7];
+//   String str[8];
+//   String str[9];
+//   String str[10];
+//   String str[11];
+//   String str[12];
+//   String str[13];
+//   String str[14];
+//   String str[15];
+//   String s;
+// equation
+//   str = {\"model gctest\", \"  String str[:] = Modelica.Utilities.Streams.readFile(\\\"gc.mo\\\"); // Reads itself\", \"  String s;\", \"algorithm\", \"  for i in 1:1000 loop\", \"    // print(String(i) + \\\"\\\\n\\\");\", \"    s := String(i) + \\\"\\\\n\\\";\", \"    if noEvent(i == 1000) then print(s); end if;\", \"    for j in 1:size(str, 1) loop\", \"      // print(str[j] + \\\"\\\\n\\\");\", \"     s := str[j] + \\\"\\\\n\\\";\", \"     if  noEvent(i == 1000) then print(s); end if;\", \"    end for;\", \"  end for;\", \"end gctest;\"};
+// algorithm
+//   for i in 1:1000 loop
+//     s := String(i, 0, true) + \"
+//     \";
+//     if noEvent(i == 1000) then
+//       print(s);
+//     end if;
+//     for j in 1:15 loop
+//       s := str[j] + \"
+//       \";
+//       if noEvent(i == 1000) then
+//         print(s);
+//       end if;
+//     end for;
+//   end for;
+// end gctest;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "gctest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'gctest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "1000
+// model gctest
+//   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
+//   String s;
+// algorithm
+//   for i in 1:1000 loop
+//     // print(String(i) + \"\\n\");
+//     s := String(i) + \"\\n\";
+//     if noEvent(i == 1000) then print(s); end if;
+//     for j in 1:size(str, 1) loop
+//       // print(str[j] + \"\\n\");
+//      s := str[j] + \"\\n\";
+//      if  noEvent(i == 1000) then print(s); end if;
+//     end for;
+//   end for;
+// end gctest;
+// 1000
+// model gctest
+//   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
+//   String s;
+// algorithm
+//   for i in 1:1000 loop
+//     // print(String(i) + \"\\n\");
+//     s := String(i) + \"\\n\";
+//     if noEvent(i == 1000) then print(s); end if;
+//     for j in 1:size(str, 1) loop
+//       // print(str[j] + \"\\n\");
+//      s := str[j] + \"\\n\";
+//      if  noEvent(i == 1000) then print(s); end if;
+//     end for;
+//   end for;
+// end gctest;
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// 1000
+// model gctest
+//   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
+//   String s;
+// algorithm
+//   for i in 1:1000 loop
+//     // print(String(i) + \"\\n\");
+//     s := String(i) + \"\\n\";
+//     if noEvent(i == 1000) then print(s); end if;
+//     for j in 1:size(str, 1) loop
+//       // print(str[j] + \"\\n\");
+//      s := str[j] + \"\\n\";
+//      if  noEvent(i == 1000) then print(s); end if;
+//     end for;
+//   end for;
+// end gctest;
+// 1000
+// model gctest
+//   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
+//   String s;
+// algorithm
+//   for i in 1:1000 loop
+//     // print(String(i) + \"\\n\");
+//     s := String(i) + \"\\n\";
+//     if noEvent(i == 1000) then print(s); end if;
+//     for j in 1:size(str, 1) loop
+//       // print(str[j] + \"\\n\");
+//      s := str[j] + \"\\n\";
+//      if  noEvent(i == 1000) then print(s); end if;
+//     end for;
+//   end for;
+// end gctest;
+// 1000
+// model gctest
+//   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself
+//   String s;
+// algorithm
+//   for i in 1:1000 loop
+//     // print(String(i) + \"\\n\");
+//     s := String(i) + \"\\n\";
+//     if noEvent(i == 1000) then print(s); end if;
+//     for j in 1:size(str, 1) loop
+//       // print(str[j] + \"\\n\");
+//      s := str[j] + \"\\n\";
+//      if  noEvent(i == 1000) then print(s); end if;
+//     end for;
+//   end for;
+// end gctest;
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

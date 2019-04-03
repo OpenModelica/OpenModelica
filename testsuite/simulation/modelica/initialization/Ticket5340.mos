@@ -1,0 +1,38 @@
+// name: Ticket5340.mos
+// keywords: initialization, if equations, terminate
+// status: correct
+// cflags:
+// teardown_command: rm -rf output.log TestInitialTerminate*
+//
+
+
+loadString("
+model TestInitialTerminate
+  Real x(start = 1, fixed=true);
+initial equation
+  if x > 0 then
+    terminate(\"Terminate should be called at initialization.\");
+  end if;
+equation
+ der(x) = 1*x;
+end TestInitialTerminate;
+"); getErrorString();
+
+simulate(TestInitialTerminate); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestInitialTerminate_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'TestInitialTerminate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// [<interactive>:6:5-6:63:writable]
+// stdout            | info    | Simulation call terminate() at initialization (time 0.000000)
+// |                 | |       | Message : Terminate should be called at initialization.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

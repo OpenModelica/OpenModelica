@@ -1,0 +1,41 @@
+// name: startValue
+// keywords: initialization, start-value
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.startValue* _initializationTests.startValue* output.log
+//
+//  case for start-values
+//
+
+loadString("
+within ;
+package initializationTests
+  model startValue
+    Real x(start=-3);
+    Real y(start=-3);
+  initial equation
+    x^2 = 10;
+  equation
+    der(x) = time;
+    y = x;
+  end startValue;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.startValue, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.startValue_res.mat", {time, y}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.startValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.startValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{-3.16227766016838,-3.16227766016838}}
+// ""
+// endResult

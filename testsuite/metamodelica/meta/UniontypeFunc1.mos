@@ -1,0 +1,17 @@
+// name:     UniontypeFunc1
+// keywords: uniontype function
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Tests functions inside of uniontypes.
+//
+
+loadFile("UniontypeFunc1.mo"); getErrorString();
+test(); getErrorString();
+
+// Result:
+// true
+// ""
+// 1.0
+// ""
+// endResult

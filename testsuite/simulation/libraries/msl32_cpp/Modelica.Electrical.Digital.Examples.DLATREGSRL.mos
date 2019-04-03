@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Digital.Examples.DLATREGSRL
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.DLATREGSRL);
+compareVars :=
+{
+   "set.y",
+   "data_1.y",
+   "data_0.y",
+   "enable.y",
+   "reset.y",
+   "dLATREGSRL.dataOut[1]",
+   "dLATREGSRL.dataOut[2]"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Digital.Examples.DLATREGSRL
+// {"set.y","data_1.y","data_0.y","enable.y","reset.y","dLATREGSRL.dataOut[1]","dLATREGSRL.dataOut[2]"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.DLATREGSRL', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Digital.Examples.DLATREGSRL_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

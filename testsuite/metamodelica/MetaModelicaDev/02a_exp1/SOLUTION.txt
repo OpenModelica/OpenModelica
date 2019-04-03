@@ -1,0 +1,53 @@
+Solution of the exercise 02a_exp1:
+
+parser.y file changes:
+======================
+locate the uncomment here section 
+and remove the comment to make the 
+comment active
+
+Exp1.mo file changes:
+=====================
+
+Exp1.Exp type addition:
+-----------------------
+  record FACop
+    Exp exp;
+  end FACop;
+  
+  record POWop
+    Exp exp1;
+    Exp exp2;    
+  end POWop;
+
+
+Exp1.eval function addition:
+----------------------------
+
+    case (FACop(exp = e))
+      equation 
+        v1 = eval(e);
+        v2 = fac(v1); 
+      then v2;
+    case (POWop(exp1 = e1, exp2 = e2))
+      local
+        Integer v3;
+      equation 
+        v1 = eval(e1); 
+        v2 = eval(e2);
+        v3 = realInt(intReal(v1) ^. intReal(v2));
+      then v3;
+
+Exp1.fac new function:
+----------------------
+function fac
+  input Integer i;
+  output Integer o;
+algorithm
+  o := matchcontinue (i)
+    case (0) then 1;
+    case (n) 
+      local Integer n;
+      then n*fac(n-1);
+  end matchcontinue;
+end fac;

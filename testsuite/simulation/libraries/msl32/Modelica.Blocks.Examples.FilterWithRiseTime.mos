@@ -1,0 +1,41 @@
+// name:     Modelica.Blocks.Examples.FilterWithRiseTime
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Blocks.Examples.FilterWithRiseTime);
+compareVars :=
+{
+   "filter_fac5.x[1]",
+   "filter_fac5.x[2]",
+   "filter_fac4.x[1]",
+   "filter_fac4.x[2]",
+   "filter_fac3.x[1]",
+   "filter_fac3.x[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Blocks.Examples.FilterWithRiseTime
+// {"filter_fac5.x[1]","filter_fac5.x[2]","filter_fac4.x[1]","filter_fac4.x[2]","filter_fac3.x[1]","filter_fac3.x[2]"}
+// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.FilterWithRiseTime', options = '', outputFormat = 'mat', variableFilter = 'time|filter_fac5.x.1.|filter_fac5.x.2.|filter_fac4.x.1.|filter_fac4.x.2.|filter_fac3.x.1.|filter_fac3.x.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Blocks.Examples.FilterWithRiseTime_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

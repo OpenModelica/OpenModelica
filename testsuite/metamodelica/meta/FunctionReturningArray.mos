@@ -1,0 +1,40 @@
+// cflags: -g=MetaModelica -d=gen
+// status: correct
+
+loadString("package FunctionReturningArray
+
+function fromList
+  input List<Integer> list;
+  output Array<Integer> array;
+algorithm
+  array := listArray(list);
+end fromList;
+
+function toList
+  input Array<Integer> array;
+  output List<Integer> list;
+algorithm
+  list := arrayList(array);
+end toList;
+
+function test
+  input List<Integer> list;
+  output List<Integer> olist;
+algorithm
+  olist := toList(fromList(list));
+end test;
+
+end FunctionReturningArray;","FunctionReturningArray"); getErrorString();
+
+FunctionReturningArray.test({1,2,3}); getErrorString();
+FunctionReturningArray.fromList({1,2,3}); getErrorString();
+
+// Result:
+// true
+// ""
+// {1,2,3}
+// ""
+//
+// "[metamodelica/meta/FunctionReturningArray.mos:30:1-30:41:writable] Error: User-defined function calls that return Array<...> are not supported: FunctionReturningArray.fromList(List(#(1), #(2), #(3))).
+// "
+// endResult

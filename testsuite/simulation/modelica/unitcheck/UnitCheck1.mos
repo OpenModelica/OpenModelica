@@ -1,0 +1,40 @@
+// name: UnitCheck1
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck1
+    Real S(unit = \"m\");
+    Real V(unit = \"m/s\");
+    Real A(unit = \"m/s2\");
+    Real C(unit = \"m/s\")=7;
+  equation
+    V=sin(S+C);
+    der(V)=A;
+    S=5.0;
+  end UnitCheck1;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.UnitCheck1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {C,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-2)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {S,{1.0 * m^(1)}}
+// true
+// "Warning: The following equation is INCONSISTENT due to specified unit information: V = sin(S + C)
+// The units of following sub-expressions need to be equal:
+// - sub-expression "S" has unit "m"
+// - sub-expression "C" has unit "m/s"
+// "
+// endResult

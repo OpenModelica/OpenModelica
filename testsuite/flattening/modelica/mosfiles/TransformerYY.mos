@@ -1,0 +1,17 @@
+// name:     TransformerYY
+// keywords: instantiate 
+// status:   correct
+// cflags:   +std=2.x
+// 
+//  instantiate TranformerYY and check for error msg
+//
+loadFile("TransformerYYTotal.mo");
+checkModel(Modelica.Electrical.MultiPhase.Examples.TransformerYY);
+getErrorString();
+// Result:
+// true
+// "Check of Modelica.Electrical.MultiPhase.Examples.TransformerYY completed successfully.
+// Class Modelica.Electrical.MultiPhase.Examples.TransformerYY has 257 equation(s) and 257 variable(s).
+// 202 of these are trivial equation(s)."
+// ""
+// endResult

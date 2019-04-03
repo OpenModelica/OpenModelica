@@ -1,0 +1,41 @@
+// name:     BouncingBalls with DOPRI5
+// keywords: events, DOPRI5
+// status:   correct
+//teardown_command: rm -rf BouncingBall_* BouncingBall.log BouncingBall.libs BouncingBall BouncingBall.exe BouncingBall.cpp BouncingBall.makefile BouncingBallExamples_* BouncingBallExamples.log BouncingBallExamples.libs BouncingBallExamples BouncingBallExamples.exe BouncingBallExamples.cpp BouncingBallExamples.makefile output.log
+//
+// Event handling
+//
+loadFile("BouncingBallExamples.mo");
+simulate(BouncingBallExamples, stopTime=3, tolerance=1e-5, numberOfIntervals=500, method="dopri5");
+echo(false);
+s:=readSimulationResultSize("BouncingBallExamples_res.mat");
+echo(true);
+val(flying,3.0);
+val(h,1.25);
+val(v_new,3.0);
+
+simulate(BouncingBall,stopTime=8, numberOfIntervals=1500, method="dopri5", tolerance=1e-5);
+val(x,0.5);
+val(x,5.0);
+val(x,8.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BouncingBallExamples_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dopri5', fileNamePrefix = 'BouncingBallExamples', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// true
+// 0.0
+// 0.225267379077486
+// 0.0
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 8.0, numberOfIntervals = 1500, tolerance = 1e-05, method = 'dopri5', fileNamePrefix = 'BouncingBall', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.345772270111802
+// 0.233846715348441
+// 0.100033242109377
+// endResult

@@ -1,0 +1,246 @@
+// name: API-Parameters
+// keywords: Graphical API, Parameters
+// status: correct
+// 
+//  Subset of the Graphical API for accessing parameters and modifiers
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+loadFile("interactive_api_param.mo");
+
+getParameterValue(A,"p1");
+setParameterValue(A,p1,111);
+getParameterValue(A,"p1");
+setParameterValue(A,p1,35);
+getParameterValue(A,"p1");
+getParameterValue(A,"NOT_EXISTENT");
+setParameterValue(A,NOT_EXISTENT,35);
+setParameterValue(NOT_EXISTENT,NOT_EXISTENT,35);
+
+getComponentModifierNames(C,"b1");
+getComponentModifierValue(C,b1.a1);
+setComponentModifierValue(C,b1.a1,$Code((p1=45)));
+getComponentModifierValue(C,b1.a1);
+setComponentModifierValue(C,b1.a2,$Code(=33));
+getComponentModifierValue(C,b1.a2);
+getExtendsModifierNames(D2,B2);
+getExtendsModifierValue(D2,B2,a.x);
+setExtendsModifierValue(D2,B2,a.x,$Code(=10));
+getExtendsModifierValue(D2,B2,a.x);
+setComponentModifierValue(E,a.p1,$Code(()));
+getComponentModifierNames(E,"a");
+getInheritanceCount(T1);
+getInheritanceCount(Types.T2);
+getNthInheritedClass(T1,1);
+getNthInheritedClass(T2,1);
+getNthInheritedClass(Types.T2,1);
+getExtendsModifierNames(Resistance,Real);
+setComponentModifierValue(Q,x.start,$Code(=4));
+getComponentModifierValue(Q,x.start);
+getComponentModifierValue(Q,x);
+getExtendsModifierNames(Modelica.Blocks.Interfaces.BooleanInput,Modelica.Blocks.Interfaces.BooleanSignal);
+setComponentModifierValue(M,x.start,$Code(()));
+getComponentModifierNames(M,"x");
+getComponentModifierValue(M,x);
+getComponentModifierValue(M2,x);
+setComponentModifierValue(M2,x,$Code(()));
+setComponentModifierValue(M3,x,$Code(()));
+getComponentModifierNames(M,"x");
+getComponentModifierValue(M3,x);
+setComponentModifierValue(M4,x,$Code(()));
+setComponentModifierValue(M5,x.start,$Code(()));
+setComponentModifierValue(M7,a1.x.fixed,$Code(()));
+setComponentModifierValue(M7,a1.x.fixed,$Code(=false));
+getComponentModifierValue(M7,a1.x.fixed);
+setComponentModifierValue(M7,a1.x.fixed,$Code(=true));
+getComponentModifierValue(M7,a1.x.fixed);
+getComponentModifierNames(M5,"x");
+getComponentModifierNames(M7,"x");
+getComponentModifierValues(G,f.r);
+setExtendsModifierValue(K,Resistor,R,$Code(=2));
+setExtendsModifierValue(K2,Resistor,R.start,$Code(=2.25));
+getExtendsModifierValue(K2,Resistor,R.start);
+getExtendsModifierValue(K2,Resistor,R.fixed);
+setExtendsModifierValue(K2,Resistor,R.start,$Code(()));
+getExtendsModifierValue(K2,Resistor,R.start);
+getExtendsModifierValue(K2,Resistor,R.fixed);
+setExtendsModifierValue(K3,Resistor,R,$Code(=2));
+getExtendsModifierValue(K3,Resistor,R.start);
+getExtendsModifierValue(K3,Resistor,R);
+setExtendsModifierValue(K3,Resistor,R.fixed,$Code(=false));
+setExtendsModifierValue(K3,Resistor,R.start,$Code(=2.21));
+getExtendsModifierValue(K3,Resistor,R);
+getExtendsModifierNames(K4,Resistor);
+setExtendsModifierValue(K4,Resistor,x,$Code(()));
+getExtendsModifierValue(K4,Resistor,x);
+// returns modifier applied on Resistor
+getExtendsModifierNames(K4,Resistor);
+// removes the modifiers applied on Resistor
+removeExtendsModifiers(K4,Resistor);
+// returns modifier applied on Resistor, should be empty now
+getExtendsModifierNames(K4,Resistor);
+setExtendsModifierValue(K5,Resistor,x,$Code(()));
+getExtendsModifierNames(K5,Resistor);
+getExtendsModifierValue(K5,Resistor,x.fixed);
+getExtendsModifierValue(K5,Resistor,x.start);
+isExtendsModifierFinal(K5,Resistor,x.start);
+isExtendsModifierFinal(K6,Resistor,x.fixed);
+isExtendsModifierFinal(K6,Resistor,x.start);
+isExtendsModifierFinal(K6,Resistor,x);
+
+// Result:
+// {true}
+// Evaluating: loadFile("interactive_api_param.mo")
+// true
+// Evaluating: getParameterValue(A, "p1")
+// "35"
+// Evaluating: setParameterValue(A, p1, 111)
+// Ok
+// Evaluating: getParameterValue(A, "p1")
+// "111"
+// Evaluating: setParameterValue(A, p1, 35)
+// Ok
+// Evaluating: getParameterValue(A, "p1")
+// "35"
+// Evaluating: getParameterValue(A, "NOT_EXISTENT")
+// ""
+// Evaluating: setParameterValue(A, NOT_EXISTENT, 35)
+// Error: component with name: NOT_EXISTENT in class: A not found.
+// Evaluating: setParameterValue(NOT_EXISTENT, NOT_EXISTENT, 35)
+// Error: class: NOT_EXISTENT not found.
+// Evaluating: getComponentModifierNames(C, "b1")
+// {"a1.p1","a1.p2","a2.p2"}
+// Evaluating: getComponentModifierValue(C, b1.a1)
+// ""
+// Evaluating: setComponentModifierValue(C, b1.a1, $Code((p1 = 45)))
+// Ok
+// Evaluating: getComponentModifierValue(C, b1.a1)
+// ""
+// Evaluating: setComponentModifierValue(C, b1.a2, $Code( = 33))
+// Ok
+// Evaluating: getComponentModifierValue(C, b1.a2)
+// "33"
+// Evaluating: getExtendsModifierNames(D2, B2)
+// {a.x, f}
+// Evaluating: getExtendsModifierValue(D2, B2, a.x)
+// 2 * y
+// Evaluating: setExtendsModifierValue(D2, B2, a.x, $Code( = 10))
+// Ok
+// Evaluating: getExtendsModifierValue(D2, B2, a.x)
+// 10
+// Evaluating: setComponentModifierValue(E, a.p1, $Code())
+// Ok
+// Evaluating: getComponentModifierNames(E, "a")
+// {"p2"}
+// Evaluating: getInheritanceCount(T1)
+// 1
+// Evaluating: getInheritanceCount(Types.T2)
+// 1
+// Evaluating: getNthInheritedClass(T1, 1)
+// Real
+// Evaluating: getNthInheritedClass(T2, 1)
+// Real
+// Evaluating: getNthInheritedClass(Types.T2, 1)
+// Types.T1
+// Evaluating: getExtendsModifierNames(Resistance, Real)
+// {unit}
+// Evaluating: setComponentModifierValue(Q, x.start, $Code( = 4))
+// Ok
+// Evaluating: getComponentModifierValue(Q, x.start)
+// "4"
+// Evaluating: getComponentModifierValue(Q, x)
+// "1"
+// Evaluating: getExtendsModifierNames(Modelica.Blocks.Interfaces.BooleanInput, Modelica.Blocks.Interfaces.BooleanSignal)
+// {}
+// Evaluating: setComponentModifierValue(M, x.start, $Code())
+// Ok
+// Evaluating: getComponentModifierNames(M, "x")
+// {}
+// Evaluating: getComponentModifierValue(M, x)
+// "1"
+// Evaluating: getComponentModifierValue(M2, x)
+// "1"
+// Evaluating: setComponentModifierValue(M2, x, $Code())
+// Ok
+// Evaluating: setComponentModifierValue(M3, x, $Code())
+// Ok
+// Evaluating: getComponentModifierNames(M, "x")
+// {}
+// Evaluating: getComponentModifierValue(M3, x)
+// ""
+// Evaluating: setComponentModifierValue(M4, x, $Code())
+// Ok
+// Evaluating: setComponentModifierValue(M5, x.start, $Code())
+// Ok
+// Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code())
+// Ok
+// Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = false))
+// Ok
+// Evaluating: getComponentModifierValue(M7, a1.x.fixed)
+// "false"
+// Evaluating: setComponentModifierValue(M7, a1.x.fixed, $Code( = true))
+// Ok
+// Evaluating: getComponentModifierValue(M7, a1.x.fixed)
+// "true"
+// Evaluating: getComponentModifierNames(M5, "x")
+// {}
+// Evaluating: getComponentModifierNames(M7, "x")
+// {}
+// Evaluating: getComponentModifierValues(G, f.r)
+// "(a = 3, b = 4)"
+// Evaluating: setExtendsModifierValue(K, Resistor, R, $Code( = 2))
+// Ok
+// Evaluating: setExtendsModifierValue(K2, Resistor, R.start, $Code( = 2.25))
+// Ok
+// Evaluating: getExtendsModifierValue(K2, Resistor, R.start)
+// 2.25
+// Evaluating: getExtendsModifierValue(K2, Resistor, R.fixed)
+// true
+// Evaluating: setExtendsModifierValue(K2, Resistor, R.start, $Code())
+// Ok
+// Evaluating: getExtendsModifierValue(K2, Resistor, R.start)
+//
+// Evaluating: getExtendsModifierValue(K2, Resistor, R.fixed)
+// true
+// Evaluating: setExtendsModifierValue(K3, Resistor, R, $Code( = 2))
+// Ok
+// Evaluating: getExtendsModifierValue(K3, Resistor, R.start)
+// 5
+// Evaluating: getExtendsModifierValue(K3, Resistor, R)
+// 2
+// Evaluating: setExtendsModifierValue(K3, Resistor, R.fixed, $Code( = false))
+// Ok
+// Evaluating: setExtendsModifierValue(K3, Resistor, R.start, $Code( = 2.21))
+// Ok
+// Evaluating: getExtendsModifierValue(K3, Resistor, R)
+// 2
+// Evaluating: getExtendsModifierNames(K4, Resistor)
+// {x, x.start, x.fixed}
+// Evaluating: setExtendsModifierValue(K4, Resistor, x, $Code())
+// Ok
+// Evaluating: getExtendsModifierValue(K4, Resistor, x)
+//
+// Evaluating: getExtendsModifierNames(K4, Resistor)
+// {x.start, x.fixed}
+// Evaluating: removeExtendsModifiers(K4, Resistor)
+// true
+// Evaluating: getExtendsModifierNames(K4, Resistor)
+// {}
+// Evaluating: setExtendsModifierValue(K5, Resistor, x, $Code())
+// Ok
+// Evaluating: getExtendsModifierNames(K5, Resistor)
+// {x.fixed, x.start}
+// Evaluating: getExtendsModifierValue(K5, Resistor, x.fixed)
+// true
+// Evaluating: getExtendsModifierValue(K5, Resistor, x.start)
+// 2
+// Evaluating: isExtendsModifierFinal(K5, Resistor, x.start)
+// false
+// Evaluating: isExtendsModifierFinal(K6, Resistor, x.fixed)
+// true
+// Evaluating: isExtendsModifierFinal(K6, Resistor, x.start)
+// false
+// Evaluating: isExtendsModifierFinal(K6, Resistor, x)
+// true
+// endResult

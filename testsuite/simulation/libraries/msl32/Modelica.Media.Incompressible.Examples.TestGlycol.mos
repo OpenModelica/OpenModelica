@@ -1,0 +1,45 @@
+// name:     Modelica.Media.Incompressible.Examples.TestGlycol
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Incompressible.Examples.TestGlycol);
+compareVars :=
+{
+   "cv",
+   "s",
+   "lambda",
+   "eta",
+   "medium.T_degC",
+   "medium.cp",
+   "medium.u",
+   "medium.T",
+   "medium.d",
+   "medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Incompressible.Examples.TestGlycol
+// {"cv","s","lambda","eta","medium.T_degC","medium.cp","medium.u","medium.T","medium.d","medium.h"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Incompressible.Examples.TestGlycol', options = '', outputFormat = 'mat', variableFilter = 'time|cv|s|lambda|eta|medium.T_degC|medium.cp|medium.u|medium.T|medium.d|medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Media.Incompressible.Examples.TestGlycol_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,24 @@
+// name: gc2980.mos [bug: #2980]
+// keywords: array string variable GC
+// status: correct
+// teardown_command: rm -rf gctest*
+//
+//  test issues with GC
+//
+
+
+loadFile("gc2980.mo"); getErrorString();
+simulate(gctest); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "gctest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'gctest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

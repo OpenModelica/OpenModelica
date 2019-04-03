@@ -1,0 +1,54 @@
+// name:     ModelicaTest.MultiBody.InitializationConversion.Rotor1D
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.InitializationConversion.Rotor1D);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.InitializationConversion.Rotor1D_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.InitializationConversion.Rotor1D.mat",
+  "ModelicaTest.MultiBody.InitializationConversion.Rotor1D_diff.csv",0.01,0.0001,
+  {"rotor1D1.rotorWith3DEffects.phi",
+"rotor1D1.rotorWith3DEffects.w",
+"rotor1D2.rotorWith3DEffects.phi",
+"rotor1D2.rotorWith3DEffects.w",
+"rotor1D3.rotorWith3DEffects.phi",
+"rotor1D3.rotorWith3DEffects.w",
+"rotor1D4.rotorWith3DEffects.phi",
+"rotor1D4.rotorWith3DEffects.w",
+"rotor1D5.rotorWith3DEffects.phi",
+"rotor1D5.rotorWith3DEffects.w",
+"rotor1D6.rotorWith3DEffects.phi",
+"rotor1D6.rotorWith3DEffects.w",
+"rotor1D7.rotorWith3DEffects.phi",
+"rotor1D7.rotorWith3DEffects.w",
+"rotor1D8.rotorWith3DEffects.phi",
+"rotor1D8.rotorWith3DEffects.w",
+"rotor1D9.rotorWith3DEffects.phi",
+"rotor1D9.rotorWith3DEffects.w",
+"rotor1D10.rotorWith3DEffects.phi",
+"rotor1D10.rotorWith3DEffects.w"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.InitializationConversion.Rotor1D_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.InitializationConversion.Rotor1D\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

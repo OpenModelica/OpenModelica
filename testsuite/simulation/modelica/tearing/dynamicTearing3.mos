@@ -1,0 +1,388 @@
+// name:      dynamicTearing3
+// keywords:  nonlinear, dynamic tearing
+// status:    correct
+
+loadString("
+model dynamicTearing3
+  Real a, x, y, z;
+  parameter Real k=3, g=0;
+algorithm
+  a := 2*x;
+equation
+  g*a*x - y*y + time = 0;
+  a + 2*y - k*z = 0;
+  g*a - y + x*z  = 0;
+end dynamicTearing3;
+"); getErrorString();
+
+setTearingMethod("cellier"); getErrorString();
+setCommandLineOptions("+forceTearing"); getErrorString();
+setCommandLineOptions("+dynamicTearing=nonlinear"); getErrorString();
+setDebugFlags("tearingdump"); getErrorString();
+simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="-lv=LOG_DT_CONS"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+//
+// ================================================================================
+// Calling Tearing for initialization!
+// ================================================================================
+// Handle strong component with index: 1
+// To disable tearing of this component use '--noTearingForComponent=1'.
+//
+// Tearing of NONLINEAR component
+// Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details
+//
+//
+// Tearing type: heuristic
+// Tearing strictness: strict
+//
+//
+// ###BEGIN print Strong Component#####################
+// (Function:CellierTearing)
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+// 2: a:VARIABLE()  type: Real 
+// 3: y:VARIABLE()  type: Real 
+// 4: x:VARIABLE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): algorithm
+//   a := $START.a;
+//   a := 2.0 * x;
+//    [dynamic |0|0|0|0|]
+// 2/2 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 4
+// 1: 4 2
+// 2: 4 3 2
+// 3: 3 2 1
+// 4: 4 3 2 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 4
+// 1: 4 3
+// 2: 4 3 2 1
+// 3: 4 3 2
+// 4: 4 2 1
+//
+// no matching
+//
+//
+// ###END print Strong Component#######################
+// (Function:CellierTearing)
+//
+//
+//
+//
+// Determine STRICT TEARING SET
+// ********************************************************************************
+//
+//
+// AdjacencyMatrixEnhanced:
+// Adjacency Matrix Enhanced (row == equation)
+// ====================================
+// number of rows: 4
+// 1:(4,unsolvable) (2,solved) 
+// 2:(2,variable(false)) (4,variable(false)) (3,nonlinear) 
+// 3:(2,constone) (3,const(true)) (1,param(true)) 
+// 4:(2,param(false)) (4,variable(true)) (1,variable(true)) (3,constone) 
+//
+// AdjacencyMatrixTransposedEnhanced:
+// Transpose Adjacency Matrix Enhanced (row == var)
+// =====================================
+// number of rows: 4
+// 1:(4,variable(true)) (3,param(true)) 
+// 2:(4,param(false)) (3,constone) (2,variable(false)) (1,solved) 
+// 3:(4,constone) (3,const(true)) (2,nonlinear) 
+// 4:(4,variable(true)) (2,variable(false)) (1,unsolvable) 
+//
+// eqLinPoints:
+// 100,150,17,62
+//
+//
+// Forced selection of Tearing Variables:
+// ========================================
+// Unsolvables as tVars: 4
+// Variables with annotation attribute 'always' as tVars: 
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 8
+//
+// order: 1,4
+// ========================================
+//
+//
+// ****************************************
+// * TEARING RESULTS - STRICT SET:
+// * (Local Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 4,1
+// *
+// * resEq: 3,2
+// *
+// * innerEquations ({eqn,vars}):
+// * {1:2}, {4:3}
+// *
+// ****************************************
+//
+// Note:
+// =====
+// No dynamic Tearing for this strong component. Check if
+// - flag 'dynamicTearing' is set proper
+// - strong component does not contain statesets
+// - system belongs to simulation
+// - SimCode target is 'C'
+//
+//
+//
+//
+//
+// ================================================================================
+// Calling Tearing for simulation!
+// ================================================================================
+// Handle strong component with index: 2
+// To disable tearing of this component use '--noTearingForComponent=2'.
+//
+// Tearing of NONLINEAR component
+// Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details
+//
+//
+// Tearing type: heuristic
+// Tearing strictness: strict
+//
+//
+// ###BEGIN print Strong Component#####################
+// (Function:CellierTearing)
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: z:VARIABLE()  type: Real 
+// 3: a:VARIABLE()  type: Real 
+// 4: x:VARIABLE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): algorithm
+//   a := $START.a;
+//   a := 2.0 * x;
+//    [dynamic |0|0|0|0|]
+// 3/3 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 4
+// 1: 4 3 1
+// 2: 4 3
+// 3: 4 3 2 1
+// 4: 3 2 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 4
+// 1: 4 3 1
+// 2: 4 3
+// 3: 4 3 2 1
+// 4: 3 2 1
+//
+// no matching
+//
+//
+// ###END print Strong Component#######################
+// (Function:CellierTearing)
+//
+//
+//
+//
+// Determine STRICT TEARING SET
+// ********************************************************************************
+//
+//
+// AdjacencyMatrixEnhanced:
+// Adjacency Matrix Enhanced (row == equation)
+// ====================================
+// number of rows: 4
+// 1:(3,variable(false)) (4,variable(false)) (1,nonlinear) 
+// 2:(4,unsolvable) (3,solved) 
+// 3:(3,param(false)) (4,variable(true)) (2,variable(true)) (1,constone) 
+// 4:(3,constone) (1,const(true)) (2,param(true)) 
+//
+// AdjacencyMatrixTransposedEnhanced:
+// Transpose Adjacency Matrix Enhanced (row == var)
+// =====================================
+// number of rows: 4
+// 1:(4,const(true)) (3,constone) (1,nonlinear) 
+// 2:(4,param(true)) (3,variable(true)) 
+// 3:(4,constone) (3,param(false)) (2,solved) (1,variable(false)) 
+// 4:(3,variable(true)) (2,unsolvable) (1,variable(false)) 
+//
+// eqLinPoints:
+// 150,100,62,17
+//
+//
+// Forced selection of Tearing Variables:
+// ========================================
+// Unsolvables as tVars: 4
+// Variables with annotation attribute 'always' as tVars: 
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 3
+// var 2 is solved in eqn 8
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 8
+//
+// order: 2,3
+// ========================================
+//
+//
+// ****************************************
+// * TEARING RESULTS - STRICT SET:
+// * (Local Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 2
+// *
+// * tVars: 4,2
+// *
+// * resEq: 4,1
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:3}, {3:1}
+// *
+// ****************************************
+//
+//
+//
+// Determine CASUAL TEARING SET
+// ********************************************************************************
+//
+//
+// AdjacencyMatrixEnhanced:
+// Adjacency Matrix Enhanced (row == equation)
+// ====================================
+// number of rows: 4
+// 1:(3,variable(false),abs(g * x) > 1e-12 (local)) (4,variable(false),abs(g * a) > 1e-12 (local)) (1,solvable,g * a * x + time >= 0.0 (local)) 
+// 2:(4,unsolvable) (3,solved) 
+// 3:(3,param(false),abs(g) > 1e-12 (global)) (4,solvable,abs(z) > 1e-12 (local)) (2,solvable,abs(x) > 1e-12 (local)) (1,solvable) 
+// 4:(3,solvable) (1,solvable) (2,solvable,abs(k) > 1e-12 (global)) 
+//
+// AdjacencyMatrixTransposedEnhanced:
+// Transpose Adjacency Matrix Enhanced (row == var)
+// =====================================
+// number of rows: 4
+// 1:(4,solvable) (3,solvable) (1,solvable,g * a * x + time >= 0.0 (local)) 
+// 2:(4,solvable,abs(k) > 1e-12 (global)) (3,solvable,abs(x) > 1e-12 (local)) 
+// 3:(4,solvable) (3,param(false),abs(g) > 1e-12 (global)) (2,solved) (1,variable(false),abs(g * x) > 1e-12 (local)) 
+// 4:(3,solvable,abs(z) > 1e-12 (local)) (2,unsolvable) (1,variable(false),abs(g * a) > 1e-12 (local)) 
+//
+// eqLinPoints:
+// 150,100,62,17
+//
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 8
+//
+// order: 2,1,3
+// ========================================
+//
+//
+// ****************************************
+// * TEARING RESULTS - CASUAL SET:
+// * (Local Indexes)
+// *
+// * No of equations in strong component: 4
+// * No of tVars: 1
+// *
+// * tVars: 4
+// *
+// * resEq: 4
+// *
+// * innerEquations ({eqn,vars}):
+// * {2:3}, {1:1}, {3:2}
+// *
+// ****************************************
+//
+//
+// Note:
+// =====
+// Nonlinear dynamic tearing for this strong component in model:
+// dynamicTearing3
+//
+// Single Equation with constraint:
+// g * a * x + time - y ^ 2.0 = 0.0
+// Constraints:
+// g * a * x + time >= 0.0 (local)
+//
+// Single Equation with constraint:
+// g * a + x * z - y = 0.0
+// Constraints:
+// abs(x) > 1e-12 (local)
+//
+// record SimulationResult
+//     resultFile = "dynamicTearing3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
+//     messages = "LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(x) > 1e-12
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(x) > 1e-12
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(x) > 1e-12
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(x) > 1e-12
+// LOG_DT_CONS       | info    | The following local constraint is violated:
+// |                 | |       | abs(x) > 1e-12
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

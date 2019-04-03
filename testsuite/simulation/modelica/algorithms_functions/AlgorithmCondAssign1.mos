@@ -1,0 +1,35 @@
+// name:      AlgorithmCondAssign1
+// keywords:  for statement, if statement
+// status: correct
+// teardown_command: rm -rf CondAssign_* CondAssign CondAssign.exe CondAssign.cpp CondAssign.makefile CondAssign.libs CondAssign.log output.log
+//
+// Drmodelica: 9.1  if-Statement (p. 292)
+//
+
+loadFile("AlgorithmCondAssign1.mo");
+simulate(CondAssign, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+echo(false);
+size := readSimulationResultSize("CondAssign_res.mat");
+res:=readSimulationResult("CondAssign_res.mat",{x,y},size);
+x := res[1,1];
+x := 1000*x;
+x := floor(x);
+y := res[2,1];
+y := 1000*y;
+y := floor(y);
+echo(true);
+x/1000.0;
+y/1000.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "CondAssign_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'CondAssign', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 400.0
+// 45.0
+// endResult

@@ -1,0 +1,55 @@
+// name: nmpcSatelliteControl
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("SatelliteControl.mo");
+getErrorString();
+
+optimize(nmpcSatelliteControl, stopTime=100.0, numberOfIntervals=20);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("nmpcSatelliteControl_res.mat","ReferenceFiles/nmpcSatelliteControl_ref.mat","nmpcSatelliteControl.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcSatelliteControl_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'optimization', fileNamePrefix = 'nmpcSatelliteControl', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:e1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:e2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:e3(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[3]:e4(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// State[4]:w1(start = 0.01, nominal = 1.01, min = -Inf, max = +Inf, init = 0.01)
+// State[5]:w2(start = 0.005, nominal = 1.005, min = -Inf, max = +Inf, init = 0.005)
+// State[6]:w3(start = 0.001, nominal = 1.001, min = -Inf, max = +Inf, init = 0.001)
+// Input[7]:T1(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[8]:T2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[9]:T3(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

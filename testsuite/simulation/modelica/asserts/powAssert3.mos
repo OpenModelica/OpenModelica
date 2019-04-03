@@ -1,0 +1,28 @@
+// name: powAssert3
+// status: correct
+
+setCommandLineOptions("-d=gendebugsymbols");
+loadString("\n\n\n\n
+package AssertTests
+  model powAssert3
+    Real pow2 = (-abs(cos(time*10)/2))^(-0.1);
+  end powAssert3;
+end AssertTests;
+","powAssert3.mos"); getErrorString();
+
+simulate(AssertTests.powAssert3); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTests.powAssert3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertTests.powAssert3
+// assert            | debug   | powAssert3.mos:8: Invalid root: (-0.5)^(-0.1)
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

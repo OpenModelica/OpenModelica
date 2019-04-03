@@ -1,0 +1,54 @@
+// name:     Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls);
+compareVars :=
+{
+   "volume.medium.Xi[1]",
+   "volume.medium.T",
+   "volume.mC[1]",
+   "ductOut.mCs_scaled[1,1]",
+   "ductOut.mCs_scaled[2,1]",
+   "ductOut.mediums[1].Xi[1]",
+   "ductOut.mediums[1].T",
+   "ductOut.mediums[2].Xi[1]",
+   "ductOut.mediums[2].T",
+   "PID.I.y",
+   "ductIn.mCs_scaled[1,1]",
+   "ductIn.mCs_scaled[2,1]",
+   "ductIn.mediums[1].p",
+   "ductIn.mediums[1].Xi[1]",
+   "ductIn.mediums[1].T",
+   "ductIn.mediums[2].p",
+   "ductIn.mediums[2].Xi[1]",
+   "ductIn.mediums[2].T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls
+// {"volume.medium.Xi[1]","volume.medium.T","volume.mC[1]","ductOut.mCs_scaled[1,1]","ductOut.mCs_scaled[2,1]","ductOut.mediums[1].Xi[1]","ductOut.mediums[1].T","ductOut.mediums[2].Xi[1]","ductOut.mediums[2].T","PID.I.y","ductIn.mCs_scaled[1,1]","ductIn.mCs_scaled[2,1]","ductIn.mediums[1].p","ductIn.mediums[1].Xi[1]","ductIn.mediums[1].T","ductIn.mediums[2].p","ductIn.mediums[2].Xi[1]","ductIn.mediums[2].T"}
+// Simulation options: startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls', options = '', outputFormat = 'mat', variableFilter = 'time|volume.medium.Xi.1.|volume.medium.T|volume.mC.1.|ductOut.mCs_scaled.1,1.|ductOut.mCs_scaled.2,1.|ductOut.mediums.1..Xi.1.|ductOut.mediums.1..T|ductOut.mediums.2..Xi.1.|ductOut.mediums.2..T|PID.I.y|ductIn.mCs_scaled.1,1.|ductIn.mCs_scaled.2,1.|ductIn.mediums.1..p|ductIn.mediums.1..Xi.1.|ductIn.mediums.1..T|ductIn.mediums.2..p|ductIn.mediums.2..Xi.1.|ductIn.mediums.2..T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls_res.mat
+// [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:112:17-112:29:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
+// [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:122:23-122:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
+// [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:168:23-168:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

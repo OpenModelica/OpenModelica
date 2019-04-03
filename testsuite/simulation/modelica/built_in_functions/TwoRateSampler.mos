@@ -1,0 +1,37 @@
+// name:     TwoRateSampler
+// keywords:  sample
+// status: correct
+// teardown_command: rm -rf TwoRateSampler_* TwoRateSampler TwoRateSampler.exe TwoRateSampler.cpp TwoRateSampler.makefile TwoRateSampler.libs TwoRateSampler.log output.log
+// 
+// Drmodelica: 13.2  Sampled Systems (p. 429)
+// 
+//
+loadFile("TwoRateSampler.mo");
+simulate(TwoRateSampler,startTime=0.0, stopTime=100.0, numberOfIntervals=500, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+//size:=readSimulationResultSize("TwoRateSampler_res.mat");
+//res:=readSimulationResult("TwoRateSampler_res.mat",{x,y},size);
+x:=val(x,20.5);
+x:=1000*x;
+x:=floor(x);
+x2:=val(x,53.5);
+x2:=1000*x2;
+x2:=floor(x2);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+x2/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TwoRateSampler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TwoRateSampler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.912
+// 0.395
+// endResult

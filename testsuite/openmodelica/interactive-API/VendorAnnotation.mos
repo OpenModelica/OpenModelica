@@ -1,0 +1,42 @@
+// name: VendorAnnotation.mos
+// status: correct
+
+
+loadFile("VendorAnnotation.mo");
+getErrorString();
+
+getAnnotationNamedModifiers(M,"experiment");
+getErrorString(); 
+
+getAnnotationNamedModifiers(M,"__OpenModelica_simulationFlags");
+getErrorString(); 
+
+getAnnotationModifierValue(M,"__OpenModelica_simulationFlags","solver");
+getErrorString(); 
+
+getAnnotationModifierValue(M,"__OpenModelica_simulationFlags","jacobian");
+getErrorString(); 
+
+getAnnotationModifierValue(M,"experiment","startTime");
+getErrorString(); 
+
+getAnnotationModifierValue(M,"experiment","stopTime");
+getErrorString(); 
+
+// Result:
+// true
+// ""
+// {"startTime","stopTime"}
+// ""
+// {"solver","jacobian"}
+// ""
+// "
+// \\ndassl"
+// ""
+// "coloredNumerical"
+// ""
+// "1"
+// ""
+// "2"
+// ""
+// endResult

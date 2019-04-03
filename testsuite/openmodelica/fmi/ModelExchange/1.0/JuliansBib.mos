@@ -1,0 +1,101 @@
+// name: JuliansBib
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml JuliansBib_Connector_Hebelarm_einfach.fmu JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach.libs JuliansBib_Connector_Hebelarm_einfach.lib JuliansBib_Connector_Hebelarm_einfach JuliansBib_Connector_Hebelarm_einfach.exe JuliansBib_Connector_Hebelarm_einfach.so JuliansBib_Connector_Hebelarm_einfach.dll JuliansBib_Connector_Hebelarm_einfach.c JuliansBib_Connector_Hebelarm_einfach.makefile JuliansBib.Connector_Hebelarm_einfach_*
+
+loadFile("PlanarMechanicsStandard.mo"); getErrorString();
+loadFile("JuliansBib.mo"); getErrorString();
+
+simulate(JuliansBib.Connector_Hebelarm_einfach); getErrorString();
+
+val(omega,0);
+val(omega,1);
+
+val(theta,0);
+val(theta,1);
+
+val(s, 0);
+val(s, 1);
+
+translateModelFMU(JuliansBib.Connector_Hebelarm_einfach, version="1.0"); getErrorString();
+importFMU("JuliansBib_Connector_Hebelarm_einfach.fmu"); getErrorString();
+loadFile("JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo"); getErrorString();
+simulate(JuliansBib_Connector_Hebelarm_einfach_me_FMU, stopTime=1,numberOfIntervals=1000); getErrorString();
+
+val(omega,0);
+val(omega,1);
+
+val(theta,0);
+val(theta,1);
+
+val(s, 0);
+val(s, 1);
+
+// Result:
+// true
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "JuliansBib.Connector_Hebelarm_einfach_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib.Connector_Hebelarm_einfach', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.002000
+// |                 | |       | lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.actuatedPrismatic1.s, has value: -3.60059e-06
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 127.2093118472222
+// -1.473673372206741
+// 12720.93118472221
+// -2.525849023130489
+// 0.0
+// -0.5326917977051931
+// "JuliansBib_Connector_Hebelarm_einfach.fmu"
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "JuliansBib_Connector_Hebelarm_einfach_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'JuliansBib_Connector_Hebelarm_einfach_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1] >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[1], has value: -1.41144
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2] >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= lever_arm_simple_2D1.ausleger1.fixedTranslation.r0[2], has value: -0.0885622
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:688:3-688:204:writable] Warning: Parameter lever_arm_simple_2D1_fixedTranslation1_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:687:3-687:203:writable] Warning: Parameter lever_arm_simple_2D1_fixedTranslation_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:686:3-686:187:writable] Warning: Parameter lever_arm_simple_2D1_body_sphere_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="sphere") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:685:3-685:206:writable] Warning: Parameter lever_arm_simple_2D1_ausleger1_revolute1_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:684:3-684:205:writable] Warning: Parameter lever_arm_simple_2D1_ausleger1_revolute_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:683:3-683:213:writable] Warning: Parameter lever_arm_simple_2D1_ausleger1_fixedTranslation_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:682:3-682:205:writable] Warning: Parameter lever_arm_simple_2D1_ausleger1_actuatedPrismatic1_box_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="box") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:681:3-681:203:writable] Warning: Parameter lever_arm_simple_2D1_actuatedRevolute_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// "
+// 127.2093118472222
+// -1.473676632759779
+// 12720.93118472221
+// -2.525871531700719
+// 0.0
+// -0.5326903886904891
+// endResult

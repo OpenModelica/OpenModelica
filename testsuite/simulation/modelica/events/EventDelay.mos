@@ -1,0 +1,29 @@
+// name:     EventDelay
+// keywords: EventHandling, Delay, Euler
+// status: correct
+// teardown_command: rm -rf TestModel* output.log
+// 
+//  Simulate model containing EventIterations
+//
+loadFile("./EventDelay.mo");
+
+simulate(TestModel, tolerance=1e-6,startTime=0, stopTime=2,numberOfIntervals=20,method="euler");
+
+val(Valve1, 0);
+val(Valve1, 1);
+val(Valve1, 2);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TestModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'TestModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// 0.0
+// 0.0
+// endResult

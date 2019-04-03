@@ -1,0 +1,79 @@
+// name: cseTestCall6
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall6
+    record rec
+      Real x;
+      Real y;
+    end rec;
+    
+    Real a;  
+    
+    function f
+      input Real s;
+      output rec t;
+    algorithm 
+      t.x := s;
+      t.y := s+1;
+    end f;
+  
+    function f2
+      input rec s;
+      output Real t;
+    algorithm 
+      t := s.x+s.y;
+    end f2;
+  
+  equation 
+    a = f2(f(time));
+  end TestCall6;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall6); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (3)
+// ========================================
+// 1: a:VARIABLE()  type: Real 
+// 2: $cse1.y:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: $cse1.x:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 3)
+// ========================================
+// 1/1 (2): $cse1 = CSE.TestCall6.f(time)   [unknown |0|0|0|0|]
+// 2/3 (1): a = CSE.TestCall6.f2($cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (2/43)
+// ========================================
+// 1: a - CSE.TestCall6.f2($cse1) - {}
+// 2: $cse1 - CSE.TestCall6.f(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

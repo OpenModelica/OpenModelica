@@ -1,0 +1,407 @@
+// name:      parameterTest6
+// keywords:  parameter evaluation, evaluate, final, override
+// status:    correct
+
+loadString("
+model parameterTest6
+  Integer x;
+  Integer y;
+  Integer z;
+  parameter Integer p1 = 2;
+  parameter Integer p2 = if b1 then e1 + p4 elseif b2 then p1 - p3 else e1 - p3; // p2 = p1 - p3
+  parameter Integer p3 = 5;
+  parameter Integer p4 = f1 + p1;
+  parameter Integer p5 = pr1;
+  final parameter Integer f1 = p1;
+  final parameter Integer f2 = 10;
+  parameter Boolean b1 = false annotation(Evaluate=true);
+  parameter Boolean b2 = true annotation(Evaluate=true);
+  parameter Integer e1 = if b1 then p3 + p1 else p2 + 7 annotation(Evaluate=true); // e1 = p2 + 7
+  parameter Integer s = 3;
+  parameter Integer a[s] = ones(s) annotation(Evaluate=true);
+protected
+  parameter Integer pr1 = 100;
+equation
+  x = if b2 then e1 - p3 else f1 - p3;
+  y = f1 + p1 + p2 + p4 + p5 + f2;
+  z = a[1] + a[2] + a[3] + s;
+end parameterTest6;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump");
+simulate(parameterTest6, simflags="-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
+system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: z:DISCRETE()  type: Integer 
+// 2: y:DISCRETE()  type: Integer 
+// 3: x:DISCRETE()  type: Integer 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = if b2 then e1 - p3 else f1 - p3   [dynamic |0|0|0|0|]
+// 2/2 (1): y = f1 + p1 + p2 + p4 + p5 + f2   [dynamic |0|0|0|0|]
+// 3/3 (1): z = a[1] + a[2] + a[3] + s   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (15)
+// ========================================
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
+// 2: a[3]:PARAM()  = 1  type: Integer  [3]
+// 3: a[2]:PARAM()  = 1  type: Integer  [3]
+// 4: a[1]:PARAM()  = 1  type: Integer  [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer 
+// 6: e1:PARAM()  = if b1 then p3 + p1 else 7 + p2  type: Integer 
+// 7: b2:PARAM()  = true  type: Boolean 
+// 8: b1:PARAM()  = false  type: Boolean 
+// 9: f2:PARAM(final = true )  = 10  type: Integer 
+// 10: f1:PARAM(final = true )  = p1  type: Integer 
+// 11: p5:PARAM()  = pr1  type: Integer 
+// 12: p4:PARAM()  = f1 + p1  type: Integer 
+// 13: p3:PARAM()  = 5  type: Integer 
+// 14: p2:PARAM()  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
+// 15: p1:PARAM()  = 2  type: Integer 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 15
+// Number of parameters selected for evaluation: 7
+// Selected parameters for evaluation:
+// 8,7,6,5,4,3,2
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 15
+// 1:
+// 2:
+// 3:
+// 4:
+// 5:
+// 6: 15 14 13 8
+// 7:
+// 8:
+// 9:
+// 10: 15
+// 11: 1
+// 12: 15 10
+// 13:
+// 14: 15 13 12 8 7 6
+// 15:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 15
+// 1: 11 1
+// 2: 2
+// 3: 3
+// 4: 4
+// 5: 5
+// 6: 14 6
+// 7: 14 7
+// 8: 14 8 6
+// 9: 9
+// 10: 12 10
+// 11: 11
+// 12: 14 12
+// 13: 14 13 6
+// 14: 14 6
+// 15: 15 14 12 10 6
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (12)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (12)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+//
+// globalKnownVars (15)
+// ========================================
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer 
+// 6: e1:PARAM(final = true )  = 4  type: Integer 
+// 7: b2:PARAM(final = true )  = true  type: Boolean 
+// 8: b1:PARAM(final = true )  = false  type: Boolean 
+// 9: f2:PARAM(final = true )  = 10  type: Integer 
+// 10: f1:PARAM(final = true )  = p1  type: Integer 
+// 11: p5:PARAM()  = pr1  type: Integer 
+// 12: p4:PARAM(final = true )  = f1 + p1  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 15
+// 13
+// 10
+// 12
+// 9
+// 8
+// 7
+// 14,6
+// 5
+// 4
+// 3
+// 2
+// 1
+// 11
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (13)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+// f2 -> 10
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (13)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+// f2 -> 10
+//
+// globalKnownVars (15)
+// ========================================
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer 
+// 6: e1:PARAM(final = true )  = 4  type: Integer 
+// 7: b2:PARAM(final = true )  = true  type: Boolean 
+// 8: b1:PARAM(final = true )  = false  type: Boolean 
+// 9: f2:PARAM(final = true )  = 10  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
+// 11: p5:PARAM()  = pr1  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (13)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+// f2 -> 10
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (13)
+// ========================================
+// b1 -> false
+// b2 -> true
+// p1 -> 2
+// p3 -> 5
+// f1 -> 2
+// p4 -> 4
+// p2 -> -3
+// e1 -> 4
+// s -> 3
+// a[1] -> 1
+// a[2] -> 1
+// a[3] -> 1
+// f2 -> 10
+//
+// globalKnownVars (15)
+// ========================================
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer 
+// 6: e1:PARAM(final = true )  = 4  type: Integer 
+// 7: b2:PARAM(final = true )  = true  type: Boolean 
+// 8: b1:PARAM(final = true )  = false  type: Boolean 
+// 9: f2:PARAM(final = true )  = 10  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
+// 11: p5:PARAM()  = pr1  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,1,1,1,1,1,1,1,-1,1,-1,1,1,1,1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: z:DISCRETE()  type: Integer 
+// 2: y:DISCRETE()  type: Integer 
+// 3: x:DISCRETE()  type: Integer 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = -1   [dynamic |0|0|0|0|]
+// 2/2 (1): y = 15 + p5   [dynamic |0|0|0|0|]
+// 3/3 (1): z = 6   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (15)
+// ========================================
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer 
+// 6: e1:PARAM(final = true )  = 4  type: Integer 
+// 7: b2:PARAM(final = true )  = true  type: Boolean 
+// 8: b1:PARAM(final = true )  = false  type: Boolean 
+// 9: f2:PARAM(final = true )  = 10  type: Integer 
+// 10: f1:PARAM(final = true )  = 2  type: Integer 
+// 11: p5:PARAM()  = pr1  type: Integer 
+// 12: p4:PARAM(final = true )  = 4  type: Integer 
+// 13: p3:PARAM(final = true )  = 5  type: Integer 
+// 14: p2:PARAM(final = true )  = -3  type: Integer 
+// 15: p1:PARAM(final = true )  = 2  type: Integer 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,f1,f2,b1,b2,e1,s,a[1],a[2],a[3],pr1,x,y,z'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=3,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=6
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// stdout            | warning | It is not possible to override the following quantity: f2
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// stdout            | warning | It is not possible to override the following quantity: s
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,p1=2,p2=-3,p3=5,p4=4,p5=100,f1=2,f2=10,b1=0,b2=1,e1=4,s=3,a[1]=1,a[2]=1,a[3]=1,pr1=100,x=-1,y=115,z=6
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// endResult

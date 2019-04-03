@@ -1,0 +1,8290 @@
+This is modtest.info, produced by makeinfo version 4.2 from
+modtest.texi.
+
+This is version 1.0-dk3, last updated 16 July 1998, of `the Modelica
+testsuite', version 1.0-dk3.
+
+Copyright (C) 1998 Modelica Design Group
+
+
+File: modtest.info,  Node: Top,  Next: Conventions,  Prev: (dir),  Up: (dir)
+
+This is version 1.0-dk3 of `the Modelica testsuite'.
+
+This document is made to provide a collection of issues that need to be
+resolved in the Modelica design process.  It also contains the full set
+of Modelica test cases currently defined.
+
+A Modelica test case is an example Modelica model that illustrates one
+ore more semantical aspects of the Modelica language.  It serves several
+purposes, both to provide a testbed for new implementations and to make
+unresolved design issues clearer.  For testing a new implementation of
+the language, the set of test cases needs to be very large, as the
+number of semantic rules is large, and there are many ways in which they
+interact.  Only some of these test cases are interesting for the design
+process, but it seems useful to keep it as one set of test cases, and
+this discussions in this document only references a selected subset of
+the test cases.
+
+* Menu:
+
+* Conventions::
+* Open Issues::
+* Test Cases::                  Collection of files with test cases.
+
+* Change-Log::
+
+ --- The Detailed Node Listing ---
+
+Conventions
+
+* General Conventions::
+* Classification::
+* Flat Modelica::
+
+Open Issues
+
+* Types::
+* Overloading and automatic type conversions::
+* Array syntax::
+* Parameters::
+* Expression Properties::
+* Declarations::
+* Connections::
+* Built-in types as connectors::
+* Integer expressions::
+* Redeclaration of parameter as variable::
+* Equations::
+* Modifications::
+
+
+File: modtest.info,  Node: Conventions,  Next: Open Issues,  Prev: Top,  Up: Top
+
+Conventions
+***********
+
+This chapter lists the conventions used in the text.
+
+* Menu:
+
+* General Conventions::
+* Classification::
+* Flat Modelica::
+
+
+File: modtest.info,  Node: General Conventions,  Next: Classification,  Prev: Conventions,  Up: Conventions
+
+General Conventions
+===================
+
+A test case is given in two formulations, first the Modelica code, and
+second a "flat" representation that specifies the semantics of the
+example.  Furthermore, each test case is classifies according to a
+couple of criteria.
+
+Each test case is formulated in one Modelica file, consisting of
+
+  1. A header containing some explanatory text to describe what it
+     tests.
+
+  2. A classification entry. (*Note Classification::.)
+
+  3. The Modelica code.
+
+  4. A flat representation. (*Note Flat Modelica::.)
+
+Everything except the Modelica code is given as comment in the file. No
+flat representation is given for incorrect examples.
+
+
+File: modtest.info,  Node: Classification,  Next: Flat Modelica,  Prev: General Conventions,  Up: Conventions
+
+Classification
+==============
+
+Each test case contains a classification entry of the form
+
+`keywords:'  KEYWORD  [`,' KEYWORD]*
+`status:'    CORRECTNESS
+
+The KEYWORD clauses are used to tag each test with a number of keywords
+to indicate what aspect of the semantic specification it tests.
+
+The following list contains all the keywords used.  ASPECT(s):
+`algorithm'
+
+`array'
+
+`connect'
+
+`constant'
+
+`declaration'
+
+`equation'
+
+`extends'
+
+`function'
+
+`modification'
+
+`partial'
+
+`protected'
+
+`redeclare'
+
+`scoping'
+
+`shadow'
+
+`type'
+
+`unknown'
+The CORRECTNESS of a test case is given as one of:
+`correct'
+     The example is correct.
+
+`incorrect'
+     The example is incorrect according to the formal Modelica
+     semantics or syntax.
+
+`erroneous'
+     The example is formally correct, but it contains a modeling error
+     that should be outlined.
+
+     <david: What does this really mean and why is it needed here?>
+
+
+File: modtest.info,  Node: Flat Modelica,  Prev: Classification,  Up: Conventions
+
+Flat Modelica
+=============
+
+The aim of the flat representation is to clearly specify the semantics
+of a test case. This is done using a low-level format. The format has
+the same basic syntax as Modelica.
+
+The following restrictions apply:
+
+   * Flat models contain only components of predefined types. Predefined
+     attributes, e.g. `start', `unit', `min', `max', ... are declared
+     as separate variables.
+
+   * A flat model has one declaration section, optionally followed by an
+     equation section, which is followed by zero or more algorithm
+     sections.
+
+   * The order of equations is undefined.
+
+   * The order of statements in each algorithm section is kept intact,
+     but the order in which the algorithm sections appear is undefined.
+
+   * No modifications are used, i.e. equation modifications made in the
+     Modelica source code are stated in the equation section of the flat
+     representation.  Redeclarations are taken care of while flattening
+     the model.
+
+   * No connect statements are used, i.e. the corresponding connection
+     equations are stated.
+
+   * For loops are not used in equations.  They are unrolled in the flat
+     representation.
+
+
+The following extensions are made:
+
+   * All array components are declared separately.  If the Modelica
+     model contains the declaration
+
+          Real x[2,3];
+
+     the flat model will contain the following declarations:
+
+          Real x[1,1];
+          Real x[1,2];
+          Real x[1,3];
+          Real x[2,1];
+          Real x[2,2];
+          Real x[2,3];
+
+     This means that the brackets in declaration do not denote array
+     size, as they do in normal Modelica.
+
+     <david: This is a consequence of how the semantic specification
+     looks at the components.  Using the simple `x[2,3]' could be done
+     instead, as it is shorter and introduces no ambuguities.>
+
+   * Identifiers may contain dots `.' (resulting from subcomponents in
+     the originating Modelica code) and tilde signs `~' (see below).
+     Identifiers may also contain subscripts, as in `x[1]'.  This is a
+     consequence of the fact that all array components are declared
+     separately.
+
+   * In order to be able to declare a local variable VAR of a function
+     FUNCNAME, an identifier of the form
+          FUNCNAME`~'N`.'VAR
+     with N a number is introduced. In this way calls to internal
+     functions (that are defined in Modelica) can be expanded, e.g. to
+     express the semantics of assigning input and output variables.
+     The number N should be incremented for each call to the same
+     function from the same class.
+
+     <Peter: The expansion is not possible for recursive functions.>
+
+     <david: This is still experimental. It might be removed.>
+
+     Calls to predefined and external functions remain in the flat
+     representation as they are in the Modelica code.
+
+   * Automatic type conversions defined in the Modelica semantics, e.g.
+     from an `Integer' `i' to `Real', are stated using the target type
+     name as conversion operator, i.e. `Real(i)'.
+
+   * A new postfix subscripting operator is introduced.  In the flat
+     model, it is necessary to be able to subscript expression, so the
+     syntax `expression[x]' is allowed.  This is currently not allowed
+     in Modelica.
+
+   * Almost no overloading of operators occus in the flat Modelica.  If
+     a model contains an array multiplied by a scalar, the flat model
+     does not use the multiplication sign, but an operator that is
+     specialized for that particular operation.
+
+     The normal integer and real arithmetic operators are still
+     overloaded, but they should not, really.
+
+   * Due to the extensions a flat model representation is not valid
+     Modelica.  Therefore, the class definition in the flat code is
+     declared as `fclass' to differentiate it from Modelica's `class'.
+
+
+The flat modelica grammar is probably not even context-free.
+
+
+File: modtest.info,  Node: Open Issues,  Next: Test Cases,  Prev: Conventions,  Up: Top
+
+Open Issues
+***********
+
+The issues brought up here are not yet clarified in the current
+Modelica language specification (Version 1c of the Modelica report).
+
+* Menu:
+
+* Types::
+* Overloading and automatic type conversions::
+* Array syntax::
+* Parameters::
+* Expression Properties::
+* Declarations::
+* Connections::
+* Built-in types as connectors::
+* Integer expressions::
+* Redeclaration of parameter as variable::
+* Equations::
+* Modifications::
+
+
+File: modtest.info,  Node: Types,  Next: Overloading and automatic type conversions,  Prev: Open Issues,  Up: Open Issues
+
+Types
+=====
+
+Modelica needs a well-defined type system, with a clear notion of what a
+type actually is.
+
+Functions
+---------
+
+Functions have a type, which looks something like `Real => Real' for a
+function from reals to reals.  This goes for the builtin functions too.
+
+This causes a few problems.  For instance, the function `size' is not
+well-defined.  What is the type of its first argument?  There is no
+type called "Array".
+
+Another problem concerns array dimension sizes. Consider the following
+example:
+
+     function f
+       input Real x[:];
+       output Real y[size(x,1)];
+     algorithm
+       ...
+     end f;
+     
+     model M
+       Real a[17], b[17], c[3], d[3];
+     equation
+       b = f(a);
+       c = f(a);
+       d = f(c);
+     end M;
+
+First of all, is it possible to define y in the way described above?  If
+not, how would it otherwise be defined?
+
+This defines a function that takes an input of type `Real[:]' and has
+an output of type `Real[:]'.  The size of `y' cannot be known by
+looking at the definition of `f'.
+
+This has the consequence that the expression `f(a)' has type `Real[:]',
+which is not equivalent to either the type of `b' or `c'.
+
+What would be desirable is a way to determine that the type of the
+expression `f(a)' actually has type `Real[17]'.
+
+When comparing the function definition to normal class definitions, one
+thing worth noting is that in other classes, the type of components
+declared like `y' is determined at instantiation time.  So what if we
+say that the function `f' is implicitly instantiated for each occation
+it appears in the model source?
+
+This would mean that `f' would be instantiated three times when then
+model `M' is instantiated.  Think of it in this way:
+
+     Model M
+       Real a[17], b[17], c[3], d[3];
+     
+       f f~1 = f(x = a);
+       f f~2 = f(x = a);
+       f f~3 = f(x = c);
+     equation
+       b = f~1.y;
+       c = f~2.y;
+       d = f~3.y;
+     end M;
+
+Here I instantiate the function `f' and call the three instances `f~1',
+`f~2' and `f~3', respectively.
+
+In the instance `f~1', it would be possible to determine the size of
+`x' (possibly using some extra magic), and the size of `y' could be
+derived.  Then the type of the expressions would be fully known, and
+the translator would be able to tell that the first and third equations
+are valid, but the second is invalid.
+
+It would be nice if this could be describe in terms of normal
+instantiation, but there are a couple of issues that need to be cleared
+first.
+
+   * Recursive functions can not be described in this way.  But since we
+     decided in Manchester that recursive functions are disallowed, this
+     doesn't really matter.
+
+   * What is needed to determine the type of a component?  Currently,
+     as I see it, the declaration of a component needs to be specified
+     in the declaration.  The question is whether the declaration
+     equation may affect the type of the component.
+
+     I'd like to, as far as possible, treat declaration equations like
+     any normal equations, meaning that `x' and `y' are treated equally
+     in the example below:
+
+          ...
+            Real x[:] = [1,2,3];
+            Real y[:];
+          equation
+            y = [1,2,3];
+          ...
+
+     But if it is necessary to be able to determine that the size of `x'
+     is 3, then there is a difference between the two types of
+     equations.  Saying that the translator should determine also that
+     the size of `y' is 3 does not seem reasonable.
+
+     This issue does proabably relate to other things than functions
+     also.
+
+
+
+File: modtest.info,  Node: Overloading and automatic type conversions,  Next: Array syntax,  Prev: Types,  Up: Open Issues
+
+Overloading and automatic type conversions
+==========================================
+
+Many of the operators in Modelica are overloaded on the types of its
+arguments.  The plus operator is e.g. both an integer addition operator
+and a real addition operator.  These two operations are similar, but not
+the same.  It also doubles as a string concatenation operator, which is
+a completely different operation, with other properties (it is not
+associative, for instance).  The overloading of the asterisk operator is
+even more extensive with both scalar and matrix multiplication.
+
+Defining the operators
+----------------------
+
+All operators need to be defined in terms of what they operate on.  A
+short table of types and operations should be sufficient.
+
+
+File: modtest.info,  Node: Array syntax,  Next: Parameters,  Prev: Overloading and automatic type conversions,  Up: Open Issues
+
+Array syntax
+============
+
+Array indexing operator
+-----------------------
+
+Should the indexing operator `[]' be a real postfix operator on
+arbitrary array expressions?  Currently, the indexing is part of the
+`component_reference' grammar rule, which means that you can only index
+variables.
+
+The following is currently not allowed:
+
+     x = cross(A,B)[2]
+
+
+File: modtest.info,  Node: Parameters,  Next: Expression Properties,  Prev: Array syntax,  Up: Open Issues
+
+Parameters
+==========
+
+Saying that parameter setting should be left until after compile-time
+might not be so easy.
+
+Compile-time? What compile-time?
+--------------------------------
+
+The term "compile-time" is used several times in the discussion about
+Modelica, but it is never clearly defined what is meant by this.
+
+
+File: modtest.info,  Node: Expression Properties,  Next: Declarations,  Prev: Parameters,  Up: Open Issues
+
+Expression Properties
+=====================
+
+In several places in the discussions about what may or may not appear in
+expressions there are restrictions applied in a somewhat ad-hoc manner.
+This should be cleared up and formalized.
+
+Each expression has a number of properties that can be derivd by
+analyzing its subexpressions.
+
+   * A type. For each kind of expression (addition, logical-and etc.)
+     it is well-defined what the type of the expression is.  The only
+     exception are overloaded operators, but that problem is another
+     issue (*Note Overloading and automatic type conversions::.)
+
+   * A "variability" property, which describes whether the expression
+     is a constant expression or not.  This can be stratified into the
+     levels constant / parameter / discrete / variable, just as
+     components can be declared constant etc.
+
+   * A "differentiability" property.  I'm not so sure about what this
+     is, but it seems to be needed.  For instance, the report states
+     that the `div()' function is not differentiable.
+
+     How is this property determined for function calls in the general
+     case?
+
+
+When these properties are defined, they can be used to define what may
+appear where.  Some examples:
+
+   * An array index must have type `Integer'.
+
+   * An array index in a `connect' statement must be a constant
+     expression of type `Integer'.
+
+   * Expressions in equations must be differentiable.
+
+
+I might be necessary to provide explicit information about the prperties
+of functions.
+
+
+File: modtest.info,  Node: Declarations,  Next: Connections,  Prev: Expression Properties,  Up: Open Issues
+
+Declarations
+============
+
+Array modifications
+-------------------
+
+The type system makes the test case *Note ArrayModification7:: illegal.
+This seems natural too me, but I just want to make sure that nobody
+complains about this.
+
+Array element modifications
+---------------------------
+
+
+File: modtest.info,  Node: Connections,  Next: Built-in types as connectors,  Prev: Declarations,  Up: Open Issues
+
+Connections
+===========
+
+Parameters and constants in connectors
+--------------------------------------
+
+Should connection equations be generated for parameters and constants?
+This issue has been discussed at the 10th design meeting. But no
+decision was made there.
+(*Note ConnectTypes::.)
+
+This has been discussed at both the 12th and 13th design meetings, but
+no agreement has been reached.
+
+
+File: modtest.info,  Node: Built-in types as connectors,  Next: Integer expressions,  Prev: Connections,  Up: Open Issues
+
+Built-in types as connectors
+============================
+
+Are variables of predefined types, e.g. `Real', valid connectors? This
+is not specified in the Modelica 1c report.  It is assumed to be true
+here.
+(*Note Units1::, and *Note Units2::.)
+
+In the Modelica 1c report, section 4.6 "Matrices", subsection "Block
+Diagrams", vectors of type `Real' are used as inputs and outputs. But
+no example is given in the discussion about connection of inputs and
+outputs there.
+
+This has been discussed at the 13th design meeting in Reno.
+
+
+File: modtest.info,  Node: Integer expressions,  Next: Redeclaration of parameter as variable,  Prev: Built-in types as connectors,  Up: Open Issues
+
+Integer expressions
+===================
+
+Version 1c of the Modelica report, appendix B.9, introduces built-in
+functions for doing things like integer division. Most of the functions
+have return type `Real'. But should not the following be allowed?
+
+     model Foo
+       Real a[10];
+       Real b[20];
+       Integer i;
+     equation
+       for i in 2:20 loop
+         a[div(i,2)] = b[i];
+       end for;
+     end Foo;
+
+There are two problems with the current specification:
+
+  1. Possibly not only the built-in function `size', but also `div',
+     `ceil', `floor', and `ndims' should have return type `Integer'. If
+     used in `Real' expressions, then the result should be converted
+     from `Integer' to `Real' (as for any integer used in a real
+     expression).
+
+     (*Note Integer2Real::.)
+
+     But this solution has another problem, which is more an
+     implementation problem. The `Integer' type is often implemented as
+     a limited type of typically 32 bits, which would mean that if you
+     call ceiling(large_real_numer) you would overflow the integer type.
+
+     One solution taken by some other languages (like C) is to
+     introduce a double set of functions that conceptually do the same
+     thing. On set that returns integers, and one that returns reals.
+     A "smaller" solution would be to only introduce an integer version
+     of the `floor' function, and write `int_floor(div(n,m))', but then
+     the gain would be very small.
+
+  2. The use of the mentioned built-in functions should not only be
+     allowed in `Boolean' equations and expressions, but also in
+     `Integer' equations and expressions (e.g. index expressions). (See
+     the example above and *Note Expression Properties::)
+
+This was discussed at the 12th design meeting.  I'm not certain of what
+was actually decided there.
+
+It was also discussed at the 13th design meeting.  The conclusion was
+that functions with integer return type were needed.
+
+
+File: modtest.info,  Node: Redeclaration of parameter as variable,  Next: Equations,  Prev: Integer expressions,  Up: Open Issues
+
+Redeclaration of parameter as variable
+======================================
+
+Version 1c of the Modelica report, appendix B2, section "Redeclaration",
+says that variability constraints may only become stronger in
+redeclarations. (*Note DisturbedResistance2::.)
+
+It should be noted that, using inheritance, one can formulate examples
+that break the rule. Should this be valid? (*Note
+DisturbedResistance3::, *Note DisturbedResistance4::.)
+
+This could probably be solved by modifying the subtype relation (but the
+Manchester meeting decided otherwise, for some reason).
+
+Resolutions from the Manchester meeting
+---------------------------------------
+
+   * Type prefix is not part of type equivalence.
+
+   * Multiple inheritance should be forced to be equivalent.
+
+   * Problem with correctness of equations, for example
+          C*der(v) = i
+          der(C*v) = i
+
+   * Open issue! Should add constraints to extends, similar to
+     redeclare. Should require that type-prefix is identical for
+     extends.
+
+
+File: modtest.info,  Node: For loops,  Next: Modifications,  Prev: Redeclaration of parameter as variable,  Up: Open Issues
+
+For loops
+=========
+
+What are the restrictions on loop variables?  Can a loop variable also
+be used in equations?
+
+
+File: modtest.info,  Node: Equations,  Next: Modifications,  Prev: Redeclaration of parameter as variable,  Up: Open Issues
+
+Equations
+=========
+
+Discretes and equations
+-----------------------
+
+The test case Discrete2 (*Note Discrete2::) depends on the expression
+properties. If it is said that equations can only contain differentiable
+expressions, then this is clearly illegal.
+
+*Note Expression Properties::
+
+
+File: modtest.info,  Node: Modifications,  Prev: Equations,  Up: Open Issues
+
+Modifications
+=============
+
+Modification of class definitions
+---------------------------------
+
+The Reno meeting agreed that it would no longer be allowed to modify
+class definitions in a modification list.  Does everebody agree on this?
+
+All the following sections depend on this decision.
+
+Double modifications
+--------------------
+
+The Manchester meeting decided that the same component may not be
+modified twice in the same modification clause, i.e. the following
+example is invalid since `x' is modified twice.
+
+     Foobar a(x = 5, y = 3, x = 7);
+
+The following two examples are also disallowed.
+
+     Foobar(x[2:8] = [1,2,3,4,5,6,7], x[3] = 17);
+     Foobar(a.x = 17, a(x = 15, y = 16);
+
+But it is still possible to write something that could be possible to
+interpret as a double modification. The following example is taken from
+*Note Modification6::.
+
+     model M
+       model Foo
+         parameter Real q = 1.0;
+       end Foo;
+       Foo f(q=2.0);
+     end M;
+     
+     model Modification6
+       M m1(Foo(q=3.0), f(q=4.0));
+       M m2(f(q=4.0), Foo(q=3.0));
+     end Modification6;
+
+Although `f.q' are modified twice on both the declaration of `m1' and
+`m2', this is not disallowed, and should not be disallowed.  But the
+semantics have to be defined.  There are three alternatives.
+
+  1. Instance modifications take precedence over class modifications.
+
+  2. Class modificaitons take precedence over class modifications.
+
+  3. The textual order of the modifications determines the precedence.
+
+If we follow the guiding principle that more specific modifications take
+precedence over more general, then the first alternative should be
+chosen.  This fits well with how outer (more specific) modifications
+take precedence over inner (more general) modifications.
+
+This might seem a little more natural if we look at the following
+example.
+
+     model ResistorCircuit
+       parameter Integer N
+       Reistor r[N];
+       ...
+     end SeralResistors;
+     
+     model Foo
+       ResistorCircuit rr(N = 17, Resistor(R = 1.0), r[5] = 1.0);
+     end Foo;
+
+*Note Modification6::, *Note Modification8::, *Note Modification9::
+
+Class modifications should be propagated down
+---------------------------------------------
+
+In *Note Modification10::, we see how a class modification is valid
+while instantiating a hierachy of submodels.  This is what class
+modifications are for, I guess.  I actually think class modification
+mostly are a pain in the butt.
+
+Class modifications on non-local classes
+----------------------------------------
+
+First of all, should it be possible to modify classes defined outside
+the class being instantiated? *Note Modification2:: for an example.  I
+suppose it should be possible.
+
+But there are some interesting consequences.  In *Note Modification11::,
+we see how this leads to a situation where it is impossible to determine
+if a modification is a class modification or a component modification.
+
+
+File: modtest.info,  Node: Test Cases,  Next: Change-Log,  Prev: Open Issues,  Up: Top
+
+Test Cases
+**********
+
+* Menu:
+
+* Abs::
+* Abs2::
+* Algorithm1::
+* Algorithm2::
+* Algorithm3::
+* Algorithm4::
+* Array1::
+* Array2::
+* Array3::
+* Array4::
+* Array5::
+* Array6::
+* Array7::
+* Array8::
+* ArrayModification1::
+* ArrayModification10::
+* ArrayModification11::
+* ArrayModification12::
+* ArrayModification2::
+* ArrayModification3::
+* ArrayModification4::
+* ArrayModification5::
+* ArrayModification6::
+* ArrayModification7::
+* ArrayModification8::
+* ArrayModification9::
+* ArraySlice1::
+* Array_builtin::
+* Circuit1::
+* Class1::
+* Class2::
+* Class3::
+* Class4::
+* ConditionalArrayExpression1::
+* ConditionalArrayExpression2::
+* Connect1::
+* Connect10::
+* Connect11::
+* Connect2::
+* Connect3::
+* Connect4::
+* Connect5::
+* Connect6::
+* Connect7::
+* Connect8::
+* Connect9::
+* ConnectConst1::
+* ConnectFlowEffort::
+* ConnectHierarchical1::
+* ConnectHierarchical2::
+* ConnectInner1::
+* ConnectInner2::
+* ConnectInner3::
+* ConnectTypes::
+* Constant1::
+* Constant2::
+* Constant3::
+* Constant4::
+* Constant5::
+* Constant6::
+* ConstrainingType1::
+* ConstrainingType2::
+* ConstrainingType3::
+* ConstructParameters::
+* ConstructParameters1::
+* ConstructParameters2::
+* Declaration1::
+* Declaration2::
+* Declaration3::
+* DeclarationOrder1::
+* DeclarationOrder2::
+* DeclareConstant1::
+* DeclareConstant2::
+* DeclareConstant3::
+* DependsMutual::
+* DependsRecursive::
+* Derivative1::
+* Discrete1::
+* Discrete2::
+* DisturbedResistance1::
+* DisturbedResistance2::
+* DisturbedResistance3::
+* DisturbedResistance4::
+* Encapsulated1::
+* Encapsulated2::
+* Encapsulated3::
+* EquationComponent1::
+* EquationComponent2::
+* EquationComponent3::
+* EquationComponent4::
+* EquationComponent5::
+* EquationFor1::
+* EquationFor2::
+* EquationFor3::
+* EquationIf1::
+* EquationIf1::
+* EquationIf2::
+* EquationIf3::
+* EquationIf4::
+* Error::
+* in::
+* testcase:::
+* Import4.mo::
+* Error::
+* in::
+* testcase:::
+* InnerClass1.mo::
+* Error::
+* in::
+* testcase:::
+* InnerOuter1.mo::
+* Extends1::
+* Faculty1::
+* Faculty2::
+* Faculty3::
+* Faculty4::
+* Function1::
+* Function2::
+* Function3::
+* Function4::
+* Function5::
+* Function5::
+* Function6::
+* Function7::
+* Function8::
+* Function9::
+* Import1::
+* Import2::
+* Import3::
+* Import4::
+* InnerClass1::
+* InnerOuter1::
+* InnerOuter2::
+* Integer2Real::
+* Lookup1::
+* Lookup2::
+* Lookup3::
+* Lookup4::
+* Lookup5::
+* Lookup6::
+* Lookup7::
+* Modification1::
+* Modification10::
+* Modification11::
+* Modification2::
+* Modification3::
+* Modification4::
+* Modification5::
+* Modification6::
+* Modification7::
+* Modification8::
+* Modification9::
+* ModifyConstant1::
+* ModifyConstant2::
+* ModifyConstant3::
+* ModifyConstant4::
+* ModifyConstant5::
+* ModifyConstant6::
+* ModifyUnknown1::
+* ModifyUnknown2::
+* NoEvent1::
+* Overwriting1::
+* Overwriting2::
+* Overwriting3::
+* Overwriting4::
+* Partial1::
+* Protected1::
+* Range1::
+* Real2Integer1::
+* Real2Integer2::
+* Real2Integer3::
+* Record1::
+* Redeclare1::
+* Redeclare2::
+* Redeclare3::
+* RedeclareFlowEffort::
+* ReplaceFunction::
+* ScopeDeclaration1::
+* ScopeDeclaration2::
+* ScopeDeclaration3::
+* ScopeDeclaration4::
+* ScopeModification1::
+* ScopeModification2::
+* Shadow1::
+* SimpleIntegrator1::
+* SimpleIntegrator2::
+* SimpleIntegrator3::
+* SimpleIntegrator4::
+* Terminal1::
+* Terminal1::
+* Type1::
+* Type2::
+* Type3::
+* Type4::
+* Type5::
+* Type6::
+* Type7::
+* Type8::
+* Units1::
+* Units2::
+* WhenSemantics1::
+* XPowers1::
+* XPowers2::
+* XPowers3::
+* modelica_1_1_Array9::
+* modelica_1_1_Function10::
+* modelica_1_1_Type10::
+* modelica_1_1_Type11::
+* modelica_1_1_Type9::
+* package-s-1::
+* partial-s-1::
+* prtest::
+
+
+File: modtest.info,  Node: Abs,  Next: Abs2,  Prev: Test Cases,  Up: Test Cases
+
+Abs
+===
+
+
+
+File: modtest.info,  Node: Abs2,  Next: Algorithm1,  Prev: Abs,  Up: Test Cases
+
+Abs2
+====
+
+     // name:     Abs2
+     // keywords: abs operator
+     // status:   incorrect
+     //
+     //  The abs operator
+     //
+     
+     
+     model Abs
+       Boolean b;
+     equation
+       b=abs(b);
+     end Abs;
+     
+     // fclass Abs
+     // Real x;
+     // Real y;
+     // equation
+     //   x = abs(x - y);
+     // end Abs;
+
+
+File: modtest.info,  Node: Algorithm1,  Next: Algorithm2,  Prev: Abs2,  Up: Test Cases
+
+Algorithm1
+==========
+
+     // name:     Algorithm1
+     // keywords: algorithm
+     // status:   correct
+     //
+     // Simple algorithms
+     
+     model Algorithm1
+       Real x, y, z, a;
+     equation
+       y = sin(time);
+     protected
+       Integer i;
+     algorithm
+       i := 0;
+       a := y-1.0;
+       while ((i/10) < y) loop
+         a := a + 0.5;
+         i := i + 1;
+       end while;
+     algorithm
+       for i in 1:3 loop
+         if i > 2 then
+           x := x - i;
+         end if;
+         if i < 1 then
+           x := 1.0;
+         elseif i < 2 then
+           x := 2.0;
+         else
+           x := 3.0;
+         end if;
+       end for;
+     algorithm
+       when y>0.9 then
+         z := 0.0;
+       end when;
+     end Algorithm1;
+     
+     
+     // fclass Algorithm1
+     // Real x;
+     // Real y;
+     // Real z;
+     // Real a;
+     // Integer i;
+     // equation
+     //   y = sin(time);
+     // algorithm
+     //   i := 0;
+     //   a := y - 1.0;
+     //   while Real(i) / 10.0 < y loop
+     //     a := a + 0.5;
+     //     i := i + 1;
+     //   end while;
+     //   for i in 1:3 loop
+     //     if i > 2 then
+     //       x := x - Real(i);
+     //     end if;
+     //     if i < 1 then
+     //       x := 1.0;
+     //     elseif i < 2 then
+     //       x := 2.0;
+     //     else
+     //       x := 3.0;
+     //     end if;
+     //   end for;
+     //   when y > 0.9 do
+     //     z := 0.0;
+     //   end when;
+     // end Algorithm1;
+
+
+File: modtest.info,  Node: Algorithm2,  Next: Algorithm3,  Prev: Algorithm1,  Up: Test Cases
+
+Algorithm2
+==========
+
+     // name:     Algorithm2
+     // keywords: algorithm
+     // status:   incorrect
+     //
+     // Type checks in algorithms.
+     //
+     
+     class Algorithm2
+       Integer i;
+       Real x;
+     algorithm
+       i := x;
+     end Algorithm2;
+
+
+File: modtest.info,  Node: Algorithm3,  Next: Algorithm4,  Prev: Algorithm2,  Up: Test Cases
+
+Algorithm3
+==========
+
+     // name:     Algorithm3
+     // keywords: algorithm
+     // status:   correct
+     //
+     // Type checks in algorithms.
+     //
+     
+     class Algorithm3
+       Integer i=integer(time*10);
+       Real x;
+     algorithm
+       x := i;
+     end Algorithm3;
+     
+     // fclass Algorithm3
+     // Integer i;
+     // Real x;
+     // equation
+     //   i = integer(time * 10.0);
+     // algorithm
+     //   x := Real(i);
+     // end Algorithm3;
+
+
+File: modtest.info,  Node: Algorithm4,  Next: Array1,  Prev: Algorithm3,  Up: Test Cases
+
+Algorithm4
+==========
+
+     // name:     Algorithm4
+     // keywords: algorithm
+     // status:   incorrect
+     //
+     // Type checks in algorithms.
+     //
+     
+     class Algorithm4
+     algorithm
+       time := 1.0;
+     end Algorithm4;
+
+
+File: modtest.info,  Node: Array1,  Next: Array2,  Prev: Algorithm4,  Up: Test Cases
+
+Array1
+======
+
+     // name:     Array1
+     // keywords: array
+     // status:   correct
+     //
+     // This is a simple test of basic array handling.
+     //
+     
+     model Array1
+       Integer x[5] = 1,2,3,4,5;
+       Integer y[3] = 1:3;
+     end Array1;
+     
+     // fclass Array1
+     //   Integer x[1];
+     //   Integer x[2];
+     //   Integer x[3];
+     //   Integer x[4];
+     //   Integer x[5];
+     //   Integer y[1];
+     //   Integer y[2];
+     //   Integer y[3];
+     // equation
+     //   x[1] = 1;
+     //   x[2] = 2;
+     //   x[3] = 3;
+     //   x[4] = 4;
+     //   x[5] = 5;
+     //   y[1] = (1:3)[1];
+     //   y[2] = (1:3)[2];
+     //   y[3] = (1:3)[3];
+     // end Array1;
+
+
+File: modtest.info,  Node: Array2,  Next: Array3,  Prev: Array1,  Up: Test Cases
+
+Array2
+======
+
+     // name:     Array2
+     // keywords: array
+     // status:   correct
+     //
+     // Multidimensional arrays
+     //
+     
+     model Array2
+       parameter Integer x[2,3];
+     end Array2;
+     
+     // fclass Array2
+     //   parameter Integer x[1,1];
+     //   parameter Integer x[1,2];
+     //   parameter Integer x[1,3];
+     //   parameter Integer x[2,1];
+     //   parameter Integer x[2,2];
+     //   parameter Integer x[2,3];
+     // end Array2;
+
+
+File: modtest.info,  Node: Array3,  Next: Array4,  Prev: Array2,  Up: Test Cases
+
+Array3
+======
+
+     // name:     Array3
+     // keywords: array
+     // status:   correct
+     //
+     // This is a simple test of basic matrix handling.
+     //
+     
+     model Array3
+       Integer x[2,3] = [ 1,2,3 ; 4,5,6 ] ;
+     end Array3;
+     
+     
+     // fclass Array3
+     //   Integer x[1,1];
+     //   Integer x[1,2];
+     //   Integer x[1,3];
+     //   Integer x[2,1];
+     //   Integer x[2,2];
+     //   Integer x[2,3];
+     // equation
+     //   x[1,1] = 1;
+     //   x[1,2] = 2;
+     //   x[1,3] = 3;
+     //   x[2,1] = 4;
+     //   x[2,2] = 5;
+     //   x[2,3] = 6;
+     // end Array3;
+     
+     // origfclass Array3
+     //   Integer x[1,1];
+     //   Integer x[1,2];
+     //   Integer x[1,3];
+     //   Integer x[2,1];
+     //   Integer x[2,2];
+     //   Integer x[2,3];
+     // equation
+     //   x[1,1] = [1,2,3;4,5,6][1][1];
+     //   x[1,2] = [1,2,3;4,5,6][1][2];
+     //   x[1,3] = [1,2,3;4,5,6][1][3];
+     //   x[2,1] = [1,2,3;4,5,6][2][1];
+     //   x[2,2] = [1,2,3;4,5,6][2][2];
+     //   x[2,3] = [1,2,3;4,5,6][2][3];
+     // origend Array3;
+
+
+File: modtest.info,  Node: Array4,  Next: Array5,  Prev: Array3,  Up: Test Cases
+
+Array4
+======
+
+     // name:     Array4
+     // keywords: array
+     // status:   correct
+     //
+     // This is a test of arrays of arrays.  The type T2 is equivalent or
+     // similar to Real[2,3].
+     //
+     
+     model Array4
+       type T1 = Real[3];
+       type T2 = T1[2];
+       parameter T2 x;
+     equation
+     end Array4;
+     
+     // fclass Array4
+     // parameter Real x[1,1];
+     // parameter Real x[1,2];
+     // parameter Real x[1,3];
+     // parameter Real x[2,1];
+     // parameter Real x[2,2];
+     // parameter Real x[2,3];
+     // end Array4;
+
+
+File: modtest.info,  Node: Array5,  Next: Array6,  Prev: Array4,  Up: Test Cases
+
+Array5
+======
+
+     // name:     Array5
+     // keywords: array,modification
+     // status:   correct
+     //
+     // This is a test of values in types.
+     // Note that the fill-operation is here generalized to non-scalars
+     // in the flat model.
+     
+     model Array5
+       type T1 = Real[3](start=1,0,0);
+       type T2 = T1[2];
+       T2 x;
+       T1 y;
+       T1[4] z[5];
+     equation
+       for i in 1:4 loop
+         for j in 1:5 loop
+           z[j,i,:]=y;
+         end for;
+       end for;
+       der(y)=-y;
+       x=y,der(y);
+     end Array5;
+     
+     // flatmodel Array5
+     //
+     // Real x[2, 3](start = fill(1, 0, 0, size(x, 1)));
+     // Real y[3](start = 1, 0, 0);
+     // Real z[5, 4, 3](start = fill(1, 0, 0, size(z, 1), size(z, 2)));
+     //
+     //equation
+     //  for i in (1:4) loop
+     //    for j in (1:5) loop
+     //      z[j, i, :] = y;
+     //    end for;
+     //  end for;
+     //  der(y) =  -y;
+     //  x = y, der(y);
+
+
+File: modtest.info,  Node: Array6,  Next: Array7,  Prev: Array5,  Up: Test Cases
+
+Array6
+======
+
+     // name:     Array6
+     // keywords: array, modification
+     // status:   correct
+     //
+     // This demonstrates advanced use of modifiers in types.
+     // Note that fill is generalized to take non-scalars in the flat model.
+     model Array6
+       type T1 = Real[3](start=1,0,0);
+       type T2 = T1[2];
+       T2 x;
+       T1 y;
+       type T3 = T2 (start=[1,0,0;2,3,4]);
+       T3[1] w;
+       T1[4,5] z[1,2];
+     equation
+       for i in 1:4 loop
+         for j in 1:5 loop
+           z[:,:,i,j,:]=w;
+         end for;
+       end for;
+       w=x;
+       der(y)=-y;
+       x=y,der(y);
+     end Array6;
+     
+     // flatmodel Array6
+     //
+     // Real x[2, 3](start = fill(1, 0, 0, size(x, 1)));
+     // Real y[3](start = 1, 0, 0);
+     // Real w[1, 2, 3](start = fill([1, 0, 0; 2, 3, 4], size(w, 1)));
+     // Real z[1, 2, 4, 5, 3](start = fill(1, 0, 0,
+     //  size(z, 1), size(z, 2), size(z, 3), size(z, 4)));
+     //equation
+     //  for i in 1:4 loop
+     //    for j in 1:5 loop
+     //      z[:,:,i,j,:]=w;
+     //    end for;
+     //  end for;
+     //  w=x;
+     //  der(y)=-y;
+     //  x=y,der(y);
+
+
+File: modtest.info,  Node: Array7,  Next: Array8,  Prev: Array6,  Up: Test Cases
+
+Array7
+======
+
+     // name:     Array7
+     // keywords: array,array of components
+     // status:   correct
+     //
+     // This demonstrates how a modifier is split
+     // among a an array of componets.
+     //
+     // It also demonstrates heterogenous arrays (a.x).
+     //
+     model Array7
+       model A
+         parameter Integer n;
+         parameter Real x[n,n];
+       end A;
+       A a[2](n=1,2);
+     end Array7;
+     
+     // flatmodel Array7
+     //
+     // parameter Integer a[1].n = 1;
+     // parameter Real a[1].x[1,1];
+     // parameter Integer a[2].n = 2;
+     // parameter Real a[2].x[2,2];
+
+
+File: modtest.info,  Node: Array8,  Next: ArrayModification1,  Prev: Array7,  Up: Test Cases
+
+Array8
+======
+
+     // name:     Array8
+     // keywords: array,declaration
+     // status:   correct
+     //
+     // This is a test of full slices [:]
+     //
+     
+     model Array8
+       Real x[2], y[2];
+     equation
+       x[:] = y;
+     end Array8;
+     
+     // fclass Array8
+     //   Real x[1];
+     //   Real x[2];
+     //   Real y[1];
+     //   Real y[2];
+     // equation
+     //   x[1] = y[1];
+     //   x[2] = y[2];
+     // end Array8;
+
+
+File: modtest.info,  Node: ArrayModification1,  Next: ArrayModification10,  Prev: Array8,  Up: Test Cases
+
+ArrayModification1
+==================
+
+     // name:     ArrayModification1
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct,incomplete model
+     //
+     // Simple equation modification of array elements.
+     //
+     
+     class ArrayModification1
+       class A
+         Real x[3];
+       end A;
+       A a(x[2] = 1.0);
+     end ArrayModification1;
+     
+     // fclass ArrayModification1
+     //   Real a.x[1];
+     //   Real a.x[2];
+     //   Real a.x[3];
+     // equation
+     //   a.x[2] = 1.0;
+     // end ArrayModification1;
+
+
+File: modtest.info,  Node: ArrayModification10,  Next: ArrayModification11,  Prev: ArrayModification1,  Up: Test Cases
+
+ArrayModification10
+===================
+
+     // name:     ArrayModification10
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct, incomplete model
+     //
+     // Double multi-dimensional modifications.
+     //
+     
+     class ArrayModification10
+       class A
+         Real x[2,2];
+       end A;
+       A a(x[2,1] = 1.0, x[2,2] = 2.0);
+     end ArrayModification10;
+     
+     // fclass ArrayModification10
+     //   Real a.x[1,1];
+     //   Real a.x[1,2];
+     //   Real a.x[2,1];
+     //   Real a.x[2,2];
+     // equation
+     //   a.x[2,1] = 1.0;
+     //   a.x[2,2] = 2.0;
+     // end ArrayModification10;
+
+
+File: modtest.info,  Node: ArrayModification11,  Next: ArrayModification12,  Prev: ArrayModification10,  Up: Test Cases
+
+ArrayModification11
+===================
+
+     // name:     ArrayModification11
+     // keywords: array,modification,unknown
+     // status:   correct
+     //
+     // Partial indexing
+     //
+     
+     class ArrayModification11
+       class A
+         Real x[2,2];
+       end A;
+       A a(x = [1.0,2.0;3.0,4.0]);
+     end ArrayModification11;
+     
+     // fclass ArrayModification11
+     //   Real    a.x[1,1];
+     //   Real    a.x[1,2];
+     //   Real    a.x[2,1];
+     //   Real    a.x[2,2];
+     // equation
+     //   a.x[1,1] = 1.0;
+     //   a.x[1,2] = 2.0;
+     //   a.x[2,1] = 3.0;
+     //   a.x[2,2] = 4.0;
+     // end ArrayModification11;
+
+
+File: modtest.info,  Node: ArrayModification12,  Next: ArrayModification2,  Prev: ArrayModification11,  Up: Test Cases
+
+ArrayModification12
+===================
+
+     // name:     ArrayModification12
+     // keywords: array,modification,unknown
+     // status:   correct
+     //
+     // This tests array modifications where the index is an array, which
+     // means that the modification modifies a whole slice.  Thus, the
+     // expression in the modification should be a vector of reals.
+     //
+     
+     class ArrayModification12
+       class A
+         Real x[5];
+       end A;
+       A a(x[2:4] = [1.0,2.0,3.0]);
+     end ArrayModification12;
+     
+     // fclass ArrayModification12
+     //   Real a.x[1];
+     //   Real a.x[2];
+     //   Real a.x[3];
+     //   Real a.x[4];
+     //   Real a.x[5];
+     // equation
+     //   a.x[2] = 1.0;
+     //   a.x[3] = 2.0;
+     //   a.x[4] = 3.0;
+     // end ArrayModification12;
+
+
+File: modtest.info,  Node: ArrayModification2,  Next: ArrayModification3,  Prev: ArrayModification12,  Up: Test Cases
+
+ArrayModification2
+==================
+
+     // name:     ArrayModification2
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct,incomplete model
+     //
+     // Simple equation modification of array elements.
+     //
+     
+     class ArrayModification2
+       class A
+         Real x[3];
+       end A;
+       A a(x[2] = 1.0, x[3] = 2.0);
+     end ArrayModification2;
+     
+     // fclass ArrayModification2
+     //   Real a.x[1];
+     //   Real a.x[2];
+     //   Real a.x[3];
+     // equation
+     //   a.x[2] = 1.0;
+     //   a.x[3] = 2.0;
+     // end ArrayModification2;
+
+
+File: modtest.info,  Node: ArrayModification3,  Next: ArrayModification4,  Prev: ArrayModification2,  Up: Test Cases
+
+ArrayModification3
+==================
+
+     // name:     ArrayModification3
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct,incomplete model
+     //
+     
+     record R
+       Real a,b;
+     end R;
+     
+     class ArrayModification3
+       class A
+         R x[3];
+       end A;
+       A a(x[2].a = 1.0, x[2].b = 1.0);
+     end ArrayModification3;
+     
+     // fclass ArrayModification3
+     //   Real a.x[1].a;
+     //   Real a.x[1].b;
+     //   Real a.x[2].a;
+     //   Real a.x[2].b;
+     //   Real a.x[3].a;
+     //   Real a.x[3].b;
+     // equation
+     //   a.x[2].a = 1.0;
+     //   a.x[2].b = 1.0;
+     // end ArrayModification3;
+
+
+File: modtest.info,  Node: ArrayModification4,  Next: ArrayModification5,  Prev: ArrayModification3,  Up: Test Cases
+
+ArrayModification4
+==================
+
+     // name:     ArrayModification4
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct,incomplete model
+     //
+     
+     class ArrayModification4
+       class A
+         Real x[3];
+       end A;
+       A a(x[1] = 1.0, x.unit = "V");
+     end ArrayModification4;
+     
+     // fclass ArrayModification4
+     //   Real a.x[1];
+     //   Real a.x[2];
+     //   Real a.x[3];
+     // equation
+     //   a.x[1] = 1.0;
+     //   a.x[1].unit = "V";
+     //   a.x[2].unit = "V";
+     //   a.x[3].unit = "V";
+     // end ArrayModification4;
+
+
+File: modtest.info,  Node: ArrayModification5,  Next: ArrayModification6,  Prev: ArrayModification4,  Up: Test Cases
+
+ArrayModification5
+==================
+
+     // name:     ArrayModification5
+     // keywords: array,modification
+     // status:   incorrect
+     //
+     // Partial indexing is not allowed.
+     //
+     
+     class ArrayModification5
+       class A
+         Real x[2,2];
+       end A;
+       A a(x[2] = 1.0,2.0);
+     end ArrayModification5;
+     
+     // fclass ArrayModification5
+     //   Real    a.x[1,1];
+     //   Real    a.x[1,2];
+     //   Real    a.x[2,1];
+     //   Real    a.x[2,2];
+     // equation
+     //   a.x[2,1] = 1.0;
+     //   a.x[2,2] = 2.0;
+     // end ArrayModification5;
+
+
+File: modtest.info,  Node: ArrayModification6,  Next: ArrayModification7,  Prev: ArrayModification5,  Up: Test Cases
+
+ArrayModification6
+==================
+
+     // name:     ArrayModification6
+     // keywords: array,modification
+     // status:   incorrect
+     //
+     // Partial indexing mixed with full indexing.
+     // Multiple modifiers of same element.
+     //
+     
+     class ArrayModification6
+       class A
+         Real x[2,2];
+       end A;
+       A a(x[2] = 1.0, x[2,1] = 2.0);
+     end ArrayModification6;
+     
+     // fclass ArrayModification6
+     //   Real a.x[1,1];
+     //   Real a.x[1,2];
+     //   Real a.x[2,1];
+     //   Real a.x[2,2];
+     // equation
+     //   a.x[2,1] = 1.0;
+     //   a.x[2,2] = 1.0;
+     //   a.x[2,1] = 2.0;
+     // end ArrayModification6;
+
+
+File: modtest.info,  Node: ArrayModification7,  Next: ArrayModification8,  Prev: ArrayModification6,  Up: Test Cases
+
+ArrayModification7
+==================
+
+     // name:     ArrayModification7
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct, incomplete model
+     //
+     // This tests array modifications where the index is an array, which
+     // means that the modification modifies a whole slice.
+     //
+     
+     class ArrayModification7
+       class A
+         Real x[5];
+       end A;
+       A a(x[2:4] = 2,3,4.5);
+     end ArrayModification7;
+     
+     // fclass ArrayModification7
+     //   Real    a.x[1];
+     //   Real    a.x[2];
+     //   Real    a.x[3];
+     //   Real    a.x[4];
+     //   Real    a.x[5];
+     // equation
+     //   a.x[2] = 1.0;
+     //   a.x[3] = 1.0;
+     //   a.x[4] = 1.0;
+     // end ArrayModification7;
+
+
+File: modtest.info,  Node: ArrayModification8,  Next: ArrayModification9,  Prev: ArrayModification7,  Up: Test Cases
+
+ArrayModification8
+==================
+
+     // name:     ArrayModification8
+     // keywords: array,modification
+     // status:   correct
+     //
+     // This tests array modifications where the whole array is equated to
+     // an array expression.
+     //
+     
+     class ArrayModification8
+       class A
+         Real x[3];
+       end A;
+       A a(x = 1.0,2.0,3.0);
+     end ArrayModification8;
+     
+     // fclass ArrayModification8
+     //   Real    a.x[1];
+     //   Real    a.x[2];
+     //   Real    a.x[3];
+     // equation
+     //   a.x[1] = 1.0;
+     //   a.x[2] = 2.0;
+     //   a.x[3] = 3.0;
+     // end ArrayModification8;
+
+
+File: modtest.info,  Node: ArrayModification9,  Next: ArraySlice1,  Prev: ArrayModification8,  Up: Test Cases
+
+ArrayModification9
+==================
+
+     // name:     ArrayModification9
+     // keywords: array,modification
+     // status:   correct
+     // origstatus:   correct, incomplete model
+     //
+     // Full indexing of a multidimensional array.
+     //
+     
+     class ArrayModification9
+       class A
+         Real x[2,2];
+       end A;
+       A a(x[1,2] = 2.0);
+     end ArrayModification9;
+     
+     // fclass ArrayModification9
+     //   Real a.x[1,1];
+     //   Real a.x[1,2];
+     //   Real a.x[2,1];
+     //   Real a.x[2,2];
+     // equation
+     //   a.x[1,2] = 2.0;
+     // end ArrayModification9;
+
+
+File: modtest.info,  Node: ArraySlice1,  Next: Array_builtin,  Prev: ArrayModification9,  Up: Test Cases
+
+ArraySlice1
+===========
+
+     // name:     ArraySlice1
+     // keywords: array
+     // status:   correct
+     //
+     // Simple array slicing.
+     //
+     
+     class ArraySlice1
+       Real a[4];
+     equation
+       a[1,3] = a[2,4];
+       a[1]=time;
+       a[4]=1;
+     end ArraySlice1;
+     
+     // fclass ArraySlice1
+     //   Real    a[1];
+     //   Real    a[2];
+     //   Real    a[3];
+     //   Real    a[4];
+     // equation
+     //   a[1] = a[2];
+     //   a[3] = a[4];
+     //   a[1] = time;
+     //   a[4] = 1.0;
+     // end ArraySlice1;
+
+
+File: modtest.info,  Node: Array_builtin,  Next: Circuit1,  Prev: ArraySlice1,  Up: Test Cases
+
+Array_builtin
+=============
+
+     // name:     Array_builtin
+     // keywords: array
+     // status:   incorrect
+     //
+     // This is a simple test of basic array handling.
+     // A matrix can not be equal to an array
+     
+     model Array_builtin
+        Real x=1.0;
+        Real y=2.0;
+        Integer q;
+        Integer A1[5]=[1,2,3,4,5];
+        algorithm
+         x:=ndims(A1);
+         x:=sin(y);
+     end Array_builtin;
+     
+     // fclass Array_builtin
+     // end Array_builtin;
+
+
+File: modtest.info,  Node: Circuit1,  Next: Class1,  Prev: Array_builtin,  Up: Test Cases
+
+Circuit1
+========
+
+     // name:     Circuit1
+     // keywords:
+     // status:   correct
+     //
+     // This is the example from the report.  It is here to have a somewhat
+     // larger test.
+     //
+     
+     type Voltage = Real(unit="V");
+     type Current = Real(unit="A");
+     
+     
+     connector Pin
+       Voltage      v;
+       flow Current i;
+     end Pin;
+     
+     partial model TwoPin "Superclass of elements with two electrical pins"
+       Pin p, n;
+       Voltage v;
+       Current i;
+     equation
+       v = p.v - n.v;
+       0 = p.i + n.i;
+       i = p.i;
+     end TwoPin;
+     
+     model Resistor "Ideal electrical resistor"
+       extends TwoPin;
+       parameter Real R(unit="Ohm") "Resistance";
+     equation
+       R*i = v;
+     end Resistor;
+     
+     model Capacitor "Ideal electrical capacitor"
+       extends TwoPin;
+       parameter Real C(unit="F") "Capacitance";
+     equation
+       C*der(v) = i;
+     end Capacitor;
+     
+     model Inductor "Ideal electrical inductor"
+       extends TwoPin;
+       parameter Real L(unit="H") "Inductance";
+     equation
+       L*der(i) = v;
+     end Inductor;
+     
+     model VsourceAC "Sin-wave voltage source"
+       extends TwoPin;
+       parameter Voltage VA = 220 "Amplitude";
+       parameter Real f(unit="Hz") = 50  "Frequency";
+       constant  Real PI=3.141592653589793;
+     equation
+       v = VA*sin(2*PI*f*time);
+     end VsourceAC;
+     
+     model Ground "Ground"
+       Pin p;
+     equation
+       p.v = 0;
+     end Ground;
+     
+     model Circuit1
+       Resistor  R1(R=10);
+       Capacitor C(C=0.01);
+       Resistor  R2(R=100);
+       Inductor  L(L=0.1);
+       VsourceAC AC;
+       Ground    G;
+     
+     equation
+       connect (AC.p, R1.p);		// Capacitor circuit
+       connect (R1.n, C.p);
+       connect (C.n, AC.n);
+       connect (R1.p, R2.p);		// Inductor circuit
+       connect (R2.n, L.p);
+       connect (L.n,  C.n);
+       connect (AC.n, G.p);		// Ground
+     end Circuit1;
+     
+     // fclass Circuit1
+     // Real R1.p.v;
+     // Real R1.p.i;
+     // Real R1.n.v;
+     // Real R1.n.i;
+     // Real R1.v;
+     // Real R1.i;
+     // parameter Real R1.R = 10;
+     // Real C.p.v;
+     // Real C.p.i;
+     // Real C.n.v;
+     // Real C.n.i;
+     // Real C.v;
+     // Real C.i;
+     // parameter Real C.C = 0.01;
+     // Real R2.p.v;
+     // Real R2.p.i;
+     // Real R2.n.v;
+     // Real R2.n.i;
+     // Real R2.v;
+     // Real R2.i;
+     // parameter Real R2.R = 100;
+     // Real L.p.v;
+     // Real L.p.i;
+     // Real L.n.v;
+     // Real L.n.i;
+     // Real L.v;
+     // Real L.i;
+     // parameter Real L.L = 0.1;
+     // Real AC.p.v;
+     // Real AC.p.i;
+     // Real AC.n.v;
+     // Real AC.n.i;
+     // Real AC.v;
+     // Real AC.i;
+     // parameter Real AC.VA = 220;
+     // parameter Real AC.f = 50;
+     // constant Real AC.PI = 3.14159265358979;
+     // Real G.p.v;
+     // Real G.p.i;
+     // equation
+     //   R1.R * R1.i = R1.v;
+     //   R1.v = R1.p.v - R1.n.v;
+     //   0.0 = R1.p.i + R1.n.i;
+     //   R1.i = R1.p.i;
+     //   C.C * der(C.v) = C.i;
+     //   C.v = C.p.v - C.n.v;
+     //   0.0 = C.p.i + C.n.i;
+     //   C.i = C.p.i;
+     //   R2.R * R2.i = R2.v;
+     //   R2.v = R2.p.v - R2.n.v;
+     //   0.0 = R2.p.i + R2.n.i;
+     //   R2.i = R2.p.i;
+     //   L.L * der(L.i) = L.v;
+     //   L.v = L.p.v - L.n.v;
+     //   0.0 = L.p.i + L.n.i;
+     //   L.i = L.p.i;
+     //   AC.v = AC.VA * sin(2.0 * 3.14159265358979 * AC.f * time);
+     //   AC.v = AC.p.v - AC.n.v;
+     //   0.0 = AC.p.i + AC.n.i;
+     //   AC.i = AC.p.i;
+     //   G.p.v = 0.0;
+     //   L.n.i + C.n.i + AC.n.i + G.p.i = 0.0;
+     //   L.n.v = C.n.v;
+     //   C.n.v = AC.n.v;
+     //   AC.n.v = G.p.v;
+     //   R2.n.i + L.p.i = 0.0;
+     //   R2.n.v = L.p.v;
+     //   AC.p.i + R1.p.i + R2.p.i = 0.0;
+     //   AC.p.v = R1.p.v;
+     //   R1.p.v = R2.p.v;
+     //   R1.n.i + C.p.i = 0.0;
+     //   R1.n.v = C.p.v;
+     // end Circuit1;
+
+
+File: modtest.info,  Node: Class1,  Next: Class2,  Prev: Circuit1,  Up: Test Cases
+
+Class1
+======
+
+     // name:     Class1
+     // keywords:
+     // status:   correct
+     //
+     // An empty class should be allowed.
+     //
+     
+     class Class1
+     
+     end Class1;
+     
+     // fclass Class1
+     // end Class1;
+
+
+File: modtest.info,  Node: Class2,  Next: Class3,  Prev: Class1,  Up: Test Cases
+
+Class2
+======
+
+     // name:     Class2
+     // keywords:
+     // status:   correct
+     //
+     // This is a really simple tests.
+     //
+     
+     class Class2
+       Real x = 17.0;
+     end Class2;
+     
+     // fclass Class2
+     //   Real    x;
+     // equation
+     //   x = 17.0;
+     // end Class2;
+
+
+File: modtest.info,  Node: Class3,  Next: Class4,  Prev: Class2,  Up: Test Cases
+
+Class3
+======
+
+     // name:     Class3
+     // keywords:
+     // status:   incorrect
+     //
+     // The end must have the same identifier as the head.
+     //
+     
+     class Class3
+       Real x = 17.0;
+     end WrongEnd;
+
+
+File: modtest.info,  Node: Class4,  Next: ConditionalArrayExpression1,  Prev: Class3,  Up: Test Cases
+
+Class4
+======
+
+     // name:     Class4
+     // keywords:
+     // status:   incorrect
+     //
+     // end should be followed by Class4.
+     //
+     
+     class Class4
+     
+     end;
+     
+     // fclass Class4
+     // equation
+     // end Class4;
+
+
+File: modtest.info,  Node: ConditionalArrayExpression1,  Next: ConditionalArrayExpression2,  Prev: Class4,  Up: Test Cases
+
+ConditionalArrayExpression1
+===========================
+
+     // name:     ConditionalArrayExpression1
+     // keywords: equation, array
+     // status:   incorrect
+     //
+     // The sizes must fit in array expressions and equations.
+     //
+     
+     model ConditionalArrayExpression1
+       Real a=1, b=2, c[2], d, e;
+     equation
+       0 = if a > b then c else [d; e];
+     end ConditionalArrayExpression1;
+
+
+File: modtest.info,  Node: ConditionalArrayExpression2,  Next: Connect1,  Prev: ConditionalArrayExpression1,  Up: Test Cases
+
+ConditionalArrayExpression2
+===========================
+
+     // name:     ConditionalArrayExpression2
+     // keywords: equation,array
+     // status:   correct
+     //
+     // The sizes must fit in array expressions and equations.
+     
+     model ConditionalArrayExpression2
+       Real a=time*4, b=2.0, c[2], d, e;
+     equation
+       d, e = if a > b then c else e, d*2+1;
+       if time < 0.5 then
+          c = 1,0;
+       else
+          c[1] = 2;
+          c[2] = 4;
+       end if;
+     end ConditionalArrayExpression2;
+     
+     // fclass ConditionalArrayExpression2
+     //   Real a;
+     //   Real b;
+     //   Real c[2];
+     //   Real d;
+     //   Real e;
+     // equation
+     //   a = time
+     //   b = Real(2);
+     //   d = if a > b then c[1] else e;
+     //   e = if a > b then c[2] else d*2+1;
+     //  if time < 0.5 then
+     //     c = 1,0;
+     //  else
+     //     c[1] = 2;
+     //     c[2] = 4;
+     //  end if;
+     // end ConditionalArrayExpression2;
+
+
+File: modtest.info,  Node: Connect1,  Next: Connect10,  Prev: ConditionalArrayExpression2,  Up: Test Cases
+
+Connect1
+========
+
+     // name:     Connect1
+     // keywords: connect
+     // status:   correct
+     //
+     // Basic connections
+     //
+     
+     connector C
+       flow Real f;
+       Real e;
+     end C;
+     
+     model Connect1
+       C c1,c2;
+     equation
+       connect(c1,c2);
+       c1.e = 1;
+       c2.f = time;
+     end Connect1;
+     
+     // fclass Connect1
+     // Real c1.f;
+     // Real c1.e;
+     // Real c2.f;
+     // Real c2.e;
+     // equation
+     //   c1.e = 1.0;
+     //   c2.f = time;
+     //   c1.e = c2.e;
+     //   (-c1.f) + (-c2.f) = 0.0;
+     // end Connect1;
+
+
+File: modtest.info,  Node: Connect10,  Next: Connect11,  Prev: Connect1,  Up: Test Cases
+
+Connect10
+=========
+
+     // name:     Connect10
+     // keywords: connect
+     // status:   incorrect
+     //
+     // Testing of input/output flags
+     //
+     
+     connector C1
+       input Real x;
+     end C1;
+     
+     connector C2
+       input Real x;
+     end C2;
+     
+     class Connect10
+       C1 c1;
+       C2 c2;
+     equation
+       connect(c1,c2);
+     end Connect10;
+
+
+File: modtest.info,  Node: Connect11,  Next: Connect2,  Prev: Connect10,  Up: Test Cases
+
+Connect11
+=========
+
+     // name:     Connect11
+     // keywords: connect
+     // status:   incorrect
+     //
+     // Testing of input/output flags
+     //
+     
+     connector C1
+       output Real x;
+     end C1;
+     
+     connector C2
+       output Real x;
+     end C2;
+     
+     class Connect11
+       C1 c1;
+       C2 c2;
+     equation
+       connect(c1,c2);
+     end Connect11;
+
+
+File: modtest.info,  Node: Connect2,  Next: Connect3,  Prev: Connect11,  Up: Test Cases
+
+Connect2
+========
+
+     // name:     Connect2
+     // keywords: connect
+     // status:   correct
+     //
+     // Basic connections between three connectors.
+     //
+     
+     connector C
+       flow Real f;
+       Real e;
+     end C;
+     
+     model Connect2
+       C c1,c2,c3;
+     equation
+       connect(c1,c2);
+       connect(c2,c3);
+       c1.e = 1;
+       c2.f = time;
+       c3.f = 1;
+     end Connect2;
+     
+     // fclass Connect2
+     // Real c1.f;
+     // Real c1.e;
+     // Real c2.f;
+     // Real c2.e;
+     // Real c3.f;
+     // Real c3.e;
+     // equation
+     //   c1.e = 1.0;
+     //   c2.f = time;
+     //   c3.f = 1.0;
+     //   c1.e = c2.e;
+     //   c2.e = c3.e;
+     //   (-c1.f) + (-c2.f) + (-c3.f) = 0.0;
+     // end Connect2;
+
+
+File: modtest.info,  Node: Connect3,  Next: Connect4,  Prev: Connect2,  Up: Test Cases
+
+Connect3
+========
+
+     // name:     Connect3
+     // keywords: connect
+     // status:   incorrect
+     //
+     // Only connector variables can be connected.
+     
+     model Connect3
+       Real e1,e2;
+       flow Real f1,f2;
+     equation
+       connect(e1,e2);
+       connect(f1,f2);
+     end Connect3;
+
+
+File: modtest.info,  Node: Connect4,  Next: Connect5,  Prev: Connect3,  Up: Test Cases
+
+Connect4
+========
+
+     // name:     Connect4
+     // keywords: connect,type,unknown
+     // status:   correct
+     //
+     // Integers are allowed in connectors
+     //
+     
+     connector C
+       Integer i;
+     end C;
+     
+     model Connect4
+       C c1,c2;
+     equation
+       connect(c1,c2);
+       c1.i=integer(time*10);
+     end Connect4;
+     
+     // fclass Connect4
+     // Integer c1.i;
+     // Integer c2.i;
+     // equation
+     //   c1.i = integer(time * 10.0);
+     //   c1.i = c2.i;
+     // end Connect4;
+
+
+File: modtest.info,  Node: Connect5,  Next: Connect6,  Prev: Connect4,  Up: Test Cases
+
+Connect5
+========
+
+     // name:     Connect5
+     // keywords: connect,type
+     // status:   correct
+     //
+     // Booleans are allowed in connectors
+     //
+     
+     connector C
+       Boolean b;
+     end C;
+     
+     model Connect5
+       C c1,c2;
+     equation
+       connect(c1,c2);
+       c1.b=time<0.5;
+     end Connect5;
+     
+     // fclass Connect4
+     //   Boolean c1.b;
+     //   Boolean c2.b;
+     // equation
+     //   c1.b=c2.b;
+     //   c1.b=time<0.5;
+     // end Connect4;
+
+
+File: modtest.info,  Node: Connect6,  Next: Connect7,  Prev: Connect5,  Up: Test Cases
+
+Connect6
+========
+
+     // name:     Connect6
+     // keywords: connect,type
+     // status:   correct
+     //
+     // Strings are allowed in connectors
+     //
+     
+     connector C
+       String s;
+     end C;
+     
+     model Connect6
+       C c1,c2;
+       Boolean b;
+     equation
+       connect(c1,c2);
+       c1.s="h";
+       b=c2.s=="h";
+     end Connect6;
+     
+     // fclass Connect4
+     //   String c1.s;
+     //   String c2.s;
+     // equation
+     //   c1.s=c2.s;
+     // end Connect4;
+
+
+File: modtest.info,  Node: Connect7,  Next: Connect8,  Prev: Connect6,  Up: Test Cases
+
+Connect7
+========
+
+     // name:     Connect7
+     // keywords: connect
+     // status:   correct
+     //
+     // If parameters are involved in connections, the parameters have to
+     // be known to generate the equations.  If the parameter N would have
+     // been set to 2 instead, only one big connection set would have been
+     // generated.
+     //
+     
+     connector C
+       flow Real x;
+     end C;
+     
+     class Connect7
+       parameter Integer N = 1;
+       C c[2], cx(x=2), cy(x=time);
+     equation
+       connect(c[N],cx);
+       connect(c[2],cy);
+     end Connect7;
+     
+     // fclass Connect7
+     // parameter Integer N = 1;
+     // Real c[1].x;
+     // Real c[2].x;
+     // Real cx.x;
+     // Real cy.x;
+     // equation
+     //   cx.x = 2.0;
+     //   cy.x = time;
+     //   (-c[1].x) + (-cx.x) + (-cy.x) = 0.0;
+     //   c[2].x = 0.0;
+     // end Connect7;
+
+
+File: modtest.info,  Node: Connect8,  Next: Connect9,  Prev: Connect7,  Up: Test Cases
+
+Connect8
+========
+
+     // name:     Connect8
+     // keywords: connect
+     // status:   correct
+     //
+     // If parameters are involved in connections, the parameters have to
+     // be known to generate the equations.
+     //
+     
+     connector C
+       flow Real x;
+     end C;
+     
+     class Connect8
+       parameter Integer N = 2;
+       C c[2], cx(x=1), cy(x=time);
+     equation
+       connect(c[N],cx);
+       connect(c[2],cy);
+       c[1].x=time; // Extra equation required compared to Connect7 example.
+     end Connect8;
+     
+     // fclass Connect8
+     // parameter Integer N = 2;
+     // Real c[1].x;
+     // Real c[2].x;
+     // Real cx.x;
+     // Real cy.x;
+     // equation
+     //   cx.x = 1.0;
+     //   cy.x = time;
+     //   c[1].x = time;
+     //   (-c[2].x) + (-cx.x) + (-cy.x) = 0.0;
+     //   c[1].x = 0.0;
+     // end Connect8;
+
+
+File: modtest.info,  Node: Connect9,  Next: ConnectConst1,  Prev: Connect8,  Up: Test Cases
+
+Connect9
+========
+
+     // name:     Connect9
+     // keywords: connect
+     // status:   correct
+     //
+     // Testing of input/output flags
+     //
+     
+     connector C1
+       input Real x;
+     end C1;
+     
+     connector C2
+       output Real x;
+     end C2;
+     
+     class Connect9
+       C1 c1;
+       C2 c2;
+     equation
+       connect(c1,c2);
+     end Connect9;
+     
+     // fclass Connect9
+     //   input Real    c1.x;
+     //   output Real    c2.x;
+     // equation
+     //   c1.x = c2.x;
+     // end Connect9;
+
+
+File: modtest.info,  Node: ConnectConst1,  Next: ConnectFlowEffort,  Prev: Connect9,  Up: Test Cases
+
+ConnectConst1
+=============
+
+     // name:     ConnectConst1
+     // keywords: connect,constant
+     // status:   correct
+     //
+     // The specification does not forbid you to connectors as constant.
+     
+     connector C
+       flow Real f;
+       Real e;
+     end C;
+     
+     model ConnectConst1
+       C c1;
+       constant C c2(e=1,f=2);
+     equation
+       connect(c1,c2);
+     end ConnectConst1;
+     
+     // fclass ConnectConst1
+     //   Real c1.e
+     //   Real c1.f
+     //   constant Real c2.e=1
+     //   constant Real c2.f=2
+     // equation
+     //  c1.e=c2.e;
+     //  c1.f+c2.f=0;
+     // end ConnectConst1
+
+
+File: modtest.info,  Node: ConnectFlowEffort,  Next: ConnectHierarchical1,  Prev: ConnectConst1,  Up: Test Cases
+
+ConnectFlowEffort
+=================
+
+     // name:     ConnectFlowEffort
+     // keywords: connect,modification
+     // status:   incorrect
+     //
+     // Flow and effort variables may not be connected.
+     //
+     
+     connector Connector1
+       Real e;
+     end Connector1;
+     
+     connector Connector2
+       flow Real e;
+     end Connector2;
+     
+     class ConnectFlowEffort
+       Connector1 c1;
+       Connector2 c2;
+     equation
+       connect(c1, c2);
+     end ConnectFlowEffort;
+
+
+File: modtest.info,  Node: ConnectHierarchical1,  Next: ConnectHierarchical2,  Prev: ConnectFlowEffort,  Up: Test Cases
+
+ConnectHierarchical1
+====================
+
+     // name:     ConnectHierarchical1
+     // keywords: connect
+     // status:   correct
+     //
+     // All effort variables are equal to 1. The unknown flow 'a.b.c.f'
+     // evaluates to -1.
+     //
+     
+     connector Connector
+       flow Real f;
+       Real e;
+     end Connector;
+     
+     class B
+       Connector c;
+     end B;
+     
+     class A
+       B b;
+       Connector c1, c2(f = 2.0);
+     equation
+       connect(c1, b.c);
+     end A;
+     
+     class ConnectHierarchical1
+       A a;
+       Connector c(e = 1.0, f = 1.0);
+     equation
+       connect(a.c1, a.c2);
+       connect(c, a.c1);
+     end ConnectHierarchical1;
+     
+     // fclass ConnectHierarchical1
+     // Real a.b.c.f;
+     // Real a.b.c.e;
+     // Real a.c1.f;
+     // Real a.c1.e;
+     // Real a.c2.f;
+     // Real a.c2.e;
+     // Real c.f;
+     // Real c.e;
+     // equation
+     //   a.c2.f = 2.0;
+     //   a.c1.e = a.b.c.e;
+     //   (-a.c1.f) + a.b.c.f = 0.0;
+     //   c.f = 1.0;
+     //   c.e = 1.0;
+     //   c.e = a.c1.e;
+     //   a.c1.e = a.c2.e;
+     //   (-c.f) + a.c1.f + a.c2.f = 0.0;
+     //   a.b.c.f = 0.0;
+     // end ConnectHierarchical1;
+
+
+File: modtest.info,  Node: ConnectHierarchical2,  Next: ConnectInner1,  Prev: ConnectHierarchical1,  Up: Test Cases
+
+ConnectHierarchical2
+====================
+
+     // name:     ConnectHierarchical2
+     // keywords: connect
+     // status:   correct
+     //
+     // Compared to ConnectHiearchical1 we have established
+     // the same connections but at different places.
+     // Thus a.c2.f will thus be default connected, and set to zero.
+     // Thus we cannot have a modifier for it.
+     // The unknown flow 'a.b.c.f' evaluates to 1.
+     
+     connector Connector
+       flow Real f;
+       Real e;
+     end Connector;
+     
+     class B
+       Connector c;
+     end B;
+     
+     class A
+       B b;
+       Connector c1, c2;
+     equation
+       connect(c1, b.c);
+       connect(c1, c2);
+     end A;
+     
+     class ConnectHierarchical2
+       A a;
+       Connector c(e = 1.0, f=1.0);
+     equation
+       connect(c, a.c1);
+     end ConnectHierarchical2;
+     
+     // fclass ConnectHierarchical2
+     // Real a.b.c.f;
+     // Real a.b.c.e;
+     // Real a.c1.f;
+     // Real a.c1.e;
+     // Real a.c2.f;
+     // Real a.c2.e;
+     // Real c.f;
+     // Real c.e;
+     // equation
+     //   a.c1.e = a.b.c.e;
+     //   a.b.c.e = a.c2.e;
+     //   (-a.c1.f) + a.b.c.f + (-a.c2.f) = 0.0;
+     //   c.f = 1.0;
+     //   c.e = 1.0;
+     //   c.e = a.c1.e;
+     //   (-c.f) + a.c1.f = 0.0;
+     //   a.b.c.f = 0.0;
+     //   a.c2.f = 0.0;
+     // end ConnectHierarchical2;
+
+
+File: modtest.info,  Node: ConnectInner1,  Next: ConnectInner2,  Prev: ConnectHierarchical2,  Up: Test Cases
+
+ConnectInner1
+=============
+
+
+     // name:     ConnectInner1
+     // keywords: connect,dynamic scoping
+     // status:   correct
+     //
+     // This demonstrates dynamic scoping for
+     // connector variables.
+     // Note the sign for the flow-variables.
+     //
+     connector C
+       Real e;
+       flow Real f;
+     end C;
+     model A
+       outer C global;
+       C my;
+     equation
+       connect(global,my);
+       my.f=10+my.e;
+     end A;
+     model B
+       A a;
+     end B;
+     
+     model ConnectInner1
+       inner C global;
+       B b;
+       A a;
+     equation
+       global.e=10;
+     end ConnectInner1;
+     
+     // fclass ConnectInner1
+     // Real global.e;
+     // Real global.f;
+     // Real b.a.global.e;
+     // Real b.a.global.f;
+     // Real b.a.my.e;
+     // Real b.a.my.f;
+     // Real a.global.e;
+     // Real a.global.f;
+     // Real a.my.e;
+     // Real a.my.f;
+     // equation
+     //   b.a.my.f = 10.0 + b.a.my.e;
+     //   (-b.a.global.f) + (-b.a.my.f) = 0.0;
+     //   b.a.global.e = b.a.my.e;
+     //   a.my.f = 10.0 + a.my.e;
+     //   (-a.global.f) + (-a.my.f) = 0.0;
+     //   a.global.e = a.my.e;
+     //   global.e = 10.0;
+     //   global.f = 0.0;
+     //   b.a.global.f = 0.0;
+     //   b.a.my.f = 0.0;
+     //   a.global.f = 0.0;
+     //   a.my.f = 0.0;
+     // end ConnectInner1;
+
+
+File: modtest.info,  Node: ConnectInner2,  Next: ConnectInner3,  Prev: ConnectInner1,  Up: Test Cases
+
+ConnectInner2
+=============
+
+
+     // name:     ConnectInner2
+     // keywords: connect,dynamic scoping
+     // status:   incorrect
+     //
+     // The inner connector must be declared 'inner'.
+     //
+     connector C
+       Real e;
+       flow Real f;
+     end C;
+     model A
+       outer C global;
+       C my;
+     equation
+       connect(global,my);
+       my.f=10+my.e;
+     end A;
+     model B
+       A a;
+     end B;
+     
+     model ConnectInner2
+       C global;
+       B b;
+       A a;
+     equation
+       global.e=10;
+     end ConnectInner2;
+
+
+File: modtest.info,  Node: ConnectInner3,  Next: ConnectTypes,  Prev: ConnectInner2,  Up: Test Cases
+
+ConnectInner3
+=============
+
+     // name:     ConnectInner3
+     // keywords: connect,dynamic scoping
+     // status:   correct
+     //
+     // This demonstrates dynamic scoping for
+     // connector variables.
+     // Note the sign for the flow-variables.
+     //
+     connector C
+       Real e;
+       flow Real f;
+     end C;
+     model CC
+       C c;
+     end CC;
+     model A
+       outer CC global;
+       C my;
+     equation
+       connect(global.c,my);
+       my.f=10+my.e;
+     end A;
+     model B
+       A a;
+     end B;
+     
+     model ConnectInner3
+       inner CC global;
+       B b;
+       A a;
+     equation
+       global.c.e=10;
+     end ConnectInner3;
+     
+     // fclass ConnectInner3
+     // Real global.c.e;
+     // Real global.c.f;
+     // Real b.a.global.c.e;
+     // Real b.a.global.c.f;
+     // Real b.a.my.e;
+     // Real b.a.my.f;
+     // Real a.global.c.e;
+     // Real a.global.c.f;
+     // Real a.my.e;
+     // Real a.my.f;
+     // equation
+     //   b.a.my.f = 10.0 + b.a.my.e;
+     //   b.a.global.c.f + (-b.a.my.f) = 0.0;
+     //   b.a.global.c.e = b.a.my.e;
+     //   a.my.f = 10.0 + a.my.e;
+     //   a.global.c.f + (-a.my.f) = 0.0;
+     //   a.global.c.e = a.my.e;
+     //   global.c.e = 10.0;
+     //   global.c.f = 0.0;
+     //   b.a.global.c.f = 0.0;
+     //   b.a.my.f = 0.0;
+     //   a.global.c.f = 0.0;
+     //   a.my.f = 0.0;
+     // end ConnectInner3;
+
+
+File: modtest.info,  Node: ConnectTypes,  Next: Constant1,  Prev: ConnectInner3,  Up: Test Cases
+
+ConnectTypes
+============
+
+     // name:     ConnectTypes
+     // keywords: connect,type
+     // status:   correct
+     //
+     // Check generation of connection equations.
+     // Parameters and constants should generate assertions
+     // (used for size-parameters in Modelica.Blocks).
+     
+     connector Connector
+       Real e[n];
+       Integer d;
+       parameter Integer p;
+       parameter Integer n=1;
+       constant Real c=2;
+     end Connector;
+     
+     class A
+       Connector c;
+     end A;
+     
+     class ConnectTypes
+       A a(c(p=4));
+       Connector c(p=4);
+     equation
+       connect(c, a.c);
+       c.e=time;
+       c.d=4;
+     end ConnectTypes;
+     
+     // fclass ConnectTypes
+     //   Real a.c.e[1];
+     //   parameter Real a.c.p=4;
+     //   parameter Integer a.c.n=1;
+     //   constant Real a.c.c=2;
+     //   Integer a.c.d;
+     //   Real c.e[1];
+     //   parameter Real c.p=4;
+     //   parameter Integer c.n=1;
+     //   constant Real c.c;
+     //   Integer c.d;
+     // equation
+     //   c.e[1] = time;
+     //   c.d = 4;
+     //   c.d = a.c.d;
+     //   c.e[1] = a.c.e[1];
+     //   assert(c.p==a.c.p,"...");
+     //   assert(c.c==a.c.c,"...");
+     // end ConnectTypes;
+
+
+File: modtest.info,  Node: Constant1,  Next: Constant2,  Prev: ConnectTypes,  Up: Test Cases
+
+Constant1
+=========
+
+     // name:     Constant1
+     // keywords: declaration
+     // status:   correct
+     //
+     // Basic constant definitions.
+     //
+     
+     class Constant1
+       constant Real PI = 3.14159265358979;
+       constant Integer N = 17;
+       Real x;
+     equation
+       x = 2.0 * PI;
+     end Constant1;
+     
+     // fclass Constant1
+     //   constant Real PI;
+     //   constant Integer N;
+     //   Real x;
+     // equation
+     //   PI = 3.14159265358979;
+     //   N = 17;
+     //   x = 2.0 * PI;
+     // end Constant1;
+
+
+File: modtest.info,  Node: Constant2,  Next: Constant3,  Prev: Constant1,  Up: Test Cases
+
+Constant2
+=========
+
+     // name:     Constant2
+     // keywords: declaration,type
+     // status:   correct
+     //
+     // Constants and their use in expressions. This tests that the
+     // translator checks that the equation modifications are constant.
+     //
+     
+     model Constant2
+       constant Real A = 5.0;
+       constant Real B = A;
+       constant Real C = B + 1.0;
+       constant Real D = C - A;
+       constant Integer E = 3;
+       constant Integer F = E + 4;
+     end Constant2;
+     
+     // fclass Constant2
+     //   constant Real A;
+     //   constant Real B;
+     //   constant Real C;
+     //   constant Real D;
+     //   constant Integer E;
+     //   constant Integer F;
+     // equation
+     //   A = 5.0;
+     //   B = A;
+     //   C = B + 1.0;
+     //   D = C - A;
+     //   E = 3;
+     //   F = E + 4;
+     // end Constant2;
+
+
+File: modtest.info,  Node: Constant3,  Next: Constant4,  Prev: Constant2,  Up: Test Cases
+
+Constant3
+=========
+
+     // name:     Constant3
+     // keywords: declaration,array
+     // status:   correct
+     //
+     // Basic constant definitions.
+     //
+     
+     class Constant3
+       constant Integer N = 3;
+       Real x[N];
+     equation
+       x[N-1] = 2.0;
+       x[1,N] = 1,time;
+     end Constant3;
+     
+     // fclass Constant3
+     //   constant Integer N;
+     //   Real x[1];
+     //   Real x[2];
+     //   Real x[3];
+     // equation
+     //   N = 3;
+     //   x[N-1] = 2.0;
+     //   x[1]   = 1;
+     //   x[N]   = time;
+     // end Constant3;
+
+
+File: modtest.info,  Node: Constant4,  Next: Constant5,  Prev: Constant3,  Up: Test Cases
+
+Constant4
+=========
+
+     // name:     Constant4
+     // keywords: declaration,array
+     // status:   correct
+     //
+     //
+     //
+     
+     class Constant4
+       Real x[2];
+     //  Real y[size(x,1)]; causes infinite loop
+     end Constant4;
+     
+     // fclass Constant4
+     //   Real x[1];
+     //   Real x[2];
+     //   Real y[1];
+     //   Real y[2];
+     //  equation
+     // end Constant4;
+
+
+File: modtest.info,  Node: Constant5,  Next: Constant6,  Prev: Constant4,  Up: Test Cases
+
+Constant5
+=========
+
+     // name:     Constant5
+     // keywords: declaration,array
+     // status:   correct
+     //
+     //
+     //
+     
+     class Constant5
+       Real x[floor(2.5)];
+     end Constant5;
+     
+     // fclass Constant5
+     //   Real x[1];
+     //   Real x[2];
+     // end Constant5;
+
+
+File: modtest.info,  Node: Constant6,  Next: ConstrainingType1,  Prev: Constant5,  Up: Test Cases
+
+Constant6
+=========
+
+     // name:     Constant6
+     // keywords: declaration,array
+     // status:   correct
+     //
+     // Can you call functions in constant expressions?
+     //
+     
+     function inc
+       input Integer x;
+       output Integer y;
+     algorithm
+       y := x + 1;
+     end inc;
+     
+     class Constant6
+       Real x[inc(1)];
+     end Constant6;
+     
+     // fclass Constant6
+     //   Real x[1];
+     //   Real x[2];
+     // end Constant6;
+
+
+File: modtest.info,  Node: ConstrainingType1,  Next: ConstrainingType2,  Prev: Constant6,  Up: Test Cases
+
+ConstrainingType1
+=================
+
+     // name:     ConstrainingType1
+     // keywords: replaceable
+     // status:   correct
+     //
+     // Demonstrates that it is sufficient that
+     // a redeclare is a sub-type of the constraining
+     // type, and how replaceable, redeclare,
+     // and constraing_clause can be used together.
+     
+     connector OnePin
+       flow Real i;
+       Real v;
+     end OnePin;
+     
+     model Ground
+       OnePin a;
+     equation
+       a.v=0;
+     end Ground;
+     
+     model ConstantSource
+       extends OnePort;
+       parameter Real U;
+     equation
+       v=U;
+     end ConstantSource;
+     
+     model TwoPin
+       OnePin a,b;
+       Real v;
+     equation
+       v=b.v-a.v;
+     end TwoPin;
+     
+     model OnePort
+       extends TwoPin;
+       Real i;
+     equation
+       i=a.i;
+       a.i+b.i=0;
+     end OnePort;
+     
+     model Resistor
+       extends OnePort;
+       parameter Real R;
+     equation
+       v=R*i;
+     end Resistor;
+     
+     model Conductor
+       extends OnePort;
+       parameter Real C;
+     equation
+       C*der(v)=i;
+     end Conductor;
+     
+     model A
+       extends TwoPin;
+       replaceable Resistor r(R=1) extends TwoPin;
+       replaceable Conductor c(C=1e-4) extends TwoPin;
+     equation
+       connect(a,r.a);
+       connect(r.b,c.a);
+       connect(c.b,b);
+     end A;
+     
+     model A2
+       extends A(redeclare Conductor c);
+     end A2;
+     
+     model ConstrainingType1
+       A2 a(c(C=1e-7));
+       A b(redeclare Resistor c(R=2),redeclare Conductor r(C=1e-5));
+       Ground g;
+       ConstantSource s(U=10);
+     equation
+       connect(s.a,g.a);
+       connect(s.b,a.a);
+       connect(a.b,b.a);
+       connect(b.b,s.a);
+     end ConstrainingType1;
+     
+     // fclass ConstrainingType1
+     // Real a.a.i;
+     // Real a.a.v;
+     // Real a.b.i;
+     // Real a.b.v;
+     // Real a.v;
+     // Real a.r.a.i;
+     // Real a.r.a.v;
+     // Real a.r.b.i;
+     // Real a.r.b.v;
+     // Real a.r.v;
+     // Real a.r.i;
+     // parameter Real a.r.R = 1;
+     // Real a.c.a.i;
+     // Real a.c.a.v;
+     // Real a.c.b.i;
+     // Real a.c.b.v;
+     // Real a.c.v;
+     // Real a.c.i;
+     // parameter Real a.c.C = 1e-07;
+     // Real b.a.i;
+     // Real b.a.v;
+     // Real b.b.i;
+     // Real b.b.v;
+     // Real b.v;
+     // Real b.r.a.i;
+     // Real b.r.a.v;
+     // Real b.r.b.i;
+     // Real b.r.b.v;
+     // Real b.r.v;
+     // Real b.r.i;
+     // parameter Real b.r.R = 1;
+     // Real b.c.a.i;
+     // Real b.c.a.v;
+     // Real b.c.b.i;
+     // Real b.c.b.v;
+     // Real b.c.v;
+     // Real b.c.i;
+     // parameter Real b.c.C = 0.0001;
+     // Real g.a.i;
+     // Real g.a.v;
+     // Real s.a.i;
+     // Real s.a.v;
+     // Real s.b.i;
+     // Real s.b.v;
+     // Real s.v;
+     // Real s.i;
+     // parameter Real s.U = 10;
+     // equation
+     //   a.r.v = a.r.R * a.r.i;
+     //   a.r.i = a.r.a.i;
+     //   a.r.a.i + a.r.b.i = 0.0;
+     //   a.r.v = a.r.b.v - a.r.a.v;
+     //   a.c.C * der(a.c.v) = a.c.i;
+     //   a.c.i = a.c.a.i;
+     //   a.c.a.i + a.c.b.i = 0.0;
+     //   a.c.v = a.c.b.v - a.c.a.v;
+     //   a.v = a.b.v - a.a.v;
+     //   a.c.b.v = a.b.v;
+     //   a.c.b.i + (-a.b.i) = 0.0;
+     //   a.r.b.v = a.c.a.v;
+     //   a.r.b.i + a.c.a.i = 0.0;
+     //   a.a.v = a.r.a.v;
+     //   (-a.a.i) + a.r.a.i = 0.0;
+     //   b.r.v = b.r.R * b.r.i;
+     //   b.r.i = b.r.a.i;
+     //   b.r.a.i + b.r.b.i = 0.0;
+     //   b.r.v = b.r.b.v - b.r.a.v;
+     //   b.c.C * der(b.c.v) = b.c.i;
+     //   b.c.i = b.c.a.i;
+     //   b.c.a.i + b.c.b.i = 0.0;
+     //   b.c.v = b.c.b.v - b.c.a.v;
+     //   b.v = b.b.v - b.a.v;
+     //   b.c.b.v = b.b.v;
+     //   b.c.b.i + (-b.b.i) = 0.0;
+     //   b.r.b.v = b.c.a.v;
+     //   b.r.b.i + b.c.a.i = 0.0;
+     //   b.a.v = b.r.a.v;
+     //   (-b.a.i) + b.r.a.i = 0.0;
+     //   g.a.v = 0.0;
+     //   s.v = s.U;
+     //   s.i = s.a.i;
+     //   s.a.i + s.b.i = 0.0;
+     //   s.v = s.b.v - s.a.v;
+     //   b.b.v = s.a.v;
+     //   s.a.v = g.a.v;
+     //   b.b.i + s.a.i + g.a.i = 0.0;
+     //   a.b.v = b.a.v;
+     //   a.b.i + b.a.i = 0.0;
+     //   s.b.v = a.a.v;
+     //   s.b.i + a.a.i = 0.0;
+     //   a.r.a.i = 0.0;
+     //   a.r.b.i = 0.0;
+     //   a.c.a.i = 0.0;
+     //   a.c.b.i = 0.0;
+     //   b.r.a.i = 0.0;
+     //   b.r.b.i = 0.0;
+     //   b.c.a.i = 0.0;
+     //   b.c.b.i = 0.0;
+     // end ConstrainingType1;
+
+
+File: modtest.info,  Node: ConstrainingType2,  Next: ConstrainingType3,  Prev: ConstrainingType1,  Up: Test Cases
+
+ConstrainingType2
+=================
+
+     // name:     ConstrainingType2
+     // keywords: replaceable
+     // status:   incorrect
+     //
+     // Modifiers are applied to the constraining type,
+     // and thus it is illegal to set parameters
+     // in the actual class that are not found in
+     // the constraining type.
+     
+     connector OnePin
+       flow Real i;
+       Real v;
+     end OnePin;
+     
+     model Ground
+       OnePin a;
+     equation
+       a.v=0;
+     end Ground;
+     
+     model ConstantSource
+       extends OnePort;
+       parameter Real U;
+     equation
+       v=U;
+     end ConstantSource;
+     
+     model TwoPin
+       OnePin a,b;
+       Real v;
+     equation
+       v=b.v-a.v;
+     end TwoPin;
+     
+     model OnePort
+       extends TwoPin;
+       Real i;
+     equation
+       i=a.i;
+       a.i+b.i=0;
+     end OnePort;
+     
+     model Resistor
+       extends OnePort;
+       parameter Real R;
+     equation
+       v=R*i;
+     end Resistor;
+     
+     model Conductor
+       extends OnePort;
+       parameter Real C;
+     equation
+       C*der(v)=i;
+     end Conductor;
+     
+     model A
+       extends TwoPin;
+       replaceable Resistor r(R=1) extends TwoPin;
+       replaceable Conductor c(C=1e-4) extends TwoPin;
+     equation
+       connect(a,r.a);
+       connect(r.b,c.a);
+       connect(c.b,b);
+     end A;
+     
+     model ConstrainingType2
+       A a(c(C=1e-7)); // Illegal since no C in constraining type of c.
+       A b(redeclare Resistor c(R=2),redeclare Conductor r(C=1e-5));
+       Ground g;
+       ConstantSource s(U=1);
+     equation
+       connect(s.a,g.a);
+       connect(s.b,a.a);
+       connect(a.b,b.a);
+       connect(b.b,s.a);
+     end ConstrainingType2;
+
+
+File: modtest.info,  Node: ConstrainingType3,  Next: ConstructParameters,  Prev: ConstrainingType2,  Up: Test Cases
+
+ConstrainingType3
+=================
+
+     // name:     ConstrainingType3
+     // keywords: replaceable
+     // status:   incorrect
+     //
+     // Modifiers are applied to the constraining type,
+     // and thus it is illegal to set parameters
+     // in the actual class that are not found in
+     // the constraining type.
+     
+     connector OnePin
+       flow Real i;
+       Real v;
+     end OnePin;
+     
+     model Ground
+       OnePin a;
+     equation
+       a.v=0;
+     end Ground;
+     
+     model ConstantSource
+       extends OnePort;
+       parameter Real U;
+     equation
+       v=U;
+     end ConstantSource;
+     
+     model TwoPin
+       OnePin a,b;
+       Real v;
+     equation
+       v=b.v-a.v;
+     end TwoPin;
+     
+     model OnePort
+       extends TwoPin;
+       Real i;
+     equation
+       i=a.i;
+       a.i+b.i=0;
+     end OnePort;
+     
+     model Resistor
+       extends OnePort;
+       parameter Real R;
+     equation
+       v=R*i;
+     end Resistor;
+     
+     model Conductor
+       extends OnePort;
+       parameter Real C;
+     equation
+       C*der(v)=i;
+     end Conductor;
+     
+     model A
+       extends TwoPin;
+       replaceable Resistor r(R=1) extends Resistor;
+       replaceable Conductor c(C=1e-4) extends TwoPin;
+     equation
+       connect(a,r.a);
+       connect(r.b,c.a);
+       connect(c.b,b);
+     end A;
+     
+     model ConstrainingType3
+       A a;
+       A b(redeclare Conductor r(C=1e-5)); // Conductor is not a sub-type of Resistor.
+       Ground g;
+       ConstantSource s(U=1);
+     equation
+       connect(s.a,g.a);
+       connect(s.b,a.a);
+       connect(a.b,b.a);
+       connect(b.b,s.a);
+     end ConstrainingType3;
+
+
+File: modtest.info,  Node: ConstructParameters,  Next: ConstructParameters1,  Prev: ConstrainingType3,  Up: Test Cases
+
+ConstructParameters
+===================
+
+     // name:     ConstructParameters
+     // keywords: declaration,algorithm,unknown
+     // status:   correct
+     //
+     // A set of parameters can be computed from a set of other parameters
+     // by using a function call.
+     //
+     // david: whereever did you come up with this syntax? It is wrong
+     //
+     
+     function fc
+       output Real p3;
+       input  Real p1, p2;
+     algorithm
+       p3 := p1*p2;
+     end fc;
+     
+     model ConstructParameters
+       parameter Real p1=2.0, p2=3.0;
+     protected
+       parameter Real p3 = fc(p1,p2);
+     end ConstructParameters;
+     
+     // fclass ConstructParameters
+     // parameter Real p1 = 2.0;
+     // parameter Real p2 = 3.0;
+     // parameter Real p3 = fc(p1,p2);
+     // end ConstructParameters;
+
+
+File: modtest.info,  Node: ConstructParameters1,  Next: ConstructParameters2,  Prev: ConstructParameters,  Up: Test Cases
+
+ConstructParameters1
+====================
+
+     // name:     ConstructParameters1
+     // keywords: declaration,algorithm
+     // status:   incorrect
+     //
+     // This is not legal Modelica, see ConstructParameters2
+     // for an example of how to do it.
+     //
+     // This syntax has been discussed to generate
+     // several parameters from one function call.
+     
+     
+     function fc
+       output Real p3, p4;
+       input  Real p1, p2;
+     algorithm
+       p3 := p1*p2;
+       p4 := p3*p1 + p2;
+     end fc;
+     
+     model ConstructParameters1
+       parameter Real p1=2.0, p2=3.0;
+     protected
+       parameter Real (p3,p4) = fc(p1,p2);
+     end ConstructParameters1;
+
+
+File: modtest.info,  Node: ConstructParameters2,  Next: Declaration1,  Prev: ConstructParameters1,  Up: Test Cases
+
+ConstructParameters2
+====================
+
+     // name:     ConstructParameters2
+     // keywords: declaration,algorithm
+     // status:   correct
+     //
+     // Show how to perform the same task
+     // as in ConstructParameters1 but with legal
+     // Modelica.
+     
+     record Prec
+       Real p3, p4;
+     end Prec;
+     
+     function fc
+       output Prec p;
+       input  Real p1, p2;
+     algorithm
+       p.p3 := p1*p2;
+       p.p4 := p.p3*p1 + p2;
+     end fc;
+     
+     model ConstructParameters2
+       parameter Real p1=2.0, p2=3.0;
+     protected
+       parameter Prec prec = fc(p1,p2);
+       parameter Real p3=prec.p3,p4 = prec.p4;
+     end ConstructParameters2;
+
+
+File: modtest.info,  Node: Declaration1,  Next: Declaration2,  Prev: ConstructParameters2,  Up: Test Cases
+
+Declaration1
+============
+
+     // name:     Declaration1
+     // keywords: declaration
+     // status:   incorrect
+     //
+     // Misuse of component attributes.
+     //
+     
+     class Declaration1
+       discrete constant Real x;
+     end Declaration1;
+
+
+File: modtest.info,  Node: Declaration2,  Next: Declaration3,  Prev: Declaration1,  Up: Test Cases
+
+Declaration2
+============
+
+     // name:     Declaration2
+     // keywords: declaration
+     // status:   incorrect
+     //
+     // Misuse of component attributes.
+     //
+     
+     class Declaration2
+       constant discrete Real x;
+     end Declaration2;
+
+
+File: modtest.info,  Node: Declaration3,  Next: DeclarationOrder1,  Prev: Declaration2,  Up: Test Cases
+
+Declaration3
+============
+
+     // name:     Declaration3
+     // keywords: declaration
+     // status:   incorrect
+     //
+     // Misuse of component attributes.
+     //
+     
+     class Declaration3
+       constant parameter Real x;
+     end Declaration3;
+
+
+File: modtest.info,  Node: DeclarationOrder1,  Next: DeclarationOrder2,  Prev: Declaration3,  Up: Test Cases
+
+DeclarationOrder1
+=================
+
+     // name:     DeclarationOrder1
+     // keywords: declaration order
+     // status:   correct
+     //
+     // A model or component is available in its entire scope,
+     // even before before it is declared.
+     
+     package A
+       model B
+         extends C;
+       end B;
+       model C
+         Real y(start=x);
+         parameter Real x=pi;
+       equation
+         der(y)=x;
+       end C;
+       constant Real pi=3.14;
+     end A;
+     
+     model DeclarationOrder1
+       A.B b;
+     end DeclarationOrder1;
+     
+     // fclass DeclarationOrder1
+     // Real b.y(start=b.x);
+     // parameter Real b.x = 3.14;
+     // equation
+     //   der(b.y) = b.x;
+     // end DeclarationOrder1;
+
+
+File: modtest.info,  Node: DeclarationOrder2,  Next: DeclareConstant1,  Prev: DeclarationOrder1,  Up: Test Cases
+
+DeclarationOrder2
+=================
+
+     // name:     DeclarationOrder2
+     // keywords: declaration order
+     // status:   correct
+     //
+     // A model or component is available in its entire scope,
+     // even before before it is declared.
+     
+     package A
+       model B
+         extends C;
+       end B;
+       model C
+         Real y(start=x);
+         parameter Real x=pi;
+       equation
+         der(y)=x;
+       end C;
+       model D
+     //    C c[size(c2,1)]; // causes ininite loop
+         C c2[n];
+         parameter Integer n=1;
+       end D;
+       constant Real pi=3.14;
+     end A;
+     
+     model DeclarationOrder2
+       A.D D;
+     end DeclarationOrder2;
+     
+     // fclass DeclarationOrder2
+     //  parameter Integer D.n = 1;
+     //  parameter Real D.c2[1].x(start = 3.14);
+     //  parameter Real D.c[1].x = 3.14;
+     //  Real D.c2[1].y(start = D.c2[1].x);
+     //  Real D.c[1].y(start = D.c[1].x);
+     //equation
+     //  der(D.c2[1].y) = D.c2[1].x;
+     //  der(D.c[1].y) = D.c[1].x;
+     // end DeclarationOrder2
+
+
+File: modtest.info,  Node: DeclareConstant1,  Next: DeclareConstant2,  Prev: DeclarationOrder2,  Up: Test Cases
+
+DeclareConstant1
+================
+
+     // name:     DeclareConstant1
+     // keywords: declaration,equation
+     // status:   incorrect
+     //
+     // A constant requires a declaration equation.
+     // A normal equation from which we can compute
+     // the constant is not sufficient.
+     
+     class DeclareConstant1
+       constant String s;
+     equation
+       s = "value";
+     end DeclareConstant1;
+
+
+File: modtest.info,  Node: DeclareConstant2,  Next: DeclareConstant3,  Prev: DeclareConstant1,  Up: Test Cases
+
+DeclareConstant2
+================
+
+     // name:     DeclareConstant2
+     // keywords: declaration
+     // status:   incorrect
+     //
+     // The attribute 'value' shall not be accessed.
+     //
+     
+     class DeclareConstant2
+       constant String s(value = "value");
+     end DeclareConstant2;
+
+
+File: modtest.info,  Node: DeclareConstant3,  Next: DependsMutual,  Prev: DeclareConstant2,  Up: Test Cases
+
+DeclareConstant3
+================
+
+     // name:     DeclareConstant3
+     // keywords: declaration
+     // status:   incorrect
+     //
+     // A constant requires a declaration equation with constant
+     // expression on the right hand side.
+     //
+     
+     class DeclareConstant3
+       Real x, y;
+       constant Real c = x + y;
+     equation
+       c = 5.0;
+     end DeclareConstant3;
+
+
+File: modtest.info,  Node: DependsMutual,  Next: DependsRecursive,  Prev: DeclareConstant3,  Up: Test Cases
+
+DependsMutual
+=============
+
+     // name:     DependsMutual
+     // keywords: scoping
+     // status:   correct
+     //
+     // Mutual dependence is supported since Modelica does not require
+     // declare before use.
+     //
+     // Here package A depends on the class DependsMutual and
+     // DependsMutual depends on the package A.
+     //
+     // Obviously a model cannot contain a model that contains itself
+     // since that leads to recursive models.
+     
+     package A
+      Real x;
+      model B
+        DependsMutual b;
+      end B;
+      model C
+        Real x;
+      end C;
+     end A;
+     
+     class DependsMutual
+       Real x;
+       A.C a;
+     equation
+       a.x=x;
+       x=time;
+     end DependsMutual;
+     
+     // fclass DependsMutual
+     // Real x;
+     // Real a.x;
+     // equation
+     //   a.x = x;
+     //   x = time;
+     // end DependsMutual;
+
+
+File: modtest.info,  Node: DependsRecursive,  Next: Derivative1,  Prev: DependsMutual,  Up: Test Cases
+
+DependsRecursive
+================
+
+     // name:     DependsRecursive
+     // keywords: scoping
+     // status:   incorrect
+     //
+     // A recursive model can not be instantiated.
+     //
+     
+     model DependsRecursive
+       Real head;
+       DependsRecursive tail;
+     end DependsRecursive;
+
+
+File: modtest.info,  Node: Derivative1,  Next: Discrete1,  Prev: DependsRecursive,  Up: Test Cases
+
+Derivative1
+===========
+
+     // name:     Derivative1
+     // keywords: functions,index reduction
+     // status:   correct
+     //
+     // This demonstrates the use of the derivative annotation
+     // in order to allow index reduction to work.
+     // Note that the non-real input must be a parameter
+     // to guarantee that there are no missed discontinuities.
+     // The solution has x=u.
+     
+     package FooFunctions
+     function foo0
+       annotation(derivative=foo1);
+       input Real x;
+       input Boolean b;
+       output Real y;
+     algorithm
+       if b then
+         y:=sin(x);
+       else
+         y:=x;
+       end if;
+     end foo0;
+     
+     function foo1
+       annotation(derivative(order=1)=foo2);
+       input Real x;
+       input Boolean b;
+       input Real der_x;
+       output Real der_y;
+     algorithm
+       if b then
+         der_y:=cos(x)*der_x;
+       else
+         der_y:=der_x;
+       end if;
+     end foo1;
+     
+     function foo2
+       input Real x;
+       input Boolean b;
+       input Real der_x;
+       input Real der_2_x;
+       output Real der_2_y;
+     algorithm
+       if b then
+         der_2_y:=cos(x)*der_2_x-sin(x)*der_x*der_x;
+       else
+         der_2_y:=der_2_x;
+       end if;
+     end foo2;
+     end FooFunctions;
+     
+     model Derivative1
+       Real x[3];
+       Real u[3](fixed=false);
+       type IC=Real(start=0,fixed=true);
+       IC ic[2]=x[1:2]-u[1:2];
+       parameter Boolean b=true;
+     equation
+       x[1]=FooFunctions.foo0(exp(time),b);
+       der(x[1:2])=x[2:3];
+       x[3]=u[3];
+       der(u[1:2])=u[2:3];
+     end Derivative1;
+
+
+File: modtest.info,  Node: Discrete1,  Next: Discrete2,  Prev: Derivative1,  Up: Test Cases
+
+Discrete1
+=========
+
+     // name:     Discrete1
+     // keywords: declaration
+     // status:   correct
+     //
+     // Test the `discrete' keyword
+     
+     class Discrete1
+       discrete Real x;
+     equation
+       when time>0.5 then
+         x=time;
+       end when;
+     end Discrete1;
+     
+     // fclass Discrete1
+     //   discrete Real    x;
+     // equation
+     //   when time>0.5 then
+     //     x=time;
+     //   end when;
+     // end Discrete1;
+
+
+File: modtest.info,  Node: Discrete2,  Next: DisturbedResistance1,  Prev: Discrete1,  Up: Test Cases
+
+Discrete2
+=========
+
+     // name:     Discrete2
+     // keywords: declaration,unknown
+     // status:   erroneous
+     //
+     // This is not valid, but should it complain now or later?
+     
+     class Discrete2
+       discrete Real x;
+     equation
+       x = sin(time);
+     end Discrete2;
+     
+     // fclass Discrete2
+     //  discrete Real x;
+     // equation
+     //   x = sin(time);
+     // end Discrete2;
+
+
+File: modtest.info,  Node: DisturbedResistance1,  Next: DisturbedResistance2,  Prev: Discrete2,  Up: Test Cases
+
+DisturbedResistance1
+====================
+
+     // name:     DisturbedResistance1
+     // keywords: modification
+     // status:   incorrect
+     //
+     // A parameter must not be time-varying.
+     //
+     
+     model Resistor
+       Real u, i;
+       parameter Real R = 1.0;
+     equation
+       u = R*i;
+     end Resistor;
+     
+     model DisturbedResistance1
+       extends Resistor(R = 1.0 + 0.1*sin(time));
+     end DisturbedResistance1;
+
+
+File: modtest.info,  Node: DisturbedResistance2,  Next: DisturbedResistance3,  Prev: DisturbedResistance1,  Up: Test Cases
+
+DisturbedResistance2
+====================
+
+     // name:     DisturbedResistance2
+     // keywords: modification
+     // status:   incorrect
+     //
+     // A parameter may not be redeclared as variable.
+     //
+     
+     model Resistor
+       Real u, i;
+       parameter Real R = 1.0;
+     equation
+       u = R*i;
+     end Resistor;
+     
+     model DisturbedResistance2
+       extends Resistor(redeclare Real R = 1.0 + 0.1*sin(time));
+     end DisturbedResistance2;
+
+
+File: modtest.info,  Node: DisturbedResistance3,  Next: DisturbedResistance4,  Prev: DisturbedResistance2,  Up: Test Cases
+
+DisturbedResistance3
+====================
+
+     // name:     DisturbedResistance3
+     // keywords: modification
+     // status:   incorrect
+     //
+     // This is an example of replacing a variable without using
+     // redeclaration syntax.
+     //
+     // This was made illegal in Modelica 1.4 since it depends
+     // very much on declaration order.
+     //
+     
+     model Resistor
+       Real u, i;
+       parameter Real R = 1.0;
+     equation
+       u = R*i;
+     end Resistor;
+     
+     model DisturbedResistance3
+       Real R = 1.0 + 0.1*sin(time);
+       extends Resistor;
+     end DisturbedResistance3;
+     
+     // fclass DisturbedResistance3
+     //   Real u;
+     //   Real i;
+     //   Real R;
+     // equation
+     //   R = 1.0 + 0.1*sin(time);
+     //   u = R*i;
+     // end DisturbedResistance3;
+
+
+File: modtest.info,  Node: DisturbedResistance4,  Next: Encapsulated1,  Prev: DisturbedResistance3,  Up: Test Cases
+
+DisturbedResistance4
+====================
+
+     // name:     DisturbedResistance4
+     // keywords: modification
+     // status:   erroneous
+     //
+     // Finalized objects shall not be overwritten.
+     //
+     
+     model Resistor
+       Real u, i;
+       final parameter Real R = 1.0;
+     equation
+       u = R*i;
+     end Resistor;
+     
+     model DisturbedResistance4
+       Real R = 1.0 + 0.1*sin(time);
+       extends Resistor;
+     end DisturbedResistance4;
+     
+     // fclass DisturbedResistance4
+     //   Real u;
+     //   Real i;
+     //   Real R;
+     // equation
+     //   R = 1.0 + 0.1*sin(time);
+     //   u = R*i;
+     // end DisturbedResistance4;
+
+
+File: modtest.info,  Node: Encapsulated1,  Next: Encapsulated2,  Prev: DisturbedResistance4,  Up: Test Cases
+
+Encapsulated1
+=============
+
+     // name:     Encapsulated1
+     // keywords: encapsulated
+     // status:   correct
+     //
+     // Demonstrating correct use of import.
+     
+     encapsulated package A
+       package B
+         model C
+           Real x;
+         end C;
+       end B;
+       encapsulated package B1
+         import A.*;
+         model C2=B.C(x=2);
+       end B1;
+     end A;
+     
+     
+     encapsulated model Encapsulated1
+       import A.*;
+       import A.B1.C2;
+       B.C c(x=1);
+     //  C2 c2; // Causes Infinite loop
+     end Encapsulated1;
+     
+     // fclass Encapsulated1
+     //   Real c.x;
+     //   Real c2.x;
+     //  equation
+     //   c.x = 1;
+     //   c2.x = 2;
+     // end Encapsulated1;
+     
+     // origfclass Encapsulated1
+     //   Real c.x=1;
+     //   Real c2.x=2;
+
+
+File: modtest.info,  Node: Encapsulated2,  Next: Encapsulated3,  Prev: Encapsulated1,  Up: Test Cases
+
+Encapsulated2
+=============
+
+     // name:     Encapsulated2
+     // keywords: encapsulated
+     // status:   incorrect
+     //
+     // An encapsulate class requires import to access
+     // even top-level classes.
+     
+     encapsulated package A
+       package B
+         model C
+           Real x;
+         end C;
+       end B;
+       encapsulated package B1
+         import A.*;
+         model C2=B.C(x=2);
+       end B1;
+     end A;
+     
+     
+     encapsulated model Encapsulated2
+       // Error: No import.
+       A.B.C c(x=1);
+       A.B1.C2 c2;
+     end Encapsulated2;
+
+
+File: modtest.info,  Node: Encapsulated3,  Next: EquationComponent1,  Prev: Encapsulated2,  Up: Test Cases
+
+Encapsulated3
+=============
+
+     // name:     Encapsulated3
+     // keywords: encapsulated
+     // status:   incorrect
+     //
+     // An encapsulated class cannot access
+     // elements in enclosing scopes.
+     
+     encapsulated package A
+       package B
+         model C
+           Real x;
+         end C;
+       end B;
+       encapsulated package B1
+         import A.*;
+         encapsulated model C2
+           extends B.C(x=2); // Error B.C not found.
+         end C2;
+       end B1;
+     end A;
+     
+     
+     encapsulated model Encapsulated3
+       import A.B.*;
+       import A.B1.C2;
+       C c(x=1);
+     //  C2 c2; // Causes infitite loop
+     end Encapsulated3;
+
+
+File: modtest.info,  Node: EquationComponent1,  Next: EquationComponent2,  Prev: Encapsulated3,  Up: Test Cases
+
+EquationComponent1
+==================
+
+     // name:     EquationComponent1
+     // keywords: equation
+     // status:   correct
+     //
+     // When an equation is between to complex types, the equation is split
+     // into separate equations for the components.
+     //
+     
+     class EquationComponent1
+       record R
+         Real x,y;
+       end R;
+       R a,b;
+     equation
+       a = b;
+     end EquationComponent1;
+     
+     // fclass EquationComponent1
+     // 	      Real    a.x;
+     // 	      Real    a.y;
+     // 	      Real    b.x;
+     // 	      Real    b.y;
+     // equation
+     //   a.x = b.x;
+     //   a.y = b.y;
+     // end EquationComponent1;
+
+
+File: modtest.info,  Node: EquationComponent2,  Next: EquationComponent3,  Prev: EquationComponent1,  Up: Test Cases
+
+EquationComponent2
+==================
+
+     // name:     EquationComponent2
+     // keywords: equation
+     // status:   correct
+     //
+     // When an equation is between to complex types, the equation is split
+     // into separate equations for the components.
+     //
+     
+     class EquationComponent2
+       record R
+         Real x,y;
+       end R;
+       R a,b,c;
+     equation
+       a = if true then b else c;
+     end EquationComponent2;
+     // fclass EquationComponent2
+     // Real a.x;
+     // Real a.y;
+     // Real b.x;
+     // Real b.y;
+     // Real c.x;
+     // Real c.y;
+     // equation
+     //   __TMP__0 = if true then b else c;
+     //   a.x = __TMP__0.x;
+     //   a.y = __TMP__0.y;
+     // end EquationComponent2;
+
+
+File: modtest.info,  Node: EquationComponent3,  Next: EquationComponent4,  Prev: EquationComponent2,  Up: Test Cases
+
+EquationComponent3
+==================
+
+     // name:     EquationComponent3
+     // keywords: equation
+     // status:   correct
+     //
+     // When an equation is between to complex types, the equation is split
+     // into separate equations for the components.
+     //
+     
+     class EquationComponent3
+       record R
+         Real x,y;
+       end R;
+       R a,b,c;
+     equation
+       (if true then a else b) = c;
+     end EquationComponent3;
+     
+     // fclass EquationComponent3
+     // Real a.x;
+     // Real a.y;
+     // Real b.x;
+     // Real b.y;
+     // Real c.x;
+     // Real c.y;
+     // equation
+     //   __TMP__0 = if true then a else b;
+     //   __TMP__0.x = c.x;
+     //   __TMP__0.y = c.y;
+     // end EquationComponent3;
+
+
+File: modtest.info,  Node: EquationComponent4,  Next: EquationComponent5,  Prev: EquationComponent3,  Up: Test Cases
+
+EquationComponent4
+==================
+
+     // name:     EquationComponent4
+     // keywords: equation
+     // status:   correct
+     //
+     // When an equation is between to complex types, the equation is split
+     // into separate equations for the components.
+     //
+     
+     class EquationComponent4
+       record R
+         Real x,y;
+       end R;
+       R a,b,c;
+     equation
+       (if true then a else b) = if true then b else c;
+     end EquationComponent4;
+     
+     // fclass EquationComponent4
+     // Real a.x;
+     // Real a.y;
+     // Real b.x;
+     // Real b.y;
+     // Real c.x;
+     // Real c.y;
+     // equation
+     //   __TMP__0 = if true then b else c;
+     //   __TMP__1 = if true then a else b;
+     //   __TMP__1.x = __TMP__0.x;
+     //   __TMP__1.y = __TMP__0.y;
+     // end EquationComponent4;
+
+
+File: modtest.info,  Node: EquationComponent5,  Next: EquationFor1,  Prev: EquationComponent4,  Up: Test Cases
+
+EquationComponent5
+==================
+
+     // name:     EquationComponent5
+     // keywords: equation
+     // status:   correct
+     //
+     // When an equation is between to complex types, the equation is split
+     // into separate equations for the components.
+     //
+     
+     class EquationComponent5
+       record R
+         Real x,y;
+       end R;
+       R a;
+       R b = a;
+     end EquationComponent5;
+     
+     // fclass EquationComponent5
+     // 	       Real    a.x;
+     // 	       Real    a.y;
+     // 	       Real    b.x;
+     // 	       Real    b.y;
+     // equation
+     //   b.x = a.x;
+     //   b.y = a.y;
+     // end EquationComponent5;
+
+
+File: modtest.info,  Node: EquationFor1,  Next: EquationFor2,  Prev: EquationComponent5,  Up: Test Cases
+
+EquationFor1
+============
+
+     // name:     EquationFor1
+     // keywords: equation,array
+     // status:   correct
+     //
+     // Test for loops in equations.
+     //
+     
+     class EquationFor1
+       Real a[5];
+     equation
+       a[1] = 1.0;
+       for i in 2,3,4,5 loop
+         a[i] = a[i-1] + 1.0;
+       end for;
+     end EquationFor1;
+     
+     // fclass EquationFor1
+     //   Real a[1];
+     //   Real a[2];
+     //   Real a[3];
+     //   Real a[4];
+     //   Real a[5];
+     // equation
+     //   a[1] = 1.0;
+     //   a[2] = a[1] + 1.0;
+     //   a[3] = a[2] + 1.0;
+     //   a[4] = a[3] + 1.0;
+     //   a[5] = a[4] + 1.0;
+     // end EquationFor1;
+     
+     // origfclass EquationFor1
+     //   Real a[1];
+     //   Real a[2];
+     //   Real a[3];
+     //   Real a[4];
+     //   Real a[5];
+     // equation
+     //   a[1] = 1.0;
+     //   a[2] = a[2-1] + 1.0;
+     //   a[3] = a[3-1] + 1.0;
+     //   a[4] = a[4-1] + 1.0;
+     //   a[5] = a[5-1] + 1.0;
+     // origend EquationFor1;
+
+
+File: modtest.info,  Node: EquationFor2,  Next: EquationFor3,  Prev: EquationFor1,  Up: Test Cases
+
+EquationFor2
+============
+
+     // name:     EquationFor2
+     // keywords: equation,array
+     // status:   correct
+     //
+     // Test for loops in equations.
+     //
+     
+     class EquationFor2
+       constant Integer N = 4;
+       Real a[N];
+     equation
+       a[1] = 1.0;
+       for i in 1:N-1 loop
+         a[i+1] = a[i] + 1.0;
+       end for;
+     end EquationFor2;
+     // fclass EquationFor2
+     // constant Integer N = 4;
+     // Real a[1];
+     // Real a[2];
+     // Real a[3];
+     // Real a[4];
+     // equation
+     //   a[1] = 1.0;
+     //   a[2] = a[1] + 1.0;
+     //   a[3] = a[2] + 1.0;
+     //   a[4] = a[3] + 1.0;
+     // end EquationFor2;
+
+
+File: modtest.info,  Node: EquationFor3,  Next: EquationIf1,  Prev: EquationFor2,  Up: Test Cases
+
+EquationFor3
+============
+
+     // name:     EquationFor3
+     // keywords: equation,array
+     // status:   correct
+     //
+     // Test for loops in equations.  The size is a parameter.
+     //
+     
+     class EquationFor3
+       parameter Integer N = 4;
+       Real a[N];
+     equation
+       a[1] = 1.0;
+       for i in 1:N-1 loop
+         a[i+1] = a[i] + 1.0;
+       end for;
+     end EquationFor3;
+     
+     // fclass EquationFor3
+     // parameter Integer N = 4;
+     // Real a[1];
+     // Real a[2];
+     // Real a[3];
+     // Real a[4];
+     // equation
+     //   a[1] = 1.0;
+     //   a[2] = a[1] + 1.0;
+     //   a[3] = a[2] + 1.0;
+     //   a[4] = a[3] + 1.0;
+     // end EquationFor3;
+
+
+File: modtest.info,  Node: EquationIf1,  Next: EquationIf1,  Prev: EquationFor3,  Up: Test Cases
+
+EquationIf1
+===========
+
+     // name:     EquationIf1
+     // keywords: equation
+     // status:   correct
+     //
+     // Testing `if' clauses in equations.
+     //
+     
+     class EquationIf1
+       parameter Boolean b = true;
+       Real x;
+     equation
+       if b then
+         x = 1.0;
+       else
+         x = 2.0;
+       end if;
+     end EquationIf1;
+     
+     // fclass EquationIf1
+     // parameter Boolean b = true;
+     // Real x;
+     // equation
+     //   x = 1.0;
+     // end EquationIf1;
+
+
+File: modtest.info,  Node: EquationIf1,  Next: EquationIf2,  Prev: EquationIf1,  Up: Test Cases
+
+EquationIf1
+===========
+
+     // name:     EquationIf1
+     // keywords: equation
+     // status:   correct
+     //
+     // Testing `if' clauses in equations.
+     //
+     
+     class EquationIf1
+       parameter Boolean b = true;
+       Real x;
+     equation
+       if b then
+         x = 1.0;
+       else
+         x = 2.0;
+       end if;
+     end EquationIf1;
+     
+     // fclass EquationIf1
+     // parameter Boolean b = true;
+     // Real x;
+     // equation
+     //   x = 1.0;
+     // end EquationIf1;
+
+
+File: modtest.info,  Node: EquationIf2,  Next: EquationIf3,  Prev: EquationIf1,  Up: Test Cases
+
+EquationIf2
+===========
+
+     // name:     EquationIf2
+     // keywords: equation
+     // status:   correct
+     //
+     // Testing `if' clauses in equations.
+     // The branches need not have the same
+     // number of equations if the condition
+     // is a parameter-expression.
+     
+     class EquationIf2
+       parameter Boolean b = false;
+       Real x;
+     equation
+       if b then
+         assert(true,"Should not happen");
+       else
+         x = 2.0;
+       end if;
+     end EquationIf2;
+     
+     // fclass EquationIf2
+     //   parameter Boolean b;
+     //   Real x;
+     // equation
+     //   b = false;
+     //   x = 2.0;
+     // end EquationIf2;
+
+
+File: modtest.info,  Node: EquationIf3,  Next: EquationIf4,  Prev: EquationIf2,  Up: Test Cases
+
+EquationIf3
+===========
+
+     // name:     EquationIf3
+     // keywords: equation
+     // status:   correct
+     //
+     // Testing `if' clauses in equations.
+     //
+     
+     class EquationIf3
+       parameter Boolean b = false;
+       Real x;
+     equation
+       if b then
+         x = 1.0;
+       elseif not b then
+         x = 2.0;
+       else
+         x = 3.0;
+       end if;
+     end EquationIf3;
+     
+     // fclass EquationIf3
+     // parameter Boolean b = false;
+     // Real x;
+     // equation
+     //   x = 2.0;
+     // end EquationIf3;
+
+
+File: modtest.info,  Node: EquationIf4,  Next: Error,  Prev: EquationIf3,  Up: Test Cases
+
+EquationIf4
+===========
+
+     // name:     EquationIf4
+     // keywords: equation
+     // status:   correct
+     //
+     // Testing `if' clauses in equations.
+     // The condition may be a non-parameter expresion if all
+     // branches have the same number of equations.
+     
+     class EquationIf4
+       Real p = 10*time;
+       Real x;
+     equation
+       if p<0.0 then
+         x = 1.0;
+       elseif p<10.0 then
+         x = 2.0;
+       elseif p > 10.0 then
+         x = 3.0;
+       else
+         x = 4.0;
+       end if;
+     end EquationIf4;
+     
+     // fclass EquationIf4
+     //   parameter Real p;
+     //   Real x;
+     // equation
+     //   p = 10.0*time;
+     //   if p<0.0 then
+     //    x = 1.0;
+     //  elseif p<10.0 then
+     //    x = 2.0;
+     //  elseif p > 10.0 then
+     //    x = 3.0;
+     //  else
+     //    x = 4.0;
+     //  end if;
+     // end EquationIf4;
+
+
+File: modtest.info,  Node: Error,  Next: in,  Prev: EquationIf4,  Up: Test Cases
+
+Error
+=====
+
+
+
+File: modtest.info,  Node: in,  Next: testcase:,  Prev: Error,  Up: Test Cases
+
+in
+==
+
+
+
+File: modtest.info,  Node: testcase:,  Next: Import4.mo,  Prev: in,  Up: Test Cases
+
+testcase:
+=========
+
+
+
+File: modtest.info,  Node: Import4.mo,  Next: Error,  Prev: testcase:,  Up: Test Cases
+
+Import4.mo
+==========
+
+
+
+File: modtest.info,  Node: Error,  Next: in,  Prev: Import4.mo,  Up: Test Cases
+
+Error
+=====
+
+
+
+File: modtest.info,  Node: in,  Next: testcase:,  Prev: Error,  Up: Test Cases
+
+in
+==
+
+
+
+File: modtest.info,  Node: testcase:,  Next: InnerClass1.mo,  Prev: in,  Up: Test Cases
+
+testcase:
+=========
+
+
+
+File: modtest.info,  Node: InnerClass1.mo,  Next: Error,  Prev: testcase:,  Up: Test Cases
+
+InnerClass1.mo
+==============
+
+
+
+File: modtest.info,  Node: Error,  Next: in,  Prev: InnerClass1.mo,  Up: Test Cases
+
+Error
+=====
+
+
+
+File: modtest.info,  Node: in,  Next: testcase:,  Prev: Error,  Up: Test Cases
+
+in
+==
+
+
+
+File: modtest.info,  Node: testcase:,  Next: InnerOuter1.mo,  Prev: in,  Up: Test Cases
+
+testcase:
+=========
+
+
+
+File: modtest.info,  Node: InnerOuter1.mo,  Next: Extends1,  Prev: testcase:,  Up: Test Cases
+
+InnerOuter1.mo
+==============
+
+
+
+File: modtest.info,  Node: Extends1,  Next: Faculty1,  Prev: InnerOuter1.mo,  Up: Test Cases
+
+Extends1
+========
+
+     // name:     Extends1
+     // keywords: extends
+     // status:   correct
+     //
+     // Testing extends clauses
+     
+     class A
+       Real a = 1.0;
+     end A;
+     
+     class B
+       extends A(a = 2.0);
+       Real b = 2.0;
+     end B;
+     
+     model Extends1
+       B x;
+     end Extends1;
+     
+     // fclass Extends1
+     //   Real x.a;
+     //   Real x.b;
+     // equation
+     //   x.a = 2.0;
+     //   x.b = 2.0;
+     // end Extends1;
+
+
+File: modtest.info,  Node: Faculty1,  Next: Faculty2,  Prev: Extends1,  Up: Test Cases
+
+Faculty1
+========
+
+     // name:     Faculty1
+     // keywords: algorithm,scoping
+     // status:   correct
+     //
+     // Example for a recursive function. The function 'Faculty' must be
+     // known during its definition in order to be called from itself.
+     
+     function Faculty1
+       input Integer x;
+       output Integer y;
+     algorithm
+       y := if x > 0 then x*Faculty1(x-1) else 1;
+     end Faculty1;
+
+
+File: modtest.info,  Node: Faculty2,  Next: Faculty3,  Prev: Faculty1,  Up: Test Cases
+
+Faculty2
+========
+
+     // name:     Faculty2
+     // keywords: algorithm
+     // status:   correct
+     //
+     // Definition of faculty using a for loop. The for loop can not be
+     // unrolled.
+     //
+     
+     function Faculty2
+       input Integer x;
+       output Integer y;
+     algorithm
+       y := 1;
+       for i in 2:x loop
+         y := i * y;
+       end for;
+     end Faculty2;
+     
+     // fclass Faculty2
+     // input Integer x;
+     // output Integer y;
+     // algorithm
+     //   y := 1;
+     //   for i in 2:x loop
+     //     y := i * y;
+     //   end for;
+     // end Faculty2;
+
+
+File: modtest.info,  Node: Faculty3,  Next: Faculty4,  Prev: Faculty2,  Up: Test Cases
+
+Faculty3
+========
+
+     // name:     Faculty3
+     // keywords: algorithm
+     // status:   correct
+     //
+     // Definition of faculty using a while loop. The while loop can not be
+     // unrolled.
+     //
+     
+     function Faculty3
+       input Integer x;
+       output Integer y;
+     protected
+       Integer i;
+     algorithm
+       y := 1;
+       i := 2;
+       while (i <= x) loop
+         y := i * y;
+         i := i + 1;
+       end while;
+     end Faculty3;
+     
+     // fclass Faculty3
+     // input Integer x;
+     // output Integer y;
+     // Integer i;
+     // algorithm
+     //   y := 1;
+     //   i := 2;
+     //   while i <= x loop
+     //     y := i * y;
+     //     i := i + 1;
+     //   end while;
+     // end Faculty3;
+
+
+File: modtest.info,  Node: Faculty4,  Next: Function1,  Prev: Faculty3,  Up: Test Cases
+
+Faculty4
+========
+
+     // name:     Faculty4
+     // keywords: equation,array
+     // status:   correct
+     //
+     // Definition of faculty using equations. It is a matter of
+     // quality of implementation if the model can be treated with
+     // 'x' being a parameter. In the expected result given here 'x'
+     // is treated constant.
+     //
+     
+     function multiply
+       input Real x;
+       input Real y;
+       output Real z;
+     algorithm
+       z:=x*y;
+     end multiply;
+     
+     block Faculty4
+       parameter Integer x(min = 0) = 4;
+       output Integer y;
+     protected
+       Integer work[x];
+     equation
+       if x < 2 then
+         y = 1;
+       else
+         y = work[x];
+         work[x:-1:2] = multiply(work[x-1:-1:1],(ones(x-1) + work[x-1:-1:1]));
+         work[1] = 1;
+       end if;
+     end Faculty4;
+     
+     // fclass Faculty4
+     //   parameter Integer x;
+     //   parameter Integer x.min;
+     //   Integer work[x];
+     //   output Integer y;
+     // equation
+     //   x = 4;
+     //   x.min = 0;
+     //   if x < 2 then
+     //     y = 1;
+     //   else
+     //     y = work[4];
+     //     work[4] = work[3] * (1 + work[3]);
+     //     work[3] = work[2] * (1 + work[2]);
+     //     work[2] = work[1] * (1 + work[1]);
+     //     work[1] = 1;
+     //   end if;
+     //   assert(x >= x.min);
+     // end Faculty4;
+
+
+File: modtest.info,  Node: Function1,  Next: Function2,  Prev: Faculty4,  Up: Test Cases
+
+Function1
+=========
+
+     // name:     Function1
+     // keywords: function
+     // status:   correct
+     //
+     // This tests basic function functionality
+     
+     function f
+       input Real x;
+       output Real r;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function1
+       Real x, y, z;
+     equation
+       x = f(z);
+       y = f(z);
+     end Function1;
+     
+     // fclass Function1
+     // Real x;
+     // Real y;
+     // Real z;
+     // equation
+     //   x = f(z);
+     //   y = f(z);
+     // end Function1;
+
+
+File: modtest.info,  Node: Function2,  Next: Function3,  Prev: Function1,  Up: Test Cases
+
+Function2
+=========
+
+     // name:     Function2
+     // keywords: function
+     // status:   incorrect
+     //
+     // This tests for illegal parts of a function definition.
+     //
+     
+     function f
+       input Real x;
+       output Real r;
+       Real toomuch;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function2
+       Real x, z;
+     equation
+       x = f(z);
+     end Function2;
+
+
+File: modtest.info,  Node: Function3,  Next: Function4,  Prev: Function2,  Up: Test Cases
+
+Function3
+=========
+
+     // name:     Function3
+     // keywords: function
+     // status:   incorrect
+     //
+     // This tests for illegal parts of a function definition.
+     //
+     
+     function Function3
+       input Real x;
+       output Real y;
+       type Voltage = Real;
+     algorithm
+       y := x;
+     end Function3;
+
+
+File: modtest.info,  Node: Function4,  Next: Function5,  Prev: Function3,  Up: Test Cases
+
+Function4
+=========
+
+     // name:     Function4
+     // keywords: function
+     // status:   incorrect
+     //
+     // This tests for illegal parts of a function definition.
+     //
+     
+     function f
+       input Real x;
+       output Real y;
+       constant Integer n = 5;
+     algorithm
+       y := x;
+     end f;
+     
+     model Function4
+       Real x, y;
+     equation
+       x = f(y);
+     end Function4;
+
+
+File: modtest.info,  Node: Function5,  Next: Function5,  Prev: Function4,  Up: Test Cases
+
+Function5
+=========
+
+     // name:     Function5
+     // keywords: function,unknown
+     // status:   correct
+     //
+     // Decarling a function as `class' seems to be allowed.  I wonder if
+     // any implementation will allow this...
+     //
+     
+     function f
+       input Real x;
+       output Real y;
+     algorithm
+       y := x * 2.0;
+     end f;
+     
+     model Function5
+       Real a,b;
+     equation
+       a = f(b);
+     end Function5;
+     
+     // fclass Function5
+     //   Real a;
+     //   Real b;
+     // equation
+     //   a = f(b);
+     // end Function5;
+
+
+File: modtest.info,  Node: Function5,  Next: Function6,  Prev: Function5,  Up: Test Cases
+
+Function5
+=========
+
+     // name:     Function5
+     // keywords: function,unknown
+     // status:   correct
+     //
+     // Decarling a function as `class' seems to be allowed.  I wonder if
+     // any implementation will allow this...
+     //
+     
+     function f
+       input Real x;
+       output Real y;
+     algorithm
+       y := x * 2.0;
+     end f;
+     
+     model Function5
+       Real a,b;
+     equation
+       a = f(b);
+     end Function5;
+     
+     // fclass Function5
+     //   Real a;
+     //   Real b;
+     // equation
+     //   a = f(b);
+     // end Function5;
+
+
+File: modtest.info,  Node: Function6,  Next: Function7,  Prev: Function5,  Up: Test Cases
+
+Function6
+=========
+
+     // name:     Function6
+     // keywords: function,type
+     // status:   correct
+     //
+     // This tests basic function functionality
+     //
+     // OBS!
+     // The function f should be represented in the flatmodelica.
+     
+     function f
+       input Real x;
+       output Real r;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function6
+       Real x;
+       Integer z;
+     equation
+       x = f(z);
+     end Function6;
+     
+     // fclass Function6
+     //   Real    x;
+     //   Integer z;
+     // equation
+     //   x = f(Real(z));
+     // end Function6;
+
+
+File: modtest.info,  Node: Function7,  Next: Function8,  Prev: Function6,  Up: Test Cases
+
+Function7
+=========
+
+     // name:     Function7
+     // keywords: function
+     // status:   incorrect
+     //
+     // This tests basic function functionality
+     //
+     
+     function f
+       input Real x;
+       output Real r;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function7
+       String x;
+       Real z;
+     equation
+       x = f(z);
+     end Function7;
+
+
+File: modtest.info,  Node: Function8,  Next: Function9,  Prev: Function7,  Up: Test Cases
+
+Function8
+=========
+
+     // name:     Function8
+     // keywords: function
+     // status:   incorrect
+     //
+     // This tests basic function functionality
+     //
+     
+     function f
+       input Real x;
+       output Real r;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function8
+       Real x;
+       String z;
+     equation
+       x = f(z);
+     end Function8;
+
+
+File: modtest.info,  Node: Function9,  Next: Import1,  Prev: Function8,  Up: Test Cases
+
+Function9
+=========
+
+     // name:     Function9
+     // keywords: function
+     // status:   correct
+     //
+     // This tests for illegal parts of a function definition.
+     //
+     
+     function f
+       input Real x;
+       output Real r;
+     protected
+       Real nottoomuch;
+     algorithm
+       r := 2.0 * x;
+     end f;
+     
+     model Function9
+       Real x, z;
+     equation
+       x = f(z);
+     end Function9;
+     
+     // fclass Function9
+     //   Real    x;
+     //   Real    z;
+     // equation
+     //   x = f(z);
+     // end Function9;
+
+
+File: modtest.info,  Node: Import1,  Next: Import2,  Prev: Function9,  Up: Test Cases
+
+Import1
+=======
+
+     // name:     Import1
+     // keywords: import
+     // status:   correct
+     //
+     // Demonstrating various form of import.
+     //
+     // Note that a qualified import takes
+     // precendence over a unqualified import.
+     //
+     
+     package A
+       package B
+         partial model C
+           Real x;
+         end C;
+         model D
+           extends C(x=5);
+         end D;
+       end B;
+       package B1
+         model C
+           extends B.C(x=4);
+         end C;
+       end B1;
+       package B2
+         model C
+           extends B.C(x=7);
+         end C;
+         model E=B.C(x=6);
+       end B2;
+     end A;
+     
+     class Import1
+       import A.B.*;
+       import A.B2.*;
+       import A.B1.C;
+       import MyC=A.B2.C;
+       C c;
+       D d;
+       E e;
+       MyC myc;
+     end Import1;
+     
+     // fclass Import1
+     // Real c.x;
+     // Real d.x;
+     // Real e.x;
+     // Real myc.x;
+     // equation
+     //   c.x = 4.0;
+     //   d.x = 5.0;
+     //   e.x = 6.0;
+     //   myc.x = 7.0;
+     // end Import1;
+     
+     // origfclass Import1
+     //   Real c.x=4; // A.B1.C via import A.B1.C
+     //   Real d.x=5; // A.B.D via import A.B.*;
+     //   Real e.x=6; // A.B2.C via import A.B2.*;
+     //   Real myc.x=7; // A.B2.E via import MyC=A.B2.C;
+
+
+File: modtest.info,  Node: Import2,  Next: Import3,  Prev: Import1,  Up: Test Cases
+
+Import2
+=======
+
+     // name:     Import2
+     // keywords: import
+     // status:   incorrect
+     //
+     // Import is not inherited through extends.
+     //
+     
+     package A
+       package B
+         partial model C
+           Real x;
+         end C;
+         model D
+           extends C(x=5);
+         end D;
+       end B;
+       package B1
+         model C
+           extends B.C(x=4);
+         end C;
+       end B1;
+       package B2
+         model C
+           extends B.C(x=7);
+         end C;
+         model E=B.C(x=6);
+       end B2;
+     end A;
+     
+     class Import1
+       import A.B.*;
+       import A.B2.*;
+       import A.B1.C;
+       import MyC=A.B2.C;
+     end Import1;
+     
+     class Import2
+       extends Import1;
+       C c;
+       D d;
+       E e;
+       MyC myc;
+     end Import2;
+
+
+File: modtest.info,  Node: Import3,  Next: Import4,  Prev: Import2,  Up: Test Cases
+
+Import3
+=======
+
+     // name:     Import3
+     // keywords: import
+     // status:   correct
+     //
+     // Import in enclosing scopes is valid.
+     
+     package A
+       package B
+         partial model C
+           Real x;
+         end C;
+         model D
+           extends C(x=5);
+         end D;
+       end B;
+       package B1
+         model C
+           extends B.C(x=4);
+         end C;
+       end B1;
+       package B2
+         model C
+           extends B.C(x=7);
+         end C;
+         model E=B.C(x=6);
+       end B2;
+     end A;
+     
+     package B
+       import A.B.*;
+       import A.B2.*;
+       import A.B1.C;
+       import MyC=A.B2.C;
+       package A
+       model F
+         C c;
+         D d;
+         E e;
+         MyC myc;
+       end F;
+       end A;
+     end B;
+     
+     model Import3
+       extends B.A.F;
+     end Import3;
+     
+     // fclass Import3
+     //   Real c.x=4; // A.B1.C via import A.B1.C
+     //   Real d.x=5; // A.B.D via import A.B.*;
+     //   Real e.x=6; // A.B2.C via import A.B2.*;
+     //   Real myc.x=7; // A.B2.E via import MyC=A.B2.C;
+
+
+File: modtest.info,  Node: Import4,  Next: InnerClass1,  Prev: Import3,  Up: Test Cases
+
+Import4
+=======
+
+     // name:     Import4
+     // keywords: import
+     // status:   correct
+     //
+     // Import in enclosing scopes is valid.
+     
+     package A
+       package B
+         partial model C
+           Real x;
+         end C;
+         model D
+           extends C(x=5);
+         end D;
+       end B;
+       package B1
+         model C
+           extends B.C(x=4);
+         end C;
+       end B1;
+       package B2
+         model C
+           extends B.C(x=7);
+         end C;
+         model E=B.C(x=6);
+       end B2;
+     end A;
+     
+     package B
+       import A.B.*;
+       import A.B2.*;
+       import A.B1.C;
+       import MyC=A.B2.C;
+       package A
+       model C=MyC(x=1);
+       model F
+         C c;
+         D d;
+         E e;
+         MyC myc;
+       end F;
+       end A;
+     end B;
+     
+     model Import4
+       extends B.A.F;
+     end Import4;
+     
+     // fclass Import4
+     //   Real c.x=1; //   B.A.C takes precedence.
+     //   Real e.x=6; // A.B2.C via import A.B2.*;
+     //   Real myc.x=7; // A.B2.E via import MyC=A.B2.C;
+
+
+File: modtest.info,  Node: InnerClass1,  Next: InnerOuter1,  Prev: Import4,  Up: Test Cases
+
+InnerClass1
+===========
+
+     // name:     InnerClass1
+     // keywords: dynamic scoping
+     // status:   correct
+     //
+     // This example demonstrates how dynamic
+     // scoping can be used both for models and for functions.
+     //
+     
+     partial function foo
+       input Real x;
+       output Real y;
+     end foo;
+     
+     partial model bar
+       parameter Real p;
+     end bar;
+     
+     model A
+       outer function myfoo=foo;
+       Real x;
+     equation
+       x=myfoo(time);
+     end A;
+     
+     model B
+       outer model mybar=bar;
+       mybar x(p=2);
+       A a;
+     end B;
+     
+     model InnerClass1
+       inner function myfoo
+         extends foo;
+       algorithm
+         y:=sin(x);
+       end myfoo;
+       inner model mybar
+         extends bar;
+         Real x;
+       equation
+         der(x)=p;
+       end mybar;
+       B b;
+       A a;
+     end InnerClass1;
+     
+     // flatmodel InnerClass1
+     //  parameter Real b.x.p = 2;
+     //  Real b.x.x;
+     //  Real b.a.x;
+     //  Real a.x;
+     //equation
+     //  der(b.x.x) = b.x.p;
+     //  b.a.x = InnerClass1.myfoo(time);
+     //  a.x = InnerClass1.myfoo(time);
+
+
+File: modtest.info,  Node: InnerOuter1,  Next: InnerOuter2,  Prev: InnerClass1,  Up: Test Cases
+
+InnerOuter1
+===========
+
+     // name:     InnerOuter1
+     // keywords: dynamic scope, lookup
+     // status:   correct
+     //
+     //  components with inner prefix references an outer component with
+     //  the same name and one variable is generated for all of them.
+     //
+     
+     class A
+     outer Real T0;
+     end A;
+     class B
+     inner Real T0=100;
+     A a1, a2; // B.T0, B.a1.T0 and B.a2.T0 is the same variable
+     end B;
+     
+     // fclass B
+     //   Real TO;
+     // equation
+     //   T0 = 100;
+     // end B;
+
+
+File: modtest.info,  Node: InnerOuter2,  Next: Integer2Real,  Prev: InnerOuter1,  Up: Test Cases
+
+InnerOuter2
+===========
+
+     // name:     InnerOuter2
+     // keywords: dynamic scope, lookup
+     // status:   correct
+     //
+     //  components with inner prefix references an outer component with
+     //  the same name and one variable is generated for all of them.
+     //
+     class A
+       outer Real TI;
+       class B
+         Real TI;
+         class C
+           Real TI;
+           class D
+     	outer Real TI; //
+           end D;
+           D d;
+         end C;
+         C c;
+       end B;
+       B b;
+     end A;
+     class E
+       inner Real TI;
+       class F
+         inner Real TI;
+         class G
+           Real TI;
+           class H
+     	A a;
+           end H;
+           H h;
+         end G;
+         G g;
+       end F;
+       F f;
+     end E;
+     class I
+       inner Real TI;
+       E e;
+       // e.f.g.h.a.TI, e.f.g.h.a.b.c.d.TI, and e.f.TI is the same variable
+       // But e.f.TI, e.TI and TI are different variables
+       A a; // a.TI, a.b.c.d.TI, and TI is the same variable
+     end I;
+     
+     // fclass I
+     // Real TI;
+     // Real e.TI;
+     // Real e.f.TI;
+     // Real e.f.g.TI;
+     // Real e.f.g.h.a.b.TI;
+     // Real e.f.g.h.a.b.c.TI;
+     // Real a.b.TI;
+     // Real a.b.c.TI;
+     // end I;
+
+
+File: modtest.info,  Node: Integer2Real,  Next: Lookup1,  Prev: InnerOuter2,  Up: Test Cases
+
+Integer2Real
+============
+
+     // name:     Integer2Real
+     // keywords: type
+     // status:   correct
+     //
+     // Automatic conversion from Integer to Real.
+     //
+     
+     class Integer2Real
+       Integer n;
+       Real a;
+     equation
+       n = 5;
+       a = n / 2;
+     end Integer2Real;
+     
+     // fclass Integer2Real
+     // Integer n;
+     // Real a;
+     // equation
+     //   n = 5;
+     //   a = Real(n) / 2.0;
+     // end Integer2Real;
+
+
+File: modtest.info,  Node: Lookup1,  Next: Lookup2,  Prev: Integer2Real,  Up: Test Cases
+
+Lookup1
+=======
+
+     // name:     Lookup1
+     // keywords: scoping
+     // status:   correct
+     //
+     // Names are looked up in a partially defined class.
+     //
+     
+     class Lookup1
+       constant Real a = 3.0;
+       class B
+         Real c = a;
+       end B;
+       B b;
+     end Lookup1;
+     
+     // fclass Lookup1
+     //   constant Real a;
+     //   Real b.c;
+     // equation
+     //   a = 3.0;
+     //   b.c = a;
+     // end Lookup1;
+
+
+File: modtest.info,  Node: Lookup2,  Next: Lookup3,  Prev: Lookup1,  Up: Test Cases
+
+Lookup2
+=======
+
+     // name:     Lookup2
+     // keywords: scoping
+     // status:   correct
+     //
+     // Note that in order to use Lookup2Package.a
+     // Either Lookup2Package must satisfy the requirements of
+     // a package
+     // or a must be an encapsulated element
+     // (Modelica 1.4 spec 3.1.1.2)
+     
+     package Lookup2Package
+       constant Real a = 3.0;
+       class B
+         Real c = Lookup2Package.a;
+       end B;
+     end Lookup2Package;
+     
+     model Lookup2
+       extends Lookup2Package.B;
+     end Lookup2;
+     
+     // fclass Lookup2
+     //   Real a;
+     //   Real c.b
+     // equation
+     //   a = 3.0;
+     //   b.c = a;
+     // end Lookup2;
+
+
+File: modtest.info,  Node: Lookup3,  Next: Lookup4,  Prev: Lookup2,  Up: Test Cases
+
+Lookup3
+=======
+
+     // name:     Lookup3
+     // keywords: scoping
+     // status:   incorrect
+     //
+     // Non-constants in an outer scope can not be referred to.
+     //
+     
+     class Lookup3
+       Real a = 3.0;
+       class B
+         Real c = a;
+       end B;
+       B b;
+     end Lookup3;
+
+
+File: modtest.info,  Node: Lookup4,  Next: Lookup5,  Prev: Lookup3,  Up: Test Cases
+
+Lookup4
+=======
+
+     // name:     Lookup4
+     // keywords: scoping
+     // status:   correct
+     //
+     // Constants can be referred to using names of previously defined
+     // classes.
+     //
+     // Note that Container must satisfy the requirement of a package.
+     
+     class Container
+       constant Real a = 3.0;
+     end Container;
+     
+     class Lookup4
+       Real b = Container.a;
+     end Lookup4;
+     
+     // fclass Lookup4
+     //   constant Real Container.a;
+     //   Real b
+     // equation
+     //   Container.a = 3.0;
+     //   b = Container.a;
+     // end Lookup4;
+
+
+File: modtest.info,  Node: Lookup5,  Next: Lookup6,  Prev: Lookup4,  Up: Test Cases
+
+Lookup5
+=======
+
+     // name:     Lookup5
+     // keywords: scoping
+     // status:   correct
+     //
+     // Modelica no longer requires declare before use.
+     // Thus the = -a refers to the 'a' declared
+     // at the same point and not to the 'a' in the
+     // enclosing scope.
+     
+     class Lookup5
+       constant Real a = 3.0;
+       class B
+         Real a = -a;
+       end B;
+       B b;
+     end Lookup5;
+     
+     // fclass Lookup5
+     //   constant Real a;
+     //   Real b.a;
+     // equation
+     //   a = 3.0;
+     //   b.a = -b.a;
+     // end Lookup5;
+
+
+File: modtest.info,  Node: Lookup6,  Next: Lookup7,  Prev: Lookup5,  Up: Test Cases
+
+Lookup6
+=======
+
+     // name:     Lookup6
+     // keywords: scoping
+     // status:   correct
+     //
+     // The constant 'a' is hidden in class 'B' after the declaration
+     // of 'B.a'.
+     //
+     
+     class Lookup6
+       constant Real a = 3.0;
+       class B
+         Real a;
+       equation
+         a = -a;
+       end B;
+       B b;
+     end Lookup6;
+     
+     // fclass Lookup6
+     // constant Real a = 3.0;
+     // Real b.a;
+     // equation
+     //   b.a = -b.a;
+     // end Lookup6;
+
+
+File: modtest.info,  Node: Lookup7,  Next: Modification1,  Prev: Lookup6,  Up: Test Cases
+
+Lookup7
+=======
+
+     // name:     Lookup7
+     // keywords: scoping
+     // status:   incorrect
+     //
+     // Modelica uses lexical scoping.
+     //
+     
+     class A
+       Real x = y;
+     end A;
+     
+     class Lookup7
+       Real y;
+       A a;
+     end Lookup7;
+
+
+File: modtest.info,  Node: Modification1,  Next: Modification10,  Prev: Lookup7,  Up: Test Cases
+
+Modification1
+=============
+
+     // name:     Modification1
+     // keywords: modification
+     // status:   correct
+     //
+     // This file tests simple modifications of variables
+     //
+     
+     //type Real = RealType;
+     
+     model Motor
+     
+       model Foo
+         parameter Real q;
+       end Foo;
+     
+       parameter Real j = 1.0;
+       Foo f(q=2.0);
+     
+     end Motor;
+     
+     model Modification1
+       Motor m(j = 3.0);
+       Motor n(f(q=5.0));
+     end Modification1;
+     
+     // fclass Modification1
+     // parameter Real m.j = 3.0;
+     // parameter Real m.f.q = 2.0;
+     // parameter Real n.j = 1.0;
+     // parameter Real n.f.q = 5.0;
+     // end Modification1;
+
+
+File: modtest.info,  Node: Modification10,  Next: Modification11,  Prev: Modification1,  Up: Test Cases
+
+Modification10
+==============
+
+     // name:     Modification10
+     // keywords: modification
+     // status:   correct
+     //
+     //
+     
+     class B
+       Real x = 1.0;
+     end B;
+     
+     class C
+       B b;
+     end C;
+     
+     class A
+       replaceable class B2=B;
+       C c;
+       B2 b;
+     end A;
+     
+     class Modification10
+       A a(redeclare class B2=B(x = 17.0));
+     end Modification10;
+     
+     
+     // fclass Modification10
+     // Real a.c.b.x;
+     // Real a.b.x;
+     // equation
+     //   a.c.b.x = 1.0;
+     //   a.b.x = 17.0;
+     // end Modification10;
+
+
+File: modtest.info,  Node: Modification11,  Next: Modification2,  Prev: Modification10,  Up: Test Cases
+
+Modification11
+==============
+
+     // name:     Modification11
+     // keywords: modification
+     // status:   incorrect
+     //
+     //
+     // Illegal since an element may not have
+     // the same name as its type identifier
+     // (Modelica 1.4 spec 3.1.2.4).
+     // Apart from that it is legal.
+     //
+     // Compare with Modification2.
+     
+     class B
+       Real x = 1.0;
+     end B;
+     
+     class A
+       B b;
+       B B;
+     end A;
+     
+     class Modification11
+       A a(B(x = 17.0));
+     end Modification11;
+     
+     // fclass Modification11
+     //   Real    a.c.b.x;
+     //   Real    a.b.x;
+     // equation
+     //   a.b.x = 1.0;
+     //   a.B.x = 17.0;
+     // end Modification11;
+
+
+File: modtest.info,  Node: Modification2,  Next: Modification3,  Prev: Modification11,  Up: Test Cases
+
+Modification2
+=============
+
+     // name:     Modification2
+     // keywords: modification
+     // status:   correct
+     //
+     // Modifying a parameter in a local class is allowed.
+     
+     
+     class B
+       class A
+         parameter Real p=1.0;
+       end A;
+       A a;
+     end B;
+     
+     class Modification2
+       B b(A(p=2.0));
+     end Modification2;
+     
+     // fclass Modification2
+     // parameter Real b.a.p = 2.0;
+     // end Modification2;
+
+
+File: modtest.info,  Node: Modification3,  Next: Modification4,  Prev: Modification2,  Up: Test Cases
+
+Modification3
+=============
+
+     // name:     Modification3
+     // keywords: modification
+     // status:   correct
+     
+     class A
+       class AA
+         parameter Real p=1.0;
+       end AA;
+     end A;
+     
+     class B
+       replaceable class A=A.AA;
+       A a;
+       A a2;
+     end B;
+     
+     class Modification3
+       B b(redeclare class A=A.AA(p=2),a2(p=4));
+     end Modification3;
+     
+     // fclass Modification3
+     //   parameter Real b.a.p=2.0;
+     //   parameter Real b.a2.p=4;
+     // end Modification3;
+
+
+File: modtest.info,  Node: Modification4,  Next: Modification5,  Prev: Modification3,  Up: Test Cases
+
+Modification4
+=============
+
+     // name:     Modification4
+     // keywords: modification
+     // status:   incorrect
+     //
+     // Error since no p inside A.
+     
+     class A
+       Integer x = 1;
+     end A;
+     
+     class B
+       A a;
+     end B;
+     
+     class Modification4
+       B b(a(p=2));
+     end Modification4;
+     
+     // fclass Modification4;
+     // equation
+     //   b.a.x = 1
+     // end Modification4;
+
+
+File: modtest.info,  Node: Modification5,  Next: Modification6,  Prev: Modification4,  Up: Test Cases
+
+Modification5
+=============
+
+     // name:     Modification5
+     // keywords: modification,scoping
+     // status:   correct
+     //
+     // By removing the declare-before-use this is legal in Modelica.
+     // Note that declaration equation are seen as equation and
+     // not as assignments.
+     
+     class A
+       Real x = 17 + 2*x;
+     end A;
+     
+     class Modification5
+       extends A;
+     end Modification5;
+     
+     // fclass Modification5
+     // equation
+     //   x = real(17) +2*x
+     // end Modification5;
+
+
+File: modtest.info,  Node: Modification6,  Next: Modification7,  Prev: Modification5,  Up: Test Cases
+
+Modification6
+=============
+
+     // name:     Modification6
+     // keywords: modification
+     // status:   correct
+     //
+     // This file tests modification precedence.
+     //
+     
+     model M
+       replaceable model Foo
+         parameter Real q = 1.0;
+       end Foo;
+       Foo f(q=2.0);
+     end M;
+     
+     model Modification6
+       model myFoo parameter Real q=5;end myFoo;
+       M m1(redeclare model Foo=myFoo(q=3.0), f(q=4.0));
+       M m2(f(q=4.0), redeclare model Foo=myFoo(q=3.0));
+     end Modification6;
+     
+     
+     // fclass Modification6
+     // parameter Real m1.f.q = 4.0;
+     // parameter Real m2.f.q = 4.0;
+     // end Modification6;
+
+
+File: modtest.info,  Node: Modification7,  Next: Modification8,  Prev: Modification6,  Up: Test Cases
+
+Modification7
+=============
+
+     // name:     Modification7
+     // keywords: modification
+     // status:   correct
+     //
+     // This test checks that two modifications of subsubcomponents are both
+     // taken care of.
+     //
+     
+     class Modification7
+       class A
+         Real x,y;
+       end A;
+       class B
+         A a;
+       end B;
+     
+       // This could be written as
+       //   B b(a(x = 1.0, y = 2.0))
+       // This tests whether it works in the following way too.
+       B b(a.x = 1.0, a.y = 2.0);
+     end Modification7;
+     
+     // fclass Modification7
+     //   Real b.a.x;
+     //   Real b.a.y;
+     // equation
+     //   b.a.x = 1.0;
+     //   b.a.y = 2.0;
+     // end Modification7;
+
+
+File: modtest.info,  Node: Modification8,  Next: Modification9,  Prev: Modification7,  Up: Test Cases
+
+Modification8
+=============
+
+     // name:     Modification8
+     // keywords: modification
+     // status:   incorrect
+     //
+     // These are seen as two modifications of the
+     // same element.
+     //
+     // The 23rd meeting at Lund clarified that
+     // a.x=1.0, a.y=2, a(z=3) is seen as a(x=1.0,y=2,z=3)
+     //
+     
+     class Modification8
+       class A
+         Real x;
+       end A;
+       class B
+         A a;
+       end B;
+       B b(a.x = 1.0, a(x = 2.0));
+     end Modification8;
+
+
+File: modtest.info,  Node: Modification9,  Next: ModifyConstant1,  Prev: Modification8,  Up: Test Cases
+
+Modification9
+=============
+
+     // name:     Modification9
+     // keywords: modification,equation,array
+     // status:   incorrect
+     //
+     // Two arguments of a modifier shall not designate the same element.
+     //
+     
+     class E
+       Real x[3,3] = zeros(3,3);
+     end E;
+     
+     class Modification9 = E(x=identity(3), x[1]=2); // Error: x[1] defined twice
+
+
+File: modtest.info,  Node: ModifyConstant1,  Next: ModifyConstant2,  Prev: Modification9,  Up: Test Cases
+
+ModifyConstant1
+===============
+
+     // name:     ModifyConstant1
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Constants cannot be redeclared.
+     //
+     
+     class A
+       constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(redeclare constant Real c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant1
+       B b;
+       C c;
+     end ModifyConstant1;
+     
+     // fclass ModifyConstant1
+     //   constant Real b.a.c;
+     //   constant Real c.a.c;
+     // equation
+     //   b.a.c = 2.0;
+     //   c.a.c = 1.0;
+     // end ModifyConstant1;
+
+
+File: modtest.info,  Node: ModifyConstant2,  Next: ModifyConstant3,  Prev: ModifyConstant1,  Up: Test Cases
+
+ModifyConstant2
+===============
+
+     // name:     ModifyConstant2
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Constant values cannot be changed in modifications.
+     //
+     
+     class A
+       constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant2
+       B b;
+       C c;
+     end ModifyConstant2;
+     
+     // fclass ModifyConstant2
+     //   constant Real b.a.c;
+     //   constant Real c.a.c;
+     // equation
+     //   b.a.c = 2.0;
+     //   c.a.c = 1.0;
+     // end ModifyConstant2;
+
+
+File: modtest.info,  Node: ModifyConstant3,  Next: ModifyConstant4,  Prev: ModifyConstant2,  Up: Test Cases
+
+ModifyConstant3
+===============
+
+     // name:     ModifyConstant3
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Only declared members may be redeclared. Using A.c in a redeclaration
+     // is a syntactic error.
+     //
+     
+     class A
+       constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(redeclare constant Real A.c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant3
+       B b;
+       C c;
+     end ModifyConstant3;
+
+
+File: modtest.info,  Node: ModifyConstant4,  Next: ModifyConstant5,  Prev: ModifyConstant3,  Up: Test Cases
+
+ModifyConstant4
+===============
+
+     // name:     ModifyConstant4
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Only members may be modified.
+     //
+     
+     class A
+       constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(A.c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant4
+       B b;
+       C c;
+     end ModifyConstant4;
+
+
+File: modtest.info,  Node: ModifyConstant5,  Next: ModifyConstant6,  Prev: ModifyConstant4,  Up: Test Cases
+
+ModifyConstant5
+===============
+
+     // name:     ModifyConstant5
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Finalized members can not be redeclared.
+     //
+     
+     class A
+       final constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(redeclare constant Real c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant5
+       B b;
+       C c;
+     end ModifyConstant5;
+
+
+File: modtest.info,  Node: ModifyConstant6,  Next: ModifyUnknown1,  Prev: ModifyConstant5,  Up: Test Cases
+
+ModifyConstant6
+===============
+
+     // name:     ModifyConstant6
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // Finalized constants can not be modified.
+     //
+     
+     class A
+       final constant Real c = 1.0;
+     end A;
+     
+     class B
+       A a(c = 2.0);
+     end B;
+     
+     class C
+       A a;
+     end C;
+     
+     class ModifyConstant6
+       B b;
+       C c;
+     end ModifyConstant6;
+
+
+File: modtest.info,  Node: ModifyUnknown1,  Next: ModifyUnknown2,  Prev: ModifyConstant6,  Up: Test Cases
+
+ModifyUnknown1
+==============
+
+     // name:     ModifyUnknown1
+     // keywords: modification
+     // status:   incorrect
+     //
+     // Try to introduce a new member via modification.
+     //
+     
+     class A
+       Real a;
+     end A;
+     
+     class ModifyUnknown1 = A(b = 5);
+
+
+File: modtest.info,  Node: ModifyUnknown2,  Next: NoEvent1,  Prev: ModifyUnknown1,  Up: Test Cases
+
+ModifyUnknown2
+==============
+
+     // name:     ModifyUnknown2
+     // keywords: modification
+     // status:   incorrect
+     //
+     // Try to introduce a new member via modification.
+     //
+     
+     class A
+       Real a;
+     end A;
+     
+     class ModifyUnknown2 = A(redeclare Real b = 5);
+
+
+File: modtest.info,  Node: NoEvent1,  Next: Overwriting1,  Prev: ModifyUnknown2,  Up: Test Cases
+
+NoEvent1
+========
+
+     // name:     NoEvent1
+     // keywords: noEvent
+     // status:   correct
+     //
+     //  The noEvent operator
+     //
+     
+     model NoEvent1
+       parameter Real c=1.0;
+       Real x,y,z;
+       Boolean b;
+       Real h;
+     equation
+       b = noEvent(x<y);
+       der(h)=if noEvent(h>0) then -c*sqrt(h) else 0;
+     end NoEvent1;
+
+
+File: modtest.info,  Node: Overwriting1,  Next: Overwriting2,  Prev: NoEvent1,  Up: Test Cases
+
+Overwriting1
+============
+
+     // name:     Overwriting1
+     // keywords: modification,equation
+     // status:   correct
+     //
+     // The modification does not overwrite the equation
+     
+     partial class A
+       Real x, u;
+     equation
+       x = 2.0 * u;
+     end A;
+     
+     class Overwriting1 = A(x = 5.0);
+     
+     // fclass Overwriting1
+     //   Real x;
+     //   Real u;
+     // equation
+     //   x = 5.0;
+     //   x = 2.0 * u;
+     // end Overwriting1;
+
+
+File: modtest.info,  Node: Overwriting2,  Next: Overwriting3,  Prev: Overwriting1,  Up: Test Cases
+
+Overwriting2
+============
+
+     // name:     Overwriting2
+     // keywords: modification,equation
+     // status:   correct
+     //
+     // The modification for `x' does not overwrite the equation.
+     
+     class Overwriting2
+       Real x = 5.0+u;
+       Real u;
+     equation
+       x = 2.0;
+     end Overwriting2;
+     
+     // fclass Overwriting2
+     //   Real x,u;
+     // equation
+     //   x = 5.0+u;
+     //   x = 2.0;
+     // end Overwriting2;
+
+
+File: modtest.info,  Node: Overwriting3,  Next: Overwriting4,  Prev: Overwriting2,  Up: Test Cases
+
+Overwriting3
+============
+
+     // name:     Overwriting3
+     // keywords: modification,equation
+     // status:   correct
+     //
+     // The declaration in class A defines three quations for x[1], x[2],
+     // and x[3]. The equation for x[1] is modified in Overwriting3.
+     //
+     
+     class A
+       Real x[3] = zeros(3);
+     end A;
+     
+     class Overwriting3 = A(x[1]=1.0);
+     
+     // fclass Overwriting3
+     //   Real x[1];
+     //   Real x[2];
+     //   Real x[3];
+     // equation
+     //   x[1] = 1.0;
+     //   x[2] = Real(0);
+     //   x[3] = Real(0);
+     // end Overwriting3;
+
+
+File: modtest.info,  Node: Overwriting4,  Next: Partial1,  Prev: Overwriting3,  Up: Test Cases
+
+Overwriting4
+============
+
+     // name:      Overwriting4
+     // keywords:  modification, equation
+     // Two arguments of a modifier shall not designate the same element.
+     // status:    incorrect
+     
+     class E
+       Real x[3,3] = zeros(3,3);
+     end E;
+     
+     class Overwriting4 = E(x=identity(3), x[1]=2); // Error: x[1] defined twice
+
+
+File: modtest.info,  Node: Partial1,  Next: Protected1,  Prev: Overwriting4,  Up: Test Cases
+
+Partial1
+========
+
+     // name:     Partial1
+     // keywords: partial
+     // status:   incorrect
+     //
+     // This is a test of the `partial' keyword.  The class `A' is declared
+     // as `partial' which means that it cannot be instantiated.
+     //
+     
+     partial class A
+       Real x;
+     end A;
+     
+     model Partial1
+       A a;
+     end Partial1;
+
+
+File: modtest.info,  Node: Protected1,  Next: Range1,  Prev: Partial1,  Up: Test Cases
+
+Protected1
+==========
+
+     // name:     Protected1
+     // keywords: protected
+     // status:   incorrect
+     //
+     // This file tests information hiding using the 'protect' keyword
+     //
+     // The file is not valid, the compiler should complaint about y and a
+     // being protected.
+     
+     class A
+       Real a = 1;
+     end A;
+     
+     class B
+       Real x = 1;
+     protected
+       extends A;
+       Real y = 1;
+     end B;
+     
+     model Protected1
+       B a(y=18);
+       B b(a=3);
+       B c;
+     end Protected1;
+
+
+File: modtest.info,  Node: Range1,  Next: Real2Integer1,  Prev: Protected1,  Up: Test Cases
+
+Range1
+======
+
+     // name:     Range1
+     // keywords: array
+     // status:   correct
+     //
+     // Some tests of range expressions.
+     //
+     
+     class Range1
+       Integer x[5] = 1:5;
+       Integer y[5], z[5];
+     equation
+       for i in 1:5 loop
+         y[i] = x[i] + 1;
+       end for;
+     
+       for i in 1:2:5 loop
+         z[i] = x[i] + 2;
+       end for;
+       z[2]=1;
+       z[4]=2;
+     end Range1;
+     
+     // fclass Range1
+     //   Integer x[1];
+     //   Integer x[2];
+     //   Integer x[3];
+     //   Integer x[4];
+     //   Integer x[5];
+     //   Integer y[1];
+     //   Integer y[2];
+     //   Integer y[3];
+     //   Integer y[4];
+     //   Integer y[5];
+     //   Integer z[1];
+     //   Integer z[2];
+     //   Integer z[3];
+     //   Integer z[4];
+     //   Integer z[5];
+     // equation
+     //   x[1] = (1:5)[1];
+     //   x[2] = (1:5)[2];
+     //   x[3] = (1:5)[3];
+     //   x[4] = (1:5)[4];
+     //   x[5] = (1:5)[5];
+     //   y[1] = x[1] + 1;
+     //   y[2] = x[2] + 1;
+     //   y[3] = x[3] + 1;
+     //   y[4] = x[4] + 1;
+     //   y[5] = x[5] + 1;
+     //   z[1] = x[1] + 2;
+     //   z[3] = x[3] + 2;
+     //   z[5] = x[5] + 2;
+     //   z[2] = 1;
+     //   z[4] = 2;
+     // end Range1;
+
+
+File: modtest.info,  Node: Real2Integer1,  Next: Real2Integer2,  Prev: Range1,  Up: Test Cases
+
+Real2Integer1
+=============
+
+     // name:     Real2Integer1
+     // keywords: type
+     // status:   erroneous
+     //
+     // No implicit conversion from 'Real' to 'Integer'. But integers are
+     // converted to reals in equations with real-expressions.
+     //
+     
+     class Real2Integer1
+       Real a = 5.6;
+       Integer n = a;
+     end Real2Integer1;
+     
+     // fclass Real2Integer1
+     //   Real a;
+     //   Integer n;
+     // equation
+     //   a = 5.6;
+     //   Real(n) = a;
+     // end Real2Integer1;
+
+
+File: modtest.info,  Node: Real2Integer2,  Next: Real2Integer3,  Prev: Real2Integer1,  Up: Test Cases
+
+Real2Integer2
+=============
+
+     // name:     Real2Integer2
+     // keywords: type
+     // status:   incorrect
+     //
+     // No implicit conversion from Real to Integer. Division via '/' always
+     // gives a Real.
+     //
+     
+     class Real2Integer2
+       Integer n1, n2;
+     algorithm
+       n1 := 6;
+       n2 := n1 / 2;
+     end Real2Integer2;
+
+
+File: modtest.info,  Node: Real2Integer3,  Next: Record1,  Prev: Real2Integer2,  Up: Test Cases
+
+Real2Integer3
+=============
+
+     // name:     Real2Integer3
+     // keywords: type
+     // status:   correct
+     //
+     // No implicit conversion from Real to Integer. Division via 'div'
+     // gives integer output with integer input.
+     //
+     
+     class Real2Integer3
+       Integer n1, n2;
+     algorithm
+       n1 := integer(6.6);
+       n2 := div(n1,2);
+     end Real2Integer3;
+
+
+File: modtest.info,  Node: Record1,  Next: Redeclare1,  Prev: Real2Integer3,  Up: Test Cases
+
+Record1
+=======
+
+     // name:     Record1
+     // keywords: type
+     // status:   correct
+     //
+     
+     record A
+       Real x = 17.0;
+     end A;
+     
+     model Record1
+       A a(x=18.0);
+     end Record1;
+     
+     // fclass Record1
+     //   Real a.x;
+     // equation
+     //   a.x = 18.0;
+     // end Record1;
+
+
+File: modtest.info,  Node: Redeclare1,  Next: Redeclare2,  Prev: Record1,  Up: Test Cases
+
+Redeclare1
+==========
+
+     // name:     Redeclare1
+     // keywords: redeclare,type
+     // status:   correct
+     //
+     // Redeclaration and subtyping.
+     //
+     
+     model A
+       Real x;
+     end A;
+     
+     model B
+       extends A;
+       Real z;
+     end B;
+     
+     model M
+       replaceable A a(x=17);
+     end M;
+     
+     model Redeclare1
+       M m(redeclare B a);
+     equation
+       m.a.z = m.a.x;
+     end Redeclare1;
+     
+     //equation
+     // m.a.x =17;
+     // m.a.z = m.a.x;
+
+
+File: modtest.info,  Node: Redeclare2,  Next: Redeclare3,  Prev: Redeclare1,  Up: Test Cases
+
+Redeclare2
+==========
+
+     // name:     Redeclare2
+     // keywords: redeclare
+     // status:   correct
+     //
+     // Replaceable classes.
+     
+     class A
+       Real x;
+     equation
+       x = 1.0;
+     end A;
+     
+     class B
+       Real x,y;
+     equation
+       y = x;
+     end B;
+     
+     class Redeclare2
+       replaceable class Q = A;
+       Q x;
+     end Redeclare2;
+     
+     // fclass Redeclare2
+     //   Real x.x;
+     // equation
+     //   x.x = 1.0;
+     // end Redeclare2;
+
+
+File: modtest.info,  Node: Redeclare3,  Next: RedeclareFlowEffort,  Prev: Redeclare2,  Up: Test Cases
+
+Redeclare3
+==========
+
+     // name:     Redeclare3
+     // keywords: redeclare
+     // status:   correct
+     //
+     
+     class A
+       Real x;
+     equation
+       x = 1;
+     end A;
+     
+     class B
+       Real x,y;
+     equation
+       y = x;
+     end B;
+     
+     class C
+       replaceable class Q = A;
+       Q x;
+     end C;
+     
+     class Redeclare3
+       C c(redeclare class Q = B(y=1));
+     end Redeclare3;
+     
+     // fclass Redeclare3
+     //  Real c.x.x;
+     //  Real c.x.y=1;
+     // equation
+     //   c.x.y = c.x.x
+     // end Redeclare3;
+
+
+File: modtest.info,  Node: RedeclareFlowEffort,  Next: ReplaceFunction,  Prev: Redeclare3,  Up: Test Cases
+
+RedeclareFlowEffort
+===================
+
+     // name:     RedeclareFlowEffort
+     // keywords: modification
+     // status:   incorrect
+     //
+     // Redeclaration that changes flow/non-flow is not allowed.
+     //
+     
+     connector Connector
+       flow Real f;
+       replaceable Real e;
+     end Connector;
+     
+     class RedeclareFlowEffort
+       Connector c1, c2(redeclare flow Real e);
+     equation
+       connect(c1, c2);
+     end RedeclareFlowEffort;
+
+
+File: modtest.info,  Node: ReplaceFunction,  Next: ScopeDeclaration1,  Prev: RedeclareFlowEffort,  Up: Test Cases
+
+ReplaceFunction
+===============
+
+     // name:     ReplaceFunction
+     // keywords: modification
+     // status:   incorrect
+     //
+     // Function arguments must be identical, including their names,
+     // in functions of the same type.
+     //
+     
+     function Sin
+       input Real x;
+       output Real y;
+     algorithm
+       y:=sin(x);
+     end Sin;
+     
+     function Cos
+       input Real xx;
+       output Real yy;
+     algorithm
+       yy:=cos(xx);
+     end Cos;
+     
+     model M
+       replaceable function f = Sin;
+       Real x;
+     equation
+       x=f(x);
+     end M;
+     
+     model ReplaceFunction = M(redeclare function f = Cos);   // Error
+
+
+File: modtest.info,  Node: ScopeDeclaration1,  Next: ScopeDeclaration2,  Prev: ReplaceFunction,  Up: Test Cases
+
+ScopeDeclaration1
+=================
+
+     // name:     ScopeDeclaration1
+     // keywords: scoping,declaration
+     // status:   correct
+     //
+     // Modelica was a originally defined as a strict define-before-use language.
+     // That was changed in Modelica 1.4, and thus the following is legal.
+     
+     class ScopeDeclaration1
+       Real a = -a;
+     end ScopeDeclaration1;
+
+
+File: modtest.info,  Node: ScopeDeclaration2,  Next: ScopeDeclaration3,  Prev: ScopeDeclaration1,  Up: Test Cases
+
+ScopeDeclaration2
+=================
+
+     // name:     ScopeDeclaration2
+     // keywords: scoping,declaration
+     // status:   incorrect
+     //
+     // An element is visible in its entire scope.
+     // The following is thus incorrect since the minimum
+     // value is not a parameter-expression.
+     
+     class ScopeDeclaration2
+       constant Real a = 3.0;
+       class B
+         Real a(min = a);
+       end B;
+       B b;
+     end ScopeDeclaration2;
+     
+     // fclass ScopeDeclaration2
+     //   constant Real a=3.0;
+     //   Real b.a;
+     //   parameter Real b.a.min=b.a;// Illegal.
+     // equation
+     //   assert(b.a >= b.a.min,"...");
+     // end ScopeDeclaration2;
+
+
+File: modtest.info,  Node: ScopeDeclaration3,  Next: ScopeDeclaration4,  Prev: ScopeDeclaration2,  Up: Test Cases
+
+ScopeDeclaration3
+=================
+
+     // name:     ScopeDeclaration3
+     // keywords: scoping,declaration
+     // status:   correct
+     //
+     // Modelica is a strict define-before-use language. A variable must be
+     // fully instantiated (defined after end of declaration, semicolon)
+     // before it is referenced.
+     // This has been changed from Modelica v1.4. Now use before declaration
+     //is allowed.
+     
+     class ScopeDeclaration3
+       Real x;
+     equation
+       x = y;
+     public
+       Real y;
+     end ScopeDeclaration3;
+     
+     // fclass ScopeDeclaration3
+     // Real x;
+     // Real y;
+     // equation
+     //   x = y;
+     // end ScopeDeclaration3;
+
+
+File: modtest.info,  Node: ScopeDeclaration4,  Next: ScopeModification1,  Prev: ScopeDeclaration3,  Up: Test Cases
+
+ScopeDeclaration4
+=================
+
+     // name:     ScopeDeclaration4
+     // keywords: scoping,extends
+     // status:   incorrect
+     //
+     // The extended class should be instantiated by itself, and the
+     // defined componends are copied into the extending class afterwards.
+     // This means that the following should not be allowed, since y is not
+     // known in A.
+     //
+     
+     class A
+       Real x;
+     equation
+       x = y;
+     end A;
+     
+     class ScopeDeclaration4
+       Real y;
+       extends A;
+     end ScopeDeclaration4;
+
+
+File: modtest.info,  Node: ScopeModification1,  Next: ScopeModification2,  Prev: ScopeDeclaration4,  Up: Test Cases
+
+ScopeModification1
+==================
+
+     // name:     ScopeModification1
+     // keywords: scoping,modification
+     // status:   correct
+     //
+     // In class modifications the scope of the outer class is used for
+     // looking up variables. Consequently 'a' of the outer class is used
+     // in the modification.
+     //
+     
+     class ScopeModification1
+       class Inner
+         Real a=2;
+         Real b;
+       end Inner;
+       Real a=1;
+       Inner m(b = a);
+     end ScopeModification1;
+     
+     // fclass ScopeModification1
+     // Real a;
+     // Real m.a;
+     // Real m.b;
+     // equation
+     //   a = 1.0;
+     //   m.a = 2.0;
+     //   m.b = a;
+     // end ScopeModification1;
+
+
+File: modtest.info,  Node: ScopeModification2,  Next: Shadow1,  Prev: ScopeModification1,  Up: Test Cases
+
+ScopeModification2
+==================
+
+     // name:     ScopeModification2
+     // keywords: scoping,modification
+     // status:   incorrect
+     //
+     // In class modifications the scope of the outer class is used for
+     // looking up variables. There is no 'a' known in the example.
+     //
+     
+     class ScopeModification2
+       class Inner
+         Real a;
+         Real b;
+       end Inner;
+       Inner m(b = a);
+     end ScopeModification2;
+
+
+File: modtest.info,  Node: Shadow1,  Next: SimpleIntegrator1,  Prev: ScopeModification2,  Up: Test Cases
+
+Shadow1
+=======
+
+     // name:     Shadow1
+     // keywords: modification,shadow
+     // status:   correct
+     //
+     // Modifications override declarations but not equations.
+     
+     class A
+       Real y=3.0;
+       Real x;
+     equation
+       x = 1;
+     end A;
+     
+     model Shadow1
+       Real z;
+       A a(x = z, y=2.0);
+     end Shadow1;
+     
+     // fclass Shadow1
+     //   Real z;
+     //   Real a.x;
+     //   Real a.y;
+     // equation
+     //   a.x = 1;
+     //   a.x = z;
+     //   a.y = 2.0;
+     // end Shadow1;
+
+
+File: modtest.info,  Node: SimpleIntegrator1,  Next: SimpleIntegrator2,  Prev: Shadow1,  Up: Test Cases
+
+SimpleIntegrator1
+=================
+
+     // name:     SimpleIntegrator1
+     // keywords: declaration,equation
+     // status:   correct
+     //
+     // In this example 'x' is defined twice: constant and
+     // non-constant. The example is correct, but is not
+     // an integrator.
+     
+     model SimpleIntegrator1
+       Real u;
+       Real x = 2.0;
+     equation
+       der(x) = u;
+     end SimpleIntegrator1;
+     
+     // fclass SimpleIntegrator1
+     //   Real u;
+     //   Real x;
+     // equation
+     //   x = 2.0;
+     //   der(x) = u;
+     // end SimpleIntegrator1;
+
+
+File: modtest.info,  Node: SimpleIntegrator2,  Next: SimpleIntegrator3,  Prev: SimpleIntegrator1,  Up: Test Cases
+
+SimpleIntegrator2
+=================
+
+     // name:     SimpleIntegrator2
+     // keywords: declaration,equation,modification
+     // status:   correct
+     //
+     // Correct formulation of a simple integrator example.
+     //
+     
+     model SimpleIntegrator2
+       Real u = 1.0;
+       Real x(start = 2.0);
+     equation
+       der(x) = u;
+     end SimpleIntegrator2;
+     
+     // fclass SimpleIntegrator2
+     // Real u;
+     // Real x(start=2.0);
+     // equation
+     //   u = 1.0;
+     //   der(x) = u;
+     // end SimpleIntegrator2;
+
+
+File: modtest.info,  Node: SimpleIntegrator3,  Next: SimpleIntegrator4,  Prev: SimpleIntegrator2,  Up: Test Cases
+
+SimpleIntegrator3
+=================
+
+     // name:     SimpleIntegrator3
+     // keywords: declaration,equation
+     // status:   incorrect
+     //
+     // Cannot specify predefined attribute in an equation section,
+     // since parameters must be bound by modifiers.
+     
+     model SimpleIntegrator3
+       Real u = 1.0;
+       Real x;
+     equation
+       x.start = 2.0;
+       der(x) = u;
+     end SimpleIntegrator3;
+
+
+File: modtest.info,  Node: SimpleIntegrator4,  Next: Terminal1,  Prev: SimpleIntegrator3,  Up: Test Cases
+
+SimpleIntegrator4
+=================
+
+     // name:     SimpleIntegrator4
+     // keywords: declaration,modification
+     // status:   incorrect
+     //
+     // Try to access non-existend attribute 'initial'.
+     //
+     
+     model SimpleIntegrator4
+       Real u = 1.0;
+       Real x(initial = 2.0);
+     equation
+       der(x) = u;
+     end SimpleIntegrator4;
+
+
+File: modtest.info,  Node: Terminal1,  Next: Terminal1,  Prev: SimpleIntegrator4,  Up: Test Cases
+
+Terminal1
+=========
+
+     // name:     Terminal1
+     // keywords: The terminal operator
+     // status:   correct
+     //
+     //  The terminal operator.
+     //
+     
+     class Terminal1
+     
+       Boolean t;
+     equation
+      t=terminal();
+     end Terminal1;
+
+
+File: modtest.info,  Node: Terminal1,  Next: Type1,  Prev: Terminal1,  Up: Test Cases
+
+Terminal1
+=========
+
+     // name:     Terminal1
+     // keywords: The terminal operator
+     // status:   correct
+     //
+     //  The terminal operator.
+     //
+     
+     class Terminal1
+     
+       Boolean t;
+     equation
+      t=terminal();
+     end Terminal1;
+
+
+File: modtest.info,  Node: Type1,  Next: Type2,  Prev: Terminal1,  Up: Test Cases
+
+Type1
+=====
+
+     // name:     Type1
+     // keywords: type
+     // status:   incorrect
+     //
+     // You cannot define your own types, only derive them from the builtings.
+     //
+     
+     type Type1
+       Real x;
+     end Type1;
+
+
+File: modtest.info,  Node: Type2,  Next: Type3,  Prev: Type1,  Up: Test Cases
+
+Type2
+=====
+
+     // name:     Type2
+     // keywords: type,unknown
+     // status:   correct
+     //
+     // What are valid connectors?  According to the report, only classes
+     // declared with `connector', or classes declared with `class' which
+     // adher to the restrictions for `connector'.
+     //
+     // The basic question is what classes a connector class may inherit from.
+     //
+     
+     record A
+       Real x;
+     end A;
+     
+     connector Type2 = A;
+
+
+File: modtest.info,  Node: Type3,  Next: Type4,  Prev: Type2,  Up: Test Cases
+
+Type3
+=====
+
+     // name:     Type3
+     // keywords: type
+     // status:   incorrect
+     //
+     // This should give a type error because the expression i/4 is of
+     // type Real.
+     
+     class Type3
+       Integer i = 16;
+       Real x[100];
+     equation
+       x[i/4] = 0.5;
+     end Type3;
+
+
+File: modtest.info,  Node: Type4,  Next: Type5,  Prev: Type3,  Up: Test Cases
+
+Type4
+=====
+
+     // name:     Type4
+     // keywords: type,declaration
+     // status:   correct
+     //
+     // Simple variable declarations.
+     //
+     
+     model Type4
+       Integer i = 17                "an integer";
+       Real r = 18.0                 "a real value";
+       String s = "hi"               "a string";
+       Boolean b = false             "a boolean";
+     end Type4;
+     
+     // fclass Type4
+     //   Integer i;
+     //   Real r;
+     //   String s;
+     //   Boolean b;
+     // equation
+     //   i = 17;
+     //   r = 18.0;
+     //   s = "hi";
+     //   b = false;
+     // end Type4;
+
+
+File: modtest.info,  Node: Type5,  Next: Type6,  Prev: Type4,  Up: Test Cases
+
+Type5
+=====
+
+     // name:     Type5
+     // keywords: type,declaration
+     // status:   correct
+     //
+     // Simple variable declarations.
+     //
+     
+     type Voltage = Real(unit="V");
+     
+     model Type5
+       Voltage v;
+     end Type5;
+     
+     // fclass Type5
+     //   Real v;
+     // end Type5;
+
+
+File: modtest.info,  Node: Type6,  Next: Type7,  Prev: Type5,  Up: Test Cases
+
+Type6
+=====
+
+     // name:     Type6
+     // keywords: type,declaration
+     // status:   correct
+     //
+     // Simple variable declarations, take two.
+     //
+     
+     model Type6
+       parameter Integer i             "an integer";
+       parameter Real r                "a real value";
+       parameter String s              "a string";
+       parameter Boolean b             "a boolean";
+     end Type6;
+     
+     // fclass Type6
+     //   parameter Integer i;
+     //   parameter Real r;
+     //   parameter String s;
+     //   parameter Boolean b;
+     // end Type6;
+
+
+File: modtest.info,  Node: Type7,  Next: Type8,  Prev: Type6,  Up: Test Cases
+
+Type7
+=====
+
+     // name:     Type7
+     // keywords: types
+     // status:   incorrect
+     //
+     // This checks that Real and RealType are handled differently
+     //
+     
+     class Type7
+       Real x;
+     equation
+       x.start = x.start.start;
+     end Type7;
+
+
+File: modtest.info,  Node: Type8,  Next: Units1,  Prev: Type7,  Up: Test Cases
+
+Type8
+=====
+
+     // name:     Type8
+     // keywords: types
+     // status:   incorrect
+     //
+     // This checks that Real and RealType are handled differently
+     //
+     
+     class Type8
+       Real x;
+     equation
+       x = x.start;
+     end Type8;
+
+
+File: modtest.info,  Node: Units1,  Next: Units2,  Prev: Type8,  Up: Test Cases
+
+Units1
+======
+
+     // name:     Units1
+     // keywords: connect,modification
+     // status:   erroneous
+     //
+     // Conversion between units is not supported within the Modelica
+     // language. Consequently in the following example the generation
+     // of equations from connect statements does not depend on the
+     // specified units. The model is thus incorrect.
+     //
+     
+     type Voltage = Real(unit = "V");
+     type Current = Real(unit = "A");
+     
+     connector Pin1
+       Voltage v(unit="kV");
+       flow Current i;
+     end Pin1;
+     
+     connector Pin2
+       Voltage v;
+       flow Current i;
+     end Pin2;
+     
+     model Units1
+       Pin1 p1;
+       Pin2 p2;
+     equation
+       connect(p1,p2);
+       p1.v=0;
+       p2.i=1;
+     end Units1;
+     
+     // fclass Units1
+     //   Real p1.v;
+     //   Real p1.i;
+     //   Real p2.v;
+     //   Real p2.i;
+     // equation
+     //   p1.v.unit = "kV";
+     //   p2.v.unit = "V";
+     //   p1.i.unit = "A";
+     //   p2.i.unit = "A";
+     //   p1.v = p2.v;
+     //   p1.i + p2.i= 0;
+     // end Units1;
+
+
+File: modtest.info,  Node: Units2,  Next: WhenSemantics1,  Prev: Units1,  Up: Test Cases
+
+Units2
+======
+
+     // name:     Units2
+     // keywords: connect
+     // status:   incorrect
+     //
+     // Connections of flow variables with non-flow variables are not
+     // possible.
+     //
+     
+     type Voltage = Real(unit = "V");
+     type Current = Real(unit = "A");
+     
+     
+     connector Pin1
+       Voltage x;
+     end Pin1;
+     connector Pin2
+       flow Current x;
+     end Pin2;
+     model Units2
+       Pin1 v;
+       Pin2 i;
+     equation
+       connect(v, i);
+     end Units2;
+
+
+File: modtest.info,  Node: WhenSemantics1,  Next: XPowers1,  Prev: Units2,  Up: Test Cases
+
+WhenSemantics1
+==============
+
+     // name:     WhenSemantics1
+     // keywords: when semantics
+     // status:   correct
+     //
+     // Simple when
+     
+     model WhenSemantics1
+       Real x,y,z;
+     equation
+       y=sin(time)+x+z;
+       when sample(0.1,0.1) then
+         x=pre(y);
+       end when;
+       when sample(0.1,0.1),time>=0.15,time>=0.25 then
+         z=time;
+       end when;
+     end WhenSemantics1;
+     
+     // fmodel WhenSemantics1
+     //  Real y;
+     //  discrete Real x,z;
+     //equation /* Sorted*/
+     // if time=0.1,0.15,0.2,0.25,0.3,0.4,0.5,... then
+     //   z=time;
+     // else
+     //   z=pre(z);
+     // end if;
+     // if time=0.1,0.2,0.3,... then
+     //   x=pre(y);
+     // else
+     //   x=pre(x);
+     // end if;
+     // y=sin(time)+x+z;
+     // end WhenSemantics1
+
+
+File: modtest.info,  Node: XPowers1,  Next: XPowers2,  Prev: WhenSemantics1,  Up: Test Cases
+
+XPowers1
+========
+
+     // name:     XPowers1
+     // keywords: equation,array
+     // status:   correct
+     //
+     // The powers of 'x' are defined by using array syntax. The dimension
+     // 'n' needs to be fixed in order to expand the formulation.
+     // Furthermore 'n' is treated fixed in the declaration of 'xpowers'.
+     //
+     // This also uses multiplication of an array with a scalar.
+     //
+     
+     model XPowers1
+       constant Integer n = 3;
+       Real x = 2.0, xpowers[n];
+     equation
+       xpowers[1] = x;
+       xpowers[2:n] = xpowers[1:n-1] * x;
+     end XPowers1;
+     
+     // fclass XPowers1
+     //   Integer n;
+     //   Real x;
+     //   Real xpowers[3];
+     // equation
+     //   n = 3;
+     //   x = 2.0;
+     //   xpowers[1] = x;
+     //   xpowers[2] = xpowers[1] * x;
+     //   xpowers[3] = xpowers[2] * x;
+     // end XPowers1;
+
+
+File: modtest.info,  Node: XPowers2,  Next: XPowers3,  Prev: XPowers1,  Up: Test Cases
+
+XPowers2
+========
+
+     // name:     XPowers2
+     // keywords: equation
+     // status:   correct
+     //
+     // The powers of 'x' are defined by using a for loop. The dimension 'n'
+     // needs to be fixed in order to expand the formulation. Furthermore 'n'
+     // is treated fixed in the declaration of 'xpowers'.
+     //
+     // No need to declare 'Integer i' since it is declared implicit in the for statement.
+     
+     model XPowers2
+       constant Integer n = 3;
+       Real x = 2.0, xpowers[n];
+     equation
+       xpowers[1] = x;
+       for i in 1:n-1 loop
+         xpowers[i+1] = xpowers[i] * x;
+       end for;
+     end XPowers2;
+     
+     // fclass XPowers2
+     // constant Integer n = 3;
+     // Real x;
+     // Real xpowers[1];
+     // Real xpowers[2];
+     // Real xpowers[3];
+     // equation
+     //   x = 2.0;
+     //   xpowers[1] = x;
+     //   xpowers[2] = xpowers[1] * x;
+     //   xpowers[3] = xpowers[2] * x;
+     // end XPowers2;
+
+
+File: modtest.info,  Node: XPowers3,  Next: modelica_1_1_Array9,  Prev: XPowers2,  Up: Test Cases
+
+XPowers3
+========
+
+     // name:     XPowers3
+     // keywords: equation
+     // status:   incorrect
+     //
+     // The powers of 'x' are defined by using a for loop. The dimension 'n'
+     // is defined with a constant value but not declared constant. The integer 'n'
+     // must be declared as constant or parameter.
+     
+     model XPowers3
+       Integer n = 3;
+       Real x = 2.0, xpowers[n];
+     equation
+       xpowers[1] = x;
+       for i in 1:n-1 loop
+         xpowers[i+1] = xpowers[i] * x;
+       end for;
+     end XPowers3;
+
+
+File: modtest.info,  Node: modelica_1_1_Array9,  Next: modelica_1_1_Function10,  Prev: XPowers3,  Up: Test Cases
+
+modelica_1_1_Array9
+===================
+
+     // name:     modelica_1_1_Array9
+     // keywords: array, construction
+     // status:   correct
+     //
+     //
+     
+     model Array9
+       Real x[2]=1,2;
+     //  Real y[2,3]=1,2,3,4,5,6;
+     end Array9;
+     
+     // fclass Array9
+     // Real x[1];
+     // Real x[2];
+     // equation
+     //   x[1] = 1.0;
+     //   x[2] = 2.0;
+     // end Array9;
+
+
+File: modtest.info,  Node: modelica_1_1_Function10,  Next: modelica_1_1_Type10,  Prev: modelica_1_1_Array9,  Up: Test Cases
+
+modelica_1_1_Function10
+=======================
+
+     // name:     modelica_1_1_Function10
+     // keywords: function
+     // status:   correct
+     //
+     // Checks that subscripts are handled in a correct manner int the component clause.
+     //
+     //
+     
+     function f
+     	input Real a;
+     	input Real b;
+     	output Real r1;
+     	output Real r2;
+     	output Real r3;
+     algorithm
+     	r1:=a;
+     	r2:=b;
+     	r3:=a+b;
+     end f;
+     
+     
+     class Function10
+       Real x;
+       Real y;
+       Real z;
+     equation
+       (x,y,z) = f(1,2);
+     end Function10;
+     
+     // fclass Function10
+     //      Real x;
+     //      Real y;
+     //      Real z;
+     //      equation
+     //      (x,y,z) = f(1.0,2.0);
+     // end Function10;
+
+
+File: modtest.info,  Node: modelica_1_1_Type10,  Next: modelica_1_1_Type11,  Prev: modelica_1_1_Function10,  Up: Test Cases
+
+modelica_1_1_Type10
+===================
+
+     // name:     modelica_1_1_Type10
+     // keywords: types
+     // status:   incorrect
+     //
+     // Checks that subscripts are handled in a correct manner int the component clause.
+     //
+     //
+     
+     class Type10
+       Real[3] x[2];
+       Real y[3,3];
+       Real ok[3];
+     equation
+       x = y;
+       ok[1]=3.0;
+     end Type10
+
+
+File: modtest.info,  Node: modelica_1_1_Type11,  Next: modelica_1_1_Type9,  Prev: modelica_1_1_Type10,  Up: Test Cases
+
+modelica_1_1_Type11
+===================
+
+     // name:     modelica_1_1_Type11
+     // keywords: types
+     // status:   correct
+     //
+     // Checks that subscripts are handled in a correct manner int the component clause.
+     //
+     //
+     
+     class Type11
+       Real[3] x[2]=[[11.,12.,13.],[21.,22.,23.]];
+       Real y[2,3]=[[11.,12.,13.],[21.,22.,23.]];
+       Real[3] x[2];
+       Real y[2,3];
+     
+       Real ok[3];
+     equation
+       ok[1]=3.0;
+     end Type11;
+     
+     // fclass Type11
+     //      Real x[1,1];
+     //      Real x[1,2];
+     //      Real x[1,3];
+     //      Real x[2,1];
+     //      Real x[2,2];
+     //      Real x[2,3];
+     //      Real y[1,1];
+     //      Real y[1,2];
+     //      Real y[1,3];
+     //      Real y[2,1];
+     //      Real y[2,2];
+     //      Real y[2,3];
+     //      Real ok[1];
+     //      Real ok[2];
+     //      Real ok[3];
+     //    equation
+     //       x[1,1] = 11.0;
+     //       x[1,2] = 12.0;
+     //       x[1,3] = 13.0;
+     //       x[2,1] = 21.0;
+     //       x[2,2] = 22.0;
+     //       x[2,3] = 23.0;
+     //       y[1,1] = 11.0;
+     //       y[1,2] = 12.0;
+     //       y[1,3] = 13.0;
+     //       y[2,1] = 21.0;
+     //       y[2,2] = 22.0;
+     //       y[2,3] = 23.0;
+     //       ok[1] = 3.0;
+     // end Type11;
+
+
+File: modtest.info,  Node: modelica_1_1_Type9,  Next: package-s-1,  Prev: modelica_1_1_Type11,  Up: Test Cases
+
+modelica_1_1_Type9
+==================
+
+     // name:     modelica_1_1_Type9
+     // keywords: types
+     // status:   correct
+     //
+     // Checks that subscripts are handled in a correct manner int the component clause.
+     //
+     
+     class Type9
+       Real[3] x[2];
+       Real y[2,3];
+       Real ok[3];
+     equation
+       x = y;
+       ok[1]=3.0;
+     end Type9;
+     
+     // fclass Type9
+     //      Real x[1,1];
+     //      Real x[1,2];
+     //      Real x[1,3];
+     //      Real x[2,1];
+     //      Real x[2,2];
+     //      Real x[2,3];
+     //      Real y[1,1];
+     //      Real y[1,2];
+     //      Real y[1,3];
+     //      Real y[2,1];
+     //      Real y[2,2];
+     //      Real y[2,3];
+     //      Real ok[1];
+     //      Real ok[2];
+     //      Real ok[3];
+     //      equation
+     //      x[1,1] = y[1,1];
+     //      x[1,2] = y[1,2];
+     //      x[1,3] = y[1,3];
+     //      x[2,1] = y[2,1];
+     //      x[2,2] = y[2,2];
+     //      x[2,3] = y[2,3];
+     //      ok[1] = 3.0;
+     // end Type9;
+
+
+File: modtest.info,  Node: package-s-1,  Next: partial-s-1,  Prev: modelica_1_1_Type9,  Up: Test Cases
+
+package-s-1
+===========
+
+     // name:     package-s-1
+     // keywords: package, declaration
+     // status:   correct
+     
+     //
+     //   Instantiation of models residing in packages.
+     //
+     
+     package P
+     
+     class C
+       Real x;
+     end C;
+     
+     end P;
+     
+     package Modelica
+       package SIunits
+         type Area = Real (final quantity="Area", final unit="m2");
+       end SIunits;
+     end Modelica;
+     
+     model World
+       P.C c;
+       Modelica.SIunits.Area a;
+     end World;
+     
+     // fclass World
+     // Real c.x;
+     // Real a;
+     // end World;
+
+
+File: modtest.info,  Node: partial-s-1,  Next: prtest,  Prev: package-s-1,  Up: Test Cases
+
+partial-s-1
+===========
+
+     // name:     partial-s-1
+     // keywords: local class, declaration
+     // status:   incorrect
+     
+     // Creating a dependency in the instantiation should give an error, not hang
+     // the compiler
+     
+     class A
+     
+       class B
+         A x;
+       equation
+         x.y = 1;
+       end B;
+     
+       // Commented out for now
+        B b;
+       Real y;
+     end A;
+
+
+File: modtest.info,  Node: prtest,  Prev: partial-s-1,  Up: Test Cases
+
+prtest
+======
+
+     // name:     prtest
+     // keywords: types
+     // status:   incorrect
+     //
+     // Checks that subscripts are handled in a correct manner int the component clause.
+     //
+     //
+     
+     class Type10
+       Real[3] x[2];
+       Real y[3,3];
+       Real ok[3];
+     equation
+       x = y;
+       ok[1]=3.0;
+     end Type10
+     
+     // fclass Type10
+     //            String  ok[1].unit;
+     //            Real    ok[1];
+     //            String  ok[2].unit;
+     //            Real    ok[2];
+     //            String  ok[3].unit;
+     //            Real    ok[3];
+     // equation
+     //  ok[1].unit = "";
+     //  ok[2].unit = "";
+     //  ok[3].unit = "";
+     //  ok[1] = 3.0;
+     // end Type10;
+
+
+File: modtest.info,  Node: Change-Log,  Prev: Test Cases,  Up: Top
+
+Change-Log
+**********
+
+Version 1.0-dk2 to 1.0-dk3
+==========================
+
+   * Stopped placing each test case on its own page.  This drastically
+     decreased the number of pages in the PostScript version.
+
+
+Version 1.0-dk1 to 1.0-dk2
+==========================
+
+   * Added *Note Modifications::.
+
+
+Version 1.0 to 1.0-dk1
+======================
+
+A lot of things were added and changed by David.
+
+Version 0.9.1 to 1.0
+====================
+
+The following changes result from the discussion at the 12th Modelica
+design meeting in Manchester. It is referred to the minutes of the 12th
+Modelica design meeting.
+
+  1. New test cases, *Note Overwriting3::, and *Note Modification9::,
+     according to N.1 and N.2, respectively, given in the minutes.
+
+  2. *Note ScopeDeclaration1::, *Note ScopeDeclaration2::, *Note
+     Lookup5::: new header.
+
+  3. *Note Faculty1::: changed correctness to `incorrect'.
+
+  4. New test case, *Note ReplaceFunction::, according to N.3 of
+     section 2.2 "Is Modelica a strict define­before­use language?" of
+     the minutes.
+
+  5. *Note DeclareConstant1::, *Note DeclareConstant3::: new header.
+
+  6. *Note ModifyConstant2::: changed correctness to `correct'.
+
+  7. New test cases, *Note ModifyConstant5::, *Note ModifyConstant6::,
+     to check modification of final constants.
+
+  8. *Note ConnectTypes::: introduced connection equations for
+     parameters and constants in the flat representation.
+
+  9. *Note ConnectHierarchical2::: changed correctness to `correct'.
+
+ 10. *Note ConnectFlowEffort::: simplified; added new test case, *Note
+     RedeclareFlowEffort::.
+
+ 11. *Note ConstructParameters::: added keywords `input' and `output'
+     to declarations in the flat model representation.
+
+ 12. *Note Real2Integer1::: changed correctness to `erroneous' and
+     corrected flat model representation.
+
+With these modifications most unclear issues of version 0.9.1 are
+resolved. (*Note Open Issues::, for remaining questions.)
+
+Version 0.9 to 0.9.1
+====================
+
+  1. *Note ConditionalArrayExpression1::: corrected classification
+     (&array).
+
+
+
+
+Tag Table:
+Node: Top216
+Node: Conventions1726
+Node: General Conventions1960
+Node: Classification2745
+Node: Flat Modelica3775
+Node: Open Issues7792
+Node: Types8332
+Node: Overloading and automatic type conversions12035
+Node: Array syntax12915
+Node: Parameters13404
+Node: Expression Properties13833
+Node: Declarations15470
+Node: Connections15869
+Node: Built-in types as connectors16380
+Node: Integer expressions17035
+Node: Redeclaration of parameter as variable19138
+Node: For loops20281
+Node: Equations20523
+Node: Modifications20938
+Node: Test Cases23957
+Node: Abs27619
+Node: Abs227712
+Node: Algorithm128138
+Node: Algorithm229706
+Node: Algorithm330074
+Node: Algorithm430643
+Node: Array130979
+Node: Array231768
+Node: Array332329
+Node: Array433489
+Node: Array534146
+Node: Array635195
+Node: Array736421
+Node: Array837120
+Node: ArrayModification137668
+Node: ArrayModification1038356
+Node: ArrayModification1139134
+Node: ArrayModification1239909
+Node: ArrayModification240841
+Node: ArrayModification341577
+Node: ArrayModification442383
+Node: ArrayModification543119
+Node: ArrayModification643835
+Node: ArrayModification744629
+Node: ArrayModification845522
+Node: ArrayModification946284
+Node: ArraySlice147009
+Node: Array_builtin47671
+Node: Circuit148264
+Node: Class152304
+Node: Class252628
+Node: Class353021
+Node: Class453332
+Node: ConditionalArrayExpression153687
+Node: ConditionalArrayExpression254229
+Node: Connect155338
+Node: Connect1056042
+Node: Connect1156520
+Node: Connect257000
+Node: Connect357847
+Node: Connect458245
+Node: Connect558862
+Node: Connect659451
+Node: Connect760044
+Node: Connect861022
+Node: Connect961977
+Node: ConnectConst162605
+Node: ConnectFlowEffort63341
+Node: ConnectHierarchical163956
+Node: ConnectHierarchical265272
+Node: ConnectInner166749
+Node: ConnectInner268195
+Node: ConnectInner368857
+Node: ConnectTypes70361
+Node: Constant171680
+Node: Constant272329
+Node: Constant373283
+Node: Constant473947
+Node: Constant574446
+Node: Constant674845
+Node: ConstrainingType175417
+Node: ConstrainingType279923
+Node: ConstrainingType381759
+Node: ConstructParameters83557
+Node: ConstructParameters184495
+Node: ConstructParameters285311
+Node: Declaration186114
+Node: Declaration286483
+Node: Declaration386844
+Node: DeclarationOrder187211
+Node: DeclarationOrder288059
+Node: DeclareConstant189233
+Node: DeclareConstant289759
+Node: DeclareConstant390175
+Node: DependsMutual90680
+Node: DependsRecursive91675
+Node: Derivative192082
+Node: Discrete193800
+Node: Discrete294360
+Node: DisturbedResistance194881
+Node: DisturbedResistance295443
+Node: DisturbedResistance396040
+Node: DisturbedResistance496986
+Node: Encapsulated197777
+Node: Encapsulated298704
+Node: Encapsulated399391
+Node: EquationComponent1100184
+Node: EquationComponent2100972
+Node: EquationComponent3101835
+Node: EquationComponent4102706
+Node: EquationComponent5103655
+Node: EquationFor1104432
+Node: EquationFor2105546
+Node: EquationFor3106315
+Node: EquationIf1107117
+Node: EquationIf2108334
+Node: EquationIf3109102
+Node: EquationIf4109755
+Node: Error110740
+Node: in110838
+Node: testcase:110928
+Node: Import4.mo111037
+Node: InnerClass1.mo111451
+Node: InnerOuter1.mo111881
+Node: Extends1112010
+Node: Faculty1112584
+Node: Faculty2113097
+Node: Faculty3113793
+Node: Faculty4114629
+Node: Function1116090
+Node: Function2116729
+Node: Function3117236
+Node: Function4117664
+Node: Function5118175
+Node: Function6119525
+Node: Function7120232
+Node: Function8120717
+Node: Function9121202
+Node: Import1121856
+Node: Import2123254
+Node: Import3124157
+Node: Import4125338
+Node: InnerClass1126500
+Node: InnerOuter1127758
+Node: InnerOuter2128397
+Node: Integer2Real129747
+Node: Lookup1130308
+Node: Lookup2130857
+Node: Lookup3131633
+Node: Lookup4132024
+Node: Lookup5132708
+Node: Lookup6133372
+Node: Lookup7133961
+Node: Modification1134327
+Node: Modification10135132
+Node: Modification11135838
+Node: Modification2136663
+Node: Modification3137239
+Node: Modification4137882
+Node: Modification5138422
+Node: Modification6139061
+Node: Modification7139840
+Node: Modification8140671
+Node: Modification9141280
+Node: ModifyConstant1141765
+Node: ModifyConstant2142519
+Node: ModifyConstant3143271
+Node: ModifyConstant4143906
+Node: ModifyConstant5144447
+Node: ModifyConstant6145027
+Node: ModifyUnknown1145582
+Node: ModifyUnknown2145977
+Node: NoEvent1146380
+Node: Overwriting1146844
+Node: Overwriting2147422
+Node: Overwriting3147981
+Node: Overwriting4148686
+Node: Partial1149140
+Node: Protected1149605
+Node: Range1150239
+Node: Real2Integer1151579
+Node: Real2Integer2152201
+Node: Real2Integer3152664
+Node: Record1153155
+Node: Redeclare1153578
+Node: Redeclare2154183
+Node: Redeclare3154782
+Node: RedeclareFlowEffort155457
+Node: ReplaceFunction156038
+Node: ScopeDeclaration1156827
+Node: ScopeDeclaration2157328
+Node: ScopeDeclaration3158134
+Node: ScopeDeclaration4158944
+Node: ScopeModification1159624
+Node: ScopeModification2160454
+Node: Shadow1161022
+Node: SimpleIntegrator1161670
+Node: SimpleIntegrator2162359
+Node: SimpleIntegrator3163020
+Node: SimpleIntegrator4163561
+Node: Terminal1164034
+Node: Type1164762
+Node: Type2165084
+Node: Type3165641
+Node: Type4166026
+Node: Type5166724
+Node: Type6167121
+Node: Type7167781
+Node: Type8168135
+Node: Units1168478
+Node: Units2169652
+Node: WhenSemantics1170249
+Node: XPowers1171156
+Node: XPowers2172125
+Node: XPowers3173179
+Node: modelica_1_1_Array9173822
+Node: modelica_1_1_Function10174342
+Node: modelica_1_1_Type10175238
+Node: modelica_1_1_Type11175756
+Node: modelica_1_1_Type9177191
+Node: package-s-1178343
+Node: partial-s-1179056
+Node: prtest179566
+Node: Change-Log180376
+
+End Tag Table

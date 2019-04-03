@@ -1,0 +1,68 @@
+// name:      Circuit3x
+// keywords:  resolveLoops
+// status:    correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("Circuit3x.mo"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection"); getErrorString();
+simulate(Circuit3x); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Circuit3x_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Circuit3x', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 46
+//  * Number of variables: 46
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 3
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (11):
+//  * Single equations (assignments): 9
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 2
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 2 {(1,100.0%) 4,(1,100.0%) 5}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 2 (Cds.v,Cgs.v)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (6):
+//  * Single equations (assignments): 4
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 2
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 2 {(1,100.0%) 4,(1,100.0%) 4}
+//  * Non-linear torn systems: 0
+// "
+// endResult

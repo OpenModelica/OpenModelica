@@ -1,0 +1,157 @@
+// name: cseFunctionCall8
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+model FunctionCallTest8
+  function f
+    input Real x;
+    input Real y;
+    output Real z;
+    annotation(derivative(noDerivative(y=g(x))) = f_der);
+//  external \"C\" z=external_f(x, y) annotation(Include = \"#include <stdlib.h>
+//  double external_f(x, y)
+//  {
+//    return x*y + 1.0;
+//  }\");
+algorithm
+z := x*y + 1.0;
+  end f;
+
+  function f_der
+    input Real x;
+    input Real x_der;
+    input Real y;
+    output Real z_der;
+  protected 
+    Real y_der;
+  algorithm 
+    //y = sin(x) * 2.0 + 1.0
+    y_der := cos(x)*2.0;
+    z_der := x_der*y + x*y_der;
+  end f_der;
+
+  function g
+    input Real a;
+    output Real b;
+  algorithm 
+    b := sin(a) * 2.0 + 1.0;
+  end g;
+
+  Real u;
+  Real u1;
+  Real u2;
+  Real i;
+  parameter Real C = 1;
+initial equation 
+  u1 = 5;
+equation 
+  u = 10;
+  i = C*der(u1);
+  i = C*der(u2);
+  u = f(time, g(time*time))*u1 + u2;
+end FunctionCallTest8;
+end CSE;
+"); getErrorString();
+
+//setCommandLineOptions("--preOptModules=unitChecking,evaluateReplaceProtectedFinalEvaluateParameters,stateMachineElab,simplifyIfEquations,expandDerOperator,clockPartitioning,CSE_EachCall,findStateOrder,introduceDerAlias,inputDerivativesForDynOpt,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,comSubExp,sortEqnsVars"); getErrorString();
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest8); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (5)
+// ========================================
+// 1: i.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
+// 2: $DER.u2.$pDERLSJac0.dummyVarLSJac0:VARIABLE(fixed = false )  type: Real 
+// 3: $res1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (5, 5)
+// ========================================
+// 1/1 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = C * $DER.u2.$pDERLSJac0.dummyVarLSJac0 - i.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): i.$pDERLSJac0.dummyVarLSJac0 = C * $DER.u1.SeedLSJac0   [dynamic |0|0|0|0|]
+// 3/3 (1): 0.0 = $cse1 * $DER.u1.SeedLSJac0 + $DER.u2.$pDERLSJac0.dummyVarLSJac0   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse2 = CSE.FunctionCallTest8.g(time ^ 2.0)   [unknown |0|0|0|0|]
+// 5/5 (1): $cse1 = CSE.FunctionCallTest8.f(time, $cse2)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (6)
+// ========================================
+// 1: input $DER.u1.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 2: input u1:VARIABLE()  type: Real 
+// 3: input C:PARAM()  = 1.0  type: Real 
+// 4: input $res1:VARIABLE()  type: Real 
+// 5: input $DER.u2:DUMMY_DER(fixed = false )  type: Real 
+// 6: input i:VARIABLE()  type: Real 
+//
+//
+// ########### CSE Replacements (2/45)
+// ========================================
+// 1: $cse1 - CSE.FunctionCallTest8.f(time, $cse2) - {}
+// 2: $cse2 - CSE.FunctionCallTest8.g(time ^ 2.0) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (7)
+// ========================================
+// 1: i:VARIABLE()  type: Real 
+// 2: u2:DUMMY_STATE()  type: Real 
+// 3: u1:STATE(1)()  type: Real 
+// 4: $DER.u2:DUMMY_DER(fixed = false )  type: Real 
+// 5: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (7, 7)
+// ========================================
+// 1/1 (1): 0.0 = $cse3 * der(u1) + $cse5 * u1 + $DER.u2   [dynamic |0|0|0|0|]
+// 2/2 (1): i = C * $DER.u2   [dynamic |0|0|0|0|]
+// 3/3 (1): i = C * der(u1)   [dynamic |0|0|0|0|]
+// 4/4 (1): 10.0 = $cse3 * u1 + u2   [dynamic |0|0|0|0|]
+// 5/5 (1): $cse5 = CSE.FunctionCallTest8.f_der(time, $cse4, 1.0)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse4 = CSE.FunctionCallTest8.g(time ^ 2.0)   [unknown |0|0|0|0|]
+// 7/7 (1): $cse3 = CSE.FunctionCallTest8.f(time, $cse4)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (2)
+// ========================================
+// 1: u:VARIABLE(fixed = true )  = 10.0  type: Real 
+// 2: C:PARAM()  = 1.0  type: Real 
+//
+//
+// ########### CSE Replacements (3/46)
+// ========================================
+// 1: $cse3 - CSE.FunctionCallTest8.f(time, $cse4) - {}
+// 2: $cse4 - CSE.FunctionCallTest8.g(time ^ 2.0) - {}
+// 3: $cse5 - CSE.FunctionCallTest8.f_der(time, $cse4, 1.0) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

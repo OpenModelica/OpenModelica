@@ -1,0 +1,24 @@
+// name:     constLinSys 
+// keywords: Simulate, constant linear System
+// status: correct
+// teardown_command: rm -rf constLinSys constLinSys.* constLinSys_* output.log
+// 
+//  Simulate models and read in data.
+//
+loadFile("constantLinSys.mo");
+simulate(constLinSys, numberOfIntervals=1);
+val(a,0.0);
+val(b,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "constLinSys_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'constLinSys', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// -4.076357827476039
+// -3.258785942492011
+// endResult

@@ -1,0 +1,30 @@
+// name: getCommandLineOptions
+// keywords: 
+// status: correct
+//
+// Tests the getCommandLineOptions API function.
+//
+
+clearCommandLineOptions();
+getCommandLineOptions();
+setCommandLineOptions("-d=failtrace");
+getCommandLineOptions();
+setCommandLineOptions("--showAnnotations");
+getCommandLineOptions();
+setCommandLineOptions("-d=ceval");
+getCommandLineOptions();
+setCommandLineOptions("--postOptModules=dumpDAE,dumpDAEXML");
+getCommandLineOptions();
+
+// Result:
+// true
+// {}
+// true
+// {"-d=failtrace"}
+// true
+// {"-d=failtrace","--showAnnotations=true"}
+// true
+// {"-d=ceval,failtrace","--showAnnotations=true"}
+// true
+// {"-d=ceval,failtrace","--postOptModules=dumpDAE,dumpDAEXML","--showAnnotations=true"}
+// endResult

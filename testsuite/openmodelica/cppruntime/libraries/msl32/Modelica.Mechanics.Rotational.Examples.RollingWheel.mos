@@ -1,0 +1,37 @@
+// name:     Modelica.Mechanics.Rotational.Examples.RollingWheel
+// teardown_command: rm -f Modelica.Mechanics.Rotational.Examples.RollingWheel_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.Rotational.Examples.RollingWheel,outputFormat="mat",stopTime=5.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotational.Examples.RollingWheel_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Rotational.Examples.RollingWheel.mat","Modelica.Mechanics.Rotational.Examples.RollingWheel_diff.csv",0.01,0.0001,
+  {"mass.s",
+  "mass.v",
+  "der(mass.s)",
+  "der(mass.v)",
+  "der(inertia.phi)",
+  "inertia.flange_a.tau",
+  "inertia.phi",
+  "mass.flange_a.s",
+  "mass.flange_b.f",
+  "quadraticSpeedDependentForce.s"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.RollingWheel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.RollingWheel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

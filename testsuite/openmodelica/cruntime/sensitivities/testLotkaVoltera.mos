@@ -1,0 +1,93 @@
+// name: testSens3
+// status: correct
+
+
+loadString("
+model LotkaVolterra
+  Real x(start=5),y(start=3), z;
+  parameter Real mu1=5,mu2=2;
+  parameter Real lambda1=3,lambda2=1;
+  parameter Real a=lambda1+lambda2,b=a*mu1;
+equation
+  0 = x*(mu1-lambda1*y) - der(x);
+  0 = -y* (mu2 -lambda2*x) - der(y);
+  der(z) = a*x+b*y;
+end LotkaVolterra;
+
+model LotkaVolterraSensitivities
+  parameter Integer n = 2;
+  parameter Integer np = 4;
+  Real s[np,n];
+  Real dF[n,n] = [[mu1-lambda1*y,-lambda2*x];[lambda2*y,-mu2+lambda2*x]];
+  Real dFp[np,n] = [  [-x*y,0]; [0,x*y]; [x,0]; [0,-y]];
+
+  Real x(start=5),y(start=3);
+  parameter Real mu1=5,mu2=2;
+  parameter Real lambda1=3,lambda2=1;
+
+equation
+  0 = x*(mu1-lambda1*y) - der(x);
+  0 = -y* (mu2 -lambda2*x) - der(y);
+
+  for i in 1:np loop
+    //der(s[i,:]) = dF*s[i,:]+dFp[i,:];
+    der(s[i,:]) = dFp[i,:];
+  end for;
+
+end LotkaVolterraSensitivities;
+");
+getErrorString();
+
+simulate(LotkaVolterraSensitivities);
+getErrorString();
+
+val(s[1,1],1);
+val(s[2,2],1);
+val(s[3,1],1);
+val(s[4,2],1);
+
+setCommandLineOptions("+calculateSensitivities");
+simulate(LotkaVolterra, method="ida", simflags="-idaSensitivity");
+getErrorString();
+
+/*
+// TODO compare results, its correnty not working due to $ char in name
+size := readSimulationResultSize("LotkaVolterra_res.mat");
+str := readSimulationResultVars("LotkaVolterra_res.mat");
+getErrorString();
+
+res := readSimulationResult("LotkaVolterra_res.mat",{'$Sensitivities.lambda1.x','$Sensitivities.lambda1.y'}, size);
+
+"lambda1";
+res[1,size];
+res[2,size];
+
+*/
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "LotkaVolterraSensitivities_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'LotkaVolterraSensitivities', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// -3.239272936814215
+// 3.239272936814215
+// 1.011875042553875
+// -2.561227058038907
+// true
+// record SimulationResult
+//     resultFile = "LotkaVolterra_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-idaSensitivity'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

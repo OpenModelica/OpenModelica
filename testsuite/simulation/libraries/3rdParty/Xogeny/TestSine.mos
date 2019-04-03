@@ -1,0 +1,13 @@
+// status: correct
+// teardown_command: rm -f TestSine_*.o
+
+loadFile("TestSine.mo");getErrorString();
+buildModel(TestSine);getErrorString();
+
+// Result:
+// true
+// ""
+// {"TestSine","TestSine_init.xml"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,31 @@
+// name: bug_2286_literal
+// keywords:
+// status: correct
+//
+//  tests for algorithms with arrays as lhs
+//
+
+loadString("
+model bug_2286_literal
+  Boolean a[1] = {time > 0.4};
+  Boolean b[1] = {time > 0.5};
+  Boolean c[1];
+algorithm
+  c := a and b;
+end bug_2286_literal;
+"); getErrorString();
+
+simulate(bug_2286_literal); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug_2286_literal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug_2286_literal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,85 @@
+// name: solveSymbolicLinearSystem
+// status: correct
+// teardown_command: rm -f foo* output.log
+
+loadString("
+model foo
+  Real x, y;
+  Real v, w, z;
+  Real a,b,c,d;
+  Real[9] err;
+  Real res(start = 0, fixed = true);
+equation
+  2*x + y = 1;
+  (1+time)*x + y = 1;
+
+  2*x + y - 1 = err[1];
+  (1+time)*x + y - 1 = err[2];
+
+
+  2*v + 3*w + 0*z = time;
+  5*v + 2*w + z = 0;
+  v + w + z = 1;
+
+  2*v + 3*w + 0*z - time = err[3];
+  5*v + 2*w + z = err[4];
+  v + w + z - 1 = err[5];
+
+
+  time*a + sin(time)*b + (1+time)*c + cos(sin(time))*d = time^2 + time + 1;
+  cosh(time)*a + exp(time)*b + tanh(1+time)*c + cos(time*7+5)*d = (time+5)^2 + time + 1;
+  exp(time)*a + (1+time)*(time-1)*b + sinh(1+time)*c + cos(time+3)*d = (time+8)^2 + time + 1;
+  cos(time)*a + sin(time)^2*b + (1+time)^2*c + cos(time*10)^3*d = (time)^5 + time + 1;
+
+  time*a + sin(time)*b + (1+time)*c + cos(sin(time))*d - (time^2 + time + 1) = err[6];
+  cosh(time)*a + exp(time)*b + tanh(1+time)*c + cos(time*7+5)*d -( (time+5)^2 + time + 1) = err[7];
+  exp(time)*a + (1+time)*(time-1)*b + sinh(1+time)*c + cos(time+3)*d - ((time+8)^2 + time + 1) = err[8];
+  cos(time)*a + sin(time)^2*b + (1+time)^2*c + cos(time*10)^3*d - ( (time)^5 + time + 1) = err[9];
+
+  der(res) = abs(max(err)) + abs(min(err));
+end foo;
+
+");
+getErrorString();
+
+simulate(foo,simflags="-s euler");
+getErrorString();
+val(res,0);
+val(res,1);
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=10 --preOptModules-=comSubExp");
+simulate(foo, simflags="-lv LOG_LS -s euler");
+getErrorString();
+val(res,0);
+val(res,1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s euler'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 4.598499359076406e-14
+// true
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
+//     messages = "LOG_LS            | info    | initialize linear system solvers
+// |                 | |       | | 3 linear systems
+// LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 6.8309976119663e-14
+// endResult

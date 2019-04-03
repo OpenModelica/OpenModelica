@@ -1,0 +1,130 @@
+// name:     simulate ParallelFlowEvaporator
+// keywords: SiemensPower ParallelFlowEvaporator
+// status:   correct
+// env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple* _SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple* SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test* _SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test* SiemensPower_Media_TTSE_Utilities_* output.log
+//
+//  Test SiemensPower component ParallelFlowEvaporator
+//
+
+loadModel(Modelica);
+loadFile("SiemensPower/package.mo");
+/*
+// test simple model
+simulate(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple_res.mat",
+  "./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat","SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple_diff.csv",0.01,0.00001,
+  { "EVA2.flueGasZone[1].tube.hOut",
+    "EVA2.flueGasZone[1].tube.m_flow",
+    "EVA2.flueGasZone[1].tube.p",
+    "EVA2.flueGasZone[1].portGasOut.h_outflow",
+    "EVA2.flueGasZone[1].tube.wall.layer[1].T[1]",
+    "h_in_gas.C1signal.y",
+    "h_in_water.C1signal.y",
+    "smoothing.y",
+    "smoothing1.y",
+    "smoothing2.y"
+  });
+
+// test jacobians
+// simulate(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple, stopTime=1, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat");
+
+// test full model
+simulate(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_test.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test_res.mat",
+  "./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_test.mat","SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test_diff.csv",0.01,0.00001,
+  { "EVA1.flueGasZone[1].tube.hOut",
+    "EVA1.flueGasZone[1].tube.m_flow",
+    "EVA1.flueGasZone[1].tube.p",
+    "EVA1.flueGasZone[1].portGasOut.h_outflow",
+    "EVA1.flueGasZone[1].tube.wall.layer[1].T[1]",
+    "EVA1.flueGasZone[2].tube.hOut",
+    "EVA1.flueGasZone[2].tube.m_flow",
+    "EVA1.flueGasZone[2].tube.p",
+    "EVA1.flueGasZone[2].portGasOut.h_outflow",
+    "EVA1.flueGasZone[2].tube.wall.layer[1].T[1]",
+    "EVA2.flueGasZone[1].tube.hOut",
+    "EVA2.flueGasZone[1].tube.m_flow",
+    "EVA2.flueGasZone[1].tube.p",
+    "EVA2.flueGasZone[1].portGasOut.h_outflow",
+    "EVA2.flueGasZone[1].tube.wall.layer[1].T[1]",
+    "EVA2.flueGasZone[2].tube.hOut",
+    "EVA2.flueGasZone[2].tube.m_flow",
+    "EVA2.flueGasZone[2].tube.p",
+    "EVA2.flueGasZone[2].portGasOut.h_outflow",
+    "EVA2.flueGasZone[2].tube.wall.layer[1].T[1]",
+    "downcomer.h[1]",
+    "downcomer.h[2]",
+    "downcomer.p",
+    "downcomer.m_flow",
+    "downcomer.wall.layer[1].T[1]",
+    "downcomer.wall.layer[2].T[1]",
+    "downcomer.wall.layer[3].T[1]",
+    "h_in_gas.C1signal.y",
+    "h_in_water.C1signal.y",
+    "smoothing.y",
+    "smoothing1.y",
+    "smoothing2.y"
+  });
+
+*/
+// test jacobians
+simulate(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test, stopTime=1, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_test.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test_res.mat",
+  "./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_test.mat","SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test_diff.csv",0.01,0.00001,
+  { "EVA1.flueGasZone[1].tube.hOut",
+    "EVA1.flueGasZone[1].tube.m_flow",
+    "EVA1.flueGasZone[1].tube.p",
+    "EVA1.flueGasZone[1].portGasOut.h_outflow",
+    "EVA1.flueGasZone[1].tube.wall.layer[1].T[1]",
+    "EVA1.flueGasZone[2].tube.hOut",
+    "EVA1.flueGasZone[2].tube.m_flow",
+    "EVA1.flueGasZone[2].tube.p",
+    "EVA1.flueGasZone[2].portGasOut.h_outflow",
+    "EVA1.flueGasZone[2].tube.wall.layer[1].T[1]",
+    "EVA2.flueGasZone[1].tube.hOut",
+    "EVA2.flueGasZone[1].tube.m_flow",
+    "EVA2.flueGasZone[1].tube.p",
+    "EVA2.flueGasZone[1].portGasOut.h_outflow",
+    "EVA2.flueGasZone[1].tube.wall.layer[1].T[1]",
+    "EVA2.flueGasZone[2].tube.hOut",
+    "EVA2.flueGasZone[2].tube.m_flow",
+    "EVA2.flueGasZone[2].tube.p",
+    "EVA2.flueGasZone[2].portGasOut.h_outflow",
+    "EVA2.flueGasZone[2].tube.wall.layer[1].T[1]",
+    "downcomer.h[1]",
+    "downcomer.h[2]",
+    "downcomer.p",
+    "downcomer.m_flow",
+    "downcomer.wall.layer[1].T[1]",
+    "downcomer.wall.layer[2].T[1]",
+    "downcomer.wall.layer[3].T[1]",
+    "h_in_gas.C1signal.y",
+    "h_in_water.C1signal.y",
+    "smoothing.y",
+    "smoothing1.y",
+    "smoothing2.y"
+  });
+
+
+  
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/ParallelFlowEvaporatorOwnMedia_test.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResults
+

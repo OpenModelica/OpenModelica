@@ -1,0 +1,62 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity,stopTime=5.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity.mat","Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity_diff.csv",0.01,0.00001,
+  {"body1.frame_a.r_0[1]",
+  "body1.frame_a.r_0[2]",
+  "body1.frame_a.r_0[3]",
+  "body1.v_0[1]",
+  "body1.v_0[2]",
+  "body1.v_0[3]",
+  "body1.w_a[1]",
+  "body1.w_a[2]",
+  "body1.w_a[3]",
+  "body2.frame_a.r_0[1]",
+  "body2.frame_a.r_0[2]",
+  "body2.frame_a.r_0[3]",
+  "body2.v_0[1]",
+  "body2.v_0[2]",
+  "body2.v_0[3]",
+  "body2.w_a[1]",
+  "body2.w_a[2]",
+  "body2.w_a[3]",
+  "der(body1.frame_a.r_0[1])",
+  "der(body1.frame_a.r_0[2])",
+  "der(body1.frame_a.r_0[3])",
+  "der(body1.v_0[1])",
+  "der(body1.v_0[2])",
+  "der(body1.v_0[3])",
+  "der(body1.w_a[1])",
+  "der(body1.w_a[2])",
+  "der(body1.w_a[3])",
+  "der(body2.frame_a.r_0[1])",
+  "der(body2.frame_a.r_0[2])",
+  "der(body2.frame_a.r_0[3])",
+  "der(body2.v_0[1])",
+  "der(body2.v_0[2])",
+  "der(body2.v_0[3])",
+  "der(body2.w_a[1])",
+  "der(body2.w_a[2])",
+  "der(body2.w_a[3])"});
+  
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity', storeInTemp = false, noClean = false, options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

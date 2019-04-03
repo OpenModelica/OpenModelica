@@ -1,0 +1,123 @@
+//name:         Accelerate2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.Accelerate,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+"Accelerate1.v:";
+val(Accelerate1.v,0.0);
+val(Accelerate1.v,0.25);
+val(Accelerate1.v,0.5);
+val(Accelerate1.v,0.75);
+val(Accelerate1.v,1.0);
+
+"Accelerate1.s:";
+val(Accelerate1.s,0.0);
+val(Accelerate1.s,0.25);
+val(Accelerate1.s,0.5);
+val(Accelerate1.s,0.75);
+val(Accelerate1.s,1.0);
+
+"Accelerate1.flange_b.s:";
+val(Accelerate1.flange_b.s,0.0);
+val(Accelerate1.flange_b.s,0.25);
+val(Accelerate1.flange_b.s,0.5);
+val(Accelerate1.flange_b.s,0.75);
+val(Accelerate1.flange_b.s,1.0);
+
+"SlidingMass1.s:";
+val(SlidingMass1.s,0.0);
+val(SlidingMass1.s,0.25);
+val(SlidingMass1.s,0.5);
+val(SlidingMass1.s,0.75);
+val(SlidingMass1.s,1.0);
+
+"SlidingMass1.flange_a.s:";
+val(SlidingMass1.flange_a.s,0.0);
+val(SlidingMass1.flange_a.s,0.25);
+val(SlidingMass1.flange_a.s,0.5);
+val(SlidingMass1.flange_a.s,0.75);
+val(SlidingMass1.flange_a.s,1.0);
+
+"SlidingMass1.flange_b.s:";
+val(SlidingMass1.flange_b.s,0.0);
+val(SlidingMass1.flange_b.s,0.25);
+val(SlidingMass1.flange_b.s,0.5);
+val(SlidingMass1.flange_b.s,0.75);
+val(SlidingMass1.flange_b.s,1.0);
+
+"SlidingMass1.v:";
+val(SlidingMass1.v,0.0);
+val(SlidingMass1.v,0.25);
+val(SlidingMass1.v,0.5);
+val(SlidingMass1.v,0.75);
+val(SlidingMass1.v,1.0);
+
+"SlidingMass1.a:";
+val(SlidingMass1.a,0.0);
+val(SlidingMass1.a,0.25);
+val(SlidingMass1.a,0.5);
+val(SlidingMass1.a,0.75);
+val(SlidingMass1.a,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Accelerate_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Accelerate1.v:"
+// 0.0
+// 0.25
+// 0.5
+// 0.75
+// 1.0
+// "Accelerate1.s:"
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// "Accelerate1.flange_b.s:"
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// "SlidingMass1.s:"
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// "SlidingMass1.flange_a.s:"
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// "SlidingMass1.flange_b.s:"
+// 1.0
+// 1.031250000078315
+// 1.12500000008594
+// 1.281250000090922
+// 1.500000000094082
+// "SlidingMass1.v:"
+// 0.0
+// 0.25
+// 0.5
+// 0.75
+// 1.0
+// "SlidingMass1.a:"
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// endResult

@@ -1,0 +1,22 @@
+// name:     Uniontype4
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype4.mo");
+simulate(Uniontype4);
+val(a,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Uniontype4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Uniontype4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 5.0
+// endResult

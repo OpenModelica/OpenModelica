@@ -1,0 +1,37 @@
+// name:     Reductions
+// keywords: reduction
+// status: correct
+// teardown_command: rm -rf Reductions Reductions.libs Reductions.log Reductions.makefile Reductions.cpp Reductions_* output.log
+// 
+// Test reduction expression.
+// Fix for bug #1136: http://openmodelica.ida.liu.se:8080/cb/issue/1136?navigation=true
+//
+loadFile("Reductions.mo");
+simulate(Reductions,numberOfIntervals=1); 
+val(x,0.0);
+val(y,0.0);
+val(z,0.0);
+val(w,0.0);
+val(erx,0.0);
+val(ery,0.0);
+val(erz,0.0);
+val(erw,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Reductions_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Reductions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 45.0
+// 0.0
+// 25.0
+// 120.0
+// 0.0
+// 8.777798510069901e+304
+// -8.777798510069901e+304
+// 1.0
+// endResult

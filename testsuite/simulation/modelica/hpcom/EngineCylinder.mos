@@ -1,0 +1,92 @@
+// name:     EngineCylinder
+// keywords: partlintornsystem
+// status: correct
+//
+
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("EngineCylinder.mo"); getErrorString();
+
+//setCommandLineOptions("+n=4"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection,partlintornsystem");getErrorString();
+
+simulate(EngineCylinder); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("EngineCylinder_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/EngineCylinder.mat",
+  "EngineCylinder_diff.csv",0.01,0.0001,
+  {"load.phi",
+   "load.w",
+   "filter.x[1]",
+   "filter.x[2]"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EngineCylinder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EngineCylinder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 1991
+//  * Number of variables: 1991
+// Warning: Alias set with several free start values
+//  * candidate: cylinder1.Cylinder.s(start = -0.3)
+//  * candidate: cylinder1.gasForce.s_rel(start = -0.0)
+// => select value from cylinder1.Cylinder.s(start = -0.3) for variable: cylinder1.Cylinder.s
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 4 (load.phi,load.w,filter.x[1],filter.x[2])
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (168):
+//  * Single equations (assignments): 164
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 2
+//  * Torn equation systems: 2
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 2 {(2,100.0%),(2,100.0%)}
+//  * Non-linear Jacobian: 0
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {6 53}
+//  * Non-linear torn systems: 1 {1 13}
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 520
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 91 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (789):
+//  * Single equations (assignments): 785
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 2
+//  * Torn equation systems: 2
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 2 {(2,100.0%),(2,100.0%)}
+//  * Non-linear Jacobian: 0
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 1 {6 53}
+//  * Non-linear torn systems: 1 {1 13}
+// "
+// {"Files Equal!"}
+// endResult

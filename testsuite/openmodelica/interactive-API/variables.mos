@@ -1,0 +1,22 @@
+// name:     Variables
+// keywords: variables, interactive
+// status:   correct
+// 
+//  Using variables in the interactive environment
+//
+
+listVariables();
+
+a:=4;
+b:=1:5;
+typeOf(a);
+typeOf(b);
+a*b
+// Result:
+// {}
+// 4
+// {1,2,3,4,5}
+// "Integer"
+// "Integer[5]"
+// {4,8,12,16,20}
+// endResult

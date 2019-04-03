@@ -1,0 +1,39 @@
+// status: correct
+
+echo(false);
+s1 := "model M1
+  annotation(Icon(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}),
+      Line(points={{-40,30},{40,30}}, color={0,0,255}),
+      Line(points={{-20,10},{20,10}}, color={0,0,255}),
+      Line(points={{0,90},{0,50}}, color={0,0,255})}));
+end M1;";
+loadString(s1, "M1.mo");
+getErrorString();
+addComponent(m1, Real, M1, annotate=Placement(visible=true, transformation=transformation(origin={-24,-54}, extent={{-10,-10},{10,10}}, rotation=0)));
+getErrorString();
+s2 := listFile(M1);
+getErrorString();
+contents := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+getErrorString();
+deleteComponent(m1, M1);
+getErrorString();
+s2 := listFile(M1);
+if s1<>diffModelicaFileListings(contents, s2, OpenModelica.Scripting.DiffFormat.plain) then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + contents + "\n");
+  print("\ndeleteComponent+listFile:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(contents, s2) + "\n");
+  print("\nDiff from expected:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  writeFile("a",s1);
+  writeFile("b",s2);
+  system("diff -u a b");
+end if;
+print("OK\n");
+
+// Result:
+// OK
+// endResult

@@ -1,0 +1,43 @@
+// name:     Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses);
+compareVars :=
+{
+   "dcpm1.la.i",
+   "dcpm2.la.i",
+   "loadInertia1.phi",
+   "loadInertia1.w",
+   "loadInertia2.phi",
+   "loadInertia2.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses
+// {"dcpm1.la.i","dcpm2.la.i","loadInertia1.phi","loadInertia1.w","loadInertia2.phi","loadInertia2.w"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.la.i|dcpm2.la.i|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

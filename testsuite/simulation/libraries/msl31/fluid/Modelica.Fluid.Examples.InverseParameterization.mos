@@ -1,0 +1,30 @@
+//name:        Modelica.Fluid.Examples.InverseParameterization [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+// This model has issues due to Modelica bug #627:
+// https://trac.modelica.org/Modelica/ticket/627
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.InverseParameterization); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.InverseParameterization', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.InverseParameterization
+// [Interfaces.mo:725:9-730:39:writable] Error: Duplicate elements (due to inherited elements) not identical:
+//   first element is:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+//   second element is: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Error: Error occurred while flattening model Modelica.Fluid.Examples.InverseParameterization
+// "
+// end SimulationResult;
+// ""
+// endResult

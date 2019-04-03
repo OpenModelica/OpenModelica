@@ -1,0 +1,52 @@
+// name:     Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX);
+compareVars :=
+{
+   "T_min",
+   "T_max",
+   "p",
+   "h_min",
+   "h_max",
+   "s_min",
+   "s_max",
+   "h1",
+   "h2",
+   "s1",
+   "s2",
+   "Th",
+   "Ts",
+   "X[1]",
+   "X[2]",
+   "X[3]",
+   "X[4]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX
+// {"T_min","T_max","p","h_min","h_max","s_min","s_max","h1","h2","s1","s2","Th","Ts","X[1]","X[2]","X[3]","X[4]"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX', options = '', outputFormat = 'mat', variableFilter = 'time|T_min|T_max|p|h_min|h_max|s_min|s_max|h1|h2|s1|s2|Th|Ts|X.1.|X.2.|X.3.|X.4.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sh_TX_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

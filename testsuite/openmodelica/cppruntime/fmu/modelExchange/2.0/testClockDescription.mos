@@ -1,0 +1,162 @@
+// name:  testClockDescription
+// keywords: FMI 2.0 export multiple clocks and sub-clocks
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *SubClocks* output.log
+//
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadString("
+model SubClocks
+  Real x1(start = 0);
+  Real x2(start = 0);
+  Real x3(start = 0);
+  Real x4(start = 0);
+  Real x5(start = 0);
+  Clock c1 = subSample(Clock(1, 2), 2);
+  Clock c2 = shiftSample(c1, 1, 2);
+  Clock c3 = subSample(c2, 3);
+  Clock c4 = superSample(c3, 2);
+  Clock c5 = superSample(shiftSample(Clock(1.0), 1, 2), 2);
+equation
+  when c1 then
+    x1 = sample(time);
+  end when;
+  when c2 then
+    x2 = sample(time);
+  end when;
+  when c3 then
+    x3 = sample(time);
+  end when;
+  when c4 then
+    x4 = sample(time);
+  end when;
+  when c5 then
+    x5 = sample(time);
+  end when;
+end SubClocks;
+");
+getErrorString();
+
+translateModelFMU(SubClocks, version="2.0");
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq SubClocks.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "SubClocks.fmu"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"SubClocks\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"SubClocks\">
+//   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               intervalCounter=\"9\"
+//               shiftCounter=\"2\"
+//               resolution=\"6\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"36\"
+//               shiftCounter=\"2\"
+//               resolution=\"12\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"4\"
+//               shiftCounter=\"2\"
+//               resolution=\"4\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"2\"
+//               resolution=\"2\"
+//               /></Clock>
+//       <Clock><Inferred
+//               interval=\"0.5\"
+//               shiftCounter=\"1\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x1\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"4\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"x2\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"3\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"x3\"
+//     valueReference=\"2\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"2\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"x4\"
+//     valueReference=\"3\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"x5\"
+//     valueReference=\"4\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"5\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

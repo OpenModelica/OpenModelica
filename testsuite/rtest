@@ -1,0 +1,514 @@
+#!/usr/bin/perl -w
+use Cwd;
+use File::Temp qw/ tempfile /;
+
+#delete($ENV{'OPENMODELICALIBRARY'});
+if (defined $ENV{"RTEST_OMCFLAGS"}) {
+    $omcflags=$ENV{"RTEST_OMCFLAGS"} . " --alarm=900";
+} else {
+    $omcflags="--alarm=900";
+}
+
+(undef,$testTempFile) = tempfile("rtest$$.XXXXX", TMPDIR => 1, SUFFIX => ".tmp", UNLINK => 1);
+$cwd = getcwd;
+if ($cwd =~ m/(.*)testsuite\/(.+)$/) {
+  $OPENMODELICAHOME="$1build";
+  $dirname=$2;
+  $ENV{'OPENMODELICAHOME'} = $OPENMODELICAHOME;
+  $ENV{'REFERENCEFILES'} = "$1testsuite/ReferenceFiles";
+  $ENV{'OMLIBRARYCOMMON'} = "$1testsuite/simulation/libraries/common";
+  $ENV{'OMCOMPILERSOURCES'} = "$1OMCompiler/Compiler";
+} else {
+  print "You must run rtest from the testsuite (was run from $cwd)\n";
+  exit 0;
+}
+
+system "$OPENMODELICAHOME/bin/omc-diff -v1.4";
+if ($?) {
+  print "$OPENMODELICAHOME/bin/omc-diff seems to be missing or of an incompatible version.";
+  print "Compile omc-diff and run rtest again.";
+  exit 2;
+}
+
+# Windows (MinGW) prints 3 digits exponent ( vs *nix 2) by default
+# and perl prints them as mismatches if there are other actual mismatches.
+# makes actual testsuite mismatches harder to find
+# print only 2 exponent digits
+$ENV{'PRINTF_EXPONENT_DIGITS'} = 2;
+
+$successes=0;
+$total=0;
+$setbaseline=0;
+$verbose="yes";
+$returnwitherror=0;
+$pager="cat";
+$diffcmd="diff -U 5 -w";
+$dwdiffcmd="dwdiff '-d()' -l -C 3 -c -L";
+$log="";
+$tmpdir = "/tmp/omc-rtest-".(getpwuid($<)||getlogin()||"unknown")."/$dirname";
+$tmpdir =~ s/\s/_/g;
+system "mkdir -p $tmpdir";
+$got = "$tmpdir/equations-got";
+$expected = "$tmpdir/equations-expected";
+$difference = "$tmpdir/equations-diff";
+$baseline = "$tmpdir/baseline";
+@keys = ();
+$collectkeys = 0;
+$collectcases = 0;
+%knownkeys = ();
+$filearg = 0;
+$status = 0;
+$statusfilter = "all";
+$eps_mo = 1.0e-7;
+$eps_mos = 5e-3;
+$set_modelica_lib = 1;
+$nodelete = 0;
+$OMCEXE = "omc";
+
+sub ulimit_cmd
+{
+  my $stack_size = shift;
+  if ($ENV{'OMDEV'}) {
+    return "";
+  }
+  if ($stack_size eq "") {
+    return "";
+  }
+  return "ulimit -s $stack_size ; ";
+}
+
+# Creates a baseline, i.e. the stores the actual result as the expected result
+sub setbaselineone
+{
+    my $mismatch = 0;
+    my ($f,%info) = @_;
+    my $setup_command = $info{"setup_command"};
+    my $cflags = $info{"cflags"};
+    my $env = $info{"env"};
+    my $teardown_command = $info{"teardown_command"};
+    my $stack_size = $info{"stack_size"};
+    my $ulimit = ulimit_cmd($stack_size);
+    my $start_t = time;
+
+    $log = "$tmpdir/log-$f";
+    system "rm -f $log";
+    if ($setup_command) {
+      if ( system "$setup_command" ) {
+        my $end_t = time-$start_t;
+        print "== Failed to set baseline for $f (system $setup_command failed)";
+        print " [time: $end_t]\n";
+        return 1;
+      }
+    }
+    if (!$cflags) {
+      $cflags = "";
+    }
+    if (!$env) {
+      $env = "";
+    }
+    if ($ENV{'OMDEV'}) {
+      $env =~ s/:/\\;/g;
+    }
+    unlink "$testTempFile$f";
+    system "$env $ulimit $OPENMODELICAHOME/bin/$OMCEXE --running-testsuite=$testTempFile$f +locale=C $omcflags $cflags $f >>$log 2>&1";
+    if ($nodelete == 0 && open(TOREMOVE,"<$testTempFile$f")) {
+      while(my $line = <TOREMOVE>) {
+        $line =~ s/^\s*(.*?)\s*$/$1/;
+        unlink $line;
+      }
+    }
+    unlink "$testTempFile$f";
+    if ($teardown_command) {
+      system $teardown_command;
+    }
+
+    open(RES,">$baseline");
+    open(LOG,"<$log");
+    open(SRC,"<$f");
+
+    while(<SRC>) {
+      if (/^\/\/ Result:/../^\/\/ endResult/) {
+
+      } else {
+        my $x = $_;
+        $x =~ s/^ *\/\/ *Result:/\/\/ Result:/;
+        print RES "$x";
+      }
+    }
+    print RES "// Result:\n";
+    while(<LOG>) {
+      my $x = $_;
+      if ($x ne "\n") {
+        print RES "// $x";
+      } else {
+        print RES "//\n";
+      }
+    }
+    print RES "// endResult\n";
+    close RES;
+    close LOG;
+    close SRC;
+
+    my $end_t = time-$start_t;
+    print "Set baseline for $f [time: $end_t]\n";
+
+    open(SRC,"<$baseline");
+    open(DST,">$f");
+    # write in bin-mode to force LF instead of CRLF on windows!
+    binmode(DST);
+
+    while(<SRC>) {
+      $_ =~ s/[\n\r]$//g;
+      print DST "$_\x{0A}";
+    }
+    close DST;
+
+    return 0;
+}
+
+sub runone
+{
+    my $retval = 0;
+    my $mismatch = 0;
+    my ($f,%info) = @_;
+    my $setup_command = $info{"setup_command"};
+    my $cflags = $info{"cflags"};
+    my $env = $info{"env"};
+    my $teardown_command = $info{"teardown_command"};
+    my $stack_size = $info{"stack_size"};
+    my $ulimit = ulimit_cmd($stack_size);
+    my $start_t = time;
+
+    $log = "$tmpdir/log-$f";
+    system "rm -f $log";
+    if ($setup_command) {
+      if ( system "$setup_command >>$log 2>&1" ) {
+        print " setup_command failed";
+        return 1;
+      }
+    }
+    if (!$cflags) {
+      $cflags = "";
+    }
+    if (!$env) {
+      $env = "";
+    }
+    if ($ENV{'OMDEV'}) {
+      $env =~ s/:/\\;/g;
+    }
+    unlink "$testTempFile$f";
+    system "$env $ulimit $OPENMODELICAHOME/bin/$OMCEXE --running-testsuite=$testTempFile$f +locale=C $omcflags $cflags $f >>$log 2>&1";
+    $retval = $?;
+    if ($nodelete==0 && open(TOREMOVE,"<$testTempFile$f")) {
+      while(my $line = <TOREMOVE>) {
+        $line =~ s/^\s*(.*?)\s*$/$1/;
+        unlink $line;
+      }
+    }
+    unlink "$testTempFile$f";
+    if ($teardown_command) {
+      system "$teardown_command >>$log 2>&1";
+    }
+    my $end_t = time-$start_t;
+
+    if ($info{"status"} eq "erroneous") {
+      print "erroneous\n";
+      return 0;
+    }
+
+    if ( $retval != 0 ) {
+        if ($info{"status"} eq "correct") {
+            print "execution failed\n";
+            return 1;
+        }
+    } elsif ($info{"status"} ne "correct") {
+        print "this test should have failed\n";
+        return 1;
+    }
+
+    # Extract the result
+    open(RES,">$got");
+    open(LOG,"<$log");
+    while(<LOG>) {
+      s/^[ \t]*//;
+      s/[ \t]+/ /;
+      $str = $_;
+      # fix generated files on windows
+      if ($^O =~ /^msys/) {
+        # replace /X.mo?_tempNNNN/: -> /
+        $str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
+      }
+      if ($str =~ /^Unexpected end of \/proc\/mounts line/) {
+        # Ignore; sometimes comes from libhwloc when running docker
+      } elsif ($str =~ /^GC Warning:/) {
+        # Ignore; comes from libgc
+      } else {
+        print RES $str;
+      }
+    }
+    close LOG;
+    close RES;
+
+    # Compare
+    my $epsilon;
+    if ($f =~ /mos$/) {
+      $epsilon = $eps_mos;
+    } else {
+      $epsilon = $eps_mo;
+    }
+    system "$OPENMODELICAHOME/bin/omc-diff $epsilon $expected $got > $difference";
+
+    if ( $? != 0 ) {
+    print "equation mismatch [time: $end_t]\n";
+    ## make a newline
+    system "echo '' >> $log";
+    system "echo Equation mismatch: diff says: >> $log";
+    system "$diffcmd $expected $got >> $log";
+
+    ## make a newline
+    system "echo '' >> $log";
+    system "echo Equation mismatch: omc-diff says: >> $log";
+    system "cat $difference >> $log";
+    return 1;
+    }
+
+    print "ok [time: $end_t]\n";
+    return 0;
+}
+
+sub dofile
+{
+    my $f = shift;
+    my %info = ("status"   => "unknown",
+        "name"     => $f,
+        "keywords" => "unknown",
+        "setup_command" => "",
+        "cflags" => "",
+        "env" => "",
+        "teardown_command" => "",
+        "stack_size" => "");
+    $log = "$tmpdir/log-$f";
+    $tc_err = 1;
+    # Find the expected result
+    open(OUT,">$expected");
+    open(IN,"<$f");
+    while(<IN>) {
+    # @adrpo - uncomment for debugging
+    # print ($_);
+    if (/^\/\/ Result:/../^\/\/ endResult/) {
+        s/^[ \t]*//;
+        s/^\/\/ Result://;
+        s/^\/\/ endResult//;
+        s/[ \t]+/ /;
+        if (/^\/\/ /) {
+          print OUT substr($_,3);
+        } elsif (/^\/\/$/) { # on msys2 perl the $ does not match so we use . below
+          print OUT substr($_,2);
+        } elsif (/^\/\/./) { # on msys2 perl the $ does not match, use .
+          print OUT substr($_,2);
+        } elsif ($tc_err == 0)  {
+            print "Error in testcase: $f\n";
+            $tc_err = 1;
+        }
+    } elsif (/^\/\/[ \\|]*([a-z_]*):[ \\|]*([^\012\015\n\r]*)/) {
+        # @adrpo - uncomment for debugging
+        # print "Noticed: $1 = $2\n";
+        # $info{$1} = $value;
+        if($1 ne "env" or $set_modelica_lib) {
+          $info{$1} = $2;
+        }
+    }
+    }
+    close IN;
+    close OUT;
+
+    # Check for keyword match
+    if ($#keys >=0) {
+    my %ks;
+    for (split(/ *, */,$info{"keywords"})) { $ks{$_} = 1; }
+    for (@keys) {
+        if (! $ks{$_}) {
+        return 0;
+        }
+    }
+    }
+
+    # Check for status match
+     if ($statusfilter ne "all") {
+     if ($info{"status"} ne $statusfilter) {
+         return 0;
+     }
+     }
+
+    # Collecting files
+    if ($collectcases) {
+    if ($info{'status'} ne "unknown") {
+        print $info{'name'}."\n";
+    }
+    return 0;
+    }
+
+    # Collecting keys?
+    if ($collectkeys) {
+    if ($info{"keywords"}) {
+        for (split(/ *, */, $info{"keywords"})) {
+        if (!$knownkeys{$_}) {
+            $knownkeys{$_} = 1;
+        } else {
+            $knownkeys{$_} += 1;
+        }
+        }
+    }
+    return 0;
+    }
+
+    if (!$setbaseline) {
+      printf(" %s %-82s... ",
+         $info{'status'} eq 'correct'?'+':'-', $info{'name'});
+    }
+    $total = $total + 1;
+
+    if ( $info{"status"} !~ /^(erroneous|(in|)correct)$/ ) {
+    print "unknown testcase status\n";
+    return 1;
+    }
+
+    if ($setbaseline) {
+      setbaselineone $f,%info;
+      $status = 0;
+    } else {
+      $status = runone $f,%info;
+    }
+
+    if ($status == 0) {
+      $successes = $successes + 1;
+    } else {
+    if ($verbose eq "yes" ) {
+      print "\n";
+      print "==== Log $log\n";
+      system "$pager $log";
+    }
+    }
+}
+
+$start_t = time;
+while ($#ARGV >= 0) {
+    $arg = shift(@ARGV);
+
+    # $setbaseline = 1;
+
+    if ($arg =~ m/^\+/) {
+      $omcflags .= " $arg";
+    } elsif ($arg =~ m"^--with-omc=(.*)$") {
+      $OMCEXE="$1";
+    } elsif ($arg eq "--return-with-error-code") {
+      $returnwitherror=1;
+    } elsif ($arg eq "-v") {
+      $verbose="yes";
+    } elsif ($arg eq "-b") {
+      $setbaseline = 1;
+    } elsif ($arg eq "-c") {
+      $diffcmd = $dwdiffcmd
+    } elsif ($arg eq "-nodelete") {
+      $nodelete = 1;
+    } elsif ($arg eq "-p") {
+      if ($ENV{"PAGER"} eq "") {
+        $pager="more";
+      } else {
+        $pager=$ENV{"PAGER"};
+      }
+    } elsif ($arg eq "-k") {
+      if ($#ARGV < 0) {
+        print "-m needs an argument\n";
+        exit 1;
+      }
+      @keys = split(/,/,shift(@ARGV));
+    } elsif ($arg eq "-s") {
+      if ($#ARGV < 0) {
+        print "-s needs an argument\n";
+        exit 1;
+      }
+      $statusfilter = shift;
+    } elsif ($arg eq "-l") {
+      $collectkeys = 1;
+    } elsif ($arg eq "-L") {
+      $collectcases = 1;
+    } elsif ($arg eq "-nolib") {
+      $set_modelica_lib = 0;
+    } else {
+      $filearg = 1;
+      dofile $arg;
+    }
+}
+$end_t = time-$start_t;
+
+##################################################################
+## Sub Name: isNumber
+## Description: returns 1 if is an integer or a real, else 0
+## @author adrpo
+##################################################################
+sub isNumber
+{
+    eval
+    {
+        local $SIG{__WARN__} = sub { die };
+
+        scalar ($_[0] == $_[0]);
+    };
+
+    !$@;
+}
+
+#@author adrpo
+sub trim($)
+{
+    my $string = shift;
+    $string =~ s/^\s+//;
+    $string =~ s/\s+$//;
+    return $string;
+}
+
+
+##################################################################
+## Sub Name: LessThanEpsilon.
+## Description: This sub check if $1 - $2 < $3
+## @author adrpo
+##################################################################
+sub LessThanEpsilon
+{
+    my $e       = shift;
+    my $g       = shift;
+    my $epsilon = shift;
+
+    if (abs($e - $g) < $epsilon)
+    {
+            return 1;
+    }
+    else
+    {
+            return 0;
+    }
+}
+
+# Check for no file args
+# adrpo: 2013-11-13 DO NOT RUN ALL MOS IF NO FILES ARE GIVEN!
+if ($filearg == 0) {
+#   for (glob '*.mos ') { dofile $_; }
+    print "No test files given at command line!\n";
+    exit 0;
+}
+
+# Final output. Statistics and stuff
+if ($collectkeys || $collectcases) {
+    for (sort(keys %knownkeys)) {
+    printf "  %3d %s\n", $knownkeys{$_}, $_;
+    }
+} elsif ($setbaseline) {
+  printf "\n== set new baseline for %d tests\n",$total;
+} else {
+    printf "\n== %d out of %d tests failed [%s, time: %d]\n", $total-$successes, $total, $dirname, $end_t;
+}
+
+if ($returnwitherror && $total!=$successes) {
+  exit 1;
+}

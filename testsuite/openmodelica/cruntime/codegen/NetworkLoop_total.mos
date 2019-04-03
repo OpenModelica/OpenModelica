@@ -1,0 +1,21 @@
+// name: NetworkLoop_total.mo [BUG: #3180]
+// keywords: delay
+// status: correct
+// teardown_command: rm -rf PowerSystems.Examples.Network.NetworkLoop*
+// test for #3180
+
+setDebugFlags("infoXmlOperations");
+loadFile("NetworkLoop_total.mo"); getErrorString();
+simulate(PowerSystems.Examples.Network.NetworkLoop); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PowerSystems.Examples.Network.NetworkLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Network.NetworkLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,39 @@
+// Name:     filterBlock1
+// keywords: initial, reinit
+// status:   correct
+// teardown_command: rm -rf initializationTests.filterBlock1* _initializationTests.filterBlock1* output.log
+// First order filter block
+// Drmodelica: 9.1 reinit (p. 296)
+//
+
+loadString("
+within ;
+package initializationTests
+  block filterBlock1 
+    parameter Real T = 1 \"Time constant\";
+    parameter Real k = 1 \"Gain\";
+    Real u = 1;
+    output Real y;
+  protected
+    Real x;
+  equation
+    der(x) = (u - x)/T;
+    y = k*x;
+  algorithm
+    when initial() then
+      reinit(x, u); // if x is u since der(x) = (u - x)/T
+    end when;
+  end filterBlock1;
+end initializationTests;
+"); getErrorString();
+
+instantiateModel(initializationTests.filterBlock1); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[<interactive>:15:5-17:13:writable] Error: Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead.
+// Error: Error occurred while flattening model initializationTests.filterBlock1
+// "
+// endResult

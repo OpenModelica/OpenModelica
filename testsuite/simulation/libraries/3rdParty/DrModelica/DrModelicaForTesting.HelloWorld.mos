@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.HelloWorld.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.HelloWorld
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.HelloWorld.* DrModelicaForTesting.HelloWorld_* DrModelicaForTesting.HelloWorld DrModelicaForTesting.HelloWorld.exe DrModelicaForTesting.HelloWorld.cpp DrModelicaForTesting.HelloWorld.makefile DrModelicaForTesting.HelloWorld.libs DrModelicaForTesting.HelloWorld.log DrModelicaForTesting.HelloWorld.c DrModelicaForTesting.HelloWorld.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.HelloWorld, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.HelloWorld_res.mat",
+  "ReferenceFiles/HelloWorld_ref.mat","DrModelicaForTesting.HelloWorld_diff.csv",0.01,0.013,
+  {"x","a","der(x)"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.HelloWorld_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.HelloWorld', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

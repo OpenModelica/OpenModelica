@@ -1,0 +1,25 @@
+// status: correct
+// teardown_command: rm -rf Table2d_* Table2d.exe
+// depends: Table2d.txt
+
+loadModel(Modelica,{"3.1"});getErrorString();
+loadFile("Table2d.mo");getErrorString();
+simulate(Table2d);getErrorString();
+val(combitable2d1.y, 0.0);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Table2d_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Table2d', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 62.0
+// ""
+// endResult

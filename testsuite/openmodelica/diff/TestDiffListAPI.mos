@@ -1,0 +1,61 @@
+// status: correct
+// depends: manual
+
+n:=5;
+min(writeFile(
+  "manual/"+String(i)+".merged.color.rtest",
+  diffModelicaFileListings(
+    readFile("manual/"+String(i)+".before"),
+    readFile("manual/"+String(i)+".after"),
+    OpenModelica.Scripting.DiffFormat.color
+  ))
+  and
+  writeFile(
+  "manual/"+String(i)+".merged.plain.rtest",
+  diffModelicaFileListings(
+    readFile("manual/"+String(i)+".before"),
+    readFile("manual/"+String(i)+".after"),
+    OpenModelica.Scripting.DiffFormat.plain
+  ))
+  and
+  writeFile(
+  "manual/"+String(i)+".merged.xml.rtest",
+  diffModelicaFileListings(
+    readFile("manual/"+String(i)+".before"),
+    readFile("manual/"+String(i)+".after"),
+    OpenModelica.Scripting.DiffFormat.xml
+  ))
+  for i in 1:n);
+getErrorString();
+
+sum(
+  if readFile("manual/"+String(i)+".merged.color")<>readFile("manual/"+String(i)+".merged.color.rtest")
+    then (String(i) + " failed. Got:\n" +
+      readFile("manual/"+String(i)+".merged.color.rtest") + "\nExpected:\n" +
+      readFile("manual/"+String(i)+".merged.color") + "\n"
+      )
+    else ""
+  for i in 1:n
+);
+getErrorString();
+
+sum(
+  if readFile("manual/"+String(i)+".merged.plain")<>readFile("manual/"+String(i)+".merged.plain.rtest")
+    then (String(i) + " failed. Got:\n" +
+      readFile("manual/"+String(i)+".merged.plain.rtest") + "\nExpected:\n" +
+      readFile("manual/"+String(i)+".merged.plain") + "\n"
+      )
+    else ""
+  for i in 1:n
+);
+getErrorString();
+
+// Result:
+// 5
+// true
+// ""
+// ""
+// ""
+// ""
+// ""
+// endResult

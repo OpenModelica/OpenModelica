@@ -1,0 +1,29 @@
+// name:     BuiltinBoolean
+// keywords: Builtin
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Builtin function testing
+//
+loadFile("BuiltinBoolean.mo");
+
+BuiltinBoolean.func(true,false);
+getErrorString();
+BuiltinBoolean.func(true,true);
+getErrorString();
+BuiltinBoolean.func(false,true);
+getErrorString();
+BuiltinBoolean.func(false,false);
+getErrorString();
+
+// Result:
+// true
+// (false,true,false)
+// ""
+// (true,true,false)
+// ""
+// (false,true,true)
+// ""
+// (false,false,true)
+// ""
+// endResult

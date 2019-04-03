@@ -1,0 +1,26 @@
+// name: SynchronousFeatures.VaryingClock
+// keywords: synchronous features
+// status: correct
+
+loadFile("SynchronousFeatures.mo"); getErrorString();
+
+instantiateModel(SynchronousFeatures.VaryingClock); getErrorString();
+
+// Result:
+// true
+// ""
+// "class SynchronousFeatures.VaryingClock \"Varying Interval Clocks\"
+//   Integer nextInterval(start = 1);
+//   Clock c = Clock(nextInterval, 100);
+//   Real v(start = 0.2);
+//   Real d = interval(v);
+//   Real d0 = 0.01 * /*Real*/(previous(nextInterval));
+// equation
+//   when c then
+//     nextInterval = 1 + previous(nextInterval);
+//     v = 1.0 + previous(v);
+//   end when;
+// end SynchronousFeatures.VaryingClock;
+// "
+// ""
+// endResult

@@ -1,0 +1,19 @@
+// name:     SliceAssignment
+// keywords: slice assignment bug1249 
+// status: correct
+// teardown_command: rm -rf SliceAssignment SliceAssignment.exe SliceAssignment.cpp SliceAssignment_functions.cpp SliceAssignment_functions.h SliceAssignment_init.xml SliceAssignment.libs SliceAssignment.log SliceAssignment.makefile SliceAssignment_records.c SliceAssignment_res.mat output.log 
+//
+// Checks that correct code is generated for slice assignments.
+// 
+loadFile("SliceAssignment.mo");
+simulate(SliceAssignment, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "SliceAssignment_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'SliceAssignment', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

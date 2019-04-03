@@ -1,0 +1,31 @@
+// name:     Failure
+// keywords: Failure
+// status:   correct
+//
+// Failure Testing
+//
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadFile("Failure.mo");
+a:=Failure.myFailure(1);getErrorString();
+a:=Failure.myFailure(2);getErrorString();
+a:=Failure.myFailure(3);getErrorString();
+a:=Failure.myFailure(4);getErrorString();
+a:=Failure.myFailure(5);getErrorString();
+a:=Failure.myFailure2();getErrorString();
+
+// Result:
+// true
+// true
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// 1
+// ""
+// endResult

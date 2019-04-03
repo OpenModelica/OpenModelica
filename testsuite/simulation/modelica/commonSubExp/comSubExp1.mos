@@ -1,0 +1,44 @@
+// name: comSubExp1
+// keywords: cse
+// status: correct
+
+loadString("
+model test
+  Real x[2];
+  Real a[2];
+  Real z;
+  parameter Real t0 = 0.5;
+  Boolean b[2];
+  Integer j;
+  Real t[2];
+equation
+  x[1] = t[2];
+  x[2] = t[1];
+  a[1] = if time<t0 then 1.0 else sin(time);
+  a[2] = if time<t0 then 1.0 else time^2;
+  x[1] = a[1]+a[2];
+  x[2]-a[2] = a[1];
+  der(z) = x[1]/x[2];
+  j = 1+integer(time);
+algorithm
+  if t[j] < time then
+    b[j] := true;
+  end if;
+end test;
+"); getErrorString();
+
+simulate(test); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

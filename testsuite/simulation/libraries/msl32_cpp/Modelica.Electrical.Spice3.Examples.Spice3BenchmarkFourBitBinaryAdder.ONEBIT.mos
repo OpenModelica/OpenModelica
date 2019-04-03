@@ -1,0 +1,117 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT);
+compareVars :=
+{
+   "X1.Q1.vbc",
+   "X1.Q1.vbe",
+   "X1.Q2.vbc",
+   "X1.Q2.vbe",
+   "X1.Q3.vbc",
+   "X1.Q3.vbe",
+   "X1.Q4.vbc",
+   "X1.Q4.vbe",
+   "X1.Q5.vbc",
+   "X1.Q5.vbe",
+   "X2.Q1.vbc",
+   "X2.Q1.vbe",
+   "X2.Q2.vbe",
+   "X2.Q3.vbc",
+   "X2.Q3.vbe",
+   "X2.Q4.vbc",
+   "X2.Q4.vbe",
+   "X2.Q5.vbc",
+   "X2.Q5.vbe",
+   "X3.Q1.vbc",
+   "X3.Q1.vbe",
+   "X3.Q2.vbc",
+   "X3.Q2.vbe",
+   "X3.Q3.vbc",
+   "X3.Q3.vbe",
+   "X3.Q4.vbc",
+   "X3.Q4.vbe",
+   "X3.Q5.vbe",
+   "X4.Q1.vbc",
+   "X4.Q1.vbe",
+   "X4.Q2.vbc",
+   "X4.Q2.vbe",
+   "X4.Q3.vbc",
+   "X4.Q3.vbe",
+   "X4.Q4.vbc",
+   "X4.Q4.vbe",
+   "X4.Q5.vbe",
+   "X5.Q1.vbc",
+   "X5.Q1.vbe",
+   "X5.Q2.vbc",
+   "X5.Q2.vbe",
+   "X5.Q3.vbc",
+   "X5.Q3.vbe",
+   "X5.Q4.vbc",
+   "X5.Q4.vbe",
+   "X5.Q5.vbc",
+   "X5.Q5.vbe",
+   "X6.Q1.vbc",
+   "X6.Q1.vbe",
+   "X6.Q2.vbc",
+   "X6.Q2.vbe",
+   "X6.Q3.vbc",
+   "X6.Q3.vbe",
+   "X6.Q4.vbc",
+   "X6.Q4.vbe",
+   "X6.Q5.vbc",
+   "X6.Q5.vbe",
+   "X7.Q1.vbe",
+   "X7.Q2.vbc",
+   "X7.Q2.vbe",
+   "X7.Q3.vbc",
+   "X7.Q3.vbe",
+   "X7.Q4.vbc",
+   "X7.Q4.vbe",
+   "X7.Q5.vbe",
+   "X8.Q1.vbc",
+   "X8.Q1.vbe",
+   "X8.Q2.vbc",
+   "X8.Q2.vbe",
+   "X8.Q3.vbc",
+   "X8.Q3.vbe",
+   "X8.Q4.vbc",
+   "X8.Q4.vbe",
+   "X8.Q5.vbc",
+   "X8.Q5.vbe",
+   "X9.Q1.vbe",
+   "X9.Q2.vbc",
+   "X9.Q2.vbe",
+   "X9.Q3.vbc",
+   "X9.Q3.vbe",
+   "X9.Q4.vbc",
+   "X9.Q4.vbe",
+   "X9.Q5.vbc",
+   "X9.Q5.vbe"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.ONEBIT
+// {"X1.Q1.vbc","X1.Q1.vbe","X1.Q2.vbc","X1.Q2.vbe","X1.Q3.vbc","X1.Q3.vbe","X1.Q4.vbc","X1.Q4.vbe","X1.Q5.vbc","X1.Q5.vbe","X2.Q1.vbc","X2.Q1.vbe","X2.Q2.vbe","X2.Q3.vbc","X2.Q3.vbe","X2.Q4.vbc","X2.Q4.vbe","X2.Q5.vbc","X2.Q5.vbe","X3.Q1.vbc","X3.Q1.vbe","X3.Q2.vbc","X3.Q2.vbe","X3.Q3.vbc","X3.Q3.vbe","X3.Q4.vbc","X3.Q4.vbe","X3.Q5.vbe","X4.Q1.vbc","X4.Q1.vbe","X4.Q2.vbc","X4.Q2.vbe","X4.Q3.vbc","X4.Q3.vbe","X4.Q4.vbc","X4.Q4.vbe","X4.Q5.vbe","X5.Q1.vbc","X5.Q1.vbe","X5.Q2.vbc","X5.Q2.vbe","X5.Q3.vbc","X5.Q3.vbe","X5.Q4.vbc","X5.Q4.vbe","X5.Q5.vbc","X5.Q5.vbe","X6.Q1.vbc","X6.Q1.vbe","X6.Q2.vbc","X6.Q2.vbe","X6.Q3.vbc","X6.Q3.vbe","X6.Q4.vbc","X6.Q4.vbe","X6.Q5.vbc","X6.Q5.vbe","X7.Q1.vbe","X7.Q2.vbc","X7.Q2.vbe","X7.Q3.vbc","X7.Q3.vbe","X7.Q4.vbc","X7.Q4.vbe","X7.Q5.vbe","X8.Q1.vbc","X8.Q1.vbe","X8.Q2.vbc","X8.Q2.vbe","X8.Q3.vbc","X8.Q3.vbe","X8.Q4.vbc","X8.Q4.vbe","X8.Q5.vbc","X8.Q5.vbe","X9.Q1.vbe","X9.Q2.vbc","X9.Q2.vbe","X9.Q3.vbc","X9.Q3.vbe","X9.Q4.vbc","X9.Q4.vbe","X9.Q5.vbc","X9.Q5.vbe"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Translation succeeded
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// The model now compiles. Please update the test.
+// endResult

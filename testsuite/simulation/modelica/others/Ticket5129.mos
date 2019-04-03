@@ -1,0 +1,36 @@
+// name: Ticket5129.mos
+// status: correct
+//
+// Checks that -r in simflags gives correct file in SimulationResult.resultFile record
+// teardown_command: rm -f blah*mat
+//
+
+
+loadString("
+model M
+ Real x(start = 0.0);
+equation
+ der(x) = -2*x;
+end M;
+");
+
+echo(false);
+r1 := simulate(M, simflags="-r=blah1.mat");
+r2 := simulate(M, simflags="-r blah2.mat");
+r3 := simulate(M, simflags="-r=\"blah3.mat\"");
+r4 := simulate(M, simflags="-r \"blah4.mat\"");
+
+echo(true);
+r1.resultFile;
+r2.resultFile;
+r3.resultFile;
+r4.resultFile;
+
+// Result:
+// true
+// true
+// "blah1.mat"
+// "blah2.mat"
+// "blah3.mat"
+// "blah4.mat"
+// endResult

@@ -1,0 +1,31 @@
+// status: correct
+
+// setCommandLineOptions({"+n=0","+d=openmp"}); // Dynamic schedule
+// setCompiler("clang");
+// setCompilerFlags("-O2 -g");
+// setEnvironmentVar("MODELICAUSERCFLAGS","-g");
+
+loadFile("ParallelPRV.mo");getErrorString();
+setParameterValue(PRVSystem,problemSize,10);getErrorString();
+
+simulate(PRVSystem,method="rungekutta",stopTime=1.2,stepSize=1e-5,variableFilter="hydr.left.p|hydr.x",simflags="-noEventEmit");getErrorString();
+val(hydr.x,1.01);
+val(hydr.left.p,1.01);
+
+// Result:
+// true
+// ""
+// Ok
+// ""
+// record SimulationResult
+//     resultFile = "PRVSystem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.2, numberOfIntervals = 119999, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'PRVSystem', options = '', outputFormat = 'mat', variableFilter = 'hydr.left.p|hydr.x', cflags = '', simflags = '-noEventEmit'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.88899226550377e-06
+// 10009941.5345061
+// endResult

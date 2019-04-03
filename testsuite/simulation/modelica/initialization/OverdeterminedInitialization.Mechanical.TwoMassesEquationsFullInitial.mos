@@ -1,0 +1,23 @@
+// name: OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+buildModel(OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial","OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullInitial_init.xml"}
+// "Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization sytem:
+//          x1 = 0.0
+//          v1 = 0.0.
+// "
+// endResult

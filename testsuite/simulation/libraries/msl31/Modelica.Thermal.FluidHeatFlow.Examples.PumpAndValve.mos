@@ -1,0 +1,27 @@
+// name:     Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve,stopTime=2.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve.mat","Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve_diff.csv",0.01,0.00001,
+  {"heatCapacitor.T","pipe.T","speed.phi"});
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

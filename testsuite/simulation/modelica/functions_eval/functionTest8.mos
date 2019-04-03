@@ -1,0 +1,273 @@
+// name:      functionTest8
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+loadString("
+model functionTest8 
+  function hv 
+    input Real Tc; 
+    input Real T; 
+    output Real Ent2; 
+  protected
+    Real temp, Ent; 
+  algorithm 
+    temp := 298.15; 
+    Ent :=0.0;
+    if T> 298.15 then 
+      while temp < T loop 
+        Ent := Ent + (temp) * 1; 
+        temp := temp + 1; 
+      end while; 
+      Ent2 := Ent; 
+    else 
+      while temp > T loop 
+        Ent := Ent + (temp) * 1; 
+        temp := temp - 1; 
+      end while; 
+      Ent2 := -Ent; 
+    end if; 
+  end hv; 
+  
+  function hl 
+    input Real Tc; 
+    input Real T; 
+    output Real Ent1; 
+  algorithm 
+    if T<Tc then 
+      Ent1 := hv(Tc, T) + (1-T/Tc)^2; 
+    else 
+      Ent1 := hv(Tc, T); //this is true for T = 400 and Tc = 33 
+    end if; 
+  end hl; 
+
+  parameter Real Tc_model = 33, T_model = 400; 
+  Real H, h; 
+equation 
+  H = hv(Tc_model, T_model);
+  h = hl(Tc_model, T_model);
+end functionTest8;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalFuncDump"); getErrorString();
+simulate(functionTest8); getErrorString();
+
+val(h, 0.0);
+val(H, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// Start function evaluation of:
+// h := functionTest8.hl(Tc_model, T_model)
+//
+// IF-statement:
+//   if T < Tc then
+//     Ent1 := functionTest8.hv(Tc, T) + (1.0 - T / Tc) ^ 2.0;
+//   else
+//     Ent1 := functionTest8.hv(Tc, T);
+//   end if;
+// -->try to check if its the if case
+// -->is the if const? false and is it the if case ? false
+// -->try to check if its another case
+// -->is it an other case? false
+// -->try to predict the outputs 
+// assignment:
+//   Ent1 := functionTest8.hv(Tc, T) + (1.0 - T / Tc) ^ 2.0;
+// evaluated assignment to:
+//   Ent1 := functionTest8.hv(Tc, T) + (1.0 - T / Tc) ^ 2.0;
+//
+// assignment:
+//   Ent1 := functionTest8.hv(Tc, T);
+//
+// Start function evaluation of:
+// Ent1 := functionTest8.hv(Tc, T)
+//
+// assignment:
+//   temp := 298.15;
+// evaluated assignment to:
+//   temp := 298.15;
+//
+// assignment:
+//   Ent := 0.0;
+// evaluated assignment to:
+//   Ent := 0.0;
+//
+// IF-statement:
+//   if T > 298.15 then
+//     while temp < T loop
+//       Ent := Ent + temp;
+//       temp := 1.0 + temp;
+//     end while;
+//     Ent2 := Ent;
+//   else
+//     while temp > T loop
+//       Ent := Ent + temp;
+//       temp := -1.0 + temp;
+//     end while;
+//     Ent2 := -Ent;
+//   end if;
+// -->try to check if its the if case
+// -->is the if const? false and is it the if case ? false
+// -->try to check if its another case
+// -->is it an other case? false
+// -->try to predict the outputs 
+// While-statement (not evaluated):
+//   while temp < T loop
+//     Ent := Ent + temp;
+//     temp := 1.0 + temp;
+//   end while;
+// evaluated While-statement to:
+//   while temp < T loop
+//     Ent := Ent + temp;
+//     temp := 1.0 + temp;
+//   end while;
+// assignment:
+//   Ent2 := Ent;
+// evaluated assignment to:
+//   Ent2 := Ent;
+//
+// While-statement (not evaluated):
+//   while temp > T loop
+//     Ent := Ent + temp;
+//     temp := -1.0 + temp;
+//   end while;
+// evaluated While-statement to:
+//   while temp > T loop
+//     Ent := Ent + temp;
+//     temp := -1.0 + temp;
+//   end while;
+// assignment:
+//   Ent2 := -Ent;
+// evaluated assignment to:
+//   Ent2 := -Ent;
+//
+// --> the predicted const outputs:
+// could it be predicted? false
+// evaluated IF-statements to:
+//   if T > 298.15 then
+//     while temp < T loop
+//       Ent := Ent + temp;
+//       temp := 1.0 + temp;
+//     end while;
+//     Ent2 := Ent;
+//   else
+//     while temp > T loop
+//       Ent := Ent + temp;
+//       temp := -1.0 + temp;
+//     end while;
+//     Ent2 := -Ent;
+//   end if;
+//
+//
+// the function output is not constant in any case
+// evaluated assignment to:
+//   Ent1 := functionTest8.hv(Tc, T);
+//
+// --> the predicted const outputs:
+// could it be predicted? false
+// evaluated IF-statements to:
+//   if T < Tc then
+//     Ent1 := functionTest8.hv(Tc, T) + (1.0 - T / Tc) ^ 2.0;
+//   else
+//     Ent1 := functionTest8.hv(Tc, T);
+//   end if;
+//
+//
+// the function output is not constant in any case
+//
+// Start function evaluation of:
+// H := functionTest8.hv(Tc_model, T_model)
+//
+// assignment:
+//   temp := 298.15;
+// evaluated assignment to:
+//   temp := 298.15;
+//
+// assignment:
+//   Ent := 0.0;
+// evaluated assignment to:
+//   Ent := 0.0;
+//
+// IF-statement:
+//   if T > 298.15 then
+//     while temp < T loop
+//       Ent := Ent + temp;
+//       temp := 1.0 + temp;
+//     end while;
+//     Ent2 := Ent;
+//   else
+//     while temp > T loop
+//       Ent := Ent + temp;
+//       temp := -1.0 + temp;
+//     end while;
+//     Ent2 := -Ent;
+//   end if;
+// -->try to check if its the if case
+// -->is the if const? false and is it the if case ? false
+// -->try to check if its another case
+// -->is it an other case? false
+// -->try to predict the outputs 
+// While-statement (not evaluated):
+//   while temp < T loop
+//     Ent := Ent + temp;
+//     temp := 1.0 + temp;
+//   end while;
+// evaluated While-statement to:
+//   while temp < T loop
+//     Ent := Ent + temp;
+//     temp := 1.0 + temp;
+//   end while;
+// assignment:
+//   Ent2 := Ent;
+// evaluated assignment to:
+//   Ent2 := Ent;
+//
+// While-statement (not evaluated):
+//   while temp > T loop
+//     Ent := Ent + temp;
+//     temp := -1.0 + temp;
+//   end while;
+// evaluated While-statement to:
+//   while temp > T loop
+//     Ent := Ent + temp;
+//     temp := -1.0 + temp;
+//   end while;
+// assignment:
+//   Ent2 := -Ent;
+// evaluated assignment to:
+//   Ent2 := -Ent;
+//
+// --> the predicted const outputs:
+// could it be predicted? false
+// evaluated IF-statements to:
+//   if T > 298.15 then
+//     while temp < T loop
+//       Ent := Ent + temp;
+//       temp := 1.0 + temp;
+//     end while;
+//     Ent2 := Ent;
+//   else
+//     while temp > T loop
+//       Ent := Ent + temp;
+//       temp := -1.0 + temp;
+//     end while;
+//     Ent2 := -Ent;
+//   end if;
+//
+//
+// the function output is not constant in any case
+// record SimulationResult
+//     resultFile = "functionTest8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 35562.30000000006
+// 35562.30000000006
+// endResult

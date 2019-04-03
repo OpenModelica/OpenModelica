@@ -1,0 +1,691 @@
+
+//name:        Simulate Modelica.Blocks.Examples [version 3.1]
+//keyword:     instantiating/check/simulate MSL 3.1 Modelica.Blocks.Examples
+//status:      correct
+//
+// instantiate/check/simulate model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+// Modelica.Blocks.Examples
+instantiateModel(Modelica.Blocks.Examples.PID_Controller);  getErrorString(); 
+checkModel(Modelica.Blocks.Examples.PID_Controller);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.PID_Controller);  getErrorString(); 
+
+instantiateModel(Modelica.Blocks.Examples.InverseModel);  getErrorString(); 
+checkModel(Modelica.Blocks.Examples.InverseModel);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.InverseModel);  getErrorString(); 
+
+instantiateModel(Modelica.Blocks.Examples.ShowLogicalSources);  getErrorString(); 
+checkModel(Modelica.Blocks.Examples.ShowLogicalSources);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.ShowLogicalSources);  getErrorString(); 
+
+instantiateModel(Modelica.Blocks.Examples.LogicalNetwork1);  getErrorString(); 
+checkModel(Modelica.Blocks.Examples.LogicalNetwork1);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.LogicalNetwork1);  getErrorString(); 
+
+instantiateModel(Modelica.Blocks.Examples.BusUsage);  getErrorString(); 
+checkModel(Modelica.Blocks.Examples.BusUsage);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.BusUsage);  getErrorString(); 
+
+system("rm -f *.c *.dll *.log *.makefile *.cpp *.exe *.h *.libs *_init.xml *_init.txt *_res.mat");
+
+
+// Result:
+// true
+// ""
+// "class Modelica.Blocks.Examples.PID_Controller
+//   parameter Real driveAngle(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 1.57 \"Reference distance to move\";
+//   input Real PI.u_s \"Connector of setpoint input signal\";
+//   input Real PI.u_m \"Connector of measurement input signal\";
+//   output Real PI.y \"Connector of actuator output signal\";
+//   output Real PI.controlError = PI.u_s - PI.u_m \"Control error (set point - measurement)\";
+//   parameter enumeration(P, PI, PD, PID) PI.controllerType = Modelica.Blocks.Types.SimpleController.PI \"Type of controller\";
+//   parameter Real PI.k(min = 0.0) = 100.0 \"Gain of controller\";
+//   parameter Real PI.Ti(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.5) = 0.1 \"Time constant of Integrator block\";
+//   parameter Real PI.Td(quantity = \"Time\", unit = \"s\", min = 0.0, start = 0.1) = 0.1 \"Time constant of Derivative block\";
+//   parameter Real PI.yMax(start = 1.0) = 12.0 \"Upper limit of output\";
+//   parameter Real PI.wp(min = 0.0) = 1.0 \"Set-point weight for Proportional block (0..1)\";
+//   parameter Real PI.wd(min = 0.0) = 0.0 \"Set-point weight for Derivative block (0..1)\";
+//   parameter Real PI.Ni(min = 1e-13) = 0.1 \"Ni*Ti is time constant of anti-windup compensation\";
+//   parameter Real PI.Nd(min = 1e-13) = 10.0 \"The higher Nd, the more ideal the derivative block\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput, DoNotUse_InitialIntegratorState) PI.initType = Modelica.Blocks.Types.Init.SteadyState \"Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)\";
+//   parameter Boolean PI.limitsAtInit = false \"= false, if limits are ignored during initializiation\";
+//   parameter Real PI.xi_start = 0.0 \"Initial or guess value value for integrator output (= integrator state)\";
+//   parameter Real PI.xd_start = 0.0 \"Initial or guess value for state of derivative block\";
+//   parameter Real PI.y_start = 0.0 \"Initial value of output\";
+//   input Real PI.addP.u1 \"Connector of Real input signal 1\";
+//   input Real PI.addP.u2 \"Connector of Real input signal 2\";
+//   output Real PI.addP.y \"Connector of Real output signal\";
+//   parameter Real PI.addP.k1 = PI.wp \"Gain of upper input\";
+//   parameter Real PI.addP.k2 = -1.0 \"Gain of lower input\";
+//   parameter Real PI.P.k(start = 1.0) = 1.0 \"Gain value multiplied with input signal\";
+//   input Real PI.P.u \"Input signal connector\";
+//   output Real PI.P.y \"Output signal connector\";
+//   parameter Real PI.gainPID.k(start = 1.0) = PI.k \"Gain value multiplied with input signal\";
+//   input Real PI.gainPID.u \"Input signal connector\";
+//   output Real PI.gainPID.y \"Output signal connector\";
+//   parameter Real PI.addPID.k1 = 1.0 \"Gain of upper input\";
+//   parameter Real PI.addPID.k2 = 1.0 \"Gain of middle input\";
+//   parameter Real PI.addPID.k3 = 1.0 \"Gain of lower input\";
+//   input Real PI.addPID.u1 \"Connector 1 of Real input signals\";
+//   input Real PI.addPID.u2 \"Connector 2 of Real input signals\";
+//   input Real PI.addPID.u3 \"Connector 3 of Real input signals\";
+//   output Real PI.addPID.y \"Connector of Real output signals\";
+//   input Real PI.limiter.u \"Connector of Real input signal\";
+//   output Real PI.limiter.y \"Connector of Real output signal\";
+//   parameter Real PI.limiter.uMax(start = 1.0) = PI.yMax \"Upper limits of input signals\";
+//   parameter Boolean PI.limiter.limitsAtInit = PI.limitsAtInit \"= false, if limits are ignored during initializiation (i.e., y=u)\";
+//   parameter Real PI.limiter.uMin = PI.yMin \"Lower limits of input signals\";
+//   protected parameter Boolean PI.with_I = PI.controllerType == Modelica.Blocks.Types.SimpleController.PI or PI.controllerType == Modelica.Blocks.Types.SimpleController.PID;
+//   protected parameter Boolean PI.with_D = PI.controllerType == Modelica.Blocks.Types.SimpleController.PD or PI.controllerType == Modelica.Blocks.Types.SimpleController.PID;
+//   parameter Real PI.yMin = -PI.yMax \"Lower limit of output\";
+//   input Real PI.I.u \"Connector of Real input signal\";
+//   output Real PI.I.y(start = PI.I.y_start) \"Connector of Real output signal\";
+//   parameter Real PI.I.k = 1.0 / PI.Ti \"Integrator gain\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) PI.I.initType = if PI.initType == Modelica.Blocks.Types.InitPID.SteadyState then Modelica.Blocks.Types.InitPID.SteadyState else if PI.initType == Modelica.Blocks.Types.InitPID.InitialState or PI.initType == Modelica.Blocks.Types.InitPID.DoNotUse_InitialIntegratorState then Modelica.Blocks.Types.InitPID.InitialState else Modelica.Blocks.Types.InitPID.NoInit \"Type of initialization (1: no init, 2: steady state, 3,4: initial output)\";
+//   parameter Real PI.I.y_start = PI.xi_start \"Initial or guess value of output (= state)\";
+//   parameter Real PI.addI.k1 = 1.0 \"Gain of upper input\";
+//   parameter Real PI.addI.k2 = -1.0 \"Gain of middle input\";
+//   parameter Real PI.addI.k3 = 1.0 \"Gain of lower input\";
+//   input Real PI.addI.u1 \"Connector 1 of Real input signals\";
+//   input Real PI.addI.u2 \"Connector 2 of Real input signals\";
+//   input Real PI.addI.u3 \"Connector 3 of Real input signals\";
+//   output Real PI.addI.y \"Connector of Real output signals\";
+//   input Real PI.addSat.u1 \"Connector of Real input signal 1\";
+//   input Real PI.addSat.u2 \"Connector of Real input signal 2\";
+//   output Real PI.addSat.y \"Connector of Real output signal\";
+//   parameter Real PI.addSat.k1 = 1.0 \"Gain of upper input\";
+//   parameter Real PI.addSat.k2 = -1.0 \"Gain of lower input\";
+//   parameter Real PI.gainTrack.k(start = 1.0) = 1.0 / (PI.Ni * PI.k) \"Gain value multiplied with input signal\";
+//   input Real PI.gainTrack.u \"Input signal connector\";
+//   output Real PI.gainTrack.y \"Output signal connector\";
+//   output Real PI.Dzero.y \"Connector of Real output signal\";
+//   parameter Real PI.Dzero.k(start = 1.0) = 0.0 \"Constant output value\";
+//   Real inertia1.flange_a.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real inertia1.flange_a.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   Real inertia1.flange_b.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real inertia1.flange_b.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   parameter Real inertia1.J(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0, start = 1.0) = 1.0 \"Moment of inertia\";
+//   parameter enumeration(never, avoid, default, prefer, always) inertia1.stateSelect = StateSelect.default \"Priority to use phi and w as states\";
+//   Real inertia1.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\", start = 0.0, fixed = true, StateSelect = StateSelect.default) \"Absolute rotation angle of component\";
+//   Real inertia1.w(quantity = \"AngularVelocity\", unit = \"rad/s\", StateSelect = StateSelect.default) \"Absolute angular velocity of component (= der(phi))\";
+//   Real inertia1.a(quantity = \"AngularAcceleration\", unit = \"rad/s2\", fixed = true) \"Absolute angular acceleration of component (= der(w))\";
+//   parameter Boolean torque.useSupport = false \"= true, if support flange enabled, otherwise implicitly grounded\";
+//   Real torque.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real torque.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   protected Real torque.phi_support(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute angle of support flange\";
+//   input Real torque.tau \"Accelerating torque acting at flange (= -flange.tau)\";
+//   Real spring.phi_rel(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\", start = 0.0, nominal = spring.phi_nominal, StateSelect = StateSelect.prefer) \"Relative rotation angle (= flange_b.phi - flange_a.phi)\";
+//   Real spring.w_rel(quantity = \"AngularVelocity\", unit = \"rad/s\", start = 0.0, fixed = true, StateSelect = StateSelect.prefer) \"Relative angular velocity (= der(phi_rel))\";
+//   Real spring.a_rel(quantity = \"AngularAcceleration\", unit = \"rad/s2\", start = 0.0) \"Relative angular acceleration (= der(w_rel))\";
+//   Real spring.tau(quantity = \"Torque\", unit = \"N.m\") \"Torque between flanges (= flange_b.tau)\";
+//   Real spring.flange_a.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real spring.flange_a.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   Real spring.flange_b.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real spring.flange_b.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   parameter Real spring.phi_nominal(quantity = \"Angle\", unit = \"rad\", displayUnit = \"rad\") = 0.0001 \"Nominal value of phi_rel (used for scaling)\";
+//   parameter enumeration(never, avoid, default, prefer, always) spring.stateSelect = StateSelect.prefer \"Priority to use phi_rel and w_rel as states\";
+//   parameter Real spring.c(quantity = \"RotationalSpringConstant\", unit = \"N.m/rad\", min = 0.0, start = 100000.0) = 10000.0 \"Spring constant\";
+//   parameter Real spring.d(quantity = \"RotationalDampingConstant\", unit = \"N.m.s/rad\", min = 0.0, start = 0.0) = 100.0 \"Damping constant\";
+//   parameter Real spring.phi_rel0(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Unstretched spring angle\";
+//   Real inertia2.flange_a.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real inertia2.flange_a.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   Real inertia2.flange_b.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real inertia2.flange_b.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   parameter Real inertia2.J(quantity = \"MomentOfInertia\", unit = \"kg.m2\", min = 0.0, start = 1.0) = 2.0 \"Moment of inertia\";
+//   parameter enumeration(never, avoid, default, prefer, always) inertia2.stateSelect = StateSelect.default \"Priority to use phi and w as states\";
+//   Real inertia2.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\", StateSelect = StateSelect.default) \"Absolute rotation angle of component\";
+//   Real inertia2.w(quantity = \"AngularVelocity\", unit = \"rad/s\", StateSelect = StateSelect.default) \"Absolute angular velocity of component (= der(phi))\";
+//   Real inertia2.a(quantity = \"AngularAcceleration\", unit = \"rad/s2\") \"Absolute angular acceleration of component (= der(w))\";
+//   parameter Integer kinematicPTP.nout(min = 1) = 1 \"Number of outputs\";
+//   output Real kinematicPTP.y[1] \"Connector of Real output signals\";
+//   parameter Real kinematicPTP.deltaq[1] = driveAngle \"Distance to move\";
+//   parameter Real kinematicPTP.qd_max[1](min = 1e-60) = 1.0 \"Maximum velocities der(q)\";
+//   parameter Real kinematicPTP.qdd_max[1](min = 1e-60) = 1.0 \"Maximum accelerations der(qd)\";
+//   parameter Real kinematicPTP.startTime(quantity = \"Time\", unit = \"s\") = 0.5 \"Time instant at which movement starts\";
+//   protected Real kinematicPTP.sd_max;
+//   protected Real kinematicPTP.sdd_max;
+//   protected Real kinematicPTP.sdd;
+//   protected Real kinematicPTP.aux1[1];
+//   protected Real kinematicPTP.aux2[1];
+//   protected Real kinematicPTP.Ta1(quantity = \"Time\", unit = \"s\");
+//   protected Real kinematicPTP.Ta2(quantity = \"Time\", unit = \"s\");
+//   protected Real kinematicPTP.Tv(quantity = \"Time\", unit = \"s\");
+//   protected Real kinematicPTP.Te(quantity = \"Time\", unit = \"s\");
+//   protected Boolean kinematicPTP.noWphase;
+//   protected parameter Real kinematicPTP.p_deltaq[1] = kinematicPTP.deltaq[1];
+//   protected parameter Real kinematicPTP.p_qd_max[1] = kinematicPTP.qd_max[1];
+//   protected parameter Real kinematicPTP.p_qdd_max[1] = kinematicPTP.qdd_max[1];
+//   input Real integrator.u \"Connector of Real input signal\";
+//   output Real integrator.y(start = integrator.y_start) \"Connector of Real output signal\";
+//   parameter Real integrator.k = 1.0 \"Integrator gain\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) integrator.initType = Modelica.Blocks.Types.Init.InitialState \"Type of initialization (1: no init, 2: steady state, 3,4: initial output)\";
+//   parameter Real integrator.y_start = 0.0 \"Initial or guess value of output (= state)\";
+//   Real speedSensor.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real speedSensor.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   output Real speedSensor.w \"Absolute angular velocity of flange\";
+//   parameter Boolean loadTorque.useSupport = false \"= true, if support flange enabled, otherwise implicitly grounded\";
+//   Real loadTorque.flange.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute rotation angle of flange\";
+//   Real loadTorque.flange.tau(quantity = \"Torque\", unit = \"N.m\") \"Cut torque in the flange\";
+//   protected Real loadTorque.phi_support(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Absolute angle of support flange\";
+//   Real loadTorque.phi(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Angle of flange with respect to support (= flange.phi - support.phi)\";
+//   parameter Real loadTorque.tau_constant(quantity = \"Torque\", unit = \"N.m\") = 10.0 \"Constant torque (if negative, torque is acting as load)\";
+//   Real loadTorque.tau(quantity = \"Torque\", unit = \"N.m\") \"Accelerating torque acting at flange (= -flange.tau)\";
+// initial equation
+//   der(PI.I.y) = 0.0;
+//   integrator.y = integrator.y_start;
+//   der(spring.w_rel) = 0.0;
+// equation
+//   PI.addP.y = PI.addP.k1 * PI.addP.u1 + PI.addP.k2 * PI.addP.u2;
+//   PI.P.y = PI.P.k * PI.P.u;
+//   PI.gainPID.y = PI.gainPID.k * PI.gainPID.u;
+//   PI.addPID.y = PI.addPID.k1 * PI.addPID.u1 + (PI.addPID.k2 * PI.addPID.u2 + PI.addPID.k3 * PI.addPID.u3);
+//   assert(PI.limiter.uMax >= PI.limiter.uMin,\"Limiter: Limits must be consistent. However, uMax (=\" + String(PI.limiter.uMax,0,true,6) + \") < uMin (=\" + String(PI.limiter.uMin,0,true,6) + \")\");
+//   if initial() and  not PI.limiter.limitsAtInit then
+//   PI.limiter.y = PI.limiter.u;
+//   assert(PI.limiter.u >= PI.limiter.uMin - 0.01 * abs(PI.limiter.uMin) and PI.limiter.u <= PI.limiter.uMax + 0.01 * abs(PI.limiter.uMax),\"Limiter: During initialization the limits have been ignored.
+// However, the result is that the input u is not within the required limits:
+//   u = \" + String(PI.limiter.u,0,true,6) + \", uMin = \" + String(PI.limiter.uMin,0,true,6) + \", uMax = \" + String(PI.limiter.uMax,0,true,6));
+//   else
+//   PI.limiter.y = if PI.limiter.u > PI.limiter.uMax then PI.limiter.uMax else if PI.limiter.u < PI.limiter.uMin then PI.limiter.uMin else PI.limiter.u;
+//   end if;
+//   der(PI.I.y) = PI.I.k * PI.I.u;
+//   PI.addI.y = PI.addI.k1 * PI.addI.u1 + (PI.addI.k2 * PI.addI.u2 + PI.addI.k3 * PI.addI.u3);
+//   PI.addSat.y = PI.addSat.k1 * PI.addSat.u1 + PI.addSat.k2 * PI.addSat.u2;
+//   PI.gainTrack.y = PI.gainTrack.k * PI.gainTrack.u;
+//   PI.Dzero.y = PI.Dzero.k;
+//   assert(PI.yMax >= PI.yMin,\"LimPID: Limits must be consistent. However, yMax (=\" + String(PI.yMax,0,true,6) + \") < yMin (=\" + String(PI.yMin,0,true,6) + \")\");
+//   assert(PI.limitsAtInit or  not PI.limitsAtInit and PI.y >= PI.yMin and PI.y <= PI.yMax,\"LimPID: During initialization the limits have been switched off.
+// After initialization, the output y (=\" + String(PI.y,0,true,6) + \") is outside of the limits of yMin (=\" + String(PI.yMin,0,true,6) + \") and yMax (=\" + String(PI.yMax,0,true,6) + \")\");
+//   inertia1.phi = inertia1.flange_a.phi;
+//   inertia1.phi = inertia1.flange_b.phi;
+//   inertia1.w = der(inertia1.phi);
+//   inertia1.a = der(inertia1.w);
+//   inertia1.J * inertia1.a = inertia1.flange_a.tau + inertia1.flange_b.tau;
+//   torque.flange.tau = -torque.tau;
+//   torque.phi_support = 0.0;
+//   spring.tau = spring.c * (spring.phi_rel - spring.phi_rel0) + spring.d * spring.w_rel;
+//   spring.phi_rel = spring.flange_b.phi - spring.flange_a.phi;
+//   spring.w_rel = der(spring.phi_rel);
+//   spring.a_rel = der(spring.w_rel);
+//   spring.flange_b.tau = spring.tau;
+//   spring.flange_a.tau = -spring.tau;
+//   inertia2.phi = inertia2.flange_a.phi;
+//   inertia2.phi = inertia2.flange_b.phi;
+//   inertia2.w = der(inertia2.phi);
+//   inertia2.a = der(inertia2.w);
+//   inertia2.J * inertia2.a = inertia2.flange_a.tau + inertia2.flange_b.tau;
+//   kinematicPTP.aux1[1] = kinematicPTP.p_deltaq[1] / kinematicPTP.p_qd_max[1];
+//   kinematicPTP.aux2[1] = kinematicPTP.p_deltaq[1] / kinematicPTP.p_qdd_max[1];
+//   kinematicPTP.sd_max = 1.0 / abs(kinematicPTP.aux1[1]);
+//   kinematicPTP.sdd_max = 1.0 / abs(kinematicPTP.aux2[1]);
+//   kinematicPTP.Ta1 = sqrt(1.0 / kinematicPTP.sdd_max);
+//   kinematicPTP.Ta2 = kinematicPTP.sd_max / kinematicPTP.sdd_max;
+//   kinematicPTP.noWphase = kinematicPTP.Ta2 >= kinematicPTP.Ta1;
+//   kinematicPTP.Tv = if kinematicPTP.noWphase then kinematicPTP.Ta1 else 1.0 / kinematicPTP.sd_max;
+//   kinematicPTP.Te = if kinematicPTP.noWphase then 2.0 * kinematicPTP.Ta1 else kinematicPTP.Tv + kinematicPTP.Ta2;
+//   kinematicPTP.sdd = if time < kinematicPTP.startTime then 0.0 else if kinematicPTP.noWphase then if time < kinematicPTP.Ta1 + kinematicPTP.startTime then kinematicPTP.sdd_max else if time < kinematicPTP.Te + kinematicPTP.startTime then -kinematicPTP.sdd_max else 0.0 else if time < kinematicPTP.Ta2 + kinematicPTP.startTime then kinematicPTP.sdd_max else if time < kinematicPTP.Tv + kinematicPTP.startTime then 0.0 else if time < kinematicPTP.Te + kinematicPTP.startTime then -kinematicPTP.sdd_max else 0.0;
+//   kinematicPTP.y[1] = kinematicPTP.sdd * kinematicPTP.p_deltaq[1];
+//   der(integrator.y) = integrator.k * integrator.u;
+//   speedSensor.w = der(speedSensor.flange.phi);
+//   0.0 = speedSensor.flange.tau;
+//   loadTorque.tau = -loadTorque.flange.tau;
+//   loadTorque.tau = loadTorque.tau_constant;
+//   loadTorque.phi = loadTorque.flange.phi - loadTorque.phi_support;
+//   loadTorque.phi_support = 0.0;
+//   PI.u_s = integrator.y;
+//   PI.u_m = speedSensor.w;
+//   PI.y = torque.tau;
+//   loadTorque.flange.tau + inertia2.flange_b.tau = 0.0;
+//   inertia2.flange_b.phi = loadTorque.flange.phi;
+//   speedSensor.flange.tau + (inertia1.flange_b.tau + spring.flange_a.tau) = 0.0;
+//   inertia1.flange_b.phi = speedSensor.flange.phi;
+//   inertia1.flange_b.phi = spring.flange_a.phi;
+//   integrator.u = kinematicPTP.y[1];
+//   torque.flange.tau + inertia1.flange_a.tau = 0.0;
+//   inertia1.flange_a.phi = torque.flange.phi;
+//   spring.flange_b.tau + inertia2.flange_a.tau = 0.0;
+//   inertia2.flange_a.phi = spring.flange_b.phi;
+//   PI.Dzero.y = PI.addPID.u2;
+//   PI.addI.u2 = PI.addP.u2;
+//   PI.addI.u2 = PI.u_m;
+//   PI.addI.u3 = PI.gainTrack.y;
+//   PI.addSat.y = PI.gainTrack.u;
+//   PI.addSat.u1 = PI.limiter.y;
+//   PI.addSat.u1 = PI.y;
+//   PI.addSat.u2 = PI.gainPID.y;
+//   PI.addSat.u2 = PI.limiter.u;
+//   PI.addPID.y = PI.gainPID.u;
+//   PI.I.y = PI.addPID.u3;
+//   PI.P.y = PI.addPID.u1;
+//   PI.I.u = PI.addI.y;
+//   PI.P.u = PI.addP.y;
+//   PI.addI.u1 = PI.addP.u1;
+//   PI.addI.u1 = PI.u_s;
+// end Modelica.Blocks.Examples.PID_Controller;
+// "
+// ""
+// "Check of Modelica.Blocks.Examples.PID_Controller completed successfully.
+// 
+// [Nonlinear.mo:19:12-23:97:writable] Warning: If-equations are only partially supported. Ignoring   assert(PI.limiter.u >= PI.limiter.uMin - 0.01 * abs(PI.limiter.uMin) and PI.limiter.u <= PI.limiter.uMax + 0.01 * abs(PI.limiter.uMax),\"Limiter: During initialization the limits have been ignored.However, the result is that the input u is not within the required limits:  u = \" + String(PI.limiter.u,0,true,6) + \", uMin = \" + String(PI.limiter.uMin,0,true,6) + \", uMax = \" + String(PI.limiter.uMax,0,true,6));
+// 
+// Class Modelica.Blocks.Examples.PID_Controller has 76 equation(s) and 76 variable(s).
+// 47 of these are trivial equation(s).
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.PID_Controller_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.PID_Controller', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = "[../../../../libraries/msl31//Modelica/Blocks/Continuous.mo:963:5-966:105:writable] Simulation call assert() at time 0.008
+// Level : error
+// Message : LimPID: During initialization the limits have been switched off.
+// After initialization, the output y (=13.8983) is outside of the limits of yMin (=-12) and yMax (=12)
+// 
+// "
+// end SimulationResult;
+// "[Nonlinear.mo:19:12-23:97:writable] Warning: If-equations are only partially supported. Ignoring   assert(PI.limiter.u >= PI.limiter.uMin - 0.01 * abs(PI.limiter.uMin) and PI.limiter.u <= PI.limiter.uMax + 0.01 * abs(PI.limiter.uMax),"Limiter: During initialization the limits have been ignored.However, the result is that the input u is not within the required limits:  u = " + String(PI.limiter.u,0,true,6) + ", uMin = " + String(PI.limiter.uMin,0,true,6) + ", uMax = " + String(PI.limiter.uMax,0,true,6));
+// "
+// "function Modelica.Math.asin
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+// 
+// external \"C\";
+// end Modelica.Math.asin;
+// 
+// function Modelica.Math.sin
+//   input Real u(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//   output Real y;
+// 
+// external \"C\";
+// end Modelica.Math.sin;
+// 
+// class Modelica.Blocks.Examples.InverseModel
+//   input Real firstOrder1.u \"Connector of Real input signal\";
+//   output Real firstOrder1.y(start = firstOrder1.y_start) \"Connector of Real output signal\";
+//   parameter Real firstOrder1.k = 1.0 \"Gain\";
+//   parameter Real firstOrder1.T(quantity = \"Time\", unit = \"s\", start = 1.0) = 0.3 \"Time Constant\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) firstOrder1.initType = Modelica.Blocks.Types.Init.SteadyState \"Type of initialization (1: no init, 2: steady state, 3/4: initial output)\";
+//   parameter Real firstOrder1.y_start = 0.0 \"Initial or guess value of output (= state)\";
+//   output Real sine.y \"Connector of Real output signal\";
+//   parameter Real sine.amplitude = 1.0 \"Amplitude of sine wave\";
+//   parameter Real sine.freqHz(quantity = \"Frequency\", unit = \"Hz\", start = 1.0) = 2.0 \"Frequency of sine wave\";
+//   parameter Real sine.phase(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Phase of sine wave\";
+//   parameter Real sine.offset = 1.0 \"Offset of output signal\";
+//   parameter Real sine.startTime(quantity = \"Time\", unit = \"s\") = 0.2 \"Output = offset for time < startTime\";
+//   protected constant Real sine.pi = 3.14159265358979;
+//   input Real inverseBlockConstraints.u1 \"Input signal 1 (u1 = u2)\";
+//   input Real inverseBlockConstraints.u2 \"Input signal 2 (u1 = u2)\";
+//   output Real inverseBlockConstraints.y1 \"Output signal 1 (y1 = y2)\";
+//   output Real inverseBlockConstraints.y2 \"Output signal 2 (y2 = y2)\";
+//   input Real firstOrder2.u \"Connector of Real input signal\";
+//   output Real firstOrder2.y(start = firstOrder2.y_start) \"Connector of Real output signal\";
+//   parameter Real firstOrder2.k = 1.0 \"Gain\";
+//   parameter Real firstOrder2.T(quantity = \"Time\", unit = \"s\", start = 1.0) = 0.3 \"Time Constant\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) firstOrder2.initType = Modelica.Blocks.Types.Init.SteadyState \"Type of initialization (1: no init, 2: steady state, 3/4: initial output)\";
+//   parameter Real firstOrder2.y_start = 0.0 \"Initial or guess value of output (= state)\";
+//   input Real feedback.u1;
+//   input Real feedback.u2;
+//   output Real feedback.y;
+//   input Real criticalDamping.u \"Connector of Real input signal\";
+//   output Real criticalDamping.y \"Connector of Real output signal\";
+//   parameter Integer criticalDamping.n = 1 \"Order of filter\";
+//   parameter Real criticalDamping.f(quantity = \"Frequency\", unit = \"Hz\", start = 1.0) = 50.0 * sine.freqHz \"Cut-off frequency\";
+//   parameter Boolean criticalDamping.normalized = true \"= true, if amplitude at f_cut is 3 dB, otherwise unmodified filter\";
+//   parameter enumeration(NoInit, SteadyState, InitialState, InitialOutput) criticalDamping.initType = Modelica.Blocks.Types.Init.NoInit \"Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)\";
+//   parameter Real criticalDamping.y_start = 0.0 \"Initial value of output (remaining states are in steady state)\";
+//   output Real criticalDamping.x[1](start = criticalDamping.x_start[1]) \"Filter states\";
+//   parameter Real criticalDamping.x_start[1] = 0.0 \"Initial or guess values of states\";
+//   protected parameter Real criticalDamping.alpha = if criticalDamping.normalized then sqrt(2.0 ^ (1.0 / Real(criticalDamping.n)) - 1.0) else 1.0 \"Frequency correction factor for normalized filter\";
+//   protected parameter Real criticalDamping.w = (6.28318530717959 * criticalDamping.f) / criticalDamping.alpha;
+// initial equation
+//   der(firstOrder1.y) = 0.0;
+//   der(firstOrder2.y) = 0.0;
+// equation
+//   der(firstOrder1.y) = (firstOrder1.k * firstOrder1.u - firstOrder1.y) / firstOrder1.T;
+//   sine.y = sine.offset + (if time < sine.startTime then 0.0 else sine.amplitude * sin(6.28318530717959 * (sine.freqHz * (time - sine.startTime)) + sine.phase));
+//   inverseBlockConstraints.u1 = inverseBlockConstraints.u2;
+//   inverseBlockConstraints.y1 = inverseBlockConstraints.y2;
+//   der(firstOrder2.y) = (firstOrder2.k * firstOrder2.u - firstOrder2.y) / firstOrder2.T;
+//   feedback.y = feedback.u1 - feedback.u2;
+//   der(criticalDamping.x[1]) = (criticalDamping.u - criticalDamping.x[1]) * criticalDamping.w;
+//   criticalDamping.y = criticalDamping.x[1];
+//   firstOrder2.u = inverseBlockConstraints.y1;
+//   criticalDamping.u = feedback.u2;
+//   criticalDamping.u = sine.y;
+//   criticalDamping.y = inverseBlockConstraints.u1;
+//   feedback.u1 = firstOrder2.y;
+//   firstOrder1.u = inverseBlockConstraints.y2;
+//   firstOrder1.y = inverseBlockConstraints.u2;
+// end Modelica.Blocks.Examples.InverseModel;
+// "
+// ""
+// "Check of Modelica.Blocks.Examples.InverseModel completed successfully.
+// 
+// 
+// Class Modelica.Blocks.Examples.InverseModel has 15 equation(s) and 15 variable(s).
+// 10 of these are trivial equation(s).
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.InverseModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.InverseModel', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// "function Modelica.Blocks.Sources.BooleanTable.getFirstIndex
+//   input Real[:] table \"Vector of time instants\";
+//   input Real simulationStartTime(quantity = \"Time\", unit = \"s\") \"Simulation start time\";
+//   input Boolean startValue \"Value of y for y < table[1]\";
+//   output Integer index \"First index to be used\";
+//   output Real nextTime(quantity = \"Time\", unit = \"s\") \"Time instant of first event\";
+//   output Boolean y \"Value of y at simulationStartTime\";
+//   protected Real t_last(quantity = \"Time\", unit = \"s\");
+//   protected Integer j;
+//   protected Integer n = size(table,1) \"Number of table points\";
+// algorithm
+//   if size(table,1) == 0 then
+//     index := 0;
+//     nextTime := -1e+60;
+//     y := startValue;
+//   elseif size(table,1) == 1 then
+//     index := 1;
+//     if table[1] > simulationStartTime then
+//       nextTime := table[1];
+//       y := startValue;
+//     else
+//       nextTime := simulationStartTime;
+//       y := startValue;
+//     end if;
+//   else
+//     t_last := table[1];
+//     for i in 2:n loop
+//       assert( table[i] > t_last, \"Time values of table not strict monotonically increasing: table[\" + String(i - 1,0,true) + \"] = \" + String(table[i - 1],0,true,6) + \"table[\" + String(i,0,true) + \"] = \" + String(table[i],0,true,6));
+//     end for;
+//     j := 1;
+//     y := startValue;
+//     while j < n and table[j] <= simulationStartTime loop
+//       y :=  not y;
+//       j := 1 + j;
+//     end while;
+//     if j == 1 then
+//       nextTime := table[1];
+//       y := startValue;
+//     elseif j == n and table[n] <= simulationStartTime then
+//       nextTime := simulationStartTime - 1.0;
+//       y :=  not y;
+//     else
+//       nextTime := table[j];
+//     end if;
+//     index := j;
+//   end if;
+// end Modelica.Blocks.Sources.BooleanTable.getFirstIndex;
+// 
+// class Modelica.Blocks.Examples.ShowLogicalSources
+//   output Boolean table.y \"Connector of Boolean output signal\";
+//   parameter Boolean table.startValue = false \"Start value of y. At time = table[1], y changes to 'not startValue'\";
+//   parameter Real table.table[1](quantity = \"Time\", unit = \"s\") = 2.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table.table[2](quantity = \"Time\", unit = \"s\") = 4.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table.table[3](quantity = \"Time\", unit = \"s\") = 6.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table.table[4](quantity = \"Time\", unit = \"s\") = 8.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   protected Real table.nextTime(quantity = \"Time\", unit = \"s\");
+//   protected Integer table.index \"Index of actual table entry\";
+//   protected parameter Integer table.n = 4 \"Number of table points\";
+//   output Boolean const.y \"Connector of Boolean output signal\";
+//   parameter Boolean const.k = true \"Constant output value\";
+//   output Boolean step.y \"Connector of Boolean output signal\";
+//   parameter Real step.startTime(quantity = \"Time\", unit = \"s\") = 4.0 \"Time instant of step start\";
+//   parameter Boolean step.startValue = false \"Output before startTime\";
+//   output Boolean pulse.y \"Connector of Boolean output signal\";
+//   parameter Real pulse.width(min = 1e-60, max = 100.0) = 50.0 \"Width of pulse in % of period\";
+//   parameter Real pulse.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 1.0) = 1.5 \"Time for one period\";
+//   parameter Real pulse.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first pulse\";
+//   protected discrete Real pulse.pulsStart(quantity = \"Time\", unit = \"s\") \"Start time of pulse\";
+//   protected parameter Real pulse.Twidth(quantity = \"Time\", unit = \"s\") = (pulse.period * pulse.width) / 100.0 \"width of one pulse\";
+//   output Boolean sample.y \"Connector of Boolean output signal\";
+//   parameter Real sample.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.01) = 0.5 \"Sample period\";
+//   parameter Real sample.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first sample trigger\";
+//   output Boolean booleanExpression.y = pulse.y and step.y \"Value of Boolean output\";
+// initial equation
+//   pulse.pulsStart = pulse.startTime;
+// initial algorithm
+//   (table.index, table.nextTime, table.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex({table.table[1],table.table[2],table.table[3],table.table[4]},time,table.startValue);
+// equation
+//   const.y = const.k;
+//   step.y = if time >= step.startTime then  not step.startValue else step.startValue;
+//   when sample(pulse.startTime,pulse.period) then
+//   pulse.pulsStart = time;
+//   end when;
+//   pulse.y = time >= pulse.pulsStart and time < pulse.pulsStart + pulse.Twidth;
+//   sample.y = sample(sample.startTime,sample.period);
+// algorithm
+//   when time >= pre(table.nextTime) and table.n > 0 then
+//     if table.index < table.n then
+//       table.index := 1 + table.index;
+//       table.nextTime := table.table[table.index];
+//       table.y :=  not table.y;
+//     elseif table.index == table.n then
+//       table.index := 1 + table.index;
+//       table.y :=  not table.y;
+//     end if;
+//   end when;
+// end Modelica.Blocks.Examples.ShowLogicalSources;
+// "
+// ""
+// "Check of Modelica.Blocks.Examples.ShowLogicalSources completed successfully.
+// 
+// 
+// Class Modelica.Blocks.Examples.ShowLogicalSources has 9 equation(s) and 9 variable(s).
+// 1 of these are trivial equation(s).
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.ShowLogicalSources_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.ShowLogicalSources', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// "function Modelica.Blocks.Sources.BooleanTable.getFirstIndex
+//   input Real[:] table \"Vector of time instants\";
+//   input Real simulationStartTime(quantity = \"Time\", unit = \"s\") \"Simulation start time\";
+//   input Boolean startValue \"Value of y for y < table[1]\";
+//   output Integer index \"First index to be used\";
+//   output Real nextTime(quantity = \"Time\", unit = \"s\") \"Time instant of first event\";
+//   output Boolean y \"Value of y at simulationStartTime\";
+//   protected Real t_last(quantity = \"Time\", unit = \"s\");
+//   protected Integer j;
+//   protected Integer n = size(table,1) \"Number of table points\";
+// algorithm
+//   if size(table,1) == 0 then
+//     index := 0;
+//     nextTime := -1e+60;
+//     y := startValue;
+//   elseif size(table,1) == 1 then
+//     index := 1;
+//     if table[1] > simulationStartTime then
+//       nextTime := table[1];
+//       y := startValue;
+//     else
+//       nextTime := simulationStartTime;
+//       y := startValue;
+//     end if;
+//   else
+//     t_last := table[1];
+//     for i in 2:n loop
+//       assert( table[i] > t_last, \"Time values of table not strict monotonically increasing: table[\" + String(i - 1,0,true) + \"] = \" + String(table[i - 1],0,true,6) + \"table[\" + String(i,0,true) + \"] = \" + String(table[i],0,true,6));
+//     end for;
+//     j := 1;
+//     y := startValue;
+//     while j < n and table[j] <= simulationStartTime loop
+//       y :=  not y;
+//       j := 1 + j;
+//     end while;
+//     if j == 1 then
+//       nextTime := table[1];
+//       y := startValue;
+//     elseif j == n and table[n] <= simulationStartTime then
+//       nextTime := simulationStartTime - 1.0;
+//       y :=  not y;
+//     else
+//       nextTime := table[j];
+//     end if;
+//     index := j;
+//   end if;
+// end Modelica.Blocks.Sources.BooleanTable.getFirstIndex;
+// 
+// class Modelica.Blocks.Examples.LogicalNetwork1
+//   output Boolean table2.y \"Connector of Boolean output signal\";
+//   parameter Boolean table2.startValue = false \"Start value of y. At time = table[1], y changes to 'not startValue'\";
+//   parameter Real table2.table[1](quantity = \"Time\", unit = \"s\") = 1.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table2.table[2](quantity = \"Time\", unit = \"s\") = 3.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table2.table[3](quantity = \"Time\", unit = \"s\") = 5.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table2.table[4](quantity = \"Time\", unit = \"s\") = 7.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   protected Real table2.nextTime(quantity = \"Time\", unit = \"s\");
+//   protected Integer table2.index \"Index of actual table entry\";
+//   protected parameter Integer table2.n = 4 \"Number of table points\";
+//   output Boolean table1.y \"Connector of Boolean output signal\";
+//   parameter Boolean table1.startValue = false \"Start value of y. At time = table[1], y changes to 'not startValue'\";
+//   parameter Real table1.table[1](quantity = \"Time\", unit = \"s\") = 2.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table1.table[2](quantity = \"Time\", unit = \"s\") = 4.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table1.table[3](quantity = \"Time\", unit = \"s\") = 6.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   parameter Real table1.table[4](quantity = \"Time\", unit = \"s\") = 8.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g. table={0,1})\";
+//   protected Real table1.nextTime(quantity = \"Time\", unit = \"s\");
+//   protected Integer table1.index \"Index of actual table entry\";
+//   protected parameter Integer table1.n = 4 \"Number of table points\";
+//   input Boolean Not1.u \"Connector of Boolean input signal\";
+//   output Boolean Not1.y \"Connector of Boolean output signal\";
+//   input Boolean And1.u1 \"Connector of first Boolean input signal\";
+//   input Boolean And1.u2 \"Connector of second Boolean input signal\";
+//   output Boolean And1.y \"Connector of Boolean output signal\";
+//   input Boolean Or1.u1 \"Connector of first Boolean input signal\";
+//   input Boolean Or1.u2 \"Connector of second Boolean input signal\";
+//   output Boolean Or1.y \"Connector of Boolean output signal\";
+//   input Boolean Pre1.u \"Connector of Boolean input signal\";
+//   output Boolean Pre1.y \"Connector of Boolean output signal\";
+//   parameter Boolean Pre1.pre_u_start = false \"Start value of pre(u) at initial time\";
+// initial equation
+//   pre(Pre1.u) = Pre1.pre_u_start;
+// initial algorithm
+//   (table2.index, table2.nextTime, table2.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex({table2.table[1],table2.table[2],table2.table[3],table2.table[4]},time,table2.startValue);
+//   (table1.index, table1.nextTime, table1.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex({table1.table[1],table1.table[2],table1.table[3],table1.table[4]},time,table1.startValue);
+// equation
+//   Not1.y =  not Not1.u;
+//   And1.y = And1.u1 and And1.u2;
+//   Or1.y = Or1.u1 or Or1.u2;
+//   Pre1.y = pre(Pre1.u);
+//   Or1.y = Pre1.u;
+//   And1.u2 = Pre1.y;
+//   And1.u1 = Not1.y;
+//   Or1.u1 = table1.y;
+//   And1.y = Or1.u2;
+//   Not1.u = table2.y;
+// algorithm
+//   when time >= pre(table2.nextTime) and table2.n > 0 then
+//     if table2.index < table2.n then
+//       table2.index := 1 + table2.index;
+//       table2.nextTime := table2.table[table2.index];
+//       table2.y :=  not table2.y;
+//     elseif table2.index == table2.n then
+//       table2.index := 1 + table2.index;
+//       table2.y :=  not table2.y;
+//     end if;
+//   end when;
+//   when time >= pre(table1.nextTime) and table1.n > 0 then
+//     if table1.index < table1.n then
+//       table1.index := 1 + table1.index;
+//       table1.nextTime := table1.table[table1.index];
+//       table1.y :=  not table1.y;
+//     elseif table1.index == table1.n then
+//       table1.index := 1 + table1.index;
+//       table1.y :=  not table1.y;
+//     end if;
+//   end when;
+// end Modelica.Blocks.Examples.LogicalNetwork1;
+// "
+// ""
+// "Check of Modelica.Blocks.Examples.LogicalNetwork1 completed successfully.
+// 
+// 
+// Class Modelica.Blocks.Examples.LogicalNetwork1 has 16 equation(s) and 16 variable(s).
+// 6 of these are trivial equation(s).
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.LogicalNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.LogicalNetwork1', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// "function Modelica.Math.asin
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+// 
+// external \"C\";
+// end Modelica.Math.asin;
+// 
+// function Modelica.Math.sin
+//   input Real u(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//   output Real y;
+// 
+// external \"C\";
+// end Modelica.Math.sin;
+// 
+// class Modelica.Blocks.Examples.BusUsage
+//   output Integer integerStep.y \"Connector of Integer output signal\";
+//   parameter Integer integerStep.offset = 2 \"Offset of output signal y\";
+//   parameter Real integerStep.startTime(quantity = \"Time\", unit = \"s\") = 0.5 \"Output y = offset for time < startTime\";
+//   parameter Integer integerStep.height = 1 \"Height of step\";
+//   output Boolean booleanStep.y \"Connector of Boolean output signal\";
+//   parameter Real booleanStep.startTime(quantity = \"Time\", unit = \"s\") = 0.5 \"Time instant of step start\";
+//   parameter Boolean booleanStep.startValue = false \"Output before startTime\";
+//   output Real sine.y \"Connector of Real output signal\";
+//   parameter Real sine.amplitude = 1.0 \"Amplitude of sine wave\";
+//   parameter Real sine.freqHz(quantity = \"Frequency\", unit = \"Hz\", start = 1.0) = 1.0 \"Frequency of sine wave\";
+//   parameter Real sine.phase(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") = 0.0 \"Phase of sine wave\";
+//   parameter Real sine.offset = 0.0 \"Offset of output signal\";
+//   parameter Real sine.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Output = offset for time < startTime\";
+//   protected constant Real sine.pi = 3.14159265358979;
+//   output Real part.realExpression.y = time \"Value of Real output\";
+//   output Boolean part.booleanExpression.y = time > 0.5 \"Value of Boolean output\";
+//   Real part.subControlBus.myRealSignal \"virtual variable in expandable connector\";
+//   Boolean part.subControlBus.myBooleanSignal \"virtual variable in expandable connector\";
+//   parameter Real gain.k(start = 1.0) = 1.0 \"Gain value multiplied with input signal\";
+//   input Real gain.u \"Input signal connector\";
+//   output Real gain.y \"Output signal connector\";
+//   Real controlBus.realSignal1 \"virtual variable in expandable connector\";
+//   Boolean controlBus.booleanSignal \"virtual variable in expandable connector\";
+//   Integer controlBus.integerSignal \"virtual variable in expandable connector\";
+//   Real controlBus.subControlBus.myRealSignal \"virtual variable in expandable connector\";
+//   Boolean controlBus.subControlBus.myBooleanSignal \"virtual variable in expandable connector\";
+// equation
+//   integerStep.y = integerStep.offset + (if time < integerStep.startTime then 0 else integerStep.height);
+//   booleanStep.y = if time >= booleanStep.startTime then  not booleanStep.startValue else booleanStep.startValue;
+//   sine.y = sine.offset + (if time < sine.startTime then 0.0 else sine.amplitude * sin(6.28318530717959 * (sine.freqHz * (time - sine.startTime)) + sine.phase));
+//   gain.y = gain.k * gain.u;
+//   controlBus.realSignal1 = gain.u;
+//   controlBus.realSignal1 = sine.y;
+//   controlBus.subControlBus.myBooleanSignal = part.subControlBus.myBooleanSignal;
+//   controlBus.subControlBus.myRealSignal = part.subControlBus.myRealSignal;
+//   controlBus.integerSignal = integerStep.y;
+//   booleanStep.y = controlBus.booleanSignal;
+//   part.booleanExpression.y = part.subControlBus.myBooleanSignal;
+//   part.realExpression.y = part.subControlBus.myRealSignal;
+// end Modelica.Blocks.Examples.BusUsage;
+// "
+// ""
+// "Check of Modelica.Blocks.Examples.BusUsage completed successfully.
+// 
+// 
+// Class Modelica.Blocks.Examples.BusUsage has 14 equation(s) and 14 variable(s).
+// 9 of these are trivial equation(s).
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.BusUsage_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0
+// endResult

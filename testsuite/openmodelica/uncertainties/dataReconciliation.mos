@@ -1,0 +1,32 @@
+// name:     dataReconciliation
+// keywords: uncertainty
+// status:   correct
+// A set of simple examples to test the uncertainties algorithm.
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+loadFile("dataReconciliation.mo");
+getErrorString();
+
+modelEquationsUC(DataReconciliationTests.SimpleExple);
+getErrorString();
+
+modelEquationsUC(DataReconciliationTests.VDI2048Exple);
+getErrorString();
+
+modelEquationsUC(DataReconciliationTests.DistillationTower);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "{{{q4[\\[FormalT]],q3[\\[FormalT]],q2[\\[FormalT]],q1[\\[FormalT]]},{q4[\\[FormalT]]==q1[\\[FormalT]],q1[\\[FormalT]]==q2[\\[FormalT]] + q3[\\[FormalT]]}},{{},{}},{\"None\",\"None\",\"None\",\"None\"}}"
+// ""
+// "{{{mHDNK[\\[FormalT]],mA5[\\[FormalT]],mA6[\\[FormalT]],mA7[\\[FormalT]],mHK[\\[FormalT]],mV[\\[FormalT]],mSPLL[\\[FormalT]],mSPL[\\[FormalT]],mFDKELL[\\[FormalT]],mFDKEL[\\[FormalT]]},{mFDKEL[\\[FormalT]] + (mFDKELL[\\[FormalT]] + (ToExpression[StringReplace[\"0.4\",\"e\"->\"*1.0*10^\"]] * mV[\\[FormalT]] + (-mSPLL[\\[FormalT]] - mSPL[\\[FormalT]])))==0,mSPL[\\[FormalT]] + (mSPLL[\\[FormalT]] + (-mA5[\\[FormalT]] - mHK[\\[FormalT]] - mA7[\\[FormalT]] - mV[\\[FormalT]] - mA6[\\[FormalT]]))==0,mA7[\\[FormalT]] + (mA6[\\[FormalT]] + (mA5[\\[FormalT]] - mHDNK[\\[FormalT]]))==0}},{{},{}},{\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\"}}"
+// ""
+// "{{{xD2[\\[FormalT]],xD1[\\[FormalT]],xB2[\\[FormalT]],xB1[\\[FormalT]],xF2[\\[FormalT]],xF1[\\[FormalT]],D1[\\[FormalT]],B[\\[FormalT]],F[\\[FormalT]]},{xD1[\\[FormalT]] + xD2[\\[FormalT]]==1,xB1[\\[FormalT]] + xB2[\\[FormalT]]==1,F[\\[FormalT]] * xF1[\\[FormalT]] + ((-B[\\[FormalT]]) * xB1[\\[FormalT]] - D1[\\[FormalT]] * xD1[\\[FormalT]])==0,F[\\[FormalT]] * xF2[\\[FormalT]] + ((-B[\\[FormalT]]) * xB2[\\[FormalT]] - D1[\\[FormalT]] * xD2[\\[FormalT]])==0,xF1[\\[FormalT]] + xF2[\\[FormalT]]==1}},{{},{}},{\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\"}}"
+// ""
+// endResult

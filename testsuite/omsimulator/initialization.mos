@@ -1,0 +1,72 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log temp-initialization/
+
+loadString("
+model initialization
+  output Real y = x;
+  parameter Real x_start = 1.0;
+protected
+  Real x(start=x_start, fixed=true);
+  Real w(fixed=false);
+initial equation
+  w = x;
+equation
+  der(x) = time;
+  der(w) = 2*time;
+end initialization;"); getErrorString();
+
+buildModelFMU(initialization, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("initialization.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-initialization/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"initialization.fmu\")
+oms_setResultFile(\"test\", \"\")
+
+oms_instantiate(\"test\")
+oms_setReal(\"test.root.A.x_start\", 1.5)
+
+oms_initialize(\"test\")
+print(\"info:    Initialization\")
+print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
+print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+print(\"info:      A.w:       \" .. oms_getReal(\"test.root.A.w\"))
+
+oms_simulate(\"test\")
+print(\"info:    Simulation\")
+print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
+print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+print(\"info:      A.w:       \" .. oms_getReal(\"test.root.A.w\"))
+
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua");
+
+// Result:
+// true
+// ""
+// "initialization.fmu"
+// ""
+// true
+// ""
+// info:    maximum step size for 'test.root': 0.100000
+// info:    No result file will be created
+// info:    Initialization
+// info:      A.x_start: 1.5
+// info:      A.x:       1.5
+// info:      A.w:       1.5
+// info:    Simulation
+// info:      A.x_start: 1.5
+// info:      A.x:       1.9080371522852
+// info:      A.w:       2.3160743045704
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 37 NumRhsEvals  = 83 NumLinSolvSetups = 39
+//          NumNonlinSolvIters = 82 NumNonlinSolvConvFails = 0 NumErrTestFails = 18
+// 0
+// endResult

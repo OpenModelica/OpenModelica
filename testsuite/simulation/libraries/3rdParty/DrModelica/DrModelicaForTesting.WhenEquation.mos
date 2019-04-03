@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.WhenEquation.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.WhenEquation
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.WhenEquation.* DrModelicaForTesting.WhenEquation_* DrModelicaForTesting.WhenEquation DrModelicaForTesting.WhenEquation.exe DrModelicaForTesting.WhenEquation.cpp DrModelicaForTesting.WhenEquation.makefile DrModelicaForTesting.WhenEquation.libs DrModelicaForTesting.WhenEquation.log DrModelicaForTesting.WhenEquation.c DrModelicaForTesting.WhenEquation.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.WhenEquation, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WhenEquation_res.mat",
+  "ReferenceFiles/WhenEquation_ref.mat","DrModelicaForTesting.WhenEquation_diff.csv",0.01,0.013,
+  {"x","y1", "y2", "y3"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.WhenEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WhenEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

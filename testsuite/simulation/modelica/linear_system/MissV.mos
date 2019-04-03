@@ -1,0 +1,64 @@
+// name:     MissV  (test bug 1110)
+// keywords: linear system of equations
+// status: correct
+// teardown_command: rm -rf linear_system.MissV* _linear_system.MissV* output.log
+//
+// Solving of a linear system of equations
+//
+// Tests fixes for bug: https://trac.openmodelica.org/OpenModelica/ticket/1110
+//
+
+loadString("
+package linear_system
+  model MissV
+    Real pb(start = 12000000);
+    Real Qb;
+    Real pa(start = 12000000); 
+    Real Qa;
+    parameter Real s = 1e-3;
+    parameter Real v = 5e3;
+
+  equation
+    der(pb) = (Qb - v)/s;
+    der(pa) = (Qa - v)/s;
+    pa = pb;
+    Qa + Qb = 0;
+  end MissV;
+end linear_system;
+"); getErrorString();
+instantiateModel(linear_system.MissV); getErrorString();
+simulate(linear_system.MissV,startTime=0.0, stopTime=1.0, numberOfIntervals=500, tolerance=1e-5); getErrorString();
+
+val(pa, 1.0);
+val(pb, 1.0);
+
+// Result:
+// true
+// ""
+// "class linear_system.MissV
+//   Real pb(start = 12000000.0);
+//   Real Qb;
+//   Real pa(start = 12000000.0);
+//   Real Qa;
+//   parameter Real s = 0.001;
+//   parameter Real v = 5000.0;
+// equation
+//   der(pb) = (Qb - v) / s;
+//   der(pa) = (Qa - v) / s;
+//   pa = pb;
+//   Qa + Qb = 0.0;
+// end linear_system.MissV;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "linear_system.MissV_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'linear_system.MissV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 6999999.999999999
+// 6999999.999999999
+// endResult

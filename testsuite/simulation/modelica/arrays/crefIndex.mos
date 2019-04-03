@@ -1,0 +1,72 @@
+// name: crefIndex
+// status: correct
+// teardown_command: rm -f M M.exe M.makefile M.c M_*
+
+loadString("
+model M
+  parameter Integer maxIx = 2;
+  parameter Real A[2,1] = ones(2,1) * 10.5;
+  parameter Real B[2] = {i for i in 1:2} * 10;
+  Real u[maxIx, 1] = ones(maxIx, 1) * time;
+
+  Real x[2];
+  Real y[2];
+  Real z[2];
+  
+  type E = enumeration(one, two);
+  Integer i(start=1);
+  Boolean b(start=false);
+  E e(start = E.one);
+equation
+  //i = integer(floor(time + 1));
+  der(x) = A * u[i, :] + B;
+  der(y) = A * u[b, :] + B;
+  der(z) = A * u[e, :] + B;
+  when sample(0,1) then
+    b = not pre(b);
+    i = if b then 1 else 2;
+    e = if b then E.one else E.two;
+  end when;
+end M;");
+simulate(M);getErrorString();
+
+val(x[1], 0.0);
+val(x[1], 1.0);
+val(x[2], 0.0);
+val(x[2], 1.0);
+
+val(y[1], 0.0);
+val(y[1], 1.0);
+val(y[2], 0.0);
+val(y[2], 1.0);
+
+val(z[1], 0.0);
+val(z[1], 1.0);
+val(z[2], 0.0);
+val(z[2], 1.0);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.0
+// 15.2500000000004
+// 0.0
+// 25.2500000000004
+// 0.0
+// 15.2500000000004
+// 0.0
+// 25.2500000000004
+// 0.0
+// 15.2500000000004
+// 0.0
+// 25.2500000000004
+// endResult

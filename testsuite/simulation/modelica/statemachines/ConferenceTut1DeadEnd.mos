@@ -1,0 +1,17 @@
+// name:     ConferenceTut1DeadEnd
+// keywords: state machines
+// status: correct
+//
+// Test case for ticket:4527
+
+loadFile("ConferenceTut1DeadEnd.mo");
+echo(false);
+simulate(ConferenceTut1DeadEnd, startTime=0, stopTime=30, numberOfIntervals = 0); getErrorString();
+echo(true);
+val(i,30.0);
+
+// Result:
+// true
+// true
+// -13.0
+// endResult

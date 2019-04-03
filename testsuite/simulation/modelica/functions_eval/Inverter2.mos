@@ -1,0 +1,36 @@
+// name:      Inverter2
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadFile("Inverter2.mo"); getErrorString();
+simulate(Inverter2, stopTime=1e-11,numberOfIntervals=2000);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Inverter2_res.mat",
+  "ReferenceFiles/Inverter2.mat",
+  "Inverter2_diff.csv", 0.01, 0.0001,
+  {"mn.cc.idrain",
+  "mn.irs",
+  "mn.ird",
+  "mn.Dinternal"}); 
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Inverter2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 2000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Inverter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | warning | The step-size 5e-15 is too small. Adjust the step-size to 1e-12.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 3.2.1/Electrical/Spice3.mo:4630:5-4631:56:writable] Warning: Parameter mn.IC has no value, and is fixed during initialization (fixed=true), using available start value (start=-1e+40) as default value.
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

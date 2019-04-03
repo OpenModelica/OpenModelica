@@ -1,0 +1,134 @@
+// name:      NPendulum10
+// keywords:  arrays
+// status:    correct
+//
+
+loadFile("NPendulum.mo");
+getErrorString();
+
+setCommandLineOptions("--maxSizeLinearTearing=4000"); getErrorString();
+buildModel(NPendulum.pendulum); getErrorString();
+system("./NPendulum.pendulum -ls totalpivot");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+
+system("./NPendulum.pendulum -ls lapack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+
+system("./NPendulum.pendulum -ls umfpack");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+
+/*
+Lis solver doesn't work here
+system("./NPendulum.pendulum -ls lis");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+*/
+system("./NPendulum.pendulum -ls klu");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"phi[10]"});
+
+
+setCommandLineOptions("--maxSizeLinearTearing=0"); getErrorString();
+buildModel(NPendulum.pendulum); getErrorString();
+
+system("./NPendulum.pendulum -ls totalpivot -lssMinSize=4001");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+
+system("./NPendulum.pendulum -ls lapack -lssMinSize=4001");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+system("./NPendulum.pendulum -ls umfpack -lssMinSize=4001");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+
+/*
+Lis solver doesn't work here
+system("./NPendulum.pendulum -ls lis");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+*/
+
+system("./NPendulum.pendulum -ls klu -lssMinSize=4001");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_10.mat",
+  "NPendulum_diff.csv",0.01,0.01,
+  {"phi[10]"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// true
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// "Notification: Tearing is skipped for strong component 1 because system size of 278 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 275 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// endResult

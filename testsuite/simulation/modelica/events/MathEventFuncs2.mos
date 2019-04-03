@@ -1,0 +1,145 @@
+// name:     mathEventFunctions2
+// keywords: events, zerossings, math
+// status: correct
+// teardown_command: rm -rf mathFunctionEvents* output.log
+// 
+// Check for interger valued zerocrossings function
+// 
+
+
+loadString("
+model mathFunctionEvents
+  Real u1,u2;
+  Real y1;
+  Real y2;
+  Real y3;
+  Integer y4;
+  Integer y5;
+  Integer y6;
+  Integer i1,i2;
+equation
+  i1 = integer(10*sin(10*time)+30);
+  i2 = integer(10*cos(10*time)+15);
+  u1 = sin(10*time)-3;
+  u2 = cos(10*time)-1.5;
+  y1 = div(u1,u2);
+  y2 = mod(u1,u2);
+  y3 = rem(u1,u2);
+  y4 = div(i1,i2);
+  y5 = mod(i1,i2);
+  y6 = rem(-y4,i2);
+end mathFunctionEvents;
+");
+getErrorString();
+
+simulate(mathFunctionEvents,numberOfIntervals=500);
+getErrorString();
+
+print("\n-y1-");
+val(y1,0);
+val(y1,0.2);
+val(y1,0.4);
+val(y1,0.6);
+val(y1,0.8);
+val(y1,1);
+
+print("\n-y2-");
+val(y2,0);
+val(y2,0.2);
+val(y2,0.4);
+val(y2,0.6);
+val(y2,0.8);
+val(y2,1);
+
+print("\n-y3-");
+val(y3,0);
+val(y3,0.2);
+val(y3,0.4);
+val(y3,0.6);
+val(y3,0.8);
+val(y3,1);
+
+print("\n-y4-");
+val(y4,0);
+val(y4,0.2);
+val(y4,0.4);
+val(y4,0.6);
+val(y4,0.8);
+val(y4,1);
+
+print("\n-y5-");
+val(y5,0);
+val(y5,0.2);
+val(y5,0.4);
+val(y5,0.6);
+val(y5,0.8);
+val(y5,1);
+
+print("\n-y6-");
+val(y6,0);
+val(y6,0.2);
+val(y6,0.4);
+val(y6,0.6);
+val(y6,0.8);
+val(y6,1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "mathFunctionEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mathFunctionEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+//
+// -y1-
+// 6.0
+// 1.0
+// 1.0
+// 6.0
+// 1.0
+// 1.0
+//
+// -y2-
+// 0.0
+// -0.1745557366271757
+// -1.603158874444317
+// -0.04043721810112189
+// -0.3651417195680047
+// -1.204949581812917
+//
+// -y3-
+// 0.0
+// -0.1745557366271757
+// -1.603158874444317
+// -0.04043721810112189
+// -0.3651417195680047
+// -1.204949581812917
+//
+// -y4-
+// 1.0
+// 3.0
+// 2.0
+// 1.0
+// 3.0
+// 4.0
+//
+// -y5-
+// 5.0
+// 9.0
+// 6.0
+// 3.0
+// 0.0
+// 0.0
+//
+// -y6-
+// -1.0
+// -3.0
+// -2.0
+// -1.0
+// -3.0
+// -4.0
+// endResult

@@ -1,0 +1,24 @@
+// name: Time
+// keywords: time
+// status: correct
+// teardown_command: rm -rf Time Time.exe Time.cpp Time_functions.cpp Time_functions.h Time_init.xml Time.libs Time.log Time.makefile Time_records.c Time_res.mat output.log
+//
+// Testing the built-in variable time
+//
+
+loadFile("Time.mo");
+simulate(Time);
+val(x,0.0);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Time_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Time', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// endResult

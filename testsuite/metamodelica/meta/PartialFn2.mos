@@ -1,0 +1,20 @@
+// name:     PartialFn2
+// keywords: PartialFn
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Partial Function Testing
+//
+loadFile("PartialFn2.mo");
+simulate(PartialFn2);
+val(i2,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "PartialFn2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PartialFn2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat'",
+//     messages = ""
+// end SimulationResult;
+// 3.0
+// endResult

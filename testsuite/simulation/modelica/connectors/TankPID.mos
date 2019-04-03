@@ -1,0 +1,51 @@
+// name:     TankPID
+// keywords: <insert keywords here>
+// cflags: +std=2.x
+// status: correct
+// teardown_command: rm -rf TankPID_* TankPID TankPID.exe TankPID.cpp TankPID.makefile TankPID.libs TankPID.log output.log
+// 
+//  <insert description here>
+//
+// Drmodelica: 12.1 Object Oriented Component-based (p. 386)
+// 
+loadFile("TankPID.mo");
+simulate(TankPID,stopTime=250,numberOfIntervals=250,tolerance=1e-5,outputFormat="mat",variableFilter="tank\\.h"); // 2 intervals == 3 values
+readSimulationResultVars("TankPID_res.mat");
+echo(false); // turns of output 
+
+//res:=readSimulationResult("TankPID_res.mat",{x,y,z},3); 
+x:=val(tank.h,25.0);
+y:=val(tank.h,100.0);
+z:=val(tank.h,150.0);
+w:=val(tank.h,200.0);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+w:=1000*w;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+w:=floor(w);
+echo(true); // turns on output
+//readSimulationResultSize("TankPID_res.mat");getErrorString();
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+w/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TankPID_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 250.0, numberOfIntervals = 250, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TankPID', options = '', outputFormat = 'mat', variableFilter = 'tank\\\\.h', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"pidContinuous.K","pidContinuous.T","pidContinuous.Ts","pidContinuous.ref","source.flowLevel","tank.area","tank.flowGain","tank.h","tank.maxV","tank.minV","time"}
+// true
+// 0.394
+// 0.235
+// 0.252
+// 0.235
+// endResult

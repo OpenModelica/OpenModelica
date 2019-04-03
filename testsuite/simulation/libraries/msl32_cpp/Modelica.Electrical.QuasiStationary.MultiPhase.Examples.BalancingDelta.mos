@@ -1,0 +1,40 @@
+// name:     Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta);
+compareVars :=
+{
+   "voltageSource.plug_p.reference.gamma",
+   "voltageSource.voltageSource[2].pin_p.reference.gamma",
+   "voltageSource.voltageSource[3].pin_p.reference.gamma"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta
+// {"voltageSource.plug_p.reference.gamma","voltageSource.voltageSource[2].pin_p.reference.gamma","voltageSource.voltageSource[3].pin_p.reference.gamma"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

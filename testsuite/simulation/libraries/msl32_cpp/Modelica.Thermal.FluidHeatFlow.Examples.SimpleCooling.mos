@@ -1,0 +1,39 @@
+// name:     Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling);
+compareVars :=
+{
+   "pipe.T",
+   "heatCapacitor.T"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling
+// {"pipe.T","heatCapacitor.T"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

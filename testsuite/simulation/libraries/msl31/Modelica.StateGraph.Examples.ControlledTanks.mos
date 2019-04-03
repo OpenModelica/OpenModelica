@@ -1,0 +1,35 @@
+// name:     Modelica.StateGraph.Examples.ExecutionPaths
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.StateGraph.Examples.ControlledTanks,stopTime=100.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.StateGraph.Examples.ControlledTanks_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.StateGraph.Examples.ControlledTanks.mat","Modelica.StateGraph.Examples.ControlledTanks_diff.csv",0.01,0.0001,
+  {"stateGraphRoot.subgraphStatePort.activeSteps",
+  "transition1.t",
+  "transition2.t",
+  "transition3.t",
+  "transition4.t",
+  "transition5.t",
+  "transition6.t",
+  "setReal.y",
+  "transition4a.t",
+  "transition6a.t",
+  "transition7.t"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.StateGraph.Examples.ControlledTanks.mos_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ExecutionPaths', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

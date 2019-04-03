@@ -1,0 +1,42 @@
+// name: External Function: Result Order
+// keyword: external functions, result
+// status: correct
+// teardown_command: rm -rf ExternalFunctionResultOrder_*.log ExternalFunctionResultOrder_*.makefile ExternalFunctionResultOrder*.libs ExternalFunctionResultOrder_*.c
+// depends: ext_ExternalFunctionResultOrder.c
+//
+// Verifies that the external call mapping works for different combinations,
+// and not only when the outputs are in the same order as the default mapping.
+//
+
+setCommandLineOptions("-d=gen,noevalfunc");
+loadFile("ExternalFunctionResultOrder.mo");
+ExternalFunctionResultOrder.c1234();getErrorString();
+ExternalFunctionResultOrder.c2341();getErrorString();
+ExternalFunctionResultOrder.c1243();getErrorString();
+ExternalFunctionResultOrder.c4321();getErrorString();
+
+ExternalFunctionResultOrder.f1234();getErrorString();
+ExternalFunctionResultOrder.f2341();getErrorString();
+ExternalFunctionResultOrder.f1243();getErrorString();
+ExternalFunctionResultOrder.f4321();getErrorString();
+
+// Result:
+// true
+// true
+// (1,2,3,4)
+// ""
+// (2,3,4,1)
+// ""
+// (1,2,4,3)
+// ""
+// (4,3,2,1)
+// ""
+// (1,2,3,4)
+// ""
+// (2,3,4,1)
+// ""
+// (1,2,4,3)
+// ""
+// (4,3,2,1)
+// ""
+// endResult

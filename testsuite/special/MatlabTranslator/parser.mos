@@ -1,0 +1,37 @@
+runScript("LoadCompilerSources.mos");
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+getErrorString();
+loadFile("runparser.mo");
+getErrorString();
+runparser.main({"Test.mo","Modelica"});
+
+getErrorString();
+/*
+loadString("function f
+input String str;
+output Real t;
+protected
+Real r1;
+Absyn.Program modast;
+Absyn.Info info;
+String unparsed;
+Boolean c;
+algorithm
+  _ := GlobalScript.ISTMTS({},false);
+  r1 := 1.0;
+  info := SOURCEINFO(\"\",false,0,0,0,0,0.0); 
+  _ := Absyn.isDerCref(Absyn.REAL(realString(r1)));
+  _ := GlobalScript.IALG(Absyn.ALGORITHMITEMCOMMENT(\"test\"));
+  _ := GlobalScript.IEXP(Absyn.REAL(realString(r1)),info);
+  
+  modast := ParserExt.parse(str,\"\",1,\"UTF-8\",1,false);
+  print(anyString(modast));  
+  unparsed := Dump.unparseStr(modast,false);        
+  //unparsed := Dump.unparseStr(outProgram,false);
+  //print(anyString(unparsed));
+  t:=1.0;
+end f;");
+getErrorString();
+{f(str) for str in {"Test.mo"}};
+getErrorString(); 
+*/

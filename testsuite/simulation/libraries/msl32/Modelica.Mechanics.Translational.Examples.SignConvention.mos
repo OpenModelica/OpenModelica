@@ -1,0 +1,57 @@
+// name:     Modelica.Mechanics.Translational.Examples.SignConvention
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.SignConvention);
+compareVars :=
+{
+   "mass1.s",
+   "mass1.v",
+   "mass1.a",
+   "mass2.s",
+   "mass2.v",
+   "mass2.a",
+   "mass3.s",
+   "mass3.v",
+   "mass3.a",
+   "mass1.flange_a.s",
+   "mass1.flange_b.s",
+   "mass2.flange_a.s",
+   "mass2.flange_b.s",
+   "mass3.flange_a.s",
+   "mass3.flange_b.s",
+   "force3.s",
+   "mass1.flange_b.f",
+   "mass2.flange_a.f",
+   "mass3.flange_a.f",
+   "mass1.a",
+   "mass2.a",
+   "mass3.a"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Translational.Examples.SignConvention
+// {"mass1.s","mass1.v","mass1.a","mass2.s","mass2.v","mass2.a","mass3.s","mass3.v","mass3.a","mass1.flange_a.s","mass1.flange_b.s","mass2.flange_a.s","mass2.flange_b.s","mass3.flange_a.s","mass3.flange_b.s","force3.s","mass1.flange_b.f","mass2.flange_a.f","mass3.flange_a.f","mass1.a","mass2.a","mass3.a"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.SignConvention', options = '', outputFormat = 'mat', variableFilter = 'time|mass1.s|mass1.v|mass1.a|mass2.s|mass2.v|mass2.a|mass3.s|mass3.v|mass3.a|mass1.flange_a.s|mass1.flange_b.s|mass2.flange_a.s|mass2.flange_b.s|mass3.flange_a.s|mass3.flange_b.s|force3.s|mass1.flange_b.f|mass2.flange_a.f|mass3.flange_a.f|mass1.a|mass2.a|mass3.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.Translational.Examples.SignConvention_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

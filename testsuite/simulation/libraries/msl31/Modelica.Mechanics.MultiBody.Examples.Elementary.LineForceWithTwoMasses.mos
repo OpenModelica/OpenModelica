@@ -1,0 +1,41 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses);
+compareVars :=
+{
+   "revolute1.phi",
+   "revolute1.w",
+   "revolute2.phi",
+   "revolute2.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses
+// {"revolute1.phi","revolute1.w","revolute2.phi","revolute2.w"}
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses', options = '', outputFormat = 'mat', variableFilter = 'time|revolute1.phi|revolute1.w|revolute2.phi|revolute2.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

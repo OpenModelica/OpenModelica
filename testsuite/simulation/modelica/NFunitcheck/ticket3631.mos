@@ -1,0 +1,41 @@
+// name: ticket3631
+// status: correct
+
+loadString("
+package unitCheckTests
+  model ticket3631
+    Real x(final unit = \"\");
+    Real y(final unit = \"\");
+  equation
+    x = time;
+    x + y = sin(time);
+  end ticket3631;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
+instantiateModel(unitCheckTests.ticket3631); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {x,{1.0 * s^(1)}}
+// {y,{1.0 * s^(1)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.ticket3631
+//   Real x(unit = \"\");
+//   Real y(unit = \"\");
+// equation
+//   x = time;
+//   x + y = sin(time);
+// end unitCheckTests.ticket3631;
+// "
+// "Notification: "x" has the Unit "s"
+// "y" has the Unit "s"
+// "
+// endResult

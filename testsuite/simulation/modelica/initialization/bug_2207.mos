@@ -1,0 +1,58 @@
+// name: bug_2207
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_2207* _initializationTests.bug_2207* output.log
+
+loadString("
+within ;
+package initializationTests
+  model bug_2207
+    parameter Real a=100;
+    constant Real b=100;
+    Real x(start=2*a, nominal=3*a, min=-4*a, max=5*a);
+    Real y(start=2*b, nominal=3*b, min=-4*b, max=5*b);
+  equation
+    der(x) = 0;
+    der(y) = 0;
+  end bug_2207;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.bug_2207, simflags="-lv=LOG_INIT"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2207_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2207', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// |                 | |       | | x(min=-400)
+// LOG_INIT          | info    | updating max-values
+// |                 | |       | | x(max=500)
+// LOG_INIT          | info    | updating nominal-values
+// |                 | |       | | x(nominal=300)
+// LOG_INIT          | info    | updating primary start-values
+// |                 | |       | | updated start value: x(start=200)
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real a(start=100, fixed=true) = 100
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=200, nominal=300) = 200 (pre: 200)
+// |                 | |       | | | [2] Real y(start=200, nominal=300) = 200 (pre: 200)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = 0 (pre: 0)
+// |                 | |       | | | [4] Real der(y) = 0 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

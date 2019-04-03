@@ -1,0 +1,77 @@
+// name:     when-statements
+// keywords: Simulate, when-statements
+// status: correct
+// teardown_command: rm -rf testalgwhen testalgwhen.exe testalgwhen.cpp testalgwhen_functions.cpp testalgwhen_functions.h testalgwhen_init.xml testalgwhen.libs testalgwhen.log testalgwhen.makefile testalgwhen_records.c testalgwhen_res.mat output.log 
+// 
+//  Simulate model containing algortithms with when-stamtements
+//
+
+loadString("
+model testalgwhen
+  Boolean b;
+  Real r;
+  Real x(start=1);
+  Real y(start=0);
+  Real z(start=0);
+  Real w(start=0);
+  Real v(start=0);
+  Real tt;
+equation
+  der(x) = 1;
+  b = time >= 0.9;
+algorithm
+  r := x + y;
+  if edge(b) then
+    tt := time;
+  end if;
+  when r > 1.1 then
+    z := x + y + r;
+  elsewhen {r > 1.1,r>1.2} then
+    v := r;
+  elsewhen {b,not b} then
+    v := r;
+  end when;
+
+equation
+  der(y) = r;
+  when r > 2 and r > 1.1 then
+    w = y;
+  end when;
+
+end testalgwhen;
+"); getErrorString();
+
+simulate(testalgwhen, tolerance=1e-5, numberOfIntervals=100); getErrorString();
+
+val(z, 0.0);
+val(z, 0.5);
+val(z, 0.95);
+val(v, 0.0);
+val(v, 0.1);
+val(v, 0.91);
+val(w, 0.4);
+val(w, 0.45);
+val(tt, 0.91);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testalgwhen_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'testalgwhen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.0
+// 2.200000004200003
+// 2.200000004200003
+// 0.0
+// 1.200000002200003
+// 3.9193064883361
+// 0.0
+// 0.5945468687401427
+// 0.0
+// endResult

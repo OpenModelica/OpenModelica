@@ -1,0 +1,19 @@
+(* file: absyn.rml *)
+(* Semantics oriented abstract syntax of the AssignTwoType language *)
+
+module Absyn:
+
+  type Ident       =  string
+
+  datatype BinOp   =  ADD | SUB | MUL | DIV 
+
+  datatype UnOp    =  NEG
+
+  datatype Exp     =  INT     of  int
+                   |  REAL    of  real
+                   |  BINARY  of  Exp * BinOp * Exp
+                   |  UNARY   of  UnOp * Exp
+                   |  ASSIGN  of  Ident * Exp
+                   |  IDENT   of  Ident
+                   
+end (* module Absyn *)

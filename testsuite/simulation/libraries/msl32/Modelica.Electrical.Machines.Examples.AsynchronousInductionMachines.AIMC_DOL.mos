@@ -1,0 +1,41 @@
+// name:     Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL);
+compareVars :=
+{
+   "aimc.idq_rr[1]",
+   "aimc.idq_rr[2]",
+   "aimc.lssigma.i_[1]",
+   "aimc.lssigma.i_[2]",
+   "aimc.lszero.i",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL
+// {"aimc.idq_rr[1]","aimc.idq_rr[2]","aimc.lssigma.i_[1]","aimc.lssigma.i_[2]","aimc.lszero.i","loadInertia.phi","loadInertia.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.lssigma.i_.1.|aimc.lssigma.i_.2.|aimc.lszero.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_DOL_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// "true
+// "
+// ""
+// endResult

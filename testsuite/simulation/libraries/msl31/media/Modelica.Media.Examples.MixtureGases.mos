@@ -1,0 +1,24 @@
+//name:        simulate(Modelica.Media.Examples.MixtureGases)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+simulate(Modelica.Media.Examples.MixtureGases);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: simulate(Modelica.Media.Examples.MixtureGases)
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.MixtureGases_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.MixtureGases', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

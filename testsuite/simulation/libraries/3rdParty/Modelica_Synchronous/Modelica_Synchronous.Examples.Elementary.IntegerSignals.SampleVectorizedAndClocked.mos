@@ -1,0 +1,31 @@
+// name: Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleVectorizedAndClocked
+// keywords: simulation Modelica_Synchronous examples
+// status: correct
+//
+// Simulation Results
+// Modelica_Synchronous
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+echo(false);
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleVectorizedAndClocked);
+compareVars :=
+{"sample.y[1]","sample.y[2]"};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleVectorizedAndClocked', options = '', outputFormat = 'mat', variableFilter = 'time|sample.y[1]|sample.y[2]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_Synchronous.Examples.Elementary.IntegerSignals.SampleVectorizedAndClocked_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

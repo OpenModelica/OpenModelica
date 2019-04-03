@@ -1,0 +1,75 @@
+// name: cseFunctionCall4d
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+
+  function f3
+    input Real x;
+    output Real y;
+  algorithm
+    y := x+1;
+  end f3;
+
+  function f4
+    input Real x1;
+    input Real x2;
+    output Real z;
+  algorithm
+	z := x1 + x2;
+  end f4;
+  
+  
+  model FunctionCallTest4
+    Real y;
+  equation
+    y = f4(time, f3(time));
+  end FunctionCallTest4;
+
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 2)
+// ========================================
+// 1/1 (1): $cse1 = CSE.f3(time)   [unknown |0|0|0|0|]
+// 2/2 (1): y = CSE.f4(time, $cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (2/43)
+// ========================================
+// 1: y - CSE.f4(time, $cse1) - {}
+// 2: $cse1 - CSE.f3(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

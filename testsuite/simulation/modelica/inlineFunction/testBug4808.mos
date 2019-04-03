@@ -1,0 +1,91 @@
+// name: ticket4808
+// status: correct
+
+// test inlining of constructor
+
+loadModel(Modelica,{"3.2.2"});
+getErrorString();
+
+setCommandLineOptions("+d=dumpdaelow");
+getErrorString();
+
+loadString("
+model foobar
+  Complex vAt;
+  Complex vA;
+  Complex k = Complex(r);
+  parameter Real r = 10;
+
+equation
+  vAt = k*vA;
+  vAt = Complex(time,2*time);
+end foobar;
+");
+getErrorString();
+
+simulate(foobar);
+getErrorString();
+val(vA.im,{0.0,1.0});
+val(vA.re,{0.0,1.0});
+
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpdaelow
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: k.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 2: k.re:VARIABLE()  "Real part of complex number" type: Real 
+// 3: vA.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 4: vA.re:VARIABLE()  "Real part of complex number" type: Real 
+// 5: vAt.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 6: vAt.re:VARIABLE()  "Real part of complex number" type: Real 
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): k.im = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): k.re = r   [dynamic |0|0|0|0|]
+// 3/3 (1): vAt.im = k.re * vA.im + k.im * vA.re   [dynamic |0|0|0|0|]
+// 4/4 (1): vAt.re = k.re * vA.re - k.im * vA.im   [dynamic |0|0|0|0|]
+// 5/5 (1): vAt.re = time   [dynamic |0|0|0|0|]
+// 6/6 (1): vAt.im = 2.0 * time   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: r:PARAM()  = 10.0  type: Real 
+//
+//
+// record SimulationResult
+//     resultFile = "foobar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foobar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,0.2}
+// {0.0,0.1}
+// ""
+// endResult

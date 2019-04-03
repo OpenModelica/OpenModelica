@@ -1,0 +1,2006 @@
+// name: homotopy4_solver
+// keywords: initialization, homotopy, solver
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy4_solver* _initializationTests.homotopy4_solver* output.log
+//
+//
+
+loadString("
+within ;
+package initializationTests
+  model homotopy4_solver
+    Real x,y,z,x1,y1,z1,x2,y2,z2,x3,y3,z3,a,b,c,d,e,f;
+    // Real x,y,z,x1,y1,z1,x2,y2,z2 annotation(tearingSelect=always),x3,y3,z3,a,b,c,d,e,f;
+    parameter Real p1 = 10;
+    
+  equation
+    // a = sin(p1* time + 1);
+    a = sin(p1* time + 3.1415/2);
+    
+    x + 5 = z + a;
+    -y + 10 = z + p1;
+    x - y + 9 = z;
+    
+    b = sin(a*x);
+    
+    // ********** Beginning of homotopy iteration loop
+    c = homotopy(b^2, b);
+    
+    x1 + 5 = z1 + c;
+    -y1 + 10 = z1 + p1;
+    x1 - y1 + 9 = z1;
+    
+    d = x1 + y1 + z1;
+    
+    homotopy(x2^2, x2) + 5 = z2 + 5;
+    homotopy(y2^2, -d) + 10 = z2 + p1;
+    x2 + y2 + 9 = z2;
+    
+    e = sin(d*x2);
+    
+    x3 + 5 = z3 + e;
+    -y3 + 10 = z3*y3 + p1;
+    x3 - y3 + 9 = z3;
+    // ********** End of homotopy iteration loop
+    
+    f = x + y + z + a + b + c + d + e + x1 + y1 + z1 + x2 + y2 + z2 + x3 + y3 + z3;
+  end homotopy4_solver;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=equidistantLocal"); getErrorString();
+buildModel(initializationTests.homotopy4_solver); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed -homotopyOnFirstTry"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=equidistantGlobal"); getErrorString();
+buildModel(initializationTests.homotopy4_solver); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed -homotopyOnFirstTry"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=adaptiveLocal"); getErrorString();
+buildModel(initializationTests.homotopy4_solver); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed -homotopyOnFirstTry"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=adaptiveGlobal"); getErrorString();
+buildModel(initializationTests.homotopy4_solver); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=hybrid -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=kinsol -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=newton -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=homotopy -homotopyOnFirstTry"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed"); getErrorString();
+system("./initializationTests.homotopy4_solver -lv=LOG_INIT -override stopTime=0.0 -nls=mixed -homotopyOnFirstTry"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"initializationTests.homotopy4_solver","initializationTests.homotopy4_solver_init.xml"}
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -17.3731 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.04362 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.95638 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with equidistant step size started for nonlinear system 0.
+// LOG_INIT          | info    | The homotopy path of system 0 will be exported to initializationTests.homotopy4_solver_nonlinsys0_equidistant_local_homotopy.csv.
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with equidistant step size started for nonlinear system 0.
+// LOG_INIT          | info    | The homotopy path of system 0 will be exported to initializationTests.homotopy4_solver_nonlinsys0_equidistant_local_homotopy.csv.
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956373 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95637 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04363 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with equidistant step size started for nonlinear system 0.
+// LOG_INIT          | info    | The homotopy path of system 0 will be exported to initializationTests.homotopy4_solver_nonlinsys0_equidistant_local_homotopy.csv.
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956366 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95637 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04363 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with equidistant step size started for nonlinear system 0.
+// LOG_INIT          | info    | The homotopy path of system 0 will be exported to initializationTests.homotopy4_solver_nonlinsys0_equidistant_local_homotopy.csv.
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with equidistant step size started for nonlinear system 0.
+// LOG_INIT          | info    | The homotopy path of system 0 will be exported to initializationTests.homotopy4_solver_nonlinsys0_equidistant_local_homotopy.csv.
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.333333 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 0.666667 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1
+// LOG_INIT          | info    | [system 0] homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// true
+// ""
+// {"initializationTests.homotopy4_solver","initializationTests.homotopy4_solver_init.xml"}
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -17.3731 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.04362 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.95638 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with equidistant step size started.
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_equidistant_global_homotopy.csv.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with equidistant step size started.
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_equidistant_global_homotopy.csv.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956373 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95637 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04363 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with equidistant step size started.
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_equidistant_global_homotopy.csv.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with equidistant step size started.
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_equidistant_global_homotopy.csv.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with equidistant step size started.
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_equidistant_global_homotopy.csv.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [2] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [3] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [4] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [5] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [6] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [7] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [8] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [10] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [11] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [12] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [13] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [14] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [15] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [16] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// true
+// ""
+// {"initializationTests.homotopy4_solver","initializationTests.homotopy4_solver_init.xml"}
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -17.3731 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.04362 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.95638 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the local global approach in combination with KINSOL.
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956373 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95637 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04363 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve nonlinear initial system 0 without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Local homotopy with adaptive step size started for nonlinear system 0.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve lambda0-system
+// LOG_INIT          | info    | solving lambda0-system done with success
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_local_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.618547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.698547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.778547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.858547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// true
+// ""
+// {"initializationTests.homotopy4_solver","initializationTests.homotopy4_solver_init.xml"}
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -17.3731 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.04362 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.95638 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Try to solve the initialization problem without homotopy first.
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = 0.57364 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -27.1705 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -5.42636 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -2.16228 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 4.57364 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 4.67544 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | Global homotopy with adaptive step size started.
+// LOG_INIT          | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | solve simplified lambda0-DAE
+// LOG_INIT          | info    | solving simplified lambda0-DAE done
+// |                 | |       | ---------------------------
+// LOG_INIT          | info    | run along the homotopy path and solve the actual system
+// LOG_INIT          | info    | Homotopy run:  1
+// LOG_INIT          | info    | startDirection =    1.0000000000e+00
+// LOG_INIT          | info    | The homotopy path will be exported to initializationTests.homotopy4_solver_nonlinsys0_adaptive_global_homotopy_pos.csv.
+// LOG_INIT          | info    | homotopy parameter lambda = 0
+// LOG_INIT          | info    | homotopy parameter lambda = 0.0287318
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.298547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.338547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.378547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.418547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.458547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.498547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.538547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.578547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.658547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.738547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.818547
+// LOG_INIT          | info    | homotopy parameter lambda = 0.978547
+// LOG_INIT          | info    | homotopy parameter lambda = 1
+// LOG_INIT          | info    | Total number of lambda steps for this homotopy loop: 15
+// LOG_INIT          | info    | parameter values
+// LOG_INIT          | info    | real parameters
+// |                 | |       | | [1] parameter Real p1(start=10, fixed=true) = 10
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real __HOM_LAMBDA(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | | [2] Real a(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [3] Real b(start=0, nominal=1) = -0.412118 (pre: 0)
+// |                 | |       | | | [4] Real c(start=0, nominal=1) = 0.169842 (pre: 0)
+// |                 | |       | | | [5] Real d(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [6] Real e(start=0, nominal=1) = -0.956376 (pre: 0)
+// |                 | |       | | | [7] Real f(start=0, nominal=1) = -23.1114 (pre: 0)
+// |                 | |       | | | [8] Real x(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [9] Real x1(start=0, nominal=1) = -9 (pre: 0)
+// |                 | |       | | | [10] Real x2(start=0, nominal=1) = 3 (pre: 0)
+// |                 | |       | | | [11] Real x3(start=0, nominal=1) = -6.95638 (pre: 0)
+// |                 | |       | | | [12] Real y(start=0, nominal=1) = 5 (pre: 0)
+// |                 | |       | | | [13] Real y1(start=0, nominal=1) = 4.16984 (pre: 0)
+// |                 | |       | | | [14] Real y2(start=0, nominal=1) = -3 (pre: 0)
+// |                 | |       | | | [15] Real y3(start=0, nominal=1) = 3.04362 (pre: 0)
+// |                 | |       | | | [16] Real z(start=0, nominal=1) = -5 (pre: 0)
+// |                 | |       | | | [17] Real z1(start=0, nominal=1) = -4.16984 (pre: 0)
+// |                 | |       | | | [18] Real z2(start=0, nominal=1) = 9 (pre: 0)
+// |                 | |       | | | [19] Real z3(start=0, nominal=1) = -1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully with 15 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// endResult

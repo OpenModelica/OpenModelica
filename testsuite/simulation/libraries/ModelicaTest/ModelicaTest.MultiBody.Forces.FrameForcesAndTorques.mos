@@ -1,0 +1,37 @@
+// name:     ModelicaTest.MultiBody.Forces.FrameForcesAndTorques
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.FrameForcesAndTorques,stopTime=1.1);
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.FrameForcesAndTorques_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.FrameForcesAndTorques.mat",
+  "ModelicaTest.MultiBody.Forces.FrameForcesAndTorques_diff.csv",0.01,0.0001,
+  {"Revolute1.phi","Revolute1.w",
+  "Revolute2.phi","Revolute2.w",
+  "Revolute3.phi","Revolute3.w",
+  "Revolute4.phi","Revolute4.w"});
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// true
+// record SimulationResult
+    // resultFile = "ModelicaTest/ModelicaTest.MultiBody.Forces.DifferentiationOfForces_res.mat",
+    // simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.MultiBody.Forces.DifferentiationOfForces', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+    // messages = "",
+// end SimulationResult;
+// "Files Equal!"
+// endResult

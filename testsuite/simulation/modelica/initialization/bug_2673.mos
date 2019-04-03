@@ -1,0 +1,66 @@
+// name: bug_2673
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_2673* _initializationTests.bug_2673* output.log bug_2673.mat
+
+loadString("
+within ;
+package initializationTests
+  model bug_2673
+    parameter Real x_start = 5;
+    Real x(start = x_start, fixed = true);
+    Real y(fixed = true);
+  equation
+    der(x) = -x + 1;
+    der(y) = -y + 1;
+  end bug_2673;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.bug_2673, startTime=0.0, stopTime=1.0, simflags="-r=bug_2673.mat"); getErrorString();
+simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI"); getErrorString();
+simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI -iim none"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug_2673.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=bug_2673.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2673_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=2.47151, nominal=1) = 2.47151 (pre: 2.47151)
+// |                 | |       | | | [2] Real y(start=0.632122, nominal=1) = 0.632122 (pre: 0.632122)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = -1.47151 (pre: -1.47151)
+// |                 | |       | | | [4] Real der(y) = 0.367878 (pre: 0.367878)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2673_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=bug_2673.mat -iit=1.0 -lv=LOG_SOTI -iim none'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=2.47151, nominal=1) = 2.47151 (pre: 0)
+// |                 | |       | | | [2] Real y(start=0.632122, nominal=1) = 0.632122 (pre: 0)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = -1.47151 (pre: 0)
+// |                 | |       | | | [4] Real der(y) = 0.367878 (pre: 0)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

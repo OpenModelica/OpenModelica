@@ -1,0 +1,33 @@
+// keywords: fmu export import
+// status: correct
+
+setCFlags(getCFlags() + " -g"); getErrorString();
+
+loadString("model TestSourceCodeFMU
+  String s = String(time) + \"\n\"; // Bug #3616
+end TestSourceCodeFMU;");getErrorString();
+
+OpenModelica.Scripting.buildModelFMU(TestSourceCodeFMU, version="2.0", platforms={"static"}); getErrorString();
+importFMU("TestSourceCodeFMU.fmu"); getErrorString();
+loadFile("TestSourceCodeFMU_me_FMU.mo"); getErrorString();
+simulate(TestSourceCodeFMU); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "TestSourceCodeFMU.fmu"
+// ""
+// "TestSourceCodeFMU_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestSourceCodeFMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestSourceCodeFMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

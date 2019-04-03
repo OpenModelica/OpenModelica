@@ -1,0 +1,25 @@
+// name:     BaseClass1
+// keywords: error handling
+// status:   correct
+//
+// Checks that pointless errors are not generated
+//
+loadFile("BaseClass1.mo");
+instantiateModel(BaseClass1);
+getErrorString();
+
+// Result:
+// true
+// "class BaseClass1
+//   Real medium.Xi[1];
+//   Real medium.Xi[2];
+//   Real medium.Xi[3];
+//   Real medium.Xi[4];
+//   parameter Integer medium.nXi = if medium.b then 4 else 2;
+//   parameter Boolean medium.b = true;
+// equation
+//   medium.Xi = {1.0, 2.0, 3.0, 4.0};
+// end BaseClass1;
+// "
+// ""
+// endResult

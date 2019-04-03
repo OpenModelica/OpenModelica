@@ -1,0 +1,26 @@
+// name:     MatrixTest
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f MatrixTest_* MatrixTest.cpp MatrixTest MatrixTest.conv.cpp MatrixTest.exe MatrixTest.makefile MatrixTest.log MatrixTest.libs
+// 
+//  Simulate models and read in data.
+//
+loadFile("MatrixTest.mo");
+simulate(MatrixTest, numberOfIntervals=50, tolerance=1e-5);
+val(F[1],0.0);
+val(F[2],0.0);
+val(F[3],0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "MatrixTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'MatrixTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 100.0
+// 132.0
+// 70.0
+// endResult

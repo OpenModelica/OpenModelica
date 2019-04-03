@@ -1,0 +1,33 @@
+// name:     IfEquation
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf TestMe_* TestMe TestMe.exe TestMe.cpp TestMe.makefile TestMe.libs TestMe.log output.log
+// 
+// Drmodelica: 8.2 Conditional Equations with if-Equations (p. 245)
+// 
+loadFile("IfEquation.mo");
+simulate(TestMe,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("TestMe_res.mat");
+res:=readSimulationResult("TestMe_res.mat",{y1.y,y2.y,y3.y},size); 
+y1:=res[1,1];
+y2:=res[2,1];
+y3:=res[3,1];
+echo(true); // turns on output
+y1;
+y2;
+y3;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TestMe_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestMe', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 0.0
+// 2.0
+// endResult

@@ -1,0 +1,34 @@
+// name:     PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.* PlanarMechanicsForTesting.Examples.SingleTrackWithEngine_* PlanarMechanicsForTesting.Examples.SingleTrackWithEngine PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.exe PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.cpp PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.makefile PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.libs PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.log PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.c PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.o output.log
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=6 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.SingleTrackWithEngine); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.SingleTrackWithEngine_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//SingleTrackWithEngine.mat","PlanarMechanicsForTesting.Examples.SingleTrackWithEngine_diff.csv",0.01,0.0002,
+  {"revolute.phi", "revolute.w"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.SingleTrackWithEngine_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 6.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.SingleTrackWithEngine', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

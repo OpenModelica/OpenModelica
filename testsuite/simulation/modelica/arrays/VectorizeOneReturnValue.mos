@@ -1,0 +1,38 @@
+// name:     VectorizeOneReturnValue
+// keywords: array
+// status:   correct
+// teardown_command: rm -rf OneReturnValue OneReturnValue_* OneReturnValue.exe OneReturnValue.cpp OneReturnValue.makefile OneReturnValue.libs OneReturnValue.log output.log
+// 
+// not yet implmeneted
+//
+// Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
+// 
+loadFile("VectorizeOneReturnValue.mo");
+simulate(OneReturnValue,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("OneReturnValue_res.mat");
+res:=readSimulationResult("OneReturnValue_res.mat",{s1[1],s2[2,1]},size); 
+s1 := res[1,1];
+s21 := res[2,1];
+s1:=1000*s1;
+s21:=1000*s21;
+s1:=floor(s1);
+s21:=floor(s21);
+
+echo(true); // turns on output
+s1/1000.0; // rounded value to 3 digits
+s21/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "OneReturnValue_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'OneReturnValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.841
+// 0.141
+// endResult

@@ -1,0 +1,462 @@
+// name: testFinalCon_6
+// status: correct
+
+setCommandLineOptions("+gDynopt");
+getErrorString();
+
+loadString("
+model testFinalCon6
+  Real x1;
+  Real x2;
+  Real y1(start=-1);
+  Real y2(start=1);
+  Real y3(start = -1);
+  input Real u;
+  input Real u2;
+
+  Real final_con1(min = -15, max = -10) annotation(isFinalConstraint = true);
+  Real final_con2(min = 10, max = 15) annotation(isFinalConstraint = true);
+  Real final_con3(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real final_con4(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real cost annotation(isLagrange = true);
+  parameter Real p=1;
+equation
+  der(x1) = x2*u - x1;
+  der(x2) = x1 + y1;
+  final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
+  final_con2 = x2 - 3;
+  final_con3 = p*der(y1);
+  final_con4 = p*der(y2);
+  y1 = 3*der(y1) + der(y2) - exp(1 + u);
+  y2+u2 = der(y1) - 5*der(y2) - exp(1 + time);
+  y3^2 = 1 + time;
+  cost = u^2 + der(y1)^2 + der(y2)^2;
+end testFinalCon6;
+
+");
+getErrorString();
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=10 --preOptModules+=introduceDerAlias");
+getErrorString();
+optimize(testFinalCon6, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT_ERROR,LOG_LS -optimizerNP 3");
+getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon6_res.mat","ReferenceFiles/testFinalCon6_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testFinalCon6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR,LOG_LS -optimizerNP 3'",
+//     messages = "LOG_LS            | info    | initialize linear system solvers
+// |                 | |       | | 1 linear systems
+// LOG_LS            | info    | Start solving Linear System 9 (size 1) at time 0 with Lapack Solver
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con4 >= 0.0 and $finalCon$final_con4 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con4 <= 0.0, has value: -0.589785
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con3 >= 0.0 and $finalCon$final_con3 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con3 <= 0.0, has value: 0.769356
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con2 >= 10.0 and $finalCon$final_con2 <= 15.0
+// assert            | warning | Variable violating min/max constraint: 10.0 <= $finalCon$final_con2 <= 15.0, has value: -3
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con1 >= -15.0 and $finalCon$final_con1 <= -10.0
+// assert            | warning | Variable violating min/max constraint: -15.0 <= $finalCon$final_con1 <= -10.0, has value: -2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:y1(start = -1, nominal = 2, min = -Inf, max = +Inf, init = -1)
+// State[3]:y2(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// Input[4]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[5]:u2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 61.8311 for the final constraint $finalCon$final_con4(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 61.485 for the final constraint $finalCon$final_con4(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 22.3269 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 1.2099e+08 for the approximation of the state y1(time = 0.264495)
+// LOG_IPOPT_ERROR   | info    | max error is 214.352 for the approximation of the state x1(time = 0.264495)
+// LOG_IPOPT_ERROR   | info    | max error is 1.41526e+20 for the approximation of the state y1(time = 1.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 3815.81 for the approximation of the state y1(time = 0.264495)
+// LOG_IPOPT_ERROR   | info    | max error is 20.7212 for the approximation of the state y1(time = 0.264495)
+// LOG_IPOPT_ERROR   | info    | max error is 19.5384 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 15838.9 for the approximation of the state y1(time = 0.364495)
+// LOG_IPOPT_ERROR   | info    | max error is 19.5381 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 497.042 for the approximation of the state y1(time = 0.364495)
+// LOG_IPOPT_ERROR   | info    | max error is 2804.42 for the approximation of the state y1(time = 4.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 15.3909 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 17.4553 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 18.4944 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 25.9291 for the approximation of the state y1(time = 0.364495)
+// LOG_IPOPT_ERROR   | info    | max error is 16.385 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 16.2642 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 11.7482 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 11.718 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 11.7171 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 9.50661 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 7.12569 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 3.75747 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 2.95799 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 3.47394e+24 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.02711e+27 for the approximation of the state y1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 8.23733e+08 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 37.4087 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.59999 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.77629 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.86638 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.96184e+07 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 24618.5 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 5812.23 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 12757.7 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 199.07 for the approximation of the state y1(time = 1.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.16575 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 7.98035e+09 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 11.399 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 1541.53 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 3711.77 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.52013 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.8953 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 5.91774e+40 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.84042e+29 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.84059e+29 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 3.98768e+15 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 130316 for the approximation of the state y1(time = 1.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 4.64337 for the approximation of the state y1(time = 1.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.77852 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.29281e+34 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.69593e+08 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.69593e+08 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 6.97628e+13 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 5124.71 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.57063 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.08894e+07 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.57798 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 18639.1 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.16449 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.36719 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 613044 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 103049 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 103069 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 8.79048 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.23082 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 373192 for the approximation of the state y1(time = 1.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 9.57944e+42 for the approximation of the state y1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.1189 for the approximation of the state x1(time = 1.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 218.382 for the approximation of the state y1(time = 1.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 6.80992e+14 for the approximation of the state y1(time = 1.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.681118 for the approximation of the state x1(time = 1.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0487577 for the approximation of the state x1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 5.05907e-06 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.1137e-08 for the approximation of the state x1(time = 1.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 35.0235 for the approximation of the state x1(time = 1.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.21261 for the approximation of the state x1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 6.88321 for the approximation of the state y1(time = 0.9)
+// LOG_IPOPT_ERROR   | info    | max error is 27467.6 for the approximation of the state y1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.10725 for the approximation of the state x1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.10047 for the approximation of the state x1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.00226 for the approximation of the state x1(time = 1.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.702974 for the approximation of the state y1(time = 0.864495)
+// LOG_IPOPT_ERROR   | info    | max error is 0.547116 for the approximation of the state y1(time = 0.864495)
+// LOG_IPOPT_ERROR   | info    | max error is 1.93615 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 3.49531 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.925855 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.948348 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.759561 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.786594 for the approximation of the state y1(time = 1.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.503427 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.51694 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 567518 for the approximation of the state y1(time = 1.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.251714 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0391894 for the approximation of the state x1(time = 1.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00617384 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.71368e-07 for the approximation of the state x1(time = 2.01551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.11756e-06 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.51671 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.51054 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0702761 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00353971 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000581775 for the approximation of the state x1(time = 1.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.21078e+10 for the approximation of the state y1(time = 1.6)
+// LOG_IPOPT_ERROR   | info    | max error is 5.42291e+147 for the approximation of the state y1(time = 2.01551)
+// LOG_IPOPT_ERROR   | info    | max error is 1302.6 for the approximation of the state y1(time = 1.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.06997 for the approximation of the state x1(time = 2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.267561 for the approximation of the state x1(time = 2)
+// LOG_IPOPT_ERROR   | info    | max error is 50.8837 for the approximation of the state y1(time = 1.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.23218e+285 for the approximation of the state y1(time = 1.96449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.986695 for the approximation of the state x1(time = 2)
+// LOG_IPOPT_ERROR   | info    | max error is 6.32635 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 6.32546 for the approximation of the state y1(time = 1.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.02383 for the approximation of the state x1(time = 2.1)
+// LOG_IPOPT_ERROR   | info    | max error is 1.35979e+14 for the approximation of the state y1(time = 1.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 3.05799e+51 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 335882 for the approximation of the state y1(time = 1.8)
+// LOG_IPOPT_ERROR   | info    | max error is 22.7992 for the approximation of the state y1(time = 1.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.24989 for the approximation of the state x1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 1.00678 for the approximation of the state x1(time = 2.1)
+// LOG_IPOPT_ERROR   | info    | max error is 31.5418 for the approximation of the state y1(time = 1.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 69398.6 for the approximation of the state y1(time = 2.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.05872 for the approximation of the state x1(time = 2.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0542308 for the approximation of the state x1(time = 2.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0134285 for the approximation of the state y1(time = 1.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.26682 for the approximation of the state x1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.719518 for the approximation of the state x1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.07487 for the approximation of the state x1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.899341 for the approximation of the state x1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00823584 for the approximation of the state x1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.01976 for the approximation of the state y1(time = 2.6)
+// LOG_IPOPT_ERROR   | info    | max error is 78.7803 for the approximation of the state y1(time = 2.01551)
+// LOG_IPOPT_ERROR   | info    | max error is 4.88972e+22 for the approximation of the state y1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.00757 for the approximation of the state y1(time = 2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.203015 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.054584 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 61.3107 for the approximation of the state y1(time = 2.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.88487e+28 for the approximation of the state y1(time = 2.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.991701 for the approximation of the state x1(time = 2.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.268781 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0971502 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 468.47 for the approximation of the state y1(time = 2.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 8.67125e+28 for the approximation of the state y1(time = 2.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.46782 for the approximation of the state y1(time = 2.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.326208 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.148343 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 47.4861 for the approximation of the state y1(time = 2.1)
+// LOG_IPOPT_ERROR   | info    | max error is 2.32124e+16 for the approximation of the state y1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.74363 for the approximation of the state y1(time = 2.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.267809 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.168938 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 4457.79 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.18303e+56 for the approximation of the state y1(time = 2.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 8.60233 for the approximation of the state y1(time = 2.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.615209 for the approximation of the state x1(time = 2.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.259325 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.18561 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 71.1692 for the approximation of the state y1(time = 2.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.39512e+23 for the approximation of the state y1(time = 2.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.865888 for the approximation of the state x1(time = 2.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.323652 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.20812 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 1.29108e+11 for the approximation of the state y1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 1.35669e+137 for the approximation of the state y1(time = 2.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 29009.8 for the approximation of the state y1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 13.6969 for the approximation of the state y1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.747819 for the approximation of the state x1(time = 2.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.318399 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.232438 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 4628.12 for the approximation of the state y1(time = 2.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.77607e+46 for the approximation of the state y1(time = 2.9)
+// LOG_IPOPT_ERROR   | info    | max error is 8.28512 for the approximation of the state y1(time = 2.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.536172 for the approximation of the state x1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.285665 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.238481 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 2.18551e+10 for the approximation of the state y1(time = 2.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.18599e+133 for the approximation of the state y1(time = 2.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 12891.4 for the approximation of the state y1(time = 2.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 16.3106 for the approximation of the state y1(time = 2.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.720018 for the approximation of the state x1(time = 2.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.324533 for the approximation of the state x1(time = 2.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.255272 for the approximation of the state x1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 663.262 for the approximation of the state y1(time = 2.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 8.85548e+36 for the approximation of the state y1(time = 2.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.26058 for the approximation of the state y1(time = 2.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.447736 for the approximation of the state x1(time = 2.8)
+// LOG_IPOPT_ERROR   | info    | max error is 0.270813 for the approximation of the state x1(time = 2.71551)
+// LOG_IPOPT_ERROR   | info    | max error is 5.61397e+40 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 8.83763e+273 for the approximation of the state y1(time = 2.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.16502e+19 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 4.25164e+08 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 1883.99 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 3.91023 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.567533 for the approximation of the state x1(time = 2.81551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.33281 for the approximation of the state x1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.284451 for the approximation of the state x1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.7005e+10 for the approximation of the state y1(time = 2.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.0698e+108 for the approximation of the state y1(time = 3)
+// LOG_IPOPT_ERROR   | info    | max error is 16294.2 for the approximation of the state y1(time = 2.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 15.7389 for the approximation of the state y1(time = 2.3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.670964 for the approximation of the state x1(time = 2.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.350503 for the approximation of the state x1(time = 2.8)
+// LOG_IPOPT_ERROR   | info    | max error is 0.294855 for the approximation of the state x1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 6.44424e+69 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.99394e+298 for the approximation of the state y1(time = 2.91551)
+// LOG_IPOPT_ERROR   | info    | max error is 4.88633e+33 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.25489e+15 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 3.97046e+06 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 205.091 for the approximation of the state y1(time = 2.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.09877 for the approximation of the state y1(time = 2.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.499047 for the approximation of the state x1(time = 2.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.331109 for the approximation of the state x1(time = 2.8)
+// LOG_IPOPT_ERROR   | info    | max error is 0.302371 for the approximation of the state x1(time = 2.76449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.28556e+06 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.04621e+59 for the approximation of the state y1(time = 3.01551)
+// LOG_IPOPT_ERROR   | info    | max error is 95.4341 for the approximation of the state y1(time = 2.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.05986 for the approximation of the state x1(time = 3.01551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.425872 for the approximation of the state x1(time = 2.86449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.310206 for the approximation of the state x1(time = 2.8)
+// LOG_IPOPT_ERROR   | info    | max error is 0.001758 for the approximation of the state x1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.125385 for the approximation of the state x1(time = 3.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0139809 for the approximation of the state x1(time = 3.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 51.2051 for the approximation of the state y1(time = 2.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.5459e+26 for the approximation of the state y1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.943491 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.240647 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0654132 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0239616 for the approximation of the state x1(time = 3.06449)
+// LOG_IPOPT_ERROR   | info    | max error is 40.243 for the approximation of the state y1(time = 2.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 6.2522e+23 for the approximation of the state y1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.922731 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.242569 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0742357 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0342589 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 48.6185 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 3.44521e+26 for the approximation of the state y1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.958486 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.259683 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0883824 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0467192 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 2505.81 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 9.56553e+54 for the approximation of the state y1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 5.29039 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.481035 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.147593 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0704777 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0519289 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 1949.7 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.18459e+51 for the approximation of the state y1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 5.6276 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.468981 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.150676 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0749929 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0568835 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 853.226 for the approximation of the state y1(time = 2.5)
+// LOG_IPOPT_ERROR   | info    | max error is 3.66961e+47 for the approximation of the state y1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 3.0853 for the approximation of the state y1(time = 2.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.440977 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.149352 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0782229 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0613295 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 2027.16 for the approximation of the state y1(time = 2.5)
+// LOG_IPOPT_ERROR   | info    | max error is 8.74691e+56 for the approximation of the state y1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 4.51253 for the approximation of the state y1(time = 2.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.470975 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.159684 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0840016 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0660393 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 1988.98 for the approximation of the state y1(time = 2.5)
+// LOG_IPOPT_ERROR   | info    | max error is 8.17512e+57 for the approximation of the state y1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 5.39096 for the approximation of the state y1(time = 2.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.463173 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.161195 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0877646 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0704388 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 379.693 for the approximation of the state y1(time = 2.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 3.38917e+47 for the approximation of the state y1(time = 3.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.12676 for the approximation of the state y1(time = 2.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.36394 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.139412 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0854808 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 37.8832 for the approximation of the state y1(time = 2.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 2.73588e+28 for the approximation of the state y1(time = 3.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.93724 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.287735 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.130702 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0941148 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 390.731 for the approximation of the state y1(time = 2.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 5.65197e+55 for the approximation of the state y1(time = 3.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.66578 for the approximation of the state y1(time = 2.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.411164 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.166827 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 0.109352 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 463.555 for the approximation of the state y1(time = 2.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 8.04053e+51 for the approximation of the state y1(time = 3.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.5307 for the approximation of the state y1(time = 2.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.392241 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.172184 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.12146 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 114.447 for the approximation of the state y1(time = 2.6)
+// LOG_IPOPT_ERROR   | info    | max error is 1.57866e+43 for the approximation of the state y1(time = 3.3)
+// LOG_IPOPT_ERROR   | info    | max error is 1.17498 for the approximation of the state x1(time = 3.3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.350992 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.168715 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.128998 for the approximation of the state x1(time = 3.1)
+// LOG_IPOPT_ERROR   | info    | max error is 56.9916 for the approximation of the state y1(time = 2.6)
+// LOG_IPOPT_ERROR   | info    | max error is 2.28206e+32 for the approximation of the state y1(time = 3.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.907537 for the approximation of the state x1(time = 3.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.287598 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.157199 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.131886 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 13.8719 for the approximation of the state y1(time = 2.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 7.35104e+14 for the approximation of the state y1(time = 3.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.641637 for the approximation of the state x1(time = 3.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.22886 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.144632 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.130951 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 10.3349 for the approximation of the state y1(time = 2.61551)
+// LOG_IPOPT_ERROR   | info    | max error is 1.98518e+12 for the approximation of the state y1(time = 3.31551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.616882 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.224605 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.14152 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.129501 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 18.8009 for the approximation of the state y1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 6.30984e+27 for the approximation of the state y1(time = 3.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.844445 for the approximation of the state x1(time = 3.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.281386 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.153252 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.130117 for the approximation of the state x1(time = 3.11551)
+// LOG_IPOPT_ERROR   | info    | max error is 29.1755 for the approximation of the state y1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 6.63088e+34 for the approximation of the state y1(time = 3.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.848709 for the approximation of the state x1(time = 3.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.271034 for the approximation of the state x1(time = 3.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.151596 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.129395 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 28.6354 for the approximation of the state y1(time = 2.66449)
+// LOG_IPOPT_ERROR   | info    | max error is 4.96794e+31 for the approximation of the state y1(time = 3.36449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.758099 for the approximation of the state x1(time = 3.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.257433 for the approximation of the state x1(time = 3.21551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.148504 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.130029 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 11.5396 for the approximation of the state y1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 1.7608e+25 for the approximation of the state y1(time = 3.4)
+// LOG_IPOPT_ERROR   | info    | max error is 0.738696 for the approximation of the state x1(time = 3.4)
+// LOG_IPOPT_ERROR   | info    | max error is 0.247895 for the approximation of the state x1(time = 3.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.146781 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.129477 for the approximation of the state x1(time = 3.16449)
+// LOG_IPOPT_ERROR   | info    | max error is 2.97983 for the approximation of the state y1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 4.18836 for the approximation of the state y1(time = 3.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.422735 for the approximation of the state x1(time = 3.3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.174774 for the approximation of the state x1(time = 3.26449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.130153 for the approximation of the state x1(time = 3.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.579513 for the approximation of the state x1(time = 3.41551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.220631 for the approximation of the state y1(time = 2.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0325721 for the approximation of the state x1(time = 3.46449)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0336595 for the approximation of the state x1(time = 3.51551)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000355233 for the approximation of the state y1(time = 3.56449)
+// LOG_IPOPT_ERROR   | info    | max error is 1.54034e-05 for the approximation of the state x1(time = 3.56449)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

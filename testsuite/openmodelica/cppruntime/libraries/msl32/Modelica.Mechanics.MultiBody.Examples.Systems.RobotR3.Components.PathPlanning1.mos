@@ -1,0 +1,35 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1.mat",
+  "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1_diff.csv",0.01,0.0001,
+  {"controlBus.axisControlBus1.angle_ref",
+   "controlBus.axisControlBus1.speed_ref",
+   "controlBus.axisControlBus1.acceleration_ref"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.Components.PathPlanning1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "[lib/omlibrary/Modelica 3.2.1/Blocks/Logical.mo:1057:7-1057:33:writable]
+// stdout            | info    | Simulation call terminate() at time 0.667109
+// |                 | |       | Message : ... End condition reached
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,95 @@
+// name:     Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
+compareVars :=
+{
+   "upperTank.level",
+   "upperTank.medium.h",
+   "lowerTank.level",
+   "lowerTank.medium.h"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
+// Messages: 
+// [CVODE WARNING]  CVode
+//   Internal t = 17305.4 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 17305.4 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 19213.2 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 19213.2 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 21482 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 21482 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// "true
+// "
+// ""
+// endResult

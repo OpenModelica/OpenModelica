@@ -1,0 +1,51 @@
+// name: clockedTypesTest
+// keywords: synchronous clocked equations types
+// status: correct
+// teardown_command: rm -f *ClockedTypes*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model ClockedTypes
+  Boolean firstTick(start = true);
+  Boolean pulse(start = false);
+  Integer counter(start = 0);
+  String text(start = \"\");
+equation
+  when Clock(0.5) then
+    firstTick = false;
+    pulse = not previous(pulse);
+    counter = previous(counter) + 1;
+    text = previous(text) + \", \" + String(counter);
+  end when;
+end ClockedTypes;
+");
+getErrorString();
+
+simulate(ClockedTypes);
+val(firstTick, 0.0);
+val(firstTick, 1.0);
+val(pulse, 0.0);
+val(pulse, 0.75);
+val(counter, 0.0);
+val(counter, 0.75);
+//val(text, 1.0); // not supported in results file?
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "ClockedTypes_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ClockedTypes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 2.0
+// ""
+// endResult

@@ -1,0 +1,42 @@
+// name: bug2756.mos
+// status: correct
+//
+// test for #2756
+//
+
+loadString("
+model bug2756
+  model struct
+    Real R;
+  end struct;
+
+  struct x[2];
+  Real s;
+equation
+
+algorithm
+  x[1].R := 1;
+  x[2].R := 1;
+  s := 0;
+  for i in 1:2 loop
+    s := s + x[i].R;
+  end for;
+  assert(abs(s-2) < 1e-30, \"Assertion failed\");
+end bug2756;
+"); getErrorString();
+
+simulate(bug2756,simflags="-output s"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug2756_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug2756', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output s'",
+//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+// time=1,s=2
+// stdout            | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

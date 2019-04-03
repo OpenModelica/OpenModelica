@@ -1,0 +1,39 @@
+// name:     Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier);
+compareVars :=
+{
+   "voltageQS.pin_p.reference.gamma",
+   "iAC.mean1.x",
+   "iAC.mean2.x",
+   "iDC2.mean.x"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier
+// {"voltageQS.pin_p.reference.gamma","iAC.mean1.x","iAC.mean2.x","iDC2.mean.x"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

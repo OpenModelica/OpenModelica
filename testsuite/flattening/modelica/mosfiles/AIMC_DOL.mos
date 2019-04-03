@@ -1,0 +1,17 @@
+// name:     AIMC_DOL
+// keywords: instantiate 
+// status:   correct
+// cflags:   +std=2.x
+// 
+//  instantiate AIMC_DOL and check for error msg
+//
+loadFile("AIMC_DOLTotal.mo");
+checkModel(Modelica_Electrical_Machines_Examples_AIMC_DOL);
+getErrorString();
+// Result:
+// true
+// "Check of Modelica_Electrical_Machines_Examples_AIMC_DOL completed successfully.
+// Class Modelica_Electrical_Machines_Examples_AIMC_DOL has 376 equation(s) and 376 variable(s).
+// 275 of these are trivial equation(s)."
+// ""
+// endResult

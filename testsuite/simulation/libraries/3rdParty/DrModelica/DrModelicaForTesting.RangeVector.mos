@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.RangeVector.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.RangeVector
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.RangeVector.* DrModelicaForTesting.RangeVector_* DrModelicaForTesting.RangeVector DrModelicaForTesting.RangeVector.exe DrModelicaForTesting.RangeVector.cpp DrModelicaForTesting.RangeVector.makefile DrModelicaForTesting.RangeVector.libs DrModelicaForTesting.RangeVector.log DrModelicaForTesting.RangeVector.c DrModelicaForTesting.RangeVector.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.RangeVector, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.RangeVector_res.mat",
+  "ReferenceFiles/RangeVector_ref.mat","DrModelicaForTesting.RangeVector_diff.csv",0.01,0.013,
+  {"v1[1]","v2[1]", "v3[1]", "v5[1]", "v6[1]"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.RangeVector_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.RangeVector', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

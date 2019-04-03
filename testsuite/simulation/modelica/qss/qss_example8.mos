@@ -1,0 +1,70 @@
+// name: qss_example8
+// status: correct
+
+loadString("
+within ;
+package qssTests
+  model example8
+    Real x1(nominal=1), x2(nominal=1), x3(nominal=1); // deflexion
+    Real x4(nominal=1), x5(nominal=1), x6(nominal=1); // velocity
+    parameter Real m1=1;
+    parameter Real m2=2;
+    parameter Real m3=3;
+    parameter Real c1=1;
+    parameter Real c2=10;
+    parameter Real c3=5;
+    parameter Real c4=15;
+    parameter Real d1=0.5;
+    parameter Real d2=0.4;
+    parameter Real d3=0.45;
+  initial equation
+    x1 = 0.1;
+    x2 = 0;
+    x3 = 0;
+    x4 = 0;
+    x5 = 0;
+    x6 = 0;
+  equation
+    der(x1) = x4;	
+    der(x2) = x5;
+    der(x3) = x6;
+    der(x4) = -(c1+c2)/m1*x1 + c2/m1*x2 - d1/m1*x4;	
+    der(x5) = c2/m2*x1 - (c2+c3)/m2*x2 + c3/m2*x3 - d2/m2*x5;
+    der(x6) = c3/m3*x2 - (c3+c4)/m3*x3 - d3/m3*x6;
+  end example8;
+end qssTests;
+"); getErrorString();
+
+simulate(qssTests.example8, stopTime=20, method="qss"); getErrorString();
+val(x1, {0.0, 20.0}); getErrorString();
+val(x2, {0.0, 20.0}); getErrorString();
+val(x3, {0.0, 20.0}); getErrorString();
+val(x4, {0.0, 20.0}); getErrorString();
+val(x5, {0.0, 20.0}); getErrorString();
+val(x6, {0.0, 20.0}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "qssTests.example8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | This QSS method is under development and should not be used yet.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.1,0.001077030775611633}
+// ""
+// {0.0,-0.001775288784157902}
+// ""
+// {0.0,0.003171398458016536}
+// ""
+// {0.0,0.0007}
+// ""
+// {0.0,4.616675474939939e-05}
+// ""
+// {0.0,0.0065}
+// ""
+// endResult

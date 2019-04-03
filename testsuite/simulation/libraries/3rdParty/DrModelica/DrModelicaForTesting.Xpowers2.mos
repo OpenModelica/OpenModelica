@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.Xpowers2.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Xpowers2
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Xpowers2.* DrModelicaForTesting.Xpowers2_* DrModelicaForTesting.Xpowers2 DrModelicaForTesting.Xpowers2.exe DrModelicaForTesting.Xpowers2.cpp DrModelicaForTesting.Xpowers2.makefile DrModelicaForTesting.Xpowers2.libs DrModelicaForTesting.Xpowers2.log DrModelicaForTesting.Xpowers2.c DrModelicaForTesting.Xpowers2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Xpowers2, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Xpowers2_res.mat",
+  "ReferenceFiles/Xpowers2_ref.mat","DrModelicaForTesting.Xpowers2_diff.csv",0.01,0.013,
+  {"x","i", "n", "xpowers[1]", "xpowers[2]"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Xpowers2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Xpowers2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

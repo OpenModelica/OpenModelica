@@ -1,0 +1,193 @@
+// name:     ts.mos [ExternalMedia Test]
+// keywords: external media
+// status:   correct
+// teardown_command: rm -f ExternalMedia.Test.TestMedium.TestState* ExternalMedia_*
+//
+// Checks that simulation of a model with external definitions from ExternalMedia library works correctly
+//
+
+loadFile("ts.mo"); getErrorString();
+instantiateModel(ExternalMedia.Test.TestMedium.TestState); getErrorString();
+simulate(ExternalMedia.Test.TestMedium.TestState); getErrorString();
+
+"State at 0";
+val(state.T, 0);
+val(state.a, 0);
+val(state.beta, 0);
+val(state.cp, 0);
+val(state.cv, 0);
+val(state.d, 0);
+val(state.ddhp, 0);
+val(state.ddph, 0);
+val(state.eta, 0);
+val(state.h, 0);
+val(state.kappa, 0);
+val(state.lambda, 0);
+val(state.p, 0);
+// val(state.phase, 0);
+val(state.s, 0);
+
+"State at 1";
+val(state.T, 1);
+val(state.a, 1);
+val(state.beta, 1);
+val(state.cp, 1);
+val(state.cv, 1);
+val(state.d, 1);
+val(state.ddhp, 1);
+val(state.ddph, 1);
+val(state.eta, 1);
+val(state.h, 1);
+val(state.kappa, 1);
+val(state.lambda, 1);
+val(state.p, 1);
+// val(state.phase, 1);
+val(state.s, 1);
+
+// Result:
+// true
+// ""
+// "function ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants \"Automatically generated record constructor for ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real triplePointTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real triplePointPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants res;
+// end ExternalMedia.Test.TestMedium.TestState.Medium.FluidConstants;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState \"Automatically generated record constructor for ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState\"
+//   input Real T(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real a(min = 0.0, max = 100000.0, nominal = 1000.0, start = 1000.0, quantity = \"Velocity\", unit = \"m/s\");
+//   input Real beta(quantity = \"CubicExpansionCoefficient\", unit = \"1/K\");
+//   input Real cp(min = 0.0, max = 10000000.0, nominal = 1000.0, start = 1000.0, quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real cv(min = 0.0, max = 10000000.0, nominal = 1000.0, start = 1000.0, quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real d(min = 0.0, max = 100000.0, nominal = 1.0, start = 1.0, quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\");
+//   input Real ddhp(unit = \"kg.s2/m5\");
+//   input Real ddph(unit = \"s2/m2\");
+//   input Real eta(min = 0.0, max = 100000000.0, nominal = 0.001, start = 0.001, quantity = \"DynamicViscosity\", unit = \"Pa.s\");
+//   input Real h(min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\");
+//   input Real kappa(quantity = \"Compressibility\", unit = \"1/Pa\");
+//   input Real lambda(min = 0.0, max = 500.0, nominal = 1.0, start = 1.0, quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real p(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Integer phase(min = 0, max = 2);
+//   input Real s(min = -10000000.0, max = 10000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\");
+//   output ThermodynamicState res;
+// end ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalMolarVolume
+//   output Real vc(quantity = \"MolarVolume\", unit = \"m3/mol\", min = 1e-06, max = 1000000.0, nominal = 1.0) \"Critical molar volume\";
+//
+//   external \"C\" vc = TwoPhaseMedium_getCriticalMolarVolume_C_impl(\"TestMedium\", \"TestMedium\", \"TestMedium\");
+// end ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalMolarVolume;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalPressure
+//   output Real pc(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"Critical temperature\";
+//
+//   external \"C\" pc = TwoPhaseMedium_getCriticalPressure_C_impl(\"TestMedium\", \"TestMedium\", \"TestMedium\");
+// end ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalPressure;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalTemperature
+//   output Real Tc(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"Critical temperature\";
+//
+//   external \"C\" Tc = TwoPhaseMedium_getCriticalTemperature_C_impl(\"TestMedium\", \"TestMedium\", \"TestMedium\");
+// end ExternalMedia.Test.TestMedium.TestState.Medium.getCriticalTemperature;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.getMolarMass
+//   output Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.001, max = 0.25, nominal = 0.032) \"molar mass\";
+//
+//   external \"C\" MM = TwoPhaseMedium_getMolarMass_C_impl(\"TestMedium\", \"TestMedium\", \"TestMedium\");
+// end ExternalMedia.Test.TestMedium.TestState.Medium.getMolarMass;
+//
+// function ExternalMedia.Test.TestMedium.TestState.Medium.setState_ph \"Return thermodynamic state record from p and h\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"specific enthalpy\";
+//   input Integer phase(min = 0, max = 2) = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   output ExternalMedia.Test.TestMedium.TestState.Medium.ThermodynamicState state;
+//
+//   external \"C\" TwoPhaseMedium_setState_ph_C_impl(p, h, phase, state, \"TestMedium\", \"TestMedium\", \"TestMedium\");
+// end ExternalMedia.Test.TestMedium.TestState.Medium.setState_ph;
+//
+// class ExternalMedia.Test.TestMedium.TestState \"Test case using TestMedium with a single state record\"
+//   Real state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 300.0, nominal = 300.0) \"temperature\";
+//   Real state.a(quantity = \"Velocity\", unit = \"m/s\", min = 0.0, max = 100000.0, start = 1000.0, nominal = 1000.0) \"velocity of sound\";
+//   Real state.beta(quantity = \"CubicExpansionCoefficient\", unit = \"1/K\") \"isobaric expansion coefficient\";
+//   Real state.cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 10000000.0, start = 1000.0, nominal = 1000.0) \"specific heat capacity cp\";
+//   Real state.cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\", min = 0.0, max = 10000000.0, start = 1000.0, nominal = 1000.0) \"specific heat capacity cv\";
+//   Real state.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 1.0, nominal = 1.0) \"density\";
+//   Real state.ddhp(unit = \"kg.s2/m5\") \"derivative of density wrt enthalpy at constant pressure\";
+//   Real state.ddph(unit = \"s2/m2\") \"derivative of density wrt pressure at constant enthalpy\";
+//   Real state.eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0, max = 100000000.0, start = 0.001, nominal = 0.001) \"dynamic viscosity\";
+//   Real state.h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -10000000000.0, max = 10000000000.0, nominal = 1000000.0) \"specific enthalpy\";
+//   Real state.kappa(quantity = \"Compressibility\", unit = \"1/Pa\") \"compressibility\";
+//   Real state.lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\", min = 0.0, max = 500.0, start = 1.0, nominal = 1.0) \"thermal conductivity\";
+//   Real state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   Integer state.phase(min = 0, max = 2) \"phase flag: 2 for two-phase, 1 for one-phase\";
+//   Real state.s(quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\", min = -10000000.0, max = 10000000.0, nominal = 1000.0) \"specific entropy\";
+// equation
+//   state = ExternalMedia.Test.TestMedium.TestState.Medium.setState_ph(100000.0, 100000.0 + 100000.0 * time, 0);
+// end ExternalMedia.Test.TestMedium.TestState;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "ExternalMedia.Test.TestMedium.TestState_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalMedia.Test.TestMedium.TestState', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "State at 0"
+// 100.5
+// 0.6
+// 0.7
+// 0.8
+// 0.9
+// 1.11
+// 1.1
+// 1.2
+// 1.3
+// 1.4
+// 1.5
+// 1.6
+// 1.7
+// 2.1
+// "State at 1"
+// 100.5
+// 0.6
+// 0.7
+// 0.8
+// 0.9
+// 1.11
+// 1.1
+// 1.2
+// 1.3
+// 1.4
+// 1.5
+// 1.6
+// 1.7
+// 2.1
+// endResult

@@ -1,0 +1,115 @@
+// name: cseFunctionCall6
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package types
+    record R
+      Real r1;
+      Integer r2;
+    end R;
+  end types;
+  
+  package functions
+    function f3
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := if x1>x2 then sin(x1) else cos(x2);
+      y.r2 := integer(ceil(y.r1));
+      for i in 1:y.r2 loop
+        y.r1 := y.r1+x1*x2;
+      end for;
+    end f3;
+    
+    function f5
+      input Real x1;
+      input Real x2;
+      input types.R r;
+      output Real y1;
+      output Real y2[2];
+    protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y1 := y1+x1*x2+r.r1*r.r2;
+      end for;
+      y2 := {r.r1,r.r2};
+    end f5;
+  end functions;
+  
+  model FunctionCallTest6
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    Real y,z;
+    Real a[2],b[2];
+  equation
+    x = sin(time*cos(time));
+    (y,a) = f5(time, x, f3(time, x));
+    (z,b) = f5(time, x, f3(time, x));
+  end FunctionCallTest6;
+
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest6); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (10)
+// ========================================
+// 1: b[2]:VARIABLE()  type: Real  [2]
+// 2: b[1]:VARIABLE()  type: Real  [2]
+// 3: a[2]:VARIABLE()  type: Real  [2]
+// 4: a[1]:VARIABLE()  type: Real  [2]
+// 5: z:VARIABLE()  type: Real 
+// 6: y:VARIABLE()  type: Real 
+// 7: x:VARIABLE()  type: Real 
+// 8: $cse2.r2:DISCRETE(protected = true )  type: Integer  unreplaceable
+// 9: $cse2.r1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 10: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (5, 10)
+// ========================================
+// 1/1 (3): (z, b) = (y, a)   [dynamic |0|0|0|0|]
+// 2/4 (2): $cse2 = CSE.functions.f3(time, x)   [unknown |0|0|0|0|]
+// 3/6 (3): (y, a) = CSE.functions.f5(time, x, $cse2)   [unknown |0|0|0|0|]
+// 4/9 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 5/10 (1): x = sin(time * $cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (4/49)
+// ========================================
+// 1: x - sin(time * $cse1) - {}
+// 2: $cse1 - cos(time) - {}
+// 3: (y, a) - CSE.functions.f5(time, x, $cse2) - {}
+// 4: $cse2 - CSE.functions.f3(time, x) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

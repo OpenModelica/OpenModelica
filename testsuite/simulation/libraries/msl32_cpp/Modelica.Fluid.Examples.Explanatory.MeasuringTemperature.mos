@@ -1,0 +1,188 @@
+// name:     Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.Explanatory.MeasuringTemperature);
+compareVars :=
+{
+   "openTankCold2.level",
+   "openTankCold2.medium.h",
+   "openTankCold1.level",
+   "openTankCold1.medium.h",
+   "openTankHot1.level",
+   "openTankHot1.medium.h",
+   "openTankHot2.level",
+   "openTankHot2.medium.h",
+   "openTankCold3.level",
+   "openTankCold3.medium.h",
+   "openTankHot3.level",
+   "openTankHot3.medium.h"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+// {"openTankCold2.level","openTankCold2.medium.h","openTankCold1.level","openTankCold1.medium.h","openTankHot1.level","openTankHot1.medium.h","openTankHot2.level","openTankHot2.medium.h","openTankCold3.level","openTankCold3.medium.h","openTankHot3.level","openTankHot3.medium.h"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MeasuringTemperature', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.Explanatory.MeasuringTemperature_res.mat
+// Files Equal!
+// Warning: Alias set with different nominal values
+//  * candidate: mFlow3.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: mFlow3.medium.state.p(nominal = 1000000.0)
+//  * candidate: mFlow3.medium.p(nominal = 100000.0)
+//  * candidate: openTankHot3.ports[1].p(nominal = 1000000.0)
+//  * candidate: junctionIdeal.port_2.p(nominal = 1000000.0)
+//  * candidate: openTankCold3.ports[1].p(nominal = 1000000.0)
+//  * candidate: junctionIdeal.port_3.p(nominal = 1000000.0)
+//  * candidate: junctionIdeal.port_1.p(nominal = 1000000.0)
+//  * candidate: T_junction.port.p(nominal = 1000000.0)
+//  * candidate: mFlow3.ports[1].p(nominal = 1000000.0)
+// => select value from mFlow3.ports[1].p(nominal = 1000000.0) for variable: mFlow3.ports[1].p
+// Warning: Alias set with different nominal values
+//  * candidate: mFlow2.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: mFlow2.medium.state.p(nominal = 1000000.0)
+//  * candidate: mFlow2.medium.p(nominal = 100000.0)
+//  * candidate: mFlow2.ports[1].p(nominal = 1000000.0)
+//  * candidate: T_twoPort.port_a.p(nominal = 1000000.0)
+//  * candidate: openTankHot2.ports[1].p(nominal = 1000000.0)
+//  * candidate: T_twoPort.port_b.p(nominal = 1000000.0)
+//  * candidate: openTankCold2.ports[1].p(nominal = 1000000.0)
+// => select value from openTankCold2.ports[1].p(nominal = 1000000.0) for variable: openTankCold2.ports[1].p
+// Warning: Alias set with different nominal values
+//  * candidate: mFlow1.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: mFlow1.medium.state.p(nominal = 1000000.0)
+//  * candidate: mFlow1.medium.p(nominal = 100000.0)
+//  * candidate: mFlow1.ports[1].p(nominal = 1000000.0)
+//  * candidate: openTankHot1.ports[1].p(nominal = 1000000.0)
+//  * candidate: T_onePort.port.p(nominal = 1000000.0)
+//  * candidate: openTankCold1.ports[1].p(nominal = 1000000.0)
+// => select value from openTankCold1.ports[1].p(nominal = 1000000.0) for variable: openTankCold1.ports[1].p
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot3.medium.h(start = openTankHot3.h_start)
+//  * candidate: openTankHot3.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankHot3.medium.state.h(start = 100000.0)
+//  * candidate: openTankHot3.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankHot3.medium.h(start = openTankHot3.h_start) for variable: openTankHot3.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot3.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankHot3.medium.state.T(start = 500.0)
+//  * candidate: openTankHot3.medium.T(start = openTankHot3.T_start)
+// => select value from openTankHot3.medium.T(start = openTankHot3.T_start) for variable: openTankHot3.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankHot3.medium.T(nominal = 500.0)
+//  * candidate: openTankHot3.medium.state.T(nominal = 500.0)
+//  * candidate: openTankHot3.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankHot3.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankHot3.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankHot3.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankHot3.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold3.medium.h(start = openTankCold3.h_start)
+//  * candidate: openTankCold3.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankCold3.medium.state.h(start = 100000.0)
+//  * candidate: openTankCold3.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankCold3.medium.h(start = openTankCold3.h_start) for variable: openTankCold3.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold3.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankCold3.medium.state.T(start = 500.0)
+//  * candidate: openTankCold3.medium.T(start = openTankCold3.T_start)
+// => select value from openTankCold3.medium.T(start = openTankCold3.T_start) for variable: openTankCold3.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankCold3.medium.T(nominal = 500.0)
+//  * candidate: openTankCold3.medium.state.T(nominal = 500.0)
+//  * candidate: openTankCold3.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankCold3.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankCold3.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankCold3.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankCold3.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot2.medium.h(start = openTankHot2.h_start)
+//  * candidate: openTankHot2.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankHot2.medium.state.h(start = 100000.0)
+//  * candidate: openTankHot2.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankHot2.medium.h(start = openTankHot2.h_start) for variable: openTankHot2.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot2.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankHot2.medium.state.T(start = 500.0)
+//  * candidate: openTankHot2.medium.T(start = openTankHot2.T_start)
+// => select value from openTankHot2.medium.T(start = openTankHot2.T_start) for variable: openTankHot2.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankHot2.medium.T(nominal = 500.0)
+//  * candidate: openTankHot2.medium.state.T(nominal = 500.0)
+//  * candidate: openTankHot2.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankHot2.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankHot2.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankHot2.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankHot2.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot1.medium.h(start = openTankHot1.h_start)
+//  * candidate: openTankHot1.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankHot1.medium.state.h(start = 100000.0)
+//  * candidate: openTankHot1.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankHot1.medium.h(start = openTankHot1.h_start) for variable: openTankHot1.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankHot1.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankHot1.medium.state.T(start = 500.0)
+//  * candidate: openTankHot1.medium.T(start = openTankHot1.T_start)
+// => select value from openTankHot1.medium.T(start = openTankHot1.T_start) for variable: openTankHot1.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankHot1.medium.T(nominal = 500.0)
+//  * candidate: openTankHot1.medium.state.T(nominal = 500.0)
+//  * candidate: openTankHot1.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankHot1.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankHot1.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankHot1.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankHot1.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold1.medium.h(start = openTankCold1.h_start)
+//  * candidate: openTankCold1.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankCold1.medium.state.h(start = 100000.0)
+//  * candidate: openTankCold1.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankCold1.medium.h(start = openTankCold1.h_start) for variable: openTankCold1.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold1.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankCold1.medium.state.T(start = 500.0)
+//  * candidate: openTankCold1.medium.T(start = openTankCold1.T_start)
+// => select value from openTankCold1.medium.T(start = openTankCold1.T_start) for variable: openTankCold1.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankCold1.medium.T(nominal = 500.0)
+//  * candidate: openTankCold1.medium.state.T(nominal = 500.0)
+//  * candidate: openTankCold1.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankCold1.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankCold1.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankCold1.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankCold1.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold2.medium.h(start = openTankCold2.h_start)
+//  * candidate: openTankCold2.ports[1].h_outflow(start = 100000.0)
+//  * candidate: openTankCold2.medium.state.h(start = 100000.0)
+//  * candidate: openTankCold2.heatTransfer.states[1].h(start = 100000.0)
+// => select value from openTankCold2.medium.h(start = openTankCold2.h_start) for variable: openTankCold2.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: openTankCold2.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: openTankCold2.medium.state.T(start = 500.0)
+//  * candidate: openTankCold2.medium.T(start = openTankCold2.T_start)
+// => select value from openTankCold2.medium.T(start = openTankCold2.T_start) for variable: openTankCold2.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: openTankCold2.medium.T(nominal = 500.0)
+//  * candidate: openTankCold2.medium.state.T(nominal = 500.0)
+//  * candidate: openTankCold2.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: openTankCold2.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: openTankCold2.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from openTankCold2.heatTransfer.Ts[1](nominal = 300.0) for variable: openTankCold2.heatTransfer.Ts[1]
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

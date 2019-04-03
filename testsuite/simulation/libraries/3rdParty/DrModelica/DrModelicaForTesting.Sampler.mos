@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.Sampler.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Sampler
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Sampler.* DrModelicaForTesting.Sampler_* DrModelicaForTesting.Sampler DrModelicaForTesting.Sampler.exe DrModelicaForTesting.Sampler.cpp DrModelicaForTesting.Sampler.makefile DrModelicaForTesting.Sampler.libs DrModelicaForTesting.Sampler.log DrModelicaForTesting.Sampler.c DrModelicaForTesting.Sampler.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Sampler, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Sampler_res.mat",
+  "ReferenceFiles/Sampler_ref.mat","DrModelicaForTesting.Sampler_diff.csv",0.01,0.013,
+  {"sample_interval","x", "y"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Sampler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Sampler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,55 @@
+// name:     Compare
+// keywords: Compare Simulation Results
+// status: correct
+// teardown_command: 
+//
+// Built-in Mathematical Functions
+//
+
+loadFile("Compare.mo"); getErrorString();
+simulate(Compare.Modell1); getErrorString();
+simulate(Compare.Modell2); getErrorString();
+
+// Should fail, because Modell1 has a variable called 'a' which Modell2 has not
+OpenModelica.Scripting.diffSimulationResults("Compare.Modell2_res.mat", "Compare.Modell1_res.mat", "abc"); getErrorString();
+OpenModelica.Scripting.compareSimulationResults("Compare.Modell2_res.mat", "Compare.Modell1_res.mat", "Modell_diff.csv", 0.01, 0.0001); getErrorString();
+
+// Should work, because Modell1 contains all variables of Modell2
+OpenModelica.Scripting.diffSimulationResults("Compare.Modell1_res.mat", "Compare.Modell2_res.mat", "abc"); getErrorString();
+OpenModelica.Scripting.compareSimulationResults("Compare.Modell1_res.mat", "Compare.Modell2_res.mat", "Modell_diff.csv", 0.01, 0.0001); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Compare.Modell1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Compare.Modell1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "Compare.Modell2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Compare.Modell2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true,{})
+// "Error: Could not read variable a in file Compare.Modell2_res.mat.
+// Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
+// "
+// {"Files not Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Error: Could not read variable a in file Compare.Modell2_res.mat.
+// Warning: Get data of variable a from file Compare.Modell2_res.mat failed!
+// Warning: Files not Equal
+// "
+// (true,{})
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

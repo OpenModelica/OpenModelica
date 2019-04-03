@@ -1,0 +1,39 @@
+// name:     PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.* PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_* PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.exe PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.cpp PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.makefile PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.libs PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.log PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.c PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection,stopTime=0.000001,numberOfIntervals=2); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_diff.csv",0.01,0.001,
+  {"prismatic.s", "prismatic.v", "revoluteDrive.w"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-06, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

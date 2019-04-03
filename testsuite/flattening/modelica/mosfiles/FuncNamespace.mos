@@ -1,0 +1,25 @@
+// name:     FuncNamespace
+// keywords: function, namespace, dynload
+// status:   correct
+//
+// Tests so that functions in different namespaces but with the same name
+// get mixed.
+//
+loadFile("FuncNamespace.mo");
+TestFunc(5);
+TestPkg.TestFunc(5);
+TestPkg.TestClass.TestFunc(5);
+TestPkg_TestClass_TestFunc(5);
+TestPkg_TestFunc(5);
+TestPkg.TestClass.TestFunc(5);
+TestPkg.TestFunc(5);
+// Result:
+// true
+// 15.0
+// 125.0
+// 243.0
+// 7.0
+// 6.0
+// 243.0
+// 125.0
+// endResult

@@ -1,0 +1,56 @@
+// name:     WhenVectorPredicateEquation
+// keywords: when
+// status: correct
+// teardown_command: rm -rf WhenSet_* WhenSet WhenSet.exe WhenSet.cpp WhenSet.makefile WhenSet.libs WhenSet.log output.log
+// 
+//  Conditional equations with when-equations
+//
+// Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// 
+loadFile("WhenVectorPredicateEquation.mo");
+simulate(WhenSet,startTime=0.0, stopTime=10.0, tolerance=1e-5, numberOfIntervals=100);
+echo(false); // turns of output 
+size := readSimulationResultSize("WhenSet_res.mat");
+res:=readSimulationResult("WhenSet_res.mat",{x,y1,y3},size); 
+s := readSimulationResultSize("WhenSet_res.mat");
+x1:=res[1,1];
+x2:=res[1,s];
+y11:=res[2,1];
+y12:=res[2,s];
+y31:=res[3,2];
+y32:=res[3,s];
+x1 := 1000*x1;
+x2 := 1000*x2;
+y11 := 1000*y11;
+y12 := 1000*y12;
+y31 := 1000*y31;
+y32 := 1000*y32;
+
+x1 := floor(x1);
+x2 := floor(x2);
+y11 := floor(y11);
+y12 := floor(y12);
+y31 := floor(y31);
+y32 := floor(y32);
+echo(true); // turns on output
+x1/1000.0; // rounded value to 3 digits
+x2/1000.0;
+y11/1000.0;
+y12/1000.0;
+y31/1000.0;
+y32/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WhenSet_res.mat"
+// end SimulationResult;
+// true
+// -3.0
+// 7.0
+// -0.142
+// -0.959
+// -3.142
+// 12.041
+// ""
+// endResult

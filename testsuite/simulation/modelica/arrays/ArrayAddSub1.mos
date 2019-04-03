@@ -1,0 +1,49 @@
+// name:     ArrayAddSub1
+// keywords: array
+// status: correct
+// teardown_command: rm -rf AddSub1_* AddSub1 AddSub1.exe AddSub1.cpp AddSub1.makefile AddSub1.libs AddSub1.log output.log
+// 
+//  arithmetic ops on arrays
+// Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+//
+loadFile("ArrayAddSub1.mo");
+simulate(AddSub1,startTime = 0.0, stopTime = 1.0 ,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("AddSub1_res.mat");
+res:=readSimulationResult("AddSub1_res.mat",{Add3[1,1],Add3[1,2],Add3[2,1],Add3[2,2],Sub1[1],Sub1[2],Sub1[3]},size); 
+x1:=res[1,1];
+x2:=res[2,1];
+x3:=res[3,1];
+x4:=res[4,1];
+
+y1:=res[5,1];
+y2:=res[6,1];
+y3:=res[7,1];
+
+echo(true); // turns on output
+x1;
+x2;
+x3;
+x4;
+y1;
+y2;
+y3;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "AddSub1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'AddSub1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 2.0
+// 3.0
+// 5.0
+// 6.0
+// 0.0
+// 0.0
+// 3.0
+// endResult

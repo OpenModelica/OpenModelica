@@ -1,0 +1,31 @@
+// Plot commands
+removePlots();
+createPlot(id = 1,
+ position = {15, 10, 733, 605},
+ y = {"ramp.y", "load1.w", "load2.w"},
+ range = {0, 2.0, 3.5, (-0.5)},
+ autoscale = true,
+ autoerase = true,
+ autoreplot = true,
+ description = false,
+ grid = true,
+ color = true,
+ online = false,
+ filename = "Aufgabe3_2.mat",
+ leftTitleType = 1,
+ bottomTitleType = 1);
+createPlot(id = 1,
+ position = {15, 10, 733, 313},
+ y = {"servo1.speedError.y", "servo2.speedError.y"},
+ range = {0, 2.0, 0.1, (-0.08)},
+ autoscale = true,
+ autoerase = true,
+ autoreplot = true,
+ description = false,
+ grid = true,
+ color = true,
+ online = false,
+ subPlot = 2,
+ leftTitleType = 1,
+ bottomTitleType = 1);
+

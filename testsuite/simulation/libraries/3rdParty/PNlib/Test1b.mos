@@ -1,0 +1,30 @@
+// name: PNlib.Test1b
+// keywords: PNlib, continuous
+// status: correct
+
+loadFile("PNlib.mo"); getErrorString();
+simulate(PNlib.Examples.Test1b); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PNlib.Examples.Test1b_res.mat",
+  "ReferenceFiles/PNlib.Examples.Test1b.mat",
+  "PNlib.Examples.Test1b_diff.csv", 0.01, 0.0001,
+  {
+    "T1.fire",
+    "T1.instantaneousSpeed",
+    "T1.maximumSpeed"
+  }); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PNlib.Examples.Test1b_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PNlib.Examples.Test1b', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

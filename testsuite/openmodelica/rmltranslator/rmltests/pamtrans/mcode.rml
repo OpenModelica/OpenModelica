@@ -1,0 +1,16 @@
+module Mcode:
+
+type     Id       =  string
+datatype MBinOp   =  MADD | MSUB | MMULT | MDIV
+datatype MCondJmp =  MJNP | MJP | MJN | MJNZ | MJPZ | MJZ
+datatype MOperand =  I of Id  |  N of int |  T of int | L of int
+datatype MCode   =  MB      of MBinOp  * MOperand      (* Binary arith ops *)
+                 |  MJ      of MCondJmp * MOperand     (* Conditional jumps *)
+                 |  MJMP    of MOperand
+                 |  MLOAD   of MOperand
+                 |  MSTO    of MOperand
+                 |  MGET    of MOperand
+                 |  MPUT    of MOperand
+                 |  MLABEL  of MOperand
+                 |  MHALT
+end 

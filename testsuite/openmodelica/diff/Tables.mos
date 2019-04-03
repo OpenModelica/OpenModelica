@@ -1,0 +1,20 @@
+// status: correct
+
+echo(false);
+old := readFile("Tables.old.mo");
+new := readFile("Tables.new.mo");
+expected := readFile("Tables.expected.mo");
+res := diffModelicaFileListings(old,new,OpenModelica.Scripting.DiffFormat.plain);
+
+if expected==res then
+  print("OK\n");
+else
+  print("Failed; output new file to Tables.wrongexpected.mo\n");
+  print(diffModelicaFileListings(res,expected,OpenModelica.Scripting.DiffFormat.color)+"\n");
+  writeFile("Tables.wrongexpected.mo", res);
+  exit(1);
+end if;
+
+// Result:
+// OK
+// endResult

@@ -1,0 +1,38 @@
+(* tcode.rml *)
+module TCode:
+    type Ident		= string
+    type Stamp		= int
+    datatype Ty		= CHAR
+			| INT
+			| REAL
+			| PTR of Ty
+			| ARR of int * Ty
+			| REC of Record
+			| UNFOLD of Stamp
+    and Record		= RECORD of Stamp * Var list
+    and Var		= VAR of Ident * Ty
+    datatype UnOp	= CtoI | ItoR | RtoI | ItoC | TOPTR of Ty | PtoI
+			| LOAD of Ty | OFFSET of Record * Ident
+    datatype BinOp	= IADD | ISUB | IMUL | IDIV | IMOD | IAND | IOR
+			| ILT | ILE | IEQ
+			| RADD | RSUB | RMUL | RDIV
+			| RLT | RLE | REQ
+			| PADD of Ty | PSUB of Ty | PDIFF of Ty
+			| PLT of Ty | PLE of Ty | PEQ of Ty
+    datatype Exp	= ICON of int
+			| RCON of real
+			| ADDR of Ident
+			| UNARY of UnOp * Exp
+			| BINARY of Exp * BinOp * Exp
+			| FCALL of Ident * Exp list
+    datatype Stmt	= STORE of Ty * Exp * Exp
+			| PCALL of Ident * Explist 
+			| RETURN of (Ty * Exp) option
+			| WHILE of Exp * Stmt
+			| IF of Exp * Stmt * Stmt
+			| SEQ of Stmt * Stmt
+			| SKIP
+    datatype Proc	= PROC of Ident * Varlist  * Ty option * Block option
+    and Block		= BLOCK of Varlist * Proc list * Stmt
+    datatype Prog	= PROG of Ident * Block
+end

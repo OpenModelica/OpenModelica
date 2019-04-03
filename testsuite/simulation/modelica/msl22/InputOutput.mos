@@ -1,0 +1,30 @@
+// name:     InputOutput
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f InputOutput_*  InputOutput.conv.cpp  InputOutput.cpp InputOutput InputOutput.exe InputOutput.makefile InputOutput.log InputOutput.libs
+// 
+//InputOutput - model containing inputs and outputs on top level
+// The inputs are considered know variables and are not calculated among
+// the algebraic variables.
+//
+loadFile("InputOutput.mo");
+simulate(InputOutput, numberOfIntervals=50, tolerance=1e-5);
+val(x,0.5);
+val(u,0.5);
+val(u2,0.5);
+val(y,0.5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "InputOutput_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'InputOutput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.3160538831443992
+// 1.0
+// 2.0
+// 4.316053883144399
+// endResult

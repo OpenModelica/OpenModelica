@@ -1,0 +1,76 @@
+// name: ticket4841
+// status: correct
+
+loadString("
+
+function foo
+  input Real a;
+  input Real b;
+  input Real c;
+  output Real d;
+  output Real e1=a;
+protected
+  Real f = a+e1;
+  Real g = f+e1;
+algorithm
+  d := b+c + g*f;
+  annotation(Inline = true);
+end foo;
+
+
+function bar
+  input Real a;
+  input Real b;
+  input Real c;
+  output Real d;
+  output Real e1=a;
+protected
+  Real f = a + e1;
+  Real g = f + e1;
+algorithm
+  d := b+c + g*f;
+  annotation(Inline = false);
+end bar;
+
+
+model foobar
+  Real a,b,c,d,e;
+  Real a1, b1, c1, d1, e2;
+  Real err(start=0,fixed=true);
+equation
+  (d, e) =  foo(a,b,c);
+  (d1, e2) =  bar(a1,b1,c1);
+  a = time;
+  b = 2*time;
+  c = 3*time;
+  a1 = a;
+  b1 = b;
+  c1 = c;
+  der(err) = 1e3*(d - d1)^2 + 1e3*(e - e2)^2;
+end foobar;
+");
+getErrorString();
+
+simulate(foobar);
+getErrorString();
+val(d,{0.0,1.0});
+val(e,{0.0,1.0});
+val(err,{0.0,1.0});
+
+getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foobar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foobar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,11.0}
+// {0.0,1.0}
+// {0.0,0.0}
+// ""
+// endResult

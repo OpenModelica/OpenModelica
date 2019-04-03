@@ -1,0 +1,30 @@
+// name:     translate Pipes
+// keywords: SiemensPower Pipes
+// status:   correct
+// teardown_command: rm -rf SiemensPower.Components.Pipes.Tests.tube* _SiemensPower.Components.Pipes.Tests.tube
+//
+//  Test SiemensPower component Pipes
+//  TODO: check small differences in SH.qMetalFluidDelayed[1]
+//
+
+loadModel(SiemensPower,{"2.1 beta"});
+getErrorString();
+
+// test simple model
+translateModel(SiemensPower.Components.Pipes.Tests.tubeTest, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/tubeTest.mat");
+getErrorString();
+
+// test full model
+translateModel(SiemensPower.Components.Pipes.Tests.tube_ownMedia_test, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/tube_ownMedia_test.mat");
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// true
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// endResult

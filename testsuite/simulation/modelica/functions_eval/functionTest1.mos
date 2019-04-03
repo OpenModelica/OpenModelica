@@ -1,0 +1,44 @@
+// name:      functionTest1
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadFile("PartEvalFunc.mo"); getErrorString();
+setDebugFlags("dumpeqninorder");getErrorString();
+simulate(PartEvalFunc.functionTest1);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PartEvalFunc.functionTest1_res.mat",
+  "ReferenceFiles/functionTest1.mat",
+  "functionTest1_diff.csv", 0.01, 0.0001,
+  {"a","b","c","d"}); 
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// 
+// indxdae: eqns in order
+// ========================================
+// SingleEquation: 3
+// 1: d:VARIABLE() .PartEvalFunc.functionTest1, .Real type: Real 
+// 1/1 (1): d = x * cos(time)
+// 
+// SingleEquation: 1
+// 1: a:DUMMY_STATE() .PartEvalFunc.functionTest1, .Real type: Real 
+// 1/1 (1): a = x * sin(time)
+// 
+// SingleEquation: 2
+// 1: c:DUMMY_STATE() .PartEvalFunc.functionTest1, .Real type: Real 
+// 1/1 (1): c = 8.0 + a
+// 
+// 
+// record SimulationResult
+//     resultFile = "PartEvalFunc.functionTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PartEvalFunc.functionTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

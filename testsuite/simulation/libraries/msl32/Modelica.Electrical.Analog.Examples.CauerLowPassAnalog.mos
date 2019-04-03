@@ -1,0 +1,40 @@
+// name:     Modelica.Electrical.Analog.Examples.CauerLowPassAnalog
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog);
+compareVars :=
+{
+   "L1.i",
+   "L2.i",
+   "C1.v",
+   "C2.v",
+   "C4.v"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CauerLowPassAnalog
+// {"L1.i","L2.i","C1.v","C2.v","C4.v"}
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassAnalog', options = '', outputFormat = 'mat', variableFilter = 'time|L1.i|L2.i|C1.v|C2.v|C4.v', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.CauerLowPassAnalog_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

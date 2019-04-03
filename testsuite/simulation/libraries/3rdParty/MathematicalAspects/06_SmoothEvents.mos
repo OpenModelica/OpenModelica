@@ -1,0 +1,93 @@
+// name: 06_SmoothEvents
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("SmoothEvent1.mo"); getErrorString();
+loadFile("SmoothEvent2.mo"); getErrorString();
+loadFile("SmoothEvent3.mo"); getErrorString();
+loadFile("SmoothEvent4.mo"); getErrorString();
+
+simulate(SmoothEvent1, stopTime=2); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent1_res.mat",
+  "ReferenceFiles/SmoothEvent1.mat",
+  "SmoothEvent1_diff.csv", 0.01, 0.0001,
+  {"u", "v"}); getErrorString();
+
+simulate(SmoothEvent2, stopTime=2); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent2_res.mat",
+  "ReferenceFiles/SmoothEvent2.mat",
+  "SmoothEvent2_diff.csv", 0.01, 0.0001,
+  {"u", "v"}); getErrorString();
+
+simulate(SmoothEvent3, stopTime=2); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent3_res.mat",
+  "ReferenceFiles/SmoothEvent3.mat",
+  "SmoothEvent3_diff.csv", 0.01, 0.0001,
+  {"u", "v"}); getErrorString();
+
+simulate(SmoothEvent4, stopTime=2); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("SmoothEvent4_res.mat",
+  "ReferenceFiles/SmoothEvent4.mat",
+  "SmoothEvent4_diff.csv", 0.01, 0.0001,
+  {"u", "v"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SmoothEvent1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "SmoothEvent2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "SmoothEvent3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "SmoothEvent4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SmoothEvent4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

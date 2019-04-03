@@ -1,0 +1,34 @@
+// status: correct
+
+loadString("model StackOverflowTest
+  function f
+    output Real r = 2;
+  algorithm
+    f();
+    print(\"Can't get here, can you?\n\");
+  end f;
+  constant Real r = f();
+end StackOverflowTest;");
+getErrorString();
+instantiateModel(StackOverflowTest);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "function StackOverflowTest.f
+//   output Real r = 2.0;
+// algorithm
+//   fail();
+//   print(\"Can't get here, can you?
+//   \");
+// end StackOverflowTest.f;
+//
+// class StackOverflowTest
+//   constant Real r = StackOverflowTest.f();
+// end StackOverflowTest;
+// "
+// "[Script/CevalScript.mo:0:0-0:0:writable] Error: Internal error Stack overflow when evaluating function call: StackOverflowTest.f()...
+// [bt] [Symbols are not generated when running the test suite]
+// "
+// endResult

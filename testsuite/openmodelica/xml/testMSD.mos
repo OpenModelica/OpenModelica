@@ -1,0 +1,587 @@
+// name: XmlDumpMSDStateSpace
+// keywords: xml, dump
+// status: correct
+// teardown_command: rm -f stateSpace-MSD.xml
+// 
+// Tests that < is escaped in Xml dumps
+//
+
+loadModel(Modelica);
+loadFile("MSD.mo");
+
+"StateSpace";
+dumpXMLDAE(MSD,"stateSpace",false,true,false,false,"stateSpace-MSD");
+readFile("stateSpace-MSD.xml");
+
+// Result:
+// true
+// true
+// "StateSpace"
+// (true,"stateSpace-MSD.xml")
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
+//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+// <variables dimension=\"44\">
+// <orderedVariables dimension=\"17\">
+// <variablesList>
+// <variable id=\"1\" name=\"$DER.mass1.flange_b.s\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"2\" name=\"force1.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Driving force as input signal\">
+// <attributesValues>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"force1.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Distance between flange and support (= flange.s - support.s)\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"damper1.lossPower\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Loss power leaving component via heatPort (&gt; 0, if heat is flowing out of component)\">
+// <attributesValues>
+// <quantity string=\"&quot;Power&quot;\">
+// </quantity>
+// <unit string=\"&quot;W&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"5\" name=\"damper1.flange_a.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"6\" name=\"damper1.v_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
+// <attributesValues>
+// <quantity string=\"&quot;Velocity&quot;\">
+// </quantity>
+// <unit string=\"&quot;m/s&quot;\">
+// </unit>
+// <stateSelect>
+// Prefer
+// </stateSelect>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"7\" name=\"damper1.s_rel\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"damper1.v_rel\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <stateSelect>
+// Prefer
+// </stateSelect>
+// <nominal string=\"damper1.s_nominal\">
+// </nominal>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"8\" name=\"mass1.a\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute acceleration of component\">
+// <attributesValues>
+// <quantity string=\"&quot;Acceleration&quot;\">
+// </quantity>
+// <unit string=\"&quot;m/s2&quot;\">
+// </unit>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"9\" name=\"mass1.v\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.a\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute velocity of component\">
+// <attributesValues>
+// <quantity string=\"&quot;Velocity&quot;\">
+// </quantity>
+// <unit string=\"&quot;m/s&quot;\">
+// </unit>
+// <stateSelect>
+// Default
+// </stateSelect>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"10\" name=\"mass1.flange_b.s\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"11\" name=\"mass1.s\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.v\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of center of component (s = flange_a.s + L/2 = flange_b.s - L/2)\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <stateSelect>
+// Default
+// </stateSelect>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"12\" name=\"spring1.f\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Force between flanges (positive in direction of flange axis R)\">
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"13\" name=\"spring1.s_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"14\" name=\"$DER.spring1.f\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Force between flanges (positive in direction of flange axis R)\">
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"15\" name=\"$DER.spring1.s_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"16\" name=\"$DER.damper1.v_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"17\" name=\"$DER.damper1.flange_a.s\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </orderedVariables>
+// <knownVariables dimension=\"12\">
+// <variablesList>
+// <variable id=\"1\" name=\"force1.useSupport\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"= true, if support flange enabled, otherwise implicitly grounded\">
+// <bindExpression string=\"false\">
+// </bindExpression>
+// </variable>
+// <variable id=\"2\" name=\"damper1.d\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Damping constant\">
+// <bindExpression string=\"0.01\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;TranslationalDampingConstant&quot;\">
+// </quantity>
+// <unit string=\"&quot;N.s/m&quot;\">
+// </unit>
+// <minValue string=\"0.0\">
+// </minValue>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"damper1.useHeatPort\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"=true, if heatPort is enabled\">
+// <bindExpression string=\"false\">
+// </bindExpression>
+// </variable>
+// <variable id=\"4\" name=\"damper1.s_nominal\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Nominal value of s_rel (used for scaling)\">
+// <bindExpression string=\"0.0001\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <minValue string=\"0.0\">
+// </minValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"5\" name=\"damper1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s_rel and v_rel as states\">
+// <bindExpression string=\"StateSelect.prefer\">
+// </bindExpression>
+// <attributesValues>
+// <minValue string=\"StateSelect.never\">
+// </minValue>
+// <maxValue string=\"StateSelect.always\">
+// </maxValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"6\" name=\"mass1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s and v as states\">
+// <bindExpression string=\"StateSelect.default\">
+// </bindExpression>
+// <attributesValues>
+// <minValue string=\"StateSelect.never\">
+// </minValue>
+// <maxValue string=\"StateSelect.always\">
+// </maxValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"7\" name=\"mass1.m\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Mass of the sliding mass\">
+// <bindExpression string=\"10.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Mass&quot;\">
+// </quantity>
+// <unit string=\"&quot;kg&quot;\">
+// </unit>
+// <minValue string=\"0.0\">
+// </minValue>
+// <initialValue string=\"1.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"8\" name=\"mass1.L\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of component, from left flange to right flange (= flange_b.s - flange_a.s)\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <initialValue string=\"0.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"9\" name=\"spring1.s_rel0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Unstretched spring length\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <minValue string=\"0.0\">
+// </minValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"10\" name=\"spring1.c\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Spring constant\">
+// <bindExpression string=\"1.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;TranslationalSpringConstant&quot;\">
+// </quantity>
+// <unit string=\"&quot;N/m&quot;\">
+// </unit>
+// <minValue string=\"0.0\">
+// </minValue>
+// <initialValue string=\"1.0\">
+// </initialValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"11\" name=\"fixed1.s0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Fixed offset position of housing\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"12\" name=\"force1.s_support\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of support flange\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <fixed string=\"true\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </knownVariables>
+// <aliasVariables dimension=\"15\">
+// <variablesList>
+// <variable id=\"1\" name=\"spring1.flange_a.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"mass1.flange_b.s\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"2\" name=\"spring1.flange_b.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"damper1.flange_a.s\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"fixed1.flange.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"fixed1.s0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"damper1.flange_b.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"fixed1.s0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"5\" name=\"mass1.flange_a.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"force1.s\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"6\" name=\"force1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"-force1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"7\" name=\"mass1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"force1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"8\" name=\"spring1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"-spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"9\" name=\"mass1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"10\" name=\"spring1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"11\" name=\"damper1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"-spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"12\" name=\"damper1.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Forces between flanges (= flange_b.f)\">
+// <bindExpression string=\"spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"13\" name=\"damper1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"14\" name=\"fixed1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"-spring1.f\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Force&quot;\">
+// </quantity>
+// <unit string=\"&quot;N&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"15\" name=\"force1.flange.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"force1.s\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </aliasVariables>
+// </variables>
+// <equations dimension=\"17\">
+// <equation id=\"1\">$DER.mass1.flange_b.s = mass1.v
+// </equation>
+// <equation id=\"2\">der(mass1.s) = mass1.v
+// </equation>
+// <equation id=\"3\">force1.s = mass1.s + (-0.5) * mass1.L
+// </equation>
+// <equation id=\"4\">damper1.flange_a.s = fixed1.s0 - damper1.s_rel
+// </equation>
+// <equation id=\"5\">mass1.flange_b.s = mass1.s + 0.5 * mass1.L
+// </equation>
+// <equation id=\"6\">spring1.s_rel = damper1.flange_a.s - mass1.flange_b.s
+// </equation>
+// <equation id=\"7\">spring1.f = spring1.c * (spring1.s_rel - spring1.s_rel0)
+// </equation>
+// <equation id=\"8\">damper1.v_rel = spring1.f / damper1.d
+// </equation>
+// <equation id=\"9\">der(damper1.s_rel) = damper1.v_rel
+// </equation>
+// <equation id=\"10\">$DER.spring1.s_rel = (-damper1.v_rel) - mass1.v
+// </equation>
+// <equation id=\"11\">$DER.spring1.f = spring1.c * $DER.spring1.s_rel
+// </equation>
+// <equation id=\"12\">$DER.damper1.v_rel = $DER.spring1.f / damper1.d
+// </equation>
+// <equation id=\"13\">$DER.damper1.flange_a.s = -damper1.v_rel
+// </equation>
+// <equation id=\"14\">damper1.lossPower = spring1.f * damper1.v_rel
+// </equation>
+// <equation id=\"15\">force1.f = sin(time)
+// </equation>
+// <equation id=\"16\">mass1.a = (force1.f + spring1.f) / mass1.m
+// </equation>
+// <equation id=\"17\">der(mass1.v) = mass1.a
+// </equation>
+// </equations>
+// <functions>
+// </functions>
+// <additionalInfo>
+// <solvingInfo>
+// <matchingAlgorithm>
+// <solvedIn variableId=\"1\" equationId=\"1\" />
+// <solvedIn variableId=\"2\" equationId=\"2\" />
+// <solvedIn variableId=\"3\" equationId=\"10\" />
+// <solvedIn variableId=\"4\" equationId=\"9\" />
+// <solvedIn variableId=\"5\" equationId=\"4\" />
+// <solvedIn variableId=\"6\" equationId=\"7\" />
+// <solvedIn variableId=\"7\" equationId=\"8\" />
+// <solvedIn variableId=\"8\" equationId=\"11\" />
+// <solvedIn variableId=\"9\" equationId=\"12\" />
+// <solvedIn variableId=\"10\" equationId=\"3\" />
+// <solvedIn variableId=\"11\" equationId=\"13\" />
+// <solvedIn variableId=\"12\" equationId=\"6\" />
+// <solvedIn variableId=\"13\" equationId=\"5\" />
+// <solvedIn variableId=\"14\" equationId=\"15\" />
+// <solvedIn variableId=\"15\" equationId=\"14\" />
+// <solvedIn variableId=\"16\" equationId=\"16\" />
+// <solvedIn variableId=\"17\" equationId=\"17\" />
+// </matchingAlgorithm>
+// <bltRepresentation>
+// <bltRepresentation>
+// <bltBlock id=\"1\">
+// <involvedEquation equationId=\"1\" />
+// </bltBlock>
+// </bltRepresentation>
+// <bltRepresentation>
+// <bltBlock id=\"2\">
+// <involvedEquation equationId=\"13\" />
+// </bltBlock>
+// <bltBlock id=\"3\">
+// <involvedEquation equationId=\"10\" />
+// </bltBlock>
+// <bltBlock id=\"4\">
+// <involvedEquation equationId=\"4\" />
+// </bltBlock>
+// <bltBlock id=\"5\">
+// <involvedEquation equationId=\"3\" />
+// </bltBlock>
+// <bltBlock id=\"6\">
+// <involvedEquation equationId=\"5\" />
+// </bltBlock>
+// <bltBlock id=\"7\">
+// <involvedEquation equationId=\"6\" />
+// </bltBlock>
+// <bltBlock id=\"8\">
+// <involvedEquation equationId=\"7\" />
+// </bltBlock>
+// <bltBlock id=\"9\">
+// <involvedEquation equationId=\"8\" />
+// </bltBlock>
+// <bltBlock id=\"10\">
+// <involvedEquation equationId=\"14\" />
+// </bltBlock>
+// <bltBlock id=\"11\">
+// <involvedEquation equationId=\"15\" />
+// </bltBlock>
+// <bltBlock id=\"12\">
+// <involvedEquation equationId=\"16\" />
+// </bltBlock>
+// <bltBlock id=\"13\">
+// <involvedEquation equationId=\"17\" />
+// </bltBlock>
+// <bltBlock id=\"14\">
+// <involvedEquation equationId=\"9\" />
+// </bltBlock>
+// <bltBlock id=\"15\">
+// <involvedEquation equationId=\"2\" />
+// </bltBlock>
+// <bltBlock id=\"16\">
+// <involvedEquation equationId=\"11\" />
+// </bltBlock>
+// <bltBlock id=\"17\">
+// <involvedEquation equationId=\"12\" />
+// </bltBlock>
+// </bltRepresentation>
+// </bltRepresentation>
+// </solvingInfo>
+// </additionalInfo>
+// </dae>"
+// endResult

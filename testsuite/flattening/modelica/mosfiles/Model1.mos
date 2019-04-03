@@ -1,0 +1,24 @@
+//name:        Model1.mos Test for BUG 1238
+//keyword:     handling modifications
+//status:      correct
+//
+// instantiate/check model example
+// Many of these models use parameters with unknown dimensions, so it's not
+// possible to instantiate them.
+//
+
+
+loadModel(Modelica,{"3.1"});
+loadFile("Model1.mo"); getErrorString();
+checkModel(Model1); getErrorString();
+
+
+// Result:
+// true
+// true
+// ""
+// "Check of Model1 completed successfully.
+// Class Model1 has 2278 equation(s) and 2278 variable(s).
+// 1310 of these are trivial equation(s)."
+// ""
+// endResult

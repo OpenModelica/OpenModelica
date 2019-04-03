@@ -1,0 +1,44 @@
+// status: correct
+
+echo(false);
+s1 := "model M1
+  annotation(Icon(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}),
+      Line(points={{0,90},{0,50}}, color={0,0,255})}),
+  Diagram(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255})}));
+end M1;";
+loadString(s1, "M1.mo");
+getErrorString();
+addClassAnnotation(M1, annotate=Diagram(coordinateSystem=CoordinateSystem(extent={{-100, -100}, {100, 100}}, preserveAspectRatio=false, initialScale=0.1, grid={2, 2}), graphics={Line(points={{-60,50},{60,50}},color={0,0,255}),Rectangle(origin={-30,-43},extent={{-74,49},{74,-49}})}));
+getErrorString();
+answer := "model M1
+  annotation(Icon(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}),
+      Line(points={{0,90},{0,50}}, color={0,0,255})}),
+  Diagram(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}, initialScale = 0.1, grid = {2, 2}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}), Rectangle(origin = {-30, -43}, extent = {{-74, 49}, {74, -49}})}));
+end M1;";
+s2 := listFile(M1);
+if answer<>diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain) then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nAdded rectangle+listFile:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print("\nXML Diff:\n\n" + diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.xml) + "\n");
+  print(getErrorString());
+  exit(1);
+end if;
+print("OK\n");
+
+// Result:
+// OK
+// endResult

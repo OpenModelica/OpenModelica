@@ -1,0 +1,63 @@
+// name: homotopy1
+// keywords: initialization, homotopy
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy1* _initializationTests.homotopy1* output.log
+//
+//  case for homotopy
+//
+
+loadString("
+within ;
+package initializationTests
+  model homotopy1
+    Real x; // 3
+    Real y; // -3
+
+  equation
+    homotopy(x^2 - 9, x-9) = 0;
+    homotopy(y^2 - 9, -y-9) = 0;     // works (continuously differentiable homotopy path)
+    // homotopy(-y^2 + 9, y+9) = 0;  // works (continuously differentiable homotopy path)
+    // homotopy(y^2 - 9, y+9) = 0;      // does not work (homotopy path is not continuously differentiable)
+  end homotopy1;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=equidistantLocal"); getErrorString();
+simulate(initializationTests.homotopy1, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy1_res.mat", {time, x, y}, 2); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=equidistantGlobal"); getErrorString();
+simulate(initializationTests.homotopy1, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy1_res.mat", {time, x, y}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 8 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{3.0,3.0},{-3.0,-3.0}}
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{3.0,3.0},{-3.0,-3.0}}
+// ""
+// endResult

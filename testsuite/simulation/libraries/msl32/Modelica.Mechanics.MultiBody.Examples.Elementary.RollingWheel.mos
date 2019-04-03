@@ -1,0 +1,46 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel);
+compareVars :=
+{
+   "wheel1.x",
+   "wheel1.y",
+   "wheel1.angles[1]",
+   "wheel1.angles[2]",
+   "wheel1.angles[3]",
+   "wheel1.der_angles[1]",
+   "wheel1.der_angles[2]",
+   "wheel1.der_angles[3]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel
+// {"wheel1.x","wheel1.y","wheel1.angles[1]","wheel1.angles[2]","wheel1.angles[3]","wheel1.der_angles[1]","wheel1.der_angles[2]","wheel1.der_angles[3]"}
+// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel', options = '', outputFormat = 'mat', variableFilter = 'time|wheel1.x|wheel1.y|wheel1.angles.1.|wheel1.angles.2.|wheel1.angles.3.|wheel1.der_angles.1.|wheel1.der_angles.2.|wheel1.der_angles.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// [Modelica 3.2.1/Mechanics/MultiBody/Parts.mo:2674:5-2678:74:writable] Warning: Variable $DER.wheel1.der_angles[2] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [Modelica 3.2.1/Mechanics/MultiBody/Parts.mo:2674:5-2678:74:writable] Warning: Variable $DER.wheel1.der_angles[1] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,38 @@
+// name: FinalTests
+// keywords: final override
+// status: correct
+//
+//
+//
+loadFile("FinalTests.mo");
+instantiateModel(test1);
+getErrorString();
+instantiateModel(test2);
+getErrorString();
+instantiateModel(test3);
+getErrorString();
+instantiateModel(test4);
+getErrorString();
+// Result:
+// true
+// ""
+// "[flattening/modelica/mosfiles/FinalTests.mo:3:3-3:49:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:9:38-9:55:writable] Error: Trying to override final element p_finalPrefix5 with modifier ' = 10'.
+// Error: Error occurred while flattening model test1
+// "
+// ""
+// "[flattening/modelica/mosfiles/FinalTests.mo:25:51-25:62:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:27:12-27:22:writable] Error: Trying to override final element unit with modifier ' = "deg"'.
+// Error: Error occurred while flattening model test2
+// "
+// ""
+// "[flattening/modelica/mosfiles/FinalTests.mo:39:27-39:36:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:44:7-44:16:writable] Error: Trying to override final element b with modifier ' = {33}'.
+// Error: Error occurred while flattening model test3
+// "
+// ""
+// "[flattening/modelica/mosfiles/FinalTests.mo:48:31-48:39:writable] Notification: From here:
+// [flattening/modelica/mosfiles/FinalTests.mo:49:26-49:35:writable] Error: Trying to override final element unit with modifier ' = "mm"'.
+// Error: Error occurred while flattening model test4
+// "
+// endResult

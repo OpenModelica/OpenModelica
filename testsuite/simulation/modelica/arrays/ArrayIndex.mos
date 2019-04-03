@@ -1,0 +1,38 @@
+// name:     ArrayIndex
+// keywords: <insert keywords here>
+// status:   correct
+// 
+//  MORE WORK HAS TO BE DONE ON THIS FILE!
+// Drmodelica: 7.4 Array Indexing operator (p. 216) 
+// 
+loadModel(Modelica);
+loadFile("ArrayIndex.mo");
+simulate(ArrayIndex,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+x:=val(fixed1.flange_b.f,0.6);
+y:=val(mass1.a,1.0);
+z:=val(spring1.s_rel,0.6);
+x:=10.0*x;
+y:=10.0*y;
+z:=10.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+
+echo(true); // turns on output
+x:=x/10.0; // rounded value to 1 digits
+y:=y/10.0;
+z:=z/10.0;
+system("rm -rf ArrayIndex_* ArrayIndex.exe ArrayIndex.cpp ArrayIndex.makefile ArrayIndex.libs ArrayIndex.log output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArrayIndex_res.mat"
+// end SimulationResult;
+// true
+// {1.0,1.654,2.169,2.62,3.032,3.418}
+// {2.0,2.0,2.0,2.0,2.0,2.0}
+// {3.0,2.545,2.23,1.979,1.767,1.581}
+// ""
+// 0
+// endResult

@@ -1,0 +1,37 @@
+// name:     Modelica.Electrical.Analog.Examples.ChuaCircuit
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.ChuaCircuit);
+compareVars :=
+{
+   "L.i",
+   "C1.v",
+   "C2.v"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// Modelica.Electrical.Analog.Examples.ChuaCircuit
+// {"L.i","C1.v","C2.v"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 50000.0, numberOfIntervals = 50000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ChuaCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.ChuaCircuit_res.mat
+// "true
+// "
+// ""
+// endResult

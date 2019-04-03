@@ -1,0 +1,73 @@
+// name: problem4-symEuler
+// status: correct
+// teardown_command: rm -f testSolver.problem3* output.log
+
+loadFile("./testSolverPackage.mo");
+getErrorString();
+
+simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=1,
+ method="rungekuttaSsc", tolerance = 1e-12
+ ,simflags="-initialStepSize=1e-4 -maxStepSize=1e-2"
+);
+getErrorString();
+
+val(x,{0,0.1,0.8,1});
+val(x1,{0, 0.5, 1});
+val(x2,{0,0.1,0.5, 1});
+val(x3,{0,0.1,0.5, 1});
+val(x4,{0,0.1,0.5, 1});
+val(x5,{0,0.1,0.5, 1});
+val(x6,{0,0.1,0.5, 1});
+val(x7,{0,0.1,0.5, 1});
+
+simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=500, method="dassl"
+ //,simflags="-lv LOG_STATS"
+);
+getErrorString();
+
+val(x,{0,0.1,0.8,1});
+val(x1,{0, 0.5, 1});
+val(x2,{0,0.1,0.5, 1});
+val(x3,{0,0.1,0.5, 1});
+val(x4,{0,0.1,0.5, 1});
+val(x5,{0,0.1,0.5, 1});
+val(x6,{0,0.1,0.5, 1});
+val(x7,{0,0.1,0.5, 1});
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-12, method = 'rungekuttaSsc', fileNamePrefix = 'testSolver.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-initialStepSize=1e-4 -maxStepSize=1e-2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.5,4.999999999999987,5.999999999999983}
+// {1.0,1.250000989999999,2.000000989999998}
+// {1.0,0.9048378673984783,0.6065309609326789,0.3678796238731685}
+// {1.0,1.105171463351061,1.648722084146221,2.718283169585888}
+// {1.0,1.099999999996531,1.499999999982616,1.999999999965169}
+// {1.0,1.009409855609601,0.8952714137494728,0.5629001250995108}
+// {1.0,1.045695075758637,1.250174609145095,1.619064305841039}
+// {1.0,4.07862874004546,1351.485305317174,3928860.780205216}
+// record SimulationResult
+//     resultFile = "testSolver.problem4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testSolver.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.5,5.000000000000003,6.000000000000011}
+// {1.0,1.250000000000958,2.00000000000096}
+// {1.0,0.9048374179781068,0.6065306596751672,0.3678794411494749}
+// {1.0,1.105170918422464,1.6487212712236,2.718281829327525}
+// {1.0,1.100000000020272,1.500000000121604,2.00000000025058}
+// {1.0,1.009410552089862,0.895272114166242,0.5628980360574168}
+// {1.0,1.045695026492631,1.250174332936091,1.619064249762689}
+// {1.0,4.078287757545476,1351.389786227009,3928623.070843442}
+// endResult

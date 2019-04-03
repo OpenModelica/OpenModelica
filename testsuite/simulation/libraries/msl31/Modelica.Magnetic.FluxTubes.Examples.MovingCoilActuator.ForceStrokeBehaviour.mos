@@ -1,0 +1,24 @@
+// name:     Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour,startTime=-4.0,stopTime=4.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour.mat","Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_diff.csv",0.01,0.00001,
+  {"feedX.flange_b.f","comparisonWithFEA.y[1]","comparisonWithFEA.y[2]","actuator.g_ma.G_m","actuator.g_mb.G_m","actuator.L","comparisonWithFEA.y[3]"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour_res.mat",
+//     simulationOptions = "startTime = -4.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

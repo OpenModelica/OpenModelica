@@ -1,0 +1,50 @@
+// name: inverseTest
+// keywords: nonlinear system solver inverse
+// status: correct
+// cflags:
+//
+// ticket:4253
+
+loadString("
+function x_to_y
+  input Real x;
+  output Real y;
+  // annotation(Inline = false, inverse(x = y_to_x(y)));
+algorithm
+  y := x ^ 2;
+  y := sign(x) * y;
+end x_to_y;
+
+function y_to_x
+  input Real y;
+  output Real x;
+algorithm
+  x := sqrt(abs(y));
+  x := sign(y) * x;
+end y_to_x;
+
+model inverseTest
+  parameter Real y = -5;
+  Real x;
+equation
+  y = x_to_y(x);
+end inverseTest;
+"); getErrorString();
+
+simulate(inverseTest, stopTime=0.0, simflags="-output x"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "inverseTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'inverseTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output x'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,x=-2.2360679774997898051
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,14 @@
+module Main:
+with "Parse.rml"
+with "Pam.rml"
+end
+
+relation main: () => ()  =
+
+  rule  Parse.parse() => program &
+        Pam.eval_stmt([], program) => _
+        --------------------
+        main
+
+end (* main *)
+

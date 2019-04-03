@@ -1,0 +1,53 @@
+// name: 08_Test3PhaseSystemsInitParam
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Test3PhaseSystemsInitParam1.mo"); getErrorString();
+loadFile("Test3PhaseSystemsInitParam2.mo"); getErrorString();
+
+simulate(Test3PhaseSystemsInitParam1, stopTime=10); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsInitParam1_res.mat",
+  "ReferenceFiles/Test3PhaseSystemsInitParam1.mat",
+  "Test3PhaseSystemsInitParam1_diff.csv", 0.01, 0.0001,
+  {"shift", "i_abc[1]", "i_abc[2]", "i_abc[3]"}); getErrorString();
+  
+simulate(Test3PhaseSystemsInitParam2, stopTime=10); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsInitParam2_res.mat",
+  "ReferenceFiles/Test3PhaseSystemsInitParam2.mat",
+  "Test3PhaseSystemsInitParam2_diff.csv", 0.01, 0.0001,
+  {"shift", "i_abc[1]", "i_abc[2]", "i_abc[3]"}); getErrorString();
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Test3PhaseSystemsInitParam1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsInitParam1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "Test3PhaseSystemsInitParam2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsInitParam2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

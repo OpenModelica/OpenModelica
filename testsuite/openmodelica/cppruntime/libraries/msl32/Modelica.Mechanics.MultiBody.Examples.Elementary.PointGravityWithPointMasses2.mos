@@ -1,0 +1,32 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2);
+compareVars := {"referenceSystem.pointMass1.frame_a.r_0[1]","referenceSystem.pointMass1.frame_a.r_0[2]","referenceSystem.pointMass1.frame_a.r_0[3]","referenceSystem.pointMass1.v_0[1]","referenceSystem.pointMass1.v_0[2]","referenceSystem.pointMass1.v_0[3]","referenceSystem.pointMass6.w_a[1]","referenceSystem.pointMass6.w_a[2]","referenceSystem.pointMass6.w_a[3]","freeMotion.r_rel_a[1]","freeMotion.r_rel_a[2]","freeMotion.r_rel_a[3]","freeMotion.v_rel_a[1]","freeMotion.v_rel_a[2]","freeMotion.v_rel_a[3]","freeMotion.w_rel_b[1]","freeMotion.w_rel_b[2]","freeMotion.w_rel_b[3]"};
+runScript(modelTesting);
+getErrorString();
+
+
+// Result:
+// true
+// true
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2.mat"
+// 0.0
+// 0.01
+// 0.0001
+// "mat"
+// {"referenceSystem.pointMass1.frame_a.r_0[1]","referenceSystem.pointMass1.frame_a.r_0[2]","referenceSystem.pointMass1.frame_a.r_0[3]","referenceSystem.pointMass1.v_0[1]","referenceSystem.pointMass1.v_0[2]","referenceSystem.pointMass1.v_0[3]","referenceSystem.pointMass6.w_a[1]","referenceSystem.pointMass6.w_a[2]","referenceSystem.pointMass6.w_a[3]","freeMotion.r_rel_a[1]","freeMotion.r_rel_a[2]","freeMotion.r_rel_a[3]","freeMotion.v_rel_a[1]","freeMotion.v_rel_a[2]","freeMotion.v_rel_a[3]","freeMotion.w_rel_b[1]","freeMotion.w_rel_b[2]","freeMotion.w_rel_b[3]"}
+// Compilation succeeded
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// endResult

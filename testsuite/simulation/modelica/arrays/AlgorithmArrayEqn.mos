@@ -1,0 +1,34 @@
+// name:     AlgorithmArrayEqn
+// keywords: array slice
+// status: correct
+// teardown_command: rm -rf AlgorithmArrayEqn_*  AlgorithmArrayEqn AlgorithmArrayEqn.exe AlgorithmArrayEqn.cpp AlgorithmArrayEqn.makefile AlgorithmArrayEqn.libs AlgorithmArrayEqn.log output.log
+// 
+// Tests assignment of one slice to another slice.
+// 
+
+loadFile("AlgorithmArrayEqn.mo");
+simulate(AlgorithmArrayEqn,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("AlgorithmArrayEqn_res.mat");
+res := readSimulationResult("AlgorithmArrayEqn_res.mat", {p2[1,1], p2[1,2], p2[2,1], p2[2,2]}, size);
+echo(true); // turns on output
+res[1,1];
+res[2,1];
+res[3,1];
+res[4,1];
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "AlgorithmArrayEqn_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'AlgorithmArrayEqn', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 3.0
+// 2.0
+// 4.0
+// endResult

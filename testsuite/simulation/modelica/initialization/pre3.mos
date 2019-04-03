@@ -1,0 +1,53 @@
+// name: pre3.mos
+// keywords: initialization, discrete, pre
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.test_1195c* _initializationTests.test_1195c* output.log
+//
+//  case for pre variables during initialization
+//
+
+loadString("
+within ;
+package initializationTests
+  model test_1195c
+    parameter Real a = 1.0;
+    Real x;           // x = 2
+    discrete Real xd; // xd = 2
+    Real x1;          // x1 = pre(x) = 2
+    Real x2;          // x2 = pre(dx) = -6
+  initial equation
+    x = 2;
+    xd = 2;
+  equation
+    der(x) = a*x;
+    when {initial(), sample(0,1)} then
+      xd = pre(xd) + 4*pre(x);
+    end when;
+  equation
+    der(x1) = 0;
+    der(x2) = 0;
+  initial equation
+    x1 = pre(x);
+    x2 = pre(xd);
+  end test_1195c;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.test_1195c, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.test_1195c_res.mat", {time, x, x1, xd, x2}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.test_1195c_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.test_1195c', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{2.0,2.0},{2.0,2.0},{2.0,2.0},{-6.0,-6.0}}
+// ""
+// endResult

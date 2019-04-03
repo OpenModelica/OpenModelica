@@ -1,0 +1,98 @@
+// name: testFinalCon_5
+// status: correct
+
+setCommandLineOptions("+gDynopt");
+getErrorString();
+
+loadString("
+model testFinalCon5
+  Real x1;
+  Real x2;
+  Real y1;
+  Real y2;
+  Real y3(start = -1);
+  input Real u;
+
+  Real final_con1(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real final_con2(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real cost annotation(isLagrange = true);
+
+equation
+  der(x1) = x2*u - x1;
+  der(x2) = x1 + y1;
+  final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
+  final_con2 = x2 - 3;
+   0 = 3*y1 + y2 - exp(1 + u);
+   0 = y1 - 5*y2 - exp(1 + time);
+   y3^2 = 1 + time;
+  cost = u^2;
+end testFinalCon5;
+
+model testFinalCon5_
+  extends testFinalCon5;
+end testFinalCon5_;
+
+");
+getErrorString();
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=0");
+getErrorString();
+echo(false);
+res:=optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1");
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "No optimal solution found") then
+  print("No optimal solution found");
+else
+  print("Optimal solution found? Weird...\n");
+  exit(1);
+end if;
+getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001); // Files not equal!!! Testing other convergence with solveLinearSystem
+getErrorString();
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=20"); getErrorString();
+echo(false);
+res := optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1 -iif ReferenceFiles/testFinalCon5_ref.mat -iim none -ipopt_init const");
+messages:=res.messages;
+echo(false);
+res.resultFile;
+if regexBool(messages, "EXIT: Optimal Solution Found.") then
+  if regexBool(messages, "Number of Iterations....: 91") then
+    print("Number of Iterations....: 91\nEXIT: Optimal Solution Found.\n");
+  else
+    print("Number of Iterations changed.\tUpdate test\n");
+    exit(1);
+  end if;
+else
+  print("No optimal solution found");
+  exit(1);
+end if;
+getErrorString();
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// "testFinalCon5__res.mat"
+// No optimal solution found
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files not Equal!","y2","y1","x2","x1","u","final_con2","final_con1","der(x2)","der(x1)","cost"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Files not Equal
+// "
+// true
+// ""
+// Number of Iterations....: 91
+// EXIT: Optimal Solution Found.
+// endResult

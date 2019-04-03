@@ -1,0 +1,36 @@
+// name:     MoonAndEarth
+// keywords: <insert keywords here>
+// status:   correct
+// teardown_command: rm -rf MoonAndEarth_* MoonAndEarth.exe MoonAndEarth.cpp MoonAndEarth.makefile MoonAndEarth.libs MoonAndEarth.log output.log
+//
+//
+loadFile("MoonAndEarth.mo");
+simulate(MoonAndEarth,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+//size:=readSimulationResultSize("MoonAndEarth_res.mat");
+//res:=readSimulationResult("MoonAndEarth_res.mat",{apollo.mass,apollo.altitude,apollo.acceleration},size); 
+x:=val(apollo.mass,0.5);
+y:=val(apollo.altitude,0.75);
+z:=val(apollo.acceleration,0.25);
+x:=1.0*x;
+y:=1.0*y;
+z:=1.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+echo(true); // turns on output
+x:=x/1.0; // rounded value to 1 digits
+y:=y/1.0;
+z:=z/1.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "MoonAndEarth_res.mat"
+// end SimulationResult;
+// true
+// 1033.0
+// 57911.0
+// 33.0
+// ""
+// 0
+// endResult

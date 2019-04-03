@@ -1,0 +1,44 @@
+// name:     Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
+// teardown_command: rm -f Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+// Fix by Adrian for missing inner component
+addComponent(stateGraphRoot, StateGraph.StateGraphRoot, Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks); getErrorString();
+setComponentProperties(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, {false,false,false,false,false},{""},{true,false},{""}); getErrorString();
+setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, "added to make the model complete"); getErrorString();
+
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
+compareVars :=
+{
+  "tank1.level", 
+  "tank1.medium.T", 
+  "tank2.level", 
+  "tank2.medium.T"
+};
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// ""
+// Ok
+// ""
+// Ok
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
+// {"tank1.level","tank1.medium.T","tank2.level","tank2.medium.T"}
+// endResult

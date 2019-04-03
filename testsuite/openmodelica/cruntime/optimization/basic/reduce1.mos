@@ -1,0 +1,137 @@
+// name: reduce1
+// status: correct
+
+setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model  reduceEx1
+  input Real u(min=-3,max=3);
+  Real y(start = 1);
+  Real x1;
+  Real x2;
+  Real x3;
+  Real x4;
+  Real cost annotation(isLagrange = true);
+equation
+  der(y) = y*u ;
+  cost = (y + (sin(time +1)))^2;
+
+  der(x1) = x2;
+  der(x2) = x3;
+  der(x3) = x4;
+  der(x4) = x1 + x2*u;
+end reduceEx1;
+");
+getErrorString();
+
+optimize(reduceEx1, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("reduceEx1_res.mat","ReferenceFiles/reduceEx1_ref.mat","reduceEx1_diff.csv",0.01,0.0001,{"y","der(y)","u"});
+getErrorString();
+
+setCommandLineOptions("+gDynOpt +d=reduceDynOpt");
+getErrorString();
+
+optimize(reduceEx1, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("reduceEx1_res.mat","ReferenceFiles/reduceEx1_ref.mat","reduceEx1_diff.csv",0.01,0.0001,{"y","der(y)","u"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "reduceEx1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'reduceEx1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:x3(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[3]:x4(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[4]:y(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// Input[5]:u(start = 0, nominal = 3, min = -3, max = 3)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 1.66533e-16 for the approximation of the state y(time = 0.00310102)
+// LOG_IPOPT_ERROR   | info    | max error is 4.64394e-05 for the approximation of the state y(time = 0.412899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00183911 for the approximation of the state y(time = 0.332899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00189787 for the approximation of the state y(time = 0.472899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00124182 for the approximation of the state y(time = 0.34)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00052515 for the approximation of the state y(time = 0.66)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000130639 for the approximation of the state y(time = 0.972899)
+// LOG_IPOPT_ERROR   | info    | max error is 4.18708e-05 for the approximation of the state y(time = 0.992899)
+// LOG_IPOPT_ERROR   | info    | max error is 1.73594e-06 for the approximation of the state y(time = 0.98)
+// LOG_IPOPT_ERROR   | info    | max error is 1.09311e-08 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 3.68416e-06 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 7.03983e-07 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 6.96787e-08 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 9.86034e-10 for the approximation of the state y(time = 1)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "reduceEx1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'reduceEx1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:y(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// Input[1]:u(start = 0, nominal = 3, min = -3, max = 3)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 1.66533e-16 for the approximation of the state y(time = 0.00310102)
+// LOG_IPOPT_ERROR   | info    | max error is 4.64394e-05 for the approximation of the state y(time = 0.412899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00183911 for the approximation of the state y(time = 0.332899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00189787 for the approximation of the state y(time = 0.472899)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00123963 for the approximation of the state y(time = 0.34)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000515132 for the approximation of the state y(time = 0.64)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000134445 for the approximation of the state y(time = 0.972899)
+// LOG_IPOPT_ERROR   | info    | max error is 4.283e-05 for the approximation of the state y(time = 0.992899)
+// LOG_IPOPT_ERROR   | info    | max error is 2.66096e-06 for the approximation of the state y(time = 0.98)
+// LOG_IPOPT_ERROR   | info    | max error is 1.00932e-08 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 3.72096e-06 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 7.13136e-07 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 7.11342e-08 for the approximation of the state y(time = 1)
+// LOG_IPOPT_ERROR   | info    | max error is 1.02648e-09 for the approximation of the state y(time = 1)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Deprecated debug flag -d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

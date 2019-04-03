@@ -1,0 +1,44 @@
+// name:     FlatTank
+// keywords: <insert keywords here>
+// status: correct
+// teardown_command: rm -rf FlatTank_* FlatTank FlatTank.exe FlatTank.cpp FlatTank.makefile FlatTank.libs FlatTank.log output.log
+// 
+// Drmodelica: 12.1 Traditional Methodology (p. 385)
+//
+loadFile("FlatTank.mo");
+simulate(FlatTank,stopTime=150, tolerance=1e-4, numberOfIntervals=150); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+x:=val(h,25.0);
+y:=val(h,100.0);
+z:=val(h,120.0);
+w:=val(h,150.0);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+w:=1000*w;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+w:=floor(w);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+w/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "FlatTank_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 150.0, numberOfIntervals = 150, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'FlatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.439
+// 0.255
+// 0.25
+// 0.249
+// endResult

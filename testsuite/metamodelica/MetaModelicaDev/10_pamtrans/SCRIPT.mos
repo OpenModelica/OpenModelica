@@ -1,0 +1,77 @@
+// name:     10  Pam Translator to Machine Code
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Absyn.mo");
+loadFile("Emit.mo");
+loadFile("Main.mo");
+loadFile("Mcode.mo");
+loadFile("Parse.mo");
+loadFile("Trans.mo");
+// Template dependencies
+loadFile("Config.mo");
+loadFile("Debug.mo");
+loadFile("Error.mo");
+loadFile("ErrorExt.mo");
+loadFile("Print.mo");
+loadFile("Flags.mo");
+loadFile("Global.mo");
+loadFile("System.mo");
+loadFile("Tpl.mo");
+loadFile("Util.mo");
+loadFile("List.mo");
+getErrorString();
+
+Main.main();
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// ""
+// [Parse. Enter a program, then press CTRL+z (Windows) or CTRL+d (Linux).]
+//  GET x
+//  GET y
+// L2 LAB
+//  LOAD  x
+//  SUB 99
+//  JZ  L3
+//  LOAD  x
+//  ADD 1
+//  STO T0
+//  LOAD  y
+//  DIV 3
+//  STO T1
+//  LOAD  T0
+//  SUB T1
+//  STO ans
+//  PUT ans
+//  GET x
+//  GET y
+//  J L2
+// L3 LAB
+//  HALT
+//
+// ""
+// endResult

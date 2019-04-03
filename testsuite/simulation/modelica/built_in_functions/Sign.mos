@@ -1,0 +1,32 @@
+// name:     Sign
+// keywords: built-in sign function
+// status: correct
+// teardown_command: rm -rf Sign_* Sign Sign.exe Sign.cpp Sign.makefile Sign.libs Sign.log output.log
+//
+loadFile("Sign.mo");
+instantiateModel(Sign);
+simulate(Sign); 
+
+val(r1, 1.0);
+val(r2, 1.0);
+
+// Result:
+// true
+// "class Sign
+//   Real r1;
+//   Real r2;
+// equation
+//   r1 = /*Real*/(sign(time));
+//   r2 = /*Real*/(sign(-time));
+// end Sign;
+// "
+// record SimulationResult
+//     resultFile = "Sign_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Sign', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// -1.0
+// endResult

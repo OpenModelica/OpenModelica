@@ -1,0 +1,43 @@
+// name:     AssertTest3
+// keywords: assert
+// status: correct
+// teardown_command: rm -rf Assert3* output.log
+// 
+//
+
+loadString("
+model Assert3
+  Real r;
+algorithm
+  r := 3.0;
+  assert(abs(r-3.0) < 1e-10, \"msg1\");
+  r := 5.0;
+  assert(abs(r-5.0) < 1e-10, \"msg2\");
+  r := 7.0;
+  assert(abs(r-7.0) < 1e-10, \"msg3\");
+end Assert3; 
+");
+simulate(Assert3); getErrorString();
+
+simulate(Assert3, startTime=0.0, stopTime=5.0, numberOfIntervals=4, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString();
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Assert3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Assert3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "Assert3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 4, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Assert3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

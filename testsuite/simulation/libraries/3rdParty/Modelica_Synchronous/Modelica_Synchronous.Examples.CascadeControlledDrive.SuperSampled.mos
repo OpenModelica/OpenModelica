@@ -1,0 +1,32 @@
+// name: Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled
+// keywords: simulation Modelica_Synchronous examples
+// status: correct
+//
+// Simulation Results
+// Modelica_Synchronous
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+echo(false);
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled);
+relTol := 0.02; // Tolerance for the simulation comparison
+compareVars :=
+{"gain.y","PI.y","speed.w","angle.phi"};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled', options = '', outputFormat = 'mat', variableFilter = 'time|gain.y|PI.y|speed.w|angle.phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_Synchronous.Examples.CascadeControlledDrive.SuperSampled_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

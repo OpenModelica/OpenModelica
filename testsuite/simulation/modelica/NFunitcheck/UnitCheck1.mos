@@ -1,0 +1,115 @@
+// name: UnitCheck1
+// keywords: initialization
+// status: correct
+
+
+loadString("
+package unitCheckTests
+  model UnitCheck1
+  function f
+    input Real V(unit = \"m/s\");
+    output Boolean b = V>=10;
+   end f;
+ function f1
+    input Real V(unit = \"m/s\");
+    output Real O(unit = \"m\"); 
+ end f1;
+    Real S(unit = \"m\")=if time>0.5 then V else X2;
+    Real V(unit = \"m/s\");
+    Real A(unit = \"m/s2\");
+    Real C(unit = \"m/s\")=7;
+    constant Real X(unit=\"m\")=8;
+    Real X2(unit=\"m\")=8;
+    Real D;
+    Real E=3 if f(X);
+    Real F;
+    Real F1;
+    Real G;
+    Real H(unit=\"m\"), I(unit=\"m/s\");
+  equation
+    F1=f1(V); 
+    F=I;
+    G=C; 
+    H=G; 
+    D=if f(X) then 3 else 4;
+    V=S+C;
+    der(V)=A;
+    end UnitCheck1;
+ end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); 
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {S,{1.0 * m^(1)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-2)}}
+// {C,{1.0 * m^(1) * s^(-1)}}
+// {X,{1.0 * m^(1)}}
+// {X2,{1.0 * m^(1)}}
+// {D,{MASTER(D)}}
+// {F,{1.0 * m^(1) * s^(-1)}}
+// {F1,{1.0 * m^(1)}}
+// {G,{1.0 * m^(1) * s^(-1)}}
+// {H,{1.0 * m^(1)}}
+// {I,{1.0 * m^(1) * s^(-1)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "function unitCheckTests.UnitCheck1.f
+//   input Real V(unit = \"m/s\");
+//   output Boolean b = V >= 10.0;
+// end unitCheckTests.UnitCheck1.f;
+//
+// function unitCheckTests.UnitCheck1.f1
+//   input Real V(unit = \"m/s\");
+//   output Real O(unit = \"m\");
+// end unitCheckTests.UnitCheck1.f1;
+//
+// class unitCheckTests.UnitCheck1
+//   Real S(unit = \"m\") = if time > 0.5 then V else X2;
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s2\");
+//   Real C(unit = \"m/s\") = 7.0;
+//   constant Real X(unit = \"m\") = 8.0;
+//   Real X2(unit = \"m\") = 8.0;
+//   Real D;
+//   Real F(unit = \"m/s\");
+//   Real F1(unit = \"m\");
+//   Real G(unit = \"m/s\");
+//   Real H(unit = \"m\");
+//   Real I(unit = \"m/s\");
+// equation
+//   F1 = unitCheckTests.UnitCheck1.f1(V);
+//   F = I;
+//   G = C;
+//   H = G;
+//   D = 4.0;
+//   V = S + C;
+//   der(V) = A;
+// end unitCheckTests.UnitCheck1;
+// "
+// "[<interactive>:12:5-12:50:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  S = if time > 0.5 then V else X2;
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "V" has unit "m/s"
+// - sub-expression "X2" has unit "m"
+// [<interactive>:28:5-28:8:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  H = G;
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "G" has unit "m/s"
+// - sub-expression "H" has unit "m"
+// [<interactive>:30:5-30:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  V = S + C;
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "S" has unit "m"
+// - sub-expression "C" has unit "m/s"
+// Notification: "F" has the Unit "m/s"
+// "F1" has the Unit "m"
+// "G" has the Unit "m/s"
+// "
+// endResult

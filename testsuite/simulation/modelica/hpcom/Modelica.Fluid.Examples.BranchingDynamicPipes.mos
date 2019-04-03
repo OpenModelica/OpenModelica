@@ -1,0 +1,128 @@
+// name:     Modelica.Fluid.Examples.BranchingDynamicPipes
+// keywords: simulation MSL Examples
+// status: correct
+// depends: Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof.json
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+alarm(800);
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=4 +hpcomScheduler=list +hpcomCode=openmp"); getErrorString();
+simulate(Modelica.Fluid.Examples.BranchingDynamicPipes, stopTime=1.0); getErrorString();
+
+//res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Fluid.Examples.BranchingDynamicPipesODE.graphml","ReferenceGraphs/Fluid.BranchingDynamicPipes_TaskGraphODE.graphml");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.BranchingDynamicPipes.mat",
+  "Modelica.Fluid.Examples.BranchingDynamicPipes_diff.csv",0.13,0.0005,
+  {   "pipe1.mediums[1].p",
+   "pipe1.mediums[1].Xi[1]",
+   "pipe1.mediums[1].T",
+   "pipe1.mediums[2].p",
+   "pipe1.mediums[2].Xi[1]",
+   "pipe1.mediums[2].T",
+   "pipe1.mediums[3].p",
+   "pipe1.mediums[3].Xi[1]",
+   "pipe1.mediums[3].T",
+   "pipe1.mediums[4].p",
+   "pipe1.mediums[4].Xi[1]",
+   "pipe1.mediums[4].T",
+   "pipe1.mediums[5].p",
+   "pipe1.mediums[5].Xi[1]",
+   "pipe1.mediums[5].T",
+   "pipe1.flowModel.m_flows[1]",
+   "pipe1.flowModel.m_flows[2]",
+   "pipe1.flowModel.m_flows[3]",
+   "pipe1.flowModel.m_flows[4]",
+   "pipe1.flowModel.m_flows[5]",
+   "pipe2.mediums[1].p",
+   "pipe2.mediums[1].Xi[1]",
+   "pipe2.mediums[1].T",
+   "pipe2.mediums[2].p",
+   "pipe2.mediums[2].Xi[1]",
+   "pipe2.mediums[2].T",
+   "pipe2.mediums[3].p",
+   "pipe2.mediums[3].Xi[1]",
+   "pipe2.mediums[3].T",
+   "pipe2.mediums[4].p",
+   "pipe2.mediums[4].Xi[1]",
+   "pipe2.mediums[4].T",
+   "pipe2.mediums[5].Xi[1]",
+   "pipe2.mediums[5].T",
+   "pipe2.flowModel.m_flows[1]",
+   "pipe2.flowModel.m_flows[2]",
+   "pipe2.flowModel.m_flows[3]",
+   "pipe2.flowModel.m_flows[4]",
+   "pipe3.mediums[1].p",
+   "pipe3.mediums[1].Xi[1]",
+   "pipe3.mediums[1].T",
+   "pipe3.mediums[2].p",
+   "pipe3.mediums[2].Xi[1]",
+   "pipe3.mediums[2].T",
+   "pipe3.mediums[3].p",
+   "pipe3.mediums[3].Xi[1]",
+   "pipe3.mediums[3].T",
+   "pipe3.mediums[4].p",
+   "pipe3.mediums[4].Xi[1]",
+   "pipe3.mediums[4].T",
+   "pipe3.mediums[5].Xi[1]",
+   "pipe3.mediums[5].T",
+   "pipe3.flowModel.m_flows[1]",
+   "pipe3.flowModel.m_flows[2]",
+   "pipe3.flowModel.m_flows[3]",
+   "pipe3.flowModel.m_flows[4]",
+   "pipe3.flowModel.m_flows[5]",
+   "pipe4.mediums[1].p",
+   "pipe4.mediums[1].Xi[1]",
+   "pipe4.mediums[1].T",
+   "pipe4.mediums[2].p",
+   "pipe4.mediums[2].Xi[1]",
+   "pipe4.mediums[2].T",
+   "pipe4.mediums[3].p",
+   "pipe4.mediums[3].Xi[1]",
+   "pipe4.mediums[3].T",
+   "pipe4.mediums[4].p",
+   "pipe4.mediums[4].Xi[1]",
+   "pipe4.mediums[4].T",
+   "pipe4.mediums[5].p",
+   "pipe4.mediums[5].Xi[1]",
+   "pipe4.mediums[5].T",
+   "pipe4.flowModel.m_flows[1]",
+   "pipe4.flowModel.m_flows[2]",
+   "pipe4.flowModel.m_flows[3]",
+   "pipe4.flowModel.m_flows[4]",
+   "pipe4.flowModel.m_flows[5]"});
+
+// Result:
+// 900
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Fluid.Examples.BranchingDynamicPipes_eqs_prof-file is missing.
+// Using list Scheduler for the DAE system
+// Using list Scheduler for the ODE system
+// Using list Scheduler for the ZeroFunc system
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.BranchingDynamicPipes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,29 @@
+// name:     StringTest 
+// keywords: String, assert 
+// status: correct
+// teardown_command: rm -rf STest1.cpp STest1 STest1.exe STest1.libs STest1.log STest1_functions.cpp STest1.makefile STest1_init.xml STest1_res.mat STest1_functions.h STest1_records.c
+// 
+//  Using String() functions to create strings in assert.
+//
+
+loadFile("StringTest.mo");
+simulate(STest1, tolerance=1e-5, numberOfIntervals=100);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'STest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: STest1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.110000
+// |                 | |       | x < 0.1
+// assert            | error   | x reached 0.11 at time 0.11 b =true i =     66
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// assert            | warning | The following assertion has been violated at time 0.105000
+// |                 | |       | x < 0.1
+// assert            | error   | x reached 0.1 at time 0.105 b =true i =     66
+// stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.105
+// "
+// end SimulationResult;
+// endResult

@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.Test.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Test
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Test.* DrModelicaForTesting.Test_* DrModelicaForTesting.Test DrModelicaForTesting.Test.exe DrModelicaForTesting.Test.cpp DrModelicaForTesting.Test.makefile DrModelicaForTesting.Test.libs DrModelicaForTesting.Test.log DrModelicaForTesting.Test.c DrModelicaForTesting.Test.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Test, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Test_res.mat",
+  "ReferenceFiles/Test_ref.mat","DrModelicaForTesting.Test_diff.csv",0.01,0.013,
+  {"y1.u","y1.y","y2.u","y2.y","y3.u","y3.y"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

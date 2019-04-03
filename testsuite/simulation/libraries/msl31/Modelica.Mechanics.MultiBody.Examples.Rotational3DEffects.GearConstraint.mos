@@ -1,0 +1,45 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+packageVersion := "3.1";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint);
+compareVars :=
+{
+   "gearConstraint.actuatedRevolute_b.phi",
+   "gearConstraint.actuatedRevolute_b.w",
+   "inertia1.phi",
+   "inertia1.w",
+   "gearConstraint.actuatedRevolute_b.a",
+   "inertia1.a"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint
+// {"gearConstraint.actuatedRevolute_b.phi","gearConstraint.actuatedRevolute_b.w","inertia1.phi","inertia1.w","gearConstraint.actuatedRevolute_b.a","inertia1.a"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|gearConstraint.actuatedRevolute_b.phi|gearConstraint.actuatedRevolute_b.w|inertia1.phi|inertia1.w|gearConstraint.actuatedRevolute_b.a|inertia1.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

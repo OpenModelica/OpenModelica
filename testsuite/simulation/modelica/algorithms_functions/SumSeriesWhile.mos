@@ -1,0 +1,31 @@
+// name:      SumSeriesWhile
+// keywords:  equation
+// status: correct
+// teardown_command: rm -rf SumSeries_* SumSeries SumSeries.exe SumSeries.cpp SumSeries.makefile SumSeries.libs SumSeries.log output.log
+//
+// Drmodelica: 9.1 while-loop (p.290)
+// 
+loadFile("SumSeriesWhile.mo");
+simulate(SumSeries, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+val(sum,0.0);
+val(sum,0.5);
+val(sum,1.0);
+val(delta,0.0);
+val(delta,0.5);
+val(delta,1.0);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "SumSeries_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'SumSeries', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 99.50073328129245
+// 99.50073328129245
+// 99.50073328129245
+// 9.955206204452296e-07
+// 9.955206204452296e-07
+// 9.955206204452296e-07
+// endResult

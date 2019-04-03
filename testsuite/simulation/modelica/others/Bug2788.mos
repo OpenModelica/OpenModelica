@@ -1,0 +1,46 @@
+// name: Bug2788.mos
+// status: correct
+//
+// tests reported Bug 2788
+//
+
+loadString("
+model foo
+  Real y1;
+equation
+  2*y1+time = (if y1 < 0.5 then y1 + 3 else y1 + 5);
+end foo;
+"); getErrorString();
+
+simulate(foo, simflags="-lv=LOG_INIT"); getErrorString();
+val(y1, 0.0); getErrorString();
+val(y1, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | parameter values
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real y1(start=0, nominal=1) = 5 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 5.000000000000001
+// ""
+// 4.000000000000001
+// ""
+// endResult

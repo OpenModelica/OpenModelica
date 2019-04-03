@@ -1,0 +1,37 @@
+// name: array_algorithm
+// keywords: initialization, array
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.array_algorithm* _initializationTests.array_algorithm* output.log
+//
+//  case for discrete variables during initialization
+//
+
+loadString("
+within ;
+package initializationTests
+  model array_algorithm
+    parameter Integer size = 1;
+    parameter Real x[size](each fixed=false);
+  initial algorithm
+    x := fill(1.0, size);
+  end array_algorithm;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.array_algorithm, startTime=0.0, stopTime=0.0, simflags="-iim=symbolic"); getErrorString();
+val(x[1], 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.array_algorithm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.array_algorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=symbolic'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

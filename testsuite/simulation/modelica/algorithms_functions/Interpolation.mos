@@ -1,0 +1,33 @@
+// name:     Interpolation
+// keywords: Simulate, readSimulationData
+// status: correct
+// teardown_command: rm -rf Interpol2Test Interpol2Test.* Interpol2Test_* output.log
+// 
+//  Simulate Modelica.Math.tempInterpol functions
+//
+
+loadFile("Interpol2.mo");
+simulate(Interpol2Test, tolerance=1e-5, numberOfIntervals=100);
+val(x,0.0);
+val(y,0.0);
+val(z,0.0);
+val(x2,0.0);
+val(y2,0.0);
+val(z2,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Interpol2Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Interpol2Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 10.5
+// 35.0
+// 60.0
+// 105.0
+// 350.0
+// 600.0
+// endResult

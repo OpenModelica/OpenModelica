@@ -1,0 +1,65 @@
+// name: dumpSparsePattern.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpSparsePattern
+// 
+
+loadString("
+model testDumpSparsePattern \"testsuite/simulation/modelica/nonlinear_system/nlsTestPackage.mo: model problem6\"
+  parameter Integer N = 100;
+  parameter Real h = 1/(N+1);
+  Real x[N](each start=0.5);
+equation
+  x[1] = x[N];
+  for k in 2:N-1 loop
+    0 = -x[k-1] + 2*x[k] -x[k+1] + (h^2/2)*(x[k]+k*h+1)^2;
+  end for;
+  x[N] = 0;
+end testDumpSparsePattern;
+"); getErrorString();
+
+setDebugFlags("dumpSparsePattern,NLSanalyticJacobian"); getErrorString();
+buildModel(testDumpSparsePattern); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 1 maxNodeDegree: 1 time : 0.0
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// Print Coloring Cols: 
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 0 maxNodeDegree: 1 time : 0.7973072568439999
+// Print sparse pattern: 1
+// Row[1] = {}
+//
+// Print sparse pattern: 1
+// Row[1] = {}
+//
+// Print Coloring Cols: 
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: 1 maxNodeDegree: 1 time : 1.137616256844
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// Print Coloring Cols: 
+// Print sparse pattern: 1
+// Row[1] = {1}
+//
+// {"testDumpSparsePattern","testDumpSparsePattern_init.xml"}
+// ""
+// endResult

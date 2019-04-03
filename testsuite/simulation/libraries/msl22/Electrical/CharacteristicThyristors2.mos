@@ -1,0 +1,119 @@
+//name:         CharacteristicThyristors2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.CharacteristicThyristors,stopTime=2,method="dassl");
+
+"IdealThyristor1.v:";
+val(IdealThyristor1.v,0.0);
+val(IdealThyristor1.v,0.4);
+val(IdealThyristor1.v,0.8);
+val(IdealThyristor1.v,1.2);
+val(IdealThyristor1.v,1.4);
+val(IdealThyristor1.v,1.6);
+val(IdealThyristor1.v,2.0);
+
+"IdealThyristor1.i:";
+val(IdealThyristor1.i,0.0);
+val(IdealThyristor1.i,0.4);
+val(IdealThyristor1.i,0.8);
+val(IdealThyristor1.i,1.2);
+val(IdealThyristor1.i,1.4);
+val(IdealThyristor1.i,1.6);
+val(IdealThyristor1.i,2.0);
+
+"IdealGTOThyristor1.v:";
+val(IdealGTOThyristor1.v,0.0);
+val(IdealGTOThyristor1.v,0.4);
+val(IdealGTOThyristor1.v,0.8);
+val(IdealGTOThyristor1.v,1.2);
+val(IdealGTOThyristor1.v,1.4);
+val(IdealGTOThyristor1.v,1.6);
+val(IdealGTOThyristor1.v,2.0);
+
+"IdealGTOThyristor1.i:";
+val(IdealGTOThyristor1.i,0.0);
+val(IdealGTOThyristor1.i,0.4);
+val(IdealGTOThyristor1.i,0.8);
+val(IdealGTOThyristor1.i,1.2);
+val(IdealGTOThyristor1.i,1.4);
+val(IdealGTOThyristor1.i,1.6);
+val(IdealGTOThyristor1.i,2.0);
+
+"R3.v:";
+val(R3.v,0.0);
+val(R3.v,0.4);
+val(R3.v,0.8);
+val(R3.v,1.2);
+val(R3.v,1.4);
+val(R3.v,1.6);
+val(R3.v,2.0);
+
+"R3.i:";
+val(R3.i,0.0);
+val(R3.i,0.4);
+val(R3.i,0.8);
+val(R3.i,1.2);
+val(R3.i,1.4);
+val(R3.i,1.6);
+val(R3.i,2.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CharacteristicThyristors_res.mat",
+//     messages = ""
+// end SimulationResult;
+// "IdealThyristor1.v:"
+// 0.0
+// 1.3951473849733e-14
+// 1.3951473849733e-14
+// 1.3951473849733e-14
+// 5.04950495
+// 5.04950495
+// 4.9504950490099
+// "IdealThyristor1.i:"
+// -0.0
+// 1.42301535138723e-19
+// 1.42301535138723e-19
+// 1.42301535138723e-19
+// 4950.49505
+// 4950.49505
+// -4950.49504900984
+// "IdealGTOThyristor1.v:"
+// 0.0
+// 1.39514738525198e-14
+// 1.39514738525198e-14
+// 1.39514738525198e-14
+// 0.099009900990099
+// 0.099009900990099
+// 6.55008397630896e-16
+// "IdealGTOThyristor1.i:"
+// -0.0
+// 1.39514738525198e-19
+// 1.39514738525198e-19
+// 1.39514738525198e-19
+// 9900.9900990099
+// 9900.9900990099
+// 6.55008397630896e-11
+// "R3.v:"
+// 0.0
+// 1.42301535138722e-22
+// 1.42301535138722e-22
+// 1.42301535138722e-22
+// 4.95049505
+// 4.95049505
+// -4.95049504900984
+// "R3.i:"
+// -0.0
+// 1.42301535138723e-19
+// 1.42301535138723e-19
+// 1.42301535138723e-19
+// 4950.49505
+// 4950.49505
+// -4950.49504900984
+// endResult

@@ -1,0 +1,50 @@
+// name:      Modelica.Blocks.Examples.BooleanNetwork1
+// keywords:  hpcom
+// status:    correct
+// depends:   Modelica.Blocks.Examples.BooleanNetwork1_eqs_prof.json
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
+simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.BooleanNetwork1.mat",
+  "Modelica.Blocks.Examples.BooleanNetwork1_diff.csv",0.13,0.0005,
+  {"showValue4.showActive",
+   "showValue5.showActive",
+   "showValue6.showActive",
+   "showValue1.showNumber"});
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ 
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Blocks.Examples.BooleanNetwork1_eqs_prof-file is missing.
+// You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!
+// Using level Scheduler for the DAE system
+// Using level Scheduler for the ODE system
+// Using level Scheduler for the ZeroFunc system
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.BooleanNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

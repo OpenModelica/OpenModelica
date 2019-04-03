@@ -1,0 +1,30 @@
+// name: Elevator.mos
+// keywords: alias
+// status: correct
+//
+// test for #3656
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Elevator.mo"); getErrorString();
+
+simulate(Elevator.Elevator); getErrorString();
+val(cabin.v, 6.0);
+val(counterweight.v, 6.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Elevator.Elevator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 12.0, numberOfIntervals = 1200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Elevator.Elevator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// -2.0
+// endResult

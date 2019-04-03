@@ -1,0 +1,40 @@
+// name: bug2667 
+// keywords: event, first interval
+// status: correct
+// cflags:
+// teardown_command: rm -rf eventTests.bug2667*  output.log
+//
+//
+
+loadString("
+package eventTests
+model bug2667
+    Real ramp(start=0, fixed=true);
+    Real out;
+    Real static_stock(start=1000, fixed=true);
+equation
+    der(ramp) = 1;
+    out = if ramp > 0 then ramp else 0;
+    der(static_stock) = 0;
+end bug2667;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.bug2667,numberOfIntervals=10, stopTime=0.1, method="euler"); getErrorString();
+val(static_stock, 0.0);
+val(static_stock, 0.1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.bug2667_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'eventTests.bug2667', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1000.0
+// 1000.0
+// endResult

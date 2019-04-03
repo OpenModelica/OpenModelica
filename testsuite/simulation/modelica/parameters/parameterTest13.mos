@@ -1,0 +1,266 @@
+// name:      parameterTest13
+// keywords:  parameter evaluation
+// status:    correct
+
+loadString("
+model parameterTest13
+  Real x;
+  parameter Boolean b1 = true;
+  parameter Boolean b2 = b1;
+  parameter Boolean b3 = not b1;
+  parameter Integer p1 = if b2 then p2 else 0;
+  parameter Integer p2 = if b3 then p1 else p3 annotation(Evaluate=true);
+  parameter Integer p3 = 5;
+
+equation
+  x = p1 + p2 + p3;
+end parameterTest13;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump");
+
+simulate(parameterTest13); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = /*Real*/(p1 + p2 + p3)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: p3:PARAM()  = 5  type: Integer 
+// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer 
+// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer 
+// 4: b3:PARAM()  = not b1  type: Boolean 
+// 5: b2:PARAM(final = true )  = b1  type: Boolean 
+// 6: b1:PARAM()  = true  type: Boolean 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 6
+// Number of parameters selected for evaluation: 2
+// Selected parameters for evaluation:
+// 5,2
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 6
+// 1:
+// 2: 4 3 1
+// 3: 5 2
+// 4: 6
+// 5: 6
+// 6:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 6
+// 1: 2 1
+// 2: 3 2
+// 3: 3 2
+// 4: 4 2
+// 5: 5 3
+// 6: 6 5 4
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p3:PARAM(final = true )  = 5  type: Integer 
+// 2: p2:PARAM(final = true )  = 5  type: Integer 
+// 3: p1:PARAM(final = true )  = if b2 then p2 else 0  type: Integer 
+// 4: b3:PARAM(final = true )  = not b1  type: Boolean 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,1,1,1,1,1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 6
+// 5
+// 4
+// 1
+// 3,2
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p3:PARAM(final = true )  = 5  type: Integer 
+// 2: p2:PARAM(final = true )  = 5  type: Integer 
+// 3: p1:PARAM(final = true )  = 5  type: Integer 
+// 4: b3:PARAM(final = true )  = false  type: Boolean 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,1,1,1,1,1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (6)
+// ========================================
+// b1 -> true
+// b2 -> true
+// b3 -> false
+// p1 -> 5
+// p3 -> 5
+// p2 -> 5
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p3:PARAM(final = true )  = 5  type: Integer 
+// 2: p2:PARAM(final = true )  = 5  type: Integer 
+// 3: p1:PARAM(final = true )  = 5  type: Integer 
+// 4: b3:PARAM(final = true )  = false  type: Boolean 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,1,1,1,1,1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = 15.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: p3:PARAM(final = true )  = 5  type: Integer 
+// 2: p2:PARAM(final = true )  = 5  type: Integer 
+// 3: p1:PARAM(final = true )  = 5  type: Integer 
+// 4: b3:PARAM(final = true )  = false  type: Boolean 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest13_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest13', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

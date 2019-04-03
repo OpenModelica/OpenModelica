@@ -1,0 +1,101 @@
+// name:     Modelica.Fluid.Examples.InverseParameterization
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.InverseParameterization);
+compareVars :=
+{
+   "source.ports[1].m_flow",
+   "source.ports[1].p",
+   "source.ports[1].h_outflow",
+   "sink.ports[1].m_flow",
+   "sink.ports[1].p",
+   "sink.ports[1].h_outflow",
+   "sink1.ports[1].m_flow",
+   "sink1.ports[1].p",
+   "sink1.ports[1].h_outflow",
+   "sink2.ports[1].m_flow",
+   "sink2.ports[1].p",
+   "sink2.ports[1].h_outflow"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.InverseParameterization
+// {"source.ports[1].m_flow","source.ports[1].p","source.ports[1].h_outflow","sink.ports[1].m_flow","sink.ports[1].p","sink.ports[1].h_outflow","sink1.ports[1].m_flow","sink1.ports[1].p","sink1.ports[1].h_outflow","sink2.ports[1].m_flow","sink2.ports[1].p","sink2.ports[1].h_outflow"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
+// [Modelica 3.2.1/Fluid/Interfaces.mo:734:9-739:39:writable] Notification: From here:
+// [Modelica 3.2.1/Fluid/Interfaces.mo:327:3-329:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start) "Mass flow rate in design flow direction"
+// Continue ....
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.p(start = pump.p_start)
+//  * candidate: pump.port_b.p(start = pump.p_b_start)
+//  * candidate: orifice.port_a.p(start = 5000000.0)
+//  * candidate: pipe2.port_a.p(start = 5000000.0)
+//  * candidate: pipe2.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: pipe1.port_a.p(start = 5000000.0)
+//  * candidate: pipe1.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: orifice.state_a.p(start = 5000000.0)
+//  * candidate: pump.medium.state.p(start = 5000000.0)
+//  * candidate: pump.monitoring.state.p(start = 5000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: pump.medium.sat.psat(start = 5000000.0)
+// => select value from pump.medium.p(start = pump.p_start) for variable: pump.medium.p
+// Warning: Alias set with different nominal values
+//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: pump.monitoring.state.p(nominal = 1000000.0)
+//  * candidate: pump.medium.state.p(nominal = 1000000.0)
+//  * candidate: orifice.state_a.p(nominal = 1000000.0)
+//  * candidate: pipe1.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe1.port_a.p(nominal = 1000000.0)
+//  * candidate: pipe2.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe2.port_a.p(nominal = 1000000.0)
+//  * candidate: orifice.port_a.p(nominal = 1000000.0)
+//  * candidate: pump.port_b.p(nominal = 1000000.0)
+//  * candidate: pump.medium.p(nominal = 100000.0)
+// => select value from pump.medium.p(nominal = 100000.0) for variable: pump.medium.p
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.h(start = pump.h_start)
+//  * candidate: pump.port_b.h_outflow(start = 100000.0)
+//  * candidate: pump.port_a.h_outflow(start = 100000.0)
+//  * candidate: pump.medium.state.h(start = 100000.0)
+//  * candidate: pump.monitoring.state.h(start = 100000.0)
+//  * candidate: pump.heatTransfer.states[1].h(start = 100000.0)
+// => select value from pump.medium.h(start = pump.h_start) for variable: pump.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pump.medium.state.T(start = 500.0)
+//  * candidate: pump.monitoring.state.T(start = 500.0)
+//  * candidate: pump.medium.T(start = pump.T_start)
+// => select value from pump.medium.T(start = pump.T_start) for variable: pump.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: pump.medium.T(nominal = 500.0)
+//  * candidate: pump.monitoring.state.T(nominal = 500.0)
+//  * candidate: pump.medium.state.T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "true
+// "
+// ""
+// endResult

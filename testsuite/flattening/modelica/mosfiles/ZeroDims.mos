@@ -1,0 +1,37 @@
+//name:        Check model with zero dimension arrays.
+//keyword:     checking models.
+//status:      correct
+//
+//
+// check model example
+//
+
+loadFile("ZeroDims.mo"); getErrorString();
+list(ZeroDims); getErrorString();
+checkModel(ZeroDims); getErrorString();
+
+instantiateModel(ZeroDims); getErrorString();
+
+// Result:
+// true
+// ""
+// "model ZeroDims
+//   model ZeroDim
+//     parameter Real length = 0.0;
+//   end ZeroDim;
+//
+//   input Integer lines[:, 2, 2] = zeros(0, 2, 2);
+//   parameter Integer n = size(lines, 1);
+//   ZeroDim c[n](length = {0.0 for i in 1:n});
+// end ZeroDims;"
+// ""
+// "Check of ZeroDims completed successfully.
+// Class ZeroDims has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "class ZeroDims
+//   parameter Integer n = 0;
+// end ZeroDims;
+// "
+// ""
+// endResult

@@ -1,0 +1,29 @@
+// name: EventClock_cpp
+// keywords: synchronous clocked equations
+// status: correct
+
+loadModel(Modelica, {"3.2.2"}, languageStandard="3.3");getErrorString();
+loadFile("EventClock.mo");getErrorString();
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+simulate(EventClock);getErrorString();
+val(nextInterval, 0.0);
+val(nextInterval, 0.5);
+val(nextInterval, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EventClock_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'EventClock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 1.0
+// 15.0
+// 21.0
+// endResult

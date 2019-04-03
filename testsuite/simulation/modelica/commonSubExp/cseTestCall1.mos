@@ -1,0 +1,115 @@
+// name: cseTestCall1
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall1
+    Real x,y;
+    Real A;
+    Real B = 4.0;
+    Real C = time+1.0;
+    Real D;
+    Real E;
+
+    function f
+      input Real s;
+      output Real a;
+      output Real b;
+    algorithm
+      a := s;
+      b := s+1;
+    end f;
+
+  equation
+    (x,y) = f(time);
+    A = B*C;
+    D = log(B*C);
+    E = B*C + log(log(log(B*C)));
+  end TestCall1;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall1); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (1, 2)
+// ========================================
+// 1/1 (2): (x, y) = CSE.TestCall1.f(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real 
+//
+//
+// ########### CSE Replacements (1/46)
+// ========================================
+// 1: (x, y) - CSE.TestCall1.f(time) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (6)
+// ========================================
+// 1: E:VARIABLE()  type: Real 
+// 2: D:VARIABLE()  type: Real 
+// 3: C:VARIABLE()  type: Real 
+// 4: A:VARIABLE()  type: Real 
+// 5: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (6, 6)
+// ========================================
+// 1/1 (1): E = A + $cse1   [dynamic |0|0|0|0|]
+// 2/2 (1): A = 4.0 * C   [dynamic |0|0|0|0|]
+// 3/3 (1): C = 1.0 + time   [binding |0|0|0|0|]
+// 4/4 (1): D = log(A)   [unknown |0|0|0|0|]
+// 5/5 (1): $cse2 = log(D)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse1 = log($cse2)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: B:VARIABLE(fixed = true )  = 4.0  type: Real 
+//
+//
+// ########### CSE Replacements (3/46)
+// ========================================
+// 1: $cse1 - log($cse2) - {}
+// 2: $cse2 - log(D) - {}
+// 3: D - log(A) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

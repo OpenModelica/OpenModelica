@@ -1,0 +1,57 @@
+// name:     Modelica.Fluid.Examples.Tanks.EmptyTanks
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.Tanks.EmptyTanks);
+compareVars :=
+{
+   "tank1.level",
+   "tank1.medium.T",
+   "tank2.level",
+   "tank2.medium.T",
+   "tank2.traceDynamics",
+   "tank2.substanceDynamics",
+   "tank2.massDynamics",
+   "tank2.energyDynamics",
+   "tank1.traceDynamics",
+   "tank1.substanceDynamics",
+   "tank1.massDynamics",
+   "tank1.energyDynamics",
+   "system.traceDynamics",
+   "system.substanceDynamics",
+   "system.massDynamics",
+   "system.energyDynamics"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.Tanks.EmptyTanks
+// {"tank1.level","tank1.medium.T","tank2.level","tank2.medium.T","tank2.traceDynamics","tank2.substanceDynamics","tank2.massDynamics","tank2.energyDynamics","tank1.traceDynamics","tank1.substanceDynamics","tank1.massDynamics","tank1.energyDynamics","system.traceDynamics","system.substanceDynamics","system.massDynamics","system.energyDynamics"}
+// Simulation options: startTime = 0.0, stopTime = 50.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.EmptyTanks', options = '', outputFormat = 'mat', variableFilter = 'time|tank1.level|tank1.medium.T|tank2.level|tank2.medium.T|tank2.traceDynamics|tank2.substanceDynamics|tank2.massDynamics|tank2.energyDynamics|tank1.traceDynamics|tank1.substanceDynamics|tank1.massDynamics|tank1.energyDynamics|system.traceDynamics|system.substanceDynamics|system.massDynamics|system.energyDynamics', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.Tanks.EmptyTanks_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 35.406941
+// |                 | |       | tank1.m >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= tank1.m, has value: -9.95587e-08
+// assert            | warning | The following assertion has been violated at time 35.406941
+// |                 | |       | tank1.level >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= tank1.level, has value: -1e-10
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

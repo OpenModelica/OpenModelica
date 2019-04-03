@@ -1,0 +1,335 @@
+// name: LotkaVolterra
+// status: correct
+
+loadString("
+
+  model LotkaVolterra
+    parameter Real g_r = 4e-2  \"Natural growth rate for rabbits\";
+    parameter Real g_fr = 1e-1 \"Efficency in growing foxes from rabbits\";
+
+    parameter Real d_rf = 5.0e-3 \"Death rate of rabbits due to foxes\";
+    parameter Real d_rh = 5.0e-2 \"Death rate of rabbits due to hunters\";
+    parameter Real d_f = 9.0e-2  \"Natural deathrate for foxes\";
+    parameter Real d_fh = 9.0e-2 \"Death rate of foxes due to hunters\";
+
+
+    Real rabbits(start=700)    \"Rabbits,(R) with start population 700\";
+    Real foxes(start=10)       \"Foxes,(F) with start population 10\";
+
+    input Real hunter_rabbits;
+    input Real hunter_foxes;
+  equation
+    der(rabbits) = g_r*rabbits - d_rf*rabbits*foxes - d_rh*hunter_rabbits;
+    der(foxes) = g_fr*d_rf*rabbits*foxes -d_f*foxes - d_fh*hunter_foxes;
+  end LotkaVolterra;
+");
+getErrorString();
+
+setCommandLineOptions("+gDynOpt");
+
+loadString(
+"
+model optLotkaVolterra1
+\"
+  goal: 
+    closing balance rabbits = 800
+    closing balance foxes = 11
+\"
+  extends LotkaVolterra;
+  Real goalRabbits(nominal = 1e2) = (rabbits - 500)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real goalFoxes(nominal = 1e1) =  (foxes-5)^2 \"goal for rabbits \" annotation(isMayer = true);
+end optLotkaVolterra1;
+
+model optLotkaVolterra2
+\"
+  goal:
+    closing balance rabbits = 800
+    closing balance foxes = 11
+    minimize cost for hunters
+\"
+
+  extends LotkaVolterra;
+  Real goalRabbits(nominal = 1e2) = (rabbits - 500)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real goalFoxes(nominal = 1e1) =  (foxes-5)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real costHuntersFoxes(nominal = 1e2) = hunter_foxes^2 annotation(isLagrange = true);
+  Real costHuntersRabbits(nominal = 1e2) = hunter_rabbits^2 annotation(isLagrange = true);
+end optLotkaVolterra2;
+
+
+model optLotkaVolterra3
+\"
+  goal:
+    closing balance rabbits = 800
+    closing balance foxes = 11
+    minimize cost for hunters
+  box constraints:
+    no negative hunters
+    max 5 hunters for foxes
+    max 5 hunters for rabbits 
+\"
+
+  extends LotkaVolterra(hunter_foxes(min=0, max = 5),
+                        hunter_rabbits(min=0, max = 10)
+   );
+  Real goalRabbits(nominal = 1e2) = (rabbits - 500)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real goalFoxes(nominal = 1e1) =  (foxes-5)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real costHuntersFoxes(nominal = 1e2) = hunter_foxes^2 annotation(isLagrange = true);
+  Real costHuntersRabbits(nominal = 1e2) = hunter_rabbits^2 annotation(isLagrange = true);
+end optLotkaVolterra3;
+
+model optLotkaVolterra4
+\"
+  goal:
+    closing balance rabbits = 800
+    closing balance foxes = 11
+    minimize cost for hunters
+  box constraints:
+    no negative hunters
+    max 5 hunters for foxes
+    max 5 hunters for rabbits
+    max 13 foxes; min 4 foxes
+\"
+
+  extends LotkaVolterra(hunter_foxes(min=0, max = 5),
+                        hunter_rabbits(min=0, max = 10),
+                        foxes(min = 4, max = 13)
+   );
+  Real goalRabbits(nominal = 1e2) = (rabbits - 500)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real goalFoxes(nominal = 1e1) =  (foxes-5)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real costHuntersFoxes(nominal = 1e2) = hunter_foxes^2 annotation(isLagrange = true);
+  Real costHuntersRabbits(nominal = 1e2) = hunter_rabbits^2 annotation(isLagrange = true);
+end optLotkaVolterra4;
+
+model optLotkaVolterra5
+\"
+  goal:
+    closing balance rabbits = 800
+    closing balance foxes = 11
+    minimize cost for hunters
+  box constraints:
+    no negative hunters
+    max 5 hunters for foxes
+    max 5 hunters for rabbits
+    max 13 foxes; min 4 foxes
+  constraints
+     100 <= 1e1*foxes + 1e-2*rabbits <= 135
+\"
+
+  extends LotkaVolterra(hunter_foxes(min=0, max = 5),
+                        hunter_rabbits(min=0, max = 10),
+                        foxes(min = 4, max = 13)
+   );
+  Real goalRabbits(nominal = 1e2) = (rabbits - 500)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real goalFoxes(nominal = 1e1) =  (foxes-5)^2 \"goal for rabbits \" annotation(isMayer = true);
+  Real costHuntersFoxes(nominal = 1e2) = hunter_foxes^2 annotation(isLagrange = true);
+  Real costHuntersRabbits(nominal = 1e2) = hunter_rabbits^2 annotation(isLagrange = true);
+  Real constraintsFoxRabbits(min = 1e2, max = 135) =  1e1*foxes + 1e-2*rabbits  annotation(isConstraint = true);
+end optLotkaVolterra5;
+
+"
+);
+getErrorString();
+
+optimize(optLotkaVolterra1, numberOfIntervals=70, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("optLotkaVolterra1_res.mat","ReferenceFiles/optLotkaVolterra1_ref.mat","optLotkaVolterra1_res.csv",0.01,0.0001);
+getErrorString();
+
+optimize(optLotkaVolterra2, numberOfIntervals=70, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("optLotkaVolterra2_res.mat","ReferenceFiles/optLotkaVolterra2_ref.mat","optLotkaVolterra2_res.csv",0.01,0.0001);
+getErrorString();
+
+optimize(optLotkaVolterra3, numberOfIntervals=70, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("optLotkaVolterra3_res.mat","ReferenceFiles/optLotkaVolterra3_ref.mat","optLotkaVolterra3_res.csv",0.01,0.0001);
+getErrorString();
+
+optimize(optLotkaVolterra4, numberOfIntervals=70, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("optLotkaVolterra4_res.mat","ReferenceFiles/optLotkaVolterra4_ref.mat","optLotkaVolterra4_res.csv",0.01,0.0001);
+getErrorString();
+
+optimize(optLotkaVolterra5, numberOfIntervals=70, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("optLotkaVolterra5_res.mat","ReferenceFiles/optLotkaVolterra5_ref.mat","optLotkaVolterra5_res.csv",0.01,0.0001);
+getErrorString();
+
+
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 0.00000001, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_jac=NUM'",
+//     messages = "
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+// 
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "optLotkaVolterra1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 70, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'optLotkaVolterra1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:foxes(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
+// State[1]:rabbits(start = 700, nominal = 701, min = -Inf, max = +Inf, init = 700)
+// Input[2]:hunter_foxes(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[3]:hunter_rabbits(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "optLotkaVolterra2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 70, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'optLotkaVolterra2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:foxes(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
+// State[1]:rabbits(start = 700, nominal = 701, min = -Inf, max = +Inf, init = 700)
+// Input[2]:hunter_foxes(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[3]:hunter_rabbits(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "optLotkaVolterra3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 70, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'optLotkaVolterra3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:foxes(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
+// State[1]:rabbits(start = 700, nominal = 701, min = -Inf, max = +Inf, init = 700)
+// Input[2]:hunter_foxes(start = 0, nominal = 5, min = 0, max = 5)
+// Input[3]:hunter_rabbits(start = 0, nominal = 10, min = 0, max = 10)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "optLotkaVolterra4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 70, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'optLotkaVolterra4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:foxes(start = 10, nominal = 13, min = 4, max = 13, init = 10)
+// State[1]:rabbits(start = 700, nominal = 701, min = -Inf, max = +Inf, init = 700)
+// Input[2]:hunter_foxes(start = 0, nominal = 5, min = 0, max = 5)
+// Input[3]:hunter_rabbits(start = 0, nominal = 10, min = 0, max = 10)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "optLotkaVolterra5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 70, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'optLotkaVolterra5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:foxes(start = 10, nominal = 13, min = 4, max = 13, init = 10)
+// State[1]:rabbits(start = 700, nominal = 701, min = -Inf, max = +Inf, init = 700)
+// Input[2]:hunter_foxes(start = 0, nominal = 5, min = 0, max = 5)
+// Input[3]:hunter_rabbits(start = 0, nominal = 10, min = 0, max = 10)
+// --------------------------------------------------------
+// number of nonlinear constraints: 1
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

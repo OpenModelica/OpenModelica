@@ -1,0 +1,14 @@
+// name:     PartialFn9
+// keywords: PartialFn
+// status:   correct
+// cflags: -g=MetaModelica -d=gen
+//
+// Partial Function Testing
+//
+loadFile("PartialFn9.mo");
+res := PartialFn9.runTest(0);
+
+// Result:
+// true
+// 6
+// endResult

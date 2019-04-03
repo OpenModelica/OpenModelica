@@ -1,0 +1,50 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution_* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.exe ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.cpp ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.makefile ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.libs ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.log ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.c ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.o output.log
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution_diff.csv",
+0.01, 0.0001,
+{"staticCentrifugalPumpWaterLiBr.Q",
+ "staticCentrifugalPumpWaterLiBr.deltaH",
+ "staticCentrifugalPumpWaterLiBr.deltaP"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 200.000000
+// |                 | |       | staticCentrifugalPumpWaterLiBr.deltaP >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= staticCentrifugalPumpWaterLiBr.deltaP, has value: -86.9556
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

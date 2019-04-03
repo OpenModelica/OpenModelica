@@ -1,0 +1,37 @@
+// name:     Modelica.StateGraph.Examples.FirstExample_Variant2
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.StateGraph.Examples.FirstExample_Variant2);
+compareVars :=
+{
+   "initialStep.active",
+   "step.active"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.StateGraph.Examples.FirstExample_Variant2
+// {"initialStep.active","step.active"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.FirstExample_Variant2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.StateGraph.Examples.FirstExample_Variant2_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

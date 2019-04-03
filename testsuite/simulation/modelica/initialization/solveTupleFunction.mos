@@ -1,0 +1,59 @@
+// name: solveTupleCall
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.parameters* _initializationTests.parameters* output.log
+
+loadString("
+within ;
+package initializationTests
+  model solveTuple
+    function f
+      input Real x;
+      output Real y;
+      output Real z;
+    algorithm
+    	for i in {1} loop //prevent inlining
+        y := sin(x);
+        z := cos(y);
+      end for;
+		end f;
+    Real x, y;
+  initial equation
+    der(x) = 1;
+  equation
+    der(x) = y;
+    (y,) = f(x);
+  end solveTuple;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.solveTuple, simflags="-lv=LOG_INIT"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.solveTuple_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.solveTuple', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | parameter values
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=0, nominal=1) = 1.5708 (pre: 0)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [2] Real der(x) = 1 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [3] Real y(start=0, nominal=1) = 1 (pre: 0)
+// |                 | |       | | | [4] Real $TMP__initializationTests_solveTuple_f3.y(start=0, nominal=1) = 1 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// "
+// end SimulationResult;
+// ""
+// endResult

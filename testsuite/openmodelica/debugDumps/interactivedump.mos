@@ -1,0 +1,24 @@
+// name: interactivedump.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=interactivedump
+// 
+
+// TODO: change this model to test the dump +d=interactivedump
+loadString("
+model testInteractivedump
+end testInteractivedump;
+"); getErrorString();
+
+setDebugFlags("interactivedump"); getErrorString();
+buildModel(testInteractivedump); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"testInteractivedump","testInteractivedump_init.xml"}
+// ""
+// endResult

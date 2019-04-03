@@ -1,0 +1,11 @@
+loadModel(Modelica,{"3.2.1"});
+
+// adrpo: add missing stateGraphRoot inner class
+addComponent(stateGraphRoot, StateGraph.StateGraphRoot, Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
+setComponentProperties(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, {false,false,false,false,false},{""},{true,false},{""}); getErrorString();
+setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, "added to make the model complete"); getErrorString();
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
+getErrorString();

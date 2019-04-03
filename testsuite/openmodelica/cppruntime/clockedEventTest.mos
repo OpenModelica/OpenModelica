@@ -1,0 +1,38 @@
+// name: clockedEventTest
+// keywords: synchronous clocked equations
+// status: correct
+// teardown_command: rm -f *EvenClock*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model EventClock \"See Modelica 3.3 spec, section 16.3 Clock Constructors\"
+  Integer nextInterval(start = 1);
+  Real nextTick(start = 0);
+equation
+  when Clock(time > hold(nextTick) / 210) then
+    nextInterval = previous(nextInterval) + 1;
+    nextTick = previous(nextTick) + nextInterval;
+  end when;
+end EventClock;
+");
+getErrorString();
+
+simulate(EventClock);
+val(nextInterval, 0.001); //the event is not triggered at time=0, only on the right limit of time=0, at time=0 the start value should be set
+val(nextInterval, 1.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "EventClock_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EventClock', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 2.0
+// 21.0
+// ""
+// endResult

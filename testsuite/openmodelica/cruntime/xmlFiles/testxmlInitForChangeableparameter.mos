@@ -1,0 +1,174 @@
+// name: testxmlInitForChangeableparameter
+// keywords: xml, init, parameters, changeable value
+// status: correct
+// teardown_command: rm -f testParameters*
+// 
+
+loadString("
+model testParameters
+  parameter Real a0;
+  parameter Real a = sin(1.21);
+  parameter Real b = 2*a-c+a0;
+  final parameter Real c = 3;
+  parameter Real d(fixed=false);
+  Real x;
+initial equation
+  d = 4;
+equation
+  der(x) = a+x;
+end testParameters;
+");
+
+buildModel(testParameters);getErrorString();
+system("cat testParameters_init.xml | grep -v OPENMODELICAHOME | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > testParameters_init.tmp.xml");
+readFile("testParameters_init.tmp.xml");
+
+// Result:
+// true
+// {"testParameters","testParameters_init.xml"}
+// "[<interactive>:3:3-3:20:writable] Warning: Parameter a0 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// "<?xml version = \"1.0\" encoding=\"UTF-8\"?>
+//
+// <!-- description of the model interface using an extention of the FMI standard -->
+// <fmiModelDescription
+//   fmiVersion                          = \"1.0\"
+//
+//   modelName                           = \"testParameters\"
+//   modelIdentifier                     = \"testParameters\"
+//
+//
+//
+//   description                         = \"\"
+//
+//   variableNamingConvention            = \"structured\"
+//
+//   numberOfEventIndicators             = \"0\"  cmt_numberOfEventIndicators             = \"NG:       number of zero crossings,                           FMI\"
+//   numberOfTimeEvents                  = \"0\"  cmt_numberOfTimeEvents                  = \"NG_SAM:   number of zero crossings that are samples,          OMC\"
+//
+//   numberOfInputVariables              = \"0\"  cmt_numberOfInputVariables              = \"NI:       number of inputvar on topmodel,                     OMC\"
+//   numberOfOutputVariables             = \"0\"  cmt_numberOfOutputVariables             = \"NO:       number of outputvar on topmodel,                    OMC\"
+//
+//   numberOfExternalObjects             = \"0\"  cmt_numberOfExternalObjects             = \"NEXT:     number of external objects,                         OMC\"
+//   numberOfFunctions                   = \"0\"  cmt_numberOfFunctions                   = \"NFUNC:    number of functions used by the simulation,         OMC\"
+//
+//   numberOfContinuousStates            = \"1\"  cmt_numberOfContinuousStates            = \"NX:       number of states,                                   FMI\"
+//   numberOfRealAlgebraicVariables      = \"0\"  cmt_numberOfRealAlgebraicVariables      = \"NY:       number of real variables,                           OMC\"
+//   numberOfRealAlgebraicAliasVariables = \"0\"  cmt_numberOfRealAlgebraicAliasVariables = \"NA:       number of alias variables,                          OMC\"
+//   numberOfRealParameters              = \"5\"  cmt_numberOfRealParameters              = \"NP:       number of parameters,                               OMC\"
+//
+//   numberOfIntegerAlgebraicVariables   = \"0\"  cmt_numberOfIntegerAlgebraicVariables   = \"NYINT:    number of alg. int variables,                       OMC\"
+//   numberOfIntegerAliasVariables       = \"0\"  cmt_numberOfIntegerAliasVariables       = \"NAINT:    number of alias int variables,                      OMC\"
+//   numberOfIntegerParameters           = \"0\"  cmt_numberOfIntegerParameters           = \"NPINT:    number of int parameters,                           OMC\"
+//
+//   numberOfStringAlgebraicVariables    = \"0\"  cmt_numberOfStringAlgebraicVariables    = \"NYSTR:    number of alg. string variables,                    OMC\"
+//   numberOfStringAliasVariables        = \"0\"  cmt_numberOfStringAliasVariables        = \"NASTR:    number of alias string variables,                   OMC\"
+//   numberOfStringParameters            = \"0\"  cmt_numberOfStringParameters            = \"NPSTR:    number of string parameters,                        OMC\"
+//
+//   numberOfBooleanAlgebraicVariables   = \"0\"  cmt_numberOfBooleanAlgebraicVariables   = \"NYBOOL:   number of alg. bool variables,                      OMC\"
+//   numberOfBooleanAliasVariables       = \"0\"  cmt_numberOfBooleanAliasVariables       = \"NABOOL:   number of alias bool variables,                     OMC\"
+//   numberOfBooleanParameters           = \"0\"  cmt_numberOfBooleanParameters           = \"NPBOOL:   number of bool parameters,                          OMC\" >
+//
+//
+//   <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
+//   <DefaultExperiment
+//     startTime      = \"0\"
+//     stopTime       = \"1\"
+//     stepSize       = \"0.002\"
+//     tolerance      = \"1e-06\"
+//     solver        = \"dassl\"
+//     outputFormat      = \"mat\"
+//     variableFilter      = \".*\" />
+//
+//   <!-- variables in the model -->
+//   <ModelVariables>
+//
+//   <ScalarVariable
+//   name = \"x\"
+//   valueReference = \"1000\"
+//   variability = \"continuous\" isDiscrete = \"false\"
+//   causality = \"internal\" isValueChangeable = \"true\"
+//   alias = \"noAlias\"
+//   classIndex = \"0\" classType = \"rSta\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"8\" startColumn = \"3\" endLine = \"8\" endColumn = \"9\" fileWritable = \"true\">
+//   <Real fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"der(x)\"
+//   valueReference = \"1001\"
+//   variability = \"continuous\" isDiscrete = \"false\"
+//   causality = \"internal\" isValueChangeable = \"false\"
+//   alias = \"noAlias\"
+//   classIndex = \"0\" classType = \"rDer\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"8\" startColumn = \"3\" endLine = \"8\" endColumn = \"9\" fileWritable = \"true\">
+//   <Real fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"a\"
+//   valueReference = \"1002\"
+//   variability = \"parameter\" isDiscrete = \"true\"
+//   causality = \"internal\" isValueChangeable = \"true\"
+//   alias = \"noAlias\"
+//   classIndex = \"0\" classType = \"rPar\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"4\" startColumn = \"3\" endLine = \"4\" endColumn = \"31\" fileWritable = \"true\">
+//   <Real start=\"0.9356160015533859\" fixed=\"true\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"a0\"
+//   valueReference = \"1003\"
+//   variability = \"parameter\" isDiscrete = \"true\"
+//   causality = \"internal\" isValueChangeable = \"true\"
+//   alias = \"noAlias\"
+//   classIndex = \"1\" classType = \"rPar\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"20\" fileWritable = \"true\">
+//   <Real fixed=\"true\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"b\"
+//   valueReference = \"1004\"
+//   variability = \"parameter\" isDiscrete = \"true\"
+//   causality = \"internal\" isValueChangeable = \"false\"
+//   alias = \"noAlias\"
+//   classIndex = \"2\" classType = \"rPar\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"3\" endLine = \"5\" endColumn = \"30\" fileWritable = \"true\">
+//   <Real fixed=\"true\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"c\"
+//   valueReference = \"1005\"
+//   variability = \"parameter\" isDiscrete = \"true\"
+//   causality = \"internal\" isValueChangeable = \"false\"
+//   alias = \"noAlias\"
+//   classIndex = \"3\" classType = \"rPar\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"6\" startColumn = \"3\" endLine = \"6\" endColumn = \"29\" fileWritable = \"true\">
+//   <Real start=\"3.0\" fixed=\"true\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//   name = \"d\"
+//   valueReference = \"1006\"
+//   variability = \"parameter\" isDiscrete = \"true\"
+//   causality = \"internal\" isValueChangeable = \"false\"
+//   alias = \"noAlias\"
+//   classIndex = \"4\" classType = \"rPar\"
+//   isProtected = \"false\" hideResult = \"false\"
+//   fileName = \"&lt;interactive&gt;\" startLine = \"7\" startColumn = \"3\" endLine = \"7\" endColumn = \"32\" fileWritable = \"true\">
+//   <Real fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//
+//
+//
+//   </ModelVariables>
+//
+//
+// </fmiModelDescription>
+//
+// "
+// endResult

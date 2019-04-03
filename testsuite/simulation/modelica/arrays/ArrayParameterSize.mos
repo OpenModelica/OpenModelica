@@ -1,0 +1,19 @@
+// name:     ArrayParameterSize
+// keywords: array parameter size checkmodel
+// status:   correct
+// 
+// Checks that checkModel can be used when an arrays dimension is defined by a
+// parameter.
+//
+
+loadFile("ArrayParameterSize.mo");
+checkModel(ArrayParameterSize);
+getErrorString();
+
+// Result:
+// true
+// "Check of ArrayParameterSize completed successfully.
+// Class ArrayParameterSize has 1 equation(s) and 1 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

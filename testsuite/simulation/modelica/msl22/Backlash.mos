@@ -1,0 +1,31 @@
+// name:     BacklashTest
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModelica_* output.log
+// 
+//  Simulate Rotational inertias with springs 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// BacklashTest
+simulate(TestModels.RotationalModels.SpringInertia.BacklashTest, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia1.w,0.0),val(inertia1.w,0.2),val(inertia1.w,0.4),
+val(inertia1.w,0.6),val(inertia1.w,0.8),val(inertia1.w,1.0)};
+{val(inertia1.phi,0.0),val(inertia1.phi,0.2),val(inertia1.phi,0.4),
+val(inertia1.phi,0.6),val(inertia1.phi,0.8),val(inertia1.phi,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SpringInertia.BacklashTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.BacklashTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.1099603913540544,0.2879181961163269,0.2879115814704904,0.1099658188863765,9.630534254722433e-06}
+// {0.0,0.007746071849397882,0.04877857504522894,0.1103878320560297,0.1514185406568894,0.1591530839493078}
+// endResult

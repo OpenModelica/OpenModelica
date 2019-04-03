@@ -1,0 +1,34 @@
+// name:     ModelicaTest.MultiBody.Sensors.CutTorque
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Sensors.CutTorque);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Sensors.CutTorque_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Sensors.CutTorque.mat",
+  "ModelicaTest.MultiBody.Sensors.CutTorque_diff.csv",0.01,0.0001,
+  {"err1[1].y","err1[2].y","err1[3].y","err2[1].y","err2[2].y","err2[3].y"});
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Sensors.CutTorque_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Sensors.CutTorque\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

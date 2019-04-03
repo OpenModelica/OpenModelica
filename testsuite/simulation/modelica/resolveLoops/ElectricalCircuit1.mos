@@ -1,0 +1,79 @@
+// name:      ElectricalCircuit1
+// keywords:  resolveLoops
+// status:    correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("ElectricalCircuit1.mo"); getErrorString();
+setDebugFlags("backenddaeinfo,stateselection"); getErrorString();
+simulate(ElectricalCircuit1); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/ElectricalCircuit1.mat",
+  "ElectricalCircuit1_diff.csv",0.01,0.0001,
+  {"C1.i",
+  "C1.v",
+  "C2.i",
+  "C2.v",
+  "C3.i",
+  "C3.v"});
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ElectricalCircuit1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ElectricalCircuit1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 89
+//  * Number of variables: 89
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (32):
+//  * Single equations (assignments): 28
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 4
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 4 {(1,100.0%) 7,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 7
+//  * Number of states: 2 (C2.v,C3.v)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (23):
+//  * Single equations (assignments): 19
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 4
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 4 {(1,100.0%) 6,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
+//  * Non-linear torn systems: 0
+// "
+// {"Files Equal!"}
+// endResult

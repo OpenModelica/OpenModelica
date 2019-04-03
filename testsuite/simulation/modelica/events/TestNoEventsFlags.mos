@@ -1,0 +1,101 @@
+// name:     testnoEventsFlag
+// keywords: EventHandling, Relations
+// status: correct
+// teardown_command: rm -rf testnoEventsFlag* output.log
+
+loadString("
+model testnoEventsFlag
+  Real x(start=1);
+  Boolean b,b1;
+equation
+  der(x) = 2*x;
+  when sample(0,0.2) then
+    reinit(x, 1);
+  end when;
+  b = x > 1.2;
+  b1 = der(x) > 2.5;
+end testnoEventsFlag;
+"); getErrorString();
+
+setCommandLineOptions("+d=noevents");
+simulate(testnoEventsFlag, numberOfIntervals=40, method="euler");
+getErrorString();
+
+val(x,0.1);
+val(x,0.2);
+val(x,0.3);
+val(x,0.4);
+val(x,0.5);
+val(x,0.6);
+val(x,0.7);
+val(x,0.8);
+val(x,0.9);
+val(x,1.0);
+
+val(b,0.1);
+val(b,0.2);
+val(b,0.3);
+val(b,0.4);
+val(b,0.5);
+val(b,0.6);
+val(b,0.7);
+val(b,0.8);
+val(b,0.9);
+val(b,1.0);
+
+val(b1,0.1);
+val(b1,0.2);
+val(b1,0.3);
+val(b1,0.4);
+val(b1,0.5);
+val(b1,0.6);
+val(b1,0.7);
+val(b1,0.8);
+val(b1,0.9);
+val(b1,1.0);
+
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "testnoEventsFlag_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 40, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'testnoEventsFlag', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.21550625
+// 1.0
+// 1.21550625
+// 1.0
+// 1.21550625
+// 1.477455443789062
+// 1.21550625
+// 1.0
+// 1.21550625
+// 1.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// endResult

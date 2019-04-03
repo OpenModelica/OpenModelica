@@ -1,0 +1,244 @@
+// name: TestNormVars
+// status: correct
+
+setCommandLineOptions("+d=addScaledVars,dumpindxdae");
+loadString("
+model foo
+  Real x(start=100, fixed=true, nominal = 100);
+  Real x_norm = x*1e-2;
+  input Real u(nominal = 20);
+  Real u_norm;
+equation
+  u_norm = u/20.0;
+  der(x) = sin(time*10*u_norm);
+end foo;
+");
+simulate(foo,stopTime=0);
+
+setCommandLineOptions("+d=addScaledVarsInput,noaddScaledVars,dumpindxdae");
+loadString("
+model foo
+  Real x(start=100, fixed=true, nominal = 100);
+  Real x_norm = x*1e-2;
+  input Real u(nominal = 20);
+  Real u_norm;
+equation
+  u_norm = u/20.0;
+  der(x) = sin(time*10*u_norm);
+end foo;
+");
+simulate(foo,stopTime=0);
+
+setCommandLineOptions("+d=addScaledVars,addScaledVarsInput,dumpindxdae");
+loadString("
+model foo
+  Real x(start=100, fixed=true, nominal = 100);
+  Real x_norm = x*1e-2;
+  input Real u(nominal = 20);
+  Real u_norm;
+equation
+  u_norm = u/20.0;
+  der(x) = sin(time*10*u_norm);
+end foo;
+");
+simulate(foo,stopTime=0);
+
+
+// Result:
+// true
+// true
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: u_norm:VARIABLE()  type: Real 
+// 2: x_norm:VARIABLE()  type: Real 
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+//
+//
+// StrongComponents
+// ========================================
+// {5:5}
+// {2:1}
+// {4:4}
+// {3:3}
+// {1:2}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+//
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// true
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: u_norm:VARIABLE()  type: Real 
+// 2: x_norm:VARIABLE()  type: Real 
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: u__OMC$scaled_input:VARIABLE()  type: Real 
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+//
+//
+// StrongComponents
+// ========================================
+// {5:5}
+// {2:1}
+// {4:4}
+// {3:3}
+// {1:2}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+//
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// true
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: u_norm:VARIABLE()  type: Real 
+// 2: x_norm:VARIABLE()  type: Real 
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
+// 6: u__OMC$scaled_input:VARIABLE()  type: Real 
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
+// 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 6
+//
+//
+// StrongComponents
+// ========================================
+// {6:6}
+// {5:5}
+// {2:1}
+// {4:4}
+// {3:3}
+// {1:2}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+//
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

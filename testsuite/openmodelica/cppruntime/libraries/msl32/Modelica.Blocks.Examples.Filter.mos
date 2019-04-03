@@ -1,0 +1,41 @@
+// name:     Modelica.Blocks.Examples.Filter
+// teardown_command: rm -f Modelica.Blocks.Examples.Filter_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Blocks.Examples.Filter, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples.Filter_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Blocks.Examples.Filter.mat",
+  "Modelica.Blocks.Examples.Filter_diff.csv",0.01,0.0001,
+  {"CriticalDamping.x[1]",
+   "CriticalDamping.x[2]",
+   "CriticalDamping.x[3]",
+   "Bessel.x[1]",
+   "Bessel.x[2]",
+   "Bessel.x[3]",
+   "Butterworth.x[1]",
+   "Butterworth.x[2]",
+   "Butterworth.x[3]",
+   "ChebyshevI.x[1]",
+   "ChebyshevI.x[2]",
+   "ChebyshevI.x[3]"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.Filter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.Filter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

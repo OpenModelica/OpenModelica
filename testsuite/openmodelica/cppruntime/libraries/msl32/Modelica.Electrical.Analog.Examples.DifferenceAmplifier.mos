@@ -1,0 +1,47 @@
+// name:     Modelica.Electrical.Analog.Examples.DifferenceAmplifier
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.DifferenceAmplifier_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.DifferenceAmplifier);
+
+compareVars :=
+{  "C1.v",
+   "C4.v",
+   "C5.v",
+   "C2.v",
+   "C3.v",
+   "Transistor1.Tr.vbc",
+   "Transistor1.Tr.vbe",
+   "Transistor2.Tr.vbc",
+   "Transistor2.Tr.vbe"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.DifferenceAmplifier
+// {"C1.v","C4.v","C5.v","C2.v","C3.v","Transistor1.Tr.vbc","Transistor1.Tr.vbe","Transistor2.Tr.vbc","Transistor2.Tr.vbe"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.DifferenceAmplifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.DifferenceAmplifier_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,7 @@
+// status: correct
+
+getClassNames(OpenModelica);
+
+// Result:
+// {$Code,threadData,Internal,Scripting,UsersGuide,AutoCompletion}
+// endResult

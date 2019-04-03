@@ -1,0 +1,68 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -n=1 -d=noevalfunc,gen");
+echo(false);
+prefixPath := if ""==getEnvironmentVar("OMCOMPILERSOURCES") then "../../../OMCompiler/Compiler/" else getEnvironmentVar("OMCOMPILERSOURCES") + "/";
+echo(true);
+loadFiles({
+  prefixPath + "Util/DiffAlgorithm.mo",
+  prefixPath + "Util/List.mo",
+  prefixPath + "Util/Print.mo"
+});
+getErrorString();
+
+loadFile("TestDiffAlgorithm.mo");
+getErrorString();
+setCommandLineOptions("+d=rml");
+generateCode(TestDiffAlgorithm);
+getErrorString();
+TestDiffAlgorithm();
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// true
+// ""
+// true
+// true
+// ""
+// Calling diff(
+//   seq1={1, 2, 3},
+//   seq2={1, 2, 3}
+// )
+// 123
+// Calling diff(
+//   seq1={1, 2, 3},
+//   seq2={1, 2, 3, 4, 5, 6}
+// )
+// 123[4;32m456[0m
+// Calling diff(
+//   seq1={1, 2, 3, 4, 5, 6},
+//   seq2={1, 2, 3}
+// )
+// 123[9;31m456[0m
+// Calling diff(
+//   seq1={1, 2, 3, 4, 5, 6},
+//   seq2={1, 2, 3, 6}
+// )
+// 123[9;31m45[0m6
+// Calling diff(
+//   seq1={1},
+//   seq2={2}
+// )
+// [9;31m1[0m[4;32m2[0m
+// Calling diff(
+//   seq1={1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+//   seq2={1, 2, 6, 4, 5, 7, 3, 8, 9, 10}
+// )
+// 12[9;31m3[0m[4;32m6[0m45[9;31m6[0m7[4;32m3[0m8910
+// Calling diff(
+//   seq1={1, 2, 3},
+//   seq2={1, 2, 3}
+// )
+// 123
+// ""
+// endResult

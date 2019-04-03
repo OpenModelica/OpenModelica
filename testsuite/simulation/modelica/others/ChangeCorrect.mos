@@ -1,0 +1,39 @@
+// name: ChangeCorrect[#2262]
+// keywords: change, empty array 
+// status: correct
+// teardown_command: rm -rf bug_2262_* _bug_2262_* output.log
+// 
+// see #2262
+// 
+
+loadString("
+model bug_2262_
+  Boolean b[0];
+  Boolean anychange;
+
+algorithm
+  anychange := false;
+  for i in (1:size(b, 1)) loop
+    anychange := anychange or change(b[i]);
+  end for;
+end bug_2262_;
+"); getErrorString();
+
+simulate(bug_2262_); getErrorString();
+val(anychange, 0.0);
+val(anychange, 0.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug_2262__res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug_2262_', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// endResult

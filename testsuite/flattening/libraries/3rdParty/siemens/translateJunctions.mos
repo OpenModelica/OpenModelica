@@ -1,0 +1,24 @@
+// name:     translate Junctions
+// keywords: SiemensPower Junctions SplitterMixer
+// status:   correct
+// teardown_command: rm -rf SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* _SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia*
+//
+//  Test SiemensPower component Junctions
+//
+
+loadModel(SiemensPower,{"2.1 beta"});
+getErrorString();
+
+// test simple model
+translateModel(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat");
+
+// test full model
+translateModel(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/splitterMixer_testTubeOwnMedia.mat");
+
+
+// Result:
+// true
+// ""
+// true
+// true
+// endResult

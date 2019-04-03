@@ -1,0 +1,30 @@
+// name: getDialogAnnotation.mos [BUG: https://trac.openmodelica.org/OpenModelica/ticket/3157]
+// keywords:
+// status: correct
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("getDialogAnnotation.mo"); getErrorString();
+list(GetDialogAnnotation); getErrorString();
+getComponentAnnotations(GetDialogAnnotation); getErrorString();
+getComponentAnnotations(Modelica.Mechanics.MultiBody.Visualizers.Advanced.Arrow); getErrorString();
+getComponentAnnotations(Modelica.Blocks.Sources.RealExpression); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "model GetDialogAnnotation
+//   parameter Real x = 1;
+//   parameter Real y = 2 annotation(
+//     Dialog);
+// end GetDialogAnnotation;"
+// ""
+// {{},{Dialog("General","",true,-,false,-,-,-,-,"",false)}}
+// ""
+// {{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{Dialog("General","",true,-,true,-,-,-,-,"",false)},{Dialog("General","",true,-,false,-,-,-,-,"",false)},{},{},{},{HideResult=true},{HideResult=true},{HideResult=true},{},{}}
+// ""
+// {{Dialog("General","Time varying output signal",true,-,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// ""
+// endResult

@@ -1,0 +1,67 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+//setCompiler("gcc"); getErrorString();
+//setCXXCompiler("g++"); getErrorString();
+//setDebugFlags("hpcom,hpcomDump"); getErrorString();
+setCommandLineOptions("+n=6 +hpcomScheduler=list +hpcomCode=pthreads_spin"); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6); getErrorString();
+
+res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Mechanics.MultiBody.Examples.Loops.EngineV6ODE.graphml","ReferenceGraphs/Mechanics.EngineV6_TaskGraphODE.graphml");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat",
+  "Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_diff.csv",0.13,0.0005,
+  {"load.phi",
+   "load.w",
+   "filter.x[1]",
+   "filter.x[2]"});
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Alias set with several free start values
+//  * candidate: cylinder1.Cylinder.s(start = -0.3)
+//  * candidate: cylinder1.gasForce.s_rel(start = -0.0)
+// => select value from cylinder1.Cylinder.s(start = -0.3) for variable: cylinder1.Cylinder.s
+// Warning: Alias set with several free start values
+//  * candidate: cylinder2.Cylinder.s(start = -0.3)
+//  * candidate: cylinder2.gasForce.s_rel(start = -0.0)
+// => select value from cylinder2.Cylinder.s(start = -0.3) for variable: cylinder2.Cylinder.s
+// Warning: Alias set with several free start values
+//  * candidate: cylinder3.Cylinder.s(start = -0.3)
+//  * candidate: cylinder3.gasForce.s_rel(start = -0.0)
+// => select value from cylinder3.Cylinder.s(start = -0.3) for variable: cylinder3.Cylinder.s
+// Warning: Alias set with several free start values
+//  * candidate: cylinder4.Cylinder.s(start = -0.3)
+//  * candidate: cylinder4.gasForce.s_rel(start = -0.0)
+// => select value from cylinder4.Cylinder.s(start = -0.3) for variable: cylinder4.Cylinder.s
+// Warning: Alias set with several free start values
+//  * candidate: cylinder5.Cylinder.s(start = -0.3)
+//  * candidate: cylinder5.gasForce.s_rel(start = -0.0)
+// => select value from cylinder5.Cylinder.s(start = -0.3) for variable: cylinder5.Cylinder.s
+// Warning: Alias set with several free start values
+//  * candidate: cylinder6.Cylinder.s(start = -0.3)
+//  * candidate: cylinder6.gasForce.s_rel(start = -0.0)
+// => select value from cylinder6.Cylinder.s(start = -0.3) for variable: cylinder6.Cylinder.s
+// "
+// {"File 'd:/Programming/OPENMODELICA/OpenModelica/testsuite/simulation/modelica/hpcom/taskGraphModelica.Mechanics.MultiBody.Examples.Loops.EngineV6ODE.graphml' does not exist"}
+// {"Files Equal!"}
+// endResult

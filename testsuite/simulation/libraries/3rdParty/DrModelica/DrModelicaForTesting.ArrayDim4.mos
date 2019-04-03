@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.ArrayDim4.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.ArrayDim4
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.ArrayDim4.* DrModelicaForTesting.ArrayDim4_* DrModelicaForTesting.ArrayDim4 DrModelicaForTesting.ArrayDim4.exe DrModelicaForTesting.ArrayDim4.cpp DrModelicaForTesting.ArrayDim4.makefile DrModelicaForTesting.ArrayDim4.libs DrModelicaForTesting.ArrayDim4.log DrModelicaForTesting.ArrayDim4.c DrModelicaForTesting.ArrayDim4.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.ArrayDim4, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.ArrayDim4_res.mat",
+  "ReferenceFiles/ArrayDim4_ref.mat","DrModelicaForTesting.ArrayDim4_diff.csv",0.01,0.013,
+  {"n","m", "k"});
+   
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.ArrayDim4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.ArrayDim4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,42 @@
+// name: Bug2704.mos
+// status: correct
+
+loadString("
+model Bug2704
+  Boolean a = initial();
+
+  impure function impureTest
+    output Integer x;
+
+    external \"C\" x = _impureTest() annotation(Include = \"#include <stdlib.h>
+                                                            int _impureTest()
+                                                            {
+                                                              static int d=0;
+                                                              return (double)++d;
+                                                            }\");
+  end impureTest;
+
+  Real r = impureTest();
+end Bug2704;
+"); getErrorString();
+
+simulate(Bug2704); getErrorString();
+val(a, 0.5); getErrorString();
+val(r, 0.5); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Bug2704_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Bug2704', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// ""
+// 253.0
+// ""
+// endResult

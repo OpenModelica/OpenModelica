@@ -1,0 +1,32 @@
+// name:     DoubleWhenConflict
+// keywords: equations when
+// status:   correct
+// 
+//  Erroneous model: close defined by two equations!
+// Drmodelica: 9.1 When-Statements (p. 293)
+// 
+loadFile("DoubleWhenConflict.mo");
+simulate(DoubleWhenConflict,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString(); // simulation failed, check error string.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DoubleWhenConflict', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: DoubleWhenConflict"
+// end SimulationResult;
+// "Error: Too many equations, over-determined system. The model has 2 equation(s) and 1 variable(s).
+// Warning: Equation 2 (size: 1) algorithm
+//   when x <= 5.0 then
+//     close := false;
+//   end when;
+//  is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: 
+//   Already solved: close
+//   Equations used to solve those variables:
+//     Equation 1 (size: 1): algorithm
+//   when x >= 5.0 then
+//     close := true;
+//   end when;
+// "
+// endResult

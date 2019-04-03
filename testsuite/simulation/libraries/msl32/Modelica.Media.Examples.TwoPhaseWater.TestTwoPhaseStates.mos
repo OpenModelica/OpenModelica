@@ -1,0 +1,42 @@
+// name:     Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates);
+compareVars :=
+{
+   "medium.p",
+   "medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates
+// {"medium.p","medium.h"}
+// Simulation options: startTime = 0.0, stopTime = 22.0, numberOfIntervals = 2200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates', options = '', outputFormat = 'mat', variableFilter = 'time|medium.p|medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 20.080014
+// |                 | |       | medium.x >= 0.0 and medium.x <= 1.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x <= 1.0, has value: 1
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

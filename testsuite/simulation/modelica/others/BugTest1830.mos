@@ -1,0 +1,45 @@
+// name:     WhenReinitAlgorithm[Bug1830.mos]
+// keywords: algorithms, reinit
+// status:   correct
+// teardown_command: rm -rf try_* try try.exe try.c _try.h try.log try.libs try.makefile output.log
+// 
+// tests reported Bug 1830
+// 
+
+loadString("
+model try
+  Real x(start = 1);
+algorithm
+  when x >= 7 then
+    reinit(x, 5);
+  end when;
+equation
+  der(x) = 1 ;
+end try;
+"); getErrorString();
+
+simulate(try,stopTime=10,numberOfIntervals=100); getErrorString();
+val(x,0);
+val(x,7);
+val(x,8);
+val(x,9);
+val(x,10);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "try_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'try', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.0
+// 5.999999999199761
+// 6.99999999919976
+// 5.999999998399694
+// 6.999999998399694
+// endResult

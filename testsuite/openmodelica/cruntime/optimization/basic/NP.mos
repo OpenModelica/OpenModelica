@@ -1,0 +1,67 @@
+// name: NishidaProblem
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+// see: Second-order sensitivities of general dynamic systems with application to optimal control problems
+// Vassilios S. Vassiliadis, Eva Balsa Canto, Julio R. Banga
+// Received 19 February 1998; received in revised form 4 November 1998; accepted 17 November 1998
+
+loadString("
+optimization NishidaProblem(objective = x1*x1 + x2*x2 + x3*x3 + x4*x4)
+    input Real u(min = -1, max = 1, start = 0);
+    Real x1(min = -15, max = 15, start = 10, fixed =true);
+    Real x2(min = -15, max = 15, start = 10, fixed =true);
+    Real x3(min = -15, max = 15, start = 10, fixed =true);
+    Real x4(min = -15, max = 15, start = 10, fixed =true);
+  equation
+   der(x1) = 5*x2 - 0.5*x1;
+   -der(x2) = 5*x1 + 0.5*x2 - u;
+   der(x3) = -0.6*x3 + 10*x4;
+   -der(x4) = 0.6*x4 + 10*x3-u;
+end NishidaProblem;
+");
+getErrorString();
+
+optimize(NishidaProblem, numberOfIntervals=200, tolerance = 1e-6, stopTime = 4, simflags="-optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("NishidaProblem_res.mat","ReferenceFiles/NishidaProblem_ref.mat","TimeTableTest_res.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NishidaProblem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'optimization', fileNamePrefix = 'NishidaProblem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 10, nominal = 15, min = -15, max = 15, init = 10)
+// State[1]:x2(start = 10, nominal = 15, min = -15, max = 15, init = 10)
+// State[2]:x3(start = 10, nominal = 15, min = -15, max = 15, init = 10)
+// State[3]:x4(start = 10, nominal = 15, min = -15, max = 15, init = 10)
+// Input[4]:u(start = 0, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

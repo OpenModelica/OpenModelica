@@ -1,0 +1,70 @@
+// name:     API loading and saving
+// keywords: Graphical API load save
+// status:   correct
+// 
+//  Subset of the Graphical API, loading and saving.
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+createModel(A);
+createModel(A.test);
+createModel(test2);
+addComponent(x,Integer,A.test);
+addComponent(z,Real,A.test);
+addComponent(y,Integer,test2);
+setSourceFile(A.test,"test.mo");
+setSourceFile(A,"A.mo");
+getSourceFile(A.test);
+getSourceFile(A);
+getSourceFile(test2);
+save(A.test);
+save(A);
+clear();
+loadFile("A.mo");
+loadFile("test.mo");
+getClassNames();
+getClassNames(A);
+system("rm -rf A.mo test.mo");
+
+// Result:
+// {true}
+// Evaluating: createModel(A)
+// true
+// Evaluating: createModel(A.test)
+// true
+// Evaluating: createModel(test2)
+// true
+// Evaluating: addComponent(x, Integer, A.test)
+// true
+// Evaluating: addComponent(z, Real, A.test)
+// true
+// Evaluating: addComponent(y, Integer, test2)
+// true
+// Evaluating: setSourceFile(A.test, "test.mo")
+// true
+// Evaluating: setSourceFile(A, "A.mo")
+// true
+// Evaluating: getSourceFile(A.test)
+// "test.mo"
+// Evaluating: getSourceFile(A)
+// "A.mo"
+// Evaluating: getSourceFile(test2)
+// ""
+// Evaluating: save(A.test)
+// true
+// Evaluating: save(A)
+// true
+// Evaluating: clear()
+// true
+// Evaluating: loadFile("A.mo")
+// true
+// Evaluating: loadFile("test.mo")
+// true
+// Evaluating: getClassNames()
+// {A}
+// Evaluating: getClassNames(A)
+// {test}
+// Evaluating: system("rm -rf A.mo test.mo")
+// 0
+// endResult

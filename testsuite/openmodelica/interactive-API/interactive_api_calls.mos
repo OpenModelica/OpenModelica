@@ -1,0 +1,1026 @@
+// name: API-Interactive Calls
+// keywords: Graphical API, component attributes
+// status: correct
+//
+//  Subset of the Graphical API for setting component attributes
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+createModel(A);              getErrorString();
+addComponent(x,Real,A);      getErrorString();
+isModel(A);                  getErrorString();
+isRecord(A);                 getErrorString();
+isBlock(A);                  getErrorString();
+isType(A);                   getErrorString();
+isFunction(A);               getErrorString();
+isPackage(A);                getErrorString();
+isClass(A);                  getErrorString();
+isOperator(A);               getErrorString();
+isOperatorRecord(A);         getErrorString();
+isOperatorFunction(A);       getErrorString();
+// test bug #3196 setComponentDimensions
+list(A); getErrorString();
+setComponentDimensions(A,x,{10,11,12}); getErrorString();
+list(A); getErrorString();
+setComponentDimensions(A,x,{1,2}); getErrorString();
+list(A); getErrorString();
+
+loadFile("interactive_api_calls.mo"); getErrorString();
+isType(vector3D);            getErrorString();
+isShortDefinition(vector3D); getErrorString();
+isShortDefinition(C); getErrorString();
+isEnumeration(C); getErrorString();
+getEnumerationLiterals(C); getErrorString();
+isEnumeration(sizeE); getErrorString();
+getEnumerationLiterals(sizeE); getErrorString();
+isReplaceable(ReplaceableClass, "M1"); getErrorString();
+isReplaceable(RealSignal, "SignalType"); getErrorString();
+isProtectedClass(RealSignal, "SignalType"); getErrorString();
+isProtectedClass(ProtectedClass, "M1"); getErrorString();
+getBuiltinType(Resistance); getErrorString();
+getDerivedClassModifierNames(Resistance);
+getDerivedClassModifierValue(Resistance, unit);
+getDerivedClassModifierValue(Resistance, quantity);
+getClassInformation(vector3D); getErrorString();
+getInheritanceCount(vector3D); getErrorString();
+getNthInheritedClass(vector3D, 1); getErrorString();
+getInheritedClasses(vector3D);
+getNthComponentCondition(M, 1); getErrorString();
+getNthComponentCondition(M, 2); getErrorString();
+getNthComponentCondition(M, 3); getErrorString();
+getExtendsModifierNames(vector3D, Real); getErrorString();
+getExtendsModifierValue(vector3D, Real, start); getErrorString();
+getExtendsModifierValue(vector3D, Real, nominal); getErrorString();
+getClassComment(M); getErrorString();
+getComponentComment(M, r); getErrorString();
+getClassInformation(state1); getErrorString();
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+getAnnotationCount(Modelica.Electrical.Analog.Basic.Resistor); getErrorString();
+getNthAnnotationString(Modelica.Electrical.Analog.Basic.Resistor, 1); getErrorString();
+getImportCount(Modelica.Mechanics.Rotational); getErrorString();
+getNthImport(Modelica.Mechanics.Rotational, 1); getErrorString();
+getInitialAlgorithmCount(Modelica.Blocks.Sources.BooleanTable); getErrorString();
+getNthInitialAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1); getErrorString();
+getAlgorithmCount(Modelica.Blocks.Sources.BooleanTable); getErrorString();
+getNthAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1); getErrorString();
+getInitialEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
+getNthInitialEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1); getErrorString();
+getEquationCount(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
+getNthEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1); getErrorString();
+getTransitions(SimpleSMwithAnnotations); getErrorString();
+
+getShortDefinitionBaseClassInformation(RealInput); getErrorString();
+getShortDefinitionBaseClassInformation(RealInput3); getErrorString();
+getShortDefinitionBaseClassInformation(RealConnect); getErrorString();
+
+getExternalFunctionSpecification(TestPack.Ext); getErrorString();
+getExternalFunctionSpecification(TestPack.NoExt); getErrorString();
+
+// adrpo test getNthComponentModification
+list(TestPack.MyModel); getErrorString();
+getNthComponentModification(TestPack.MyModel, 1); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1, $Code(=2)); getErrorString();
+list(TestPack.MyModel); getErrorString();
+getNthComponentModification(TestPack.MyModel, 1); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1.start, $Code(=2));  getErrorString();
+list(TestPack.MyModel); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1, $Code(=Resistor(R=2)));  getErrorString();
+list(TestPack.MyModel); getErrorString();
+getNthComponentModification(TestPack.MyModel, 1); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1.min, $Code(=10)); getErrorString();
+list(TestPack.MyModel); getErrorString();
+getComponentModifierNames(TestPack.MyModel, "r1"); getErrorString();
+getNthComponentModification(TestPack.MyModel, 1); getErrorString();
+getComponentModifierValue(TestPack.MyModel, r1); getErrorString();
+getComponentModifierValue(TestPack.MyModel, r1.start); getErrorString();
+getComponentModifierValue(TestPack.MyModel, r1.min); getErrorString();
+list(TestPack.MyModel); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1.min, $Code(())); getErrorString();
+list(TestPack.MyModel); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1, $Code(())); getErrorString();
+list(TestPack.MyModel); getErrorString();
+setComponentModifierValue(TestPack.MyModel, r1.start, $Code(())); getErrorString();
+list(TestPack.MyModel); getErrorString();
+
+// test codeToString($Code)
+codeToString($Code(=1+2)); getErrorString();
+
+// test MSL 3.2 Code issues [from Chris Paredis and Axel Reichwein at Georgia Institute of Technology]
+deleteClass(ModelicaServices);
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
+getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
+list(Modelica.UsersGuide.Conventions.Documentation.Format.Code); getErrorString();
+
+// test getMessagesStringInternal()
+buildModel(M1);
+getMessagesStringInternal();
+
+clear();
+// adrpo: test unique messages
+loadModel(Modelica, {"3.2.1"});
+getMessagesStringInternal(); // unique
+loadModel(ThermoSysPro);
+getMessagesStringInternal(); // unique
+translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution);
+getMessagesStringInternal(); // unique
+translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution);
+getMessagesStringInternal(unique = false); // not unique
+
+// Result:
+// {true}
+// Evaluating: createModel(A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addComponent(x, Real, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isModel(A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isRecord(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isBlock(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isType(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isFunction(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isPackage(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isClass(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isOperator(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isOperatorRecord(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isOperatorFunction(A)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(A)
+// "model A
+//   Real x;
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentDimensions(A, x, {10, 11, 12})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(A)
+// "model A
+//   Real x[10, 11, 12];
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentDimensions(A, x, {1, 2})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(A)
+// "model A
+//   Real x[1, 2];
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadFile("interactive_api_calls.mo")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isType(vector3D)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isShortDefinition(vector3D)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isShortDefinition(C)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isEnumeration(C)
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getEnumerationLiterals(C)
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isEnumeration(sizeE)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getEnumerationLiterals(sizeE)
+// {"Small","Medium","Large"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isReplaceable(ReplaceableClass, "M1")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isReplaceable(RealSignal, "SignalType")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isProtectedClass(RealSignal, "SignalType")
+// false
+// Evaluating: getErrorString()
+// ""
+// Evaluating: isProtectedClass(ProtectedClass, "M1")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getBuiltinType(Resistance)
+// "Real"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDerivedClassModifierNames(Resistance)
+// {"quantity","unit"}
+// Evaluating: getDerivedClassModifierValue(Resistance, unit)
+// "\"Ohm\""
+// Evaluating: getDerivedClassModifierValue(Resistance, quantity)
+// "\"Resistance\""
+// Evaluating: getClassInformation(vector3D)
+// ("type","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,4,1,4,67,{"3"},false,false,"","",false,"")
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInheritanceCount(vector3D)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthInheritedClass(vector3D, 1)
+// Real
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInheritedClasses(vector3D)
+// {Real}
+// Evaluating: getNthComponentCondition(M, 1)
+// ""
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentCondition(M, 2)
+// "if i > 0"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentCondition(M, 3)
+// Error
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExtendsModifierNames(vector3D, Real)
+// {start, nominal}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExtendsModifierValue(vector3D, Real, start)
+// 5
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExtendsModifierValue(vector3D, Real, nominal)
+// {1, 2, 3, 4, 5}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassComment(M)
+// "A class comment"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentComment(M, r)
+// "A component comment"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassInformation(state1)
+// ("model","",false,false,false,"openmodelica/interactive-API/interactive_api_calls.mo",false,44,1,46,11,{},false,false,"","",true,"")
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadModel(Modelica, {"3.1"})
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getAnnotationCount(Modelica.Electrical.Analog.Basic.Resistor)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthAnnotationString(Modelica.Electrical.Analog.Basic.Resistor, 1)
+// "annotation(
+//   Documentation(info = \"<HTML>
+// <P>
+// The linear resistor connects the branch voltage <i>v</i> with the
+// branch current <i>i</i> by <i>i*R = v</i>.
+// The Resistance <i>R</i> is allowed to be positive, zero, or negative.
+// </P>
+// </HTML>
+//   \", revisions = \"<html>
+// <ul>
+// <li><i> August 07, 2009   </i>
+//        by Anton Haumer<br> temperature dependency of resistance added<br>
+//        </li>
+// <li><i> March 11, 2009   </i>
+//        by Christoph Clauss<br> conditional heat port added<br>
+//        </li>
+// <li><i> 1998   </i>
+//        by Christoph Clauss<br> initially implemented<br>
+//        </li>
+// </ul>
+// </html>\"),
+//   Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {90, 0}}, color = {0, 0, 255}), Text(extent = {{-144, -40}, {142, -72}}, lineColor = {0, 0, 0}, textString = \"R=%R\"), Line(visible = useHeatPort, points = {{0, -100}, {0, -30}}, color = {127, 0, 0}, smooth = Smooth.None, pattern = LinePattern.Dot), Text(extent = {{-152, 87}, {148, 47}}, textString = \"%name\", lineColor = {0, 0, 255})}),
+//   Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-70, 30}, {70, -30}}, lineColor = {0, 0, 255}), Line(points = {{-96, 0}, {-70, 0}}, color = {0, 0, 255}), Line(points = {{70, 0}, {96, 0}}, color = {0, 0, 255})}));"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getImportCount(Modelica.Mechanics.Rotational)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthImport(Modelica.Mechanics.Rotational, 1)
+// {"Modelica.SIunits","SI","named"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInitialAlgorithmCount(Modelica.Blocks.Sources.BooleanTable)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthInitialAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1)
+// "(index, nextTime, y) := getFirstIndex(table, time, startValue);"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getAlgorithmCount(Modelica.Blocks.Sources.BooleanTable)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthAlgorithm(Modelica.Blocks.Sources.BooleanTable, 1)
+// "when time >= pre(nextTime) and n > 0 then
+//   if index < n then
+//     index := index + 1;
+//     nextTime := table[index];
+//     y := not y;
+//   elseif index == n then
+//     index := index + 1;
+//     y := not y;
+//   end if;
+// end when;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInitialEquationCount(Modelica.Mechanics.MultiBody.Parts.Body)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthInitialEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1)
+// "if angles_fixed then
+// // Initialize positional variables
+//   if not Connections.isRoot(frame_a.R) then
+// // frame_a.R is computed somewhere else
+//     zeros(3) = Frames.Orientation.equalityConstraint(frame_a.R, R_start);
+//   elseif useQuaternions then
+// // frame_a.R is computed from quaternions Q
+//     zeros(3) = Frames.Quaternions.Orientation.equalityConstraint(Q, Q_start);
+//   else
+// // frame_a.R is computed from the 3 angles 'phi'
+//     phi = phi_start;
+//   end if;
+// end if;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getEquationCount(Modelica.Mechanics.MultiBody.Parts.Body)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthEquation(Modelica.Mechanics.MultiBody.Parts.Body, 1)
+// "if enforceStates then
+//   Connections.root(frame_a.R);
+// else
+//   Connections.potentialRoot(frame_a.R);
+// end if;
+// r_0 = frame_a.r_0;
+// if not Connections.isRoot(frame_a.R) then
+// // Body does not have states
+// // Dummies
+//   Q = {0, 0, 0, 1};
+//   phi = zeros(3);
+//   phi_d = zeros(3);
+//   phi_dd = zeros(3);
+// elseif useQuaternions then
+// // Use Quaternions as states (with dynamic state selection)
+//   frame_a.R = Frames.from_Q(Q, Frames.Quaternions.angularVelocity2(Q, der(Q)));
+//   {0} = Frames.Quaternions.orientationConstraint(Q);
+// // Dummies
+//   phi = zeros(3);
+//   phi_d = zeros(3);
+//   phi_dd = zeros(3);
+// else
+// // Use Cardan angles as states
+//   phi_d = der(phi);
+//   phi_dd = der(phi_d);
+//   frame_a.R = Frames.axesRotations(sequence_angleStates, phi, phi_d);
+// // Dummies
+//   Q = {0, 0, 0, 1};
+// end if;
+// // gravity acceleration at center of mass resolved in world frame
+// g_0 = world.gravityAcceleration(frame_a.r_0 + Frames.resolve1(frame_a.R, r_CM));
+// // translational kinematic differential equations
+// v_0 = der(frame_a.r_0);
+// a_0 = der(v_0);
+// // rotational kinematic differential equations
+// w_a = Frames.angularVelocity2(frame_a.R);
+// z_a = der(w_a);
+// /* Newton/Euler equations with respect to center of mass
+//             a_CM = a_a + cross(z_a, r_CM) + cross(w_a, cross(w_a, r_CM));
+//             f_CM = m*(a_CM - g_a);
+//             t_CM = I*z_a + cross(w_a, I*w_a);
+//        frame_a.f = f_CM
+//        frame_a.t = t_CM + cross(r_CM, f_CM);
+//     Inserting the first three equations in the last two results in:
+//   */
+// frame_a.f = m * (Frames.resolve2(frame_a.R, a_0 - g_0) + cross(z_a, r_CM) + cross(w_a, cross(w_a, r_CM)));
+// frame_a.t = I * z_a + cross(w_a, I * w_a) + cross(r_CM, frame_a.f);"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getTransitions(SimpleSMwithAnnotations)
+// {{"state1","state2","i > 10","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-24, 58}, {-16, 50}, {-24, 11}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier), Text(true, {0.0, 0.0}, 0, {95, 95, 95}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{12, -2}, {12, -8}}, \"%condition\", 10, {TextStyle.Bold}, TextAlignment.Left)"},{"state2","state1","i < 1","false","true","false","1","Line(true, {0.0, 0.0}, 0, {{-66, 11}, {-76, 42}, {-64, 58}}, {175, 175, 175}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.Bezier), Text(true, {0.0, 0.0}, 0, {95, 95, 95}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-6, 4}, {-6, 10}}, \"%condition\", 10, {TextStyle.Bold}, TextAlignment.Right)"}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getShortDefinitionBaseClassInformation(RealInput)
+// {Real,"","","unspecified","input",{}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getShortDefinitionBaseClassInformation(RealInput3)
+// {Real,"flow","","constant","input",{3}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getShortDefinitionBaseClassInformation(RealConnect)
+// {Real,"","stream","unspecified","unspecified",{}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExternalFunctionSpecification(TestPack.Ext)
+// {"C","u","externFunc","x, y, z","",""}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExternalFunctionSpecification(TestPack.NoExt)
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1;
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentModification(TestPack.MyModel, 1)
+// {$Code()}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code( = 2))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1 = 2;
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentModification(TestPack.MyModel, 1)
+// {$Code( = 2)}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1.start, $Code( = 2))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2) = 2;
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code( = Resistor(R = 2)))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2) = Resistor(R = 2);
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentModification(TestPack.MyModel, 1)
+// {$Code((start = 2) = Resistor(R = 2))}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1.min, $Code( = 10))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2, min = 10) = Resistor(R = 2);
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(TestPack.MyModel, "r1")
+// {"start","min"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthComponentModification(TestPack.MyModel, 1)
+// {$Code((start = 2, min = 10) = Resistor(R = 2))}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(TestPack.MyModel, r1)
+// "Resistor(R = 2)"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(TestPack.MyModel, r1.start)
+// "2"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(TestPack.MyModel, r1.min)
+// "10"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2, min = 10) = Resistor(R = 2);
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1.min, $Code())
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2) = Resistor(R = 2);
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1, $Code())
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1(start = 2);
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentModifierValue(TestPack.MyModel, r1.start, $Code())
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(TestPack.MyModel)
+// "model MyModel
+//   Modelica.Electrical.Analog.Basic.Resistor r1;
+//   Modelica.Electrical.Analog.Basic.Capacitor c1;
+// end MyModel;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: codeToString($Code( = 1 + 2))
+// " = 1 + 2"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: deleteClass(ModelicaServices)
+// true
+// Evaluating: loadModel(Modelica, {"3.2.1"})
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassRestriction(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
+// "class"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassInformation(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
+// ("class","Code",false,false,false,"Modelica 3.2.1/package.mo",false,572,9,625,17,{},false,false,"","",false,"")
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(Modelica.UsersGuide.Conventions.Documentation.Format.Code)
+// "class Code \"Code\"
+//   extends Modelica.Icons.Information;
+//   annotation(
+//     Documentation(info = \"<html>
+// <p>
+// <a href=\\\"modelica://Modelica.UsersGuide.Conventions.ModelicaCode\\\">Modelica code</a> conventions of class and instance names,
+// parameters and variables are specified separately. In this section it is summarized how to refer to
+// Modelica code in the HTML documentation.
+// </p>
+//
+// <ol>
+// <li> For constants, parameters and variables in code segments <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>
+//      should to be used, e.g., <br>
+//      <code><b>parameter</b> Modelica.SIunits.Time tStart \\\"Start time\\\"</code></li>
+// <li> Write multi or single line code segments using <code>&lt;pre&gt;</code> and <code>&lt;/pre&gt;</code>.</li>
+// <li> Multi line or single line code shall not be indented.</li>
+// <li> Inline code segments may be typeset with <code>&lt;code&gt;</code> and <code>&lt;/code&gt;</code>.</li>
+// <li> In code segments use bold to emphasize Modelica keywords.</li>
+// </ol>
+//
+// <h5>Example 1</h5>
+//
+// <pre>
+// &lt;pre&gt;
+// &lt;b&gt;connector&lt;/b&gt; Frame
+//    ...
+//    &lt;b&gt;flow&lt;/b&gt; SI.Force f[Woehrnschimmel1998] &lt;b&gt;annotation&lt;/b&gt;(unassignedMessage=\\\"...\\\");
+// &lt;b&gt;end&lt;/b&gt; Frame;
+// &lt;/pre&gt;</pre>
+//
+// <p>appears as</p>
+//
+// <pre>
+// <b>connector</b> Frame
+//    ...
+//    <b>flow</b> SI.Force f[Woehrnschimmel1998] <b>annotation</b>(unassignedMessage=\\\"...\\\");
+// <b>end</b> Frame;
+// </pre>
+//
+// <h5>Example 2</h5>
+//
+// <pre>
+// &lt;pre&gt;
+// &lt;b&gt;parameter&lt;/b&gt; Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
+// &lt;/pre&gt;
+// </pre>
+//
+// <p>appears as</p>
+//
+// <pre>
+// <b>parameter</b> Modelica.SIunits.Conductance G=1 &quot;Conductance&quot;;
+// </pre>
+// </html>\"));
+// end Code;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: buildModel(M1)
+// {"",""}
+// Evaluating: getMessagesStringInternal()
+// {record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "",
+//     readonly = false,
+//     lineStart = 0,
+//     columnStart = 0,
+//     lineEnd = 0,
+//     columnEnd = 0
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Error occurred while flattening model M1",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.error,
+//     id = 89
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "openmodelica/interactive-API/interactive_api_calls.mo",
+//     readonly = false,
+//     lineStart = 41,
+//     columnStart = 3,
+//     lineEnd = 41,
+//     columnEnd = 70
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Variable resistor1: In modifier (phi(start = 1), class or component start), class or component phi not found in <Modelica.Electrical.Analog.Basic.Resistor$resistor1>.",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.error,
+//     id = 515
+// end OpenModelica.Scripting.ErrorMessage;}
+// Evaluating: clear()
+// true
+// Evaluating: loadModel(Modelica, {"3.2.1"})
+// true
+// Evaluating: getMessagesStringInternal()
+// {}
+// Evaluating: loadModel(ThermoSysPro)
+// true
+// Evaluating: getMessagesStringInternal()
+// {}
+// Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
+// true
+// Evaluating: getMessagesStringInternal()
+// {record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     readonly = false,
+//     lineStart = 1185,
+//     columnStart = 3,
+//     lineEnd = 1241,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 245
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     readonly = false,
+//     lineStart = 703,
+//     columnStart = 3,
+//     lineEnd = 754,
+//     columnEnd = 22
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 245
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;}
+// Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
+// true
+// Evaluating: getMessagesStringInternal(unique = false)
+// {record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     readonly = false,
+//     lineStart = 1185,
+//     columnStart = 3,
+//     lineEnd = 1241,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 245
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     readonly = false,
+//     lineStart = 703,
+//     columnStart = 3,
+//     lineEnd = 754,
+//     columnEnd = 22
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 245
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 45,
+//     columnStart = 3,
+//     lineEnd = 85,
+//     columnEnd = 26
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     readonly = false,
+//     lineStart = 3,
+//     columnStart = 3,
+//     lineEnd = 43,
+//     columnEnd = 25
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
+//     kind = .OpenModelica.Scripting.ErrorKind.translation,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 150
+// end OpenModelica.Scripting.ErrorMessage;}
+// endResult

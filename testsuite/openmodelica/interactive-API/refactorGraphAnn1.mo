@@ -1,0 +1,88 @@
+// name:     refactorGraphAnn1
+// keywords: annotation
+// status:   correct
+//
+// Graphical  class annotations of old standard to be refactored into a new on.
+//
+
+model complextest
+
+  annotation (
+Coordsys(extent=[-150,-150;150,150],grid=[1,1]),
+Icon( Text(
+        extent=[-82,82; -28,34],
+        string="Edit Here",
+        style(
+          color=71,
+          rgbcolor={85,170,255},
+          pattern=2,
+          thickness=4,
+          arrow=2,
+          fillColor=3,
+          rgbfillColor={0,0,255},
+          fillPattern=10)),
+      Bitmap(extent=[-13,86; 91,46], name=
+            "C:/Documents and Settings/Mina dokument/Mina webbplatser/minwebbplats4/images/mycat.jpg",
+        style(
+          thickness=4,
+          gradient=2,
+          fillColor=46,
+          rgbfillColor={127,127,0})),
+      Rectangle(extent=[-88,12; -22,-28], style(
+          color=68,
+          rgbcolor={170,255,213},
+          pattern=3,
+          fillColor=83,
+          rgbfillColor={255,85,255})),
+      Ellipse(extent=[14,-10; 80,-48], style(
+          color=85,
+          rgbcolor={255,0,128},
+          pattern=4,
+          thickness=4,
+          fillPattern=3,
+          gradient=3,
+
+          fillColor=63,
+          rgbfillColor={85,255,170})),
+      Polygon(points=[-64,-56; -20,-82; -16,-54; 8,-74; -56,-82; -20,-82; -16,
+            -56; 8,-74; -26,-78; -52,-78; -64,-60; -52,-54; -22,-58; -48,-74;
+            -50,-84; -40,-76; -22,-58; -18,-58; -10,-26; -4,-34; -8,-48; -2,-66;
+            -4,-70; 0,-72; 0,-80; 6,-80; 38,-76; 36,-72; 6,-74; -6,-66; -10,-72;
+            -8,-72; -64,-56], style(
+          color=84,
+          rgbcolor={255,170,213},
+          pattern=3,
+          thickness=4,
+          gradient=2,
+          fillColor=3,
+          rgbfillColor={0,0,255},
+          fillPattern=10)),
+      Line(points=[-6,24; 56,8; 52,28; -4,24], style(
+          color=42,
+          rgbcolor={127,0,0},
+          pattern=2,
+          gradient=1,
+          arrow=3,
+          fillColor=79,
+          rgbfillColor={170,85,255},
+          fillPattern=7)),
+      Rectangle(extent=[-66,112; -124,80], style(
+          color=84,
+          rgbcolor={255,170,213},
+          pattern=2,
+          thickness=4,
+          gradient=3,
+          arrow=2,
+          fillColor=79,
+          rgbfillColor={170,85,255}))),
+    Diagram(Rectangle(extent=[-60,112; 65,40], style(
+          color=3,
+          rgbcolor={0,0,255},
+fillColor=51,
+          gradient=1,
+          rgbfillColor={255,255,85}))));
+
+end complextest;
+
+// class complextest
+// end complextest;

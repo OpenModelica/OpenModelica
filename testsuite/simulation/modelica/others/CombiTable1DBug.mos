@@ -1,0 +1,28 @@
+// name:     CombiTable1DBug [check bug with interpolation of table of 1 row]
+// keywords: Simulation, 
+// status:   correct
+// teardown_command: rm -rf _CombiTable1DBug* CombiTable1DBug_functions* CombiTable1DBug_records* CombiTable1DBug.makefile CombiTable1DBug.c CombiTable1DBug.o CombiTable1DBug.cpp CombiTable1DBug.exe CombiTable1DBug.libs CombiTable1DBug.log CombiTable1DBug_functions.cpp CombiTable1DBug_init.xml CombiTable1DBug_res.mat 
+// Simulate models and read in data.
+
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("CombiTable1DBug.mo"); getErrorString();
+simulate(CombiTable1DBug); getErrorString();
+val(y, 0);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CombiTable1DBug_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CombiTable1DBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.7
+// endResult

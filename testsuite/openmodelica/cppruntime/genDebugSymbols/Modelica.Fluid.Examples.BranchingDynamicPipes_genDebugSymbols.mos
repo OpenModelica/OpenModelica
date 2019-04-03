@@ -1,0 +1,122 @@
+// name:     Modelica.Fluid.Examples.BranchingDynamicPipes_Debug_Symbols_CPP
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTestingDefaults.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.BranchingDynamicPipes);
+timeout := 600;
+outputFormat := "mat";
+
+compareVars :=
+{
+   "pipe1.mediums[1].p",
+   "pipe1.mediums[1].Xi[1]",
+   "pipe1.mediums[1].T",
+   "pipe1.mediums[2].p",
+   "pipe1.mediums[2].Xi[1]",
+   "pipe1.mediums[2].T",
+   "pipe1.mediums[3].p",
+   "pipe1.mediums[3].Xi[1]",
+   "pipe1.mediums[3].T",
+   "pipe1.mediums[4].p",
+   "pipe1.mediums[4].Xi[1]",
+   "pipe1.mediums[4].T",
+   "pipe1.mediums[5].p",
+   "pipe1.mediums[5].Xi[1]",
+   "pipe1.mediums[5].T",
+   "pipe1.flowModel.m_flows[1]",
+   "pipe1.flowModel.m_flows[2]",
+   "pipe1.flowModel.m_flows[3]",
+   "pipe1.flowModel.m_flows[4]",
+   "pipe1.flowModel.m_flows[5]",
+   "pipe2.mediums[1].p",
+   "pipe2.mediums[1].Xi[1]",
+   "pipe2.mediums[1].T",
+   "pipe2.mediums[2].p",
+   "pipe2.mediums[2].Xi[1]",
+   "pipe2.mediums[2].T",
+   "pipe2.mediums[3].p",
+   "pipe2.mediums[3].Xi[1]",
+   "pipe2.mediums[3].T",
+   "pipe2.mediums[4].p",
+   "pipe2.mediums[4].Xi[1]",
+   "pipe2.mediums[4].T",
+   "pipe2.mediums[5].Xi[1]",
+   "pipe2.mediums[5].T",
+   "pipe2.flowModel.m_flows[1]",
+   "pipe2.flowModel.m_flows[2]",
+   "pipe2.flowModel.m_flows[3]",
+   "pipe2.flowModel.m_flows[4]",
+   "pipe3.mediums[1].p",
+   "pipe3.mediums[1].Xi[1]",
+   "pipe3.mediums[1].T",
+   "pipe3.mediums[2].p",
+   "pipe3.mediums[2].Xi[1]",
+   "pipe3.mediums[2].T",
+   "pipe3.mediums[3].p",
+   "pipe3.mediums[3].Xi[1]",
+   "pipe3.mediums[3].T",
+   "pipe3.mediums[4].p",
+   "pipe3.mediums[4].Xi[1]",
+   "pipe3.mediums[4].T",
+   "pipe3.mediums[5].Xi[1]",
+   "pipe3.mediums[5].T",
+   "pipe3.flowModel.m_flows[1]",
+   "pipe3.flowModel.m_flows[2]",
+   "pipe3.flowModel.m_flows[3]",
+   "pipe3.flowModel.m_flows[4]",
+   "pipe3.flowModel.m_flows[5]",
+   "pipe4.mediums[1].p",
+   "pipe4.mediums[1].Xi[1]",
+   "pipe4.mediums[1].T",
+   "pipe4.mediums[2].p",
+   "pipe4.mediums[2].Xi[1]",
+   "pipe4.mediums[2].T",
+   "pipe4.mediums[3].p",
+   "pipe4.mediums[3].Xi[1]",
+   "pipe4.mediums[3].T",
+   "pipe4.mediums[4].p",
+   "pipe4.mediums[4].Xi[1]",
+   "pipe4.mediums[4].T",
+   "pipe4.mediums[5].p",
+   "pipe4.mediums[5].Xi[1]",
+   "pipe4.mediums[5].T",
+   "pipe4.flowModel.m_flows[1]",
+   "pipe4.flowModel.m_flows[2]",
+   "pipe4.flowModel.m_flows[3]",
+   "pipe4.flowModel.m_flows[4]",
+   "pipe4.flowModel.m_flows[5]"
+};
+
+setDebugFlags("gendebugsymbols"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.BranchingDynamicPipes
+// 600
+// "mat"
+// {"pipe1.mediums[1].p","pipe1.mediums[1].Xi[1]","pipe1.mediums[1].T","pipe1.mediums[2].p","pipe1.mediums[2].Xi[1]","pipe1.mediums[2].T","pipe1.mediums[3].p","pipe1.mediums[3].Xi[1]","pipe1.mediums[3].T","pipe1.mediums[4].p","pipe1.mediums[4].Xi[1]","pipe1.mediums[4].T","pipe1.mediums[5].p","pipe1.mediums[5].Xi[1]","pipe1.mediums[5].T","pipe1.flowModel.m_flows[1]","pipe1.flowModel.m_flows[2]","pipe1.flowModel.m_flows[3]","pipe1.flowModel.m_flows[4]","pipe1.flowModel.m_flows[5]","pipe2.mediums[1].p","pipe2.mediums[1].Xi[1]","pipe2.mediums[1].T","pipe2.mediums[2].p","pipe2.mediums[2].Xi[1]","pipe2.mediums[2].T","pipe2.mediums[3].p","pipe2.mediums[3].Xi[1]","pipe2.mediums[3].T","pipe2.mediums[4].p","pipe2.mediums[4].Xi[1]","pipe2.mediums[4].T","pipe2.mediums[5].Xi[1]","pipe2.mediums[5].T","pipe2.flowModel.m_flows[1]","pipe2.flowModel.m_flows[2]","pipe2.flowModel.m_flows[3]","pipe2.flowModel.m_flows[4]","pipe3.mediums[1].p","pipe3.mediums[1].Xi[1]","pipe3.mediums[1].T","pipe3.mediums[2].p","pipe3.mediums[2].Xi[1]","pipe3.mediums[2].T","pipe3.mediums[3].p","pipe3.mediums[3].Xi[1]","pipe3.mediums[3].T","pipe3.mediums[4].p","pipe3.mediums[4].Xi[1]","pipe3.mediums[4].T","pipe3.mediums[5].Xi[1]","pipe3.mediums[5].T","pipe3.flowModel.m_flows[1]","pipe3.flowModel.m_flows[2]","pipe3.flowModel.m_flows[3]","pipe3.flowModel.m_flows[4]","pipe3.flowModel.m_flows[5]","pipe4.mediums[1].p","pipe4.mediums[1].Xi[1]","pipe4.mediums[1].T","pipe4.mediums[2].p","pipe4.mediums[2].Xi[1]","pipe4.mediums[2].T","pipe4.mediums[3].p","pipe4.mediums[3].Xi[1]","pipe4.mediums[3].T","pipe4.mediums[4].p","pipe4.mediums[4].Xi[1]","pipe4.mediums[4].T","pipe4.mediums[5].p","pipe4.mediums[5].Xi[1]","pipe4.mediums[5].T","pipe4.flowModel.m_flows[1]","pipe4.flowModel.m_flows[2]","pipe4.flowModel.m_flows[3]","pipe4.flowModel.m_flows[4]","pipe4.flowModel.m_flows[5]"}
+// true
+// ""
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.BranchingDynamicPipes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.BranchingDynamicPipes_res.mat
+// Messages: Wrong start value for variable _boundary1_P_medium_P_p_steam_sat_ detected. Got 2339.19 Expected: 100000
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

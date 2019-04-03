@@ -1,0 +1,41 @@
+// name:     HeatTankExpanded
+// keywords: <insert keywords here>
+// cflags: +std=2.x
+// status: correct
+// teardown_command: rm -rf HeatTankExpanded_* HeatTankExpanded HeatTankExpanded.exe HeatTankExpanded.cpp HeatTankExpanded.makefile HeatTankExpanded.libs HeatTankExpanded.log output.log
+// 
+//  <insert description here>
+// Drmodelica: 4.4 Parameterization and extension of Interfaces (p. 136).
+//
+loadFile("HeatTankExpanded.mo");
+simulate(HeatTankExpanded, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+//res:=readSimulationResult("HeatTankExpanded_res.mat",{x,y,z},3); 
+x:=val(level,0.3);
+y:=val(level,0.5);
+z:=val(level,0.7);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "HeatTankExpanded_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'HeatTankExpanded', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 2.899
+// 3.499
+// 4.099
+// endResult

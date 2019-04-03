@@ -1,0 +1,37 @@
+// name: 10_Test3PhaseSystemsDummyInit
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("Test3PhaseSystemsDummyInit.mo"); getErrorString();
+
+simulate(Test3PhaseSystemsDummyInit, stopTime=10); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsDummyInit_res.mat",
+  "ReferenceFiles/Test3PhaseSystemsDummyInit.mat",
+  "Test3PhaseSystemsDummyInit_diff.csv", 0.01, 0.0001,
+  {"i_dq0[1]", "i_dq0[2]", "i_dq0[3]"}); getErrorString();
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Test3PhaseSystemsDummyInit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsDummyInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[1] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[2] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[1] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [simulation/libraries/3rdParty/MathematicalAspects/Test3PhaseSystemsDummyInit.mo:4:3-4:71:writable] Warning: Variable $DER.i_abc[2] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

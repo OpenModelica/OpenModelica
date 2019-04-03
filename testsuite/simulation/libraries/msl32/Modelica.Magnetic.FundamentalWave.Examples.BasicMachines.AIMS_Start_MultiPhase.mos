@@ -1,0 +1,49 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase);
+compareVars :=
+{
+   "aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "aims3.rotor.zeroInductor.i0",
+   "aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "aimsM.rotor.zeroInductor.i0",
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "loadInertia3.phi",
+   "loadInertia3.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase
+// {"aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aims3.rotor.zeroInductor.i0","aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.rotor.zeroInductor.i0","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","loadInertia3.phi","loadInertia3.w","loadInertiaM.phi","loadInertiaM.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase', options = '', outputFormat = 'mat', variableFilter = 'time|aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aims3.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aims3.rotor.zeroInductor.i0|aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aims3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimsM.rotor.zeroInductor.i0|aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|loadInertia3.phi|loadInertia3.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_MultiPhase_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

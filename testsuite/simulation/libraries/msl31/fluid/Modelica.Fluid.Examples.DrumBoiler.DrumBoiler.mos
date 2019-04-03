@@ -1,0 +1,43 @@
+//name:        Modelica.Fluid.Examples.DrumBoiler.DrumBoiler [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.DrumBoiler.DrumBoiler
+// [Nonlinear.mo:19:12-23:97:writable] Warning: If-equations are only partially supported. Ignoring   assert(limiter.u >= limiter.uMin + -0.01 * abs(limiter.uMin) and limiter.u <= limiter.uMax + 0.01 * abs(limiter.uMax),\"Limiter: During initialization the limits have been ignored.However, the result is that the input u is not within the required limits:  u = \" + String(limiter.u, 0, true, 6) + \", uMin = \" + String(limiter.uMin, 0, true, 6) + \", uMax = \" + String(limiter.uMax, 0, true, 6));
+// Warning: Alias variables evaporator.p = evaporator.sat.psat have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = evaporator.port_a.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = evaporator.port_b.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = massFlowRate.port_b.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = pressure.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = temperature.port.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = pump.medium.state.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Warning: Alias variables evaporator.p = SteamValve.state_a.p have start values evaporator.p_start != 100000.0. Use value from evaporator.p.
+// Error: Error building simulator. Buildlog: mingw32-make[1]: Entering directory `c:/bin/cygwin/home/adrpo/dev/OpenModelica/testsuite/libraries/msl31/fluid/simulate'
+// gcc   -falign-functions -msse2 -mfpmath=sse   -I\"c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc\" -I.    -c -o Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.o Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c: In function 'eqFunction_126':
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c:2477: warning: passing argument 3 of 'array_alloc_scalar_string_array' discards qualifiers from pointer target type
+// c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc/string_array.h:129: note: expected 'modelica_string_t' but argument is of type 'const char *'
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c: In function 'eqFunction_136':
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c:2793: error: storage size of 'tmp33' isn't known
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c: In function 'eqFunction_139':
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.c:2867: error: storage size of 'tmp52' isn't known
+// mingw32-make[1]: *** [Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.o] Error 1
+// mingw32-make[1]: Leaving directory `c:/bin/cygwin/home/adrpo/dev/OpenModelica/testsuite/libraries/msl31/fluid/simulate'
+// 
+// "
+// end SimulationResult;
+// ""
+// endResult

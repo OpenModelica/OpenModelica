@@ -1,0 +1,19 @@
+// name:     DeadEnd
+// keywords: state machines
+// status: correct
+//
+
+loadFile("DeadEnd.mo");
+echo(false);
+//setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+simulate(DeadEnd, startTime=0, stopTime=2, numberOfIntervals=0); getErrorString();
+echo(true);
+val(state1.active,2);
+val(state2.active,2);
+
+// Result:
+// true
+// true
+// 0.0
+// 1.0
+// endResult

@@ -1,0 +1,87 @@
+// name:     SyncFilter
+// keywords: vector and when
+// status:  correct
+// teardown_command: rm -rf SyncFilterTest* output.log
+// tests: bug reported here: https://www.openmodelica.org/index.php/forum/topic?id=74
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("SyncFilter.mo"); getErrorString();
+instantiateModel(SyncFilterTest); getErrorString();
+simulate(SyncFilterTest, stopTime=0.0005);
+val(syncFilter.y, 4.2*10e-6);
+val(syncFilter.y, 6.2*10e-6);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "function Modelica.Math.asin \"Inverse sine (-1 <= u <= 1)\"
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//
+//   external \"C\" y = asin(u);
+// end Modelica.Math.asin;
+//
+// class SyncFilterTest
+//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-13, start = 0.1) = 1.0 / (syncFilter.UpdateRate * /*Real*/(syncFilter.n)) \"Sample period of component\";
+//   parameter Real syncFilter.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"First sample time instant\";
+//   protected Boolean syncFilter.sampleTrigger \"True, if sample time instant\";
+//   protected Boolean syncFilter.firstTrigger \"Rising edge signals first sample instant\";
+//   Real syncFilter.u \"Continuous input signal\";
+//   Real syncFilter.y \"Continuous output signal\";
+//   parameter Real syncFilter.UpdateRate = 25000.0;
+//   parameter Integer syncFilter.n = 5;
+//   Real syncFilter.x[1] \"State of transfer function from controller canonical form\";
+//   Real syncFilter.x[2] \"State of transfer function from controller canonical form\";
+//   Real syncFilter.x[3] \"State of transfer function from controller canonical form\";
+//   Real syncFilter.x[4] \"State of transfer function from controller canonical form\";
+//   Real syncFilter.b[1];
+//   Real syncFilter.b[2];
+//   Real syncFilter.b[3];
+//   Real syncFilter.b[4];
+//   Real syncFilter.b[5];
+//   Real syncFilter.xext[1];
+//   Real syncFilter.xext[2];
+//   Real syncFilter.xext[3];
+//   Real syncFilter.xext[4];
+//   Real syncFilter.xext[5];
+//   Real syncFilter.x1;
+//   Real clock.y \"Connector of Real output signal\";
+//   parameter Real clock.offset(quantity = \"Time\", unit = \"s\") = 0.0 \"Offset of output signal\";
+//   parameter Real clock.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Output = offset for time < startTime\";
+// equation
+//   syncFilter.b = {1.0 / /*Real*/(syncFilter.n), 1.0 / /*Real*/(syncFilter.n), 1.0 / /*Real*/(syncFilter.n), 1.0 / /*Real*/(syncFilter.n), 1.0 / /*Real*/(syncFilter.n)};
+//   when syncFilter.sampleTrigger then
+//     syncFilter.x1 = syncFilter.u;
+//     syncFilter.xext[1] = syncFilter.x1;
+//     syncFilter.xext[2] = syncFilter.x[1];
+//     syncFilter.xext[3] = syncFilter.x[2];
+//     syncFilter.xext[4] = syncFilter.x[3];
+//     syncFilter.xext[5] = syncFilter.x[4];
+//     syncFilter.x[1] = syncFilter.xext[1];
+//     syncFilter.x[2] = syncFilter.xext[2];
+//     syncFilter.x[3] = syncFilter.xext[3];
+//     syncFilter.x[4] = syncFilter.xext[4];
+//     syncFilter.y = syncFilter.b[1] * syncFilter.xext[1] + syncFilter.b[2] * syncFilter.xext[2] + syncFilter.b[3] * syncFilter.xext[3] + syncFilter.b[4] * syncFilter.xext[4] + syncFilter.b[5] * syncFilter.xext[5];
+//   end when;
+//   syncFilter.sampleTrigger = sample(syncFilter.startTime, syncFilter.samplePeriod);
+//   when syncFilter.sampleTrigger then
+//     syncFilter.firstTrigger = time <= syncFilter.startTime + 0.5 * syncFilter.samplePeriod;
+//   end when;
+//   clock.y = clock.offset + (if time < clock.startTime then 0.0 else time - clock.startTime);
+//   clock.y = syncFilter.u;
+// end SyncFilterTest;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "SyncFilterTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0005, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SyncFilterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 4e-05
+// 5.6e-05
+// endResult

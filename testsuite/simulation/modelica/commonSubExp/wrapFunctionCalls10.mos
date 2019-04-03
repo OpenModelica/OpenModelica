@@ -1,0 +1,120 @@
+// name: wrapFunctionCalls10
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls10
+    record data
+      Integer d1;
+      Integer d2;
+    end data;
+    
+    function f1
+      input data dataIn;
+      input Real x;
+      output Real y;
+    algorithm
+      y := dataIn.d1 + dataIn.d2 + x;
+    end f1;
+    
+    function f2
+      input Integer a;
+      input Integer b;
+      output data dataOut;
+      // output Integer dummy;
+    algorithm
+      dataOut.d1 := a;
+      dataOut.d2 := b;
+      // dummy := 5;
+    end f2;
+
+    Real z1, z2;
+    // Integer z3;
+    // data dat;
+    parameter Integer p1 = 5;
+    parameter Integer p2 = 10;
+    parameter Real p3 = 1.0;
+  equation
+    // z1 = f1(f2(p1, p2), p3);
+    z1 = f1(f2(p1, p2), p3);
+    z2 = f1(f2(p1, p2), time);
+    // (,z3) = f2(p1, p2);
+    // dat = f2(p1, p2);
+  end wrapFunctionCalls10;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls10); getErrorString();
+
+system("xz --keep --decompress --force ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat.xz");
+(success, failVars) := OpenModelica.Scripting.diffSimulationResults("CSE.wrapFunctionCalls10_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat", "CSE.wrapFunctionCalls10_diff"); getErrorString();
+if success then
+  print("Files equal!\n");
+else
+  print("Files not equal!\n");
+  for v in failVars loop
+    curFile := "CSE.wrapFunctionCalls10." + v + ".html";
+    success := writeFile(curFile, OpenModelica.Scripting.diffSimulationResultsHtml(v, "CSE.wrapFunctionCalls10_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat", 0.01)); getErrorString();
+    if success then
+      print("Created diff file " + curFile + "\n");
+    else
+      print("Creating diff file " + curFile + " failed\n");
+    end if;
+  end for; getErrorString();
+end if;
+system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (1)
+// ========================================
+// 1: z2:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (1, 1)
+// ========================================
+// 1/1 (1): z2 = CSE.wrapFunctionCalls10.f1($cse1, time)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (6)
+// ========================================
+// 1: p1:PARAM()  = 5  type: Integer 
+// 2: p2:PARAM()  = 10  type: Integer 
+// 3: p3:PARAM()  = 1.0  type: Real 
+// 4: $cse1.d2 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
+// 5: $cse1.d1 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
+// 6: z1:VARIABLE(fixed = true )  = CSE.wrapFunctionCalls10.f1($cse1, p3)  type: Real 
+//
+//
+// ########### CSE Replacements (3/44)
+// ========================================
+// 1: z1 - CSE.wrapFunctionCalls10.f1($cse1, p3) - {}
+// 2: $cse1 - CSE.wrapFunctionCalls10.f2(p1, p2) - {}
+// 3: z2 - CSE.wrapFunctionCalls10.f1($cse1, time) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+//
+// ""
+// Files equal!
+//
+// 0
+// endResult

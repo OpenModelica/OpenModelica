@@ -1,0 +1,40 @@
+// name: problem6 [kinsol]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem6* _nonlinear_system.problem6* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+simulate(nonlinear_system.problem6, stopTime=0, simflags="-nls=kinsol"); getErrorString();
+
+val(x[1],{0.0});
+val(x[20],{0.0});
+val(x[30],{0.0});
+val(x[40],{0.0});
+val(x[50],{0.0});
+val(x[60],{0.0});
+val(x[70],{0.0});
+val(x[80],{0.0});
+val(x[90],{0.0});
+val(x[100],{0.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0}
+// {-0.06532729491621075}
+// {-0.0908940492717448}
+// {-0.1093185611137787}
+// {-0.1196136958219124}
+// {-0.1206187352141865}
+// {-0.110961216371592}
+// {-0.08900861786246114}
+// {-0.05280668518725373}
+// {0.0}
+// endResult

@@ -1,0 +1,16 @@
+// name:     TimeInState
+// keywords: state machines
+// status: correct
+//
+
+loadFile("TimeInState.mo");
+echo(false);
+simulate(TimeInState, startTime=0, stopTime=30, numberOfIntervals=0); getErrorString();
+echo(true);
+val(i,30.0);
+
+// Result:
+// true
+// true
+// 20.0
+// endResult

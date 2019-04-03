@@ -1,0 +1,558 @@
+// name: testCSTR
+// keywords: synchronous, algebraic loop, model structure, analytic Jacobian
+// status: correct
+// teardown_command: rm -f *CSTRModel* modelDescription.tmp.xml
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+setCommandLineOptions("--std=3.3");
+
+loadFile("CSTR.mo"); getErrorString();
+loadString("
+model CSTRModel
+  extends CSTR;
+end CSTRModel;
+");
+getErrorString();
+
+// enable directional derivatives
+setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
+
+translateModelFMU(CSTRModel, version="2.0"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq CSTRModel.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// skip simulation because OpenModelica does not support import of Clock
+/*
+importFMU("CSTRModel.fmu"); getErrorString();
+loadFile("CSTRModel_me_FMU.mo"); getErrorString();
+
+simulate(CSTR_me_FMU, stopTime=1500.0); getErrorString();
+
+val(cA, 0.0);
+val(cB, 0.0);
+val(TK, 0.0);
+val(cA, 1500.0);
+val(cB, 1500.0);
+val(TK, 1500.0);
+getErrorString();
+*/
+
+// Result:
+// true
+// true
+// true
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "
+// true
+// ""
+// true
+// ""
+// "CSTRModel.fmu"
+// "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable cA has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable $outputAlias_cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// "
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"CSTRModel\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"CSTRModel\"
+//     providesDirectionalDerivative=\"true\">
+//   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               interval=\"20.0\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"previous(_D_outputAlias_TK)\"
+//     valueReference=\"0\"
+//     description=\"Coolant temperature\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"previous(_D_outputAlias_cA)\"
+//     valueReference=\"1\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"previous(_D_outputAlias_cB)\"
+//     valueReference=\"2\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"previous(T)\"
+//     valueReference=\"3\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_TK)\"
+//     valueReference=\"4\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_cA)\"
+//     valueReference=\"5\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_cB)\"
+//     valueReference=\"6\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"der(T)\"
+//     valueReference=\"7\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"_D_cse1\"
+//     valueReference=\"8\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"_D_cse2\"
+//     valueReference=\"9\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"_D_cse3\"
+//     valueReference=\"10\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_TK\"
+//     valueReference=\"11\"
+//     description=\"Coolant temperature\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"112.9\" nominal=\"100.0\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_cA\"
+//     valueReference=\"12\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"2\"
+//     initial=\"exact\">
+//     <Real start=\"2.14\" unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_cB\"
+//     valueReference=\"13\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"3\"
+//     initial=\"exact\">
+//     <Real start=\"1.09\" unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"QK_flow\"
+//     valueReference=\"14\"
+//     description=\"Heat flow rate\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"-1113.5\" nominal=\"1000.0\" unit=\"kJ/h\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"QK_flow_sampled\"
+//     valueReference=\"15\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"T\"
+//     valueReference=\"16\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"4\"
+//     initial=\"exact\">
+//     <Real start=\"114.2\" nominal=\"100.0\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"TF\"
+//     valueReference=\"17\"
+//     description=\"Feed temperature\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"104.9\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"19\" -->
+//   <ScalarVariable
+//     name=\"TK\"
+//     valueReference=\"18\"
+//     description=\"Coolant temperature\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real nominal=\"100.0\" unit=\"degC\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"20\" -->
+//   <ScalarVariable
+//     name=\"VF_flow\"
+//     valueReference=\"19\"
+//     description=\"Feed flow rate\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"14.19\" unit=\"1/h\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"21\" -->
+//   <ScalarVariable
+//     name=\"cA\"
+//     valueReference=\"20\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"22\" -->
+//   <ScalarVariable
+//     name=\"cB\"
+//     valueReference=\"21\"
+//     description=\"Concentration\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"23\" -->
+//   <ScalarVariable
+//     name=\"k[1]\"
+//     valueReference=\"22\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"24\" -->
+//   <ScalarVariable
+//     name=\"k[2]\"
+//     valueReference=\"23\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"25\" -->
+//   <ScalarVariable
+//     name=\"k[3]\"
+//     valueReference=\"24\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"26\" -->
+//   <ScalarVariable
+//     name=\"AR\"
+//     valueReference=\"25\"
+//     description=\"reactor surface area\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"0.215\" unit=\"m2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"27\" -->
+//   <ScalarVariable
+//     name=\"Cp\"
+//     valueReference=\"26\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"3010.0\" unit=\"J/(kg.K)\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"28\" -->
+//   <ScalarVariable
+//     name=\"CpK\"
+//     valueReference=\"27\"
+//     description=\"coolant heat capacity\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"2000.0\" unit=\"J/(kg.K)\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"29\" -->
+//   <ScalarVariable
+//     name=\"E[1]\"
+//     valueReference=\"28\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"-9758.299999999999\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"30\" -->
+//   <ScalarVariable
+//     name=\"E[2]\"
+//     valueReference=\"29\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"-9758.299999999999\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"31\" -->
+//   <ScalarVariable
+//     name=\"E[3]\"
+//     valueReference=\"30\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"-8560.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"32\" -->
+//   <ScalarVariable
+//     name=\"H[1]\"
+//     valueReference=\"31\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"4200.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"33\" -->
+//   <ScalarVariable
+//     name=\"H[2]\"
+//     valueReference=\"32\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"-11000.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"34\" -->
+//   <ScalarVariable
+//     name=\"H[3]\"
+//     valueReference=\"33\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"-41850.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"35\" -->
+//   <ScalarVariable
+//     name=\"VR\"
+//     valueReference=\"34\"
+//     description=\"reactor volume\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"0.01\" unit=\"m3\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"36\" -->
+//   <ScalarVariable
+//     name=\"cAF\"
+//     valueReference=\"35\"
+//     description=\"Concentration of substance A in feed\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"5.1\" unit=\"mol/l\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"37\" -->
+//   <ScalarVariable
+//     name=\"k0[1]\"
+//     valueReference=\"36\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"357500000.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"38\" -->
+//   <ScalarVariable
+//     name=\"k0[2]\"
+//     valueReference=\"37\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"357500000.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"39\" -->
+//   <ScalarVariable
+//     name=\"k0[3]\"
+//     valueReference=\"38\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"2511944.444444444\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"40\" -->
+//   <ScalarVariable
+//     name=\"kw\"
+//     valueReference=\"39\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"1120.0\" unit=\"W/(m2.K)\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"41\" -->
+//   <ScalarVariable
+//     name=\"mK\"
+//     valueReference=\"40\"
+//     description=\"coolant mass\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"5.0\" min=\"0.0\" unit=\"kg\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"42\" -->
+//   <ScalarVariable
+//     name=\"rho\"
+//     valueReference=\"41\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"934.2\" min=\"0.0\" unit=\"kg/m3\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"43\" -->
+//   <ScalarVariable
+//     name=\"samplePeriod\"
+//     valueReference=\"42\"
+//     description=\"Period of clock\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Real unit=\"s\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"44\" -->
+//   <ScalarVariable
+//     name=\"fixedInitial\"
+//     valueReference=\"0\"
+//     description=\"=false to free reactor states\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Boolean/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"45\" -->
+//   <ScalarVariable
+//     name=\"solverMethod\"
+//     valueReference=\"0\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <String/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"19\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"21\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"22\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//     </Outputs>
+//     <DiscreteStates>
+//       <Unknown index=\"12\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"13\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"14\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"17\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//     </DiscreteStates>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

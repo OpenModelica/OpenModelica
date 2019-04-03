@@ -1,0 +1,29 @@
+// name: Bug2537.mos
+// keywords: homotopy differentiation
+// status: correct
+// teardown_command: rm -rf ThermoPower.Examples.CISE.CISESim120501*
+//
+// test for #2537
+//
+
+loadFile("Bug2537.mo"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoPower.Examples.CISE.CISESim120501_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1200.0, numberOfIntervals = 1000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.CISE.CISESim120501', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// endResult

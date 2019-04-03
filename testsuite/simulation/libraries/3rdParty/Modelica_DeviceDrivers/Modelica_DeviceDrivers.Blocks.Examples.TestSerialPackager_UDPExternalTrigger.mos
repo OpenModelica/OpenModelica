@@ -1,0 +1,42 @@
+// name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger
+// keywords: simulation Modelica_DeviceDrivers examples
+// status: correct
+//
+// Simulation Results
+// Modelica_DeviceDrivers
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+echo(false);
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger);
+
+runScript("common.mos");getErrorString();
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ' -abortSlowSimulation -alarm=360'
+// Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger_res.mat
+// Note: Reference file /home/bernhard/data/workspace/openmodelica/testsuite/ReferenceFiles/Modelica_DeviceDrivers/Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger.mat does not exist. Cannot determine if the result improved!
+// Warning: Alias equations of external objects are not Modelica compliant as in:
+//     getFloat.pkgOut[1].pkg = getInteger.pkgIn.pkg
+//     getFloat.pkgIn.pkg = getReal.pkgOut[1].pkg
+//     addInteger.pkgOut[1].pkg = uDPSend.pkgIn.pkg
+//     addFloat.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     addFloat.pkgIn.pkg = addReal.pkgOut[1].pkg
+//     getReal.pkgIn.pkg = uDPReceive.pkgOut.pkg
+//     addReal.pkgIn.pkg = packager.pkgOut.pkg
+//     getFloat.pkgOut[1].pkg = getFloat.pkgIn.pkg
+//     addFloat.pkgOut[1].pkg = addFloat.pkgIn.pkg
+//     getReal.pkgOut[1].pkg = getReal.pkgIn.pkg
+//     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     addReal.pkgOut[1].pkg = addReal.pkgIn.pkg
+//
+// "true
+// "
+// ""
+// endResult

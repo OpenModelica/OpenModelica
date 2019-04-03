@@ -1,0 +1,85 @@
+// name: LeeRamirezBioreactor
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+// see: Dynamic optimization of chemical and biochemical processes using restricted second-order information 2001,
+// Eva Balsa-Canto, Julio R. Banga, Antonio A. Alonso Vassilios S. Vassiliadis 
+
+loadString("
+optimization LeeRamirezBioreactor(objectiveIntegrand = -u2, objective = x4*x1)
+    input Real u1(min = 0, max = 1, start = 1);
+    input Real u2(min = 0, max = 1, start = 1);
+    Real x1(min = -1, max = 10, start = 1, fixed =true);
+    Real x2(min = -1, max = 10, start = 0.1, fixed =true);
+    Real x3(min = 10, max = 50, start = 40, fixed =true);
+    Real x4(min = -1, max = 10, start = 0, fixed =true);
+    Real x5(min = -1, max = 10, start = 0, fixed =true);
+    Real x6(min = -1, max = 10, start = 1, fixed =true);
+    Real x7(min = -1, max = 10, start = 0, fixed =true);
+
+    Real g1,g2,g3;
+    Real t1,t2,t3;
+    parameter Real c1 = 100;
+    parameter Real c2 = 0.51;
+    parameter Real c3 = 4.0;
+
+  equation
+
+    t1 = 14.35+x3+((x3)^2/111.5);
+    t2 = 0.22+x5;
+    t3 = x6+0.22./t2*x7;
+
+    g1 = x3/t1*t3;
+    g2 = 0.233*x3./t1.*((0.0005+x5)./(0.022+x5));
+    g3 = 0.09*x5./(0.034+x5);
+
+    der(x1) = u1+u2;
+    der(x2) = g1*x2-(u1+u2)*x2/x1;
+    der(x3) = u1/x1*c1-(u1+u2)*x3/x1-g1*x2/c2;
+    der(x4) = g2*x2-(u1+u2)*x4/x1;
+    der(x5) = u2*c3/x1-(u1+u2)*x5/x1;
+    der(x6) = -g3*x6;
+    der(x7) = g3*(1-x7);
+end LeeRamirezBioreactor;
+");
+getErrorString();
+
+echo(false);
+res := optimize(LeeRamirezBioreactor, numberOfIntervals=500, tolerance = 1e-6, stopTime = 10, simflags="-optimizerNP 1 -lv LOG_IPOPT");
+getErrorString();
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "EXIT: Optimal Solution Found.") then
+  if regexBool(messages, "Number of Iterations....: 19") then
+    print("Number of Iterations....: 19\nEXIT: Optimal Solution Found.");
+  else
+    print("Number of Iterations changed.\tUpdate test\n");
+    exit(1);
+  end if;
+else
+  print("No optimal solution found");
+  exit(1);
+end if;
+getErrorString();
+
+
+res := OpenModelica.Scripting.compareSimulationResults("LeeRamirezBioreactor_res.mat","ReferenceFiles/LeeRamirezBioreactor_ref.mat","TimeTableTest_res.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "LeeRamirezBioreactor_res.mat"
+// Number of Iterations....: 19
+// EXIT: Optimal Solution Found.
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

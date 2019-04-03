@@ -1,0 +1,59 @@
+// name: homotopy3
+// keywords: initialization, homotopy
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy3* _initializationTests.homotopy3* output.log
+//
+//  case for homotopy
+//
+
+loadString("
+within ;
+package initializationTests
+  record rec
+    Real n1;
+    Real n2[2];
+    Real n3;
+  end rec;
+  
+  function f1
+    input rec r;
+    output Real res;
+  algorithm
+    res := r.n1 * r.n2[1] / r.n3;
+  end f1;
+  
+  model homotopy3
+    Real x;
+    Real y;
+    parameter Real p1 = 1;
+    parameter Real p2 = 2;
+    parameter Real p3 = 3;
+  equation
+    x = homotopy(f1(rec(p1,{p2,p2},p3))+y, f1(rec(y,{p2,p2},p3)))*y;
+    x + y = time;
+  end homotopy3;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=adaptiveLocal"); getErrorString();
+simulate(initializationTests.homotopy3, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy3_res.mat", {time, x}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{0.0,0.0}}
+// ""
+// endResult

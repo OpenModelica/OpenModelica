@@ -1,0 +1,40 @@
+// name:     Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench);
+compareVars :=
+{
+   "source.plug_p.reference.gamma",
+   "source.voltageSource[2].pin_p.reference.gamma",
+   "source.voltageSource[3].pin_p.reference.gamma"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+// {"source.plug_p.reference.gamma","source.voltageSource[2].pin_p.reference.gamma","source.voltageSource[3].pin_p.reference.gamma"}
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = 'time|source.plug_p.reference.gamma|source.voltageSource.2..pin_p.reference.gamma|source.voltageSource.3..pin_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

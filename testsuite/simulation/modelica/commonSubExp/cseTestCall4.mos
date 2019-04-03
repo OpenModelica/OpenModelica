@@ -1,0 +1,90 @@
+// name: cseTestCall4
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall4
+    Real x,y;
+    final parameter Real c = 3;
+  equation
+    x = sin(time) + 2;
+    y = sin(time) + c;
+  end TestCall4;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 2)
+// ========================================
+// 1/1 (1): y = 3.0 + $cse1   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: c:PARAM(final = true )  = 3.0  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse1 - sin(time) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+// 2: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 2)
+// ========================================
+// 1/1 (1): x = 2.0 + $cse2   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse2 = sin(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (1)
+// ========================================
+// 1: c:PARAM(final = true )  = 3.0  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse2 - sin(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

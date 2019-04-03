@@ -1,0 +1,72 @@
+// name:     simulate Junctions
+// keywords: SiemensPower Junctions SplitterMixer
+// status:   correct
+// env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* _SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* SiemensPower_Media_TTSE_Utilities_* output.log
+//
+//  Test SiemensPower component Junctions
+//
+
+loadModel(Modelica);
+loadFile("SiemensPower/package.mo");
+
+// test simple model
+simulate(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput_res.mat",
+  "./ReferenceFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat","SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput_diff.csv",0.01,0.00001,
+  { "mixer.h",
+    "pipe1.portIn.h_outflow",
+    "pipe1.portOut.p",
+    "pipe1.portOut.h_outflow",
+    "pipe2.portIn.h_outflow",
+    "pipe2.portOut.p",
+    "pipe2.portOut.h_outflow",
+    "pipe3.portIn.h_outflow",
+    "pipe3.portOut.p",
+    "pipe3.portOut.h_outflow"  
+  });
+
+// test jacobians
+//simulate(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput, stopTime=1, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat");
+/* 
+since result is missing avoid that test for now
+// test full model
+simulate(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_res.mat",
+  "./ReferenceFiles/splitterMixer_testTubeOwnMedia.mat","SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_diff.csv",0.01,0.00001,
+  { "mixer.h",
+    "pipe1.portIn.h_outflow",
+    "pipe1.portOut.p",
+    "pipe1.portOut.h_outflow",
+    "pipe2.portIn.h_outflow",
+    "pipe2.portOut.p",
+    "pipe2.portOut.h_outflow",
+    "pipe3.portIn.h_outflow",
+    "pipe3.portOut.p",
+    "pipe3.portOut.h_outflow"  
+  });
+*/  
+// test jacobians
+//simulate(SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia, stopTime=1, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia.mat");
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_simpleInput', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia_simpleInput.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResults
+
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_test.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia_test', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/splitterMixer_testTubeOwnMedia.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResults
+

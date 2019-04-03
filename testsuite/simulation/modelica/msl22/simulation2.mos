@@ -1,0 +1,69 @@
+// name:     Simulation2
+// keywords: Simulation, BooleanModel, LargeSteps
+// status:   correct
+// teardown_command: rm -f Booleanmodel* Largesteps* output.log
+//
+
+// Model that tests discrete equations that do not contain zero crossings, e.g n = 1;
+loadString("
+model Booleanmodel
+  Boolean startForward;
+  Integer mode(start=2, fixed=true);
+equation
+  startForward = pre(mode)==1 or initial();
+  mode = if time < 0.5 then 2 else if time < 0.7 then 1 else 0;
+end Booleanmodel;
+"); getErrorString();
+simulate(Booleanmodel, tolerance=1e-5, numberOfIntervals=100); getErrorString();
+
+val(startForward, 0.0);
+val(startForward, 0.5000001);
+val(startForward, 0.9);
+val(mode, 0.0);
+val(mode, 0.5000001);
+val(mode, 0.9);
+
+
+
+loadString("
+model Largesteps
+  Real x(start=0.0, fixed=true);
+equation
+  der(x)=-sin(2*time);
+end Largesteps;
+"); getErrorString();
+simulate(Largesteps, stopTime=200, numberOfIntervals=100, tolerance=1e-10); getErrorString();
+
+val(x, 0.0);
+val(x, 200.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Booleanmodel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Booleanmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 0.0
+// 2.0
+// 1.0
+// 0.0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Largesteps_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 200.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Largesteps', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// -0.7626478602634448
+// endResult

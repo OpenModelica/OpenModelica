@@ -1,0 +1,28 @@
+// name:     Shaft
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.RotationalModels.SpringInertia.Shaft* output.log
+// 
+//  Simulate Rotational inertias with springs 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// Shaft
+simulate(TestModels.RotationalModels.SpringInertia.Shaft, tolerance=1e-5, numberOfIntervals=100);
+{val(inertia3.w,0.0),val(inertia3.w,0.2),val(inertia3.w,0.4),
+val(inertia3.w,0.6),val(inertia3.w,0.8),val(inertia3.w,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.SpringInertia.Shaft_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.SpringInertia.Shaft', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,-9.272522097943873e-05,-0.002277359754688934,-0.01191280171725629,-0.02691748241390565,-0.02742590691823057}
+// endResult

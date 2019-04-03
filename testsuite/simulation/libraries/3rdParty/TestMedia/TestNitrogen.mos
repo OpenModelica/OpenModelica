@@ -1,0 +1,717 @@
+// name: TestNitrogen.mos [instantiate/check/simulate]
+// status: correct
+// teardown_command: rm -rf *TestMedia.TestModels* output.log
+// provided by Francesco Casella
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+instantiateModel(TestMedia.TestModels.TestNitrogen); getErrorString();
+checkModel(TestMedia.TestModels.TestNitrogen); getErrorString();
+simulate(TestMedia.TestModels.TestNitrogen); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "function Modelica.Math.asin \"Inverse sine (-1 <= u <= 1)\"
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//
+//   external \"C\" y = asin(u);
+// end Modelica.Math.asin;
+//
+// function Modelica.Math.log \"Natural (base e) logarithm (u shall be > 0)\"
+//   input Real u;
+//   output Real y;
+//
+//   external \"C\" y = log(u);
+// end Modelica.Math.log;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord res;
+// end Modelica.Media.IdealGases.Common.DataRecord;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$Ar \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$Ar\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$Ar res;
+// end Modelica.Media.IdealGases.Common.DataRecord$Ar;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C2H2_vinylidene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C2H2_vinylidene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C2H2_vinylidene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C2H2_vinylidene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C2H4 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C2H4\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C2H4 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C2H4;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C2H5OH \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C2H5OH\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C2H5OH res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C2H5OH;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C2H6 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C2H6\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C2H6 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C2H6;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C3H6_propylene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C3H6_propylene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C3H6_propylene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C3H6_propylene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C3H8 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C3H8\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C3H8 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C3H8;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C4H10_n_butane \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C4H10_n_butane\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C4H10_n_butane res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C4H10_n_butane;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C4H8_1_butene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C4H8_1_butene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C4H8_1_butene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C4H8_1_butene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C5H10_1_pentene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C5H10_1_pentene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C5H10_1_pentene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C5H10_1_pentene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C5H12_n_pentane \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C5H12_n_pentane\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C5H12_n_pentane res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C5H12_n_pentane;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C6H12_1_hexene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C6H12_1_hexene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C6H12_1_hexene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C6H12_1_hexene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C6H14_n_hexane \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C6H14_n_hexane\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C6H14_n_hexane res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C6H14_n_hexane;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C6H6 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C6H6\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C6H6 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C6H6;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C7H14_1_heptene \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C7H14_1_heptene\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C7H14_1_heptene res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C7H14_1_heptene;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C7H16_n_heptane \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C7H16_n_heptane\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C7H16_n_heptane res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C7H16_n_heptane;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C8H10_ethylbenz \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C8H10_ethylbenz\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C8H10_ethylbenz res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C8H10_ethylbenz;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$C8H18_n_octane \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$C8H18_n_octane\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$C8H18_n_octane res;
+// end Modelica.Media.IdealGases.Common.DataRecord$C8H18_n_octane;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$CH3OH \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$CH3OH\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$CH3OH res;
+// end Modelica.Media.IdealGases.Common.DataRecord$CH3OH;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$CH4 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$CH4\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$CH4 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$CH4;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$CL2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$CL2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$CL2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$CL2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$CO \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$CO\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$CO res;
+// end Modelica.Media.IdealGases.Common.DataRecord$CO;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$CO2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$CO2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$CO2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$CO2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$F2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$F2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$F2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$F2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$H2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$H2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$H2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$H2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$H2O \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$H2O\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$H2O res;
+// end Modelica.Media.IdealGases.Common.DataRecord$H2O;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$He \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$He\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$He res;
+// end Modelica.Media.IdealGases.Common.DataRecord$He;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$N2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$N2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$N2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$N2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$N2O \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$N2O\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$N2O res;
+// end Modelica.Media.IdealGases.Common.DataRecord$N2O;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$NH3 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$NH3\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$NH3 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$NH3;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$NO \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$NO\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$NO res;
+// end Modelica.Media.IdealGases.Common.DataRecord$NO;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$NO2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$NO2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$NO2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$NO2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$Ne \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$Ne\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$Ne res;
+// end Modelica.Media.IdealGases.Common.DataRecord$Ne;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$O2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$O2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$O2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$O2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$SO2 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$SO2\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$SO2 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$SO2;
+//
+// function Modelica.Media.IdealGases.Common.DataRecord$SO3 \"Automatically generated record constructor for Modelica.Media.IdealGases.Common.DataRecord$SO3\"
+//   input String name;
+//   input Real MM(quantity = \"MolarMass\", unit = \"kg/mol\", min = 0.0);
+//   input Real Hf(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real H0(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real Tlimit(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real[7] alow;
+//   input Real[2] blow;
+//   input Real[7] ahigh;
+//   input Real[2] bhigh;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   output DataRecord$SO3 res;
+// end Modelica.Media.IdealGases.Common.DataRecord$SO3;
+//
+// function Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants \"Automatically generated record constructor for Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants res;
+// end Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants;
+//
+// function Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants$N2 \"Automatically generated record constructor for Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants$N2\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants$N2 res;
+// end Modelica.Media.Interfaces.PartialMixtureMedium.FluidConstants$N2;
+//
+// function Modelica.SIunits.Conversions.from_degC \"Convert from °Celsius to Kelvin\"
+//   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
+//   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
+// algorithm
+//   Kelvin := 273.15 + Celsius;
+// end Modelica.SIunits.Conversions.from_degC;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.FluidConstants \"Automatically generated record constructor for TestMedia.TestModels.TestNitrogen.Medium.FluidConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants res;
+// end TestMedia.TestModels.TestNitrogen.Medium.FluidConstants;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState \"Automatically generated record constructor for TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState\"
+//   input Real p(start = 1000000.0, nominal = 1000000.0, min = 0.0, max = 100000000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real T(min = 200.0, max = 6000.0, start = 500.0, nominal = 500.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   output ThermodynamicState res;
+// end TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.density \"return density of ideal gas\"
+//   input TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState state \"thermodynamic state record\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 10.0, nominal = 10.0) \"Density\";
+// algorithm
+//   d := 0.003369233788988645 * state.p / state.T;
+// end TestMedia.TestModels.TestNitrogen.Medium.density;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.h_T \"Compute specific enthalpy from temperature and gas data; reference is decided by the
+//     refChoice input, or by the referenceChoice package constant by default\"
+//   input Modelica.Media.IdealGases.Common.DataRecord data \"Ideal gas data\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature\";
+//   input Boolean exclEnthForm = true \"If true, enthalpy of formation Hf is not included in specific enthalpy h\";
+//   input enumeration(ZeroAt0K, ZeroAt25C, UserDefined) refChoice = TestMedia.TestModels.TestNitrogen.Medium.Choices.ReferenceEnthalpy.ZeroAt0K \"Choice of reference enthalpy\";
+//   input Real h_off(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 0.0 \"User defined offset for reference enthalpy, if referenceChoice = UserDefined\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"Specific enthalpy at temperature T\";
+// algorithm
+//   h := smooth(0, (if T < data.Tlimit then data.R * (T * (data.blow[1] + data.alow[2] * log(T) + T * (data.alow[3] + T * (0.5 * data.alow[4] + T * (0.3333333333333333 * data.alow[5] + T * (0.25 * data.alow[6] + 0.2 * data.alow[7] * T))))) - data.alow[1]) / T else data.R * (T * (data.bhigh[1] + data.ahigh[2] * log(T) + T * (data.ahigh[3] + T * (0.5 * data.ahigh[4] + T * (0.3333333333333333 * data.ahigh[5] + T * (0.25 * data.ahigh[6] + 0.2 * data.ahigh[7] * T))))) - data.ahigh[1]) / T) + (if exclEnthForm then -data.Hf else 0.0) + (if refChoice == Modelica.Media.Interfaces.PartialMedium.Choices.ReferenceEnthalpy.ZeroAt0K then data.H0 else 0.0) + (if refChoice == Modelica.Media.Interfaces.PartialMedium.Choices.ReferenceEnthalpy.UserDefined then h_off else 0.0));
+// end TestMedia.TestModels.TestNitrogen.Medium.h_T;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.setState_pTX \"Return thermodynamic state as function of p, T and composition X\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 1000000.0, nominal = 1000000.0) \"Pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 200.0, max = 6000.0, start = 500.0, nominal = 500.0) \"Temperature\";
+//   input Real[:] X(quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, nominal = 0.1) = {1.0} \"Mass fractions\";
+//   output TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState state;
+// algorithm
+//   state := TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState(p, T);
+// end TestMedia.TestModels.TestNitrogen.Medium.setState_pTX;
+//
+// function TestMedia.TestModels.TestNitrogen.Medium.specificEnthalpy \"Return specific enthalpy\"
+//   input TestMedia.TestModels.TestNitrogen.Medium.ThermodynamicState state \"thermodynamic state record\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 309498.4543111511, nominal = 100000.0) \"Specific enthalpy\";
+// algorithm
+//   h := TestMedia.TestModels.TestNitrogen.Medium.h_T(Modelica.Media.IdealGases.Common.DataRecord(\"N2\", 0.0280134, 0, 309498.4543111511, 1000, {22103.71497, -381.846182, 6.08273836, -0.00853091441, 1.384646189e-05, -9.62579362e-09, 2.519705809e-12}, {710.846086, -10.76003744}, {587712.406, -2239.249073, 6.06694922, -0.00061396855, 1.491806679e-07, -1.923105485e-11, 1.061954386e-15}, {12832.10415, -15.86640027}, 296.8033869505308), state.T, true, TestMedia.TestModels.TestNitrogen.Medium.Choices.ReferenceEnthalpy.ZeroAt0K, 0.0);
+// end TestMedia.TestModels.TestNitrogen.Medium.specificEnthalpy;
+//
+// class TestMedia.TestModels.TestNitrogen
+//   Real state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 1000000.0, nominal = 1000000.0) \"Absolute pressure of medium\";
+//   Real state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 200.0, max = 6000.0, start = 500.0, nominal = 500.0) \"Temperature of medium\";
+//   Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 1000000.0, nominal = 1000000.0);
+//   Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 309498.4543111511, nominal = 100000.0);
+//   Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 10.0, nominal = 10.0);
+//   Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 200.0, max = 6000.0, start = 500.0, nominal = 500.0);
+// equation
+//   T = 300.0 + 300.0 * time;
+//   p = 100000.0;
+//   state = TestMedia.TestModels.TestNitrogen.Medium.setState_pTX(p, T, {1.0});
+//   d = TestMedia.TestModels.TestNitrogen.Medium.density(state);
+//   h = TestMedia.TestModels.TestNitrogen.Medium.specificEnthalpy(state);
+// end TestMedia.TestModels.TestNitrogen;
+// "
+// ""
+// "Check of TestMedia.TestModels.TestNitrogen completed successfully.
+// Class TestMedia.TestModels.TestNitrogen has 6 equation(s) and 6 variable(s).
+// 2 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.TestNitrogen_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.TestNitrogen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

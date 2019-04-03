@@ -1,0 +1,59 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint);
+compareVars := {"joint.phi_a","joint.phi_b","joint.w_a","joint.w_b","freeMotionScalarInit.R_rel.w[1]","freeMotionScalarInit.angle_3"};
+runScript(modelTesting);
+getErrorString();
+
+
+// Result:
+// true
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint.mat"
+// 0.0
+// 0.01
+// 0.0001
+// {"joint.phi_a","joint.phi_b","joint.w_a","joint.w_b","freeMotionScalarInit.R_rel.w[1]","freeMotionScalarInit.angle_3"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainUniversalJoint_res.mat
+// Files Equal!
+// Warning: Aliasset with several free start values
+// Candidate bodyOfConstraint.r_0[3](start = 0.1)
+// Candidate bodyOfConstraint.body.r_0[3](start = 0.0)
+// Select value from bodyOfConstraint.r_0[3](start = 0.1)
+// Warning: Aliasset with several free start values
+// Candidate bodyOfConstraint.r_0[2](start = -0.5)
+// Candidate bodyOfConstraint.body.r_0[2](start = 0.0)
+// Select value from bodyOfConstraint.r_0[2](start = -0.5)
+// Warning: Aliasset with several free start values
+// Candidate bodyOfConstraint.r_0[1](start = 0.2)
+// Candidate bodyOfConstraint.body.r_0[1](start = 0.0)
+// Select value from bodyOfConstraint.r_0[1](start = 0.2)
+// Warning: Aliasset with several free start values
+// Candidate bodyOfJoint.r_0[3](start = 0.1)
+// Candidate bodyOfJoint.body.r_0[3](start = 0.0)
+// Select value from bodyOfJoint.r_0[3](start = 0.1)
+// Warning: Aliasset with several free start values
+// Candidate bodyOfJoint.r_0[2](start = -0.5)
+// Candidate bodyOfJoint.body.r_0[2](start = 0.0)
+// Select value from bodyOfJoint.r_0[2](start = -0.5)
+// Warning: Aliasset with several free start values
+// Candidate bodyOfJoint.r_0[1](start = 0.2)
+// Candidate bodyOfJoint.body.r_0[1](start = 0.0)
+// Select value from bodyOfJoint.r_0[1](start = 0.2)
+// 
+// "true
+// "
+// ""
+// endResult

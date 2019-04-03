@@ -1,0 +1,28 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("package FunctionPartialApplicationAsGeneralExp
+
+function f
+  output Real o;
+protected
+  partial function F
+    input Real r;
+    output Real o;
+  end F;
+  F ff;
+algorithm
+  ff := function realAdd(r2=2.5);
+  o := ff(-1.5);
+end f;
+
+end FunctionPartialApplicationAsGeneralExp;");getErrorString();
+FunctionPartialApplicationAsGeneralExp.f();getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// 1.0
+// ""
+// endResult

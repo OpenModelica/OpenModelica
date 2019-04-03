@@ -1,0 +1,45 @@
+// name:     Modelica.Fluid.Examples.HeatingSystem
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls --preOptModules-=resolveLoops"); getErrorString();
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+timeoutSim := 600;
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(Modelica.Fluid.Examples.HeatingSystem);
+stopTime := 600.0;
+compareVars :=
+{
+   "heater.mediums[1].h",
+   "heater.mediums[1].p",
+   "pipe.mediums[1].h",
+   "pipe.mediums[2].h",
+   "pipe.mediums[2].p",
+   "radiator.mediums[1].h",
+   "radiator.mediums[1].p",
+   "tank.level",
+   "tank.medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// true
+// ""
+// "true
+// "
+// ""
+// 600
+// OpenModelicaModelTesting.Kind.Instantiation
+// Modelica.Fluid.Examples.HeatingSystem
+// 600.0
+// {"heater.mediums[1].h","heater.mediums[1].p","pipe.mediums[1].h","pipe.mediums[2].h","pipe.mediums[2].p","radiator.mediums[1].h","radiator.mediums[1].p","tank.level","tank.medium.h"}
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

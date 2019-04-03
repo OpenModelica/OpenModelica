@@ -1,0 +1,38 @@
+// name:     Modelica.StateGraph.Examples.ShowExceptions
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.StateGraph.Examples.ShowExceptions);
+compareVars :=
+{
+   "initialStep.active",
+   "compositeStep.active",
+   "step1.active"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.StateGraph.Examples.ShowExceptions
+// {"initialStep.active","compositeStep.active","step1.active"}
+// Simulation options: startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ShowExceptions', options = '', outputFormat = 'mat', variableFilter = 'time|initialStep.active|compositeStep.active|step1.active', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.StateGraph.Examples.ShowExceptions_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,28 @@
+// name:     HumModOMCTotal [buildModel]
+// keywords:
+// status:   correct
+//
+//
+//
+
+/*
+ * The HumModOMCTotal.mo model is GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+ * contact Pavol at: Pavol.Privitzer@lf1.cuni.cz if you have questions about the model
+ */
+
+loadFile("HumModTest_OMC_total.mo"); getErrorString();
+buildModel(HumModTest); getErrorString();
+
+// Result:
+// true
+// ""
+// {"HumModTest","HumModTest_init.xml"}
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// endResult

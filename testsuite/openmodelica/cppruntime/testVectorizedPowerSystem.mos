@@ -1,0 +1,676 @@
+// name:     testVectorizedPowerSystem
+// keywords: vectorized components, array equations, for loops
+// status: correct
+// teardown_command: rm -f *VectorizedPowerSystemTest*
+
+setCommandLineOptions("--std=3.3"); getErrorString();
+setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
+setCommandLineOptions("--preOptModules-=removeSimpleEquations"); getErrorString();
+setCommandLineOptions("--postOptModules-=removeSimpleEquations"); getErrorString();
+setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+
+loadFile("VectorizedPowerSystemTotal.mo"); getErrorString();
+
+simulate(VectorizedPowerSystemTest); getErrorString();
+
+val(fixedVoltageSource1.p[1], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.initime:DISCRETE(unit = "s" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): when initial() then
+//   system.initime := time;
+// end when;   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.phi:VARIABLE(unit = "rad" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.phi = 0.0   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.I:VARIABLE(unit = "A" nominal = 1.0 )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.I = busBar1.i[1]   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.V:VARIABLE(unit = "V" nominal = 1000.0 )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.V = busBar1.v[1]   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: system.omega_internal:VARIABLE(flow=false protected = true )  type: Real 
+// 2: system.omega:VARIABLE(start = 314.1592653589793 unit = "rad/s" )  type: Real 
+// 3: system.thetaRef:VARIABLE(unit = "rad" )  "angle of reference frame" type: Real 
+// 4: system.thetaRel:VARIABLE(unit = "rad" )  "angle relative to reference frame" type: Real 
+// 5: system.theta:VARIABLE(start = 0.0 unit = "rad" )  "system angle" type: Real 
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (1): system.thetaRef / time = system.omega_internal   [dynamic |0|0|0|0|]
+// 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
+// 4/4 (1): 0.0 = -system.thetaRel   [unknown |0|0|0|0|]
+// 5/5 (1): system.thetaRef = system.theta   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: fixedVoltageSource1.phi:VARIABLE(unit = "rad" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): fixedVoltageSource1.phi = 0.0   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (13)
+// ========================================
+// 1: busBar1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
+// 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
+// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
+// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
+// 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
+// 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
+// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
+// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
+// 10: fixedLoad1.p:VARIABLE(unit = "W" )  type: Real[3, 1]  [3,1]
+// 11: fixedVoltageSource1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
+// 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
+//
+//
+// Equations (13, 13)
+// ========================================
+// 1/1 (3): busBar1.terminal_n.v = fixedLoad1.terminal.v   [dynamic |0|0|0|0|]
+// 2/4 (3): busBar1.terminal_n.i + fixedLoad1.terminal.i = 0.0   [dynamic |0|0|0|0|]
+// 3/7 (1): fixedVoltageSource1.terminal.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
+// 4/8 (1): fixedVoltageSource1.terminal.i + busBar1.terminal_p.i = 0.0   [dynamic |0|0|0|0|]
+// 5/9 (1): fixedVoltageSource1.p = {fixedVoltageSource1.terminal.v * fixedVoltageSource1.terminal.i}   [dynamic |0|0|0|0|]
+// 6/10 (1): fixedVoltageSource1.terminal.v = {fixedVoltageSource1.V}   [dynamic |0|0|0|0|]
+// 7/11 (3): for $i in 1 : 3 loop 
+//     fixedLoad1[$i].p = {fixedLoad1[$i].terminal.v * fixedLoad1[$i].terminal.i}; end for;    [dynamic |0|0|0|0|]
+// 8/14 (3): for $i in 1 : 3 loop 
+//     fixedLoad1[$i].terminal.v * fixedLoad1[$i].terminal.i = fixedLoad1[$i].P; end for;    [dynamic |0|0|0|0|]
+// 9/17 (1): busBar1.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
+// 10/18 (1): busBar1.i = busBar1.terminal_p.i   [dynamic |0|0|0|0|]
+// 11/19 (1): busBar1.p = {busBar1.v * busBar1.i}   [dynamic |0|0|0|0|]
+// 12/20 (1): for i in 1 : 1 loop 
+//     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
+// 13/21 (3): for i in 1 : 3 loop 
+//     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.w_h:VARIABLE(flow=false )  "Dummy potential-variable to balance flow-variable w_H" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.w_h = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.h:VARIABLE(flow=false )  "Dummy potential-variable to balance flow-variable H" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.h = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.w_H:VARIABLE(flow=true unit = "rad" )  "angular velocity, inertia-weighted" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.w_H = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.H:VARIABLE(flow=true unit = "s" )  "inertia constant" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.H = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (20)
+// ========================================
+// 1: busBar1.n_n:PARAM()  = 3  type: Integer 
+// 2: busBar1.i_start:PARAM(unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
+// 3: busBar1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
+// 4: fixedLoad1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
+// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
+// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
+// 7: system.synRef:PARAM(final = true )  = true  type: Boolean 
+// 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
+// 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
+// 10: system.dynType:PARAM(min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
+// 11: system.refType:PARAM(min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
+// 12: system.alpha0:PARAM(unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
+// 13: system.f_lim:PARAM(unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
+// 14: system.f_nom:PARAM(unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
+// 15: system.f:PARAM(unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
+// 16: system.fType:PARAM(min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
+// 17: fixedVoltageSource1.V:PARAM(unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
+// 18: fixedVoltageSource1.definiteReference:PARAM(final = true )  = false  "serve as definite root" type: Boolean 
+// 19: fixedVoltageSource1.potentialReference:PARAM(final = true )  = true  "serve as potential root" type: Boolean 
+// 20: n:PARAM()  = 3  "number of loads" type: Integer 
+//
+//
+// Simple Shared Equations (1, 1)
+// ========================================
+// 1/1 (0): for i in 1 : 3 loop 
+//     algorithm
+//   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
+// ; end for;    [dynamic |0|0|0|0|]
+//
+//
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.H:VARIABLE(flow=true unit = "s" )  "inertia constant" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.H = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.w_H:VARIABLE(flow=true unit = "rad" )  "angular velocity, inertia-weighted" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.w_H = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.h:VARIABLE(flow=false )  "Dummy potential-variable to balance flow-variable H" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.h = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.receiveFreq.w_h:VARIABLE(flow=false )  "Dummy potential-variable to balance flow-variable w_H" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): system.receiveFreq.w_h = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (13)
+// ========================================
+// 1: busBar1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
+// 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
+// 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
+// 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
+// 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
+// 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
+// 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
+// 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
+// 10: fixedLoad1.p:VARIABLE(unit = "W" )  type: Real[3, 1]  [3,1]
+// 11: fixedVoltageSource1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
+// 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
+//
+//
+// Equations (13, 13)
+// ========================================
+// 1/1 (3): busBar1.terminal_n.v = fixedLoad1.terminal.v   [dynamic |0|0|0|0|]
+// 2/4 (3): busBar1.terminal_n.i + fixedLoad1.terminal.i = 0.0   [dynamic |0|0|0|0|]
+// 3/7 (1): fixedVoltageSource1.terminal.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
+// 4/8 (1): fixedVoltageSource1.terminal.i + busBar1.terminal_p.i = 0.0   [dynamic |0|0|0|0|]
+// 5/9 (1): fixedVoltageSource1.p = {fixedVoltageSource1.terminal.v * fixedVoltageSource1.terminal.i}   [dynamic |0|0|0|0|]
+// 6/10 (1): fixedVoltageSource1.terminal.v = {fixedVoltageSource1.V}   [dynamic |0|0|0|0|]
+// 7/11 (3): for $i in 1 : 3 loop 
+//     fixedLoad1[$i].p = {fixedLoad1[$i].terminal.v * fixedLoad1[$i].terminal.i}; end for;    [dynamic |0|0|0|0|]
+// 8/14 (3): for $i in 1 : 3 loop 
+//     fixedLoad1[$i].terminal.v * fixedLoad1[$i].terminal.i = fixedLoad1[$i].P; end for;    [dynamic |0|0|0|0|]
+// 9/17 (1): busBar1.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
+// 10/18 (1): busBar1.i = busBar1.terminal_p.i   [dynamic |0|0|0|0|]
+// 11/19 (1): busBar1.p = {busBar1.v * busBar1.i}   [dynamic |0|0|0|0|]
+// 12/20 (1): for i in 1 : 1 loop 
+//     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
+// 13/21 (3): for i in 1 : 3 loop 
+//     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 13 variables and equations
+// var 1 is solved in eqn 11
+// var 2 is solved in eqn 10
+// var 3 is solved in eqn 9
+// var 4 is solved in eqn 13
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 12
+// var 7 is solved in eqn 3
+// var 8 is solved in eqn 1
+// var 9 is solved in eqn 8
+// var 10 is solved in eqn 7
+// var 11 is solved in eqn 5
+// var 12 is solved in eqn 4
+// var 13 is solved in eqn 6
+//
+//
+// StrongComponents
+// ========================================
+// {12:6}
+// Array  {{10:2}}
+// Array  {{6:13}}
+// Array  {{4:12}}
+// Array  {{5:11}}
+// Array  {{3:7}}
+// Array  {{9:3}}
+// Array  {{11:1}}
+// {13:4}
+// Array  {{1:8}}
+// {8:9}
+// Array  {{2:5}}
+// {7:10}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: fixedVoltageSource1.phi:VARIABLE(unit = "rad" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): fixedVoltageSource1.phi = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: system.omega_internal:VARIABLE(flow=false protected = true )  type: Real 
+// 2: system.omega:VARIABLE(start = 314.1592653589793 unit = "rad/s" )  type: Real 
+// 3: system.thetaRef:VARIABLE(unit = "rad" )  "angle of reference frame" type: Real 
+// 4: system.thetaRel:VARIABLE(unit = "rad" )  "angle relative to reference frame" type: Real 
+// 5: system.theta:VARIABLE(start = 0.0 unit = "rad" )  "system angle" type: Real 
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (1): system.omega_internal = system.thetaRef / time   [dynamic |0|0|0|0|]
+// 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
+// 4/4 (1): system.thetaRel = 0.0   [unknown |0|0|0|0|]
+// 5/5 (1): system.theta = system.thetaRef   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+//
+//
+// StrongComponents
+// ========================================
+// {4:4}
+// {2:2}
+// {3:3}
+// {5:5}
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.V:VARIABLE(unit = "V" nominal = 1000.0 )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.V = busBar1.v[1]   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.I:VARIABLE(unit = "A" nominal = 1.0 )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.I = busBar1.i[1]   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: busBar1.phi:VARIABLE(unit = "rad" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): busBar1.phi = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: system.initime:DISCRETE(unit = "s" )  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): when false then
+//   system.initime := time;
+// end when;   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// WhenEquation  {1:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (20)
+// ========================================
+// 1: busBar1.n_n:PARAM()  = 3  type: Integer 
+// 2: busBar1.i_start:PARAM(unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
+// 3: busBar1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
+// 4: fixedLoad1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
+// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
+// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
+// 7: system.synRef:PARAM(final = true )  = true  type: Boolean 
+// 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
+// 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
+// 10: system.dynType:PARAM(min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
+// 11: system.refType:PARAM(min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
+// 12: system.alpha0:PARAM(unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
+// 13: system.f_lim:PARAM(unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
+// 14: system.f_nom:PARAM(unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
+// 15: system.f:PARAM(unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
+// 16: system.fType:PARAM(min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
+// 17: fixedVoltageSource1.V:PARAM(unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
+// 18: fixedVoltageSource1.definiteReference:PARAM(final = true )  = false  "serve as definite root" type: Boolean 
+// 19: fixedVoltageSource1.potentialReference:PARAM(final = true )  = true  "serve as potential root" type: Boolean 
+// 20: n:PARAM()  = 3  "number of loads" type: Integer 
+//
+//
+// Simple Shared Equations (1, 1)
+// ========================================
+// 1/1 (0): for i in 1 : 3 loop 
+//     algorithm
+//   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
+// ; end for;    [dynamic |0|0|0|0|]
+//
+//
+// record SimulationResult
+//     resultFile = "VectorizedPowerSystemTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VectorizedPowerSystemTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// -6000000.0
+// endResult

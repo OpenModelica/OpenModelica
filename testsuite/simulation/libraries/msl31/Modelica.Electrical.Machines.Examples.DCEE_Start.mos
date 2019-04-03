@@ -1,0 +1,31 @@
+// name:     Modelica.Electrical.Machines.Examples.DCEE_Start
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.DCEE_Start,stopTime=2.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.DCEE_Start_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.DCEE_Start.mat","Modelica.Electrical.Machines.Examples.DCEE_Start_diff.csv",0.01,0.00001,
+  {"dcee.inertiaRotor.phi",
+  "dcee.inertiaRotor.w",
+  "dcee.la.i",
+  "dcee.airGapDC.psi_e",
+  "der(dcee.inertiaRotor.phi)",
+  "der(dcee.inertiaRotor.w)",
+  "der(dcee.la.i)",
+  "der(dcee.airGapDC.psi_e)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.DCEE_Start_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCEE_Start', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

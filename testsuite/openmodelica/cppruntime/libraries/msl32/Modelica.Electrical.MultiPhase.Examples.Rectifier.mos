@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.MultiPhase.Examples.Rectifier
+// teardown_command: rm -f Modelica.Electrical.MultiPhase.Examples.Rectifier_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.MultiPhase.Examples.Rectifier);
+compareVars :=
+{
+  "cDC1.v",
+  "cDC2.v",
+  "supplyL.inductor[2].i",
+  "supplyL.inductor[3].i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.MultiPhase.Examples.Rectifier
+// {"cDC1.v","cDC2.v","supplyL.inductor[2].i","supplyL.inductor[3].i"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.MultiPhase.Examples.Rectifier_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

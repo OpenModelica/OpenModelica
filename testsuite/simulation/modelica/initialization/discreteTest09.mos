@@ -1,0 +1,72 @@
+// name: discreteTest9
+// keywords: initialization, discrete
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.discreteTest9* _initializationTests.discreteTest9* output.log
+//
+//  case for when-clauses in algorithm sections
+//
+
+loadString("
+within ;
+package initializationTests
+  model discreteTest9
+    discrete Real d1(start=1, fixed=false); // d1 = 1.0 | pre(d1) = 1.0
+    discrete Real d2(start=1, fixed=false); // d2 = 1.0 | pre(d2) = 1.0
+    discrete Real d3(start=1, fixed=true);  // d3 = 1.0 | pre(d3) = 1.0
+
+    Real x1, x1_;  // 1.0
+    Real x2, x2_;  // 1.0
+    Real x3, x3_;  // 1.0
+    
+  initial equation 
+    pre(d1) = 1;
+    d2 = 1;
+
+    x1 = pre(d1);
+    x2 = pre(d2);
+    x3 = pre(d3);
+
+  equation
+    der(x1) = 0;
+    der(x2) = 0;
+    der(x3) = 0;
+
+  algorithm
+    when {sample(0.1, 0.1)} then
+      d1 := pre(d1) + 0.1;
+    end when;
+    x1_ := x1;
+
+  algorithm
+    x2_ := x2;
+    when {sample(0.1, 0.1)} then
+      d2 := pre(d2) + 0.1;
+    end when;
+    x3_ := x3;
+
+  algorithm
+    when {sample(0.1, 0.1)} then
+      d3 := pre(d3) + 0.1;
+    end when;
+  end discreteTest9;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.discreteTest9, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest9_res.mat", {time, x1, x2, x3, d1, d2, d3}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.discreteTest9_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{1.0,1.0},{1.0,1.0},{1.0,1.0},{1.0,1.0},{1.0,1.0},{1.0,1.0}}
+// ""
+// endResult

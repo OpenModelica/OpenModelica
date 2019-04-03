@@ -1,0 +1,20 @@
+// name:     EnumArray
+// keywords: enum array
+// status: correct
+// teardown_command: rm -rf EnumArray_* EnumArray EnumArray.exe EnumArray.cpp EnumArray.makefile EnumArray.libs EnumArray.log output.log
+//
+// Code generation for assignment of arrays indexed with enumerations.
+// TODO: in resultfile are subscript for UNKNOWN
+// 
+loadFile("EnumArray.mo");
+simulate(EnumArray, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "EnumArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'EnumArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

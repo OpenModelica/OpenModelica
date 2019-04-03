@@ -1,0 +1,37 @@
+// status: correct
+
+echo(false);
+s1 := "model M1
+  annotation(Icon(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}),
+      Line(points={{-40,30},{40,30}}, color={0,0,255}),
+      Line(points={{-20,10},{20,10}}, color={0,0,255}),
+      Line(points={{0,90},{0,50}}, color={0,0,255})}));
+end M1;";
+loadString(s1, "M1.mo");
+getErrorString();
+addComponent(m1, Real, M1, annotate=Placement(visible=true, transformation=transformation(origin={-24,-54}, extent={{-10,-10},{10,10}}, rotation=0)));
+getErrorString();
+answer := "model M1
+  Real m1 annotation(
+    Placement(visible = true, transformation(origin = {-24, -54}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  annotation(Icon(coordinateSystem(
+      preserveAspectRatio=false,
+      extent={{-100,-100},{100,100}}), graphics={
+      Line(points={{-60,50},{60,50}}, color={0,0,255}),
+      Line(points={{-40,30},{40,30}}, color={0,0,255}),
+      Line(points={{-20,10},{20,10}}, color={0,0,255}),
+      Line(points={{0,90},{0,50}}, color={0,0,255})}));
+end M1;";
+s2 := listFile(M1);
+//print(s2);
+res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>res then
+  print("\nFailed:\nGot:\n"+diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain)+"\nExpected:\n"+diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.color));
+  exit(1);
+end if;
+
+// Result:
+// endResult

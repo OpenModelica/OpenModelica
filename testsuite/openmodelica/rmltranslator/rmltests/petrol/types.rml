@@ -1,0 +1,427 @@
+(* types.rml *)
+
+ module Types:
+     with "Absyn.rml"    (* import RelOp and BinOp *)
+     with "Tcode.rml"
+
+    type Ident          = string
+    type Stamp          = int
+
+    datatype ATy        = CHAR | INT | REAL
+
+    datatype Ty         = ARITH of ATy
+                        | PTR of Ty
+                        | PTRNIL         
+                        | ARR of int * Ty
+                        | REC of Record
+                        | UNFOLD of Stamp
+    and Record          = RECORD of Stamp * (Ident * Ty) list
+
+end
+
+relation unfold_rec: Record => (Ident * Ty) list   =
+
+  rule  unfold_bnds(r, bnds, []) => bnds1
+        ----------------
+        unfold_rec(r as RECORD(stamp, bnds)) => bnds1
+end
+
+relation unfold_bnds: (Record, (Ident * Ty) list, (Ident * Ty) list)
+          => (Ident * Ty) list =
+  rule  list_reverse bnds1 => bnds2
+        ----------------
+        unfold_bnds(_, [], bnds1) => bnds2
+
+  rule  unfold_ty(ty, r) => ty1 &
+        unfold_bnds(r, bnds, (id,ty1)::bnds1) => bnds2
+        ----------------
+        unfold_bnds(r, (id,ty)::bnds, bnds1) => bnds2
+end
+
+
+relation unfold_ty:  (Ty,Record) => Ty   =
+
+  axiom unfold_ty(ty as ARITH _, _) => ty
+  axiom unfold_ty(ty as PTRNIL, _) => ty
+
+  rule  unfold_ty(ty, r) => ty1
+        ----------------
+        unfold_ty(PTR ty, r) => PTR ty1
+
+  rule  unfold_ty(ty, r) => ty1
+        ----------------
+        unfold_ty(ARR(sz,ty), r) => ARR(sz,ty1)
+
+  rule  unfold_bnds(r, bnds, []) => bnds1
+        ----------------
+        unfold_ty(REC(RECORD(stamp,bnds)), r) => REC(RECORD(stamp,bnds1))
+
+    rule  stamp = stamp1
+        ----------------
+        unfold_ty(UNFOLD stamp, r as RECORD(stamp1,_)) => REC r
+
+  rule  not stamp = stamp1
+        ----------------
+        unfold_ty(ty as UNFOLD stamp, RECORD(stamp1,_)) => ty
+end
+
+
+relation ty_cnv: Ty => TCode.Ty   =
+
+  axiom ty_cnv(ARITH CHAR)      => TCode.CHAR
+  axiom ty_cnv(ARITH INT)       => TCode.INT
+  axiom ty_cnv(ARITH REAL)      => TCode.REAL
+
+  rule  ty_cnv ty => ty1
+        ----------------
+        ty_cnv(PTR ty) => TCode.PTR ty1
+
+  rule  ty_cnv ty => ty1
+        ----------------
+        ty_cnv(ARR(sz,ty)) => TCode.ARR(sz,ty1)
+
+  rule  rec_cnv r => r1
+        ----------------
+        ty_cnv(REC r) => TCode.REC r1
+
+  axiom ty_cnv(UNFOLD stamp) => TCode.UNFOLD stamp
+end
+
+
+relation rec_cnv: Record => TCode.Record   =
+  rule  bnds_cnv(bnds, []) => bnds1
+        ----------------
+        rec_cnv(RECORD(stamp, bnds)) => TCode.RECORD(stamp, bnds1)
+end
+
+
+relation bnds_cnv: ((Ident * Ty) list, TCode.Var list) =>  TCode.Var list   =
+
+  rule  list_reverse bnds1 => bnds2
+        ----------------
+        bnds_cnv([], bnds1) => bnds2
+
+  rule  ty_cnv ty => ty1 &
+        TCode.VAR(var,ty1) => var1 &
+        bnds_cnv(bnds, var1::bnds1) => bnds2
+        ----------------
+        bnds_cnv((var,ty)::bnds, bnds1) => bnds2
+end
+
+
+relation decay: (TCode.Exp, Ty) => (TCode.Exp, Ty)   =
+
+  axiom decay(exp, ARITH CHAR) => (TCode.UNARY(TCode.CtoI,exp), ARITH INT)
+
+  rule  ty_cnv ty => ty1
+        ----------------
+        decay(exp, ARR(_,ty)) => (TCode.UNARY(TCode.TOPTR ty1,exp), PTR ty)
+
+  axiom decay(exp, ty as ARITH INT) => (exp, ty)
+  axiom decay(exp, ty as ARITH REAL) => (exp, ty)
+  axiom decay(exp, ty as PTR _) => (exp, ty)
+  axiom decay(exp, ty as REC _) => (exp, ty)
+  axiom decay(exp, ty as PTRNIL) => (exp, ty)
+
+end
+
+
+relation asg_cnv: (TCode.Exp, Ty, Ty) => TCode.Exp   = 
+
+  rule  asg_cnv1(rhs, aty1, aty2) => rhs1
+        ----------------
+        asg_cnv(rhs, ARITH aty1, ARITH aty2) => rhs1
+
+  rule  ty1 = ty2
+        ----------------
+        asg_cnv(rhs, PTR ty1, PTR ty2) => rhs
+
+  rule  ty1 = ty2
+        ----------------
+        asg_cnv(rhs, ARR(_,ty1), PTR ty2) => rhs
+
+  rule  ty_cnv ty => ty_1
+        ----------------
+        asg_cnv(_, PTRNIL, PTR ty) => TCode.UNARY(TCode.TOPTR ty_1,
+                                                  TCode.ICON 0)
+
+  rule  stamp1 = stamp2
+        ----------------
+        asg_cnv(rhs, REC(RECORD(stamp1,_)), REC(RECORD(stamp2,_))) => rhs
+end
+
+
+relation asg_cnv1 :  (TCode.Exp, ATy, ATy) => TCode.Exp   =
+  axiom asg_cnv1(rhs,CHAR,CHAR)=> rhs
+  axiom asg_cnv1(rhs,CHAR, INT)=> TCode.UNARY(TCode.CtoI, rhs)
+ 
+  rule TCode.UNARY(TCode.CtoI,rhs)=> exp1
+       ---------------------------------------
+       asg_cnv1(rhs,CHAR,REAL)=> TCode.UNARY(TCode.ItoR,exp1)
+  
+  axiom asg_cnv1(rhs, INT,CHAR)=> TCode.UNARY(TCode.ItoC, rhs)
+  axiom asg_cnv1(rhs, INT, INT)=> rhs
+  axiom asg_cnv1(rhs, INT,REAL)=> TCode.UNARY(TCode.ItoR, rhs)
+  
+  rule TCode.UNARY(TCode.RtoI,rhs)=> exp1
+       ---------------------------------------
+       asg_cnv1(rhs,REAL,CHAR)=> TCode.UNARY(TCode.ItoR,exp1)
+
+  axiom asg_cnv1(rhs,REAL, INT)=> TCode.UNARY(TCode.RtoI, rhs)
+  axiom asg_cnv1(rhs,REAL,REAL)=> rhs
+ end
+
+
+relation cast_cnv: (TCode.Exp, Ty, Ty) => TCode.Exp   =
+
+  rule  asg_cnv1(exp, aty1, aty2) => exp1
+        ----------------
+        cast_cnv(exp, ARITH aty1, ARITH aty2) => exp1
+
+  rule  asg_cnv1(TCode.UNARY(TCode.PtoI,exp), INT, aty) => exp1
+        ----------------
+        cast_cnv(exp, PTR _, ARITH aty) => exp1
+
+  rule  asg_cnv1(TCode.ICON 0, INT, aty) => exp
+        ----------------
+        cast_cnv(_, PTRNIL, ARITH aty) => exp
+
+  rule  asg_cnv1(exp, aty1, INT) => exp1 &
+        ty_cnv ty2 => ty2_1
+        ----------------
+        cast_cnv(exp, ARITH aty1, PTR ty2) => TCode.UNARY(TCode.TOPTR ty2_1,
+                                                          exp1)
+
+  rule  ty_cnv ty => ty_1
+        ----------------
+        cast_cnv(exp, PTR _, PTR ty) => TCode.UNARY(TCode.TOPTR ty_1, exp)
+
+  rule  ty_cnv ty => ty_1
+        ----------------
+        cast_cnv(_, PTRNIL, PTR ty) => TCode.UNARY(TCode.TOPTR ty_1,
+                                                   TCode.ICON 0)
+end
+
+
+
+relation cond_cnv: (TCode.Exp, Ty) => TCode.Exp   =
+
+  axiom cond_cnv(_, PTRNIL) => TCode.ICON 0
+
+  axiom cond_cnv(exp, ARITH INT) => exp   (* No change for int, already bool *)
+
+  axiom cond_cnv(exp, ARITH REAL)
+        => TCode.BINARY(TCode.BINARY(exp, TCode.REQ, TCode.RCON 0.0),
+                        TCode.IEQ,
+                        TCode.ICON 0)
+
+  rule  ty_cnv ty => ty1 &
+        TCode.UNARY(TCode.TOPTR ty1,TCode.ICON 0)=> exp1
+        ---------------- 
+        cond_cnv(exp, PTR ty)
+        => TCode.BINARY(TCode.BINARY(exp,TCode.PEQ ty1,exp1),TCode.IEQ,TCode.ICON 0)
+end
+
+
+
+ relation eq_cnv: (TCode.Exp, Ty, TCode.Exp, Ty) => TCode.Exp   =
+
+  rule  ty1 = ty2 & ty_cnv ty1 => ty_1
+        ----------------
+        eq_cnv(exp1, PTR ty1, exp2, PTR ty2) =>
+        TCode.BINARY(exp1,TCode.PEQ ty_1,exp2)
+
+  rule  ptr_eq_null(exp, ty) => exp1
+        ----------------
+        eq_cnv(exp, PTR ty, _, PTRNIL) => exp1
+
+  rule  ptr_eq_null(exp, ty) => exp1
+        ----------------
+        eq_cnv(_, PTRNIL, exp, PTR ty) => exp1
+
+  rule  arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3) &
+        choose_int_real(raty3, TCode.IEQ, TCode.REQ) => bop
+        ----------------
+        eq_cnv(exp1, ARITH raty1, exp2, ARITH raty2) =>
+        TCode.BINARY(exp1_1,bop,exp2_1)
+end
+
+
+relation ptr_eq_null: (TCode.Exp, Ty) => TCode.Exp =
+  rule  ty_cnv ty => ty1 &
+        TCode.UNARY(TCode.TOPTR ty1,TCode.ICON 0)=>exp1
+        ----------------
+        ptr_eq_null(exp, ty) => TCode.BINARY(exp,TCode.PEQ ty1,exp1)
+end
+
+
+relation choose_int_real: (ATy,TCode.BinOp,TCode.BinOp) => TCode.BinOp =
+  axiom choose_int_real(INT, x, _) => x
+  axiom choose_int_real(REAL, _, y) => y
+end
+
+
+relation arith_cnv:  (TCode.Exp,ATy, TCode.Exp,ATy) =>
+                                                  (TCode.Exp, TCode.Exp, ATy)  =
+  rule  arith_lub(raty1, raty2) => raty3 &
+        arith_widen(exp1, raty1, raty3) => exp1_1 &
+        arith_widen(exp2, raty2, raty3) => exp2_1
+        ----------------
+        arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3)
+end
+
+
+relation arith_lub:  (ATy, ATy) => ATy  =
+  axiom arith_lub(INT, y)       => y
+  axiom arith_lub(REAL, _)      => REAL
+end
+
+relation arith_widen: (TCode.Exp, ATy, ATy) => TCode.Exp  =
+  axiom arith_widen(exp, INT, INT) => exp
+  axiom arith_widen(exp, INT, REAL) => TCode.UNARY(TCode.ItoR, exp)
+  axiom arith_widen(exp, REAL, REAL) => exp
+end 
+
+
+relation rel_cnv: (TCode.Exp, Ty, Absyn.RelOp, TCode.Exp, Ty) => TCode.Exp   =
+
+  rule  ty1 = ty2 &
+        ty_cnv ty1 => ty_1 &
+        ptr_relop(relop, ty_1) => bop
+        ----------------
+        rel_cnv(exp1, PTR ty1, relop, exp2, PTR ty2)
+          => TCode.BINARY(exp1,bop,exp2)
+
+  rule  arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3)  &
+        int_or_real_relop(raty3, relop)     => bop
+        ----------------
+        rel_cnv(exp1,ARITH raty1,relop,exp2,ARITH raty2) => 
+        TCode.BINARY(exp1_1,bop,exp2_1)
+end
+
+
+relation ptr_relop: (Absyn.RelOp, TCode.Ty) => TCode.BinOp   =
+  axiom ptr_relop(Absyn.LT, ty) => TCode.PLT ty
+  axiom ptr_relop(Absyn.LE, ty) => TCode.PLE ty
+end
+
+
+relation int_or_real_relop: (ATy, Absyn.RelOp) => TCode.BinOp   =
+  axiom int_or_real_relop(INT,  Absyn.LT) => TCode.ILT
+  axiom int_or_real_relop(INT,  Absyn.LE) => TCode.ILE
+  axiom int_or_real_relop(REAL, Absyn.LT) => TCode.RLT
+  axiom int_or_real_relop(REAL, Absyn.LE) => TCode.RLE
+end
+
+
+relation bin_cnv: (TCode.Exp,Ty,Absyn.BinOp,TCode.Exp,Ty) => (TCode.Exp, Ty)  =
+
+  rule  add_cnv(exp1, rty1, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.ADD, exp2, rty2) => (exp3, rty3)
+
+  rule  sub_cnv(exp1, rty1, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.SUB, exp2, rty2) => (exp3, rty3)
+
+  rule  mul_cnv(exp1, rty1, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.MUL, exp2, rty2) => (exp3, rty3)
+
+  rule  rdiv_cnv(exp1, rty1, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.RDIV, exp2, rty2) => (exp3, rty3)
+
+  rule  intop_cnv(exp1, rty1, TCode.IDIV, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.IDIV, exp2, rty2) => (exp3, rty3)
+
+  rule  intop_cnv(exp1, rty1, TCode.IMOD, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.IMOD, exp2, rty2) => (exp3, rty3)
+
+  rule  intop_cnv(exp1, rty1, TCode.IAND, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.IAND, exp2, rty2) => (exp3, rty3)
+
+  rule  intop_cnv(exp1, rty1, TCode.IOR, exp2, rty2) => (exp3, rty3)
+        ----------------
+        bin_cnv(exp1, rty1, Absyn.IOR, exp2, rty2) => (exp3, rty3)
+end
+
+
+ relation add_cnv: (TCode.Exp, Ty, TCode.Exp, Ty) => (TCode.Exp, Ty)   =
+
+  rule  ptr_add_int_cnv(exp1, ty, ty1, exp2) => (exp3, ty3)
+        ----------------
+        add_cnv(exp1, ty as PTR ty1, exp2, ARITH INT) => (exp3, ty3)
+
+  rule  ptr_add_int_cnv(exp2, ty, ty2, exp1) => (exp3, ty3)
+        ----------------
+        add_cnv(exp1, ARITH INT, exp2, ty as PTR ty2) => (exp3, ty3)
+
+  rule  arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3) &
+        choose_int_real(raty3, TCode.IADD, TCode.RADD) => bop
+        ----------------
+        add_cnv(exp1, ARITH raty1, exp2, ARITH raty2) =>
+                                    (TCode.BINARY(exp1_1,bop,exp2_1), ARITH raty3)
+end
+
+
+relation  ptr_add_int_cnv: (TCode.Exp, Ty, Ty, TCode.Exp)
+          => (TCode.Exp, Ty)  =
+  rule  ty_cnv ty1 => ty1_1
+        ----------------
+        ptr_add_int_cnv(exp1, ty, ty1, exp2) =>
+         (TCode.BINARY(exp1, TCode.PADD ty1_1, exp2), ty)
+end
+
+
+ relation sub_cnv:  (TCode.Exp, Ty, TCode.Exp, Ty) => (TCode.Exp, Ty)  =
+  
+  rule  ty1 = ty2 & ty_cnv ty1 => ty1_1
+        ----------------
+        sub_cnv(exp1, PTR ty1, exp2, PTR ty2) =>
+                         (TCode.BINARY(exp1,TCode.PDIFF ty1_1,exp2), ARITH INT)
+
+  rule  ty_cnv ty1 => ty1_1
+        ----------------
+        sub_cnv(exp1, ty as PTR ty1, exp2, ARITH INT)
+        => (TCode.BINARY(exp1,TCode.PSUB ty1_1,exp2), ty)
+
+  
+  rule  arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3) &
+        choose_int_real(raty3, TCode.ISUB, TCode.RSUB) => bop
+        ----------------
+        sub_cnv(exp1, ARITH raty1, exp2, ARITH raty2)
+        => (TCode.BINARY(exp1_1,bop,exp2_1), ARITH raty3)
+end
+
+
+relation mul_cnv: (TCode.Exp, Ty, TCode.Exp, Ty) => (TCode.Exp, Ty)   =
+
+  rule  arith_cnv(exp1, raty1, exp2, raty2) => (exp1_1, exp2_1, raty3) &
+        choose_int_real(raty3, TCode.IMUL, TCode.RMUL) => bop
+        ----------------
+        mul_cnv(exp1, ARITH raty1, exp2, ARITH raty2)
+        => (TCode.BINARY(exp1_1,bop,exp2_1), ARITH raty3)
+end
+
+
+relation rdiv_cnv: (TCode.Exp, Ty, TCode.Exp, Ty) => (TCode.Exp, Ty)   =
+
+  rule  arith_widen(exp1, raty1, REAL) => exp1_1 &
+        arith_widen(exp2, raty2, REAL) => exp2_1
+        ----------------
+        rdiv_cnv(exp1, ARITH raty1, exp2, ARITH raty2) => 
+                              (TCode.BINARY(exp1_1,TCode.RDIV,exp2_1), ARITH REAL)
+end
+
+
+relation intop_cnv: (TCode.Exp, Ty, TCode.BinOp, TCode.Exp, Ty) => (TCode.Exp, Ty) =
+
+  axiom intop_cnv(exp1, ARITH INT, bop, exp2, ARITH INT) => (TCode.BINARY(exp1,bop,exp2), ARITH INT)
+end
+
+
+

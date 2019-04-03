@@ -1,0 +1,35 @@
+// name: qss_example9
+// status: correct
+
+loadString("
+within ;
+package qssTests
+  model example9
+    Real x(start=1.0, fixed=true);
+  equation
+    der(x) = sin(time);
+  end example9;
+end qssTests;
+"); getErrorString();
+
+setCommandLineOptions("--postOptModules+=addTimeAsState"); getErrorString();
+simulate(qssTests.example9, method="qss"); getErrorString();
+val(x, {0.0, 1.0}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "qssTests.example9_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | This QSS method is under development and should not be used yet.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.459655620199529}
+// ""
+// endResult

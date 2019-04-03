@@ -1,0 +1,37 @@
+// name:     Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier
+// teardown_command: rm -f Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+
+setDebugFlags({"pedantic"}); getErrorString();
+simulate(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier.mat",
+  "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_diff.csv",0.01,0.0001,
+  {"voltageQS.pin_p.reference.gamma",
+   "iAC.mean1.x",
+   "iAC.mean2.x",
+   "iDC2.mean.x"}); getErrorString();
+
+// Result:
+// true
+// ""
+// {true}
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult

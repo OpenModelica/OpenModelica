@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Spice3.Examples.Nand
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Nand);
+compareVars :=
+{
+   "mp1.Dinternal",
+   "mp1.Sinternal",
+   "mp2.Dinternal",
+   "mp2.Sinternal",
+   "mn2.Dinternal",
+   "mn2.Sinternal",
+   "mn1.Dinternal",
+   "mn1.Sinternal"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Spice3.Examples.Nand
+// {"mp1.Dinternal","mp1.Sinternal","mp2.Dinternal","mp2.Sinternal","mn2.Dinternal","mn2.Sinternal","mn1.Dinternal","mn1.Sinternal"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2e-07, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Nand', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Nand_res.mat
+// "true
+// "
+// ""
+// endResult

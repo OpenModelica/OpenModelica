@@ -1,0 +1,45 @@
+// name:     Modelica.Mechanics.Rotational.Examples.RollingWheel
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.RollingWheel);
+compareVars :=
+{
+   "mass.s",
+   "mass.v",
+   "mass.a",
+   "inertia.flange_a.tau",
+   "inertia.phi",
+   "inertia.w",
+   "inertia.a",
+   "mass.flange_a.s",
+   "mass.flange_b.f",
+   "quadraticSpeedDependentForce.s"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Rotational.Examples.RollingWheel
+// {"mass.s","mass.v","mass.a","inertia.flange_a.tau","inertia.phi","inertia.w","inertia.a","mass.flange_a.s","mass.flange_b.f","quadraticSpeedDependentForce.s"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.RollingWheel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Rotational.Examples.RollingWheel_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,74 @@
+// name:     testnoEventEmitRK
+// keywords: events, emit, results, runge-kutta
+// status: correct
+// teardown_command: rm -rf testModel* output.log
+//
+// Event handling
+//
+loadString("
+model testModel
+  parameter Real e=0.7;
+  parameter Real g=9.81;
+  Real h(start=1);
+  Real v;
+  Boolean flying(start=true);
+  Boolean impact;
+  Real v_new;
+  discrete Integer n_bounce(start=0);
+equation
+  impact = h <= 0.0;
+  der(v) = if flying then -g else 0;
+  der(h) = v;
+
+  when {h <= 0.0 and v <= 0.0,impact} then
+    v_new = if edge(impact) then -e*pre(v) else 0;
+    flying = v_new > 0;
+    reinit(v, v_new);
+    n_bounce=pre(n_bounce)+1;
+  end when;
+
+end testModel;");
+simulate(testModel, stopTime=3.0, method="rungekutta");
+readSimulationResultSize("testModel_res.mat");
+simulate(testModel, stopTime=3.0, simflags="-noEventEmit",method="rungekutta");
+readSimulationResultSize("testModel_res.mat");
+simulate(testModel, stopTime=2.0, numberOfIntervals= 20, simflags="-noEventEmit",method="rungekutta");
+readSimulationResultSize("testModel_res.mat");
+simulate(testModel, stopTime=2.0, numberOfIntervals= 6, simflags="-noEventEmit",method="rungekutta");
+readSimulationResultSize("testModel_res.mat");
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 584
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEventEmit'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 501
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEventEmit'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 21
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 6, tolerance = 1e-06, method = 'rungekutta', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEventEmit'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 7
+// endResult

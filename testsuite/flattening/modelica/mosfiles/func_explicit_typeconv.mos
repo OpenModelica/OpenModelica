@@ -1,0 +1,42 @@
+// name:     Test floor(), integer(), ceil() and integer()
+// keywords: function ceil floor Integer
+// status:   correct, however ut does not work together with the test suite
+// 
+//  * testing a simple function and the build in type conversion function
+//    Intege(), integer(), ceil() and floor()
+//
+//  Not working:
+//    Function Intege() does not work in a function or in the script
+//    floor(), ceil() and integer() works in the script, but not in a function
+//
+
+loadFile("func_explicit_typeconv.mo");
+Sumit(33,22,0);
+Sumit(33,22,11.21);
+floor(33.1);
+floor(32323.1231);
+floor(4411.876);
+ceil(33.1);
+ceil(32323.1231);
+ceil(4411.876);
+integer(33.1);
+integer(32323.1231);
+integer(4411.876);
+Sumit(33,22,floor(11.21));
+
+
+// Result:
+// true
+// 55
+// 66.2099990844727
+// 33.0
+// 32323.0
+// 4411.0
+// 34.0
+// 32324.0
+// 4412.0
+// 33
+// 32323
+// 4411
+// 66.0
+// endResult

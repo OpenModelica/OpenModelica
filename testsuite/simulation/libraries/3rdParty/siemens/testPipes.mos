@@ -1,0 +1,204 @@
+// name:     simulate Pipes
+// keywords: SiemensPower Pipes
+// status:   correct
+// env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.Pipes.Tests.tubeTest* _SiemensPower.Components.Pipes.Tests.tubeTest* SiemensPower.Components.Pipes.Tests.tube_ownMedia_test* _SiemensPower.Components.Pipes.Tests.tube_ownMedia_test* SiemensPower_Media_TTSE_Utilities_* output.log
+//
+//  Test SiemensPower component Pipes
+//  TODO: check small differences in SH.qMetalFluidDelayed[1]
+//
+
+loadModel(Modelica);
+loadFile("SiemensPower/package.mo");
+
+// test simple model
+simulate(SiemensPower.Components.Pipes.Tests.tubeTest, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/tubeTest.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults(
+	"SiemensPower.Components.Pipes.Tests.tubeTest_res.mat",
+	"./ReferenceFiles/tubeTest.mat",
+	"SiemensPower.Components.Pipes.Tests.tubeTest_diff.csv",0.01,0.00001,
+  { "SH.h[1]",
+    "SH.h[2]",
+    "SH.h[3]",
+//  "SH.qMetalFluidDelayed[1]",
+    "SH.p",
+    "SH.m_flow",
+    "SH.T[1]",
+    "SH.T[2]",
+    "SH.T[3]",
+    "timeTable2.C1signal.y"
+  });
+
+// test jacobians
+simulate(SiemensPower.Components.Pipes.Tests.tubeTest, stopTime=2000, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/tubeTest.mat", cflags="-L./TTSE_libs/");
+
+res := OpenModelica.Scripting.compareSimulationResults(
+	"SiemensPower.Components.Pipes.Tests.tubeTest_res.mat",
+	"./ReferenceFiles/tubeTest.mat",
+	"SiemensPower.Components.Pipes.Tests.tubeTest_diff.csv",0.01,0.00001,
+  { "SH.h[1]",
+    "SH.h[2]",
+    "SH.h[3]",
+//  "SH.qMetalFluidDelayed[1]",
+    "SH.p",
+    "SH.m_flow",
+    "SH.T[1]",
+    "SH.T[2]",
+    "SH.T[3]",
+    "timeTable2.C1signal.y"
+  });
+
+
+// test full model
+simulate(SiemensPower.Components.Pipes.Tests.tube_ownMedia_test, stopTime=2000, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/tube_ownMedia_test.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.Pipes.Tests.tube_ownMedia_test_res.mat",
+  "./ReferenceFiles/tube_ownMedia_test.mat","SiemensPower.Components.Pipes.Tests.tube_ownMedia_test_diff.csv",0.1,0.001,
+  { "EVA.h[1]",
+    "EVA.h[2]",
+    "EVA.h[3]",
+    "EVA.h[4]",
+    "EVA.h[5]",
+    "EVA.h[6]",
+    "EVA.h[7]",
+    "EVA.h[8]",
+    "EVA.h[9]",
+    "EVA.h[10]",
+    "EVA.h[11]",
+    "EVA.h[12]",
+    "EVA.h[13]",
+    "EVA.h[14]",
+    "EVA.h[15]",
+    "EVA.h[16]",
+    "EVA.h[17]",
+    "EVA.h[18]",
+    "EVA.h[19]",
+    "EVA.h[20]",
+    "EVA.p",
+    "EVA.m_flow",
+    "EVA.T[1]",
+    "EVA.T[2]",
+    "EVA.T[3]",
+    "ECO.h[1]",
+    "ECO.h[2]",
+    "ECO.h[3]",
+    "ECO.h[4]",
+    "ECO.h[5]",
+    "ECO.h[6]",
+    "ECO.h[7]",
+    "ECO.h[8]",
+    "ECO.h[9]",
+    "ECO.h[10]",
+    "ECO.qMetalFluidDelayed[1]",
+    "ECO.p",
+    "ECO.m_flow",
+    "ECO.T[1]",
+    "ECO.T[2]",
+    "ECO.T[3]",
+    "SH.h[1]",
+    "SH.h[2]",
+    "SH.h[3]",
+    "SH.h[4]",
+    "SH.h[5]",
+    "SH.h[6]",
+    "SH.h[7]",
+    "SH.h[8]",
+    "SH.h[9]",
+    "SH.h[10]",
+//  "SH.qMetalFluidDelayed[1]",
+    "SH.p",
+    "SH.m_flow",
+    "SH.T[1]",
+    "SH.T[2]",
+    "SH.T[3]",
+    "timeTable.C1signal.y",
+    "timeTable1.C1signal.y",
+    "timeTable2.C1signal.y"
+  });
+  
+// test jacobians
+
+simulate(SiemensPower.Components.Pipes.Tests.tube_ownMedia_test, stopTime=2000, numberOfIntervals=2000, method="dassljac", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ReferenceFiles/tube_ownMedia_test.mat");
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.Pipes.Tests.tube_ownMedia_test_res.mat",
+  "./ReferenceFiles/tube_ownMedia_test.mat","SiemensPower.Components.Pipes.Tests.tube_ownMedia_test_diff.csv",0.1,0.001,
+  { "EVA.h[1]",
+    "EVA.h[2]",
+    "EVA.h[3]",
+    "EVA.h[4]",
+    "EVA.h[5]",
+    "EVA.h[6]",
+    "EVA.h[7]",
+    "EVA.h[8]",
+    "EVA.h[9]",
+    "EVA.h[10]",
+    "EVA.h[11]",
+    "EVA.h[12]",
+    "EVA.h[13]",
+    "EVA.h[14]",
+    "EVA.h[15]",
+    "EVA.h[16]",
+    "EVA.h[17]",
+    "EVA.h[18]",
+    "EVA.h[19]",
+    "EVA.h[20]",
+    "EVA.p",
+    "EVA.m_flow",
+    "EVA.T[1]",
+    "EVA.T[2]",
+    "EVA.T[3]",
+    "ECO.h[1]",
+    "ECO.h[2]",
+    "ECO.h[3]",
+    "ECO.h[4]",
+    "ECO.h[5]",
+    "ECO.h[6]",
+    "ECO.h[7]",
+    "ECO.h[8]",
+    "ECO.h[9]",
+    "ECO.h[10]",
+    "ECO.qMetalFluidDelayed[1]",
+    "ECO.p",
+    "ECO.m_flow",
+    "ECO.T[1]",
+    "ECO.T[2]",
+    "ECO.T[3]",
+    "SH.h[1]",
+    "SH.h[2]",
+    "SH.h[3]",
+    "SH.h[4]",
+    "SH.h[5]",
+    "SH.h[6]",
+    "SH.h[7]",
+    "SH.h[8]",
+    "SH.h[9]",
+    "SH.h[10]",
+//  "SH.qMetalFluidDelayed[1]",
+    "SH.p",
+    "SH.m_flow",
+    "SH.T[1]",
+    "SH.T[2]",
+    "SH.T[3]",
+    "timeTable.C1signal.y",
+    "timeTable1.C1signal.y",
+    "timeTable2.C1signal.y"
+  });
+
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.Pipes.Tests.tubeTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 2000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.Pipes.Tests.tubeTest', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/tubeTest.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.Pipes.Tests.tube_ownMedia_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 2000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.Pipes.Tests.tube_ownMedia_test', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '-L./TTSE_libs/', simflags = '-iim none -iif ./ReferenceFiles/tube_ownMedia_test.mat'",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResults

@@ -1,0 +1,33 @@
+// name:     Modelica.Mechanics.Translational.Examples.Oscillator
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Oscillator, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Oscillator_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.Translational.Examples.Oscillator.mat","Modelica.Mechanics.Translational.Examples.Oscillator_diff.csv",0.01,0.0001,
+  {"mass1.s",
+  "mass1.v",
+  "damper1.s_rel",
+  "damper1.v_rel",
+  "der(mass1.s)",
+  "der(mass1.v)",
+  "der(damper1.s_rel)",
+  "der(damper1.v_rel)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Oscillator_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Oscillator', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

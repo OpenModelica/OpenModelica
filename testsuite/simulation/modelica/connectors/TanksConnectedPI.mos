@@ -1,0 +1,68 @@
+// name:     TanksConnectedPI
+// keywords: <insert keywords here>
+// cflags: +std=2.x
+// status: correct
+// teardown_command: rm -rf TanksConnectedPI_* TanksConnectedPI TanksConnectedPI.exe TanksConnectedPI.cpp TanksConnectedPI.makefile TanksConnectedPI.libs TanksConnectedPI.log output.log
+// 
+//  <insert description here>
+//
+// Drmodelica: 12.1 Object Oriented Component-based (p. 386)
+// 
+loadFile("TanksConnectedPI.mo");
+simulate(TanksConnectedPI,stopTime=210,numberOfIntervals=250, tolerance=1e-5);
+echo(false); // turns of output 
+
+//res:=readSimulationResult("TanksConnectedPI_res.mat",{x,y,z},3); 
+x:=val(tank1.h,25.0);
+y:=val(tank1.h,100.0);
+z:=val(tank1.h,150.0);
+w:=val(tank1.h,200.0);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+w:=1000*w;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+w:=floor(w);
+x2:=val(tank2.h,28.0);
+y2:=val(tank2.h,100.0);
+z2:=val(tank2.h,149.0);
+w2:=val(tank2.h,199.9);
+x2:=1000*x2;
+y2:=1000*y2;
+z2:=1000*z2;
+w2:=1000*w2;
+x2:=floor(x2);
+y2:=floor(y2);
+z2:=floor(z2);
+w2:=floor(w2);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+w/1000.0;
+x2/1000.0; // rounded value to 3 digits
+y2/1000.0;
+z2/1000.0;
+w2/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TanksConnectedPI_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 210.0, numberOfIntervals = 250, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TanksConnectedPI', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.439
+// 0.255
+// 0.249
+// 0.214
+// 0.094
+// 0.395
+// 0.42
+// 0.336
+// endResult

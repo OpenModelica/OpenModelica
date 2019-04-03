@@ -1,0 +1,41 @@
+// name: UnitCheck14
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck14
+    Real A;
+    Real V=1;
+    Real S;
+  equation
+    S=time;
+    A=der(S);
+  end UnitCheck14;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.UnitCheck14); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {S,{MASTER(S)}}
+// {V,{MASTER(V)}}
+// {A,{MASTER(A)}}
+// HashTable:
+// {S,{1.0 * s^(1)}}
+// {V,{MASTER(V)}}
+// {A,{1.0 * 1}}
+// ######## UnitCheck COMPLETED ########
+// true
+// "Notification: "S" has the Unit "s"
+// "A" has the Unit "1"
+// "
+// endResult

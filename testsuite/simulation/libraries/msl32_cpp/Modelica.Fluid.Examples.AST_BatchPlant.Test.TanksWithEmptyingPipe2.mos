@@ -1,0 +1,39 @@
+// name:     Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2);
+compareVars :=
+{
+   "tank3.level",
+   "tank3.medium.T",
+   "tank1.level",
+   "tank1.medium.T",
+   "tank2.level",
+   "tank2.medium.T"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.AST_BatchPlant.Test.TanksWithEmptyingPipe2
+// {"tank3.level","tank3.medium.T","tank1.level","tank1.medium.T","tank2.level","tank2.medium.T"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

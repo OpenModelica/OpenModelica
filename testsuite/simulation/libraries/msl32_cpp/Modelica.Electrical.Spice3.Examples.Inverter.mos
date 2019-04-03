@@ -1,0 +1,34 @@
+// name:     Modelica.Electrical.Spice3.Examples.Inverter
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Inverter);
+compareVars :=
+{
+   "mp.Dinternal",
+   "mp.Sinternal",
+   "mn.Dinternal",
+   "mn.Sinternal"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Spice3.Examples.Inverter
+// {"mp.Dinternal","mp.Sinternal","mn.Dinternal","mn.Sinternal"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
+// endResult

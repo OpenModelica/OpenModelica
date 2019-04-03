@@ -1,0 +1,46 @@
+// Name:     BouncingBall2
+// keywords: equations when
+// status:   correct
+// teardown_command: rm -rf BouncingBall2.makefile BouncingBall2.libs BouncingBall2.log BouncingBall2 BouncingBall2.exe BouncingBall2.cpp BouncingBall2.plt BouncingBall2_* output.log 
+// 
+//  Tests when, elsewhen
+// Drmodelica: 9.1 reinit (p. 296)
+//
+
+loadFile("BouncingBall2.mo");
+simulate(BouncingBall2,numberOfIntervals=5, tolerance=1e-5); // 2 intervals == 3 values
+val(height,0.0);
+val(height,0.2);
+val(height,0.4);
+val(height,0.6);
+val(height,0.8);
+val(height,1.0);
+val(velocity,0.0);
+val(velocity,0.2);
+val(velocity,0.4);
+val(velocity,0.6);
+val(velocity,0.8);
+val(velocity,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BouncingBall2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'BouncingBall2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.8037999998891638
+// 0.2151999998786468
+// 0.6046422324667133
+// 0.8280563113630965
+// 0.6590703902890099
+// 0.0
+// -1.962
+// -3.924
+// 2.098070394806885
+// 0.1360703948068835
+// -1.825929605193116
+// endResult

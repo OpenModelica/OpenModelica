@@ -1,0 +1,74 @@
+// name:     EventTest2
+// keywords: EventHandling, Realations
+// status: correct
+// teardown_command: rm -rf testEvents2* output.log
+
+loadString("
+model testEvents2
+  Boolean a = time < -0.2;
+  Boolean b = time <= -0.1;
+  Boolean c = time > 0.1;
+  Boolean d = time >= 0.2;
+  annotation (experiment(StartTime=-1, StopTime=1));
+end testEvents2;
+"); getErrorString();
+
+simulate(testEvents2, numberOfIntervals=20, simflags="-lv=LOG_EVENTS"); getErrorString();
+simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testEvents2_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=-1
+// |                 | |       | | [1] (pre:  true)  true = time < -0.2
+// |                 | |       | | [2] (pre:  true)  true = time <= -0.1
+// |                 | |       | | [3] (pre: false) false = time > 0.1
+// |                 | |       | | [4] (pre: false) false = time >= 0.2
+// LOG_EVENTS        | info    | status of zero crossings at time=-1
+// |                 | |       | | [1] (pre:  0)  1 = time < -0.2
+// |                 | |       | | [2] (pre:  0)  1 = time <= -0.1
+// |                 | |       | | [3] (pre:  0) -1 = time > 0.1
+// |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=-0.19999999988
+// |                 | |       | | [1] time < -0.2
+// LOG_EVENTS        | info    | state event at time=-0.0999999998894
+// |                 | |       | | [2] time <= -0.1
+// LOG_EVENTS        | info    | state event at time=0.100000000111
+// |                 | |       | | [3] time > 0.1
+// LOG_EVENTS        | info    | state event at time=0.20000000012
+// |                 | |       | | [4] time >= 0.2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "testEvents2_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 19, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=-1
+// |                 | |       | | [1] (pre:  true)  true = time < -0.2
+// |                 | |       | | [2] (pre:  true)  true = time <= -0.1
+// |                 | |       | | [3] (pre: false) false = time > 0.1
+// |                 | |       | | [4] (pre: false) false = time >= 0.2
+// LOG_EVENTS        | info    | status of zero crossings at time=-1
+// |                 | |       | | [1] (pre:  0)  1 = time < -0.2
+// |                 | |       | | [2] (pre:  0)  1 = time <= -0.1
+// |                 | |       | | [3] (pre:  0) -1 = time > 0.1
+// |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=-0.19999999988
+// |                 | |       | | [1] time < -0.2
+// LOG_EVENTS        | info    | state event at time=-0.0999999998894
+// |                 | |       | | [2] time <= -0.1
+// LOG_EVENTS        | info    | state event at time=0.100000000111
+// |                 | |       | | [3] time > 0.1
+// LOG_EVENTS        | info    | state event at time=0.20000000012
+// |                 | |       | | [4] time >= 0.2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

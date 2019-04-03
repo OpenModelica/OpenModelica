@@ -1,0 +1,29 @@
+// name:      RtlInverter
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+simulate(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_res.mat",
+  "ReferenceFiles/RtlInverter.mat",
+  "RtlInverter_diff.csv", 0.01, 0.0001,
+  {"Q1.vbe",
+   "Q1.vbe"}); 
+getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-07, numberOfIntervals = 999, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

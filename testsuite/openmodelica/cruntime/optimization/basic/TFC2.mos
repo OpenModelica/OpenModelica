@@ -1,0 +1,77 @@
+// name: testFinalCon_2
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString("
+model testFinalCon2
+  Real x1(start = 1, fixed = true);
+  Real x2(start = -1, fixed = true);
+  input Real u;
+  
+  Real final_con1(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real final_con2(min = 0, max = 0) annotation(isFinalConstraint = true);
+  Real final_con3(min = 0, max = 1) annotation(isFinalConstraint = true);
+  Real cost annotation(isLagrange = true);
+
+equation
+  der(x1) = x2*u - x1;
+  der(x2) = x1 + u;
+  final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
+  final_con2 = x2 - 3;
+  final_con3 = cost - 15;
+  
+  cost = u^2;
+end testFinalCon2;
+");
+getErrorString();
+
+optimize(testFinalCon2, numberOfIntervals=50, tolerance = 1e-08, stopTime = 5);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon2_res.mat","ReferenceFiles/testFinalCon2_ref.mat","testFinalCon2_diff.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testFinalCon2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con3 >= 0.0 and $finalCon$final_con3 <= 1.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con3 <= 1.0, has value: -15
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con2 >= 0.0 and $finalCon$final_con2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con2 <= 0.0, has value: -4
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con1 >= 0.0 and $finalCon$final_con1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con1 <= 0.0, has value: -1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// State[1]:x2(start = -1, nominal = 2, min = -Inf, max = +Inf, init = -1)
+// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

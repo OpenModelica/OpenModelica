@@ -1,0 +1,51 @@
+// name:     externalFMUs
+// keywords: fmu import co-simulation stand-alone
+// status: correct
+// teardown_command: rm -rf binaries sources documentation modelDescription.xml model.png output.log _bouncingBall* bouncingBall_* bouncingBall bouncingBall.exe _vanDerPol* vanDerPol_* vanDerPol vanDerPol.exe
+//
+// 
+
+importFMU("testedFMU/fmusdk1.0.2/bouncingBall.fmu");
+loadFile("bouncingBall_cs_st_FMU.mo");
+getErrorString();
+simulate(bouncingBall_cs_st_FMU);
+val(h,0);
+val(h,1);
+val(h,3);
+
+importFMU("testedFMU/fmusdk1.0.2/vanDerPol.fmu");
+loadFile("vanDerPol_cs_st_FMU.mo");
+getErrorString();
+simulate(vanDerPol_cs_st_FMU);
+val(x0,0);
+val(x0,1);
+val(x1,0);
+val(x1,1);
+
+// Result:
+// "bouncingBall_cs_st_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bouncingBall_cs_st_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bouncingBall_cs_st_FMU', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "fmiStatus = 0;  bouncingBall (log): fmiSetDebugLogging: loggingOn=0
+// "
+// end SimulationResult;
+// 0.9989331625
+// 9.91299113806439e-05
+// NaN
+// "vanDerPol_cs_st_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "vanDerPol_cs_st_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'vanDerPol_cs_st_FMU', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "fmiStatus = 0;  vanDerPol (log): fmiSetDebugLogging: loggingOn=0
+// "
+// end SimulationResult;
+// 1.99978551801558
+// -0.894483565115658
+// -0.0293555381587737
+// -2.67301665705339
+// endResult

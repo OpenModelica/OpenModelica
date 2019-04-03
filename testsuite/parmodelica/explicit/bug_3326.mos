@@ -1,0 +1,29 @@
+// name: bug_3326
+// status: correct
+
+// setGrammarParModelica();
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
+
+setDefaultOpenCLDevice(1);
+getErrorString();
+
+loadFile("bug_3326.mo");
+getErrorString();
+
+(x,y):=oclTest.test();
+getErrorString();
+
+x;
+y;
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+//
+// ""
+// {1,1,2,2,3,3,4,4,5,5}
+// {1,2,1,2,1,2,1,2,1,2}
+// endResult

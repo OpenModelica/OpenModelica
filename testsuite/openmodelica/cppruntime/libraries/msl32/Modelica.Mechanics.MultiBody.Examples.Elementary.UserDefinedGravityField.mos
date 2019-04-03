@@ -1,0 +1,33 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField, outputFormat="mat");
+
+// res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField_res.mat",
+//  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField.mat",
+//  "Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField_diff.csv",0.01,0.0001,
+//  {"rev.phi",
+//   "rev.w"});
+// getErrorString();
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.00000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
+// [UserDefinedGravityField.mo:11:3-18:43:writable] Notification: From here:
+// [package.mo:1255:1-1259:15:writable] Error: Trying to redeclare function gravityAcceleration but function not declared as replaceable
+// Error: Error occurred while flattening model Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField
+// "
+// end SimulationResult;
+// endResult

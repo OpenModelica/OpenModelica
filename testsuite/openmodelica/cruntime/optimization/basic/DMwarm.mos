@@ -1,0 +1,60 @@
+// name: diesel_model_warm_start
+// status: correct
+
+setCommandLineOptions("+g=Optimica"); getErrorString();
+loadFile("DM.mo"); getErrorString();
+
+optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "diesel_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 450, tolerance = 1e-10, method = 'optimization', fileNamePrefix = 'diesel_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -exInputFile ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:p_em(start = 0.339267, nominal = 1.01111, min = 0.337038, max = 1.01111, init = 0.339267)
+// State[1]:p_im(start = 0.50615, nominal = 1.01111, min = 0.404445, max = 1.01111, init = 0.50615)
+// State[2]:w_ice(start = 0.249899, nominal = 1, min = 0.0181818, max = 1, init = 0.249899)
+// State[3]:w_tc(start = 0.0681, nominal = 1, min = 0.03, max = 1, init = 0.0681)
+// Input[4]:u_f(start = 9e-06, nominal = 1, min = 0, max = 1)
+// Input[5]:u_wg(start = 0.000485, nominal = 1, min = 0, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 0.0015511 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00153097 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00149595 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00112748 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000313137 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000122445 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 8.56457e-05 for the approximation of the state p_em(time = 0.486667)
+// LOG_IPOPT_ERROR   | info    | max error is 2.37178e-06 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 4.55501e-07 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 1.16221e-07 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.52825e-08 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 3.66997e-09 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 1.48205e-10 for the approximation of the state p_em(time = 0.485556)
+// LOG_IPOPT_ERROR   | info    | max error is 2.86256e-13 for the approximation of the state p_em(time = 0.485556)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

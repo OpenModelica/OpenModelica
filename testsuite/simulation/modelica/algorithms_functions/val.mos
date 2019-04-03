@@ -1,0 +1,35 @@
+// name:    val
+// keywords: interactive functionality val
+// status: correct
+// teardown_command: rm -rf val_* val.log val.libs val val.exe val.cpp val.makefile output.log
+//
+// Interactive val handling
+//
+loadFile("val.mo");
+simulate(val, stopTime=1.0, tolerance=1e-5, numberOfIntervals=100);
+getErrorString();
+val(x[1],0.0);
+val(x[1],0.5);
+val(x[1],1.0);
+val(z,0.0);
+val(z,0.5);
+val(z,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "val_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'val', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 2.0
+// 0.2706892443029744
+// 0.03663319221705208
+// 2.0
+// 0.2706892443029744
+// 0.03663319221705208
+// endResult

@@ -1,0 +1,61 @@
+// name: CatalystMixing
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+// see: Second-order sensitivities of general dynamic systems with application to optimal control problems
+// Vassilios S. Vassiliadis, Eva Balsa Canto, Julio R. Banga
+// Received 19 February 1998; received in revised form 4 November 1998; accepted 17 November 1998
+
+loadString("
+optimization CatalystMixing(objectiveIntegrand = -(der(x1)+der(x2)))
+    input Real u(min = 0, max = 1, start = 1);
+    Real x1(min = 0, max = 1, start = 1, fixed =true);
+    Real x2(min = 0, max = 1, start = 0, fixed =true);
+  equation
+   der(x1) = u*(10*x2-x1);
+   der(x2) = -(der(x1) +  (1-u)*x2);
+end CatalystMixing;
+");
+getErrorString();
+
+optimize(CatalystMixing, numberOfIntervals=200, tolerance = 1e-6, stopTime = 1, simflags="-optimizerNP 1");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("CatalystMixing_res.mat","ReferenceFiles/CatalystMixing_ref.mat","TimeTableTest_res.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CatalystMixing_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'optimization', fileNamePrefix = 'CatalystMixing', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 1, min = 0, max = 1, init = 1)
+// State[1]:x2(start = 0, nominal = 1, min = 0, max = 1, init = 0)
+// Input[2]:u(start = 1, nominal = 1, min = 0, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

@@ -1,0 +1,126 @@
+// name: inlineRecords1
+// status: correct
+
+// use new inline method
+setCommandLineOptions("+inlineMethod=append");
+
+loadString("
+model foo
+  record A
+    Real x;
+    Real y;
+  end A;
+
+  function f
+    input A x;
+    output A y;
+  protected
+    A a;
+    A b = A(-x.x,-x.y);
+  algorithm
+     a.x := x.x + x.y;
+     y.x := x.x + a.x;
+     a.y := a.x + a.x;
+     y.y := a.y + a.x*x.x + y.x + b.x + b.y;
+    annotation(Inline=true); 
+  end f;
+
+  A a;
+  A b = A(time, time^2);
+equation
+ a = f(b);
+end foo;
+");
+getErrorString();
+
+//setCommandLineOptions("+d=backenddaeinfo");
+getErrorString();
+
+getErrorString();
+simulate(foo);
+getErrorString();
+val(a.x,{0,0.5,1.0}); // 0, 3
+val(a.y,{0,0.5,1.0}); // 0, 7// Result:
+//
+// true
+// "[simulation/modelica/inlineFunction/inlineRecords1.mos:5:1-5:45:writable] Error: Class setCommandLineOptions not found in scope <global scope> (looking for a function or record).
+// "
+// true
+// ""
+//
+// ############ BackendInline ############
+// ########################################
+// Result DAE after Inline. (1 partitions)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: b.y:VARIABLE() .foo, .foo.A, .Real type: Real
+// 2: b.x:VARIABLE() .foo, .foo.A, .Real type: Real
+// 3: a.y:VARIABLE() .foo, .foo.A, .Real type: Real
+// 4: a.x:VARIABLE() .foo, .foo.A, .Real type: Real
+//
+//
+// Equations (3, 4)
+// ========================================
+// 1/1 (1): b.x = time   [dynamic]
+// 2/2 (1): b.y = time ^ 2.0   [dynamic]
+// 3/3 (2): a = foo.f(b)   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 3
+// 1: 2
+// 2: 1
+// 3: 2 1 4 3
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 4
+// 1: 3 2
+// 2: 3 1
+// 3: 3
+// 4: 3
+//
+// no matching
+//
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {0.0,1.25,3.0}
+// {0.0,2.375,7.0}
+// endResult
+// Result:
+// true
+// true
+// ""
+// ""
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,1.25,3.0}
+// {0.0,2.375,7.0}
+// endResult

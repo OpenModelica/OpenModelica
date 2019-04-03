@@ -1,0 +1,31 @@
+// status: correct
+
+setCommandLineOptions("--grammar=MetaModelica -d=gen");
+loadString("
+function assignMetaRecordField
+  uniontype union
+    record METARECORD
+      Real r;
+    end METARECORD;
+  end union;
+  output union u;
+algorithm
+  u := METARECORD(1.5);
+  u := match u
+    case METARECORD() // u is now bound to be a metarecord
+      algorithm
+        u.r := u.r*3;
+      then u;
+  end match;
+end assignMetaRecordField;");getErrorString();
+assignMetaRecordField();getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record assignMetaRecordField.union.METARECORD
+//     r = 4.5
+// end assignMetaRecordField.union.METARECORD;
+// ""
+// endResult

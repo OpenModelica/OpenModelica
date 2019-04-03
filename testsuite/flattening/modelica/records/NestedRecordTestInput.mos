@@ -1,0 +1,69 @@
+// name:     Record-in-Record Input
+// keywords: algorithm
+// status:   correct
+
+loadFile("RecordTest.mo");
+
+plus:=RecordTest.PLUS(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+mult:=RecordTest.MULT_PLUS(plus,plus,plus);
+res:=RecordTest.plus_ident(plus);
+res:=RecordTest.eval_plus(plus);
+res:=RecordTest.eval_mult(mult);
+
+// Result:
+// true
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// record RecordTest.MULT_PLUS
+//     plus1 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;,
+//     plus2 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;,
+//     plus3 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// end RecordTest.MULT_PLUS;
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// 10.0
+// 1000.0
+// endResult

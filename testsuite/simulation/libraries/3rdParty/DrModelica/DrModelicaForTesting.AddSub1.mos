@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.AddSub1.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.AddSub1
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.AddSub1.* DrModelicaForTesting.AddSub1_* DrModelicaForTesting.AddSub1 DrModelicaForTesting.AddSub1.exe DrModelicaForTesting.AddSub1.cpp DrModelicaForTesting.AddSub1.makefile DrModelicaForTesting.AddSub1.libs DrModelicaForTesting.AddSub1.log DrModelicaForTesting.AddSub1.c DrModelicaForTesting.AddSub1.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.AddSub1, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.AddSub1_res.mat",
+  "ReferenceFiles/AddSub1_ref.mat","DrModelicaForTesting.AddSub1_diff.csv",0.01,0.013,
+  {"Sub1[1]","Sub1[2]", "Sub1[3]","Add3[1,1]","Add3[1,2]","Add3[2,1]","Add3[2,2]" });
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.AddSub1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.AddSub1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

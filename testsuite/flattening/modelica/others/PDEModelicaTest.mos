@@ -1,0 +1,68 @@
+// name:     PDEModelica general test
+// keywords: PDEModelica field, indomain, pder, extrapolateField, domain
+// status:   correct
+//
+// Test main features of PDEModelica
+//
+//setCompilerFlags("--grammar=PDEModelica"); getErrorString();
+setCommandLineOptions("--grammar=PDEModelica"); getErrorString();
+loadFile("PDEModelicaTest.mo"); getErrorString();
+instantiateModel(PDEModelicaTest); getErrorString();
+
+// Result:
+//true
+//""
+//true
+//""
+//"function DomainLineSegment1D \"Automatically generated record constructor for DomainLineSegment1D\"
+//  input Real x0(unit = \"m\") = 0.0;
+//  input Real L(unit = \"m\") = 1.0;
+//  input Real dx = 0.1111111111111111 * L;
+//  input Real[10] x(unit = \"m\") = {x0, x0 + dx, x0 + 2.0 * dx, x0 + 3.0 * dx, x0 + 4.0 * dx, x0 + 5.0 * dx, x0 + 6.0 * dx, x0 + 7.0 * dx, x0 + 8.0 * dx, x0 + 9.0 * dx};
+//  input DomainLineSegment1D.Region left = DomainLineSegment1D.Region();
+//  input DomainLineSegment1D.Region right = DomainLineSegment1D.Region();
+//  input DomainLineSegment1D.Region interior = DomainLineSegment1D.Region();
+//  protected Integer N(unit = \"\") = 10;
+//  output DomainLineSegment1D res;
+//end DomainLineSegment1D;
+//
+//function DomainLineSegment1D.Region \"Automatically generated record constructor for DomainLineSegment1D.Region\"
+//  output Region res;
+//end DomainLineSegment1D.Region;
+//
+//class PDEModelicaTest
+//  constant Real pde2.pi = 3.14159;
+//  parameter Real pde2.omega.x0(unit = \"m\") = 0.0 \"x value at left boundary\";
+//  parameter Real pde2.omega.L(unit = \"m\") = 2.0 \"length of the domain\";
+//  constant Integer pde2.omega.N = 5 \"number of grid nodes\";
+//  parameter Real pde2.omega.dx = 0.25 * pde2.omega.L \"grid space step\";
+//  parameter Real pde2.omega.x[1](unit = \"m\") = pde2.omega.x0 \"space coordinate\";
+//  parameter Real pde2.omega.x[2](unit = \"m\") = pde2.omega.x0 + pde2.omega.dx \"space coordinate\";
+//  parameter Real pde2.omega.x[3](unit = \"m\") = pde2.omega.x0 + 2.0 * pde2.omega.dx \"space coordinate\";
+//  parameter Real pde2.omega.x[4](unit = \"m\") = pde2.omega.x0 + 3.0 * pde2.omega.dx \"space coordinate\";
+//  parameter Real pde2.omega.x[5](unit = \"m\") = pde2.omega.x0 + 4.0 * pde2.omega.dx \"space coordinate\";
+//  Real pde2.u[1];
+//  Real pde2.u[2];
+//  Real pde2.u[3];
+//  Real pde2.u[4];
+//  Real pde2.u[5];
+//  Real pde2.u$ghostL;
+//  Real pde2.u$ghostR;
+//initial equation
+//  pde2.u[1] = sin(6.28318 * pde2.omega.x[1]);
+//  pde2.u[2] = sin(6.28318 * pde2.omega.x[2]);
+//  pde2.u[3] = sin(6.28318 * pde2.omega.x[3]);
+//  pde2.u[4] = sin(6.28318 * pde2.omega.x[4]);
+//  pde2.u[5] = sin(6.28318 * pde2.omega.x[5]);
+//equation
+//  pde2.u$ghostL = 0.0;
+//  der(pde2.u[1]) + 0.5 * (pde2.u[2] - pde2.u$ghostL) / pde2.omega.dx + (2.0 * pde2.u[1] + (-pde2.u[2]) - pde2.u$ghostL) / pde2.omega.dx ^ 2.0 = 0.0;
+//  der(pde2.u[2]) + 0.5 * (pde2.u[3] - pde2.u[1]) / pde2.omega.dx + (2.0 * pde2.u[2] + (-pde2.u[3]) - pde2.u[1]) / pde2.omega.dx ^ 2.0 = 0.0;
+//  der(pde2.u[3]) + 0.5 * (pde2.u[4] - pde2.u[2]) / pde2.omega.dx + (2.0 * pde2.u[3] + (-pde2.u[4]) - pde2.u[2]) / pde2.omega.dx ^ 2.0 = 0.0;
+//  der(pde2.u[4]) + 0.5 * (pde2.u[5] - pde2.u[3]) / pde2.omega.dx + (2.0 * pde2.u[4] + (-pde2.u[5]) - pde2.u[3]) / pde2.omega.dx ^ 2.0 = 0.0;
+//  der(pde2.u[5]) + 0.5 * (pde2.u$ghostR - pde2.u[4]) / pde2.omega.dx + (2.0 * pde2.u[5] + (-pde2.u$ghostR) - pde2.u[4]) / pde2.omega.dx ^ 2.0 = 0.0;
+//  pde2.u$ghostR = 2.0 * pde2.u[5] - pde2.u[4];
+//end PDEModelicaTest;
+//"
+//""
+// endResult

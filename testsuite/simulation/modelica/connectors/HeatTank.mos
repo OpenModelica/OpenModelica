@@ -1,0 +1,32 @@
+// name:     HeatTank
+// keywords: replaceable connector
+// cflags: +std=2.x
+// status:   correct
+// 
+//  Error in implementation, replaceable connector.
+// Drmodelica: 4.4 Parameterization and extension of Interfaces (p. 136).
+//
+loadFile("HeatTank.mo");
+simulate(HeatTank,numberOfIntervals=10, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString(); // simulation failed, check error string.
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'HeatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: HeatTank"
+// end SimulationResult;
+// "Error: Too many equations, over-determined system. The model has 10 equation(s) and 8 variable(s).
+// [simulation/modelica/connectors/HeatTank.mo:32:1-35:15:writable] Warning: Equation 9 (size: 1) inlet.volumeFlowRate = 0.0 is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: 
+//   Already solved: inlet.volumeFlowRate
+//   Equations used to solve those variables:
+//     Equation 4 (size: 1): inlet.volumeFlowRate = 1.0
+// [simulation/modelica/connectors/HeatTank.mo:32:1-35:15:writable] Warning: Equation 10 (size: 1) outlet.volumeFlowRate = 0.0 is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: 
+//   Already solved: outlet.volumeFlowRate
+//   Equations used to solve those variables:
+//     Equation 8 (size: 1): outlet.volumeFlowRate = 2.0
+// "
+// endResult

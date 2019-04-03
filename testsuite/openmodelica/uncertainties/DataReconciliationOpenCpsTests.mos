@@ -1,0 +1,1376 @@
+// name:     DataReconciliationOpenCpsTests
+// keywords: extraction algorithm
+// status:   correct
+// depends: Splitter1_Sx.csv
+
+//loadModel(Modelica,{"3.1"}); getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+
+loadFile("DataReconciliationTests21jan2013Total.mo");
+getErrorString();
+
+translateModel(DataReconciliationTests.DistillationTower);
+getErrorString();
+
+translateModel(DataReconciliationTests.VDI2048Exple);
+getErrorString();
+
+translateModel(DataReconciliationTests.FlatSimpleExple);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetS_NL_Test);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetSTest);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetSTest2);
+getErrorString();
+
+//translateModel(DataReconciliationTests.Pipe1);
+//getErrorString();
+
+//translateModel(DataReconciliationTests.Pipe2);
+//getErrorString();
+
+//translateModel(DataReconciliationTests.Pipe3);
+//getErrorString();
+
+//translateModel(DataReconciliationTests.Pipe4);
+//getErrorString();
+
+//translateModel(DataReconciliationTests.Pipe5);
+//getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase1);
+getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase2);
+getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase3);
+getErrorString();
+
+buildModel(DataReconciliationTests.Splitter1);
+getErrorString();
+
+system("./DataReconciliationTests.Splitter1 -reconcile -sx=./Splitter1_Sx.csv -eps=0.0023 > Splitter1_log.txt");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.DistillationTower
+// ==========================================================================
+//
+//
+// orderedEquation (9, 9)
+// ========================================
+// 1/1 (1): F = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): B = 1.0   [binding |0|0|0|0|]
+// 3/3 (1): xB1 = 1.0   [binding |0|0|0|0|]
+// 4/4 (1): xT1 = 1.0   [binding |0|0|0|0|]
+// 5/5 (1): F * xF1 + (-B) * xB1 - T * xT1 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): F * xF2 + (-B) * xB2 - T * xT2 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 8/8 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 9/9 (1): xT1 + xT2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (9)
+// ========================================
+// 1: xT2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: xT1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: xB2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: xB1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: xF2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: xF1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: B:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: F:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 9
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 7
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 2
+// var 9 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {9, 8, 6, 5, 7}
+// SET_S: {}
+//
+//
+// SET_C (5)
+// ========================================
+// 1/1 (1): xT1 + xT2 = 100.0   [dynamic |0|0|0|0|]
+// 2/2 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 3/3 (1): F * xF2 + (-B) * xB2 - T * xT2 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): F * xF1 + (-B) * xB1 - T * xT1 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{9, 8, 7, 6, 5, 4, 3, 2, 1} (9)
+// ========================================
+// 1: F:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: B:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: xF1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: xF2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: xB1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: xB2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: xT1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: xT2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{2, 4, 8, 9} (4)
+// ========================================
+// 1: xT1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: xB1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: B:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: F:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{9, 8, 6, 5, 7}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has all known variables:{5, 6, 2, 4, 7, 8, 9, 1, 3} (9)
+// ========================================
+// 1: xF2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: xF1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: xT1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: xB1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: B:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: F:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: xT2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: xB2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:5 equations < 9 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables 
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.VDI2048Exple
+// ==========================================================================
+//
+//
+// orderedEquation (11, 11)
+// ========================================
+// 1/1 (1): mFDKEL = 46.241   [binding |0|0|0|0|]
+// 2/2 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
+// 3/3 (1): mSPL = 44.575   [binding |0|0|0|0|]
+// 4/4 (1): mSPLL = 44.319   [binding |0|0|0|0|]
+// 5/5 (1): mHK = 69.97799999999999   [binding |0|0|0|0|]
+// 6/6 (1): mA7 = 10.364   [binding |0|0|0|0|]
+// 7/7 (1): mA6 = 3.744   [binding |0|0|0|0|]
+// 8/8 (1): mD = 2.092   [binding |0|0|0|0|]
+// 9/9 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
+// 10/10 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
+// 11/11 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (11)
+// ========================================
+// 1: mD:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: mHDNK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: mA5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: mA6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: mA7:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: mHK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: mV:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: mSPLL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: mSPL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 10: mFDKELL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 11: mFDKEL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 11 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 11
+// var 3 is solved in eqn 10
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 5
+// var 7 is solved in eqn 9
+// var 8 is solved in eqn 4
+// var 9 is solved in eqn 3
+// var 10 is solved in eqn 2
+// var 11 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {9, 10, 11}
+// SET_S: {}
+//
+//
+// SET_C (3)
+// ========================================
+// 1/1 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1} (11)
+// ========================================
+// 1: mFDKEL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: mFDKELL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: mSPL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: mSPLL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: mV:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: mHK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: mA7:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: mA6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: mA5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 10: mHDNK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 11: mD:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{1, 4, 5, 6, 8, 9, 10, 11} (8)
+// ========================================
+// 1: mD:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: mA6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: mA7:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: mHK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: mSPLL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: mSPL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: mFDKELL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: mFDKEL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{9, 10, 11}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{1} (1)
+// ========================================
+// 1: mD:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// true
+// "Error: Internal error : Condition 2- Failed : The system is ill-posed.
+// "
+//
+// ModelInfo: DataReconciliationTests.FlatSimpleExple
+// ==========================================================================
+//
+//
+// orderedEquation (4, 4)
+// ========================================
+// 1/1 (1): q1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): q2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): q1 = q2 + q3   [dynamic |0|0|0|0|]
+// 4/4 (1): q4 = q2 + q3   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (4)
+// ========================================
+// 1: q4:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {3, 4}
+// SET_S: {}
+//
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): q1 = q2 + q3   [dynamic |0|0|0|0|]
+// 2/2 (1): q4 = q2 + q3   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{4, 3, 2, 1} (4)
+// ========================================
+// 1: q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: q4:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{3, 4} (2)
+// ========================================
+// 1: q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{3, 4}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has all known variables:{1, 2, 3, 4} (4)
+// ========================================
+// 1: q4:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 4 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables 
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.ExtractionSetS_NL_Test
+// ==========================================================================
+//
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y3:VARIABLE()  type: Real 
+// 2: y2:VARIABLE()  type: Real 
+// 3: y1:VARIABLE()  type: Real 
+// 4: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {1, 3}
+// SET_S: {5, 6, 4}
+//
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 * y3 = 3.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{6, 5, 4} (3)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{} (0)
+// ========================================
+//
+// -SET_C:{1, 3}
+// -SET_S:{5, 6, 4}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has all known variables:{4, 5, 6} (3)
+// ========================================
+// 1: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 3 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (1)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (5)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+// true
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+//
+// ModelInfo: DataReconciliationTests.ExtractionSetSTest
+// ==========================================================================
+//
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y3:VARIABLE()  type: Real 
+// 2: y2:VARIABLE()  type: Real 
+// 3: y1:VARIABLE()  type: Real 
+// 4: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {1, 3}
+// SET_S: {5, 6, 4}
+//
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{6, 5, 4} (3)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{} (0)
+// ========================================
+//
+// -SET_C:{1, 3}
+// -SET_S:{5, 6, 4}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has all known variables:{4, 5, 6} (3)
+// ========================================
+// 1: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 3 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (1)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (5)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.ExtractionSetSTest2
+// ==========================================================================
+//
+//
+// orderedEquation (11, 11)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 7/7 (1): z1 + z2 + z3 + y3 = 2.0   [dynamic |0|0|0|0|]
+// 8/8 (1): z2 + 2.0 * z3 = x1 - x2   [dynamic |0|0|0|0|]
+// 9/9 (1): z3 = 2.0 * x3   [dynamic |0|0|0|0|]
+// 10/10 (1): y1 + y2 + z4 = x2 + 3.0 * x3   [dynamic |0|0|0|0|]
+// 11/11 (1): z4 - z5 = x1 - x3   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (11)
+// ========================================
+// 1: z5:VARIABLE()  type: Real 
+// 2: z4:VARIABLE()  type: Real 
+// 3: z3:VARIABLE()  type: Real 
+// 4: z2:VARIABLE()  type: Real 
+// 5: z1:VARIABLE()  type: Real 
+// 6: y3:VARIABLE()  type: Real 
+// 7: y2:VARIABLE()  type: Real 
+// 8: y1:VARIABLE()  type: Real 
+// 9: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 10: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 11: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 11 variables and equations
+// var 1 is solved in eqn 11
+// var 2 is solved in eqn 10
+// var 3 is solved in eqn 9
+// var 4 is solved in eqn 8
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 6
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 4
+// var 9 is solved in eqn 3
+// var 10 is solved in eqn 2
+// var 11 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {2, 3}
+// SET_S: {6, 5, 4}
+//
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{11, 10, 9} (3)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{} (0)
+// ========================================
+//
+// -SET_C:{2, 3}
+// -SET_S:{6, 5, 4}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has all known variables:{9, 10, 11} (3)
+// ========================================
+// 1: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 3 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{8} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{8} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{8} (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (1)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: y1:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (5)
+// ========================================
+// 1/1 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.RedundancyTestCase1
+// ==========================================================================
+//
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {5, 6}
+// SET_S: {4, 3}
+//
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (2)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{6, 5, 2, 1} (4)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{5, 6} (2)
+// ========================================
+// 1: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{5, 6}
+// -SET_S:{4, 3}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has known variables:{1, 2} (2)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// -SET_S has known variables:{5, 6} (2)
+// ========================================
+// 1: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 4 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3, 4} (2)
+// ========================================
+// 1: x4:VARIABLE()  type: Real 
+// 2: x3:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{3, 4} (2)
+// ========================================
+// 1: x4:VARIABLE()  type: Real 
+// 2: x3:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{3, 4} (2)
+// ========================================
+// 1: x4:VARIABLE()  type: Real 
+// 2: x3:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (2)
+// ========================================
+// 1/1 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: x4:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (2)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: x3:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (3)
+// ========================================
+// 1/1 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 3/3 (1): x2 = 2.0   [binding |0|0|0|0|]
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.RedundancyTestCase2
+// ==========================================================================
+//
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE()  type: Real 
+// 2: x5:VARIABLE()  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {}
+// SET_S: {}
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{6, 5} (2)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{5, 6} (2)
+// ========================================
+// 1: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Failed
+//
+// knownVariables not Found:{5, 6} (2)
+// ========================================
+// 1: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// true
+// "Error: Internal error : Condition 2- Failed : The system is ill-posed.
+// "
+//
+// ModelInfo: DataReconciliationTests.RedundancyTestCase3
+// ==========================================================================
+//
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x5:VARIABLE()  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE()  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {6}
+// SET_S: {4, 2, 3, 5}
+//
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (4)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{6, 1} (2)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{5, 6} (2)
+// ========================================
+// 1: x2:VARIABLE()  type: Real 
+// 2: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// -SET_C:{6}
+// -SET_S:{4, 2, 3, 5}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has known variables:{1} (1)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// -SET_S has known variables:{6} (1)
+// ========================================
+// 1: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 2 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{2, 3} (2)
+// ========================================
+// 1: x5:VARIABLE()  type: Real 
+// 2: x4:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{2, 3} (2)
+// ========================================
+// 1: x5:VARIABLE()  type: Real 
+// 2: x4:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{2, 3} (2)
+// ========================================
+// 1: x5:VARIABLE()  type: Real 
+// 2: x4:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (2)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: x5:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (4)
+// ========================================
+// 1/1 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 4/4 (1): x1 = 1.0   [binding |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: x4:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (2)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+//
+// true
+// ""
+//
+// ModelInfo: DataReconciliationTests.Splitter1
+// ==========================================================================
+//
+//
+// orderedEquation (25, 25)
+// ========================================
+// 1/1 (1): P01 = 3.0   [dynamic |0|0|0|0|]
+// 2/2 (1): P02 = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): P03 = 1.0   [dynamic |0|0|0|0|]
+// 4/4 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 5/5 (1): T2_P2 = P02   [dynamic |0|0|0|0|]
+// 6/6 (1): T3_P2 = P03   [dynamic |0|0|0|0|]
+// 7/7 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 8/8 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 9/9 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 10/10 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 11/11 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 12/12 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 13/13 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 14/14 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 15/15 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 16/16 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 17/17 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 18/18 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 19/19 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 20/20 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 21/21 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 22/22 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 23/23 (1): T1_Q1 = Q1   [dynamic |0|0|0|0|]
+// 24/24 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 25/25 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (25)
+// ========================================
+// 1: T3_Q2:VARIABLE()  type: Real 
+// 2: T2_Q2:VARIABLE()  type: Real 
+// 3: T1_Q1:VARIABLE()  type: Real 
+// 4: V_P3:VARIABLE()  type: Real 
+// 5: V_P2:VARIABLE()  type: Real 
+// 6: P:VARIABLE()  type: Real 
+// 7: V_P1:VARIABLE()  type: Real 
+// 8: T3_Q1:VARIABLE()  type: Real 
+// 9: T2_Q1:VARIABLE()  type: Real 
+// 10: T1_Q2:VARIABLE()  type: Real 
+// 11: V_Q3:VARIABLE()  type: Real 
+// 12: V_Q2:VARIABLE()  type: Real 
+// 13: V_Q1:VARIABLE()  type: Real 
+// 14: T3_P1:VARIABLE()  type: Real 
+// 15: T2_P1:VARIABLE()  type: Real 
+// 16: T1_P2:VARIABLE()  type: Real 
+// 17: T3_P2:VARIABLE()  type: Real 
+// 18: T2_P2:VARIABLE()  type: Real 
+// 19: T1_P1:VARIABLE()  type: Real 
+// 20: P03:VARIABLE()  type: Real 
+// 21: P02:VARIABLE()  type: Real 
+// 22: P01:VARIABLE()  type: Real 
+// 23: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
+// 24: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
+// 25: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 25 variables and equations
+// var 1 is solved in eqn 25
+// var 2 is solved in eqn 24
+// var 3 is solved in eqn 23
+// var 4 is solved in eqn 22
+// var 5 is solved in eqn 20
+// var 6 is solved in eqn 18
+// var 7 is solved in eqn 17
+// var 8 is solved in eqn 16
+// var 9 is solved in eqn 14
+// var 10 is solved in eqn 11
+// var 11 is solved in eqn 15
+// var 12 is solved in eqn 13
+// var 13 is solved in eqn 10
+// var 14 is solved in eqn 21
+// var 15 is solved in eqn 19
+// var 16 is solved in eqn 7
+// var 17 is solved in eqn 6
+// var 18 is solved in eqn 5
+// var 19 is solved in eqn 4
+// var 20 is solved in eqn 3
+// var 21 is solved in eqn 2
+// var 22 is solved in eqn 1
+// var 23 is solved in eqn 9
+// var 24 is solved in eqn 8
+// var 25 is solved in eqn 12
+//
+// FINAL SET OF EQUATIONS After Reconciliation 
+// ==========================================================================
+// SET_C: {12}
+// SET_S: {4, 1, 5, 2, 6, 16, 21, 22, 18, 17, 11, 10, 13, 14, 19, 20, 15}
+//
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (17)
+// ========================================
+// 1/1 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 2/2 (1): P01 = 3.0   [dynamic |0|0|0|0|]
+// 3/3 (1): T2_P2 = P02   [dynamic |0|0|0|0|]
+// 4/4 (1): P02 = 1.0   [dynamic |0|0|0|0|]
+// 5/5 (1): T3_P2 = P03   [dynamic |0|0|0|0|]
+// 6/6 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 7/7 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 8/8 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 9/9 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 10/10 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 11/11 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 12/12 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 13/13 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 14/14 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 15/15 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 16/16 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 17/17 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{25, 24, 23} (3)
+// ========================================
+// 1: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
+// 2: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
+// 3: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// ConstantVariables:{20, 21, 22} (3)
+// ========================================
+// 1: P03:VARIABLE()  type: Real 
+// 2: P02:VARIABLE()  type: Real 
+// 3: P01:VARIABLE()  type: Real 
+//
+// -SET_C:{12}
+// -SET_S:{4, 1, 5, 2, 6, 16, 21, 22, 18, 17, 11, 10, 13, 14, 19, 20, 15}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed 
+//
+// -SET_C has known variables:{25} (1)
+// ========================================
+// 1: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
+//
+//
+// -SET_S has known variables:{23, 24} (2)
+// ========================================
+// 1: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
+// 2: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:1 equations < 3 known variables 
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{10} (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real 
+//
+//
+// -SET_S has intermediate variables involved in SET_C:{10} (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real 
+//
+// -Passed
+//
+// Condition-5 "SET_S should be square "
+// ==========================================================================
+//
+// -SET_C has intermediate variables:{10} (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real 
+//
+//
+// -SET_S has equations which can compute above intermediate variable (1)
+// ========================================
+// 1/1 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+//
+//
+// Intermediate_Variable_in_SET_C (1)
+// ========================================
+// 1: T1_Q2:VARIABLE()  type: Real 
+//
+//
+// Dependency_tree (6)
+// ========================================
+// 1/1 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 2/2 (1): V_Q1 = V_Q2 + V_Q3   [dynamic |0|0|0|0|]
+// 3/3 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 5/5 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 6/6 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+//
+// {"DataReconciliationTests.Splitter1","DataReconciliationTests.Splitter1_init.xml"}
+// ""
+// 0
+// ""
+// endResult

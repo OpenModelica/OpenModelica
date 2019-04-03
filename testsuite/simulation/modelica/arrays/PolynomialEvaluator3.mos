@@ -1,0 +1,28 @@
+// Name:     PolynomialEvaluator3
+// keywords: equations when
+// status: correct
+// teardown_command: rm -rf NamedCall NamedCall.makefile NamedCall.libs NamedCall.log NamedCall.plt NamedCall.exe NamedCall.cpp NamedCall_* PolynomialEvaluator3.exe PolynomialEvaluator3.c PolynomialEvaluator3_* output.log
+// 
+//  Tests when, elsewhen
+//
+// Drmodelica: 9.2 called (p. 300)
+//
+loadFile("PolynomialEvaluator3.mo");
+simulate(NamedCall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+//res:=readSimulationResult("NamedCall_res.mat",{p},3); 
+echo(true); // turns on output
+val(p,0.5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "NamedCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'NamedCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 38410.0
+// endResult

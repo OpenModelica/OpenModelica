@@ -1,0 +1,19 @@
+// name:     PartialFn3
+// keywords: PartialFn
+// status:   incorrect
+//
+// Partial Function Testing
+//
+loadFile("PartialFn3.mo");
+a:=PartialFn3.ApplyIntOp(PartialFn3.AddInt,4);
+
+// Result:
+// true
+// Error processing file: PartialFn3.mos
+// [metamodelica/meta/PartialFn3.mos:8:1-8:46:writable] Error: Cannot evaluate function pointers (got PartialFn3.AddInt).
+// 
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+// 
+// Execution failed!
+// endResult

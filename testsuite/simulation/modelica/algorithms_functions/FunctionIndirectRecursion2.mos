@@ -1,0 +1,14 @@
+// name:     FunctionIndirectRecursion2
+// keywords: function,recursion
+// status: correct
+// teardown_command: rm -rf facIndirect.c facIndirect.libs facIndirect.log facIndirect.makefile facIndirect.so
+// 
+// Indirectly recursive function call
+// 
+loadFile("FunctionIndirectRecursion.mo");
+i:=facIndirect(5);
+
+// Result:
+// true
+// 120
+// endResult

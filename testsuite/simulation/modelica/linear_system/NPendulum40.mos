@@ -1,0 +1,49 @@
+// name:      NPendulum40
+// keywords:  arrays
+// status:    correct
+//
+
+loadFile("NPendulum.mo");
+getErrorString();
+
+setCommandLineOptions("--maxSizeLinearTearing=0");
+setCommandLineOptions("--generateSymbolicJacobian");
+buildModel(NPendulum.pendulum40); getErrorString();
+system("./NPendulum.pendulum40 -ls umfpack -lssMinSize=4001 -jacobian=coloredSymbolical");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_40.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"pendel.phi[40]"});
+system("./NPendulum.pendulum40 -ls klu -lssMinSize=4001 -jacobian=coloredSymbolical");
+res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/NPendulum_40.mat",
+  "NPendulum_diff.csv",0.01,0.0001,
+  {"pendel.phi[40]"});
+
+// Result:
+// true
+// ""
+// true
+// true
+// {"NPendulum.pendulum40","NPendulum.pendulum40_init.xml"}
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// Notification: Tearing is skipped for strong component 1 because system size of 1178 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 1175 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 3 because system size of 1175 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,37 @@
+// name:     Modelica.Electrical.Analog.Examples.ShowSaturatingInductor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor);
+compareVars :=
+{
+   "Inductance1.i",
+   "SaturatingInductance1.Psi"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.ShowSaturatingInductor
+// {"Inductance1.i","SaturatingInductance1.Psi"}
+// Simulation options: startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = 'time|Inductance1.i|SaturatingInductance1.Psi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

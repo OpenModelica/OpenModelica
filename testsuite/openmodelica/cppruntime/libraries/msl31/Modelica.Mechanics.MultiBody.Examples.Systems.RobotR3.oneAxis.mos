@@ -1,0 +1,42 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis,stopTime=1.6, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis.mat","Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis_diff.csv",0.01,0.00001,
+  {"axis.gear.spring.phi_rel",
+  "axis.gear.spring.w_rel",
+  "axis.motor.La.i",
+  "axis.motor.C.v",
+  "axis.controller.PI.x",
+  "axis.initializeFlange.phi_flange",
+  "axis.initializeFlange.w_flange",
+  "der(axis.gear.spring.phi_rel)",
+  "der(axis.gear.spring.w_rel)",
+  "der(axis.motor.La.i)",
+  "der(axis.motor.C.v)",
+  "der(axis.controller.PI.x)",
+  "der(axis.initializeFlange.phi_flange)",
+  "der(axis.initializeFlange.w_flange)"});
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.6, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

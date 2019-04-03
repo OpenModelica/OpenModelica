@@ -1,0 +1,16 @@
+// name:     MatchCase6
+// keywords: Match Cases
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Match Testing
+//
+loadFile("MatchCase6.mo");getErrorString();
+MatchCase6.func("hej",1,false);getErrorString();
+
+// Result:
+// true
+// ""
+// (1,2)
+// ""
+// endResult

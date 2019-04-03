@@ -1,0 +1,26 @@
+// name:     FunctionInReinit
+// keywords: events
+// status: correct
+// teardown_command: rm -rf FunctionInReinit_* FunctionInReinit FunctionInReinit.exe FunctionInReinit.cpp FunctionInReinit.makefile FunctionInReinit.libs FunctionInReinit.log output.log
+//
+// Event handling
+//
+loadFile("FunctionInReinit.mo");
+simulate(FunctionInReinit, startTime=0.0, stopTime=1.0, method="rungekutta", tolerance=1e-5);
+val(x,0.0);
+val(x,0.03);
+val(x,0.07);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "FunctionInReinit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'rungekutta', fileNamePrefix = 'FunctionInReinit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.97
+// 0.48
+// endResult

@@ -1,0 +1,51 @@
+// name:     IntegerNetwork1
+// keywords: IntegerNetwork1 FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml IntegerNetwork1.fmu IntegerNetwork1_me_FMU.mo IntegerNetwork1.lib* IntegerNetwork1.so IntegerNetwork1.dll IntegerNetwork1_*.c IntegerNetwork1_*.h IntegerNetwork1_*.o IntegerNetwork1_*.json
+// Integer variables, Integer input variables, no continuous-time states, time events, state events
+
+loadModel(Modelica); getErrorString();
+loadFile("IntegerNetwork1.mo"); getErrorString();
+translateModelFMU(IntegerNetwork1, version="1.0"); getErrorString();
+
+importFMU("IntegerNetwork1.fmu"); getErrorString();
+loadFile("IntegerNetwork1_me_FMU.mo"); getErrorString();
+simulate(IntegerNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|y5"); getErrorString();
+
+val(y, 8);
+val(y2, 2.5);
+val(y2, 7.5);
+val(y3, 2.5);
+val(y3, 7.5);
+val(y4, 10);
+val(y5, 2.5);
+val(y5, 7.5);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "IntegerNetwork1.fmu"
+// ""
+// "IntegerNetwork1_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IntegerNetwork1_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IntegerNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|y5', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// -3.0
+// 4.0
+// -2.0
+// 10.0
+// 2.999999987169963
+// -2.999999967431478
+// endResult

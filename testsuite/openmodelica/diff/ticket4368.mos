@@ -1,0 +1,26 @@
+// status: correct
+// Based on https://trac.openmodelica.org/OpenModelica/ticket/4368
+
+diffModelicaFileListings("model test
+  M x;
+// comment
+
+equation
+  connect(a, b);
+end test;","model test
+  M y;
+  // comment
+equation
+  connect(a, c);
+end test;", OpenModelica.Scripting.DiffFormat.color);getErrorString();
+
+// Result:
+// "model test
+//   M [4;32my[0m;
+// // comment
+//
+// equation
+//   connect(a, [4;32mc[0m);
+// end test;"
+// ""
+// endResult

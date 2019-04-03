@@ -1,0 +1,56 @@
+//name:         ChuaCircuit2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.ChuaCircuit);
+
+"Nr.v:";
+val(Nr.v,0.0);
+val(Nr.v,0.5);
+val(Nr.v,1.0);
+
+"Nr.i:";
+val(Nr.i,0.0);
+val(Nr.i,0.5);
+val(Nr.i,1.0);
+
+"G.v:";
+val(G.v,0.0);
+val(G.v,0.5);
+val(G.v,1.0);
+
+"G.i:";
+val(G.i,0.0);
+val(G.i,0.5);
+val(G.i,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ChuaCircuit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ChuaCircuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Nr.v:"
+// 4.0
+// 3.986454612126923
+// 3.973329691176497
+// "Nr.i:"
+// -1.984849
+// -1.979307703729615
+// -1.973938416693084
+// "G.v:"
+// -4.0
+// -3.975190039520446
+// -3.950871524068953
+// "G.i:"
+// -2.26
+// -2.245982372329052
+// -2.232242411098958
+// endResult

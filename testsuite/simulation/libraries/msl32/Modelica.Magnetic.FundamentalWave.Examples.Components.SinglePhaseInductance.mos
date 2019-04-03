@@ -1,0 +1,37 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance);
+compareVars :=
+{
+   "converter_m.Phi.re",
+   "inductor_e.i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance
+// {"converter_m.Phi.re","inductor_e.i"}
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance', options = '', outputFormat = 'mat', variableFilter = 'time|converter_m.Phi.re|inductor_e.i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

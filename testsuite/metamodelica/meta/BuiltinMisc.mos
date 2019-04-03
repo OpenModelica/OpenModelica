@@ -1,0 +1,45 @@
+// name:     BuiltinMisc
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Builtin function testing
+//
+loadFile("BuiltinMisc.mo");
+
+r := BuiltinMisc.myClock();getErrorString();
+i := BuiltinMisc.myTick();getErrorString();
+BuiltinMisc.myTick();getErrorString();
+BuiltinMisc.myTick();getErrorString();
+// BuiltinMisc.myClock();getErrorString(); // Disabled because it is not deterministic
+
+BuiltinMisc.myPrint("abc");getErrorString();
+BuiltinMisc.myTick();getErrorString();
+BuiltinMisc.myTick();getErrorString();
+BuiltinMisc.myPrint("def");getErrorString();
+BuiltinMisc.myTick();getErrorString();
+// BuiltinMisc.myClock();getErrorString(); // Disabled because it is not deterministic
+
+// Result:
+// true
+// 0.0
+// ""
+// 0
+// ""
+// 1
+// ""
+// 2
+// ""
+// abc
+// 
+// ""
+// 3
+// ""
+// 4
+// ""
+// def
+// 
+// ""
+// 5
+// ""
+// endResult

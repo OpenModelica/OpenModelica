@@ -1,0 +1,32 @@
+// name: SynchronousFeatures.SpeedControl
+// keywords: synchronous features
+// status: correct
+
+loadFile("SynchronousFeatures.mo"); getErrorString();
+
+instantiateModel(SynchronousFeatures.SpeedControl); getErrorString();
+
+// Result:
+// true
+// ""
+// "class SynchronousFeatures.SpeedControl \"Plant and Controller Partitioning\"
+//   parameter Real m(quantity = \"Mass\", unit = \"kg\", min = 0.0) = 1.0;
+//   parameter Real k(unit = \"N/m\") = 1.0;
+//   parameter Real d(unit = \"N.s/m\") = 0.1;
+//   Real x(quantity = \"Length\", unit = \"m\", start = 1.0, fixed = true) \"Position\";
+//   Real v(quantity = \"Velocity\", unit = \"m/s\", start = 0.0, fixed = true) \"Velocity\";
+//   Real f(quantity = \"Force\", unit = \"N\") \"Force\";
+//   parameter Real K = 20.0 \"Gain of speed P controller\";
+//   parameter Real vref(quantity = \"Velocity\", unit = \"m/s\") = 100.0 \"Speed ref.\";
+//   discrete Real vd;
+//   discrete Real u(start = 0.0);
+// equation
+//   vd = sample(v, Clock(0.01));
+//   u = K * (vref - vd);
+//   f = hold(u);
+//   der(x) = v;
+//   m * der(v) = f + (-k) * x - d * v;
+// end SynchronousFeatures.SpeedControl;
+// "
+// ""
+// endResult

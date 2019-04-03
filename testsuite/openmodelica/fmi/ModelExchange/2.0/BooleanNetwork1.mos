@@ -1,0 +1,71 @@
+// name:     BooleanNetwork1
+// keywords: BooleanNetwork1 FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml BooleanNetwork1.fmu BooleanNetwork1_me_FMU.mo BooleanNetwork1.lib* BooleanNetwork1.so BooleanNetwork1.dll BooleanNetwork1_*.c BooleanNetwork1_*.h BooleanNetwork1_*.o BooleanNetwork1_*.json
+// Boolean variables, Boolean input variable, no continuous-time states, time events
+
+loadModel(Modelica); getErrorString();
+loadFile("BooleanNetwork1.mo"); getErrorString();
+
+simulate(BooleanNetwork1, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+
+val(y1, 2.2);
+val(y2, 10);
+val(y3, 10);
+val(y4, 10);
+val(Q, 10);
+val(QI, 10);
+
+translateModelFMU(BooleanNetwork1, version="2.0"); getErrorString();
+
+importFMU("BooleanNetwork1.fmu"); getErrorString();
+loadFile("BooleanNetwork1_me_FMU.mo"); getErrorString();
+simulate(BooleanNetwork1_me_FMU, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();
+
+val(y1, 2.2);
+val(y2, 10);
+val(y3, 10);
+val(y4, 10);
+val(Q, 10);
+val(QI, 10);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BooleanNetwork1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 8.0
+// 1.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// "BooleanNetwork1.fmu"
+// ""
+// "BooleanNetwork1_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BooleanNetwork1_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanNetwork1_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'y|y1|y2|y3|y4|Q|QI', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 8.0
+// 1.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// endResult

@@ -1,0 +1,23 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("function forIterArray
+  input Real x;
+  output Real r = x;
+protected
+  array<Real> arr;
+algorithm
+  arr := listArray({1.0,2,3,4,5,6,7,8});
+  for i in arr loop
+    r := r + i;
+  end for;
+end forIterArray;");getErrorString();
+forIterArray(0);getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// 36.0
+// ""
+// endResult

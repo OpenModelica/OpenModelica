@@ -1,0 +1,60 @@
+// name:     WhenEquation
+// keywords: when
+// status: correct
+// teardown_command: rm -rf WhenEquation_* WhenEquation WhenEquation.exe WhenEquation.cpp WhenEquation.makefile WhenEquation.libs WhenEquation.log output.log
+// 
+// Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// 
+loadFile("WhenEquation.mo");
+simulate(WhenEquation, startTime=0.0, stopTime=10.0, tolerance=1e-5, numberOfIntervals=400); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+size := readSimulationResultSize("WhenEquation_res.mat");
+res:=readSimulationResult("WhenEquation_res.mat",{x,y1,y3},size); 
+
+x1:=res[1,1];
+x2:=res[1,size];
+y11:=res[2,200];
+y12:=res[2,size];
+y31:=res[3,1];
+y32:=res[3,size];
+
+x1 := 1000*x1;
+x2 := 1000*x2;
+y11 := 1000*y11;
+y12 := 1000*y12;
+y31 := 1000*y31;
+y32 := 1000*y32;
+
+x1 := floor(x1);
+x2 := floor(x2);
+y11 := floor(y11);
+y12 := floor(y12);
+y31 := floor(y31);
+y32 := floor(y32);
+
+echo(true); // turns on output
+x1/1000.0; // rounded value to 3 digits
+x2/1000.0;
+y11/1000.0;
+y12/1000.0;
+y31/1000.0;
+y32/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WhenEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 400, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'WhenEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// -3.0
+// 7.0
+// 0.0
+// 0.909
+// 0.0
+// 7.909
+// endResult

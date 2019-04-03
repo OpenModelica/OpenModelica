@@ -1,0 +1,88 @@
+// name: UnitCheck18
+// keywords: initialization
+// status: correct
+
+
+loadString("
+package unitCheckTests
+  model UnitCheck18
+  function test2
+    input Real a (unit=\"s\");
+    output Real b (unit=\"m/s2\");
+  end test2; 
+ function test
+   input Real x (unit=\"m\");
+   input Real y (unit=\"m\");
+   output Real z (unit=\"m\") ;
+   output Real r (unit=\"m/s\");
+ end test;
+ Real y1 (unit=\"m/s\");
+ Real y2 (unit=\"J\");
+ Real t1(unit=\"m\");
+ Real t2(unit=\"m/s\");
+ Real b (unit=\"m/s2\");
+ equation
+  (y1,y2)=test(t1,t2);
+   b=test2(t2);
+ end UnitCheck18; 
+  end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); 
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck18);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {y1,{1.0 * m^(1) * s^(-1)}}
+// {y2,{1000.0 * m^(2) * s^(-2) * g^(1)}}
+// {t1,{1.0 * m^(1)}}
+// {t2,{1.0 * m^(1) * s^(-1)}}
+// {b,{1.0 * m^(1) * s^(-2)}}
+// ######## UnitCheck COMPLETED ########
+// "function unitCheckTests.UnitCheck18.test
+//   input Real x(unit = \"m\");
+//   input Real y(unit = \"m\");
+//   output Real z(unit = \"m\");
+//   output Real r(unit = \"m/s\");
+// end unitCheckTests.UnitCheck18.test;
+//
+// function unitCheckTests.UnitCheck18.test2
+//   input Real a(unit = \"s\");
+//   output Real b(unit = \"m/s2\");
+// end unitCheckTests.UnitCheck18.test2;
+//
+// class unitCheckTests.UnitCheck18
+//   Real y1(unit = \"m/s\");
+//   Real y2(unit = \"J\");
+//   Real t1(unit = \"m\");
+//   Real t2(unit = \"m/s\");
+//   Real b(unit = \"m/s2\");
+// equation
+//   (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
+//   b = unitCheckTests.UnitCheck18.test2(t2);
+// end unitCheckTests.UnitCheck18;
+// "
+// "[<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "y1" has unit "m/s"
+// - sub-expression "unitCheckTests.UnitCheck18.test().z" has unit "m"
+// [<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "y2" has unit "J"
+// - sub-expression "unitCheckTests.UnitCheck18.test().r" has unit "m/s"
+// [<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "t2" has unit "m/s"
+// - sub-expression "unitCheckTests.UnitCheck18.test().y" has unit "m"
+// [<interactive>:21:4-21:15:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  b = unitCheckTests.UnitCheck18.test2(t2);
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "t2" has unit "m/s"
+// - sub-expression "unitCheckTests.UnitCheck18.test2().a" has unit "s"
+// "
+// endResult

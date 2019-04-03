@@ -1,0 +1,45 @@
+// name:     BuiltinMath 
+// keywords: Built-in Mathematical Functions
+// status: correct
+// teardown_command: rm -rf BuiltinMath_* BuiltinMath.log BuiltinMath.libs BuiltinMath BuiltinMath.exe BuiltinMath.cpp BuiltinMath.makefile output.log
+//
+// Built-in Mathematical Functions
+//
+loadFile("BuiltinMath.mo");
+simulate(BuiltinMath, stopTime=1);
+{val(x[1],0.0),val(x[1],1.0)};
+{val(x[2],0.0),val(x[2],1.0)};
+{val(x[3],0.0),val(x[3],1.0)};
+{val(x[4],0.0),val(x[4],1.0)};
+{val(x[5],0.0),val(x[5],1.0)};
+{val(x[6],0.0),val(x[6],1.0)};
+{val(x[7],0.0),val(x[7],1.0)};
+{val(x[8],0.0),val(x[8],1.0)};
+{val(x[9],0.0),val(x[9],1.0)};
+{val(x[10],0.0),val(x[10],1.0)};
+{val(x[11],0.0),val(x[11],1.0)};
+{val(x[12],0.0),val(x[12],1.0)};
+{val(x[13],0.0),val(x[13],1.0)};
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BuiltinMath_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BuiltinMath', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.8414709848078965}
+// {1.0,0.5403023058681398}
+// {0.0,1.557407724654902}
+// {0.0,1.570796326794897}
+// {1.570796326794897,0.0}
+// {0.0,0.7853981633974483}
+// {0.0,0.4636476090008061}
+// {0.0,1.175201193643801}
+// {1.0,1.543080634815244}
+// {0.0,0.7615941559557649}
+// {1.0,2.718281828459045}
+// {-2.302585092994045,0.0}
+// {-1.0,0.0}
+// endResult

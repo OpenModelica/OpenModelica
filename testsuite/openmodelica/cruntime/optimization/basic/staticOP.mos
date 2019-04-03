@@ -1,0 +1,62 @@
+// name: static OP
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+
+loadString(
+"
+optimization foo(objective = cost_u + cost_w)
+  Real cost_u = (3-u)^2;
+  Real cost_w = (7-w)^2;
+  input Real u;
+  input Real w;
+  Real x \"dummy state\";
+equation
+  der(x) = 0;
+end foo;
+"
+);
+getErrorString();
+
+optimize(foo, numberOfIntervals=1, tolerance = 1e-8, simflags ="-optimizerNP 1");
+getErrorString();
+
+val(u, 0.0);
+val(u, 1.0);
+val(w, 0.0);
+val(w, 1.0);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[1]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[2]:w(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 3.0
+// 3.0
+// 7.0
+// 7.0
+// endResult

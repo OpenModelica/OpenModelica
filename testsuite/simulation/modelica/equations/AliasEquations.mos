@@ -1,0 +1,50 @@
+// name:     AliasEquations
+// keywords: SimpleEquations, Alias Variables
+// status:   correct
+// teardown_command: rm -rf Alias.* Alias Alias_* output.log
+//
+//
+loadFile("AliasEquations.mo");
+simulate(Alias,stopTime=1,numberOfIntervals=3);
+
+val(a,0);
+val(b,0);
+val(c,0);
+val(d,0);
+val(e,0);
+val(f,0);
+val(g,0);
+
+val(a,1);
+val(b,1);
+val(c,1);
+val(d,1);
+val(e,1);
+val(f,1);
+val(g,1);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Alias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 3, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// -0.0
+// -0.0
+// -0.0
+// 0.0
+// 0.0
+// 3.589793029841612e-09
+// 3.589793029841612e-09
+// -0.8414709848078965
+// -0.8414709848078965
+// -0.8414709848078965
+// 0.8414709848078965
+// 0.8414709848078965
+// 3.589793029841612e-09
+// 3.589793029841612e-09
+// endResult

@@ -1,0 +1,125 @@
+// name:     Algorithms
+// keywords: Simulate, readSimulationData
+// status:   correct
+// teardown_command: rm -rf Alg1 Alg1.* Alg1_* Alg2 Alg2.* Alg2_* Alg3 Alg3.* Alg3_* output.log
+//
+//  Simulate model containing algortithms and read in data.
+//
+
+loadFile("Algorithm.mo"); getErrorString();
+setDebugFlags("initialization"); getErrorString();
+
+// Alg1 - an algorithm for a single variable.
+simulate(Alg1, numberOfIntervals=10, tolerance=1e-5); getErrorString();
+val(x,1.0);
+
+// Alg2 - two variables in an algorithm
+simulate(Alg2); getErrorString();
+//val(x,1.0);
+val(y,1.0);
+
+// Alg3 - mixed algorithm and equation sections
+simulate(Alg3); getErrorString();
+val(x,0.0);
+val(z,0.0);
+val(u,0.0);
+
+// Alg4 - single algorithm with wrong causality
+simulate(Alg4); getErrorString();
+
+// Alg5 - continues algorithms
+simulate(Alg5); getErrorString();
+val(x1,0.0);
+val(x1,0.5);
+val(x1,1.0);
+val(x2,0.0);
+val(x2,0.5);
+val(x2,1.0);
+val(y1,0.0);
+val(y1,0.5);
+val(y1,1.0);
+val(y2,0.0);
+val(y2,0.5);
+val(y2,1.0);
+val(x3,0.0);
+val(x3,0.5);
+val(x3,1.0);
+val(x4,0.0);
+val(x4,0.5);
+val(x4,1.0);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Alg1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Alg1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// record SimulationResult
+//     resultFile = "Alg2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alg2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// record SimulationResult
+//     resultFile = "Alg3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alg3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 4.0
+// 3.0
+// 4.0
+// record SimulationResult
+//     resultFile = "Alg4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alg4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          x:VARIABLE()  type: Real
+// "
+// record SimulationResult
+//     resultFile = "Alg5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Alg5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 2 variables:
+//          x2:VARIABLE()  type: Real 
+//          x1:VARIABLE()  type: Real
+// "
+// 0.0
+// 0.1224090895290663
+// 0.4596922009045253
+// 0.0
+// 0.1224090895290671
+// 0.4596922009167508
+// 0.0
+// 0.4794255386041834
+// 0.841470984648068
+// 0.0
+// 0.479425538604203
+// 0.8414709848078965
+// 1.0
+// 1.5
+// 2.0
+// 0.0
+// 0.0
+// 0.0
+// endResult

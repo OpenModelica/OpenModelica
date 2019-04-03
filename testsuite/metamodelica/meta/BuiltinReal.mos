@@ -1,0 +1,48 @@
+// name:     BuiltinReal
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=noevalfunc,gen
+//
+// Builtin function testing
+//
+loadFile("BuiltinReal.mo");
+
+BuiltinReal.funcRealRealToReal(1.5,2.5);getErrorString();
+
+BuiltinReal.funcRealTransform(15.73);getErrorString();
+
+BuiltinReal.funcRealRelations(1.0, 1.0);getErrorString();
+BuiltinReal.funcRealRelations(-1.0, 1.0);getErrorString();
+BuiltinReal.funcRealRelations(1.0, -1.0);getErrorString();
+
+BuiltinReal.funcRealString(1.0);getErrorString();
+BuiltinReal.funcRealString(13.5766121121345457777E100);getErrorString();
+BuiltinReal.funcRealString(0.333333333333333333333333333333333333);getErrorString();
+BuiltinReal.funcRealString(-0.33333333333333333333333333333333333E240);getErrorString();
+
+BuiltinReal.funcRealInt(27.777777777777777);getErrorString();
+
+
+// Result:
+// true
+// (4.0,-1.0,3.75,0.6,1.5,2.755675960631075,2.5,1.5)
+// ""
+// (15.73,-15.73)
+// ""
+// (false,true,true,false,true,false)
+// ""
+// (true,true,false,true,false,false)
+// ""
+// (false,false,false,true,true,true)
+// ""
+// "1.0"
+// ""
+// "1.357661211213455e+101"
+// ""
+// "0.3333333333333333"
+// ""
+// "-3.333333333333333e+239"
+// ""
+// 27
+// ""
+// endResult

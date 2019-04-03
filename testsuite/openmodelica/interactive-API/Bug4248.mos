@@ -1,0 +1,36 @@
+// name: Bug4248.mos
+// keywords:
+// status: correct
+//
+// Tests that the simulation works correctly after a call to an API function
+//
+
+loadModel(Modelica, {"3.2.2"}); getErrorString();
+
+loadFile("./IMCNominalOperation.mo"); getErrorString();
+
+getComponentAnnotations(Modelica.Magnetic.QuasiStatic.FundamentalWave.BasicMachines.BaseClasses.PartialBasicMachine); getErrorString();
+
+simulate(IMCNominalOperation.NominalOperation);
+
+val(powerSensor.y.re, 0.001);
+val(imc.powerBalance.powerStator, 0.001);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {{},{},{},{Evaluate=true},{Dialog(error)},{Evaluate=true},{},{},{Dialog(error)},{Dialog("Nominal resistances and inductances","",true,-,false,-,-,-,-,"",false)},{Dialog("Nominal resistances and inductances","",true,-,false,-,-,-,-,"",false)},{Dialog("Nominal resistances and inductances","",true,-,false,-,-,-,-,"",false)},{},{Dialog("Nominal resistances and inductances","",true,-,false,-,-,-,-,"",false)},{Dialog("Nominal resistances and inductances","",true,-,false,-,-,-,-,"",false)},{Dialog("Losses","",true,-,false,-,-,-,-,"",false)},{Dialog("Losses","",true,-,false,-,-,-,-,"",false)},{Dialog("Losses","",true,-,false,-,-,-,-,"",false)},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{Placement(true,-,-,90.0,-10.0,110.0,10.0,-,-,-,-,-,-,-,)},{Placement(true,80.0,0.0,10.0,10.0,-10.0,-10.0,180.0,-,-,-,-,-,-,)},{Placement(true,-,-,90.0,-110.0,110.0,-90.0,-,-,-,-,-,-,-,)},{Placement(true,80.0,-100.0,10.0,10.0,-10.0,-10.0,180.0,-,-,-,-,-,-,)},{Placement(true,70.0,-90.0,-10.0,-10.0,10.0,10.0,180.0,-,-,-,-,-,-,)},{Placement(true,-,-,50.0,90.0,70.0,110.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,-70.0,90.0,-50.0,110.0,-,-,-,-,-,-,-,)},{Placement(true,0.0,40.0,-10.0,-10.0,10.0,10.0,270.0,-,-,-,-,-,-,)},{Placement(true,-70.0,-90.0,-10.0,-10.0,10.0,10.0,270.0,-,-,-,-,-,-,)},{Placement(true,-,-,-10.0,-110.0,10.0,-90.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,-40.0,30.0,-20.0,10.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,-10.0,-10.0,10.0,10.0,270.0,-,-,-,-,-,-,)},{Placement(true,-,-,-40.0,-30.0,-20.0,-10.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,60.0,60.0,40.0,80.0,-,-,-,-,-,-,-,)},{Placement(true,90.0,-30.0,-10.0,-10.0,10.0,10.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,-44.0,-94.0,-36.0,-86.0,-,-,-,-,-,-,-,)},{Placement(true,-,-,56.0,-104.0,64.0,-96.0,-,-,-,-,-,-,-,)}}
+// ""
+// record SimulationResult
+//     resultFile = "IMCNominalOperation.NominalOperation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'IMCNominalOperation.NominalOperation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 25149.45842709194
+// 25149.45842709194
+// endResult

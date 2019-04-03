@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.WatchDogSystem2.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.WatchDogSystem2
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.WatchDogSystem2.* DrModelicaForTesting.WatchDogSystem2_* DrModelicaForTesting.WatchDogSystem2 DrModelicaForTesting.WatchDogSystem2.exe DrModelicaForTesting.WatchDogSystem2.cpp DrModelicaForTesting.WatchDogSystem2.makefile DrModelicaForTesting.WatchDogSystem2.libs DrModelicaForTesting.WatchDogSystem2.log DrModelicaForTesting.WatchDogSystem2.c DrModelicaForTesting.WatchDogSystem2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.WatchDogSystem2, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WatchDogSystem2_res.mat",
+  "ReferenceFiles/WatchDogSystem2_ref.mat","DrModelicaForTesting.WatchDogSystem2_diff.csv",0.01,0.013,
+  {"turnOn.eventTime","turnOn.dOutput.signal", "turnOff.eventTime", "deadlineEmitter.eventTime", "watchdog.dOn.signal"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.WatchDogSystem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WatchDogSystem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

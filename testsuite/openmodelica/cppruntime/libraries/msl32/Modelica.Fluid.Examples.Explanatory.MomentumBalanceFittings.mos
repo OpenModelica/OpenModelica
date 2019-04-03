@@ -1,0 +1,68 @@
+// name:     Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings
+// teardown_command: rm -f Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings);
+compareVars :=
+{
+  "leftBoundary1.ports[1].m_flow",
+  "leftBoundary1.ports[1].p",
+  "leftBoundary1.ports[1].h_outflow",
+  "rightBoundary1.ports[1].m_flow",
+  "rightBoundary1.ports[1].p",
+  "rightBoundary1.ports[1].h_outflow",
+  "leftBoundary2.ports[1].m_flow",
+  "leftBoundary2.ports[1].p",
+  "leftBoundary2.ports[1].h_outflow",
+  "rightBoundary2.ports[1].m_flow",
+  "rightBoundary2.ports[1].p",
+  "rightBoundary2.ports[1].h_outflow"
+};
+
+runScript(modelTesting);getErrorString();
+
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings
+// {"leftBoundary1.ports[1].m_flow","leftBoundary1.ports[1].p","leftBoundary1.ports[1].h_outflow","rightBoundary1.ports[1].m_flow","rightBoundary1.ports[1].p","rightBoundary1.ports[1].h_outflow","leftBoundary2.ports[1].m_flow","leftBoundary2.ports[1].p","leftBoundary2.ports[1].h_outflow","rightBoundary2.ports[1].m_flow","rightBoundary2.ports[1].p","rightBoundary2.ports[1].h_outflow"}
+// Compilation succeeded
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Continue ....
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Continue ....
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Continue ....
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:740:9-745:39:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:332:3-334:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
+// 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer)
+// 	second: Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start)
+// Continue ....
+// "true
+// "
+// ""
+// endResult

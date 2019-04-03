@@ -1,0 +1,60 @@
+// name:     Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.lib Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.makefile Modelica_from_nxy_*
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.2"}); getErrorString();
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
+importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu", loglevel=0); getErrorString();
+loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();
+simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU,stopTime=3.0); getErrorString();
+val(rev_phi, 0);
+val(rev_phi, 1);
+val(rev_phi, 2);
+val(rev_phi, 3);
+
+// Result:
+// true
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu"
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1104:3-1104:183:writable] Warning: Parameter world_z_label_cylinders_3__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1103:3-1103:183:writable] Warning: Parameter world_z_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1102:3-1102:183:writable] Warning: Parameter world_z_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1101:3-1101:174:writable] Warning: Parameter world_z_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1100:3-1100:170:writable] Warning: Parameter world_z_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cone") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1099:3-1099:183:writable] Warning: Parameter world_y_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1098:3-1098:183:writable] Warning: Parameter world_y_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1097:3-1097:174:writable] Warning: Parameter world_y_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1096:3-1096:170:writable] Warning: Parameter world_y_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cone") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1095:3-1095:183:writable] Warning: Parameter world_x_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1094:3-1094:183:writable] Warning: Parameter world_x_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1093:3-1093:174:writable] Warning: Parameter world_x_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1092:3-1092:170:writable] Warning: Parameter world_x_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cone") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1091:3-1091:76:writable] Warning: Parameter world_label2 has no value, and is fixed during initialization (fixed=true), using available start value (start="y") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1090:3-1090:78:writable] Warning: Parameter world_label1 has no value, and is fixed during initialization (fixed=true), using available start value (start="x") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1089:3-1089:179:writable] Warning: Parameter world_gravityArrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1088:3-1088:175:writable] Warning: Parameter world_gravityArrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cone") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1087:3-1087:169:writable] Warning: Parameter rev_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1086:3-1086:166:writable] Warning: Parameter body_sphere_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="sphere") as default value.
+// [openmodelica/fmi/ModelExchange/1.0/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo:1085:3-1085:170:writable] Warning: Parameter body_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
+// "
+// 0.0
+// -2.58015084103757
+// -1.577603053655477
+// -0.8529875496061315
+// endResult

@@ -1,0 +1,41 @@
+// name: UnitCheck5
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck5
+    Real S(unit=\"\");
+    Real V(unit=\"m/s\");
+    Real A;
+  equation
+    der(S)=V;
+    A=der(V);
+    S = 5.0;
+  end UnitCheck5;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.UnitCheck5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {A,{MASTER(A)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {S,{MASTER(S)}}
+// HashTable:
+// {A,{1.0 * m^(1) * s^(-2)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {S,{1.0 * m^(1)}}
+// ######## UnitCheck COMPLETED ########
+// true
+// "Notification: "A" has the Unit "m.s-2"
+// "S" has the Unit "m"
+// "
+// endResult

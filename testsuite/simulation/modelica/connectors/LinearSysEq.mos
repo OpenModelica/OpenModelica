@@ -1,0 +1,66 @@
+// name:     LinearSysEq (test bug 1012)
+// keywords: linear system of equations
+// status: correct
+// teardown_command: rm -rf LinearSysEq_* LinearSysEq LinearSysEq.exe LinearSysEq.cpp LinearSysEq.makefile LinearSysEq.libs LinearSysEq.log output.log
+//
+// Solving of a linear system of equations
+//
+// Tests fixes for bug: http://openmodelica.ida.liu.se:8080/cb/issue/1012
+// 
+
+loadFile("LinearSysEq.mo");
+instantiateModel(LinearSysEq);
+simulate(LinearSysEq);
+
+val(pi.port.pressure, 0.0);
+val(pi.port.flowrate, 0.0);
+val(pu.port.pressure, 0.0);
+val(pu.port.flowrate, 0.0);
+
+val(pi.port.pressure, 0.5);
+val(pi.port.flowrate, 0.5);
+val(pu.port.pressure, 0.5);
+val(pu.port.flowrate, 0.5);
+
+val(pi.port.pressure, 1.0);
+val(pi.port.flowrate, 1.0);
+val(pu.port.pressure, 1.0);
+val(pu.port.flowrate, 1.0);
+
+
+
+// Result:
+// true
+// "class LinearSysEq
+//   Real pu.port.pressure;
+//   Real pu.port.flowrate;
+//   Real pi.port.pressure;
+//   Real pi.port.flowrate;
+//   parameter Real pi.a = 1.0;
+// equation
+//   pu.port.flowrate = pu.port.pressure - time;
+//   pi.port.pressure = pi.port.flowrate * pi.a;
+//   pu.port.flowrate + pi.port.flowrate = 0.0;
+//   pi.port.pressure = pu.port.pressure;
+// end LinearSysEq;
+// "
+// record SimulationResult
+//     resultFile = "LinearSysEq_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'LinearSysEq', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// -0.0
+// -0.0
+// -0.0
+// 0.0
+// 0.25
+// 0.25
+// 0.25
+// -0.25
+// 0.5
+// 0.5
+// 0.5
+// -0.5
+// endResult

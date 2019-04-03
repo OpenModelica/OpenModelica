@@ -1,0 +1,25 @@
+// name:     translate FlueGasZoneSingleTube
+// keywords: SiemensPower FlueGasZoneSingleTube
+// status:   correct
+// env:      LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
+// teardown_command: rm -rf SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube* _SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube* output.log
+//
+//  Test SiemensPower component FlueGasZone
+//
+
+loadModel(SiemensPower,{"2.1 beta"});
+getErrorString();
+
+// test simple model
+translateModel(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_testsimple, stopTime=200, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/FlueGasZoneSingleTube_testsimple.mat");
+
+// test full model
+translateModel(SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_test, stopTime=200, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/FlueGasZoneSingleTube_test.mat");
+
+
+// Result:
+// true
+// ""
+// true
+// true
+// endResult

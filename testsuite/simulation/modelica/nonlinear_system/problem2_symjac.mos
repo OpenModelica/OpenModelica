@@ -1,0 +1,52 @@
+// name: problem2 [symjac]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem2* _nonlinear_system.problem2* output.log
+
+alarm(360);
+loadFile("nlsTestPackage.mo"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();
+OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();
+simulate(nonlinear_system.problem2, stopTime=2); getErrorString();
+
+val(x[1],{0.0,1.0,2.0});
+val(x[2],{0.0,1.0,2.0});
+val(x[3],{0.0,1.0,2.0});
+val(x[4],{0.0,1.0,2.0});
+val(x[5],{0.0,1.0,2.0});
+val(x[6],{0.0,1.0,2.0});
+val(x[7],{0.0,1.0,2.0});
+val(x[8],{0.0,1.0,2.0});
+val(x[9],{0.0,1.0,2.0});
+val(x[10],{0.0,1.0,2.0});
+val(y,{0.0,1.0,2.0});
+
+// Result:
+// 900
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {1.087909512402704,0.9908697454089415,0.8650752875248886}
+// {1.083547107176289,0.9818228523667806,0.8483552530862688}
+// {1.074074333470105,0.963976113429641,0.8197066354390672}
+// {1.05363567381925,0.9292499472629159,0.7719189681828357}
+// {1.010148133144546,0.863505464488132,0.6958588934404536}
+// {0.9203992508954109,0.7456416872008647,0.5842195995801726}
+// {0.7471347810488336,0.5559815256917521,0.4413125405336171}
+// {0.4582103810528884,0.3091154569105283,0.2947567584322355}
+// {0.1099567533046332,0.09555236570100469,0.1868815466414792}
+// {-0.08790951240270403,0.009130254591058533,0.1349247124751113}
+// {-1.0,-5.551115123125783e-17,0.9999999999999998}
+// endResult

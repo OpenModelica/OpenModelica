@@ -1,0 +1,23 @@
+// name:     ArraySlice2
+// keywords: array slice
+// status: correct
+// teardown_command: rm -rf ArraySlice2_* ArraySlice2 ArraySlice2.exe ArraySlice2.cpp ArraySlice2.makefile ArraySlice2.libs ArraySlice2.log output.log
+// 
+// Tests array slicing where some subscripts are scalar variables.
+// 
+
+loadFile("ArraySlice2.mo");
+simulate(ArraySlice2, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+val(y, 0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArraySlice2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ArraySlice2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 15.0
+// endResult

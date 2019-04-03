@@ -1,0 +1,324 @@
+// name: PriorityQueue
+// cflags: -g=MetaModelica
+// status: correct
+//
+// TODO: Make me faster; I'm slow
+
+runScript("LoadCompilerSources.mos");getErrorString();
+setCommandLineOptions("-d=noevalfunc,gen");getErrorString();
+e:=PriorityQueue.empty;getErrorString();
+q:=PriorityQueue.insert((1,{}),e);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((3,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((2,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((4,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((7,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((-2,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((11,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((35,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.insert((26,{}),q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.deleteMin(q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+q:=PriorityQueue.deleteMin(q);getErrorString();
+PriorityQueue.findMin(q);getErrorString();
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// {}
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (-2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (-2,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (11,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (-2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (-2,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (-2,{}),
+//     rank = 3,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (11,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (35,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (-2,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (26,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (-2,{}),
+//     rank = 3,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (11,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (35,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (-2,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (1,{}),
+//     rank = 3,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (11,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (35,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (26,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (1,{})
+// ""
+// {record PriorityQueue.Tree.NODE
+//     elt = (3,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (2,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (4,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (7,{}),
+//     rank = 2,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (11,{}),
+//     rank = 1,
+//     trees = {record PriorityQueue.Tree.NODE
+//     elt = (35,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
+//     elt = (26,{}),
+//     rank = 0,
+//     trees = {}
+// end PriorityQueue.Tree.NODE;}
+// end PriorityQueue.Tree.NODE;}
+// ""
+// (2,{})
+// ""
+// endResult

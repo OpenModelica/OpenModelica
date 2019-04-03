@@ -1,0 +1,65 @@
+// name: inlineFunction5
+// status: correct
+
+// use new inline method
+setCommandLineOptions("+inlineMethod=append");
+
+loadString("
+model foo
+  record A
+    Real a;
+    Real b;
+  end A;
+  function f
+    input A x;
+    input Real[:] z;
+    output Real y;
+    output Real y1;
+  protected
+    Real a[2];
+  algorithm
+     a[1] := f1(z[1]);
+     a[2] := f1(z[2]);
+     y := sum(a)*x.a + sum(z);
+     y1 := sum(a)*x.b + y + sum(z);
+    annotation(Inline=true); 
+  end f;
+  function f1
+    input Real y;
+    output Real x;
+  protected
+    Real y1 = 2*y + 7;
+    Real[2] z = {2*y1, y*y1};
+  algorithm
+    x := sum(z)*sum(z)*y1*y;
+    annotation(Inline=true); 
+  end f1;
+  Real y(start=0,fixed=true);
+  Real dy = der(y);
+  Real y1,y2;
+  Real[:] z =  {time, cos(time), exp(-time)};
+equation
+ der(y) + 1 = f(A(5 + time,3), z);
+ (y1,y2) = f(A(5 + time,3), z);
+end foo;
+");
+getErrorString();
+simulate(foo);
+getErrorString();
+val(time,{0,0.5,1.0});
+val(y,{0,0.5,1.0});
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,0.5,1.0}
+// {0.0,17301.90025334362,37490.19975223122}
+// endResult

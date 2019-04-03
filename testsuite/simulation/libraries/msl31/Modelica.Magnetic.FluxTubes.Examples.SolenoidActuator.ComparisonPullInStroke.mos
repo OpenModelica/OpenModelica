@@ -1,0 +1,25 @@
+// name:     Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke,stopTime=0.0500000007451);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke.mat","Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_diff.csv",0.01,0.00001,
+  {"simpleSolenoid.p.i","advancedSolenoid.p.i","comparisonWithFEA.y[1]","simpleSolenoid.armature.flange_a.f","advancedSolenoid.armature.flange_a.f","comparisonWithFEA.y[2]","simpleSolenoid.x",
+  "advancedSolenoid.x","comparisonWithFEA.y[3]"});
+  
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0500000007451, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

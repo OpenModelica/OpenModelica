@@ -1,0 +1,20 @@
+// name:     Uniontype15
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Test type aliasing of uniontypes
+//
+loadFile("Uniontype15.mo");
+getErrorString();
+Uniontype15.T2.func();
+getErrorString();
+
+// Result:
+// true
+// ""
+// record Uniontype15.T1.U.R
+//     i = 2
+// end Uniontype15.T1.U.R;
+// ""
+// endResult

@@ -1,0 +1,215 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT);
+compareVars :=
+{
+   "X1.X1.Q1.vbc",
+   "X1.X1.Q1.vbe",
+   "X1.X1.Q2.vbc",
+   "X1.X1.Q2.vbe",
+   "X1.X1.Q3.vbc",
+   "X1.X1.Q3.vbe",
+   "X1.X1.Q4.vbc",
+   "X1.X1.Q4.vbe",
+   "X1.X1.Q5.vbe",
+   "X1.X2.Q1.vbc",
+   "X1.X2.Q1.vbe",
+   "X1.X2.Q2.vbe",
+   "X1.X2.Q3.vbc",
+   "X1.X2.Q3.vbe",
+   "X1.X2.Q4.vbc",
+   "X1.X2.Q4.vbe",
+   "X1.X2.Q5.vbc",
+   "X1.X2.Q5.vbe",
+   "X1.X3.Q1.vbc",
+   "X1.X3.Q1.vbe",
+   "X1.X3.Q2.vbc",
+   "X1.X3.Q2.vbe",
+   "X1.X3.Q3.vbc",
+   "X1.X3.Q3.vbe",
+   "X1.X3.Q4.vbc",
+   "X1.X3.Q4.vbe",
+   "X1.X3.Q5.vbe",
+   "X1.X4.Q1.vbc",
+   "X1.X4.Q1.vbe",
+   "X1.X4.Q2.vbc",
+   "X1.X4.Q2.vbe",
+   "X1.X4.Q3.vbc",
+   "X1.X4.Q3.vbe",
+   "X1.X4.Q4.vbc",
+   "X1.X4.Q4.vbe",
+   "X1.X4.Q5.vbc",
+   "X1.X4.Q5.vbe",
+   "X1.X5.Q1.vbc",
+   "X1.X5.Q1.vbe",
+   "X1.X5.Q2.vbc",
+   "X1.X5.Q2.vbe",
+   "X1.X5.Q3.vbc",
+   "X1.X5.Q3.vbe",
+   "X1.X5.Q4.vbc",
+   "X1.X5.Q4.vbe",
+   "X1.X5.Q5.vbe",
+   "X1.X6.Q1.vbc",
+   "X1.X6.Q1.vbe",
+   "X1.X6.Q2.vbc",
+   "X1.X6.Q2.vbe",
+   "X1.X6.Q3.vbc",
+   "X1.X6.Q3.vbe",
+   "X1.X6.Q4.vbc",
+   "X1.X6.Q4.vbe",
+   "X1.X6.Q5.vbc",
+   "X1.X6.Q5.vbe",
+   "X1.X7.Q1.vbc",
+   "X1.X7.Q1.vbe",
+   "X1.X7.Q2.vbe",
+   "X1.X7.Q3.vbc",
+   "X1.X7.Q3.vbe",
+   "X1.X7.Q4.vbc",
+   "X1.X7.Q4.vbe",
+   "X1.X7.Q5.vbe",
+   "X1.X8.Q1.vbc",
+   "X1.X8.Q1.vbe",
+   "X1.X8.Q2.vbc",
+   "X1.X8.Q2.vbe",
+   "X1.X8.Q3.vbc",
+   "X1.X8.Q3.vbe",
+   "X1.X8.Q4.vbc",
+   "X1.X8.Q4.vbe",
+   "X1.X8.Q5.vbc",
+   "X1.X8.Q5.vbe",
+   "X1.X9.Q1.vbc",
+   "X1.X9.Q1.vbe",
+   "X1.X9.Q2.vbc",
+   "X1.X9.Q2.vbe",
+   "X1.X9.Q3.vbc",
+   "X1.X9.Q3.vbe",
+   "X1.X9.Q4.vbc",
+   "X1.X9.Q4.vbe",
+   "X1.X9.Q5.vbc",
+   "X2.X1.Q1.vbc",
+   "X2.X1.Q1.vbe",
+   "X2.X1.Q2.vbc",
+   "X2.X1.Q2.vbe",
+   "X2.X1.Q3.vbc",
+   "X2.X1.Q3.vbe",
+   "X2.X1.Q4.vbc",
+   "X2.X1.Q4.vbe",
+   "X2.X1.Q5.vbc",
+   "X2.X1.Q5.vbe",
+   "X2.X2.Q1.vbc",
+   "X2.X2.Q1.vbe",
+   "X2.X2.Q2.vbe",
+   "X2.X2.Q3.vbc",
+   "X2.X2.Q3.vbe",
+   "X2.X2.Q4.vbc",
+   "X2.X2.Q4.vbe",
+   "X2.X2.Q5.vbe",
+   "X2.X3.Q1.vbc",
+   "X2.X3.Q1.vbe",
+   "X2.X3.Q2.vbc",
+   "X2.X3.Q2.vbe",
+   "X2.X3.Q3.vbc",
+   "X2.X3.Q3.vbe",
+   "X2.X3.Q4.vbc",
+   "X2.X3.Q4.vbe",
+   "X2.X3.Q5.vbc",
+   "X2.X3.Q5.vbe",
+   "X2.X4.Q1.vbc",
+   "X2.X4.Q1.vbe",
+   "X2.X4.Q2.vbc",
+   "X2.X4.Q2.vbe",
+   "X2.X4.Q3.vbc",
+   "X2.X4.Q3.vbe",
+   "X2.X4.Q4.vbc",
+   "X2.X4.Q4.vbe",
+   "X2.X4.Q5.vbc",
+   "X2.X4.Q5.vbe",
+   "X2.X5.Q1.vbc",
+   "X2.X5.Q1.vbe",
+   "X2.X5.Q2.vbc",
+   "X2.X5.Q2.vbe",
+   "X2.X5.Q3.vbc",
+   "X2.X5.Q3.vbe",
+   "X2.X5.Q4.vbc",
+   "X2.X5.Q4.vbe",
+   "X2.X5.Q5.vbe",
+   "X2.X6.Q1.vbc",
+   "X2.X6.Q1.vbe",
+   "X2.X6.Q2.vbc",
+   "X2.X6.Q2.vbe",
+   "X2.X6.Q3.vbc",
+   "X2.X6.Q3.vbe",
+   "X2.X6.Q4.vbc",
+   "X2.X6.Q4.vbe",
+   "X2.X6.Q5.vbc",
+   "X2.X6.Q5.vbe",
+   "X2.X7.Q1.vbc",
+   "X2.X7.Q1.vbe",
+   "X2.X7.Q2.vbe",
+   "X2.X7.Q3.vbc",
+   "X2.X7.Q3.vbe",
+   "X2.X7.Q4.vbc",
+   "X2.X7.Q4.vbe",
+   "X2.X7.Q5.vbe",
+   "X2.X8.Q1.vbc",
+   "X2.X8.Q1.vbe",
+   "X2.X8.Q2.vbc",
+   "X2.X8.Q2.vbe",
+   "X2.X8.Q3.vbc",
+   "X2.X8.Q3.vbe",
+   "X2.X8.Q4.vbc",
+   "X2.X8.Q4.vbe",
+   "X2.X8.Q5.vbc",
+   "X2.X8.Q5.vbe",
+   "X2.X9.Q1.vbc",
+   "X2.X9.Q1.vbe",
+   "X2.X9.Q2.vbe",
+   "X2.X9.Q3.vbc",
+   "X2.X9.Q3.vbe",
+   "X2.X9.Q4.vbc",
+   "X2.X9.Q4.vbe",
+   "X2.X9.Q5.vbc",
+   "X2.X9.Q5.vbe"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// ""
+// true
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT
+// {"X1.X1.Q1.vbc","X1.X1.Q1.vbe","X1.X1.Q2.vbc","X1.X1.Q2.vbe","X1.X1.Q3.vbc","X1.X1.Q3.vbe","X1.X1.Q4.vbc","X1.X1.Q4.vbe","X1.X1.Q5.vbe","X1.X2.Q1.vbc","X1.X2.Q1.vbe","X1.X2.Q2.vbe","X1.X2.Q3.vbc","X1.X2.Q3.vbe","X1.X2.Q4.vbc","X1.X2.Q4.vbe","X1.X2.Q5.vbc","X1.X2.Q5.vbe","X1.X3.Q1.vbc","X1.X3.Q1.vbe","X1.X3.Q2.vbc","X1.X3.Q2.vbe","X1.X3.Q3.vbc","X1.X3.Q3.vbe","X1.X3.Q4.vbc","X1.X3.Q4.vbe","X1.X3.Q5.vbe","X1.X4.Q1.vbc","X1.X4.Q1.vbe","X1.X4.Q2.vbc","X1.X4.Q2.vbe","X1.X4.Q3.vbc","X1.X4.Q3.vbe","X1.X4.Q4.vbc","X1.X4.Q4.vbe","X1.X4.Q5.vbc","X1.X4.Q5.vbe","X1.X5.Q1.vbc","X1.X5.Q1.vbe","X1.X5.Q2.vbc","X1.X5.Q2.vbe","X1.X5.Q3.vbc","X1.X5.Q3.vbe","X1.X5.Q4.vbc","X1.X5.Q4.vbe","X1.X5.Q5.vbe","X1.X6.Q1.vbc","X1.X6.Q1.vbe","X1.X6.Q2.vbc","X1.X6.Q2.vbe","X1.X6.Q3.vbc","X1.X6.Q3.vbe","X1.X6.Q4.vbc","X1.X6.Q4.vbe","X1.X6.Q5.vbc","X1.X6.Q5.vbe","X1.X7.Q1.vbc","X1.X7.Q1.vbe","X1.X7.Q2.vbe","X1.X7.Q3.vbc","X1.X7.Q3.vbe","X1.X7.Q4.vbc","X1.X7.Q4.vbe","X1.X7.Q5.vbe","X1.X8.Q1.vbc","X1.X8.Q1.vbe","X1.X8.Q2.vbc","X1.X8.Q2.vbe","X1.X8.Q3.vbc","X1.X8.Q3.vbe","X1.X8.Q4.vbc","X1.X8.Q4.vbe","X1.X8.Q5.vbc","X1.X8.Q5.vbe","X1.X9.Q1.vbc","X1.X9.Q1.vbe","X1.X9.Q2.vbc","X1.X9.Q2.vbe","X1.X9.Q3.vbc","X1.X9.Q3.vbe","X1.X9.Q4.vbc","X1.X9.Q4.vbe","X1.X9.Q5.vbc","X2.X1.Q1.vbc","X2.X1.Q1.vbe","X2.X1.Q2.vbc","X2.X1.Q2.vbe","X2.X1.Q3.vbc","X2.X1.Q3.vbe","X2.X1.Q4.vbc","X2.X1.Q4.vbe","X2.X1.Q5.vbc","X2.X1.Q5.vbe","X2.X2.Q1.vbc","X2.X2.Q1.vbe","X2.X2.Q2.vbe","X2.X2.Q3.vbc","X2.X2.Q3.vbe","X2.X2.Q4.vbc","X2.X2.Q4.vbe","X2.X2.Q5.vbe","X2.X3.Q1.vbc","X2.X3.Q1.vbe","X2.X3.Q2.vbc","X2.X3.Q2.vbe","X2.X3.Q3.vbc","X2.X3.Q3.vbe","X2.X3.Q4.vbc","X2.X3.Q4.vbe","X2.X3.Q5.vbc","X2.X3.Q5.vbe","X2.X4.Q1.vbc","X2.X4.Q1.vbe","X2.X4.Q2.vbc","X2.X4.Q2.vbe","X2.X4.Q3.vbc","X2.X4.Q3.vbe","X2.X4.Q4.vbc","X2.X4.Q4.vbe","X2.X4.Q5.vbc","X2.X4.Q5.vbe","X2.X5.Q1.vbc","X2.X5.Q1.vbe","X2.X5.Q2.vbc","X2.X5.Q2.vbe","X2.X5.Q3.vbc","X2.X5.Q3.vbe","X2.X5.Q4.vbc","X2.X5.Q4.vbe","X2.X5.Q5.vbe","X2.X6.Q1.vbc","X2.X6.Q1.vbe","X2.X6.Q2.vbc","X2.X6.Q2.vbe","X2.X6.Q3.vbc","X2.X6.Q3.vbe","X2.X6.Q4.vbc","X2.X6.Q4.vbe","X2.X6.Q5.vbc","X2.X6.Q5.vbe","X2.X7.Q1.vbc","X2.X7.Q1.vbe","X2.X7.Q2.vbe","X2.X7.Q3.vbc","X2.X7.Q3.vbe","X2.X7.Q4.vbc","X2.X7.Q4.vbe","X2.X7.Q5.vbe","X2.X8.Q1.vbc","X2.X8.Q1.vbe","X2.X8.Q2.vbc","X2.X8.Q2.vbe","X2.X8.Q3.vbc","X2.X8.Q3.vbe","X2.X8.Q4.vbc","X2.X8.Q4.vbe","X2.X8.Q5.vbc","X2.X8.Q5.vbe","X2.X9.Q1.vbc","X2.X9.Q1.vbe","X2.X9.Q2.vbe","X2.X9.Q3.vbc","X2.X9.Q3.vbe","X2.X9.Q4.vbc","X2.X9.Q4.vbe","X2.X9.Q5.vbc","X2.X9.Q5.vbe"}
+// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT_res.mat
+// Messages: stdout            | warning | Failed to solve linear system of equations (no. 5533) at time 0.000000, system is singular for U[47, 47].
+// stdout            | warning | Failed to solve linear system of equations (no. 6722) at time 0.000000, system is singular for U[10, 10].
+// stdout            | warning | Failed to solve linear system of equations (no. 6722) at time 0.000000, system is singular for U[10, 10].
+// 
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

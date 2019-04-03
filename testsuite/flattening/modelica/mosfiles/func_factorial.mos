@@ -1,0 +1,29 @@
+// name:     Test simple recursive function
+// keywords: recursive
+// status:   correct, however ut does not work together with the test suite
+// 
+//
+//  Not working:
+//    When the integer grows too large, it will be changed to 0. (i.e. Factorial(123))
+//    Is this correct.
+//
+
+loadFile("func_factorial.mo");
+Factorial(0);
+Factorial(1);
+Factorial(2);
+Factorial(3);
+Factorial(5);
+Factorial(10);
+Factorial(123);
+
+// Result:
+// true
+// 1
+// 1
+// 2
+// 6
+// 120
+// 3628800
+// 0
+// endResult

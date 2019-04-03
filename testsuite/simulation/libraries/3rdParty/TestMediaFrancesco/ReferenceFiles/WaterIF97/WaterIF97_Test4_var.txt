@@ -1,0 +1,13 @@
+TestMedia.TestModels.WaterIF97.Test4
+number of intervals = 200
+stopTime = 1
+
+relevant variables
+state1.T
+state1.d
+state2.h
+state2.d
+Ts
+ps
+sat1.Tsat
+sat2.psat

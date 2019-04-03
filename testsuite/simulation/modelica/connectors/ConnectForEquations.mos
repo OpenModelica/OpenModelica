@@ -1,0 +1,38 @@
+// name:     ConnectForEquations
+// keywords: <insert keywords here>
+// status:   correct
+// 
+//  MORE WORK HAS TO BE DONE ON THIS FILE!
+// Drmodelica: 8.2  connect equations (p. 244)
+// 
+loadModel(Modelica);
+loadFile("ConnectForEquations.mo");
+simulate(ConnectForEquations,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+x:=val(r_components[1].v,0.6);
+y:=val(r_components[2].v,1.0);
+z:=val(r_components[6].v,0.6);
+x:=10.0*x;
+y:=10.0*y;
+z:=10.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+
+echo(true); // turns on output
+x:=x/10.0; // rounded value to 1 digits
+y:=y/10.0;
+z:=z/10.0;
+system("rm -rf ConnectForEquations_* ConnectForEquations.exe ConnectForEquations.cpp ConnectForEquations.makefile ConnectForEquations.libs ConnectForEquations.log output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ConnectForEquations_res.mat"
+// end SimulationResult;
+// true
+// -1.0
+// 0.0
+// -1.0
+// ""
+// 0
+// endResult

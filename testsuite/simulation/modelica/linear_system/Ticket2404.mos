@@ -1,0 +1,38 @@
+// name: Ticket2404
+// keywords: linear system, iteration variable
+// status: correct
+// teardown_command: rm -rf linearSystemTests.Ticket2404* _linearSystemTests.Ticket2404* output.log
+//
+//  case for iteration variables with default zero start-attribute
+//
+
+loadString("
+within ;
+package linearSystemTests
+  model Ticket2404
+    Real x, y, z;
+  equation
+    z = sin(time);
+    z*x + y = 2;
+    x - z*y = 2; 
+  end Ticket2404;
+end linearSystemTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("initialization"); getErrorString();
+simulate(linearSystemTests.Ticket2404); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linearSystemTests.Ticket2404_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearSystemTests.Ticket2404', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,39 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses);
+compareVars :=
+{
+   "converter_e.singlePhaseElectroMagneticConverter[3].Phi.re",
+   "converter_e.singlePhaseElectroMagneticConverter[3].Phi.im",
+   "loss_m.Phi.re",
+   "loss_m.Phi.im"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses
+// {"converter_e.singlePhaseElectroMagneticConverter[3].Phi.re","converter_e.singlePhaseElectroMagneticConverter[3].Phi.im","loss_m.Phi.re","loss_m.Phi.im"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 40.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

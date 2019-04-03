@@ -1,0 +1,32 @@
+// name:     EquationCallIntegerArray
+// keywords: events
+// status: correct
+// teardown_command: rm -rf EquationCallIntegerArray_* EquationCallIntegerArray EquationCallIntegerArray.exe EquationCallIntegerArray.cpp EquationCallIntegerArray.makefile EquationCallIntegerArray.libs EquationCallIntegerArray.log output.log
+//
+// Array calls
+// 
+loadFile("EquationCallIntegerArray.mo");
+simulate(EquationCallIntegerArray, startTime=0.0, stopTime=1.0, numberOfIntervals=50, tolerance=1e-5);
+val(i[1],0.0);
+val(i[1],0.3);
+val(i[2],0.0);
+val(i[2],0.3);
+val(i[3],0.0);
+val(i[3],0.3);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "EquationCallIntegerArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'EquationCallIntegerArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 1.0
+// 0.0
+// 6.0
+// 0.0
+// 9.0
+// endResult

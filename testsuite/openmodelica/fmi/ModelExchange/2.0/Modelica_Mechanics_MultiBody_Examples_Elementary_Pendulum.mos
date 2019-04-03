@@ -1,0 +1,55 @@
+// name:     Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum
+// keywords: Pendulum FMI-Export FMI-Import
+// status: correct
+// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_* binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.lib* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_*.c Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_*.h Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_*.o Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_*.json
+//
+
+loadModel(Modelica); getErrorString();
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, stopTime=3.0); getErrorString();
+val(rev.phi, 0);
+val(rev.phi, 1);
+val(rev.phi, 2);
+val(rev.phi, 3);
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0"); getErrorString();
+importFMU("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"); getErrorString();
+loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();
+simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU, stopTime=3.0); getErrorString();
+val(rev_phi, 0);
+val(rev_phi, 1);
+val(rev_phi, 2);
+val(rev_phi, 3);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// -2.580150841077482
+// -1.577603053585166
+// -0.8529875495512017
+// "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// -2.580150841077478
+// -1.577603053585182
+// -0.8529875495512135
+// endResult

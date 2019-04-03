@@ -1,0 +1,23 @@
+// name: ModelBalance2
+// keywords: balance
+// status: correct
+//
+// Tests a model with too few equations
+//
+
+loadFile("ModelBalance2.mo");
+simulate(ModelBalance2);getErrorString();
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelBalance2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: ModelBalance2"
+// end SimulationResult;
+// "Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
+// [simulation/modelica/equations/ModelBalance2.mo:9:3-9:12:writable] Warning: Variable x does not have any remaining equation to be solved in.
+//   The original equations were:
+//   Equation 1: y = 2 + x, which needs to solve for y
+// "
+// endResult

@@ -1,0 +1,89 @@
+// name:     Test fixes of bug 180
+// keywords: events
+// status:   correct
+// teardown_command: rm -f libFunc.a output.log tt_*.* tt.log tt.libs tt.makefile tt tt.exe tt.cpp 
+//
+// Test for function wrapper code generation involving arrays
+//
+// 
+loadFile("Matrix.mo");
+system("gcc -c -o libFunc.a Func.c");
+checkModel(tt);
+getErrorString();
+instantiateModel(tt);
+getErrorString();
+buildModel(tt,numberOfIntervals=1);
+getErrorString();
+simulate(tt,numberOfIntervals=1);
+getErrorString();
+{val(x[1,1], 0.0), val(x[1,2], 0.0), val(x[1,3], 0.0)};
+{val(x[2,1], 0.0), val(x[2,2], 0.0), val(x[2,3], 0.0)};
+{val(y[1,1], 0.0), val(y[1,2], 0.0)};
+{val(y[2,1], 0.0), val(y[2,2], 0.0)};
+{val(y[3,1], 0.0), val(y[3,2], 0.0)};
+{val(z[1,1], 0.0), val(z[1,2], 0.0)}; 
+{val(z[2,1], 0.0), val(z[2,2], 0.0)};
+{val(z[3,1], 0.0), val(z[3,2], 0.0)};
+// Result:
+// true
+// 0
+// "Check of tt completed successfully.
+// Class tt has 18 equation(s) and 18 variable(s).
+// 6 of these are trivial equation(s)."
+// "[simulation/modelica/external_functions/Matrix.mo:1:1-5:10:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
+// "
+// "function Trans
+//   input Real[:, :] x;
+//   output Real[size(x, 2), size(x, 1)] y;
+//
+//   external \"C\" Trans(x, size(x, 1), size(x, 2), y, size(y, 1), size(y, 2));
+// end Trans;
+//
+// class tt
+//   Real x[1,1];
+//   Real x[1,2];
+//   Real x[1,3];
+//   Real x[2,1];
+//   Real x[2,2];
+//   Real x[2,3];
+//   Real z[1,1];
+//   Real z[1,2];
+//   Real z[2,1];
+//   Real z[2,2];
+//   Real z[3,1];
+//   Real z[3,2];
+//   Real y[1,1];
+//   Real y[1,2];
+//   Real y[2,1];
+//   Real y[2,2];
+//   Real y[3,1];
+//   Real y[3,2];
+// equation
+//   x = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}};
+//   z = Trans({{x[1,1], x[1,2], x[1,3]}, {x[2,1], x[2,2], x[2,3]}});
+//   y = Trans({{x[1,1], x[1,2], x[1,3]}, {x[2,1], x[2,2], x[2,3]}});
+// end tt;
+// "
+// "[simulation/modelica/external_functions/Matrix.mo:1:1-5:10:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
+// "
+// {"tt","tt_init.xml"}
+// "[simulation/modelica/external_functions/Matrix.mo:1:1-5:10:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
+// "
+// record SimulationResult
+//     resultFile = "tt_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'tt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[simulation/modelica/external_functions/Matrix.mo:1:1-5:10:writable] Warning: An external declaration with a single output without explicit mapping is defined as having the output as the lhs, but language C does not support this for array variables. OpenModelica will put the output as an input (as is done when there is more than 1 output), but this is not according to the Modelica Specification. Use an explicit mapping instead of the implicit one to suppress this warning.
+// "
+// {1.0,2.0,3.0}
+// {4.0,5.0,6.0}
+// {1.0,3.0}
+// {5.0,2.0}
+// {4.0,6.0}
+// {1.0,3.0}
+// {5.0,2.0}
+// {4.0,6.0}
+// endResult

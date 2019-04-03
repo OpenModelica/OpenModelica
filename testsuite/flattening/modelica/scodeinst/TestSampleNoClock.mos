@@ -1,0 +1,356 @@
+// name:     TestSampleNoClock
+// keywords: sample
+// status:   correct
+// cflags:   -d=newInst
+//
+// Tests if sample in Modelica 3.2.1 (which sets --std < 3.3) works fine
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
+
+// Result:
+// true
+// ""
+// "function Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex \"Get first index of table and check table\"
+//   input Real[:] table \"Vector of time instants\";
+//   input Real simulationStartTime(quantity = \"Time\", unit = \"s\") \"Simulation start time\";
+//   input Boolean startValue \"Value of y for time < table[1]\";
+//   output Integer index \"First index to be used\";
+//   output Real nextTime(quantity = \"Time\", unit = \"s\") \"Time instant of first event\";
+//   output Boolean y \"Value of y at simulationStartTime\";
+//   protected Integer j;
+//   protected Integer n = size(table, 1) \"Number of table points\";
+// algorithm
+//   if size(table, 1) == 0 then
+//     index := 0;
+//     nextTime := 9.999999999999999e+59;
+//     y := startValue;
+//   elseif size(table, 1) == 1 then
+//     index := 1;
+//     if table[1] > simulationStartTime then
+//       nextTime := table[1];
+//       y := startValue;
+//     else
+//       nextTime := 9.999999999999999e+59;
+//       y := not startValue;
+//     end if;
+//   else
+//     for i in 2:n loop
+//       assert(table[i] > table[i - 1], \"Time values of table not strict monotonically increasing: table[\" + String(i - 1, 0, true) + \"] = \" + String(table[i - 1], 6, 0, true) + \", table[\" + String(i, 0, true) + \"] = \" + String(table[i], 6, 0, true));
+//     end for;
+//     j := 1;
+//     y := startValue;
+//     while j <= n and table[j] <= simulationStartTime loop
+//       y := not y;
+//       j := j + 1;
+//     end while;
+//     if j > n then
+//       nextTime := 9.999999999999999e+59;
+//     else
+//       nextTime := table[j];
+//     end if;
+//     index := j;
+//   end if;
+// end Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex;
+//
+// function Modelica.Math.BooleanVectors.allTrue \"Returns true, if all elements of the Boolean input vector are true ('and')\"
+//   input Boolean[:] b \"Boolean vector\";
+//   output Boolean result \"= true, if all elements of b are true\";
+// algorithm
+//   result := size(b, 1) > 0;
+//   for i in 1:size(b, 1) loop
+//     result := result and b[i];
+//   end for;
+// end Modelica.Math.BooleanVectors.allTrue;
+//
+// function Modelica.Math.BooleanVectors.anyTrue \"Returns true, if at least on element of the Boolean input vector is true ('or')\"
+//   input Boolean[:] b;
+//   output Boolean result;
+// algorithm
+//   result := false;
+//   for i in 1:size(b, 1) loop
+//     result := result or b[i];
+//   end for;
+// end Modelica.Math.BooleanVectors.anyTrue;
+//
+// function Modelica.Math.BooleanVectors.countTrue \"Inline before index reduction\" \"Returns the number of true entries in a Boolean vector\"
+//   input Boolean[:] b \"Boolean vector\";
+//   output Integer n \"Number of true entries\";
+// algorithm
+//   n := sum(if b[i] then 1 else 0 for i in 1:size(b, 1));
+// end Modelica.Math.BooleanVectors.countTrue;
+//
+// function Modelica.Math.BooleanVectors.firstTrueIndex \"Returns the index of the first true element of a Boolean vector\"
+//   input Boolean[:] b;
+//   output Integer index;
+// algorithm
+//   index := 0;
+//   for i in 1:size(b, 1) loop
+//     if b[i] then
+//       index := i;
+//       return;
+//     end if;
+//   end for;
+// end Modelica.Math.BooleanVectors.firstTrueIndex;
+//
+// function Modelica.Math.BooleanVectors.oneTrue \"Returns true, if exactly one element of the Boolean input vector is true (\\\"xor\\\")\"
+//   input Boolean[:] b;
+//   output Boolean result;
+// algorithm
+//   result := Modelica.Math.BooleanVectors.countTrue(b) == 1;
+// end Modelica.Math.BooleanVectors.oneTrue;
+//
+// class Modelica.Blocks.Examples.BooleanNetwork1 \"Demonstrates the usage of blocks from Modelica.Blocks.MathBoolean\"
+//   parameter Boolean showValue.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue.showActive;
+//   parameter Integer and1.nu(min = 0) = 3 \"Number of input connections\";
+//   Boolean and1.u[1] \"Vector of Boolean input signals\";
+//   Boolean and1.u[2] \"Vector of Boolean input signals\";
+//   Boolean and1.u[3] \"Vector of Boolean input signals\";
+//   Boolean and1.y \"Boolean output signal\";
+//   parameter Real booleanPulse1.width(min = 1e-60, max = 100.0) = 20.0 \"Width of pulse in % of period\";
+//   parameter Real booleanPulse1.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 1.0) = 1.0 \"Time for one period\";
+//   parameter Real booleanPulse1.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first pulse\";
+//   Boolean booleanPulse1.y \"Connector of Boolean output signal\";
+//   protected parameter Real booleanPulse1.Twidth(quantity = \"Time\", unit = \"s\") = booleanPulse1.period * booleanPulse1.width / 100.0 \"width of one pulse\";
+//   protected discrete Real booleanPulse1.pulsStart(quantity = \"Time\", unit = \"s\") \"Start time of pulse\";
+//   parameter Real booleanPulse2.width(min = 1e-60, max = 100.0) = 80.0 \"Width of pulse in % of period\";
+//   parameter Real booleanPulse2.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 1.0) = 1.0 \"Time for one period\";
+//   parameter Real booleanPulse2.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first pulse\";
+//   Boolean booleanPulse2.y \"Connector of Boolean output signal\";
+//   protected parameter Real booleanPulse2.Twidth(quantity = \"Time\", unit = \"s\") = booleanPulse2.period * booleanPulse2.width / 100.0 \"width of one pulse\";
+//   protected discrete Real booleanPulse2.pulsStart(quantity = \"Time\", unit = \"s\") \"Start time of pulse\";
+//   parameter Real booleanStep.startTime(quantity = \"Time\", unit = \"s\") = 1.5 \"Time instant of step start\";
+//   parameter Boolean booleanStep.startValue = false \"Output before startTime\";
+//   Boolean booleanStep.y \"Connector of Boolean output signal\";
+//   parameter Integer or1.nu(min = 0) = 2 \"Number of input connections\";
+//   Boolean or1.u[1] \"Vector of Boolean input signals\";
+//   Boolean or1.u[2] \"Vector of Boolean input signals\";
+//   Boolean or1.y \"Boolean output signal\";
+//   parameter Integer xor1.nu(min = 0) = 2 \"Number of input connections\";
+//   Boolean xor1.u[1] \"Vector of Boolean input signals\";
+//   Boolean xor1.u[2] \"Vector of Boolean input signals\";
+//   Boolean xor1.y \"Boolean output signal\";
+//   parameter Boolean showValue2.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue2.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue2.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue2.showActive;
+//   parameter Boolean showValue3.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue3.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue3.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue3.showActive;
+//   parameter Integer nand1.nu(min = 0) = 2 \"Number of input connections\";
+//   Boolean nand1.u[1] \"Vector of Boolean input signals\";
+//   Boolean nand1.u[2] \"Vector of Boolean input signals\";
+//   Boolean nand1.y \"Boolean output signal\";
+//   parameter Integer or2.nu(min = 0) = 2 \"Number of input connections\";
+//   Boolean or2.u[1] \"Vector of Boolean input signals\";
+//   Boolean or2.u[2] \"Vector of Boolean input signals\";
+//   Boolean or2.y \"Boolean output signal\";
+//   parameter Boolean showValue4.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue4.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue4.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue4.showActive;
+//   Boolean nor1.u \"Boolean input signal\";
+//   Boolean nor1.y \"Boolean output signal\";
+//   Boolean onDelay.u \"Boolean input signal\";
+//   Boolean onDelay.y \"Boolean output signal\";
+//   parameter Real onDelay.delayTime(quantity = \"Time\", unit = \"s\") = 1.0 \"Delay time\";
+//   protected Boolean onDelay.delaySignal(start = false, fixed = true);
+//   protected discrete Real onDelay.t_next(quantity = \"Time\", unit = \"s\");
+//   parameter Boolean rising.pre_u_start = false \"Value of pre(u) at initial time\";
+//   Boolean rising.u \"Boolean input signal\";
+//   Boolean rising.y \"Boolean output signal\";
+//   Boolean set1.expr[1] \"y = if u[i] then expr[i] else y_default (time varying)\";
+//   Boolean set1.expr[2] \"y = if u[i] then expr[i] else y_default (time varying)\";
+//   parameter Boolean set1.use_pre_as_default = true \"set true to hold last value as default (y_default = pre(y))\";
+//   parameter Boolean set1.y_default = false \"Default value of output y if all u[i] = false\";
+//   parameter Integer set1.nu(min = 0) = 2 \"Number of input connections\";
+//   Boolean set1.u[1] \"Set y = expr[i], if u[i] = true\";
+//   Boolean set1.u[2] \"Set y = expr[i], if u[i] = true\";
+//   Boolean set1.y \"Output depending on expression\";
+//   protected Integer set1.firstActiveIndex;
+//   parameter Boolean falling.pre_u_start = false \"Value of pre(u) at initial time\";
+//   Boolean falling.u \"Boolean input signal\";
+//   Boolean falling.y \"Boolean output signal\";
+//   protected Boolean falling.not_u = not falling.u;
+//   parameter Boolean booleanTable.startValue = false \"Start value of y. At time = table[1], y changes to 'not startValue'\";
+//   parameter Real booleanTable.table[1](quantity = \"Time\", unit = \"s\") = 2.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[2](quantity = \"Time\", unit = \"s\") = 4.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[3](quantity = \"Time\", unit = \"s\") = 6.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[4](quantity = \"Time\", unit = \"s\") = 6.5 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[5](quantity = \"Time\", unit = \"s\") = 7.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[6](quantity = \"Time\", unit = \"s\") = 9.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   parameter Real booleanTable.table[7](quantity = \"Time\", unit = \"s\") = 11.0 \"Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})\";
+//   Boolean booleanTable.y \"Connector of Boolean output signal\";
+//   protected parameter Integer booleanTable.n = 7 \"Number of table points\";
+//   protected Real booleanTable.nextTime(quantity = \"Time\", unit = \"s\");
+//   protected Integer booleanTable.index \"Index of actual table entry\";
+//   parameter Boolean changing.pre_u_start = false \"Value of pre(u) at initial time\";
+//   Boolean changing.u \"Boolean input signal\";
+//   Boolean changing.y \"Boolean output signal\";
+//   Integer triggeredAdd.u \"Integer input signal\";
+//   Integer triggeredAdd.y \"Integer output signal\";
+//   parameter Boolean triggeredAdd.use_reset = false \"=true, if reset port enabled\";
+//   parameter Boolean triggeredAdd.use_set = false \"=true, if set port enabled and used as default value when reset\";
+//   parameter Integer triggeredAdd.y_start = 0 \"Initial and reset value of y if set port is not used\";
+//   Boolean triggeredAdd.trigger;
+//   protected Boolean triggeredAdd.local_reset;
+//   protected Integer triggeredAdd.local_set;
+//   parameter Integer integerConstant.k(start = 1) = 2 \"Constant output value\";
+//   Integer integerConstant.y \"Connector of Integer output signal\";
+//   parameter Boolean showValue1.use_numberPort = true \"= true, if numberPort enabled\";
+//   Integer showValue1.number = 0 \"Number to visualize if use_numberPort=false (time varying)\";
+//   Integer showValue1.numberPort \"Number to be shown in diagram layer if use_numberPort = true\";
+//   Integer showValue1.showNumber;
+//   parameter Boolean showValue5.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue5.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue5.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue5.showActive;
+//   parameter Boolean showValue6.use_activePort = true \"= true, if activePort enabled\";
+//   Boolean showValue6.active = false \"Boolean variable to visualize if use_activePort=false (time varying)\";
+//   Boolean showValue6.activePort \"Boolean variable to be shown in diagram layer if use_activePort = true\";
+//   Boolean showValue6.showActive;
+//   parameter Boolean rSFlipFlop.Qini = false \"Start value of Q at initial time\";
+//   Boolean rSFlipFlop.Q;
+//   Boolean rSFlipFlop.QI;
+//   Boolean rSFlipFlop.nor.u1 \"Connector of first Boolean input signal\";
+//   Boolean rSFlipFlop.nor.u2 \"Connector of second Boolean input signal\";
+//   Boolean rSFlipFlop.nor.y \"Connector of Boolean output signal\";
+//   Boolean rSFlipFlop.nor1.u1 \"Connector of first Boolean input signal\";
+//   Boolean rSFlipFlop.nor1.u2 \"Connector of second Boolean input signal\";
+//   Boolean rSFlipFlop.nor1.y \"Connector of Boolean output signal\";
+//   parameter Boolean rSFlipFlop.pre.pre_u_start = not rSFlipFlop.Qini \"Start value of pre(u) at initial time\";
+//   Boolean rSFlipFlop.pre.u \"Connector of Boolean input signal\";
+//   Boolean rSFlipFlop.pre.y \"Connector of Boolean output signal\";
+//   Boolean rSFlipFlop.S;
+//   Boolean rSFlipFlop.R;
+//   parameter Real sampleTriggerSet.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.01) = 0.5 \"Sample period\";
+//   parameter Real sampleTriggerSet.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first sample trigger\";
+//   Boolean sampleTriggerSet.y \"Connector of Boolean output signal\";
+//   parameter Real sampleTriggerReset.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.01) = 0.5 \"Sample period\";
+//   parameter Real sampleTriggerReset.startTime(quantity = \"Time\", unit = \"s\") = 0.3 \"Time instant of first sample trigger\";
+//   Boolean sampleTriggerReset.y \"Connector of Boolean output signal\";
+// initial equation
+//   booleanPulse1.pulsStart = booleanPulse1.startTime;
+//   booleanPulse2.pulsStart = booleanPulse2.startTime;
+//   pre(onDelay.u) = false;
+//   pre(onDelay.t_next) = time - 1.0;
+//   pre(rising.u) = rising.pre_u_start;
+//   pre(set1.y) = set1.y_default;
+//   pre(falling.not_u) = not falling.pre_u_start;
+//   pre(changing.u) = changing.pre_u_start;
+//   pre(triggeredAdd.y) = triggeredAdd.y_start;
+//   pre(rSFlipFlop.pre.u) = rSFlipFlop.pre.pre_u_start;
+// initial algorithm
+//   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Examples.BooleanNetwork1.booleanTable.getFirstIndex(booleanTable.table, time, booleanTable.startValue);
+// equation
+//   showValue.activePort = showValue.showActive;
+//   showValue2.activePort = showValue2.showActive;
+//   showValue3.activePort = showValue3.showActive;
+//   showValue4.activePort = showValue4.showActive;
+//   showValue1.numberPort = showValue1.showNumber;
+//   showValue5.activePort = showValue5.showActive;
+//   showValue6.activePort = showValue6.showActive;
+//   rSFlipFlop.nor1.y = rSFlipFlop.Q;
+//   rSFlipFlop.nor1.y = rSFlipFlop.nor.u2;
+//   rSFlipFlop.nor.y = rSFlipFlop.pre.u;
+//   rSFlipFlop.pre.y = rSFlipFlop.QI;
+//   rSFlipFlop.pre.y = rSFlipFlop.nor1.u1;
+//   rSFlipFlop.S = rSFlipFlop.nor.u1;
+//   rSFlipFlop.R = rSFlipFlop.nor1.u2;
+//   booleanPulse1.y = and1.u[1];
+//   booleanStep.y = and1.u[2];
+//   booleanPulse2.y = changing.u;
+//   booleanPulse2.y = falling.u;
+//   booleanPulse2.y = rising.u;
+//   booleanPulse2.y = or2.u[2];
+//   booleanPulse2.y = nand1.u[2];
+//   booleanPulse2.y = xor1.u[2];
+//   booleanPulse2.y = or1.u[2];
+//   booleanPulse2.y = and1.u[3];
+//   and1.y = showValue.activePort;
+//   and1.y = or1.u[1];
+//   or1.y = showValue2.activePort;
+//   or1.y = xor1.u[1];
+//   xor1.y = nand1.u[1];
+//   xor1.y = showValue3.activePort;
+//   nand1.y = or2.u[1];
+//   or2.y = nor1.u;
+//   nor1.y = showValue4.activePort;
+//   rising.y = set1.u[1];
+//   falling.y = set1.u[2];
+//   booleanTable.y = onDelay.u;
+//   integerConstant.y = triggeredAdd.u;
+//   changing.y = triggeredAdd.trigger;
+//   triggeredAdd.y = showValue1.numberPort;
+//   set1.y = showValue5.activePort;
+//   onDelay.y = showValue6.activePort;
+//   sampleTriggerSet.y = rSFlipFlop.S;
+//   sampleTriggerReset.y = rSFlipFlop.R;
+//   and1.y = Modelica.Math.BooleanVectors.allTrue(and1.u);
+//   when sample(booleanPulse1.startTime, booleanPulse1.period) then
+//     booleanPulse1.pulsStart = time;
+//   end when;
+//   booleanPulse1.y = time >= booleanPulse1.pulsStart and time < booleanPulse1.pulsStart + booleanPulse1.Twidth;
+//   when sample(booleanPulse2.startTime, booleanPulse2.period) then
+//     booleanPulse2.pulsStart = time;
+//   end when;
+//   booleanPulse2.y = time >= booleanPulse2.pulsStart and time < booleanPulse2.pulsStart + booleanPulse2.Twidth;
+//   booleanStep.y = if time >= booleanStep.startTime then not booleanStep.startValue else booleanStep.startValue;
+//   or1.y = Modelica.Math.BooleanVectors.anyTrue(or1.u);
+//   xor1.y = Modelica.Math.BooleanVectors.oneTrue(xor1.u);
+//   nand1.y = not Modelica.Math.BooleanVectors.allTrue(nand1.u);
+//   or2.y = not Modelica.Math.BooleanVectors.anyTrue(or2.u);
+//   nor1.y = not nor1.u;
+//   if onDelay.delaySignal then
+//     onDelay.y = time >= onDelay.t_next;
+//   else
+//     onDelay.y = false;
+//   end if;
+//   rising.y = edge(rising.u);
+//   set1.expr = {false, true};
+//   set1.firstActiveIndex = Modelica.Math.BooleanVectors.firstTrueIndex(set1.u);
+//   set1.y = if set1.firstActiveIndex == 0 then if set1.use_pre_as_default then pre(set1.y) else set1.y_default else set1.expr[set1.firstActiveIndex];
+//   falling.y = edge(falling.not_u);
+//   changing.y = change(changing.u);
+//   triggeredAdd.local_reset = false;
+//   triggeredAdd.local_set = 0;
+//   when {triggeredAdd.trigger, triggeredAdd.local_reset} then
+//     triggeredAdd.y = if triggeredAdd.local_reset then triggeredAdd.local_set else pre(triggeredAdd.y) + triggeredAdd.u;
+//   end when;
+//   integerConstant.y = integerConstant.k;
+//   rSFlipFlop.nor.y = not (rSFlipFlop.nor.u1 or rSFlipFlop.nor.u2);
+//   rSFlipFlop.nor1.y = not (rSFlipFlop.nor1.u1 or rSFlipFlop.nor1.u2);
+//   rSFlipFlop.pre.y = pre(rSFlipFlop.pre.u);
+//   sampleTriggerSet.y = sample(sampleTriggerSet.startTime, sampleTriggerSet.period);
+//   sampleTriggerReset.y = sample(sampleTriggerReset.startTime, sampleTriggerReset.period);
+// algorithm
+//   when initial() then
+//     onDelay.delaySignal := onDelay.u;
+//     onDelay.t_next := time - 1.0;
+//   elsewhen onDelay.u then
+//     onDelay.delaySignal := true;
+//     onDelay.t_next := time + onDelay.delayTime;
+//   elsewhen not onDelay.u then
+//     onDelay.delaySignal := false;
+//     onDelay.t_next := time - 1.0;
+//   end when;
+// algorithm
+//   when time >= pre(booleanTable.nextTime) and booleanTable.n > 0 then
+//     if booleanTable.index < booleanTable.n then
+//       booleanTable.index := booleanTable.index + 1;
+//       booleanTable.nextTime := booleanTable.table[booleanTable.index];
+//       booleanTable.y := not booleanTable.y;
+//     elseif booleanTable.index == booleanTable.n then
+//       booleanTable.index := booleanTable.index + 1;
+//       booleanTable.y := not booleanTable.y;
+//     end if;
+//   end when;
+// end Modelica.Blocks.Examples.BooleanNetwork1;
+// "
+// ""
+// endResult

@@ -1,0 +1,56 @@
+// name: solveSymbolicLinearSystemWithConstA
+// status: correct
+// teardown_command: rm -f foo* output.log
+
+loadFile("linearTestPackage.mo"); getErrorString();
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=200");
+getErrorString();
+setDebugFlags("disableStartCalc");getErrorString();// far too much effort to calculate the whole system start values
+simulate(linear_system.problem4, simflags="-lv LOG_LS -s euler", stopTime=10,numberOfIntervals = 5000);
+getErrorString();
+val(max_res,0);
+val(max_res,1);
+
+setCommandLineOptions("+maxSizeSolveLinearSystem=0");getErrorString();
+setDebugFlags("disableStartCalc");getErrorString();
+simulate(linear_system.problem4, simflags="-s euler", stopTime=10,numberOfIntervals = 5000);
+getErrorString();
+val(max_res,0);
+val(max_res,1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linear_system.problem4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
+//     messages = "LOG_LS            | info    | initialize linear system solvers
+// |                 | |       | | 1 linear systems
+// LOG_LS            | info    | Start solving Linear System 42 (size 19) at time 0 with Lapack Solver
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.000000000000518
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "linear_system.problem4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s euler'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.000000000000248
+// endResult

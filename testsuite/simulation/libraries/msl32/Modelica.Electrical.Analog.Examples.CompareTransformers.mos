@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.Analog.Examples.CompareTransformers
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CompareTransformers);
+compareVars :=
+{
+   "basicTransformer.i1",
+   "basicTransformer.i2",
+   "inductor21.i"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CompareTransformers
+// {"basicTransformer.i1","basicTransformer.i2","inductor21.i"}
+// Simulation options: startTime = 0.0, stopTime = 50.0, numberOfIntervals = 50000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CompareTransformers', options = '', outputFormat = 'mat', variableFilter = 'time|basicTransformer.i1|basicTransformer.i2|inductor21.i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

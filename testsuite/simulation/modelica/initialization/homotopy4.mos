@@ -1,0 +1,193 @@
+// name: homotopy4
+// keywords: initialization, homotopy
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy4* _initializationTests.homotopy4* output.log
+//
+//  case for homotopy
+//
+
+loadString("
+within ;
+package initializationTests
+  model homotopy4
+    Real x,y,z,x1,y1,z1,x2,y2,z2,x3,y3,z3,a,b,c,d,e,f;
+    // Real x,y,z,x1,y1,z1,x2,y2,z2 annotation(tearingSelect=always),x3,y3,z3,a,b,c,d,e,f;
+    parameter Real p1 = 10;
+    
+  equation
+    // a = sin(p1* time + 1);
+    a = sin(p1* time + 3.1415/2);
+    
+    x + 5 = z + a;
+    -y + 10 = z + p1;
+    x - y + 9 = z;
+    
+    b = sin(a*x);
+    
+    // ********** Beginning of homotopy iteration loop
+    c = homotopy(b^2, b);
+    
+    x1 + 5 = z1 + c;
+    -y1 + 10 = z1 + p1;
+    x1 - y1 + 9 = z1;
+    
+    d = x1 + y1 + z1;
+    
+    homotopy(x2^2, x2) + 5 = z2 + 5;
+    homotopy(y2^2, -d) + 10 = z2 + p1;
+    x2 + y2 + 9 = z2;
+    
+    e = sin(d*x2);
+    
+    x3 + 5 = z3 + e;
+    -y3 + 10 = z3*y3 + p1;
+    x3 - y3 + 9 = z3;
+    // ********** End of homotopy iteration loop
+    
+    f = x + y + z + a + b + c + d + e + x1 + y1 + z1 + x2 + y2 + z2 + x3 + y3 + z3;
+  end homotopy4;
+end initializationTests;
+"); getErrorString();
+
+sflags:="-homotopyOnFirstTry -homTauStart=0.4";
+
+// setCommandLineOptions("--homotopyApproach=equidistantGlobal"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=equidistantGlobal --noTearingForComponent=4"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=adaptiveGlobal"); getErrorString();
+setCommandLineOptions("--homotopyApproach=adaptiveGlobal --noTearingForComponent=4"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=adaptiveGlobal --noTearingForComponent=4 -d=-NLSanalyticJacobian"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=eqidistantLocal"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=eqidistantLocal --noTearingForComponent=4"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=adaptiveLocal"); getErrorString();
+// setCommandLineOptions("--homotopyApproach=adaptiveLocal --noTearingForComponent=4"); getErrorString();
+simulate(initializationTests.homotopy4, startTime=0.0, stopTime=0.0, simflags=sflags); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy4_res.mat", {time, x,y,z,a,b,c,d,e,x1,y1,z1,x2,y2,z2,x3,y3,z3,f}, 2); getErrorString();
+
+print("x=");
+val(x, 0.0);
+
+print("\ny=");
+val(y, 0.0);
+
+print("\nz=");
+val(z, 0.0);
+
+print("\nx1=");
+val(x1, 0.0);
+
+print("\ny1=");
+val(y1, 0.0);
+
+print("\nz1=");
+val(z1, 0.0);
+
+print("\nx2=");
+val(x2, 0.0);
+
+print("\ny2=");
+val(y2, 0.0);
+
+print("\nz2=");
+val(z2, 0.0);
+
+print("\nx3=");
+val(x3, 0.0);
+
+print("\ny3=");
+val(y3, 0.0);
+
+print("\nz3=");
+val(z3, 0.0);
+
+print("\na=");
+val(a, 0.0);
+
+print("\nb=");
+val(b, 0.0);
+
+print("\nc=");
+val(c, 0.0);
+
+print("\nd=");
+val(d, 0.0);
+
+print("\ne=");
+val(e, 0.0);
+
+print("\nf=");
+val(f, 0.0);
+
+// Result:
+// true
+// ""
+// "-homotopyOnFirstTry -homTauStart=0.4"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry -homTauStart=0.4'",
+//     messages = "stdout            | info    | homotopy parameter homTauStart changed to 0.400000
+// LOG_SUCCESS       | info    | The initialization finished successfully with 480 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Tearing is skipped for strong component 4 because of activated compiler flag 'noTearingForComponent=4'.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{-9.0,-9.0},{4.999999998926914,4.999999998926914},{-4.999999998926914,-4.999999998926914},{0.999999998926914,0.999999998926914},{-0.412118494041246,-0.412118494041246},{0.1698416531308245,0.1698416531308245},{-9.0,-9.0},{-0.956375928404503,-0.956375928404503},{-9.0,-9.0},{4.169841653130826,4.169841653130826},{-4.169841653130826,-4.169841653130826},{3.0,3.0},{-3.0,-3.0},{9.0,9.0},{-6.956375928404503,-6.956375928404503},{3.043624071595497,3.043624071595497},{-1.0,-1.0},{-23.11140462719703,-23.11140462719703}}
+// ""
+// x=
+// -9.0
+//
+// y=
+// 4.999999998926914
+//
+// z=
+// -4.999999998926914
+//
+// x1=
+// -9.0
+//
+// y1=
+// 4.169841653130826
+//
+// z1=
+// -4.169841653130826
+//
+// x2=
+// 3.0
+//
+// y2=
+// -3.0
+//
+// z2=
+// 9.0
+//
+// x3=
+// -6.956375928404503
+//
+// y3=
+// 3.043624071595497
+//
+// z3=
+// -1.0
+//
+// a=
+// 0.999999998926914
+//
+// b=
+// -0.412118494041246
+//
+// c=
+// 0.1698416531308245
+//
+// d=
+// -9.0
+//
+// e=
+// -0.956375928404503
+//
+// f=
+// -23.11140462719703
+// endResult

@@ -1,0 +1,67 @@
+// name: testAlgLoop3
+// status: correct
+
+
+setCommandLineOptions("+gDynOpt +loop2con=all");
+//setCommandLineOptions("+gDynOpt");
+
+getErrorString();
+
+loadString("
+model testAlgLoop3
+  Real y1;
+  Real y2;
+  Real cost annotation(isLagrange = true);
+equation
+  y1*sin(y2) = time^2 + exp(time)*y2; 
+  y2*cos(y1) = time^3 + sqrt(time)*y1; 
+  cost = y1^2 + y2^2;
+end testAlgLoop3;
+");
+getErrorString();
+
+optimize(testAlgLoop3, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop3_res.mat","ReferenceFiles/testAlgLoop3_ref.mat","testAlgLoop3_diff.csv",0.01,0.0001,{"y1","y2","cost"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testAlgLoop3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// Input[0]:$y1(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[1]:$y2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 2
+// ========================================================
+// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 1 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.491941 for the constraint $EqCon$y2(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0251223 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.99863e-05 for the constraint $EqCon$y1(time = 1)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.53473e-09 for the constraint $EqCon$y1(time = 1)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

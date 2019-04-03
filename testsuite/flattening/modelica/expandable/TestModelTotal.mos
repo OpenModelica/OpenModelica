@@ -1,0 +1,52 @@
+//name:        ExpadableConnectors [BUG: #2899]
+//keyword:     expandable
+//status:      correct
+//
+// instantiate/check model example
+// models by MathCore
+//
+
+loadFile("TestModelTotal.mo"); getErrorString();
+instantiateModel(TestPackage_TestModel); getErrorString();
+checkModel(TestPackage_TestModel); getErrorString();
+
+// Result:
+// true
+// ""
+// "class TestPackage_TestModel
+//   Real OutputFromBus.vehicleVelocity.y;
+//   Real OutputFromBus.vehicleVelocity.velocity.fromBus \"To be connected with signal on bus\";
+//   Real OutputFromBus.vehicleVelocity.velocity.y(unit = \"m/s\") \"Output signal to be received from bus\";
+//   Real OutputFromBus.vehicleVelocity.subBus.velocity \"virtual variable in expandable connector\";
+//   Real OutputFromBus.chassisBus.velocity \"virtual variable in expandable connector\";
+//   Real OutputFromBus.controlBus.chassis.velocity \"virtual variable in expandable connector\";
+//   Real inputToBus.velocityIn.u;
+//   Real inputToBus.velocityIn.velocity.toBus(unit = \"m/s\") \"Output signal to be connected to bus\";
+//   Real inputToBus.velocityIn.velocity.u \"Input signal to be send to bus\";
+//   Real inputToBus.velocityIn.subBus.velocity \"virtual variable in expandable connector\";
+//   Real inputToBus.const.y \"Connector of Real output signal\";
+//   parameter Real inputToBus.const.k(start = 1.0) = 30.0 \"Constant output value\";
+//   Real inputToBus.chassisBus.velocity \"virtual variable in expandable connector\";
+//   Real inputToBus.controlBus.chassis.velocity \"virtual variable in expandable connector\";
+// equation
+//   OutputFromBus.vehicleVelocity.velocity.y = OutputFromBus.vehicleVelocity.velocity.fromBus;
+//   inputToBus.velocityIn.velocity.toBus = inputToBus.velocityIn.velocity.u;
+//   inputToBus.const.y = inputToBus.const.k;
+//   OutputFromBus.vehicleVelocity.velocity.y = OutputFromBus.vehicleVelocity.y;
+//   OutputFromBus.vehicleVelocity.subBus.velocity = OutputFromBus.vehicleVelocity.velocity.fromBus;
+//   OutputFromBus.chassisBus.velocity = OutputFromBus.controlBus.chassis.velocity;
+//   OutputFromBus.chassisBus.velocity = OutputFromBus.vehicleVelocity.subBus.velocity;
+//   inputToBus.velocityIn.u = inputToBus.velocityIn.velocity.u;
+//   inputToBus.velocityIn.subBus.velocity = inputToBus.velocityIn.velocity.toBus;
+//   inputToBus.chassisBus.velocity = inputToBus.controlBus.chassis.velocity;
+//   inputToBus.chassisBus.velocity = inputToBus.velocityIn.subBus.velocity;
+//   inputToBus.const.y = inputToBus.velocityIn.u;
+//   OutputFromBus.controlBus.chassis.velocity = inputToBus.controlBus.chassis.velocity;
+// end TestPackage_TestModel;
+// "
+// ""
+// "Check of TestPackage_TestModel completed successfully.
+// Class TestPackage_TestModel has 13 equation(s) and 13 variable(s).
+// 13 of these are trivial equation(s)."
+// ""
+// endResult

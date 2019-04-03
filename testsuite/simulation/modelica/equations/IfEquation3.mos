@@ -1,0 +1,54 @@
+// name:     IfEquation3
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf IfEquation3_* IfEquation3 IfEquation3.exe IfEquation3.cpp IfEquation3.makefile IfEquation3.libs IfEquation3.log output.log
+//
+// Checks that if-equations which have another if-equation in one of the branches are transformed correctly
+// wbraun:
+// TODO: these "if equation" could rewrited is a better way without algebraic loop.
+//       but however the error message "singular system" doesn't affect the solution.
+//       As long as the algebraic loop is produced, we can apply the noEvent() operator
+//
+
+loadString("
+model IfEquation3
+ Real x;
+ Real y;
+equation
+  if noEvent(time < 1) then
+    if noEvent(time > 0.5) then
+      x=0;
+      y=1;
+    else
+      y=0;
+      x=1;
+    end if;
+  elseif noEvent(time < 1.5) then
+    x=1;
+    y=2;
+  else
+    y=1;
+    x=2;
+  end if;
+end IfEquation3;
+"); getErrorString();
+
+simulate(IfEquation3,startTime=0.0, stopTime=2.0, numberOfIntervals=8, tolerance=1e-5); getErrorString();
+
+val(x, {0.25, 0.75, 1.25, 1.75});
+val(y, {0.25, 0.75, 1.25, 1.75});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "IfEquation3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 8, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'IfEquation3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,0.0,1.0,2.0}
+// {0.0,1.0,2.0,1.0}
+// endResult

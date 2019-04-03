@@ -1,0 +1,82 @@
+// name: OMCC
+// status: correct
+//
+
+// setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
+
+OpenModelica.Scripting.setCFlags("-g -lzmq " + getCFlags());
+getErrorString();
+
+files := {
+  "Types.mo",
+  //"Absyn.mo",
+  "AbsynMat.mo",
+  "../../../OMCompiler/Compiler/FrontEnd/Absyn.mo",
+  "../../../OMCompiler/Compiler/Util/Autoconf.mo",
+  "../../../OMCompiler/Compiler/Util/Error.mo",
+  "../../../OMCompiler/Compiler/Util/ErrorExt.mo",
+  "../../../OMCompiler/Compiler/Util/Print.mo",
+  "../../../OMCompiler/Compiler/Util/StringUtil.mo",
+  "../../../OMCompiler/Compiler/Util/Flags.mo",
+  "../../../OMCompiler/Compiler/Global/Global.mo",
+  "../../../OMCompiler/Compiler/Util/Config.mo",
+  "../../../OMCompiler/Compiler/Util/Debug.mo",
+  "../../../OMCompiler/Compiler/Util/List.mo",
+  "../../../OMCompiler/Compiler/Util/Settings.mo",
+  "../../../OMCompiler/Compiler/Util/Corba.mo",
+  "../../../OMCompiler/Compiler/Util/File.mo",
+  "../../../OMCompiler/Compiler/Util/Util.mo",
+  "../../../OMCompiler/Compiler/Util/System.mo",
+  "../../../OMCompiler/Compiler/SimCode/SimCodeUtil.mo",
+  "../../../OMCompiler/Compiler/Template/AbsynDumpTpl.mo",
+  "../../../OMCompiler/Compiler/FrontEnd/Dump.mo",
+  "../../../OMCompiler/Compiler/Template/Tpl.mo",
+  "../../../OMCompiler/Compiler/Util/ZeroMQ.mo",
+  "../../../OMCompiler/Compiler/Util/StackOverflow.mo",
+  "TokenModelica.mo",
+  "LexTableModelica.mo",
+  "LexerCodeModelica.mo",
+  "LexerModelica.mo",
+  "ParseCodeModelica.mo",
+  "ParserModelica.mo",
+  "ParseTableModelica.mo",
+  "Translate.mo",
+  "Mat_Builtin.mo",
+  "Mod_Builtin.mo",
+  "Fnc_Handle.mo",
+  "Main.mo"};
+getErrorString();
+
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();
+
+LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files);
+if not LoadCompilerSourcesRes then
+      print("Failed to load compiler sources:\n");
+      print(getErrorString());
+      exit(1);
+end if;
+
+// adrpo: add -lOpenModelicaCompiler for windows otherwise we get undefined symbols to: omc_File_File_destructor
+info:=checkSettings();
+os:=info.OS;
+if os=="Windows_NT" then
+  appendEnvironmentVar("MODELICAUSERCFLAGS", "-lOpenModelicaCompiler"); getErrorString();
+end if;
+
+// add your test case here
+status:= Main.main({"./Workingexamples/area_inside.m","Modelica"});
+
+// some more working examples
+/*
+{Main.main({"./Workingexamples/" + file,"Modelica"}) for file in {"add_subtract_together.m","add_then_subtract.m","area_inside.m",
+                                                       "array_extremes.m","array_max.m","array_min.m","bubbleSort.m","counter.m",
+                                                       "cube.m","engine_model.m","fact.m","findmax.m",isperfect.m","multiple.m",
+                                                       "normalfact.m","quadratic.m","traparea.m"}}; */
+
+if status then
+  print ("\n Successful");
+  exit(0);
+end if;
+exit(1);
+
+getErrorString();

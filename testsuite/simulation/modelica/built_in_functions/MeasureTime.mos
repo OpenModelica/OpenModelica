@@ -1,0 +1,25 @@
+// name: MeasureTime
+// status: correct
+// teardown_command: rm -f MeasureTime.A*
+// Note: This testcase requires xsltproc and gnuplot installed
+
+setCommandLineOptions("+profiling=blocks+html");
+loadFile("MeasureTime.mo");getErrorString();
+system("rm -f MeasureTime.A_prof*");
+echo(false);
+res:=simulate(MeasureTime.A,method="euler");print(getErrorString());
+echo(true);
+res.resultFile;
+regularFileExists({"MeasureTime.A_prof.html","MeasureTime.A_prof.xml","MeasureTime.A_prof.fun0.svg"});
+
+// Result:
+// true
+// true
+// ""
+// 0
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// true
+// "MeasureTime.A_res.mat"
+// {true,true,true}
+// endResult

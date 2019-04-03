@@ -1,0 +1,88 @@
+Test Computer:
+Elitebook 8440p Core-i7 @ 2.67Ghz 8Gb RAM
+
+Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a.mos 
+3032 equation(s)
+DYM: 06.6s
+OMC: 27.6s (17.7s backend, 3.6 compile, 0.6s simulation)
+-------------
+4 x faster
+
+Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic
+3326 equation(s)
+DYM: 07.3s
+OMC: 70.1s (21.6s backend, 4.8 compile, 34.9 simulation)
+-------------
+10 x faster
+
+Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot
+4828 equation(s)
+DYM:   7.91s
+OMC: 186.01s (simulation crashes)
+-----------------
+23 x faster
+
+Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
+12491 equation(s)
+DYM: 19.1s
+OMC: goes into an infinite loop in the back-end (17 sec flattening).
+-----------------
+? x faster
+
+Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
+9491
+DYM: 11.30s
+OMC: 
+-----------------
+? x faster
+
+
+
+
+
+Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.mos
+487 equation(s)
+DYM: 5.6s flatten,compile,simulate; 4.0s -> check model only
+OMC: 5.4s -> check model only
+-----------------------------
+about the same (no simulation as OMC cannot do it yet)
+
+Modelica.Fluid.Examples.DrumBoiler.DrumBoiler
+142 equation(s)
+DYM: 5.9s flatten,compile,simulate; 04.5s -> check model only
+OMC: 17.2s -> check model only
+-------------------------------
+4 x faster (no simulation as OMC cannot do it yet)
+
+Modelica.Fluid.Examples.Explanatory.MeasuringTemperature.mos 
+444 equation(s)
+DYM: 6.5s flatten,compile,simulate; 04.3s -> check model only
+OMC: 25.3s -> check model only
+-------------------------------
+6 x faster (no simulation as OMC cannot do it yet)
+
+
+
+
+
+
+Modelica.Electrical.Analog.Examples.CharacteristicThyristors
+50 equation(s)
+DYM: 4.68s 
+OMC: 5.26s (0.16s backend, 1.22s compile, 0.077 simulation) 
+---------------
+about the same
+
+Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes
+80 equation(s)
+DYM: 4.8s
+OMC: 5.38s (0.2s backend, 1.26s compile, 0.099s simulation)
+----------------
+about the same
+
+Modelica.Electrical.Analog.Examples.CauerLowPassSC
+559 equation(s)
+DYM: 5.26s
+OMC: 7.65s (0.79s backend, 2.01s compile, 0.46s simulation)
+----------------
+about the same

@@ -1,0 +1,20 @@
+// name:     TopLevelNestedConnectors
+// keywords: connectors
+// status: correct
+//
+//  Tests that top level connectors inside top level connector are top level connectors too
+//
+
+loadFile("TopLevelNestedConnectors.mo");
+instantiateModel(TopLevelNestedConnectors);
+translateModel(TopLevelNestedConnectors);
+
+// Result:
+// true
+// "class TopLevelNestedConnectors
+//   input Integer conn1.foo;
+//   input Integer conn1.conn2.foo;
+// end TopLevelNestedConnectors;
+// "
+// true
+// endResult

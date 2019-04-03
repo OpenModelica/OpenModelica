@@ -1,0 +1,23 @@
+// name:     MatchCase10
+// keywords: Match Cases
+// cflags: +g=MetaModelica
+// status:   correct
+// teardown_command: rm -rf MatchCase10_*
+//
+// Match Testing
+//
+loadFile("MatchCase10.mo");
+simulate(MatchCase10);
+val(i,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "MatchCase10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MatchCase10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 3.0
+// endResult

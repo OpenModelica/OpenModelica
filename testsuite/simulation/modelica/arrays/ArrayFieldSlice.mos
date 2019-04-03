@@ -1,0 +1,29 @@
+// name:     ArrayFieldSlice
+// keywords: array
+// status:   correct
+// teardown_command: rm -rf getPerson_* getPerson getPerson.exe getPerson.cpp getPerson.makefile getPerson.libs getPerson.log output.log
+// 
+// Drmodelica: 7.4  Array Indexing operator (p. 216)
+//
+loadFile("ArrayFieldSlice.mo");
+simulate(getPerson,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("getPerson_res.mat");
+res:=readSimulationResult("getPerson_res.mat",{name[1],name[2],name[3]},size); 
+name1:=res[1,1];
+name2:=res[2,1];
+name3:=res[3,1];
+echo(true); // turns on output
+name1;
+name2;
+name3;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "getPerson_res.mat"
+// end SimulationResult;
+// true
+// John
+// Karin
+// Lisa
+// endResult

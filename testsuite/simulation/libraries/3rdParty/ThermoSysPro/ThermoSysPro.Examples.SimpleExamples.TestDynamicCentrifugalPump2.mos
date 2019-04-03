@@ -1,0 +1,499 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.* ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_* ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.log ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.c ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_diff.csv",
+0.01, 0.0001,
+{"DynamicCentrifugalPump1.Q",
+ "DynamicCentrifugalPump1.deltaH",
+ "DynamicCentrifugalPump1.deltaP",
+ "DynamicCentrifugalPump1.VRot",
+ "dynamicReliefValve.Q",
+ "dynamicReliefValve.Ouv",
+ "dynamicReliefValve.deltaP"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 114.654.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 114.608.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.143.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.143.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.143.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | debug   | Solving non-linear system 260 failed at time=435.142698586561.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.087.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.068.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.066.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.039.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.036.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.035.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.031.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.031.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.032.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.036.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.069.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 435.065.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.797.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.757.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.82.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.863.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.901.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.901.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.901.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.886.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.905.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.9.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.919.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.933.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.929.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.929.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.927.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 474.931.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 615.167.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 615.512.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 615.823.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 615.823.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 616.133.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 616.444.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 616.755.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 617.686.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 617.997.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 618.929.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 619.24.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 620.172.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 620.482.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.103.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.103.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.414.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.414.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.694.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.694.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 621.973.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 622.532.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 623.371.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 623.371.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 623.93.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.21.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.21.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.489.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.769.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.769.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 624.769.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 625.049.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 625.608.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 625.608.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 625.608.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 625.608.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 628.124.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 628.627.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 628.627.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 629.08.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 629.08.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 629.488.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// assert            | warning | The following assertion has been violated at time 638.000000
+// |                 | |       | DynamicCentrifugalPump1.hn >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= DynamicCentrifugalPump1.hn, has value: -0.000614241
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.581.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.581.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.574.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.574.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.574.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.571.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.572.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 844.576.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 854.614.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 855.253.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// stdout            | warning | While solving non-linear system an assertion failed at time 855.892.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/ElectroMechanics/Connectors.mo:3:3-38:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/ElectroMechanics/Connectors.mo:3:3-38:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files not Equal!","dynamicReliefValve.deltaP","dynamicReliefValve.Ouv","dynamicReliefValve.Q","DynamicCentrifugalPump1.VRot","DynamicCentrifugalPump1.deltaP","DynamicCentrifugalPump1.deltaH","DynamicCentrifugalPump1.Q"}
+// endResult

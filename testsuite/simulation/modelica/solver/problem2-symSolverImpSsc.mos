@@ -1,0 +1,78 @@
+// name: problem2-symSolverImpSsc
+// status: correct
+// teardown_command: rm -f testSolver.problem2* output.log
+
+stopTime := 321.8122;
+loadFile("testSolverPackage.mo"); getErrorString();
+setCommandLineOptions("--symSolver=impEuler"); getErrorString();
+simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=12000, method="symSolverSsc"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
+  "testSolver.problem2_diff.csv",0.1,0.1,
+{
+"y[1]",
+"y[2]",
+"y[3]",
+"y[4]",
+"y[5]",
+"y[6]",
+"y[7]",
+"y[8]",
+"der(y[2])",
+"der(y[3])",
+"der(y[4])",
+"der(y[5])",
+"der(y[6])",
+"der(y[7])",
+"der(y[8])"
+});
+getErrorString();
+
+val(y[1], stopTime); 
+val(y[2], stopTime);
+val(y[3], stopTime);
+val(y[4], stopTime);
+val(y[5], stopTime);
+val(y[6], stopTime);
+val(y[7], stopTime);
+val(y[8], stopTime);
+/*
+val(der(y[1]), stopTime);
+val(der(y[2]), stopTime);
+val(der(y[3]), stopTime);
+val(der(y[4]), stopTime);
+val(der(y[5]), stopTime);
+val(der(y[6]), stopTime);
+val(der(y[7]), stopTime);
+val(der(y[8]), stopTime);
+*/
+
+
+// Result:
+// 321.8122
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'symSolverSsc', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// 0.0007378826529726283
+// 0.0001443964762010527
+// 5.902829667065656e-05
+// 0.00117703152548367
+// 0.002409514742812167
+// 0.006312341629438915
+// 0.002865850195479065
+// 0.002834149804520921
+// endResult

@@ -1,0 +1,85 @@
+// name: inlineFunction11
+// status: correct
+
+// use new inline method
+setCommandLineOptions("+inlineMethod=append");
+loadString("
+model foo
+  record A
+    Real a;
+    Real b;
+    Boolean c;
+  end A;
+  function f
+    input A x;
+    output Real y;
+  algorithm
+     y := if x.c then x.b+1 else x.b-1;
+    annotation(Inline=true); 
+  end f;
+  function f1
+    input Real p;
+    output Real y;
+  protected
+    A r;
+  algorithm
+    r.a :=p;
+    r.b :=2*p;
+    r.c :=p>0.5;
+    y := if r.c then f(r.a,r) else sin(r.a);
+    annotation(Inline=true); 
+  end f1;
+  function f2
+    input Real x;
+    input Real y;
+    output A r;
+  algorithm
+    for i in {1} loop
+    r.a := if x>y then sin(x) else sin(y);
+    r.b := if y>x then sin(x)+5 else sin(y)-5;
+    r.c := if y<x then true else false;
+    end for;
+    annotation(Inline=true); 
+  end f2;
+  Real y(start=0,fixed=true);
+  A b = A(time,y,time>0.5);
+equation
+  0 = f(f2(y,time))+der(y);
+end foo;
+");
+getErrorString();
+simulate(foo);
+getErrorString();
+val(time,{0,0.5,1.0});
+val(y,{0,0.5,1.0});
+setCommandLineOptions("+inlineMethod=replace");
+getErrorString();
+simulate(foo);
+getErrorString();
+val(y,{0,0.5,1.0});
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,0.5,1.0}
+// {0.0,1.877583356589937,3.540310995780263}
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,1.877583356589937,3.540310995780263}
+// endResult

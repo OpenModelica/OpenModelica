@@ -1,0 +1,26 @@
+// name:     tempInterpol2test
+// keywords: Simulate, function, 
+// status: correct
+// teardown_command: rm -rf tempInterpol2test_* tempInterpol2test.cpp tempInterpol2test.libs tempInterpol2test.log tempInterpol2test tempInterpol2test.exe tempInterpol2test.makefile  output.log
+// 
+//  Simulate models and read in data.
+//
+
+loadFile("tempInterpol2test.mo");
+simulate(tempInterpol2test, tolerance=1e-5, numberOfIntervals=100);
+val(y[1,1],0.0);
+val(y[1,2],0.0);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "tempInterpol2test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'tempInterpol2test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.6
+// 2.6
+// endResult

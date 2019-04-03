@@ -1,0 +1,286 @@
+// name:      parameterTest15
+// keywords:  parameter evaluation, override
+// status:    correct
+
+loadString("
+model parameterTest15
+  parameter Integer p1 = 1;
+  parameter Integer p2 = p1;
+  constant Integer c1 = 5;
+  constant Integer c2 = c1;
+  parameter Integer p3 = c1;
+  parameter Integer p4 (fixed=false);
+  final parameter Integer p5 = 1;
+  final parameter Integer p6 = p5;
+  final parameter Integer p7 (start=1);
+  parameter Integer p8 (start=2*p3);
+protected
+  parameter Integer pr1 = 5;
+  parameter Integer pr2 = pr1;
+equation
+end parameterTest15;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump");
+
+simulate(parameterTest15, simflags="-output=p1,p2,p3"); getErrorString();
+
+system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (12)
+// ========================================
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 4: p7:PARAM(start = 1 final = true )  type: Integer 
+// 5: p6:PARAM(final = true )  = p5  type: Integer 
+// 6: p5:PARAM(final = true )  = 1  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: p3:PARAM()  = 5  type: Integer 
+// 9: c2:CONST()  = 5  type: Integer 
+// 10: c1:CONST()  = 5  type: Integer 
+// 11: p2:PARAM()  = p1  type: Integer 
+// 12: p1:PARAM()  = 1  type: Integer 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 12
+// Number of parameters selected for evaluation: 0
+// Selected parameters for evaluation:
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 12
+// 1: 2
+// 2:
+// 3: 8
+// 4:
+// 5: 6
+// 6:
+// 7:
+// 8:
+// 9:
+// 10:
+// 11: 12
+// 12:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 12
+// 1: 1
+// 2: 2 1
+// 3: 3
+// 4: 4
+// 5: 5
+// 6: 6 5
+// 7: 7
+// 8: 8 3
+// 9: 9
+// 10: 10
+// 11: 11
+// 12: 12 11
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (0)
+// ========================================
+//
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (0)
+// ========================================
+//
+//
+// globalKnownVars (12)
+// ========================================
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 4: p7:PARAM(start = 1 final = true )  type: Integer 
+// 5: p6:PARAM(final = true )  = p5  type: Integer 
+// 6: p5:PARAM(final = true )  = 1  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: p3:PARAM()  = 5  type: Integer 
+// 9: c2:CONST()  = 5  type: Integer 
+// 10: c1:CONST()  = 5  type: Integer 
+// 11: p2:PARAM()  = p1  type: Integer 
+// 12: p1:PARAM()  = 1  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 12
+// 11
+// 10
+// 9
+// 8
+// 7
+// 6
+// 5
+// 4
+// 3
+// 2
+// 1
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (2)
+// ========================================
+// p5 -> 1
+// p6 -> 1
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (2)
+// ========================================
+// p5 -> 1
+// p6 -> 1
+//
+// globalKnownVars (12)
+// ========================================
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 4: p7:PARAM(start = 1 final = true )  type: Integer 
+// 5: p6:PARAM(final = true )  = 1  type: Integer 
+// 6: p5:PARAM(final = true )  = 1  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: p3:PARAM()  = 5  type: Integer 
+// 9: c2:CONST()  = 5  type: Integer 
+// 10: c1:CONST()  = 5  type: Integer 
+// 11: p2:PARAM()  = p1  type: Integer 
+// 12: p1:PARAM()  = 1  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (2)
+// ========================================
+// p5 -> 1
+// p6 -> 1
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (2)
+// ========================================
+// p5 -> 1
+// p6 -> 1
+//
+// globalKnownVars (12)
+// ========================================
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 4: p7:PARAM(start = 1 final = true )  type: Integer 
+// 5: p6:PARAM(final = true )  = 1  type: Integer 
+// 6: p5:PARAM(final = true )  = 1  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: p3:PARAM()  = 5  type: Integer 
+// 9: c2:CONST()  = 5  type: Integer 
+// 10: c1:CONST()  = 5  type: Integer 
+// 11: p2:PARAM()  = p1  type: Integer 
+// 12: p1:PARAM()  = 1  type: Integer 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (12)
+// ========================================
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
+// 4: p7:PARAM(start = 1 final = true )  type: Integer 
+// 5: p6:PARAM(final = true )  = 1  type: Integer 
+// 6: p5:PARAM(final = true )  = 1  type: Integer 
+// 7: p4:PARAM(fixed = false )  type: Integer 
+// 8: p3:PARAM()  = 5  type: Integer 
+// 9: c2:CONST()  = 5  type: Integer 
+// 10: c1:CONST()  = 5  type: Integer 
+// 11: p2:PARAM()  = p1  type: Integer 
+// 12: p1:PARAM()  = 1  type: Integer 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest15_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,p1=1,p2=1,p3=5
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:12:3-12:36:writable] Warning: Parameter p8 has no value, and is fixed during initialization (fixed=true), using available start value (start=2 * p3) as default value.
+// [<interactive>:11:3-11:39:writable] Warning: Parameter p7 has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// stdout            | warning | It is not possible to override the following quantity: p2
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,p1=2,p2=2,p3=10
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// endResult

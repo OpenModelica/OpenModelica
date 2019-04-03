@@ -1,0 +1,71 @@
+// name: RML To MetaModelica Translator
+// status: correct
+OpenModelica.Scripting.setCFlags("-g " + getCFlags());
+getErrorString();
+files := {
+  "Types.mo",
+  "Absyn.mo",
+  "Absynrml.mo",
+  "Dump.mo",
+  "../../../Compiler/Util/Error.mo",
+  "../../../Compiler/Util/ErrorExt.mo", 
+  "../../../Compiler/Util/Print.mo",
+  "../../../Compiler/Util/Flags.mo",
+  "../../../Compiler/Global/Global.mo",
+  "../../../Compiler/Util/Config.mo",
+  "../../../Compiler/Util/Debug.mo",
+  "../../../Compiler/Util/List.mo",
+  "../../../Compiler/Util/Settings.mo",
+  "../../../Compiler/Util/Corba.mo",
+  "../../../Compiler/Util/Util.mo",
+  "../../../Compiler/Util/System.mo",
+  "TokenModelica.mo",
+  "LexTableModelica.mo",
+  "LexerCodeModelica.mo",
+  "LexerModelica.mo",
+  "ParseCodeModelica.mo",
+  "ParserModelica.mo",
+  "ParseTableModelica.mo",
+  "Translate.mo",
+  "Dict.mo",
+  "Main.mo",
+  "Debugger.mo"}; getErrorString();
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+loadFile(files);
+getErrorString();
+
+
+// add your test files here
+  // {Main.main({"./rmltests/exp1/" + file,"Modelica"}) for file in {"exp1.rml"}};
+
+     /* 11_Petrol Exercise */
+ //{Main.main({"./rmltests/petrol/" + file,"Modelica"}) for file in {"absyn.rml","fcemit.rml","fcode.rml","types.rml","flatten.rml","main.rml","static.rml","tcode.rml"}};
+
+    /* 09_Pamdecl Exercise */
+ //{Main.main({"./rmltests/pamdecl/" + file,"Modelica"}) for file in {"absyn.rml","env.rml","eval.rml","main.rml"}};
+
+     /* 10_Pamtrans Exercise */
+  //{Main.main({"./rmltests/pamtrans/" + file,"Modelica"}) for file in {"absyn.rml","emit.rml","main.rml","mcode.rml","trans.rml"}};
+  
+     /* 08_Pam Exercise */
+  //{Main.main({"./rmltests/pam/" + file,"Modelica"}) for file in {"input.rml","main.rml","pam.rml"}};
+ 
+      /* 05_modassigntwotype Exercise */
+ // {Main.main({"./rmltests/modassigntwotype/" + file,"Modelica"}) for file in {"absyn.rml","eval.rml","main.rml"}};
+ 
+ /* 05b_modassigntwotype Exercise */
+  //{Main.main({"./rmltests/modassigntwotype/" + file,"Modelica"}) for file in {"absyn.rml","eval.rml","main.rml"}};
+
+  /* 05a_assigntwotype Exercise */
+ //{Main.main({"./rmltests/assigntwotype/" + file,"Modelica"}) for file in {"assigntwotype.rml"}};
+  
+  /* 04a_assignment Exercise */
+  //{Main.main({"./rmltests/assignment/" + file,"Modelica"}) for file in {"assignment.rml"}};
+
+  /* 02a_exp1 Exercise */
+  //{Main.main({"./rmltests/exp1/" + file,"Modelica"}) for file in {"exp1.rml"}};
+ 
+  /* 02b_exp2 Exercise */
+  //{Main.main({"./rmltests/exp2/" + file,"Modelica"}) for file in {"exp2.rml"}};
+  
+//getErrorString(); 

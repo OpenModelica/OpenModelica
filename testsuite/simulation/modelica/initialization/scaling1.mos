@@ -1,0 +1,63 @@
+// name: scaling1
+// keywords: initialization, initial_residual, scaling
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.forest* _initializationTests.forest* output.log
+//
+//  case for initial scaling-coefficients
+//
+
+loadString("
+within ;
+package initializationTests
+  model forest
+    Real foxes;
+    Real rabbits;
+    Real population(start=850);
+    Real value;
+    discrete Integer seasons(start=0, fixed=true);
+
+    parameter Real g_r = 0.4;
+    parameter Real d_rf= 0.005;
+    parameter Real d_f = 0.9;
+    parameter Real g_fr= 1.0;
+    parameter Real priceFox = 150;
+    parameter Real priceRabbit = 12;
+    parameter Real priceSeason = 1000;
+
+  initial equation
+    der(foxes) = 20;
+    10000000000.0*value = 10000000000.0*11000;
+
+  equation
+    der(rabbits) =  rabbits*g_r - rabbits*foxes*d_rf;
+    der(foxes) = -foxes*d_f + rabbits*foxes*d_rf*g_fr;
+    population = foxes+rabbits;
+    value = priceFox*foxes + priceRabbit*rabbits + priceSeason*seasons;
+
+    when sample(1, 1) and foxes > 50 then
+      reinit(foxes, foxes/2);
+      seasons = pre(seasons)+1;
+    end when;
+  end forest;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.forest, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.forest_res.mat", {time, foxes, rabbits}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.forest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.forest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {{0.0,0.0},{6.051192201167479,6.051192201167479},{841.0267641520732,841.0267641520732}}
+// ""
+// endResult

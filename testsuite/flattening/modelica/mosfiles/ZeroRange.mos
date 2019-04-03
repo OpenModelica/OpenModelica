@@ -1,0 +1,57 @@
+// name: ZeroRange
+// status: correct
+// teardown_command: rm -f ZeroRange_*
+
+loadFile("ZeroRange.mo");
+
+ZeroRange.testRangeLoop(0,1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,1,0);getErrorString();
+ZeroRange.testRangeLoop(0,1,1);getErrorString();
+
+ZeroRange.testRangeLoop(0,-1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,-1,0);getErrorString();
+ZeroRange.testRangeLoop(0,-1,1);getErrorString();
+
+// ZeroRange.testRangeLoop(0,0,1);
+
+setCommandLineOptions("-d=noevalfunc,gen");
+ZeroRange.testRangeLoop(0,1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,1,0);getErrorString();
+ZeroRange.testRangeLoop(0,1,1);getErrorString();
+
+ZeroRange.testRangeLoop(0,-1,-1);getErrorString();
+ZeroRange.testRangeLoop(0,-1,0);getErrorString();
+ZeroRange.testRangeLoop(0,-1,1);getErrorString();
+ZeroRange.testRangeLoop(0,0,1);getErrorString();
+
+// Result:
+// true
+// 0
+// ""
+// 1
+// ""
+// 2
+// ""
+// 2
+// ""
+// 1
+// ""
+// 0
+// ""
+// true
+// 0
+// ""
+// 1
+// ""
+// 2
+// ""
+// 2
+// ""
+// 1
+// ""
+// 0
+// ""
+// fail()
+// "Error: assertion range step != 0 failed
+// "
+// endResult

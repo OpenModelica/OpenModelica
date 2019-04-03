@@ -1,0 +1,40 @@
+// name: PNlib.Test12
+// keywords: PNlib, continuous
+// status: correct
+
+loadFile("PNlib.mo"); getErrorString();
+simulate(PNlib.Examples.Test12); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PNlib.Examples.Test12_res.mat",
+  "ReferenceFiles/PNlib.Examples.Test12.mat",
+  "PNlib.Examples.Test12_diff.csv", 0.01, 0.0001,
+  {
+    "P1.t",
+    "P2.t",
+    "P3.t",
+    "T1.fire",
+    "T1.instantaneousSpeed",
+    "T1.maximumSpeed",
+    "T2.fire",
+    "T2.instantaneousSpeed",
+    "T2.maximumSpeed",
+    "T3.fire",
+    "T3.instantaneousSpeed",
+    "T3.maximumSpeed"
+  }); getErrorString();
+  
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PNlib.Examples.Test12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PNlib.Examples.Test12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

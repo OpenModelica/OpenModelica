@@ -1,0 +1,36 @@
+// name:     Bug.B [Bug1987.mos, test for bugs: #1987, #1988]
+// keywords: inner outer classes
+// status: correct
+// teardown_command: rm -rf Bug.B* _Bug.B* output.log
+// 
+// tests reported bugs #1987, #1988
+// 
+
+loadFile("Bug1987.mo"); getErrorString();
+instantiateModel(Bug.B); getErrorString();
+simulate(Bug.B); getErrorString();
+
+// Result:
+// true
+// ""
+// "class Bug.B
+//   Real a.r.x = 1.0;
+//   Real a.r.y;
+//   Real a.y = a.r.y;
+//   Real xa(start = 1.0);
+// equation
+//   a.r.y = 2.0 * a.r.x;
+//   der(xa) = a.y;
+// end Bug.B;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "Bug.B_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Bug.B', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

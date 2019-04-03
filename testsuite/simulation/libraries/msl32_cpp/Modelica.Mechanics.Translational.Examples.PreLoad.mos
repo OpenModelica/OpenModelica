@@ -1,0 +1,40 @@
+// name:     Modelica.Mechanics.Translational.Examples.PreLoad
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.PreLoad);
+compareVars :=
+{
+   "friction.v_rel",
+   "innerContactA.s_rel",
+   "innerContactB.s_rel",
+   "outerContactA.v_rel",
+   "outerContactB.s_rel",
+   "outerContactB.v_rel"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.Translational.Examples.PreLoad
+// {"friction.v_rel","innerContactA.s_rel","innerContactB.s_rel","outerContactA.v_rel","outerContactB.s_rel","outerContactB.v_rel"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.PreLoad', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Translational.Examples.PreLoad_res.mat
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,308 @@
+// name:      parameterTest
+// keywords:  parameter evaluation, function evaluation
+// status:    correct
+
+loadString("
+model parameterTest
+  Real x;
+  // Real y;
+  final parameter Real p1 = 1;
+  parameter Real p2 = 2 annotation(Evaluate=true);
+  final parameter Boolean b1 = false;
+  final parameter Boolean b2 = true;
+  parameter Real p3 = add(p1,p2);
+  parameter Real p4 = if b1 then p3 else sub(p3,p1,p5,b2);
+  parameter Real p5 = 5;
+
+  function add
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    out := add2(a,b);
+  end add;
+
+  function add2
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    out := a+b;
+  end add2;
+
+  function sub
+    input Real a;
+    input Real d;
+    input Real c;
+    input Boolean b;
+    output Real out;
+  algorithm
+    out := c;
+    
+    if b then
+      out:= sub2(a,out);
+    else
+      out:= sub2(a,c);
+    end if;
+    
+    // out := if b then sub2(a,out) else sub2(a,c);
+  end sub;
+
+  function sub2
+    input Real a;
+    input Real b;
+    output Real out;
+  algorithm
+    assert(a<=b,\"Error in function sub2: a>b.\");
+    out := a-b;
+  end sub2;
+
+equation
+  x = sub(p3,p1,p5,b2);
+  // 2*y + add(x,time) -1 = 0;
+  // sub(x,y,2,true) = 10;
+end parameterTest;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump"); getErrorString();
+simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = if b1 then p3 else parameterTest.sub(p3, p1, p5, b2)  type: Real 
+// 3: p3:PARAM()  = parameterTest.add(p1, p2)  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM()  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 7
+// Number of parameters selected for evaluation: 1
+// Selected parameters for evaluation:
+// 6
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 7
+// 1:
+// 2: 7 5 4 3 1
+// 3: 7 6
+// 4:
+// 5:
+// 6:
+// 7:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 7
+// 1: 2 1
+// 2: 2
+// 3: 3 2
+// 4: 4 2
+// 5: 5 2
+// 6: 6 3
+// 7: 7 3 2
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (1)
+// ========================================
+// p2 -> 2.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
+// ========================================
+// p2 -> 2.0
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = if b1 then p3 else parameterTest.sub(p3, p1, p5, b2)  type: Real 
+// 3: p3:PARAM()  = parameterTest.add(p1, p2)  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,1,-1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 7
+// 6
+// 5
+// 4
+// 3
+// 1
+// 2
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (5)
+// ========================================
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (5)
+// ========================================
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,1,-1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (5)
+// ========================================
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (5)
+// ========================================
+// p2 -> 2.0
+// p1 -> 1.0
+// b1 -> false
+// b2 -> true
+// p3 -> 3.0
+//
+// globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,-1,1,-1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = parameterTest.sub(3.0, 1.0, p5, true)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (7)
+// ========================================
+// 1: p5:PARAM()  = 5.0  type: Real 
+// 2: p4:PARAM()  = parameterTest.sub(3.0, 1.0, p5, true)  type: Real 
+// 3: p3:PARAM(final = true )  = 3.0  type: Real 
+// 4: b2:PARAM(final = true )  = true  type: Boolean 
+// 5: b1:PARAM(final = true )  = false  type: Boolean 
+// 6: p2:PARAM(final = true )  = 2.0  type: Real 
+// 7: p1:PARAM(final = true )  = 1.0  type: Real 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,b1,b2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,p1=1,p2=2,p3=3,p4=-2,p5=5,b1=0,b2=1
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

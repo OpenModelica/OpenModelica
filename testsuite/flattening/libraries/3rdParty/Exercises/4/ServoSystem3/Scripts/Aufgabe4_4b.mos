@@ -1,0 +1,2 @@
+// Diese Option muss fuer das Modell von Aufgabe 4.4b gesetzt werden
+Advanced.DefaultSteadyStateInitialization = true

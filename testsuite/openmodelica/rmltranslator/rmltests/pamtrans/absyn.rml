@@ -1,0 +1,22 @@
+module Absyn:
+(* Semantics oriented abstract syntax for the PAM language *)
+
+type Ident       =  string
+datatype BinOp   =  ADD | SUB | MUL | DIV
+datatype RelOp   =  EQ | GT | LT | LE | GE | NE
+datatype Exp     =  INT      of  int
+                 |  IDENT    of  Ident
+                 |  BINARY   of  Exp * BinOp * Exp
+                 |  RELATION of  Exp * RelOp * Exp
+type Comparison  =  Exp
+
+datatype Stmt    =  ASSIGN of Ident * Exp       (* Id := Exp *)
+                 |  IF    of Exp * Stmt * Stmt  (* if Exp then Stmt..*)
+                 |  WHILE of Exp * Stmt         (* while Exp do Stmt*)
+                 |  TODO  of Exp * Stmt         (* to Exp do Stmt...*)
+                 |  READ  of Ident list        (* read id1,id2,...*)
+                 |  WRITE of Ident list        (* write id1,id2,..*)
+                 |  SEQ   of Stmt * Stmt        (* Stmt1; Stmt2 *)
+                 |  SKIP                        (* ; empty stmt *)
+
+end (* of interface section of module Absyn *)

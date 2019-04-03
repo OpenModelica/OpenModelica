@@ -1,0 +1,20 @@
+// name: AlgPatternm
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadFile("AlgPatternm.mo");
+getErrorString();
+AlgPatternm.f1(1);
+getErrorString();
+AlgPatternm.f2(1);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// (1,2)
+// ""
+// (1,2)
+// ""
+// endResult

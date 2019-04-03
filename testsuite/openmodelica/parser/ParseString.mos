@@ -1,0 +1,25 @@
+// name: ParseString
+// status: correct
+
+parseString("class A end A;");getErrorString();
+parseString("within D.C; class A end A;");getErrorString();
+parseString("");getErrorString();
+parseString("#","x.mo");getErrorString();
+loadString("class A end A;");getErrorString();
+list();
+
+// Result:
+// {A}
+// ""
+// {D.C.A}
+// ""
+// {}
+// ""
+// {}
+// "[x.mo:1:0-1:0:writable] Error: Lexer failed to recognize '#'
+// "
+// true
+// ""
+// "class A
+// end A;"
+// endResult

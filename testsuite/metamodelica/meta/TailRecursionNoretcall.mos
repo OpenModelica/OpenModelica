@@ -1,0 +1,22 @@
+// status: correct
+
+setCommandLineOptions("+g=MetaModelica +d=noevalfunc");getErrorString();
+loadString("
+function f
+  input Integer i;
+algorithm
+  _ := match i
+    case 0 then ();
+    else equation f(i-1); then ();
+  end match;
+end f;
+");
+f(3000000);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+//
+// ""
+// endResult

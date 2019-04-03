@@ -1,0 +1,49 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource);
+compareVars :=
+{
+   "inertiaLoad.phi",
+   "inertiaLoad.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource.mat"
+// {"inertiaLoad.phi","inertiaLoad.w"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource_res.mat
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13311:7-13316:41:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13311:7-13316:41:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13311:7-13316:41:writable] Error: Variable smpm.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13317:7-13319:41:writable] Error: Variable smpm.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5411:9-5414:43:writable] Error: Variable smpm.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5411:9-5414:43:writable] Error: Variable smpm.permanentMagnetLossParameters: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpm.fsNominal / /*Real*/(smpm.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)6.283185307179586 * smpm.fsNominal / /*Real*/(smpm.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966}  and  = (typed)157.07963267948966 DAE.PROP(Real(displayUnit="1/min", min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 157.07963267948966 on component wRef.
+// 
+// "true
+// "
+// ""
+// endResult

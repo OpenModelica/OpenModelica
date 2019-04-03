@@ -1,0 +1,36 @@
+// name:     ModelicaTest.MultiBody.Joints.Prismatic
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Joints.Prismatic);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Joints.Prismatic_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Joints.Prismatic.mat",
+  "ModelicaTest.MultiBody.Joints.Prismatic_diff.csv",0.01,0.0001,
+  {"prismatic.s",
+"prismatic.v"});
+
+
+// Result:
+// b'true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Joints.Prismatic_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Joints.Prismatic\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!",
+// '
+// endResult

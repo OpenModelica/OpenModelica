@@ -1,0 +1,29 @@
+// name:     ABCDsystem.csv
+// keywords: array
+// status: correct
+// teardown_command: rm -rf ABCDsystem_* ABCDsystem ABCDsystem.exe ABCDsystem.cpp ABCDsystem.makefile ABCDsystem.libs ABCDsystem.log output.log
+// 
+// Using empty arrays
+// Drmodelica: 7.9 Empty Arrays (p. 231)
+//
+
+loadFile("ABCDsystem.mo");
+simulate(ABCDsystem,startTime=0.0, stopTime=1.0, method="rungekutta", numberOfIntervals=2, tolerance=1e-4, outputFormat="csv"); // 2 intervals == 3 values
+readFile("ABCDsystem_res.csv");
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ABCDsystem_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.0001, method = 'rungekutta', fileNamePrefix = 'ABCDsystem', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "\"time\",\"D[1,1]\",\"D[1,2]\",\"D[1,3]\",\"D[1,4]\",\"D[1,5]\",\"D[2,1]\",\"D[2,2]\",\"D[2,3]\",\"D[2,4]\",\"D[2,5]\",\"D[3,1]\",\"D[3,2]\",\"D[3,3]\",\"D[3,4]\",\"D[3,5]\",\"u[1]\",\"u[2]\",\"u[3]\",\"u[4]\",\"u[5]\",\"y[1]\",\"y[2]\",\"y[3]\"
+// 0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,15,4,3,9,11,42,42,42
+// 0.5,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,15,4,3,9,11,42,42,42
+// 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,15,4,3,9,11,42,42,42
+// 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,15,4,3,9,11,42,42,42
+// "
+// endResult

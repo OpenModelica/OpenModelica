@@ -1,0 +1,16 @@
+// name: DialogAnnotation.mos
+// keywords: Graphical API, component attributes
+// status: correct
+// 
+//  Subset of the Graphical API for quering Dialog annotation
+//
+
+loadFile("DialogAnnotation.mo"); getErrorString();
+getComponentAnnotations(DialogAnnotation); getErrorString();
+
+// Result:
+// true
+// ""
+// {{Dialog("General","Table data definition",true,-,false,-,-,-,-,"",false)},{Dialog("General","Table data definition",true,-,false,-,-,-,-,"",false)},{Dialog("General","Table data definition",false,-,false,-,-,-,-,"",false)},{Dialog("General","Table data definition",false,-,false,"Text files (*.txt);;MATLAB MAT-files (*.mat)","Open file in which table is present",-,-,"",false)}}
+// ""
+// endResult

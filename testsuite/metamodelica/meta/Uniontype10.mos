@@ -1,0 +1,40 @@
+// name:     Uniontype10
+// keywords: Uniontype
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Uniontype Testing
+//
+loadFile("Uniontype10.mo");
+a:=REC1(1+2);
+b:=Uniontype10.test(a);
+f:=foo(1);
+c:=REC3(foo(1));
+d:=Uniontype10.test(c);
+
+// Result:
+// true
+// record UT.REC1
+//     x = 3
+// end UT.REC1;
+// record UT.REC2
+//     x = record UT.REC1
+//     x = 3
+// end UT.REC1;
+// end UT.REC2;
+// record foo
+//     x = 1
+// end foo;
+// record UT.REC3
+//     f = record foo
+//     x = 1
+// end foo;
+// end UT.REC3;
+// record UT.REC2
+//     x = record UT.REC3
+//     f = record foo
+//     x = 1
+// end foo;
+// end UT.REC3;
+// end UT.REC2;
+// endResult

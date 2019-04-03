@@ -1,0 +1,11 @@
+// status: correct
+// cflags: -d=noevalfunc,gen
+
+loadModel(Modelica,{"3.2"});getErrorString();
+Modelica.Math.Matrices.leastSquares([1,2; 3,4], {1,2});getErrorString();
+// Result:
+// true
+// ""
+// ({0.0000000000000004535958399146134,0.49999999999999967},2)
+// ""
+// endResult

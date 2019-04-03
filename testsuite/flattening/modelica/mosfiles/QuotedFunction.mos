@@ -1,0 +1,19 @@
+// name: QuotedFunction
+// status: correct
+// cflags: -d=noevalfunc,gen
+// env: MODELICAUSERCFLAGS=-g
+// teardown_command: rm -f _omcQuot_*
+
+loadFile("QuotedFunction.mo");getErrorString();
+// Modelica does not allow this :(
+// 'オーペンモーデリッカー・ロックス'(1.5);getErrorString();
+// This is ok:
+'\"\''(1.5);getErrorString();
+
+
+// Result:
+// true
+// ""
+// 0.997494986604054
+// ""
+// endResult

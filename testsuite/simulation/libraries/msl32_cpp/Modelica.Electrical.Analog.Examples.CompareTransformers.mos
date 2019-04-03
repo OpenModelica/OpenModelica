@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.Analog.Examples.CompareTransformers
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CompareTransformers);
+compareVars :=
+{
+   "basicTransformer.i1",
+   "basicTransformer.i2",
+   "inductor21.i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CompareTransformers
+// {"basicTransformer.i1","basicTransformer.i2","inductor21.i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 50.0, numberOfIntervals = 50000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CompareTransformers', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

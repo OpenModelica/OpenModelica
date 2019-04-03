@@ -1,0 +1,37 @@
+// name: problem6-symSolverImp
+// status: correct
+// teardown_command: rm -f testSolver.problem6* output.log
+
+loadFile("./testSolverPackage.mo");
+getErrorString();
+
+setCommandLineOptions("--symSolver=impEuler"); getErrorString();
+simulate(testSolver.problem6, startTime = 0, stopTime=10, numberOfIntervals=500, method="symSolver"); getErrorString();
+simulate(testSolver.problem6, startTime = 0, stopTime=10, numberOfIntervals=500, method="symSolverSsc"); getErrorString();
+
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'symSolver', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// record SimulationResult
+//     resultFile = "testSolver.problem6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'symSolverSsc', fileNamePrefix = 'testSolver.problem6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

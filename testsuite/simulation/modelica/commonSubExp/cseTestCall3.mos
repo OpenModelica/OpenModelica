@@ -1,0 +1,70 @@
+// name: cseTestCall3
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall3
+    record rec
+       Real x;
+    end rec;
+    
+    rec a;
+    Real b;
+    
+    function f
+      input rec s;
+      output Real t;
+    algorithm
+      t := s.x;
+    end f;       
+
+  equation 
+    a.x = 5.0+time;
+    b = f(a);
+  end TestCall3;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: b:VARIABLE()  type: Real 
+// 2: a.x:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (2, 2)
+// ========================================
+// 1/1 (1): a.x = 5.0 + time   [dynamic |0|0|0|0|]
+// 2/2 (1): b = CSE.TestCall3.f(a)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: b - CSE.TestCall3.f(a) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

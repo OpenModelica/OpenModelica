@@ -1,0 +1,36 @@
+// status: correct
+// Checks that elements that are not classes are part of the listed file
+// even if their source file is different
+
+s := "within ;model M1
+    Real a;
+    Real b;
+  Real c;
+  M m1;
+end M1;";
+loadString(s, "M1", "UTF-8");
+getErrorString();
+setSourceFile(M1, "MX");
+getErrorString();
+diffModelicaFileListings(s, listFile(M1), OpenModelica.Scripting.DiffFormat.plain);
+getErrorString();
+
+// Result:
+// "within ;model M1
+//     Real a;
+//     Real b;
+//   Real c;
+//   M m1;
+// end M1;"
+// true
+// ""
+// true
+// ""
+// "within ;model M1
+//     Real a;
+//     Real b;
+//   Real c;
+//   M m1;
+// end M1;"
+// ""
+// endResult

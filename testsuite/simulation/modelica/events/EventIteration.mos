@@ -1,0 +1,66 @@
+// name:     EventIteration
+// keywords: EventHandling, EventIteration
+// status: correct
+// teardown_command: rm -rf EventIteration EventIteration.exe EventIteration.cpp EventIteration.make EventIteration.libs EventIteration.log EventIteration.makefile EventIteration_* output.log
+// 
+//  Simulate model containing EventIterations
+//
+
+loadString("
+model EventIteration
+  Real x(start = 1);
+  Boolean y(start = false);
+  Boolean z(start = false);
+  Boolean h1;
+  Boolean c1,c2,c3;
+equation
+  der(x) = 1;
+  h1 = x >= 1.5;
+  when y then
+    z = true;
+  end when;
+  c1 = pre(z);
+  c2 = pre(c1);
+  c3 = pre(c2);
+  when h1 then
+     y = true;
+  end when;
+end EventIteration;
+"); getErrorString();
+
+simulate(EventIteration, tolerance=1e-5,startTime=0, stopTime=1,numberOfIntervals=10,method="euler"); getErrorString();
+
+val(x,0.0);
+val(x,1.0);
+val(h1,0.0);
+val(h1,1.0);
+val(c1,0.0);
+val(c1,1.0);
+val(c2,0.0);
+val(c2,1.0);
+val(c3,0.0);
+val(c3,1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EventIteration_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'euler', fileNamePrefix = 'EventIteration', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.0
+// 2.000000000000001
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// endResult

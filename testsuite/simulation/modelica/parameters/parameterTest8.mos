@@ -1,0 +1,211 @@
+// name:      parameterTest8
+// keywords:  parameter evaluation, structural
+// status:    correct
+
+loadString("
+model parameterTest8
+  parameter Boolean state = true;
+  Real v;
+  Real r;
+equation
+  if state then // code which is removed during symbolic
+    der(v) = 1; // processing, if state=false
+    der(r) = 2;
+  else
+    v = time;
+    r = 2*time;
+  end if;
+end parameterTest8;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump");
+simulate(parameterTest8, simflags="-output=state,v,r"); getErrorString();
+system("./parameterTest8 -override state=false -output=state,v,r"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: r:VARIABLE()  type: Real 
+// 2: v:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 1
+// Number of parameters selected for evaluation: 1
+// Selected parameters for evaluation:
+// 1
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 1
+// 1:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 1
+// 1: 1
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 1
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (1)
+// ========================================
+// state -> true
+//
+// globalKnownVars (1)
+// ========================================
+// 1: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: r:VARIABLE()  type: Real 
+// 2: v:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=state,v,r'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,state=1,v=1,r=2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// stdout            | warning | It is not possible to override the following quantity: state
+// |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,state=1,v=1,r=2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// endResult

@@ -1,0 +1,31 @@
+// name:     DCMotor (Blocks)
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.BlockModels* output.log
+// 
+//  Simulate systems of blocks 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+//DCmotor
+simulate(TestModels.BlockModels.SystemTests.DCmotor, tolerance=1e-5, numberOfIntervals=50);
+{val(integrator2.y,0.0),val(integrator2.y,0.2),val(integrator2.y,0.4),
+val(integrator2.y,0.6),val(integrator2.y,0.8),val(integrator2.y,1.0)};
+{val(firstOrder1.y,0.0),val(firstOrder1.y,0.2),val(firstOrder1.y,0.4),
+val(firstOrder1.y,0.6),val(firstOrder1.y,0.8),val(firstOrder1.y,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SystemTests.DCmotor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.DCmotor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.001271957813737703,0.009615148429739043,0.03066718828321567,0.0685958742249031,0.1261964500177127}
+// {0.0,0.180065321515615,0.3209819801381534,0.4247586025096863,0.4943757874259148,0.5335118647569782}
+// endResult

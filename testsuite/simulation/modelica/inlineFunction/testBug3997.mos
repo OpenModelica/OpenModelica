@@ -1,0 +1,45 @@
+// name: ticket3687
+// status: correct
+
+// use new inline method
+loadString("
+
+model InlineMatrixFunction
+  function jj \"Vectorized version of j\"
+    input Real[:,:] xx \"array of voltage or current vectors\";
+    output Real[size(xx,1),size(xx,2)] yy \"array of rotated vectors\";
+  algorithm
+    yy := cat(1, {-xx[2,:], xx[1,:]}, zeros(size(xx,1)-2, size(xx,2)));
+    annotation(Inline=true);
+  end jj;
+
+  Real[3, 1] v = {{1}, {2}, {3}};
+  Real[3, 1] jv = jj(v);
+end InlineMatrixFunction;
+
+");
+getErrorString();
+simulate(InlineMatrixFunction);
+
+getErrorString();
+val(jv[1,1],{0.0,1.0});
+val(jv[2,1],{0.0,1.0});
+val(jv[3,1],{0.0,1.0});
+
+getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InlineMatrixFunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'InlineMatrixFunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {-2.0,-2.0}
+// {1.0,1.0}
+// {0.0,0.0}
+// ""
+// endResult

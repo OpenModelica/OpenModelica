@@ -1,0 +1,200 @@
+// name:     Random.mos
+// keywords: function calls Modelica.Utilities.Streams.print testing
+// status:  correct
+// teardown_command: rm -rf testRandom1* testRandom2* testRandom3* testRandom2_* output.log
+// tests: function calls
+//        Modelica.Utilities.Streams.print
+//        String(x, format);
+//        interactive call of functions
+//        when with no-return call in algorithm sections
+//
+
+
+setCommandLineOptions("--std=3.2"); // So we do not need to mark functions "impure"
+loadFile("Random.mo"); getErrorString();
+
+setCommandLineOptions("-d=gen");
+testRandom1({5,6,13});
+testRandom1({6,7,2});
+testRandom1({33,21,17});
+setCommandLineOptions("-d=nogen");
+
+instantiateModel(testRandom2); getErrorString();
+simulate(testRandom2, stopTime=3); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// See if seed_start is OK
+// seed_start[1] = 5
+// seed_start[2] = 6
+// seed_start[3] = 13
+// See if seed is set from seed_start
+// seed[1] = 5
+// seed[2] = 6
+// seed[3] = 13
+// x = 0.1351802310973727
+// x = 0.0769890861178375
+// x = 0.6320634440543995
+// x = 0.1746304784651731
+// x = 0.2261487421133119
+// x = 0.5822825403329426
+// x = 0.8685325299092261
+// x = 0.3247009996034562
+// x = 0.1539904247592703
+// x = 0.9668480139584235
+// 0.9668480139584235
+// See if seed_start is OK
+// seed_start[1] = 6
+// seed_start[2] = 7
+// seed_start[3] = 2
+// See if seed is set from seed_start
+// seed[1] = 6
+// seed[2] = 7
+// seed[3] = 2
+// x = 0.08483547196048634
+// x = 0.5353798901434894
+// x = 0.4768262391718506
+// x = 0.7703588380462376
+// x = 0.9086443360920617
+// x = 0.9854621425896031
+// x = 0.4482131888968541
+// x = 0.2495274098011122
+// x = 0.981638535344608
+// x = 0.4101378849580573
+// 0.4101378849580573
+// See if seed_start is OK
+// seed_start[1] = 33
+// seed_start[2] = 21
+// seed_start[3] = 17
+// See if seed is set from seed_start
+// seed[1] = 33
+// seed[2] = 21
+// seed[3] = 17
+// x = 0.4009159389765676
+// x = 0.5804987598022009
+// x = 0.5620918184705916
+// x = 0.5724159035264323
+// x = 0.849820026482087
+// x = 0.0658101349497211
+// x = 0.2625044697939494
+// x = 0.7933464385344386
+// x = 0.8767777042924849
+// x = 0.699829719908992
+// 0.699829719908992
+// true
+// "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
+//   input String string = \"\" \"String to be printed\";
+//   input String fileName = \"\" \"File where to print (empty string is the terminal)\";
+//
+//   external \"C\" myPuts(string, fileName);
+// end Modelica.Utilities.Streams.print;
+//
+// function random \"Pseudo random number generator\"
+//   input Integer[3] seedIn \"Seed from last call\";
+//   output Real x \"Random number between 0 and 1\";
+//   output Integer[3] seedOut \"Modified seed for next call\";
+// algorithm
+//   seedOut[1] := 171 * seedIn[1] + -30269 * div(171 * seedIn[1], 30269);
+//   seedOut[2] := 172 * seedIn[2] + -30307 * div(172 * seedIn[2], 30307);
+//   seedOut[3] := 170 * seedIn[3] + -30323 * div(170 * seedIn[3], 30323);
+//   for i in 1:3 loop
+//     if seedOut[i] == 0 then
+//       seedOut[i] := 1;
+//     end if;
+//   end for;
+//   x := 3.303710066404573e-05 * /*Real*/(seedOut[1]) + 3.299567756623883e-05 * /*Real*/(seedOut[2]) + 3.297826732183491e-05 * /*Real*/(seedOut[3]) - div(3.303710066404573e-05 * /*Real*/(seedOut[1]) + 3.299567756623883e-05 * /*Real*/(seedOut[2]) + 3.297826732183491e-05 * /*Real*/(seedOut[3]), 1.0);
+// end random;
+//
+// function testRandom3
+//   input Integer[3] seed_start = {23, 87, 187};
+//   output Real x;
+//   protected Integer[3] seed = {seed_start[1], seed_start[2], seed_start[3]};
+// algorithm
+//   Modelica.Utilities.Streams.print(\"See if seed_start is OK
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[1] = \" + String(seed_start[1], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[2] = \" + String(seed_start[2], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed_start[3] = \" + String(seed_start[3], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"See if seed is set from seed_start
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[1] = \" + String(seed[1], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[2] = \" + String(seed[2], 0, true) + \"
+//   \", \"\");
+//   Modelica.Utilities.Streams.print(\"seed[3] = \" + String(seed[3], 0, true) + \"
+//   \", \"\");
+//   for i in 1:10 loop
+//     (x, seed) := random({seed[1], seed[2], seed[3]});
+//     Modelica.Utilities.Streams.print(\"x = \" + String(x, 16, 0, true) + \"
+//     \", \"\");
+//   end for;
+// end testRandom3;
+//
+// class testRandom2
+//   parameter Integer seed_start[1] = 23;
+//   parameter Integer seed_start[2] = 87;
+//   parameter Integer seed_start[3] = 187;
+//   Integer seed[1](start = seed_start[1], fixed = true);
+//   Integer seed[2](start = seed_start[2], fixed = true);
+//   Integer seed[3](start = seed_start[3], fixed = true);
+//   parameter Real y = testRandom3({seed_start[1], seed_start[2], seed_start[3]});
+//   Real x;
+// algorithm
+//   when sample(0.0, 0.2) then
+//     (x, seed) := random({pre(seed[1]), pre(seed[2]), pre(seed[3])});
+//     Modelica.Utilities.Streams.print(\"time = \" + String(time, \".1f\") + \", x = \" + String(x, \".6f\") + \"
+//     \", \"\");
+//   end when;
+// end testRandom2;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "testRandom2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testRandom2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "See if seed_start is OK
+// seed_start[1] = 23
+// seed_start[2] = 87
+// seed_start[3] = 187
+// See if seed is set from seed_start
+// seed[1] = 23
+// seed[2] = 87
+// seed[3] = 187
+// x = 0.6720613541740216
+// x = 0.3678597646977235
+// x = 0.6041085613242592
+// x = 0.1667374195729037
+// x = 0.4629589578171097
+// x = 0.9289893342375366
+// x = 0.653192131612639
+// x = 0.5926293930235835
+// x = 0.5294703487946859
+// x = 0.7684225743864568
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time = 0.0, x = 0.672061
+// time = 0.2, x = 0.367860
+// time = 0.4, x = 0.604109
+// time = 0.6, x = 0.166737
+// time = 0.8, x = 0.462959
+// time = 1.0, x = 0.928989
+// time = 1.2, x = 0.653192
+// time = 1.4, x = 0.592629
+// time = 1.6, x = 0.529470
+// time = 1.8, x = 0.768423
+// time = 2.0, x = 0.673137
+// time = 2.2, x = 0.677167
+// time = 2.4, x = 0.042806
+// time = 2.6, x = 0.064589
+// time = 2.8, x = 0.674971
+// time = 3.0, x = 0.180925
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

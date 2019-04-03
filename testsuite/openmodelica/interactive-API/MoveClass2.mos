@@ -1,0 +1,39 @@
+// name: MoveClass2
+// keywords: moveClass
+// status: correct
+//
+// Tests the moveClass API.
+//
+
+loadString("
+  package P1
+    package P2
+      class C1 end C1;
+      class C2 end C2;
+    end P2;
+  end P1;
+");
+getErrorString();
+loadString("
+  model M
+  end M;
+");
+
+getClassNames();
+getClassNames(P1.P2);
+moveClass(P1.P2.C2, -1);
+getErrorString();
+getClassNames();
+getClassNames(P1.P2);
+
+// Result:
+// true
+// ""
+// true
+// {M,P1}
+// {C1,C2}
+// true
+// ""
+// {M,P1}
+// {C2,C1}
+// endResult

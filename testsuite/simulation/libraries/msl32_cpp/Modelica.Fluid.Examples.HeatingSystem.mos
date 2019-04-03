@@ -1,0 +1,390 @@
+// name:     Modelica.Fluid.Examples.HeatingSystem
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.HeatingSystem);
+compareVars :=
+{
+   "heater.mediums[1].h",
+   "heater.mediums[1].p",
+   "pipe.mediums[1].h",
+   "pipe.mediums[2].h",
+   "pipe.mediums[2].p",
+   "radiator.mediums[1].h",
+   "radiator.mediums[1].p",
+   "tank.level",
+   "tank.medium.h"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.HeatingSystem
+// {"heater.mediums[1].h","heater.mediums[1].p","pipe.mediums[1].h","pipe.mediums[2].h","pipe.mediums[2].p","radiator.mediums[1].h","radiator.mediums[1].p","tank.level","tank.medium.h"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Compilation succeeded
+// Warning: Alias set with several free start values
+//  * candidate: pipe.mediums[2].p(start = 130000.0)
+//  * candidate: pipe.port_b.p(start = 5000000.0)
+//  * candidate: valve.port_a.p(start = 5000000.0)
+//  * candidate: valve.state_a.p(start = 5000000.0)
+//  * candidate: pipe.state_b.p(start = 5000000.0)
+//  * candidate: pipe.mediums[2].state.p(start = 5000000.0)
+//  * candidate: pipe.statesFM[2].p(start = 5000000.0)
+//  * candidate: pipe.flowModel.states[2].p(start = 5000000.0)
+//  * candidate: pipe.heatTransfer.states[2].p(start = 5000000.0)
+//  * candidate: pipe.mediums[2].sat.psat(start = 5000000.0)
+// => select value from pipe.mediums[2].p(start = 130000.0) for variable: pipe.mediums[2].p
+// Warning: Alias set with different nominal values
+//  * candidate: pipe.mediums[2].sat.psat(nominal = 1000000.0)
+//  * candidate: pipe.heatTransfer.states[2].p(nominal = 1000000.0)
+//  * candidate: pipe.flowModel.states[2].p(nominal = 1000000.0)
+//  * candidate: pipe.statesFM[2].p(nominal = 1000000.0)
+//  * candidate: pipe.mediums[2].state.p(nominal = 1000000.0)
+//  * candidate: pipe.state_b.p(nominal = 1000000.0)
+//  * candidate: valve.state_a.p(nominal = 1000000.0)
+//  * candidate: valve.port_a.p(nominal = 1000000.0)
+//  * candidate: pipe.port_b.p(nominal = 1000000.0)
+//  * candidate: pipe.mediums[2].p(nominal = 100000.0)
+// => select value from pipe.mediums[2].p(nominal = 100000.0) for variable: pipe.mediums[2].p
+// Warning: Alias set with several free start values
+//  * candidate: pipe.mediums[1].p(start = 130000.0)
+//  * candidate: pipe.port_a.p(start = 5000000.0)
+//  * candidate: heater.port_b.p(start = 5000000.0)
+//  * candidate: sensor_T_forward.port.p(start = 5000000.0)
+//  * candidate: heater.state_b.p(start = 5000000.0)
+//  * candidate: heater.statesFM[3].p(start = 5000000.0)
+//  * candidate: heater.flowModel.states[3].p(start = 5000000.0)
+//  * candidate: pipe.state_a.p(start = 5000000.0)
+//  * candidate: pipe.mediums[1].state.p(start = 5000000.0)
+//  * candidate: pipe.statesFM[1].p(start = 5000000.0)
+//  * candidate: pipe.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: pipe.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: pipe.mediums[1].sat.psat(start = 5000000.0)
+// => select value from pipe.mediums[1].p(start = 130000.0) for variable: pipe.mediums[1].p
+// Warning: Alias set with different nominal values
+//  * candidate: pipe.mediums[1].sat.psat(nominal = 1000000.0)
+//  * candidate: pipe.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe.statesFM[1].p(nominal = 1000000.0)
+//  * candidate: pipe.mediums[1].state.p(nominal = 1000000.0)
+//  * candidate: pipe.state_a.p(nominal = 1000000.0)
+//  * candidate: heater.flowModel.states[3].p(nominal = 1000000.0)
+//  * candidate: heater.statesFM[3].p(nominal = 1000000.0)
+//  * candidate: heater.state_b.p(nominal = 1000000.0)
+//  * candidate: sensor_T_forward.port.p(nominal = 1000000.0)
+//  * candidate: heater.port_b.p(nominal = 1000000.0)
+//  * candidate: pipe.port_a.p(nominal = 1000000.0)
+//  * candidate: pipe.mediums[1].p(nominal = 100000.0)
+// => select value from pipe.mediums[1].p(nominal = 100000.0) for variable: pipe.mediums[1].p
+// Warning: Alias set with several free start values
+//  * candidate: radiator.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: radiator.mediums[1].state.T(start = 500.0)
+//  * candidate: radiator.statesFM[2].T(start = 500.0)
+//  * candidate: radiator.flowModel.states[2].T(start = 500.0)
+//  * candidate: radiator.mediums[1].T(start = 313.15)
+// => select value from radiator.statesFM[2].T(start = 500.0) for variable: radiator.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: radiator.mediums[1].T(nominal = 500.0)
+//  * candidate: radiator.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: radiator.statesFM[2].T(nominal = 500.0)
+//  * candidate: radiator.mediums[1].state.T(nominal = 500.0)
+//  * candidate: radiator.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: wall.port_b.T(nominal = 300.0)
+//  * candidate: radiator.heatPorts[1].T(nominal = 300.0)
+//  * candidate: radiator.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: radiator.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from radiator.heatTransfer.Ts[1](nominal = 300.0) for variable: radiator.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: heater.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: heater.mediums[1].state.T(start = 500.0)
+//  * candidate: heater.statesFM[2].T(start = 500.0)
+//  * candidate: heater.flowModel.states[2].T(start = 500.0)
+//  * candidate: heater.mediums[1].T(start = 353.15)
+// => select value from heater.statesFM[2].T(start = 500.0) for variable: heater.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: heater.mediums[1].T(nominal = 500.0)
+//  * candidate: heater.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: heater.statesFM[2].T(nominal = 500.0)
+//  * candidate: heater.mediums[1].state.T(nominal = 500.0)
+//  * candidate: heater.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: burner.port.T(nominal = 300.0)
+//  * candidate: heater.heatPorts[1].T(nominal = 300.0)
+//  * candidate: heater.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: heater.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from heater.heatTransfer.Ts[1](nominal = 300.0) for variable: heater.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.p(start = pump.p_start)
+//  * candidate: pump.port_b.p(start = pump.p_b_start)
+//  * candidate: sensor_m_flow.port_a.p(start = 5000000.0)
+//  * candidate: sensor_m_flow.port_b.p(start = 5000000.0)
+//  * candidate: heater.port_a.p(start = 5000000.0)
+//  * candidate: heater.state_a.p(start = 5000000.0)
+//  * candidate: heater.statesFM[1].p(start = 5000000.0)
+//  * candidate: heater.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: pump.medium.state.p(start = 5000000.0)
+//  * candidate: pump.monitoring.state.p(start = 5000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: pump.medium.sat.psat(start = 5000000.0)
+// => select value from pump.medium.p(start = pump.p_start) for variable: pump.medium.p
+// Warning: Alias set with different nominal values
+//  * candidate: pump.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: pump.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: pump.monitoring.state.p(nominal = 1000000.0)
+//  * candidate: pump.medium.state.p(nominal = 1000000.0)
+//  * candidate: heater.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: heater.statesFM[1].p(nominal = 1000000.0)
+//  * candidate: heater.state_a.p(nominal = 1000000.0)
+//  * candidate: heater.port_a.p(nominal = 1000000.0)
+//  * candidate: sensor_m_flow.port_b.p(nominal = 1000000.0)
+//  * candidate: sensor_m_flow.port_a.p(nominal = 1000000.0)
+//  * candidate: pump.port_b.p(nominal = 1000000.0)
+//  * candidate: pump.medium.p(nominal = 100000.0)
+// => select value from pump.medium.p(nominal = 100000.0) for variable: pump.medium.p
+// Warning: Alias set with several free start values
+//  * candidate: tank.ports[2].p(start = 100000.0)
+//  * candidate: pump.port_a.p(start = pump.p_a_start)
+//  * candidate: pump.monitoring.state_in.p(start = 5000000.0)
+// => select value from tank.ports[2].p(start = 100000.0) for variable: tank.ports[2].p
+// Warning: Alias set with several free start values
+//  * candidate: radiator.statesFM[3].p(start = 5000000.0)
+//  * candidate: radiator.state_b.p(start = 110000.0)
+//  * candidate: radiator.port_b.p(start = 5000000.0)
+//  * candidate: tank.ports[1].p(start = 100000.0)
+//  * candidate: sensor_T_return.port.p(start = 5000000.0)
+//  * candidate: radiator.flowModel.states[3].p(start = 5000000.0)
+// => select value from radiator.statesFM[3].p(start = 5000000.0) for variable: radiator.statesFM[3].p
+// Warning: Alias set with several free start values
+//  * candidate: radiator.statesFM[1].p(start = 5000000.0)
+//  * candidate: radiator.state_a.p(start = 110000.0)
+//  * candidate: radiator.port_a.p(start = 5000000.0)
+//  * candidate: valve.port_b.p(start = 5000000.0)
+//  * candidate: valve.state_b.p(start = 5000000.0)
+//  * candidate: radiator.flowModel.states[1].p(start = 5000000.0)
+// => select value from radiator.statesFM[1].p(start = 5000000.0) for variable: radiator.statesFM[1].p
+// Warning: Alias set with several free start values
+//  * candidate: pump.port_b.m_flow(start = pump.m_flow_start)
+//  * candidate: heater.m_flows[1](start = 0.0)
+//  * candidate: heater.flowModel.m_flows[1](start = 0.0)
+// => select value from pump.port_b.m_flow(start = pump.m_flow_start) for variable: m_flow
+// Warning: Alias set with several free start values
+//  * candidate: pipe.m_flows[3](start = 0.0)
+//  * candidate: radiator.m_flows[1](start = 0.0)
+//  * candidate: radiator.flowModel.m_flows[1](start = 0.0)
+//  * candidate: valve.m_flow(start = valve.m_flow_start)
+// => select value from valve.m_flow(start = valve.m_flow_start) for variable: pipe.m_flows[3]
+// Warning: Alias set with several free start values
+//  * candidate: tank.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: tank.medium.state.T(start = 500.0)
+//  * candidate: tank.medium.T(start = tank.T_start)
+// => select value from tank.medium.T(start = tank.T_start) for variable: tank.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: tank.medium.T(nominal = 500.0)
+//  * candidate: tank.medium.state.T(nominal = 500.0)
+//  * candidate: tank.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: tank.heatPort.T(nominal = 300.0)
+//  * candidate: tank.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: tank.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from tank.heatTransfer.Ts[1](nominal = 300.0) for variable: tank.heatTransfer.Ts[1]
+// Warning: Alias set with several free start values
+//  * candidate: pipe.statesFM[2].T(start = 500.0)
+//  * candidate: pipe.mediums[2].state.T(start = 500.0)
+//  * candidate: pipe.heatTransfer.states[2].T(start = 500.0)
+//  * candidate: pipe.mediums[2].T(start = 353.15)
+//  * candidate: pipe.flowModel.states[2].T(start = 500.0)
+// => select value from pipe.statesFM[2].T(start = 500.0) for variable: pipe.statesFM[2].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipe.flowModel.states[2].T(nominal = 500.0)
+//  * candidate: pipe.mediums[2].T(nominal = 500.0)
+//  * candidate: pipe.heatTransfer.heatPorts[2].T(nominal = 300.0)
+//  * candidate: pipe.heatTransfer.Ts[2](nominal = 300.0)
+//  * candidate: pipe.heatTransfer.states[2].T(nominal = 500.0)
+//  * candidate: pipe.mediums[2].state.T(nominal = 500.0)
+//  * candidate: pipe.statesFM[2].T(nominal = 500.0)
+// => select value from pipe.statesFM[2].T(nominal = 500.0) for variable: pipe.statesFM[2].T
+// Warning: Alias set with several free start values
+//  * candidate: pipe.mediums[2].h(start = pipe.h_start)
+//  * candidate: pipe.port_b.h_outflow(start = 100000.0)
+//  * candidate: pipe.state_b.h(start = 100000.0)
+//  * candidate: valve.state_a.h(start = 100000.0)
+//  * candidate: valve.port_b.h_outflow(start = 100000.0)
+//  * candidate: radiator.state_a.h(start = 100000.0)
+//  * candidate: radiator.statesFM[1].h(start = 100000.0)
+//  * candidate: radiator.flowModel.states[1].h(start = 100000.0)
+//  * candidate: pipe.mediums[2].state.h(start = 100000.0)
+//  * candidate: pipe.statesFM[2].h(start = 100000.0)
+//  * candidate: pipe.flowModel.states[2].h(start = 100000.0)
+//  * candidate: pipe.heatTransfer.states[2].h(start = 100000.0)
+// => select value from pipe.mediums[2].h(start = pipe.h_start) for variable: pipe.mediums[2].h
+// Warning: Alias set with several free start values
+//  * candidate: pipe.statesFM[1].T(start = 500.0)
+//  * candidate: pipe.mediums[1].state.T(start = 500.0)
+//  * candidate: pipe.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pipe.mediums[1].T(start = 353.15)
+//  * candidate: pipe.flowModel.states[1].T(start = 500.0)
+// => select value from pipe.statesFM[1].T(start = 500.0) for variable: pipe.statesFM[1].T
+// Warning: Alias set with different nominal values
+//  * candidate: pipe.flowModel.states[1].T(nominal = 500.0)
+//  * candidate: pipe.mediums[1].T(nominal = 500.0)
+//  * candidate: pipe.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pipe.heatTransfer.Ts[1](nominal = 300.0)
+//  * candidate: pipe.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pipe.mediums[1].state.T(nominal = 500.0)
+//  * candidate: pipe.statesFM[1].T(nominal = 500.0)
+// => select value from pipe.statesFM[1].T(nominal = 500.0) for variable: pipe.statesFM[1].T
+// Warning: Alias set with several free start values
+//  * candidate: pipe.mediums[1].h(start = pipe.h_start)
+//  * candidate: pipe.port_a.h_outflow(start = 100000.0)
+//  * candidate: heater.state_b.h(start = 100000.0)
+//  * candidate: heater.statesFM[3].h(start = 100000.0)
+//  * candidate: heater.flowModel.states[3].h(start = 100000.0)
+//  * candidate: pipe.mediums[1].state.h(start = 100000.0)
+//  * candidate: pipe.statesFM[1].h(start = 100000.0)
+//  * candidate: pipe.flowModel.states[1].h(start = 100000.0)
+//  * candidate: pipe.heatTransfer.states[1].h(start = 100000.0)
+// => select value from pipe.mediums[1].h(start = pipe.h_start) for variable: pipe.mediums[1].h
+// Warning: Alias set with several free start values
+//  * candidate: heater.mediums[1].h(start = heater.h_start)
+//  * candidate: heater.port_b.h_outflow(start = 100000.0)
+//  * candidate: pipe.state_a.h(start = 100000.0)
+//  * candidate: heater.port_a.h_outflow(start = 100000.0)
+//  * candidate: sensor_m_flow.port_a.h_outflow(start = 100000.0)
+//  * candidate: heater.mediums[1].state.h(start = 100000.0)
+//  * candidate: heater.statesFM[2].h(start = 100000.0)
+//  * candidate: heater.flowModel.states[2].h(start = 100000.0)
+//  * candidate: heater.heatTransfer.states[1].h(start = 100000.0)
+// => select value from heater.mediums[1].h(start = heater.h_start) for variable: heater.mediums[1].h
+// Warning: Alias set with several free start values
+//  * candidate: tank.medium.h(start = tank.h_start)
+//  * candidate: tank.ports[2].h_outflow(start = 100000.0)
+//  * candidate: pump.monitoring.state_in.h(start = 100000.0)
+//  * candidate: tank.ports[1].h_outflow(start = 100000.0)
+//  * candidate: radiator.state_b.h(start = 100000.0)
+//  * candidate: radiator.statesFM[3].h(start = 100000.0)
+//  * candidate: radiator.flowModel.states[3].h(start = 100000.0)
+//  * candidate: tank.medium.state.h(start = 100000.0)
+//  * candidate: tank.heatTransfer.states[1].h(start = 100000.0)
+// => select value from tank.medium.h(start = tank.h_start) for variable: tank.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: radiator.mediums[1].p(start = 110000.0)
+//  * candidate: radiator.mediums[1].state.p(start = 5000000.0)
+//  * candidate: radiator.statesFM[2].p(start = 5000000.0)
+//  * candidate: radiator.flowModel.states[2].p(start = 5000000.0)
+//  * candidate: radiator.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: radiator.mediums[1].sat.psat(start = 5000000.0)
+// => select value from radiator.mediums[1].p(start = 110000.0) for variable: radiator.mediums[1].p
+// Warning: Alias set with different nominal values
+//  * candidate: radiator.mediums[1].sat.psat(nominal = 1000000.0)
+//  * candidate: radiator.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: radiator.flowModel.states[2].p(nominal = 1000000.0)
+//  * candidate: radiator.statesFM[2].p(nominal = 1000000.0)
+//  * candidate: radiator.mediums[1].state.p(nominal = 1000000.0)
+//  * candidate: radiator.mediums[1].p(nominal = 100000.0)
+// => select value from radiator.mediums[1].p(nominal = 100000.0) for variable: radiator.mediums[1].p
+// Warning: Alias set with several free start values
+//  * candidate: radiator.mediums[1].h(start = radiator.h_start)
+//  * candidate: radiator.port_b.h_outflow(start = 100000.0)
+//  * candidate: radiator.port_a.h_outflow(start = 100000.0)
+//  * candidate: valve.state_b.h(start = 100000.0)
+//  * candidate: valve.port_a.h_outflow(start = 100000.0)
+//  * candidate: radiator.mediums[1].state.h(start = 100000.0)
+//  * candidate: radiator.statesFM[2].h(start = 100000.0)
+//  * candidate: radiator.flowModel.states[2].h(start = 100000.0)
+//  * candidate: radiator.heatTransfer.states[1].h(start = 100000.0)
+// => select value from radiator.mediums[1].h(start = radiator.h_start) for variable: radiator.mediums[1].h
+// Warning: Alias set with several free start values
+//  * candidate: heater.mediums[1].p(start = 130000.0)
+//  * candidate: heater.mediums[1].state.p(start = 5000000.0)
+//  * candidate: heater.statesFM[2].p(start = 5000000.0)
+//  * candidate: heater.flowModel.states[2].p(start = 5000000.0)
+//  * candidate: heater.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: heater.mediums[1].sat.psat(start = 5000000.0)
+// => select value from heater.mediums[1].p(start = 130000.0) for variable: heater.mediums[1].p
+// Warning: Alias set with different nominal values
+//  * candidate: heater.mediums[1].sat.psat(nominal = 1000000.0)
+//  * candidate: heater.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: heater.flowModel.states[2].p(nominal = 1000000.0)
+//  * candidate: heater.statesFM[2].p(nominal = 1000000.0)
+//  * candidate: heater.mediums[1].state.p(nominal = 1000000.0)
+//  * candidate: heater.mediums[1].p(nominal = 100000.0)
+// => select value from heater.mediums[1].p(nominal = 100000.0) for variable: heater.mediums[1].p
+// Warning: Alias set with several free start values
+//  * candidate: pump.medium.h(start = pump.h_start)
+//  * candidate: pump.port_b.h_outflow(start = 100000.0)
+//  * candidate: sensor_m_flow.port_b.h_outflow(start = 100000.0)
+//  * candidate: heater.state_a.h(start = 100000.0)
+//  * candidate: heater.statesFM[1].h(start = 100000.0)
+//  * candidate: heater.flowModel.states[1].h(start = 100000.0)
+//  * candidate: pump.port_a.h_outflow(start = 100000.0)
+//  * candidate: pump.medium.state.h(start = 100000.0)
+//  * candidate: pump.monitoring.state.h(start = 100000.0)
+//  * candidate: pump.heatTransfer.states[1].h(start = 100000.0)
+// => select value from pump.medium.h(start = pump.h_start) for variable: pump.medium.h
+// Warning: Alias set with several free start values
+//  * candidate: pump.heatTransfer.states[1].T(start = 500.0)
+//  * candidate: pump.medium.state.T(start = 500.0)
+//  * candidate: pump.monitoring.state.T(start = 500.0)
+//  * candidate: pump.medium.T(start = pump.T_start)
+// => select value from pump.medium.T(start = pump.T_start) for variable: pump.heatTransfer.Ts[1]
+// Warning: Alias set with different nominal values
+//  * candidate: pump.medium.T(nominal = 500.0)
+//  * candidate: pump.monitoring.state.T(nominal = 500.0)
+//  * candidate: pump.medium.state.T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pump.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pump.heatTransfer.Ts[1](nominal = 300.0)
+// => select value from pump.heatTransfer.Ts[1](nominal = 300.0) for variable: pump.heatTransfer.Ts[1]
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: The linear system: 
+// 1 : pump.dp_pump = pump.medium.p - tank.ports[2].p
+// 2 : $STATESET1.J[3] = pump.dp_pump - (pump.p_b_nominal - tank.ports[2].p)
+// [
+//   1.0 , 1.0 ;
+//   -1.0 , -1.0
+// ]
+//   *
+// [
+//   tank.ports[2].p ;
+//   pump.dp_pump
+// ]
+//   =
+// [
+//   pump.medium.p ;
+//   (-$STATESET1.J[3]) - pump.p_b_nominal
+// ]
+//  might be structurally or numerically singular for variable pump.dp_pump since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
+// Warning: The linear system: 
+// 1 : $STATESET1.J[3] = pump.dp_pump - (pump.p_b_nominal - tank.ports[2].p)
+// 2 : pump.dp_pump = pump.medium.p - tank.ports[2].p
+// [
+//   -1.0 , -1.0 ;
+//   1.0 , 1.0
+// ]
+//   *
+// [
+//   pump.dp_pump ;
+//   tank.ports[2].p
+// ]
+//   =
+// [
+//   (-$STATESET1.J[3]) - pump.p_b_nominal ;
+//   pump.medium.p
+// ]
+//  might be structurally or numerically singular for variable tank.ports[2].p since U(2,2) = 0.0. It might be hard to solve. Compilation continues anyway.
+// "true
+// "
+// ""
+// endResult

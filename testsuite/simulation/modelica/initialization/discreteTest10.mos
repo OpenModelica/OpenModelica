@@ -1,0 +1,47 @@
+// name: discreteTest10
+// keywords: initialization, discrete
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.discreteTest10* _initializationTests.discreteTest10* output.log
+//
+//  case for when-clauses in algorithm sections
+//
+
+loadString("
+within ;
+package initializationTests
+  model discreteTest10
+    Real x(start=1);
+    Real y;
+  initial equation
+    y = 4;
+  equation
+    when time > 0.5 then
+      x = 0.5;
+    end when;
+    y = x^2;
+  end discreteTest10;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+
+simulate(initializationTests.discreteTest10, startTime=0.0, stopTime=1.0,numberOfIntervals=0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.discreteTest10_res.mat", {x, y}, 0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.discreteTest10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{2.0,2.0,0.5,0.5,0.5},{4.0,4.0,0.25,0.25,0.25}}
+// ""
+// endResult

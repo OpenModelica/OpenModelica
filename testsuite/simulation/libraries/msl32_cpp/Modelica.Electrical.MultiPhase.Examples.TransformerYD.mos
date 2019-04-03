@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.MultiPhase.Examples.TransformerYD
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.MultiPhase.Examples.TransformerYD);
+compareVars :=
+{
+   "transformerL.inductor[1].i",
+   "transformerL.inductor[2].i",
+   "transformerL.inductor[3].i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.MultiPhase.Examples.TransformerYD
+// {"transformerL.inductor[1].i","transformerL.inductor[2].i","transformerL.inductor[3].i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TransformerYD', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.MultiPhase.Examples.TransformerYD_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,255 @@
+// name:     extfunctions linearization
+// keywords: extfunctions, linearization
+// status:   correct
+// teardown_command: rm -rf extfunction.* extfunction_* output.log linear_extfunction.* linear_extfunction_* linear_extfunction extfunction
+// 
+//  Case for numeric linearization of extfunctions model
+//
+
+//linearize with numeric linearization and data recovery at time 0
+loadFile("modelextfunction.mo");
+setCommandLineOptions("--generateSymbolicLinearization");
+getErrorString();
+simulate(extfunction, simflags="-l=0 -l_datarec");
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+setCommandLineOptions("--generateSymbolicLinearization=false");
+getErrorString();
+
+//linearize with numeric linearization and data recovery at time 0
+simulate(extfunction, simflags="-l=1 -l_datarec");
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+
+// 
+//  Case for linearization of extfunctions model
+//
+setCommandLineOptions("--generateSymbolicLinearization");
+getErrorString();
+//linearize at point in time 0 
+linearize(extfunction, stopTime=0);
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+setCommandLineOptions("--generateSymbolicLinearization=false");
+getErrorString();
+
+//linearize at point in time 1 
+linearize(extfunction, stopTime=1);
+getErrorString();
+loadFile("linear_extfunction.mo");
+list(linear_extfunction);
+simulate(linear_extfunction);
+getErrorString();
+readFile("linear_extfunction.log"); // Check that output log is empty
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 2 \"data recovery variables\";
+//   parameter Real x0[2] = {1, -1};
+//   parameter Real u0[0] = zeros(0);
+//   parameter Real z0[2] = {0.5403023058681398, 0.5403023058681398};
+//   parameter Real A[n, n] = [0.5403023058681398, 0.8414709848078965; 0.8414709848078965, 0.5403023058681398];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [0, 0.8414709479039962; -0.8414710212080169, 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+//   Real 'z_$cse1' = z[1];
+//   Real 'z_$cse2' = z[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=1 -l_datarec'",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 1.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 2 \"data recovery variables\";
+//   parameter Real x0[2] = {1.398992320427181, -1.398992320427181};
+//   parameter Real u0[0] = zeros(0);
+//   parameter Real z0[2] = {0.1709600740012847, 0.1709600740012847};
+//   parameter Real A[n, n] = [0.1709600742174606, 1.378396283075882; 1.378396310036173, 0.170960073974575];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [0, 0.9852779481952085; -0.9852779676260491, 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+//   Real 'z_$cse1' = z[1];
+//   Real 'z_$cse2' = z[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+//   z = Cz * x + Dz * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {1, -1};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0.5403023058681398, 0.8414709848078965; 0.8414709848078965, 0.5403023058681398];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | Linearization will performed at point of time: 1.000000
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Linear model is created!
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// true
+// "model linear_extfunction
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {1.398992320427181, -1.398992320427181};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0.1709600742174606, 1.378396283075882; 1.378396310036173, 0.170960073974575];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   Real 'x_x' = x[1];
+//   Real 'x_y' = x[2];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_extfunction;"
+// record SimulationResult
+//     resultFile = "linear_extfunction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_extfunction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// endResult

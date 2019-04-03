@@ -1,0 +1,106 @@
+// name:     Test3PhaseInitOver
+// keywords: initialization, overdetermined, additial equations.
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f Test3Phase.Test3Phase* output.log
+//  Simulate models and read in data.
+//
+
+loadFile("InitTest3Phase.mo");
+
+simulate(Test3Phase.Test3PhaseInitOver,stopTime=10, tolerance=1e-5, numberOfIntervals=1000, simflags="-emit_protected"); getErrorString();
+
+"i_abc[:] at 0.0";
+val(i_abc[1],0.0);
+val(i_abc[2],0.0);
+val(i_abc[3],0.0);
+
+"i_dq0[:] at 0.0";
+val(i_dq0[1],0.0);
+val(i_dq0[2],0.0);
+val(i_dq0[3],0.0);
+
+"i_abc[:] at 10.0";
+val(i_abc[1],10.0);
+val(i_abc[2],10.0);
+val(i_abc[3],10.0);
+
+"i_dq0[:] at 10.0:";
+val(i_dq0[1],10.0);
+val(i_dq0[2],10.0);
+val(i_dq0[3],10.0);
+
+"u_abc[:] at 0.0";
+val(u_abc[1],0.0);
+val(u_abc[2],0.0);
+val(u_abc[3],0.0);
+
+"u_dq0[:] at 0.0";
+val(u_dq0[1],0.0);
+val(u_dq0[2],0.0);
+val(u_dq0[3],0.0);
+
+"u_abc[:] at 10.0";
+val(u_abc[1],10.0);
+val(u_abc[2],10.0);
+val(u_abc[3],10.0);
+
+"u_dq0[:] at 10.0:";
+val(u_dq0[1],10.0);
+val(u_dq0[2],10.0);
+val(u_dq0[3],10.0);
+
+"power :";
+val(power,0);
+val(power,10);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Test3Phase.Test3PhaseInitOver_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Test3Phase.Test3PhaseInitOver', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[1] = 0.0 (0.8164965809277261 * sin(6.283185307179586 * time) * (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + 5.130199320647457 * cos(6.283185307179586 * time) * (S1.signalSource.offset + (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * sin(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase))) + 0.8164965809277261 * sin(2.094395102393195 + 6.283185307179586 * time) * (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + 5.130199320647457 * cos(2.094395102393195 + 6.283185307179586 * time) * (S2.signalSource.offset + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * sin(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase))) + 0.8164965809277261 * sin(4.188790204786391 + 6.283185307179586 * time) * (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz) + 5.130199320647457 * cos(4.188790204786391 + 6.283185307179586 * time) * (S3.signalSource.offset + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * sin(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase))) = 0.0)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[2] = 0.0 (0.8164965809277261 * cos(6.283185307179586 * time) * (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + (-5.130199320647457) * sin(6.283185307179586 * time) * (S1.signalSource.offset + (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * sin(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase))) + 0.8164965809277261 * cos(2.094395102393195 + 6.283185307179586 * time) * (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + (-5.130199320647457) * sin(2.094395102393195 + 6.283185307179586 * time) * (S2.signalSource.offset + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * sin(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase))) + 0.8164965809277261 * cos(4.188790204786391 + 6.283185307179586 * time) * (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz) + (-5.130199320647457) * sin(4.188790204786391 + 6.283185307179586 * time) * (S3.signalSource.offset + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * sin(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase))) = 0.0)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[3] = 0.0 (0.5773502691896258 * ((if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz)) = 0.0)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "i_abc[:] at 0.0"
+// 0.2989213705621611
+// -0.2237355800428358
+// -0.07518579051932672
+// "i_dq0[:] at 0.0"
+// -0.1050405635159077
+// 0.3661024155453519
+// -8.332838307662111e-16
+// "i_abc[:] at 10.0"
+// 0.2989210002960301
+// -0.2237375080684502
+// -0.07518349222758328
+// "i_dq0[:] at 10.0:"
+// -0.1050435519735721
+// 0.3661019620638076
+// -1.93898737543676e-15
+// "u_abc[:] at 0.0"
+// 0.0
+// 0.8660254037844389
+// -0.8660254037844388
+// "u_dq0[:] at 0.0"
+// 1.22474487139159
+// 1.110223024625157e-16
+// 6.409875621278547e-17
+// "u_abc[:] at 10.0"
+// -2.449293598294707e-15
+// 0.8660254037844412
+// -0.8660254037844349
+// "u_dq0[:] at 10.0:"
+// 1.224744871391588
+// 2.942091015256665e-15
+// 2.179357711234706e-15
+// "power :"
+// -0.1286478914541904
+// -0.1286515515523871
+// endResult

@@ -1,0 +1,58 @@
+// name:     HydrogenIodide
+// keywords: der
+// status: correct
+// teardown_command: rm -rf HydrogenIodide_* HydrogenIodide HydrogenIodide.exe HydrogenIodide.cpp HydrogenIodide.makefile HydrogenIodide.libs HydrogenIodide.log output.log
+// 
+//  <insert description here>
+// Drmodelica: 15.3.1 Chemical Reaction Kinetics of Hydrogen Iodine (p. 555) Not in the notebook
+//
+loadFile("HydrogenIodide.mo");
+simulate(HydrogenIodide, startTime=0.0, stopTime=3.0, numberOfIntervals=480, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output
+//size:=readSimulationResultSize("HydrogenIodide_res.mat");
+//res:=readSimulationResult("HydrogenIodide_res.mat",{HI,H2,I2},size); 
+
+x:=val(HI,0.132);
+x2:=val(HI,0.666);
+y:=val(H2,0.12);
+y2:=val(H2,0.774);
+z:=val(I2,0.15);
+z2:=val(I2,0.72);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+x2:=1000*x2;
+y2:=1000*y2;
+z2:=1000*z2;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+x2:=floor(x2);
+y2:=floor(y2);
+z2:=floor(z2);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+x2/1000.0; 
+y/1000.0;
+y2/1000.0;
+z/1000.0;
+z2/1000.0;
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "HydrogenIodide_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 480, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'HydrogenIodide', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 4.643
+// 7.925
+// 2.806
+// 0.991
+// 5.504
+// 4.011
+// endResult

@@ -1,0 +1,26 @@
+// status: correct
+
+loadString("package O
+
+function f
+  input Integer i;
+end f;
+
+function f
+  input String s;
+end f;
+
+function f2
+  input String s;
+end f2;
+
+function f2
+  input Real s;
+end f2;
+
+end O;");getErrorString();
+
+// Result:
+// true
+// ""
+// endResult

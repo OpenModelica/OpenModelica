@@ -1,0 +1,27 @@
+// name:     DoubleWhenSequential
+// keywords: when
+// status: correct
+// teardown_command: rm -rf DoubleWhenSequential_* DoubleWhenSequential DoubleWhenSequential.exe DoubleWhenSequential.cpp DoubleWhenSequential.makefile DoubleWhenSequential.libs DoubleWhenSequential.log output.log
+// 
+// Drmodelica: 9.1 When-Statements (p. 293)
+// 
+loadFile("DoubleWhenSequential.mo");
+simulate(DoubleWhenSequential, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values
+echo(false); // turns of output 
+size:=readSimulationResultSize("DoubleWhenSequential_res.mat");
+res:=readSimulationResult("DoubleWhenSequential_res.mat",{close},size); 
+close:=res[1,1];
+echo(true); // turns on output
+close;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DoubleWhenSequential_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DoubleWhenSequential', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.0
+// endResult

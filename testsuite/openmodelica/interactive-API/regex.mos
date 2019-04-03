@@ -1,0 +1,39 @@
+// name: Regular Expression Scripting
+// status: correct
+
+regex("abc","b");
+regexBool("abc","b");
+
+regexBool("abc",{"b","a.c","d","[abc]*","[ab*]$","[ab*]","abc"});
+getErrorString();
+
+regexBool("*abc","[*abc");
+getErrorString();
+
+lorem:="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed lectus non felis laoreet malesuada sed et enim. Cras orci neque, rhoncus in faucibus ut, eleifend quis ligula. Ut elementum auctor purus, ac dignissim orci adipiscing sit amet. Ut adipiscing, erat vel scelerisque sodales, enim justo laoreet sapien, tincidunt sodales quam augue sit amet tellus. Nam euismod lacus vel augue tempus id dictum sapien placerat. Vivamus elementum diam nec quam tincidunt quis euismod ipsum hendrerit. Nulla est dui, scelerisque vel condimentum a, suscipit mollis ante. Aenean tortor tortor, tempus sed rutrum ac, ullamcorper et elit. Nullam iaculis, magna vel laoreet tristique, metus ipsum ullamcorper ligula, eu luctus est sapien dapibus metus. Phasellus aliquam nulla eu enim placerat et tristique ligula viverra. Sed ut odio auctor ante mattis blandit in at tellus. Integer hendrerit justo vitae dui aliquam malesuada. Nulla facilisi. Donec vehicula nisi at lorem pulvinar pulvinar. Nullam eget eros sit amet leo tempus vulputate. In quis mi sed ipsum fermentum ultricies ut eu urna. In hac habitasse platea dictumst.";
+
+regex(lorem," \\([A-Za-z]*\\) \\([A-Za-z]*\\) ",maxMatches=5);getErrorString();
+regex(lorem,"lorem iPsum",maxMatches=5,caseInsensitive=true);getErrorString();
+regex(lorem,"lorem iPsum",maxMatches=5,caseInsensitive=false);getErrorString();
+regex(lorem,"lorem|nisi");getErrorString();
+regex(lorem,"lorem|nisi",extended=false);getErrorString();
+
+// Result:
+// (1,{"b"})
+// true
+// {true,true,false,true,false,true,true}
+// ""
+// false
+// ""
+// "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed lectus non felis laoreet malesuada sed et enim. Cras orci neque, rhoncus in faucibus ut, eleifend quis ligula. Ut elementum auctor purus, ac dignissim orci adipiscing sit amet. Ut adipiscing, erat vel scelerisque sodales, enim justo laoreet sapien, tincidunt sodales quam augue sit amet tellus. Nam euismod lacus vel augue tempus id dictum sapien placerat. Vivamus elementum diam nec quam tincidunt quis euismod ipsum hendrerit. Nulla est dui, scelerisque vel condimentum a, suscipit mollis ante. Aenean tortor tortor, tempus sed rutrum ac, ullamcorper et elit. Nullam iaculis, magna vel laoreet tristique, metus ipsum ullamcorper ligula, eu luctus est sapien dapibus metus. Phasellus aliquam nulla eu enim placerat et tristique ligula viverra. Sed ut odio auctor ante mattis blandit in at tellus. Integer hendrerit justo vitae dui aliquam malesuada. Nulla facilisi. Donec vehicula nisi at lorem pulvinar pulvinar. Nullam eget eros sit amet leo tempus vulputate. In quis mi sed ipsum fermentum ultricies ut eu urna. In hac habitasse platea dictumst."
+// (0,{"","","","",""})
+// ""
+// (1,{"Lorem ipsum","","","",""})
+// ""
+// (0,{"","","","",""})
+// ""
+// (1,{"nisi"})
+// ""
+// (0,{""})
+// ""
+// endResult

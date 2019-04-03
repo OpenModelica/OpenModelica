@@ -1,0 +1,33 @@
+// name:     Modelica.Electrical.MultiPhase.Examples.Rectifier
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.MultiPhase.Examples.Rectifier);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.MultiPhase.Examples.Rectifier_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.MultiPhase.Examples.Rectifier.mat","Modelica.Electrical.MultiPhase.Examples.Rectifier_diff.csv",0.01,0.00001,
+  {"cDC1.v",
+  "cDC2.v",
+  "supplyL.inductor[2].i",
+  "supplyL.inductor[3].i",
+  "der(cDC1.v)",
+  "der(cDC2.v)",
+  "der(supplyL.inductor[2].i)",
+  "der(supplyL.inductor[3].i)"});
+  
+  
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.MultiPhase.Examples.Rectifier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.Rectifier', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

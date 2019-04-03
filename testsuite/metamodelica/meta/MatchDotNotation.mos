@@ -1,0 +1,63 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+setCFlags(getCFlags() + " -g");getErrorString();
+loadFile("MatchDotNotation.mo");getErrorString();
+
+MatchDotNotation.f1(1);getErrorString();
+MatchDotNotation.f2(2);getErrorString();
+MatchDotNotation.f3(3);getErrorString();
+MatchDotNotation.f4(4);getErrorString();
+
+MatchDotNotation.error1(0);getErrorString();
+MatchDotNotation.error2(0);getErrorString();
+MatchDotNotation.error3(0);getErrorString();
+MatchDotNotation.error4(0);getErrorString();
+MatchDotNotation.error5(0);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// 2.0
+// "[metamodelica/meta/MatchDotNotation.mo:19:3-26:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(rx)) is a constant value.
+// "
+// 4.0
+// "[metamodelica/meta/MatchDotNotation.mo:33:3-40:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
+// 6.0
+// ""
+// 8.0
+// "[metamodelica/meta/MatchDotNotation.mo:59:3-61:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
+//
+// "[metamodelica/meta/MatchDotNotation.mo:74:9-74:24:writable] Error: Type mismatch in pattern x as REAL()
+// expression type:
+//   MatchDotNotation.Union
+// pattern type:
+//   MatchDotNotation.Union.REAL
+// "
+// fail()
+// "[metamodelica/meta/MatchDotNotation.mo:83:3-90:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
+//
+// "[metamodelica/meta/MatchDotNotation.mo:102:9-102:24:writable] Error: Type mismatch in pattern x as _
+// expression type:
+//   MatchDotNotation.Union.INT
+// pattern type:
+//   MatchDotNotation.Union.REAL
+// "
+//
+// "[metamodelica/meta/MatchDotNotation.mo:116:9-116:29:writable] Error: Type mismatch in pattern x
+// expression type:
+//   MatchDotNotation.Union
+// pattern type:
+//   MatchDotNotation.Union.REAL
+// "
+//
+// "[metamodelica/meta/MatchDotNotation.mo:126:26-126:39:writable] Error: Trying to assign to input component u.
+// "
+// endResult

@@ -1,0 +1,48 @@
+// name: UnitCheck12
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck12
+    Real V;
+    Real A;
+    Real S(unit = \"m2\");
+  equation
+    A=5.0;
+    V=8.0;
+    S=V^2+sqrt(A);
+  end UnitCheck12;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); 
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck12); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {V,{1.0 * m^(1)}}
+// {A,{1.0 * m^(4)}}
+// {S,{1.0 * m^(2)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck12
+//   Real V(unit = \"m\");
+//   Real A(unit = \"m4\");
+//   Real S(unit = \"m2\");
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   S = V ^ 2.0 + sqrt(A);
+// end unitCheckTests.UnitCheck12;
+// "
+// "Notification: "V" has the Unit "m"
+// "A" has the Unit "m4"
+// "
+// endResult

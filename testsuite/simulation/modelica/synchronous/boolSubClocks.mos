@@ -1,0 +1,51 @@
+// name:     boolSubClocks
+// keywords: synchronous features, cpp
+// status: correct
+//
+loadModel(Modelica, languageStandard="3.3");getErrorString();
+
+loadFile("boolSubClocks.mo");
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+simulate(boolSubClocks); getErrorString();
+val(a1,2.5);
+val(a2,2.5);
+val(a2,3.0);
+val(a3,2.5);
+val(x1,0.5);
+val(x1,1.0);
+val(x2,0.5);
+val(x2,1.0);
+val(x3,2.5);
+val(x4,0.5);
+val(x4,1.0);
+val(x5,0.5);
+val(x5,1.0);
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "boolSubClocks_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'boolSubClocks', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 2.000000000159155
+// 0.0
+// 0.0
+// 2.000000000159155
+// 0.3
+// 0.8999999999999999
+// 0.0
+// 0.8999999999999999
+// 2.4
+// 0.5
+// 0.8
+// 0.4
+// 1.0
+// endResult

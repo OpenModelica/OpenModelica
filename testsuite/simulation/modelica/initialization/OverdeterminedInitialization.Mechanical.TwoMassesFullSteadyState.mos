@@ -1,0 +1,25 @@
+// name: OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+buildModel(OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState","OverdeterminedInitialization.Mechanical.TwoMassesFullSteadyState_init.xml"}
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass2.v = $START.mass2.v ($START.mass1.v = $START.mass2.v)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: mass1.a = $START.mass1.a ($START.mass2.a = $START.mass1.a)
+// Warning: The initial conditions are over specified. The following 2 initial equations are redundant, so they are removed from the initialization sytem:
+//          mass2.v = $START.mass2.v
+//          mass1.a = $START.mass1.a.
+// "
+// endResult

@@ -1,0 +1,53 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");
+loadString("
+package TestFind
+
+function find<TI, TO>
+  input list<TI> inList;
+  input FindFunc inFindFunc;
+  output TO outElement;
+
+  partial function FindFunc
+    input TI inElement;
+    output TO outElement;
+  end FindFunc;
+algorithm
+  for e in inList loop
+    try
+      outElement := inFindFunc(e);
+      return; // This return is dangerous if it does not restore the longjmp pointer after the call finishes
+    else
+    end try;
+  end for;
+  fail();
+end find;
+
+function findTestF
+  input Integer inI;
+  output Integer outI;
+algorithm
+  outI := match inI
+  case 3
+  then 9;
+  end match;
+end findTestF;
+
+function test
+algorithm
+  find({1,2,3,4}, findTestF);
+  fail();
+end test;
+
+end TestFind;
+");
+
+TestFind.test();getErrorString();
+
+// Result:
+// true
+// true
+// fail()
+// ""
+// endResult

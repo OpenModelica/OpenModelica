@@ -1,0 +1,20 @@
+// Name: ComplexNumbers
+// status: correct
+// teardown_command: rm -rf ComplexNumbers ComplexNumbers.exe ComplexNumbers.c ComplexNumbers.cpp ComplexNumbers.libs ComplexNumbers.log ComplexNumbers.makefile ComplexNumbers.plt ComplexNumbers_* output.log
+// 
+
+loadFile("ComplexNumbers.mo");
+simulate(ComplexUser,numberOfIntervals=1, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString();
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ComplexUser_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ComplexUser', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

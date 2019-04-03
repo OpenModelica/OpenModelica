@@ -1,0 +1,44 @@
+// name:     TempResistor3
+// keywords: <insert keywords here>
+// status:   correct
+// 
+//  MORE WORK ON THIS FILE HAS TO BE DONE!
+//
+// Drmodelica: 4.5 Design a Class to be Extended (p. 137)
+// 
+loadModel(Modelica);
+loadFile("TempResistor3.mo");
+simulate(TempResistor3,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+x:=val(fixed1.flange_b.f,0.6);
+y:=val(mass1.a,1.0);
+z:=val(spring1.s_rel,0.6);
+x:=10.0*x;
+y:=10.0*y;
+z:=10.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+
+echo(true); // turns on output
+x:=x/10.0; // rounded value to 1 digits
+y:=y/10.0;
+z:=z/10.0;
+
+echo(true); // turns on output
+x:=x/1000.0; // rounded value to 3 digits
+//y:=y/1000.0;
+//z:=z/1000.0;
+system("rm -rf TempResistor3_* TempResistor3.exe TempResistor3.cpp TempResistor3.makefile TempResistor3.libs TempResistor3.log output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "TempResistor3_res.mat"
+// end SimulationResult;
+// true
+// 111
+// 111
+// 111
+// ""
+// 0
+// endResult

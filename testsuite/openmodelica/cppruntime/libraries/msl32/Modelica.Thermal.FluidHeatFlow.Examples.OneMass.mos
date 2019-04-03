@@ -1,0 +1,31 @@
+// name:     Modelica.Thermal.FluidHeatFlow.Examples.OneMass
+// teardown_command: rm -f Modelica.Thermal.FluidHeatFlow.Examples.OneMass_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.OneMass, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Thermal.FluidHeatFlow.Examples.OneMass_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Thermal.FluidHeatFlow.Examples.OneMass.mat",
+  "Modelica.Thermal.FluidHeatFlow.Examples.OneMass_diff.csv",0.01,0.0001,
+  {"pipe.T",
+   "heatCapacitor.T"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Thermal.FluidHeatFlow.Examples.OneMass_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.OneMass', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

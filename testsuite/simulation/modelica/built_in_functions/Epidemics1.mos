@@ -1,0 +1,65 @@
+// name:     Epidemics1
+// keywords: der terminate
+// status:   correct
+// teardown_command: rm -rf Epidemics1 Epidemics1.exe Epidemics1.cpp Epidemics1_functions.cpp Epidemics1_functions.h Epidemics1_init.xml Epidemics1.libs Epidemics1.log Epidemics1.makefile Epidemics1_records.c Epidemics1_res.mat output.log 
+// 
+// Drmodelica: 
+// 
+
+loadFile("Epidemics1.mo");
+simulate(Epidemics1,startTime=0.0, stopTime=52.0, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values
+echo(false); // turns of output
+//size:=readSimulationResultSize("Epidemics1_res.mat");
+//res:=readSimulationResult("Epidemics1_res.mat",{Indv,S,R},size);
+
+x:=val(Indv,6.0);
+x2:=val(Indv,11.4);
+y:=val(S,6.0);
+y2:=val(S,15.0);
+z:=val(R,9.0);
+z2:=val(R,24.0);
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+x2:=1000*x2;
+y2:=1000*y2;
+z2:=1000*z2;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+x2:=floor(x2);
+y2:=floor(y2);
+z2:=floor(z2);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+x2/1000.0;
+y/1000.0;
+y2/1000.0;
+z/1000.0;
+z2/1000.0;
+// dymola values, differs a bit.
+// 0.108
+// 0.325
+// 0.837
+// 0.128
+// 0.195
+// 0.901
+//////////////////
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Epidemics1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 52.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Epidemics1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.107
+// 0.324
+// 0.839
+// 0.129
+// 0.194
+// 0.901
+// endResult

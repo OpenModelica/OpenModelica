@@ -1,0 +1,2 @@
+print("Loading model file...");loadFile("simpleExple.mo");getErrorString();
+modelEquationsUC(SimpleExple);getErrorString();

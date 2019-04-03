@@ -1,0 +1,43 @@
+// name:     EnumerationTest
+// keywords: Enumeration FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml EnumerationTest.fmu _EnumerationTest* EnumerationTest_me_FMU.mo EnumerationTest.libs EnumerationTest.lib EnumerationTest.so EnumerationTest.dll EnumerationTest.c EnumerationTest.o EnumerationTest.makefile output.log EnumerationTest_*.c EnumerationTest_*.h EnumerationTest_*.o EnumerationTest_*.json EnumerationTest/*
+//
+// String(Enum.e1)
+//
+// 
+
+loadFile("EnumerationTest.mo");
+//instantiateModel(EnumerationTest);
+translateModelFMU(EnumerationTest, version="2.0");
+getErrorString();
+
+importFMU("EnumerationTest.fmu"); getErrorString();
+loadFile("EnumerationTest_me_FMU.mo"); getErrorString();
+simulate(EnumerationTest_me_FMU,startTime=0.0, stopTime=1.0, numberOfIntervals=500, tolerance=1e-5); getErrorString();
+
+val(x,0.2);
+val(x,0.4);
+val(x,0.6);
+
+// Result:
+// true
+// "EnumerationTest.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "EnumerationTest_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EnumerationTest_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'EnumerationTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.8186898836203428
+// 0.6702829055553423
+// 0.5487798730887792
+// endResult

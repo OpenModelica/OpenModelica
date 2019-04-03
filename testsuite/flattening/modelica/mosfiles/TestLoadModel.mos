@@ -1,0 +1,116 @@
+// name: TestLoadModel
+// status: correct
+// Test loading of correct version of a library
+// depends: TestLibrary
+
+setModelicaPath("TestLibrary/");
+
+"3.2";
+loadModel(Modelica,{"3.2"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"3.2.1";
+loadModel(Modelica,{"3.2.1"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"4.1, 3.2";
+loadModel(Modelica,{"4.1","3.2"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"4.1, 3.1, 3.2";
+loadModel(Modelica,{"4.1","3.1","3.2"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"default, 3.2";
+loadModel(Modelica,{"default","3.2"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+"3.3 beta1, default, 3.2";
+loadModel(Modelica,{"3.3 beta1","default","3.2"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+"3.4 beta1";
+loadModel(Modelica,{"3.4 beta1"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"3.4";
+loadModel(Modelica,{"3.4"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"3.5 beta1";
+loadModel(Modelica,{"3.5 beta1"});
+getErrorString();
+
+"CustomSort";
+loadModel(Modelica,{"CustomSort"});
+getErrorString();getNamedAnnotation(Modelica,version);clear() and setCommandLineOptions("--std=latest");
+
+"XYZ";
+loadModel(ABC,{"XYZ"});
+getErrorString();getNamedAnnotation(ABC,version);clear() and setCommandLineOptions("--std=latest");
+
+"Invalid";
+loadModel(Invalid);getErrorString();
+
+// Result:
+// true
+// "3.2"
+// true
+// ""
+// {"3.2"}
+// true
+// "3.2.1"
+// true
+// ""
+// {"3.2.1"}
+// true
+// "4.1, 3.2"
+// true
+// ""
+// {"3.2"}
+// true
+// "4.1, 3.1, 3.2"
+// true
+// ""
+// {"3.1"}
+// true
+// "default, 3.2"
+// true
+// ""
+// {"3.2.1"}
+// true
+// "3.3 beta1, default, 3.2"
+// true
+// ""
+// {"3.3 beta1"}
+// true
+// "3.4 beta1"
+// true
+// ""
+// {"3.4 beta1"}
+// true
+// "3.4"
+// false
+// "Error: Failed to load package Modelica (3.4) using MODELICAPATH TestLibrary/.
+// "
+// {}
+// true
+// "3.5 beta1"
+// false
+// "[TestLibrary//Modelica 3.5 beta1/package.order:0:0-0:0:readonly] Error: Found duplicate names in package.order file: A.
+// Error: Failed to load package Modelica (3.5 beta1) using MODELICAPATH TestLibrary/.
+// "
+// "CustomSort"
+// true
+// ""
+// {"CustomSort"}
+// true
+// "XYZ"
+// true
+// ""
+// {"XYZ"}
+// true
+// "Invalid"
+// false
+// "[flattening/modelica/mosfiles/TestLibrary/Invalid/package.mo:1:1-2:12:writable] Error: The same class is defined in multiple files: flattening/modelica/mosfiles/TestLibrary/Invalid/Duplicate.mo, flattening/modelica/mosfiles/TestLibrary/Invalid/Duplicate/package.mo.
+// Error: Failed to load package Invalid (default) using MODELICAPATH TestLibrary/.
+// "
+// endResult

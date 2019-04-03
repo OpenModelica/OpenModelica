@@ -1,0 +1,79 @@
+// name:     Experiment (Interactive)
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+// Uses packages, aliases, etc
+//
+// This test should be disabled until dynamic loading of functions
+// works properly on the Windows platform.
+//
+echo(false);
+setCommandLineOptions({"+d=rml,noevalfunc,gen","+g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("SOLUTION.mo");
+loadFile("Types.mo");
+
+nl := "
+"; // Because the parser thinks it's funny not to convert \n to a newline
+
+// factorial 
+n_str := "10";
+print("Factorial of " + n_str + " is: ");
+n := stringInt(n_str);    
+i := Functions.factorial(n);
+str := intString(i);
+print(str); 
+print(nl);
+
+// test function
+print("Calling Functions.test('one'):   " + intString(Functions.test("one")));
+print(nl);
+print("Calling Functions.test('two'):   " + intString(Functions.test("two")));
+print(nl);
+print("Calling Functions.test('three'): " + intString(Functions.test("three")));
+print(nl);
+print("Calling Functions.test('other'): " + intString(Functions.test("other")));
+print(nl);
+
+print("Types.aliasConstant: ");
+Functions.printAlias(Types.aliasConstant);
+print(nl);
+
+print("Types.optionAliasConstant: ");
+Functions.printOptionType(Types.optionAliasConstant);
+print(nl);
+print("Types.optionAliasConstantNone: ");
+Functions.printOptionType(Types.optionAliasConstantNone);
+print(nl);
+
+print("Types.tupleConstant: ");
+Functions.printTupleType(Types.tupleConstant);
+print(nl);
+
+print("Types.listConstant: {");
+Functions.printListType(Types.listConstant);
+print("}");
+print(nl);
+
+print("Types.oneRecord: ");
+Functions.printOneRecord(Types.oneRecord);
+print(nl);
+
+print("Types.select: ");
+Functions.printSelect(Types.select);
+print(nl);
+
+// Result:
+// Factorial of 10 is: 3628800
+// Calling Functions.test('one'):   1
+// Calling Functions.test('two'):   2
+// Calling Functions.test('three'): 3
+// Calling Functions.test('other'): 0
+// Types.aliasConstant: 1
+// Types.optionAliasConstant: 1
+// Types.optionAliasConstantNone: NONE()
+// Types.tupleConstant: ("a tuple element", 1, 1)
+// Types.listConstant: {("a tuple element", 1, 1), ("another element", 2, NONE())}
+// Types.oneRecord: OneRecord("first element", 3)
+// Types.select: ThirdAlternative(SecondAlternative(FirstAlternative("one", "First"), FirstAlternative("two", "Second")))
+// endResult

@@ -1,0 +1,55 @@
+// name:     SimplePeriodicSampler
+// keywords: sample
+// status: correct
+// teardown_command: rm -rf Sampler_* Sampler Sampler.exe Sampler.cpp Sampler.makefile Sampler.libs Sampler.log output.log
+// 
+//  <insert description here>
+//
+// Drmodelica: 13.2  Sampled Systems (p. 429)
+// 
+loadFile("SimplePeriodicSampler.mo");
+simulate(Sampler,startTime=0.0, stopTime=10.0,numberOfIntervals=345, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+size:=readSimulationResultSize("Sampler_res.mat");
+res:=readSimulationResult("Sampler_res.mat",{x,y},size);
+//x1:=res[1,99];
+//y1:=res[2,99];
+//x2:=res[1,344];
+//y2:=res[2,344];
+// 1.839
+// 2.032
+// 0.15
+// 0.166
+x1:=val(x,1.0);
+y1:=val(y,0.9);
+x2:=val(x,3.0);
+y2:=val(y,3.0);
+x1:=1000*x1;
+y1:=1000*y1;
+x1:=floor(x1);
+y1:=floor(y1);
+x2:=1000*x2;
+y2:=1000*y2;
+x2:=floor(x2);
+y2:=floor(y2);
+echo(true); // turns on output
+x1/1000.0; // rounded value to 3 digits
+y1/1000.0;
+x2/1000.0; 
+y2/1000.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Sampler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 345, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Sampler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.839
+// 2.032
+// 0.248
+// 0.275
+// endResult

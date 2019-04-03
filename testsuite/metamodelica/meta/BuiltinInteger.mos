@@ -1,0 +1,31 @@
+// name:     BuiltinInteger
+// keywords: Builtin
+// status:   correct
+// cflags:   +g=MetaModelica
+//
+// Builtin function testing
+//
+loadFile("BuiltinInteger.mo");
+
+BuiltinInteger.funcIntIntToInt(-17,3);getErrorString();
+
+BuiltinInteger.funcIntegerRelations( 1, 1);getErrorString();
+BuiltinInteger.funcIntegerRelations(-1, 1);getErrorString();
+BuiltinInteger.funcIntegerRelations( 1,-1);getErrorString();
+
+BuiltinInteger.func(-1047483648);getErrorString();
+
+
+// Result:
+// true
+// (-14,-20,-51,-5,1,3,-17)
+// ""
+// (false,true,true,false,true,false)
+// ""
+// (true,true,false,true,false,false)
+// ""
+// (false,false,false,true,true,true)
+// ""
+// (1047483648,1047483648,-1047483648.0,"-1047483648")
+// ""
+// endResult

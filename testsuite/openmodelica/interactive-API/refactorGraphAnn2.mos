@@ -1,0 +1,43 @@
+// name:     refactorGraphAnn2
+// keywords: annotation
+// status:   correct
+// 
+//  Tests refactoring of graphical component annotations and connect annotations
+//
+//echo(false);
+loadModel(Modelica,{"2.2.2"});
+loadFile("refactorGraphAnn2.mo");
+echo(true);
+refactorClass(connecttest);
+
+// Result:
+// true
+// true
+// true
+// model connecttest
+//   // name:     refactorGraphAnn2
+//   // keywords: annotation
+//   // status:   correct
+//   //
+//   // Graphical  class annotations of old standard to be refactored into a new on.
+//   //
+//   Modelica.Electrical.Analog.Basic.Conductor conductor annotation(
+//     extent = [24, 54; 44, 74]);
+//   Modelica.Electrical.Analog.Basic.Resistor resistor annotation(
+//     rotation = 180,
+//     extent = [-18, 18; 0, 94]);
+//   Modelica.Electrical.Analog.Basic.Conductor conductor1 annotation(
+//     extent = [94, 22; 64, 42],
+//     rotation = 45);
+// equation
+//   connect(resistor.n, conductor.p) annotation(
+//     Line(points = {{-18, 56}, {14, 56}, {14, 64}, {24, 64}}, color = {255, 0, 127}, pattern = LinePattern.Dash, arrow = {Arrow.Filled, Arrow.Filled}));
+//   connect(resistor.p, conductor1.p) annotation(
+//     Line(color = {0, 0, 255}, points = {{0, 56}, {-20, 56}, {-20, -40}, {89.6066, -40}, {89.6066, 24.9289}}));
+//   connect(conductor1.n, conductor.n) annotation(
+//     Line(points = {{68.3934, 39.0711}, {68.3934, 64}, {44, 64}}, color = {0, 0, 255}, thickness = 1.0));
+//   annotation(
+//     uses(Modelica(version = "1.6"), ModelicaAdditions(version = "1.5")),
+//     Diagram);
+// end connecttest;
+// endResult

@@ -1,0 +1,79 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump);
+compareVars :=
+{
+   "speed.phi",
+   "speed.w",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]",
+   "smee.idq_rr[1]",
+   "smee.idq_rr[2]",
+   "smee.lesigma.i",
+   "voltageController.I.y"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// {"speed.phi","speed.w","smee.idq_sr[1]","smee.idq_sr[2]","smee.idq_rr[1]","smee.idq_rr[2]","smee.lesigma.i","voltageController.I.y"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat
+// Messages: Warning: Variable smee.strayLoad.strayLoadParameters.wRef out of [min, max] interval: smee.strayLoad.strayLoadParameters.wRef >= 1e-60 has value: 0
+// Warning: Variable smee.friction.frictionParameters.wRef out of [min, max] interval: smee.friction.frictionParameters.wRef >= 1e-60 has value: 0
+// Warning: Variable smee.strayLoadParameters.wRef out of [min, max] interval: smee.strayLoadParameters.wRef >= 1e-60 has value: 0
+// Warning: Variable smee.frictionParameters.wRef out of [min, max] interval: smee.frictionParameters.wRef >= 1e-60 has value: 0
+// 
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11144:7-11145:66:writable] Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11150:7-11151:66:writable] Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11148:7-11149:40:writable] Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11144:7-11145:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11150:7-11151:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11148:7-11149:40:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11209:7-11210:67:writable] Warning: Parameter VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11209:7-11210:67:writable] Warning: Parameter m has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11211:7-11211:70:writable] Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11185:7-11186:90:writable] Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13270:7-13273:74:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: smee.internalThermalPort, modification: redeclare final .Modelica.Electrical.Machines.Interfaces.InductionMachines.ThermalPortSMEE internalThermalPort(final useDamperCage = useDamperCage).
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11144:7-11145:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11150:7-11151:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11148:7-11149:40:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11185:7-11186:90:writable] Warning: Parameter smee.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11209:7-11210:67:writable] Warning: Parameter smee.statorCore.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11211:7-11211:70:writable] Warning: Parameter smee.statorCore.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11144:7-11145:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11150:7-11151:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11148:7-11149:40:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13270:7-13273:74:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: smee.internalThermalPort, modification: redeclare final .Modelica.Electrical.Machines.Interfaces.InductionMachines.ThermalPortSMEE internalThermalPort(final useDamperCage = useDamperCage).
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11144:7-11145:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11150:7-11151:66:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11148:7-11149:40:writable] Warning: Parameter smee.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11185:7-11186:90:writable] Warning: Parameter smee.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11209:7-11210:67:writable] Warning: Parameter smee.statorCore.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:11211:7-11211:70:writable] Warning: Parameter smee.statorCore.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// 
+// "true
+// "
+// ""
+// endResult

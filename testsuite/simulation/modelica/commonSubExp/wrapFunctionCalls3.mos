@@ -1,0 +1,69 @@
+// name: wrapFunctionCalls3
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls3
+    function f1
+      input Real x1;
+      output Real y1;
+      output Real y2;
+      output Real y3;
+    algorithm
+      y1 := x1;
+      y2 := x1 + y1;
+      y1 := y2+1.0;
+      y2 := x1 * y2;
+      y3 := x1 * y2 + y1;
+    end f1;
+
+    Real a;
+    Real b;
+  equation
+    (,b,) = f1(time);
+    a = f1(time) + 5.0;
+  end wrapFunctionCalls3;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls --preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (3)
+// ========================================
+// 1: b:VARIABLE()  type: Real 
+// 2: a:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 3)
+// ========================================
+// 1/1 (1): a = 5.0 + $cse1   [dynamic |0|0|0|0|]
+// 2/2 (2): ($cse1, b, _) = CSE.wrapFunctionCalls3.f1(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: ($cse1, b, _) - CSE.wrapFunctionCalls3.f1(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

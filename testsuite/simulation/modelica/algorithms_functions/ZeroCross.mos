@@ -1,0 +1,53 @@
+// name:     ZeroCrossing in algorithm for loop
+// keywords: iZeroCrosssing, EventHandling, Algorithm
+// status: correct
+// teardown_command: rm -rf ZeroCrossAlg* output.log *.conv.cpp
+// 
+//  Simulate model containing ZeroCrossing in for loop algorithm
+//
+loadFile("./ZeroCross.mo");
+
+simulate(ZeroCrossAlg, tolerance=1e-5,startTime=0, stopTime=1,numberOfIntervals=10);
+val(b[1],0.01);
+val(b[1],1.0);
+val(b[2],0.01);
+val(b[2],1.0);
+val(b[3],0.01);
+val(b[3],1.0);
+val(b[4],0.01);
+val(b[4],1.0);
+val(b[5],0.01);
+val(b[5],1.0);
+val(b[6],0.01);
+val(b[6],1.0);
+val(b[7],0.01);
+val(b[7],1.0);
+val(b[8],0.01);
+val(b[8],1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ZeroCrossAlg_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ZeroCrossAlg', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// 1.0
+// 0.0
+// endResult

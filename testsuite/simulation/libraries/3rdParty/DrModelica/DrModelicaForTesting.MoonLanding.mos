@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.MoonLanding.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.MoonLanding
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.MoonLanding.* DrModelicaForTesting.MoonLanding_* DrModelicaForTesting.MoonLanding DrModelicaForTesting.MoonLanding.exe DrModelicaForTesting.MoonLanding.cpp DrModelicaForTesting.MoonLanding.makefile DrModelicaForTesting.MoonLanding.libs DrModelicaForTesting.MoonLanding.log DrModelicaForTesting.MoonLanding.c DrModelicaForTesting.MoonLanding.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.MoonLanding, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.MoonLanding_res.mat",
+  "ReferenceFiles/MoonLanding_ref.mat","DrModelicaForTesting.MoonLanding_diff.csv",0.01,0.013,
+  {"force1", "force2", "apollo.mass", "apollo.velocity", "moon.mass"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.MoonLanding_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.MoonLanding', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

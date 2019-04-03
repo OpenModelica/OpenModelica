@@ -1,0 +1,39 @@
+// name:     PolynomialEvaluatorA
+// keywords: 
+// status: correct
+// teardown_command: rm -rf PolyEvaluate1_* PolyEvaluate1 PolyEvaluate1.exe PolyEvaluate1.cpp PolyEvaluate1.makefile PolyEvaluate1.libs PolyEvaluate1.log output.log
+// 
+// Drmodelica: 8.2 Polynomial Evaluator (p. 242)
+//
+loadFile("PolynomialEvaluatorA.mo");
+simulate(PolyEvaluate1,startTime=0.0, stopTime=10.0, numberOfIntervals = 100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output  
+p1:=val(p,3.0);
+p2:=val(p,5.0);
+p3:=val(p,8.0);
+p1:=1000*p1;
+p2:=1000*p2;
+p3:=1000*p3;
+p1:=floor(p1);
+p2:=floor(p2);
+p3:=floor(p3);
+
+echo(true); // turns on output
+p1/1000.0; // rounded value to 3 digits
+p2/1000.0;
+p3/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "PolyEvaluate1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'PolyEvaluate1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 27.0
+// 125.0
+// 512.0
+// endResult

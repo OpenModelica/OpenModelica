@@ -1,0 +1,25 @@
+// name: bug_3334
+// status: correct
+
+// setGrammarParModelica();
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
+
+setDefaultOpenCLDevice(1);
+getErrorString();
+
+loadFile("bug_3334.mo");
+getErrorString();
+
+x:=ParFuncTest.test(5);
+getErrorString();
+
+// x;
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// {50,200,450,800,1250,1800,2450,3200,4050,5000}
+// ""
+// endResult

@@ -1,0 +1,51 @@
+// name:      FuncMultResults
+// keywords:  function
+// status: incorrect
+// teardown_command: rm -rf f_* f.* FuncMultResults_* FuncMultResults FuncMultResults.exe FuncMultResults.cpp FuncMultResults.makefile FuncMultResults.libs FuncMultResults.log output.log
+//
+// function handling
+// Drmodelica: 9.1 Function with Multiple Results (p. 287)
+// 
+loadFile("FuncMultResults.mo");
+simulate(fCall, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
+echo(false);
+res:=readSimulationResult("FuncMultResults_res.mat",{a,b,c,x[1],x[2],x[3]},3);
+a := res[1];
+a := 1000*a;
+a := floor(a);
+b := res[2];
+b := 1000*b;
+b := floor(b);
+c := res[3];
+c := 1000*c;
+c := floor(c);
+x1 := res[4];
+x1 := 1000*x1;
+x1 := floor(x1);
+x2 := res[5];
+x2 := 1000*x2;
+x2 := floor(x2);
+x3 := res[6];
+x3 := 1000*x3;
+x3 := floor(x3);
+echo(true);
+a/1000.0;
+b/1000.0;
+c/1000.0;
+x1/1000.0;
+x2/1000.0;
+x3/1000.0;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "FuncMultResults_res.mat"
+// end SimulationResult;
+// true
+// {1.0,1.0,1.0}
+// {2.0,2.0,2.0}
+// {2.0,2.0,2.0}
+// {3.0,3.0,3.0}
+// {4.0,4.0,4.0}
+// {12.0,12.0,12.0}
+// ""
+// endResult

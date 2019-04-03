@@ -1,0 +1,64 @@
+// name:     EnzMM
+// keywords: biochem, lookup
+// status:   correct
+//
+// BioChem example
+// 
+
+loadFile("EnzMMTotal.mo");
+instantiateModel(BioChem.Examples.EnzMM);
+getErrorString();
+// Result:
+// true
+// "class BioChem.Examples.EnzMM \"An enzymatic reaction with Michaelis-Menten kinetics\"
+//   Real V(quantity = \"Volume\", unit = \"l\", start = 1.0) \"Compartment volume\";
+//   Real F6P.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 2.0) \"Current concentration of substance (mM)\";
+//   Real F6P.rNet(quantity = \"Molar flow rate\", unit = \"mol/s\") \"Net flow rate of substance into the node\";
+//   Real F6P.n(quantity = \"AmountOfSubstance\", unit = \"mol\", min = 0.0) \"Number of moles of substance in pool (mol)\";
+//   Real F6P.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
+//   Real F6P.n1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
+//   Real F6P.n1.V(quantity = \"Volume\", unit = \"l\");
+//   Real uur.rr(quantity = \"Reaction rate\", unit = \"mol/s\") \"Rate of the reaction\";
+//   Real uur.s1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
+//   Real uur.s1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
+//   Real uur.s1.V(quantity = \"Volume\", unit = \"l\");
+//   Real uur.p1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
+//   Real uur.p1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
+//   Real uur.p1.V(quantity = \"Volume\", unit = \"l\");
+//   Real uur.nS1(quantity = \"Stoichiometric coefficient\", unit = \"1\") = 1.0 \"Stoichiometric coefficient for the substrate\";
+//   Real uur.nP1(quantity = \"Stoichiometric coefficient\", unit = \"1\") = 1.0 \"Stoichiometric coefficient for the product\";
+//   parameter Real uur.KmS(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0) = 0.1 \"Forward Michaelis-Menten constant\";
+//   parameter Real uur.KmP(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0) = 0.05 \"Reverse Michaelis-Menten constant\";
+//   parameter Real uur.vF(quantity = \"Reaction rate\", unit = \"mol/s\") = 1.5 \"Forward maximum velocity\";
+//   parameter Real uur.vR(quantity = \"Reaction rate\", unit = \"mol/s\") = 1.0 \"Reverse maximum velocity\";
+//   Real G6P.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 1.0) \"Current concentration of substance (mM)\";
+//   Real G6P.rNet(quantity = \"Molar flow rate\", unit = \"mol/s\") \"Net flow rate of substance into the node\";
+//   Real G6P.n(quantity = \"AmountOfSubstance\", unit = \"mol\", min = 0.0) \"Number of moles of substance in pool (mol)\";
+//   Real G6P.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
+//   Real G6P.n1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
+//   Real G6P.n1.V(quantity = \"Volume\", unit = \"l\");
+// equation
+//   der(F6P.n) = F6P.rNet;
+//   F6P.rNet = F6P.n1.r;
+//   F6P.c = F6P.n1.c;
+//   V = F6P.n1.V;
+//   F6P.c = F6P.n / V;
+//   uur.rr = (uur.vF * uur.s1.c / uur.KmS - uur.vR * uur.p1.c / uur.KmP) / (1.0 + uur.s1.c / uur.KmS + uur.p1.c / uur.KmP);
+//   uur.s1.r = uur.nS1 * uur.rr;
+//   uur.p1.r = (-uur.nP1) * uur.rr;
+//   der(G6P.n) = G6P.rNet;
+//   G6P.rNet = G6P.n1.r;
+//   G6P.c = G6P.n1.c;
+//   V = G6P.n1.V;
+//   G6P.c = G6P.n / V;
+//   der(V) = 0.0 \"Compartment volume is constant\";
+//   F6P.n1.r + uur.p1.r = 0.0;
+//   uur.s1.r + G6P.n1.r = 0.0;
+//   F6P.n1.V = uur.p1.V;
+//   F6P.n1.c = uur.p1.c;
+//   G6P.n1.V = uur.s1.V;
+//   G6P.n1.c = uur.s1.c;
+// end BioChem.Examples.EnzMM;
+// "
+// ""
+// endResult

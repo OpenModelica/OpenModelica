@@ -1,0 +1,46 @@
+// name: problem1 [kinsol]
+// status: correct
+// teardown_command: rm -f nonlinear_system.problem1* _nonlinear_system.problem1* output.log
+
+loadFile("nlsTestPackage.mo"); getErrorString();
+simulate(nonlinear_system.problem1, stopTime=2, simflags="-nls=kinsol"); getErrorString();
+
+val(x[1],{0.0,1.0,2.0});
+val(x[2],{0.0,1.0,2.0});
+val(x[3],{0.0,1.0,2.0});
+val(x[4],{0.0,1.0,2.0});
+val(x[5],{0.0,1.0,2.0});
+val(x[6],{0.0,1.0,2.0});
+val(x[7],{0.0,1.0,2.0});
+val(x[8],{0.0,1.0,2.0});
+val(x[9],{0.0,1.0,2.0});
+val(x[10],{0.0,1.0,2.0});
+val(z,{0.0,1.0,2.0});
+val(y,{0.0,1.0,2.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {0.4044646785222299,0.2484857135634593,0.1512091359384809}
+// {0.1635916761720908,0.06174514984514156,0.022864202791262}
+// {0.02676223651279422,0.003812463529398985,0.0005227717692799529}
+// {0.0007162173031667359,1.453487816299737e-05,2.732903227560923e-07}
+// {5.12967225355432e-07,2.112626832131777e-10,7.46876005121291e-14}
+// {2.631353742888505e-13,4.463192131843147e-20,5.578237670259387e-27}
+// {6.924022520213346e-26,1.992008400574657e-39,3.111673550590088e-53}
+// {4.794208786042158e-51,3.968097467960004e-78,9.682512285441925e-106}
+// {2.298443788416382e-101,1.574579751523059e-155,9.375104415773381e-211}
+// {5.282843848509851e-202,2.479301393906442e-310,0.0}
+// {0.5955353214777701,0.3140578620274255,0.1745963837894203}
+// {0.0,0.4374564244101344,0.6741944802720988}
+// endResult

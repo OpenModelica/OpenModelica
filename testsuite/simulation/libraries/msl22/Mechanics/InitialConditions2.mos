@@ -1,0 +1,641 @@
+//name:         InitialConditions2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.InitialConditions,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+"M3.s:";
+val(M3.s,0.0);
+val(M3.s,0.25);
+val(M3.s,0.5);
+val(M3.s,0.75);
+val(M3.s,1.0);
+
+"M3.flange_a.s:";
+val(M3.flange_a.s,0.0);
+val(M3.flange_a.s,0.25);
+val(M3.flange_a.s,0.5);
+val(M3.flange_a.s,0.75);
+val(M3.flange_a.s,1.0);
+
+"M3.flange_a.f:";
+val(M3.flange_a.f,0.0);
+val(M3.flange_a.f,0.25);
+val(M3.flange_a.f,0.5);
+val(M3.flange_a.f,0.75);
+val(M3.flange_a.f,1.0);
+
+"M3.flange_b.s:";
+val(M3.flange_b.s,0.0);
+val(M3.flange_b.s,0.25);
+val(M3.flange_b.s,0.5);
+val(M3.flange_b.s,0.75);
+val(M3.flange_b.s,1.0);
+
+"M3.flange_b.f:";
+val(M3.flange_b.f,0.0);
+val(M3.flange_b.f,0.25);
+val(M3.flange_b.f,0.5);
+val(M3.flange_b.f,0.75);
+val(M3.flange_b.f,1.0);
+
+"M3.v:";
+val(M3.v,0.0);
+val(M3.v,0.25);
+val(M3.v,0.5);
+val(M3.v,0.75);
+val(M3.v,1.0);
+
+"M3.a:";
+val(M3.a,0.0);
+val(M3.a,0.25);
+val(M3.a,0.5);
+val(M3.a,0.75);
+val(M3.a,1.0);
+
+"S2.flange_a.f:";
+val(S2.flange_a.f,0.0);
+val(S2.flange_a.f,0.25);
+val(S2.flange_a.f,0.5);
+val(S2.flange_a.f,0.75);
+val(S2.flange_a.f,1.0);
+
+"S2.flange_b.s:";
+val(S2.flange_b.s,0.0);
+val(S2.flange_b.s,0.25);
+val(S2.flange_b.s,0.5);
+val(S2.flange_b.s,0.75);
+val(S2.flange_b.s,1.0);
+
+"S2.flange_b.f:";
+val(S2.flange_b.f,0.0);
+val(S2.flange_b.f,0.25);
+val(S2.flange_b.f,0.5);
+val(S2.flange_b.f,0.75);
+val(S2.flange_b.f,1.0);
+
+"S2.f:";
+val(S2.f,0.0);
+val(S2.f,0.25);
+val(S2.f,0.5);
+val(S2.f,0.75);
+val(S2.f,1.0);
+
+"Fixed1.flange_b.f:";
+val(Fixed1.flange_b.f,0.0);
+val(Fixed1.flange_b.f,0.25);
+val(Fixed1.flange_b.f,0.5);
+val(Fixed1.flange_b.f,0.75);
+val(Fixed1.flange_b.f,1.0);
+
+"SD4.flange_a.s:";
+val(SD4.flange_a.s,0.0);
+val(SD4.flange_a.s,0.25);
+val(SD4.flange_a.s,0.5);
+val(SD4.flange_a.s,0.75);
+val(SD4.flange_a.s,1.0);
+
+"SD4.flange_a.f:";
+val(SD4.flange_a.f,0.0);
+val(SD4.flange_a.f,0.25);
+val(SD4.flange_a.f,0.5);
+val(SD4.flange_a.f,0.75);
+val(SD4.flange_a.f,1.0);
+
+"SD4.flange_b.s:";
+val(SD4.flange_b.s,0.0);
+val(SD4.flange_b.s,0.25);
+val(SD4.flange_b.s,0.5);
+val(SD4.flange_b.s,0.75);
+val(SD4.flange_b.s,1.0);
+
+"SD4.flange_b.f:";
+val(SD4.flange_b.f,0.0);
+val(SD4.flange_b.f,0.25);
+val(SD4.flange_b.f,0.5);
+val(SD4.flange_b.f,0.75);
+val(SD4.flange_b.f,1.0);
+
+"SD4.f:";
+val(SD4.f,0.0);
+val(SD4.f,0.25);
+val(SD4.f,0.5);
+val(SD4.f,0.75);
+val(SD4.f,1.0);
+
+"SD4.v_rel:";
+val(SD4.v_rel,0.0);
+val(SD4.v_rel,0.25);
+val(SD4.v_rel,0.5);
+val(SD4.v_rel,0.75);
+val(SD4.v_rel,1.0);
+
+"M5.s:";
+val(M5.s,0.0);
+val(M5.s,0.25);
+val(M5.s,0.5);
+val(M5.s,0.75);
+val(M5.s,1.0);
+
+"M5.flange_a.s:";
+val(M5.flange_a.s,0.0);
+val(M5.flange_a.s,0.25);
+val(M5.flange_a.s,0.5);
+val(M5.flange_a.s,0.75);
+val(M5.flange_a.s,1.0);
+
+"M5.flange_a.f:";
+val(M5.flange_a.f,0.0);
+val(M5.flange_a.f,0.25);
+val(M5.flange_a.f,0.5);
+val(M5.flange_a.f,0.75);
+val(M5.flange_a.f,1.0);
+
+"M5.flange_b.s:";
+val(M5.flange_b.s,0.0);
+val(M5.flange_b.s,0.25);
+val(M5.flange_b.s,0.5);
+val(M5.flange_b.s,0.75);
+val(M5.flange_b.s,1.0);
+
+"M5.v:";
+val(M5.v,0.0);
+val(M5.v,0.25);
+val(M5.v,0.5);
+val(M5.v,0.75);
+val(M5.v,1.0);
+
+"M5.a:";
+val(M5.a,0.0);
+val(M5.a,0.25);
+val(M5.a,0.5);
+val(M5.a,0.75);
+val(M5.a,1.0);
+
+"M1.s:";
+val(M1.s,0.0);
+val(M1.s,0.25);
+val(M1.s,0.5);
+val(M1.s,0.75);
+val(M1.s,1.0);
+
+"M1.flange_a.s:";
+val(M1.flange_a.s,0.0);
+val(M1.flange_a.s,0.25);
+val(M1.flange_a.s,0.5);
+val(M1.flange_a.s,0.75);
+val(M1.flange_a.s,1.0);
+
+"M1.flange_a.f:";
+val(M1.flange_a.f,0.0);
+val(M1.flange_a.f,0.25);
+val(M1.flange_a.f,0.5);
+val(M1.flange_a.f,0.75);
+val(M1.flange_a.f,1.0);
+
+"M1.flange_b.s:";
+val(M1.flange_b.s,0.0);
+val(M1.flange_b.s,0.25);
+val(M1.flange_b.s,0.5);
+val(M1.flange_b.s,0.75);
+val(M1.flange_b.s,1.0);
+
+"M1.flange_b.f:";
+val(M1.flange_b.f,0.0);
+val(M1.flange_b.f,0.25);
+val(M1.flange_b.f,0.5);
+val(M1.flange_b.f,0.75);
+val(M1.flange_b.f,1.0);
+
+"M1.v:";
+val(M1.v,0.0);
+val(M1.v,0.25);
+val(M1.v,0.5);
+val(M1.v,0.75);
+val(M1.v,1.0);
+
+"M1.a:";
+val(M1.a,0.0);
+val(M1.a,0.25);
+val(M1.a,0.5);
+val(M1.a,0.75);
+val(M1.a,1.0);
+
+"S1.flange_a.f:";
+val(S1.flange_a.f,0.0);
+val(S1.flange_a.f,0.25);
+val(S1.flange_a.f,0.5);
+val(S1.flange_a.f,0.75);
+val(S1.flange_a.f,1.0);
+
+"S1.flange_b.s:";
+val(S1.flange_b.s,0.0);
+val(S1.flange_b.s,0.25);
+val(S1.flange_b.s,0.5);
+val(S1.flange_b.s,0.75);
+val(S1.flange_b.s,1.0);
+
+"S1.flange_b.f:";
+val(S1.flange_b.f,0.0);
+val(S1.flange_b.f,0.25);
+val(S1.flange_b.f,0.5);
+val(S1.flange_b.f,0.75);
+val(S1.flange_b.f,1.0);
+
+"S1.f:";
+val(S1.f,0.0);
+val(S1.f,0.25);
+val(S1.f,0.5);
+val(S1.f,0.75);
+val(S1.f,1.0);
+
+"Fixed2.flange_b.f:";
+val(Fixed2.flange_b.f,0.0);
+val(Fixed2.flange_b.f,0.25);
+val(Fixed2.flange_b.f,0.5);
+val(Fixed2.flange_b.f,0.75);
+val(Fixed2.flange_b.f,1.0);
+
+"SD1.flange_a.s:";
+val(SD1.flange_a.s,0.0);
+val(SD1.flange_a.s,0.25);
+val(SD1.flange_a.s,0.5);
+val(SD1.flange_a.s,0.75);
+val(SD1.flange_a.s,1.0);
+
+"SD1.flange_a.f:";
+val(SD1.flange_a.f,0.0);
+val(SD1.flange_a.f,0.25);
+val(SD1.flange_a.f,0.5);
+val(SD1.flange_a.f,0.75);
+val(SD1.flange_a.f,1.0);
+
+"SD1.flange_b.s:";
+val(SD1.flange_b.s,0.0);
+val(SD1.flange_b.s,0.25);
+val(SD1.flange_b.s,0.5);
+val(SD1.flange_b.s,0.75);
+val(SD1.flange_b.s,1.0);
+
+"SD1.flange_b.f:";
+val(SD1.flange_b.f,0.0);
+val(SD1.flange_b.f,0.25);
+val(SD1.flange_b.f,0.5);
+val(SD1.flange_b.f,0.75);
+val(SD1.flange_b.f,1.0);
+
+"SD1.f:";
+val(SD1.f,0.0);
+val(SD1.f,0.25);
+val(SD1.f,0.5);
+val(SD1.f,0.75);
+val(SD1.f,1.0);
+
+"SD1.v_rel:";
+val(SD1.v_rel,0.0);
+val(SD1.v_rel,0.25);
+val(SD1.v_rel,0.5);
+val(SD1.v_rel,0.75);
+val(SD1.v_rel,1.0);
+
+"M2.s:";
+val(M2.s,0.0);
+val(M2.s,0.25);
+val(M2.s,0.5);
+val(M2.s,0.75);
+val(M2.s,1.0);
+
+"M2.flange_a.s:";
+val(M2.flange_a.s,0.0);
+val(M2.flange_a.s,0.25);
+val(M2.flange_a.s,0.5);
+val(M2.flange_a.s,0.75);
+val(M2.flange_a.s,1.0);
+
+"M2.flange_a.f:";
+val(M2.flange_a.f,0.0);
+val(M2.flange_a.f,0.25);
+val(M2.flange_a.f,0.5);
+val(M2.flange_a.f,0.75);
+val(M2.flange_a.f,1.0);
+
+"M2.flange_b.s:";
+val(M2.flange_b.s,0.0);
+val(M2.flange_b.s,0.25);
+val(M2.flange_b.s,0.5);
+val(M2.flange_b.s,0.75);
+val(M2.flange_b.s,1.0);
+
+"M2.v:";
+val(M2.v,0.0);
+val(M2.v,0.25);
+val(M2.v,0.5);
+val(M2.v,0.75);
+val(M2.v,1.0);
+
+"M2.a:";
+val(M2.a,0.0);
+val(M2.a,0.25);
+val(M2.a,0.5);
+val(M2.a,0.75);
+val(M2.a,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat",
+//     messages = ""
+// end SimulationResult;
+// "M3.s:"
+// 4.5
+// 4.5
+// 4.5
+// 4.5
+// 4.5
+// "M3.flange_a.s:"
+// 3.0
+// 3.0
+// 3.0
+// 3.0
+// 3.0
+// "M3.flange_a.f:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -0.0
+// "M3.flange_b.s:"
+// 6.0
+// 6.0
+// 6.0
+// 6.0
+// 6.0
+// "M3.flange_b.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "M3.v:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "M3.a:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "S2.flange_a.f:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -0.0
+// "S2.flange_b.s:"
+// 3.0
+// 3.0
+// 3.0
+// 3.0
+// 3.0
+// "S2.flange_b.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "S2.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "Fixed1.flange_b.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "SD4.flange_a.s:"
+// 6.0
+// 6.0
+// 6.0
+// 6.0
+// 6.0
+// "SD4.flange_a.f:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -0.0
+// "SD4.flange_b.s:"
+// 10.0
+// 10.0
+// 10.0
+// 10.0
+// 10.0
+// "SD4.flange_b.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "SD4.f:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "SD4.v_rel:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "M5.s:"
+// 12.5
+// 12.5
+// 12.5
+// 12.5
+// 12.5
+// "M5.flange_a.s:"
+// 10.0
+// 10.0
+// 10.0
+// 10.0
+// 10.0
+// "M5.flange_a.f:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -0.0
+// "M5.flange_b.s:"
+// 15.0
+// 15.0
+// 15.0
+// 15.0
+// 15.0
+// "M5.v:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "M5.a:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -0.0
+// "M1.s:"
+// 0.0
+// 0.810521980526545
+// 0.487341225980795
+// 0.309546686325437
+// 0.727987373098492
+// "M1.flange_a.s:"
+// -0.5
+// 0.310521980526545
+// -0.0126587740192052
+// -0.190453313674563
+// 0.227987373098492
+// "M1.flange_a.f:"
+// 500.0
+// -310.521980526545
+// 12.6587740192052
+// 190.453313674563
+// -227.987373098492
+// "M1.flange_b.s:"
+// 0.5
+// 1.31052198052654
+// 0.987341225980795
+// 0.809546686325437
+// 1.22798737309849
+// "M1.flange_b.f:"
+// -277.5
+// 208.639493421604
+// -77.197410799755
+// -64.3570832327313
+// 163.20752905245
+// "M1.v:"
+// 0.0
+// 5.94572243509522
+// -6.0303772780296
+// 2.12069183427809
+// 1.47848341920503
+// "M1.a:"
+// 222.5
+// -101.88248710494
+// -64.5386367805497
+// 126.096230441832
+// -64.7798440460428
+// "S1.flange_a.f:"
+// 500.0
+// -310.521980526545
+// 12.6587740192052
+// 190.453313674563
+// -227.987373098492
+// "S1.flange_b.s:"
+// -0.5
+// 0.310521980526545
+// -0.0126587740192052
+// -0.190453313674563
+// 0.227987373098492
+// "S1.flange_b.f:"
+// -500.0
+// 310.521980526545
+// -12.6587740192052
+// -190.453313674563
+// 227.987373098492
+// "S1.f:"
+// -500.0
+// 310.521980526545
+// -12.6587740192052
+// -190.453313674563
+// 227.987373098492
+// "Fixed2.flange_b.f:"
+// -500.0
+// 310.521980526545
+// -12.6587740192052
+// -190.453313674563
+// 227.987373098492
+// "SD1.flange_a.s:"
+// 0.5
+// 1.31052198052654
+// 0.987341225980795
+// 0.809546686325437
+// 1.22798737309849
+// "SD1.flange_a.f:"
+// 277.5
+// -208.639493421604
+// 77.197410799755
+// 64.3570832327313
+// -163.20752905245
+// "SD1.flange_b.s:"
+// -1.0
+// 4.09845313921289
+// 1.44835174102571
+// 1.06352898879387
+// 3.80456155913819
+// "SD1.flange_b.f:"
+// -277.5
+// 208.639493421604
+// -77.197410799755
+// -64.3570832327313
+// 163.20752905245
+// "SD1.f:"
+// -277.5
+// 208.639493421604
+// -77.197410799755
+// -64.3570832327313
+// 163.20752905245
+// "SD1.v_rel:"
+// 0.0
+// 10.1791348074199
+// -17.3695779697401
+// 18.4508811932722
+// -11.7922055979574
+// "M2.s:"
+// 0.0
+// 5.09845313921289
+// 2.44835174102571
+// 2.06352898879387
+// 4.80456155913819
+// "M2.flange_a.s:"
+// -1.0
+// 4.09845313921289
+// 1.44835174102571
+// 1.06352898879387
+// 3.80456155913819
+// "M2.flange_a.f:"
+// 277.5
+// -208.639493421604
+// 77.197410799755
+// 64.3570832327313
+// -163.20752905245
+// "M2.flange_b.s:"
+// 1.0
+// 6.09845313921289
+// 3.44835174102571
+// 3.06352898879387
+// 5.80456155913819
+// "M2.v:"
+// 0.0
+// 16.1248572425151
+// -23.3999552477697
+// 20.5715730275503
+// -10.3137221787524
+// "M2.a:"
+// 277.5
+// -208.639493421604
+// 77.197410799755
+// 64.3570832327313
+// -163.20752905245
+// endResult

@@ -1,0 +1,76 @@
+// name: 02_BouncingBall
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("BouncingBall.mo"); getErrorString();
+loadFile("BouncingBall1.mo"); getErrorString();
+loadFile("BouncingBall2.mo"); getErrorString();
+
+simulate(BouncingBall, stopTime=3); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
+  "ReferenceFiles/BouncingBall.mat",
+  "BouncingBall_diff.csv", 0.01, 0.0001,
+  {"h"}); getErrorString();
+
+simulate(BouncingBall1, stopTime=3, numberOfIntervals=500); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("BouncingBall1_res.mat",
+  "ReferenceFiles/BouncingBall1.mat",
+  "BouncingBall1_diff.csv", 0.01, 0.0001,
+  {"h"}); getErrorString();
+
+simulate(BouncingBall2, stopTime=3, numberOfIntervals=500); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("BouncingBall2_res.mat",
+  "ReferenceFiles/BouncingBall2.mat",
+  "BouncingBall2_diff.csv", 0.01, 0.0001,
+  {"h"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "BouncingBall1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBall1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "BouncingBall2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBall2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

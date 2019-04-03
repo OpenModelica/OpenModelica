@@ -1,0 +1,18 @@
+// name:     05b AssignTwoType
+// keywords: MetaModelica
+// cflags: +g=MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+//
+echo(false);
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Absyn.mo");
+loadFile("Eval.mo");
+loadFile("Main.mo");
+loadFile("Parse.mo");
+i:=Main.main({});
+// Result:
+// [Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
+// 14.6
+// endResult

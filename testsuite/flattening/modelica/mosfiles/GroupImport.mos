@@ -1,0 +1,24 @@
+// name: GroupImport
+// status: correct
+
+loadFile("GroupImport.mo");
+list();getErrorString();
+instantiateModel(GroupImport);getErrorString();
+
+// Result:
+// true
+// "package B
+//   constant Real c = 1, d = 2;
+// end B;
+// 
+// class GroupImport
+//   import B.{c,e = d};
+//   Real r = c + e;
+// end GroupImport;"
+// ""
+// "class GroupImport
+//   Real r = 3.0;
+// end GroupImport;
+// "
+// ""
+// endResult

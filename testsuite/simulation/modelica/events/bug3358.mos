@@ -1,0 +1,64 @@
+// name: bug3358
+// keywords: events
+// status: correct
+
+loadString("
+package bug3358
+  model foo3
+    Real x(fixed=true, start=0.0);
+    Boolean b1, b2;
+  algorithm
+    b1 := time > 0.5;
+    b2 := time > 0.5;
+    when b1 then
+      x := pre(x) + 1;
+    elsewhen b2 then
+      x := pre(x) + 0.1;
+    end when;
+  end foo3;
+
+  model foo3b
+    Real x(fixed=true, start=0.0);
+    Boolean b1, b2;
+  algorithm
+    b2 := time > 0.5;
+    b1 := time > 0.5;
+    when b1 then
+      x := pre(x) + 1;
+    elsewhen b2 then
+      x := pre(x) + 0.1;
+    end when;
+  end foo3b;
+end bug3358;
+"); getErrorString();
+
+simulate(bug3358.foo3); getErrorString();
+val(x, 1.0); getErrorString();
+
+simulate(bug3358.foo3b); getErrorString();
+val(x, 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "bug3358.foo3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug3358.foo3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// ""
+// record SimulationResult
+//     resultFile = "bug3358.foo3b_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'bug3358.foo3b', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// ""
+// endResult

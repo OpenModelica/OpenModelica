@@ -1,0 +1,11 @@
+// name: NonlinearSolverFailureInitial
+// status: correct
+// teardown_command: rm -f NonlinearSolverFailureInitial* output.log
+
+loadModel(Modelica);
+loadFile("DebugPackage.mo"); getErrorString();
+
+simulate(SolverFailure.NonlinearSolverFailureInitial); getErrorString();
+
+// Result:
+// endResult

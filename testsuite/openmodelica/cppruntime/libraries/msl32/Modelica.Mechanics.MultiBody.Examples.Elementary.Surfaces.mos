@@ -1,0 +1,36 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces);
+compareVars := {"prismatic.v","position.s"};
+runScript(modelTesting);
+getErrorString();
+
+
+// Result:
+// true
+// true
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces.mat"
+// 0.0
+// 0.01
+// 0.0001
+// "mat"
+// {"prismatic.v","position.s"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces_res.mat
+// Note: Result files are now equal. Please update the test to do verified simulation!
+// "true
+// "
+// ""
+// endResult

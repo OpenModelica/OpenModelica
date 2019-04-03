@@ -1,0 +1,39 @@
+// name:     Oscillator
+// keywords: modelica library
+// status:   correct
+// 
+//  MORE WORK ON THIS FILE HAS TO BE DONE!
+//
+// Drmodelica: 5.3 Oscillating Mass Connected to a Spring (p. 156)
+// 
+loadModel(Modelica);
+loadFile("Oscillator.mo");
+simulate(Oscillator,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+x:=val(fixed1.flange_b.f,0.6);
+y:=val(mass1.a,1.0);
+z:=val(spring1.s_rel,0.6);
+x:=10.0*x;
+y:=10.0*y;
+z:=10.0*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+
+echo(true); // turns on output
+x:=x/10.0; // rounded value to 1 digits
+y:=y/10.0;
+z:=z/10.0;
+system("rm -rf Oscillator_* Oscillator.exe Oscillator.cpp Oscillator.makefile Oscillator.libs Oscillator.log output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Oscillator_res.mat"
+// end SimulationResult;
+// true
+// -9490.7
+// -8597.7
+// 2.9
+// ""
+// 0
+// endResult

@@ -1,0 +1,7 @@
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+setCompiler("gcc"); getErrorString();
+setCXXCompiler("g++"); getErrorString();
+simulate(Modelica.Fluid.Examples.BranchingDynamicPipes, measureTime=true, simflags="-clock=CYC"); getErrorString();

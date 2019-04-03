@@ -1,0 +1,24 @@
+// Name:     MRFcall
+// keywords: equations when
+// status:   correct
+// 
+//  Tests when, elsewhen
+//
+// Drmodelica: 9.2 Multiple Results (p. 302)
+// 
+loadFile("MRFcall.mo");
+simulate(MRFcall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+res:=readSimulationResult("MRFcall_res.mat",{a,b,c},3); 
+echo(true); // turns on output
+system("rm -rf MRFcall.plt MRFcall.c MRFcall.exe MRFcall_* output.log"); // remove tmp files.
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "MRFcall_res.mat"
+// end SimulationResult;
+// true
+// ""
+// 0
+// endResult

@@ -1,0 +1,45 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator);
+compareVars :=
+{
+   "constantSpeedE.phi",
+   "constantSpeedM.phi",
+   "smeeE.idq_dr[1]",
+   "smeeE.idq_rr[2]",
+   "smeeE.idq_sr[1]",
+   "smeeE.idq_sr[2]",
+   "smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smeeM.stator.strayReluctance.port_p.Phi.im",
+   "smeeM.stator.strayReluctance.port_p.Phi.re"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator
+// {"constantSpeedE.phi","constantSpeedM.phi","smeeE.idq_dr[1]","smeeE.idq_rr[2]","smeeE.idq_sr[1]","smeeE.idq_sr[2]","smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smeeM.stator.strayReluctance.port_p.Phi.im","smeeM.stator.strayReluctance.port_p.Phi.re"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

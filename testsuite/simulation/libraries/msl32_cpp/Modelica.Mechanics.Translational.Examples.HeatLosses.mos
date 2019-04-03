@@ -1,0 +1,43 @@
+// name:     Modelica.Mechanics.Translational.Examples.HeatLosses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.HeatLosses);
+compareVars :=
+{
+   "damper.s_rel",
+   "damper.v_rel",
+   "massWithStopAndFriction.s",
+   "massWithStopAndFriction.v",
+   "springDamper.s_rel",
+   "springDamper.v_rel"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Translational.Examples.HeatLosses
+// {"damper.s_rel","damper.v_rel","massWithStopAndFriction.s","massWithStopAndFriction.v","springDamper.s_rel","springDamper.v_rel"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Translational.Examples.HeatLosses_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

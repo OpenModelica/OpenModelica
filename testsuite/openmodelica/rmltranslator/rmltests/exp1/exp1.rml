@@ -1,0 +1,48 @@
+(* file exp1.rml *)
+
+module Exp1:
+  datatype Exp   =  INTconst of  int
+                 |  ADDop    of  Exp * Exp
+                 |  SUBop    of  Exp * Exp
+                 |  MULop    of  Exp * Exp
+                 |  DIVop    of  Exp * Exp
+                 |  NEGop    of  Exp
+
+  relation eval:  Exp => int
+
+end
+
+relation eval: Exp => int  =
+  
+  axiom eval( INTconst(ival) ) => ival  
+  
+  rule  eval(e1) => v1 & 
+        eval(e2) => v2  &  
+        int_add(v1,v2) => v3 
+        -----------------------------------------------------------
+        eval( ADDop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  
+        eval(e2) => v2  & 
+        int_sub(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( SUBop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  
+        eval(e2) => v2  &  
+        int_mul(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( MULop(e1,e2) ) => v3
+
+  rule  eval(e1) => v1  &  
+        eval(e2) => v2  &  
+        int_div(v1,v2) => v3
+        ----------------------------------------------------------
+        eval( DIVop(e1,e2) ) => v3
+
+  rule  eval(e) => v1  &  
+        int_neg(v1) => v2
+        -----------------------------------
+        eval( NEGop(e) ) => v2
+
+end 

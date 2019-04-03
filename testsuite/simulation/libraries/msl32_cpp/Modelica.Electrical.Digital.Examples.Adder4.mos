@@ -1,0 +1,52 @@
+// name:     Modelica.Electrical.Digital.Examples.Adder4
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.Adder4);
+compareVars :=
+{
+   "a1.y",
+   "b1.y",
+   "a2.y",
+   "b2.y",
+   "a3.y",
+   "b3.y",
+   "a4.y",
+   "b4.y",
+   "Set.y",
+   "Adder1.s",
+   "Adder1.c_out",
+   "Adder2.s",
+   "Adder2.c_out",
+   "Adder3.s",
+   "Adder3.c_out",
+   "Adder4.s",
+   "Adder4.c_out"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Digital.Examples.Adder4
+// {"a1.y","b1.y","a2.y","b2.y","a3.y","b3.y","a4.y","b4.y","Set.y","Adder1.s","Adder1.c_out","Adder2.s","Adder2.c_out","Adder3.s","Adder3.c_out","Adder4.s","Adder4.c_out"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Adder4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Digital.Examples.Adder4_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

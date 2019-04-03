@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.MRFcall.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.MRFcall
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.MRFcall.* DrModelicaForTesting.MRFcall_* DrModelicaForTesting.MRFcall DrModelicaForTesting.MRFcall.exe DrModelicaForTesting.MRFcall.cpp DrModelicaForTesting.MRFcall.makefile DrModelicaForTesting.MRFcall.libs DrModelicaForTesting.MRFcall.log DrModelicaForTesting.MRFcall.c DrModelicaForTesting.MRFcall.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.MRFcall, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.MRFcall_res.mat",
+  "ReferenceFiles/MRFcall_ref.mat","DrModelicaForTesting.MRFcall_diff.csv",0.01,0.013,
+  {"a", "b", "c"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.MRFcall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.MRFcall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

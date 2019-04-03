@@ -1,0 +1,55 @@
+// name: Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager
+// keywords: simulation Modelica_DeviceDrivers examples
+// status: omc failure
+//
+// Simulation Results
+// Modelica_DeviceDrivers
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager);
+compareVars :=
+{"unpackInt.y", "unpackInt1.y", "getInteger.y[1]", "getBoolean.y[1]"};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager
+// {"unpackInt.y","unpackInt1.y","getInteger.y[1]","getBoolean.y[1]"}
+// "Modelica_DeviceDrivers
+// \"\"
+// true
+// \"Modelica_DeviceDrivers\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager', options = '', outputFormat = 'mat', variableFilter = 'time|unpackInt.y|unpackInt1.y|getInteger.y.1.|getBoolean.y.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Error: Simulation did not produce a result-file
+// Errors: Failed to build model: Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackagerWarning: Alias equations of external objects are not Modelica compliant as in:
+//     addBoolean.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     getBoolean.pkgIn.pkg = getInteger.pkgOut[1].pkg
+//     addBoolean.pkgIn.pkg = addInteger.pkgOut[1].pkg
+//     getInteger.pkgIn.pkg = unpackInt1.pkgOut[1].pkg
+//     unpackInt.pkgOut[1].pkg = unpackInt1.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = unpackInt.pkgIn.pkg
+//     addInteger.pkgIn.pkg = packInt1.pkgOut[1].pkg
+//     packInt.pkgOut[1].pkg = packInt1.pkgIn.pkg
+//     packInt.pkgIn.pkg = packager.pkgOut.pkg
+//     addBoolean.pkgOut[1].pkg = addBoolean.pkgIn.pkg
+//     unpackInt1.pkgOut[1].pkg = unpackInt1.pkgIn.pkg
+//     getInteger.pkgOut[1].pkg = getInteger.pkgIn.pkg
+//     unpackInt.pkgOut[1].pkg = unpackInt.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     packInt1.pkgOut[1].pkg = packInt1.pkgIn.pkg
+//     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
+// Error: Too many equations, over-determined system. The model has 100 equation(s) and 99 variable(s).
+//
+// endResult

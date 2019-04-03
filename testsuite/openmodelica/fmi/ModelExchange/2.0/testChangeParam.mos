@@ -1,0 +1,74 @@
+// name:  testChangeParam
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_ChangeParam* output.log
+//
+
+
+loadString("
+model test_ChangeParam
+  parameter Real a = 2.0;
+  parameter Integer i = 1;
+  parameter Boolean b = true;
+  parameter String s = \"foo\";
+  Real x(start=1);
+  input Real u;
+  output Real y;
+equation
+  der(x) = x*a+u;
+  y = if b then der(x)-x-i else der(x)+x+i;
+  when time>1 then
+      terminate(\"Simulation done by \" + s);
+  end when;
+  annotation(experiment(StopTime=2));
+end test_ChangeParam;
+");
+getErrorString();
+loadModel(Modelica);
+
+
+translateModelFMU(test_ChangeParam, version="2.0");
+getErrorString();
+importFMU("test_ChangeParam.fmu");
+
+loadFile("test_ChangeParam_me_FMU.mo");
+getErrorString();
+
+simulate(test_ChangeParam_me_FMU, numberOfIntervals=1);
+val(x, 1);
+val(a, 1);
+val(y, 1);
+getErrorString();
+
+system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat");
+readSimulationResult("test_ChangeParam.mat", {x,a,y}, 7);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "test_ChangeParam.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "test_ChangeParam_me_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "test_ChangeParam_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 7.3890899286445
+// 2.0
+// 6.3890899286445
+// ""
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// {{1.0,1.0,1.0,0.1353363211838032,0.1353363211838032,0.01831624751345867,0.01831624751345867},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.1353363211838,-10.1353363211838,-10.01831624751346,-10.01831624751346}}
+// ""
+// endResult

@@ -1,0 +1,39 @@
+//name:        Modelica.Fluid.Examples.Tanks.TanksWithOverflow [version 3.1]
+//keyword:     fluid
+//status:      correct
+//
+// simulation
+//
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+
+
+simulate(Modelica.Fluid.Examples.Tanks.TanksWithOverflow); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// Warning: Parameter pipe.flowModel.p_a_start has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter pipe.flowModel.p_b_start has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter pipe.flowModel.nParallel has neither value nor start value, and is fixed during initialization (fixed=true)
+// [Pipes.mo:21:5-40:85:writable] Error: No matching function found for Medium.density(flowModel.states[1])
+// of type
+//   .Modelica.Fluid.Pipes.StaticPipe.Medium.density<function>(state:record Modelica.Fluid.Pipes.StaticPipe.FlowModel.Medium.ThermodynamicState
+// end Modelica.Fluid.Pipes.StaticPipe.FlowModel.Medium.ThermodynamicState;) => Real(min=0.0, max=100000.0, nominal=1.0, start=1.0, quantity=\"Density\", unit=\"kg/m3\", displayUnit=\"g/cm3\") in component pipe
+// candidates are 
+//   .Modelica.Fluid.Pipes.StaticPipe.Medium.density<function>(state:record Modelica.Fluid.Pipes.StaticPipe.Medium.ThermodynamicState
+// Integer(min=0, max=2) phase;
+// Real(min=-100000000.0, max=100000000.0, nominal=1000000.0, quantity=\"SpecificEnergy\", unit=\"J/kg\") h;
+// Real(min=0.0, max=100000.0, nominal=1.0, start=1.0, quantity=\"Density\", unit=\"kg/m3\", displayUnit=\"g/cm3\") d;
+// Real(min=1.0, max=10000.0, nominal=300.0, start=300.0, quantity=\"ThermodynamicTemperature\", unit=\"K\", displayUnit=\"degC\") T;
+// Real(min=0.0, max=100000000.0, nominal=100000.0, start=100000.0, quantity=\"Pressure\", unit=\"Pa\", displayUnit=\"bar\") p;
+// end Modelica.Fluid.Pipes.StaticPipe.Medium.ThermodynamicState;) => Real(min=0.0, max=100000.0, nominal=1.0, start=1.0, quantity=\"Density\", unit=\"kg/m3\", displayUnit=\"g/cm3\")
+// Error: Error occurred while flattening model Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// "
+// end SimulationResult;
+// ""
+// endResult

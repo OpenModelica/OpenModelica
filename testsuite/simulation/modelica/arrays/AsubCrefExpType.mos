@@ -1,0 +1,21 @@
+// name:     AsubCrefExpType
+// keywords: asub cref type
+// status: correct
+// teardown_command: rm -rf AsubCrefExpType_* AsubCrefExpType AsubCrefExpType.exe AsubCrefExpType.cpp AsubCrefExpType.makefile AsubCrefExpType.libs AsubCrefExpType.log output.log
+// 
+// Tests assignment of one slice to another slice.
+// 
+
+loadFile("AsubCrefExpType.mo");
+simulate(AsubCrefExpType,startTime=0.0, stopTime=1.0, numberOfIntervals=2);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "AsubCrefExpType_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AsubCrefExpType', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

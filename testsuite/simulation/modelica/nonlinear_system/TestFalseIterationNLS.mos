@@ -1,0 +1,248 @@
+// name: TestFalseIterationNLS
+// status: correct
+//
+// Ticket 4046
+//
+
+loadModel(Modelica); getErrorString();
+loadString("
+model TestFalseIterationNLS
+  Modelica.SIunits.Pressure p;
+  Modelica.SIunits.Temperature T;
+  //Pure Component Properties
+  Modelica.SIunits.PartialPressure p_s \"Saturation partial pressure of condensing component\";
+  Modelica.SIunits.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
+  Modelica.SIunits.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
+  parameter Integer nc=5;
+  Modelica.SIunits.SpecificEnthalpy h_i[nc];
+equation
+  p_s = 4e6*time;
+  T = 273.15 + time * 10;
+  (p_s, delta_hv, delta_hd, h_i) = pureComponentProperties_pTnc(p, T, nc);
+end TestFalseIterationNLS;
+
+function pureComponentProperties_pTnc
+  input Modelica.SIunits.AbsolutePressure p \"Pressure\";
+  input Modelica.SIunits.Temperature T \"Temperature\";
+  input Integer nc \"Number of components\";
+  output Modelica.SIunits.PartialPressure ppS \"Saturation partial pressure of condensing component\";
+  output Modelica.SIunits.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
+  output Modelica.SIunits.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
+  output Modelica.SIunits.SpecificEnthalpy h_idealGas[nc] \"Specific enthalpy of theoretical pure component ideal gas state\";
+
+  external \"C\" TILMedia_Gas_pureComponentProperties_pT(p, T, ppS, delta_hv, delta_hd, h_idealGas) annotation(Include=\"
+
+void TILMedia_Gas_pureComponentProperties_pT(double p, double T, double *ppS, double *delta_hv, double *delta_hd, double *h_idealGas){
+        *ppS = 0.1*p;
+        *delta_hv = -1;
+        *delta_hd = -1;
+}
+  \");
+end pureComponentProperties_pTnc;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+simulate(TestFalseIterationNLS); getErrorString();
+
+val(p, 0.0); getErrorString();
+val(delta_hv, 0.0); getErrorString();
+val(delta_hd, 0.0); getErrorString();
+val(h_i[1], 0.0); getErrorString();
+val(h_i[2], 0.0); getErrorString();
+val(h_i[3], 0.0); getErrorString();
+val(h_i[4], 0.0); getErrorString();
+val(h_i[5], 0.0); getErrorString();
+val(p, 1.0); getErrorString();
+val(delta_hv, 1.0); getErrorString();
+val(delta_hd, 1.0); getErrorString();
+val(h_i[1], 1.0); getErrorString();
+val(h_i[2], 1.0); getErrorString();
+val(h_i[3], 1.0); getErrorString();
+val(h_i[4], 1.0); getErrorString();
+val(h_i[5], 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations: 
+// ========================================
+//
+// 6: T=273.15 + 10.0 * time [Real ]
+// 7: p_s=4000000.0 * time [Real ]
+// 10:  (NONLINEAR) index:1 jacobian: false
+// crefs: p
+// 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
+//
+// 	9: $TMP_pureComponentProperties__pTnc8.p_s - p_s (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems): 
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems): 
+// ========================================
+// 6: T=273.15 + 10.0 * time [Real ]
+// 7: p_s=4000000.0 * time [Real ]
+// 10:  (NONLINEAR) index:1 jacobian: false
+// crefs: p
+// 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
+//
+// 	9: $TMP_pureComponentProperties__pTnc8.p_s - p_s (RESIDUAL)
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (3)
+// ========================================
+// 1: alias of 7
+// 2: alias of 6
+// 5:  (NONLINEAR) index:0 jacobian: false
+// crefs: p
+// 	3:   ($TMP_pureComponentProperties__pTnc3.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
+//
+// 	4: $TMP_pureComponentProperties__pTnc3.p_s - p_s (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations: 
+// ========================================
+//
+// startValueEquations: 
+// ========================================
+//
+// nominalValueEquations: 
+// ========================================
+//
+// minValueEquations: 
+// ========================================
+//
+// maxValueEquations: 
+// ========================================
+//
+// parameterEquations: 
+// ========================================
+// 11: nc=5 [Integer ]
+//
+// removedEquations: 
+// ========================================
+//
+// algorithmAndEquationAsserts: 
+// ========================================
+// 12:   assert(T >= 0.0, "Variable violating min constraint: 0.0 <= T, has value: " + String(T, "g"));
+//
+// 13:   assert(p_s >= 0.0, "Variable violating min constraint: 0.0 <= p_s, has value: " + String(p_s, "g"));
+//
+//
+// equationsForZeroCrossings: 
+// ========================================
+//
+// jacobianEquations: 
+// ========================================
+//
+// jacobianMatrices: 
+// ========================================
+// 	Jacobian idx: 0
+// 	
+// 	Jacobian idx: 1
+// 	
+// 	Jacobian idx: 2
+// 	
+// 	Jacobian idx: 3
+// 	
+// 	Jacobian idx: 4
+// 	
+//
+// modelInfo: 
+// ========================================
+// algVars (12)
+// ----------------------
+// index: 0: $TMP_pureComponentProperties__pTnc3.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(1) [] 
+// index: 1: $TMP_pureComponentProperties__pTnc8.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(2) [] 
+// index: 2: T (no alias)  initial: 288.15	no arrCref index:(3) [] 
+// index: 3: delta_hd (no alias)  initial: 	no arrCref index:(4) [] 
+// index: 4: delta_hv (no alias)  initial: 	no arrCref index:(5) [] 
+// index: 5: h_i[1] (no alias)  initial:  	arrCref:h_i index:(6) [5] 
+// index: 6: h_i[2] (no alias)  initial: 	no arrCref index:(7) [5] 
+// index: 7: h_i[3] (no alias)  initial: 	no arrCref index:(8) [5] 
+// index: 8: h_i[4] (no alias)  initial: 	no arrCref index:(9) [5] 
+// index: 9: h_i[5] (no alias)  initial: 	no arrCref index:(10) [5] 
+// index: 10: p (no alias)  initial: 	no arrCref index:(11) [] 
+// index: 11: p_s (no alias)  initial: 0.0	no arrCref index:(12) [] 
+// intParamVars
+// ----------------------
+// index: 0: nc (no alias)  initial: 5	no arrCref index:(13) [] 
+// functions:
+// -----------
+//
+// External Function: pureComponentProperties_pTnc
+// 	outVars: ppS (Real, )  , delta_hv (Real, )  , delta_hd (Real, )  , h_idealGas (Real, )  , 
+// record SimulationResult
+//     resultFile = "TestFalseIterationNLS_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:20:3-20:42:writable] Warning: Unused input variable nc in function .pureComponentProperties_pTnc.
+// "
+// 0.0
+// ""
+// -1.0
+// ""
+// -1.0
+// ""
+// 2.994315439165665e-315
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 40000000.0
+// ""
+// -1.0
+// ""
+// -1.0
+// ""
+// 2.994563815847143e-315
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// endResult

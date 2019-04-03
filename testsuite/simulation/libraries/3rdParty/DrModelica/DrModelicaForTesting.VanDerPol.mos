@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.VanDerPol.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.VanDerPol
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.VanDerPol.* DrModelicaForTesting.VanDerPol_* DrModelicaForTesting.VanDerPol DrModelicaForTesting.VanDerPol.exe DrModelicaForTesting.VanDerPol.cpp DrModelicaForTesting.VanDerPol.makefile DrModelicaForTesting.VanDerPol.libs DrModelicaForTesting.VanDerPol.log DrModelicaForTesting.VanDerPol.c DrModelicaForTesting.VanDerPol.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.VanDerPol, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.VanDerPol_res.mat",
+  "ReferenceFiles/VanDerPol_ref.mat","DrModelicaForTesting.VanDerPol_diff.csv",0.01,0.013,
+  {"x", "y"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.VanDerPol_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.VanDerPol', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,1239 @@
+//name:         CoupledClutches2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Rotational.Examples.CoupledClutches,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+"J1.phi:";
+val(J1.phi,0.0);
+val(J1.phi,0.25);
+val(J1.phi,0.5);
+val(J1.phi,0.75);
+val(J1.phi,1.0);
+
+"J1.flange_a.phi:";
+val(J1.flange_a.phi,0.0);
+val(J1.flange_a.phi,0.25);
+val(J1.flange_a.phi,0.5);
+val(J1.flange_a.phi,0.75);
+val(J1.flange_a.phi,1.0);
+
+"J1.flange_a.tau:";
+val(J1.flange_a.tau,0.0);
+val(J1.flange_a.tau,0.25);
+val(J1.flange_a.tau,0.5);
+val(J1.flange_a.tau,0.75);
+val(J1.flange_a.tau,1.0);
+
+"J1.flange_b.phi:";
+val(J1.flange_b.phi,0.0);
+val(J1.flange_b.phi,0.25);
+val(J1.flange_b.phi,0.5);
+val(J1.flange_b.phi,0.75);
+val(J1.flange_b.phi,1.0);
+
+"J1.flange_b.tau:";
+val(J1.flange_b.tau,0.0);
+val(J1.flange_b.tau,0.25);
+val(J1.flange_b.tau,0.5);
+val(J1.flange_b.tau,0.75);
+val(J1.flange_b.tau,1.0);
+
+"J1.w:";
+val(J1.w,0.0);
+val(J1.w,0.25);
+val(J1.w,0.5);
+val(J1.w,0.75);
+val(J1.w,1.0);
+
+"J1.a:";
+val(J1.a,0.0);
+val(J1.a,0.25);
+val(J1.a,0.5);
+val(J1.a,0.75);
+val(J1.a,1.0);
+
+"torque.tau:";
+val(torque.tau,0.0);
+val(torque.tau,0.25);
+val(torque.tau,0.5);
+val(torque.tau,0.75);
+val(torque.tau,1.0);
+
+"torque.flange_b.phi:";
+val(torque.flange_b.phi,0.0);
+val(torque.flange_b.phi,0.25);
+val(torque.flange_b.phi,0.5);
+val(torque.flange_b.phi,0.75);
+val(torque.flange_b.phi,1.0);
+
+"torque.flange_b.tau:";
+val(torque.flange_b.tau,0.0);
+val(torque.flange_b.tau,0.25);
+val(torque.flange_b.tau,0.5);
+val(torque.flange_b.tau,0.75);
+val(torque.flange_b.tau,1.0);
+
+"clutch1.phi_rel:";
+val(clutch1.phi_rel,0.0);
+val(clutch1.phi_rel,0.25);
+val(clutch1.phi_rel,0.5);
+val(clutch1.phi_rel,0.75);
+val(clutch1.phi_rel,1.0);
+
+"clutch1.tau:";
+val(clutch1.tau,0.0);
+val(clutch1.tau,0.25);
+val(clutch1.tau,0.5);
+val(clutch1.tau,0.75);
+val(clutch1.tau,1.0);
+
+"clutch1.flange_a.phi:";
+val(clutch1.flange_a.phi,0.0);
+val(clutch1.flange_a.phi,0.25);
+val(clutch1.flange_a.phi,0.5);
+val(clutch1.flange_a.phi,0.75);
+val(clutch1.flange_a.phi,1.0);
+
+"clutch1.flange_a.tau:";
+val(clutch1.flange_a.tau,0.0);
+val(clutch1.flange_a.tau,0.25);
+val(clutch1.flange_a.tau,0.5);
+val(clutch1.flange_a.tau,0.75);
+val(clutch1.flange_a.tau,1.0);
+
+"clutch1.flange_b.phi:";
+val(clutch1.flange_b.phi,0.0);
+val(clutch1.flange_b.phi,0.25);
+val(clutch1.flange_b.phi,0.5);
+val(clutch1.flange_b.phi,0.75);
+val(clutch1.flange_b.phi,1.0);
+
+"clutch1.flange_b.tau:";
+val(clutch1.flange_b.tau,0.0);
+val(clutch1.flange_b.tau,0.25);
+val(clutch1.flange_b.tau,0.5);
+val(clutch1.flange_b.tau,0.75);
+val(clutch1.flange_b.tau,1.0);
+
+"clutch1.w_relfric:";
+val(clutch1.w_relfric,0.0);
+val(clutch1.w_relfric,0.25);
+val(clutch1.w_relfric,0.5);
+val(clutch1.w_relfric,0.75);
+val(clutch1.w_relfric,1.0);
+
+"clutch1.a_relfric:";
+val(clutch1.a_relfric,0.0);
+val(clutch1.a_relfric,0.25);
+val(clutch1.a_relfric,0.5);
+val(clutch1.a_relfric,0.75);
+val(clutch1.a_relfric,1.0);
+
+"clutch1.tau0:";
+val(clutch1.tau0,0.0);
+val(clutch1.tau0,0.25);
+val(clutch1.tau0,0.5);
+val(clutch1.tau0,0.75);
+val(clutch1.tau0,1.0);
+
+"clutch1.tau0_max:";
+val(clutch1.tau0_max,0.0);
+val(clutch1.tau0_max,0.25);
+val(clutch1.tau0_max,0.5);
+val(clutch1.tau0_max,0.75);
+val(clutch1.tau0_max,1.0);
+
+"clutch1.free:";
+val(clutch1.free,0.0);
+val(clutch1.free,0.25);
+val(clutch1.free,0.5);
+val(clutch1.free,0.75);
+val(clutch1.free,1.0);
+
+"clutch1.sa:";
+val(clutch1.sa,0.0);
+val(clutch1.sa,0.25);
+val(clutch1.sa,0.5);
+val(clutch1.sa,0.75);
+val(clutch1.sa,1.0);
+
+"clutch1.startForward:";
+val(clutch1.startForward,0.0);
+val(clutch1.startForward,0.25);
+val(clutch1.startForward,0.5);
+val(clutch1.startForward,0.75);
+val(clutch1.startForward,1.0);
+
+"clutch1.startBackward:";
+val(clutch1.startBackward,0.0);
+val(clutch1.startBackward,0.25);
+val(clutch1.startBackward,0.5);
+val(clutch1.startBackward,0.75);
+val(clutch1.startBackward,1.0);
+
+"clutch1.locked:";
+val(clutch1.locked,0.0);
+val(clutch1.locked,0.25);
+val(clutch1.locked,0.5);
+val(clutch1.locked,0.75);
+val(clutch1.locked,1.0);
+
+"clutch1.mode:";
+val(clutch1.mode,0.0);
+val(clutch1.mode,0.25);
+val(clutch1.mode,0.5);
+val(clutch1.mode,0.75);
+val(clutch1.mode,1.0);
+
+"clutch1.w_rel:";
+val(clutch1.w_rel,0.0);
+val(clutch1.w_rel,0.25);
+val(clutch1.w_rel,0.5);
+val(clutch1.w_rel,0.75);
+val(clutch1.w_rel,1.0);
+
+"clutch1.a_rel:";
+val(clutch1.a_rel,0.0);
+val(clutch1.a_rel,0.25);
+val(clutch1.a_rel,0.5);
+val(clutch1.a_rel,0.75);
+val(clutch1.a_rel,1.0);
+
+"clutch1.fn:";
+val(clutch1.fn,0.0);
+val(clutch1.fn,0.25);
+val(clutch1.fn,0.5);
+val(clutch1.fn,0.75);
+val(clutch1.fn,1.0);
+
+"clutch1.f_normalized:";
+val(clutch1.f_normalized,0.0);
+val(clutch1.f_normalized,0.25);
+val(clutch1.f_normalized,0.5);
+val(clutch1.f_normalized,0.75);
+val(clutch1.f_normalized,1.0);
+
+"sin1.y:";
+val(sin1.y,0.0);
+val(sin1.y,0.25);
+val(sin1.y,0.5);
+val(sin1.y,0.75);
+val(sin1.y,1.0);
+
+"step1.y:";
+val(step1.y,0.0);
+val(step1.y,0.25);
+val(step1.y,0.5);
+val(step1.y,0.75);
+val(step1.y,1.0);
+
+"J2.phi:";
+val(J2.phi,0.0);
+val(J2.phi,0.25);
+val(J2.phi,0.5);
+val(J2.phi,0.75);
+val(J2.phi,1.0);
+
+"J2.flange_a.phi:";
+val(J2.flange_a.phi,0.0);
+val(J2.flange_a.phi,0.25);
+val(J2.flange_a.phi,0.5);
+val(J2.flange_a.phi,0.75);
+val(J2.flange_a.phi,1.0);
+
+"J2.flange_a.tau:";
+val(J2.flange_a.tau,0.0);
+val(J2.flange_a.tau,0.25);
+val(J2.flange_a.tau,0.5);
+val(J2.flange_a.tau,0.75);
+val(J2.flange_a.tau,1.0);
+
+"J2.flange_b.phi:";
+val(J2.flange_b.phi,0.0);
+val(J2.flange_b.phi,0.25);
+val(J2.flange_b.phi,0.5);
+val(J2.flange_b.phi,0.75);
+val(J2.flange_b.phi,1.0);
+
+"J2.flange_b.tau:";
+val(J2.flange_b.tau,0.0);
+val(J2.flange_b.tau,0.25);
+val(J2.flange_b.tau,0.5);
+val(J2.flange_b.tau,0.75);
+val(J2.flange_b.tau,1.0);
+
+"J2.w:";
+val(J2.w,0.0);
+val(J2.w,0.25);
+val(J2.w,0.5);
+val(J2.w,0.75);
+val(J2.w,1.0);
+
+"J2.a:";
+val(J2.a,0.0);
+val(J2.a,0.25);
+val(J2.a,0.5);
+val(J2.a,0.75);
+val(J2.a,1.0);
+
+"clutch2.phi_rel:";
+val(clutch2.phi_rel,0.0);
+val(clutch2.phi_rel,0.25);
+val(clutch2.phi_rel,0.5);
+val(clutch2.phi_rel,0.75);
+val(clutch2.phi_rel,1.0);
+
+"clutch2.tau:";
+val(clutch2.tau,0.0);
+val(clutch2.tau,0.25);
+val(clutch2.tau,0.5);
+val(clutch2.tau,0.75);
+val(clutch2.tau,1.0);
+
+"clutch2.flange_a.phi:";
+val(clutch2.flange_a.phi,0.0);
+val(clutch2.flange_a.phi,0.25);
+val(clutch2.flange_a.phi,0.5);
+val(clutch2.flange_a.phi,0.75);
+val(clutch2.flange_a.phi,1.0);
+
+"clutch2.flange_a.tau:";
+val(clutch2.flange_a.tau,0.0);
+val(clutch2.flange_a.tau,0.25);
+val(clutch2.flange_a.tau,0.5);
+val(clutch2.flange_a.tau,0.75);
+val(clutch2.flange_a.tau,1.0);
+
+"clutch2.flange_b.phi:";
+val(clutch2.flange_b.phi,0.0);
+val(clutch2.flange_b.phi,0.25);
+val(clutch2.flange_b.phi,0.5);
+val(clutch2.flange_b.phi,0.75);
+val(clutch2.flange_b.phi,1.0);
+
+"clutch2.flange_b.tau:";
+val(clutch2.flange_b.tau,0.0);
+val(clutch2.flange_b.tau,0.25);
+val(clutch2.flange_b.tau,0.5);
+val(clutch2.flange_b.tau,0.75);
+val(clutch2.flange_b.tau,1.0);
+
+"clutch2.w_relfric:";
+val(clutch2.w_relfric,0.0);
+val(clutch2.w_relfric,0.25);
+val(clutch2.w_relfric,0.5);
+val(clutch2.w_relfric,0.75);
+val(clutch2.w_relfric,1.0);
+
+"clutch2.a_relfric:";
+val(clutch2.a_relfric,0.0);
+val(clutch2.a_relfric,0.25);
+val(clutch2.a_relfric,0.5);
+val(clutch2.a_relfric,0.75);
+val(clutch2.a_relfric,1.0);
+
+"clutch2.tau0:";
+val(clutch2.tau0,0.0);
+val(clutch2.tau0,0.25);
+val(clutch2.tau0,0.5);
+val(clutch2.tau0,0.75);
+val(clutch2.tau0,1.0);
+
+"clutch2.tau0_max:";
+val(clutch2.tau0_max,0.0);
+val(clutch2.tau0_max,0.25);
+val(clutch2.tau0_max,0.5);
+val(clutch2.tau0_max,0.75);
+val(clutch2.tau0_max,1.0);
+
+"clutch2.free:";
+val(clutch2.free,0.0);
+val(clutch2.free,0.25);
+val(clutch2.free,0.5);
+val(clutch2.free,0.75);
+val(clutch2.free,1.0);
+
+"clutch2.sa:";
+val(clutch2.sa,0.0);
+val(clutch2.sa,0.25);
+val(clutch2.sa,0.5);
+val(clutch2.sa,0.75);
+val(clutch2.sa,1.0);
+
+"clutch2.startForward:";
+val(clutch2.startForward,0.0);
+val(clutch2.startForward,0.25);
+val(clutch2.startForward,0.5);
+val(clutch2.startForward,0.75);
+val(clutch2.startForward,1.0);
+
+"clutch2.startBackward:";
+val(clutch2.startBackward,0.0);
+val(clutch2.startBackward,0.25);
+val(clutch2.startBackward,0.5);
+val(clutch2.startBackward,0.75);
+val(clutch2.startBackward,1.0);
+
+"clutch2.locked:";
+val(clutch2.locked,0.0);
+val(clutch2.locked,0.25);
+val(clutch2.locked,0.5);
+val(clutch2.locked,0.75);
+val(clutch2.locked,1.0);
+
+"clutch2.mode:";
+val(clutch2.mode,0.0);
+val(clutch2.mode,0.25);
+val(clutch2.mode,0.5);
+val(clutch2.mode,0.75);
+val(clutch2.mode,1.0);
+
+"clutch2.w_rel:";
+val(clutch2.w_rel,0.0);
+val(clutch2.w_rel,0.25);
+val(clutch2.w_rel,0.5);
+val(clutch2.w_rel,0.75);
+val(clutch2.w_rel,1.0);
+
+"clutch2.a_rel:";
+val(clutch2.a_rel,0.0);
+val(clutch2.a_rel,0.25);
+val(clutch2.a_rel,0.5);
+val(clutch2.a_rel,0.75);
+val(clutch2.a_rel,1.0);
+
+"clutch2.fn:";
+val(clutch2.fn,0.0);
+val(clutch2.fn,0.25);
+val(clutch2.fn,0.5);
+val(clutch2.fn,0.75);
+val(clutch2.fn,1.0);
+
+"clutch2.f.normalized:";
+val(clutch2.f_normalized,0.0);
+val(clutch2.f_normalized,0.25);
+val(clutch2.f_normalized,0.5);
+val(clutch2.f_normalized,0.75);
+val(clutch2.f_normalized,1.0);
+
+"J3.phi:";
+val(J3.phi,0.0);
+val(J3.phi,0.25);
+val(J3.phi,0.5);
+val(J3.phi,0.75);
+val(J3.phi,1.0);
+
+"J3.flange_a.phi:";
+val(J3.flange_a.phi,0.0);
+val(J3.flange_a.phi,0.25);
+val(J3.flange_a.phi,0.5);
+val(J3.flange_a.phi,0.75);
+val(J3.flange_a.phi,1.0);
+
+"J3.flange_a.tau:";
+val(J3.flange_a.tau,0.0);
+val(J3.flange_a.tau,0.25);
+val(J3.flange_a.tau,0.5);
+val(J3.flange_a.tau,0.75);
+val(J3.flange_a.tau,1.0);
+
+"J3.flange_b.phi:";
+val(J3.flange_b.phi,0.0);
+val(J3.flange_b.phi,0.25);
+val(J3.flange_b.phi,0.5);
+val(J3.flange_b.phi,0.75);
+val(J3.flange_b.phi,1.0);
+
+"J3.flange_b.tau:";
+val(J3.flange_b.tau,0.0);
+val(J3.flange_b.tau,0.25);
+val(J3.flange_b.tau,0.5);
+val(J3.flange_b.tau,0.75);
+val(J3.flange_b.tau,1.0);
+
+"J3.w:";
+val(J3.w,0.0);
+val(J3.w,0.25);
+val(J3.w,0.5);
+val(J3.w,0.75);
+val(J3.w,1.0);
+
+"J3.a:";
+val(J3.a,0.0);
+val(J3.a,0.25);
+val(J3.a,0.5);
+val(J3.a,0.75);
+val(J3.a,1.0);
+
+"clutch3.phi_rel:";
+val(clutch3.phi_rel,0.0);
+val(clutch3.phi_rel,0.25);
+val(clutch3.phi_rel,0.5);
+val(clutch3.phi_rel,0.75);
+val(clutch3.phi_rel,1.0);
+
+"clutch3.tau:";
+val(clutch3.tau,0.0);
+val(clutch3.tau,0.25);
+val(clutch3.tau,0.5);
+val(clutch3.tau,0.75);
+val(clutch3.tau,1.0);
+
+"clutch3.flange_a.phi:";
+val(clutch3.flange_a.phi,0.0);
+val(clutch3.flange_a.phi,0.25);
+val(clutch3.flange_a.phi,0.5);
+val(clutch3.flange_a.phi,0.75);
+val(clutch3.flange_a.phi,1.0);
+
+"clutch3.flange_a.tau:";
+val(clutch3.flange_a.tau,0.0);
+val(clutch3.flange_a.tau,0.25);
+val(clutch3.flange_a.tau,0.5);
+val(clutch3.flange_a.tau,0.75);
+val(clutch3.flange_a.tau,1.0);
+
+"clutch3.flange_b.phi:";
+val(clutch3.flange_b.phi,0.0);
+val(clutch3.flange_b.phi,0.25);
+val(clutch3.flange_b.phi,0.5);
+val(clutch3.flange_b.phi,0.75);
+val(clutch3.flange_b.phi,1.0);
+
+"clutch3.flange_b.tau:";
+val(clutch3.flange_b.tau,0.0);
+val(clutch3.flange_b.tau,0.25);
+val(clutch3.flange_b.tau,0.5);
+val(clutch3.flange_b.tau,0.75);
+val(clutch3.flange_b.tau,1.0);
+
+"clutch3.w_relfric:";
+val(clutch3.w_relfric,0.0);
+val(clutch3.w_relfric,0.25);
+val(clutch3.w_relfric,0.5);
+val(clutch3.w_relfric,0.75);
+val(clutch3.w_relfric,1.0);
+
+"clutch3.a_relfric:";
+val(clutch3.a_relfric,0.0);
+val(clutch3.a_relfric,0.25);
+val(clutch3.a_relfric,0.5);
+val(clutch3.a_relfric,0.75);
+val(clutch3.a_relfric,1.0);
+
+"clutch3.tau0:";
+val(clutch3.tau0,0.0);
+val(clutch3.tau0,0.25);
+val(clutch3.tau0,0.5);
+val(clutch3.tau0,0.75);
+val(clutch3.tau0,1.0);
+
+"clutch3.tau0_max:";
+val(clutch3.tau0_max,0.0);
+val(clutch3.tau0_max,0.25);
+val(clutch3.tau0_max,0.5);
+val(clutch3.tau0_max,0.75);
+val(clutch3.tau0_max,1.0);
+
+"clutch3.free:";
+val(clutch3.free,0.0);
+val(clutch3.free,0.25);
+val(clutch3.free,0.5);
+val(clutch3.free,0.75);
+val(clutch3.free,1.0);
+
+"clutch3.sa:";
+val(clutch3.sa,0.0);
+val(clutch3.sa,0.25);
+val(clutch3.sa,0.5);
+val(clutch3.sa,0.75);
+val(clutch3.sa,1.0);
+
+"clutch3.startForward:";
+val(clutch3.startForward,0.0);
+val(clutch3.startForward,0.25);
+val(clutch3.startForward,0.5);
+val(clutch3.startForward,0.75);
+val(clutch3.startForward,1.0);
+
+"clutch3.startBackward:";
+val(clutch3.startBackward,0.0);
+val(clutch3.startBackward,0.25);
+val(clutch3.startBackward,0.5);
+val(clutch3.startBackward,0.75);
+val(clutch3.startBackward,1.0);
+
+"clutch3.locked:";
+val(clutch3.locked,0.0);
+val(clutch3.locked,0.25);
+val(clutch3.locked,0.5);
+val(clutch3.locked,0.75);
+val(clutch3.locked,1.0);
+
+"clutch3.mode:";
+val(clutch3.mode,0.0);
+val(clutch3.mode,0.25);
+val(clutch3.mode,0.5);
+val(clutch3.mode,0.75);
+val(clutch3.mode,1.0);
+
+"clutch3.w_rel:";
+val(clutch3.w_rel,0.0);
+val(clutch3.w_rel,0.25);
+val(clutch3.w_rel,0.5);
+val(clutch3.w_rel,0.75);
+val(clutch3.w_rel,1.0);
+
+"clutch3.a_rel:";
+val(clutch3.a_rel,0.0);
+val(clutch3.a_rel,0.25);
+val(clutch3.a_rel,0.5);
+val(clutch3.a_rel,0.75);
+val(clutch3.a_rel,1.0);
+
+"clutch3.fn:";
+val(clutch3.fn,0.0);
+val(clutch3.fn,0.25);
+val(clutch3.fn,0.5);
+val(clutch3.fn,0.75);
+val(clutch3.fn,1.0);
+
+"clutch3.f_normalized:";
+val(clutch3.f_normalized,0.0);
+val(clutch3.f_normalized,0.25);
+val(clutch3.f_normalized,0.5);
+val(clutch3.f_normalized,0.75);
+val(clutch3.f_normalized,1.0);
+
+"J4.phi:";
+val(J4.phi,0.0);
+val(J4.phi,0.25);
+val(J4.phi,0.5);
+val(J4.phi,0.75);
+val(J4.phi,1.0);
+
+"J4.flange_a.phi:";
+val(J4.flange_a.phi,0.0);
+val(J4.flange_a.phi,0.25);
+val(J4.flange_a.phi,0.5);
+val(J4.flange_a.phi,0.75);
+val(J4.flange_a.phi,1.0);
+
+"J4.flange_a.tau:";
+val(J4.flange_a.tau,0.0);
+val(J4.flange_a.tau,0.25);
+val(J4.flange_a.tau,0.5);
+val(J4.flange_a.tau,0.75);
+val(J4.flange_a.tau,1.0);
+
+"J4.flange_b.phi:";
+val(J4.flange_b.phi,0.0);
+val(J4.flange_b.phi,0.25);
+val(J4.flange_b.phi,0.5);
+val(J4.flange_b.phi,0.75);
+val(J4.flange_b.phi,1.0);
+
+"J4.w:";
+val(J4.w,0.0);
+val(J4.w,0.25);
+val(J4.w,0.5);
+val(J4.w,0.75);
+val(J4.w,1.0);
+
+"J4.a:";
+val(J4.a,0.0);
+val(J4.a,0.25);
+val(J4.a,0.5);
+val(J4.a,0.75);
+val(J4.a,1.0);
+
+"sin2.y:";
+val(sin2.y,0.0);
+val(sin2.y,0.25);
+val(sin2.y,0.5);
+val(sin2.y,0.75);
+val(sin2.y,1.0);
+
+"step2.y:";
+val(step2.y,0.0);
+val(step2.y,0.25);
+val(step2.y,0.5);
+val(step2.y,0.75);
+val(step2.y,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.CoupledClutches_res.mat",
+//     messages = ""
+// end SimulationResult;
+// "J1.phi:"
+// 0.0
+// 2.25827034012585
+// 3.94549238960656
+// 5.13079213731251
+// 5.94288692365284
+// "J1.flange_a.phi:"
+// 0.0
+// 2.25827034012585
+// 3.94549238960656
+// 5.13079213731251
+// 5.94288692365284
+// "J1.flange_a.tau:"
+// 0.0
+// 10.0
+// -8.47089867868356e-14
+// -9.99999999999999
+// 1.65389620401801e-13
+// "J1.flange_b.phi:"
+// 0.0
+// 2.25827034012585
+// 3.94549238960656
+// 5.13079213731251
+// 5.94288692365284
+// "J1.flange_b.tau:"
+// -9.99999682931835
+// -9.513022932321
+// -8.09484806957989
+// -5.88429307766539
+// -3.33333333333344
+// "J1.w:"
+// 10.0
+// 7.85086168832478
+// 5.9460070866889
+// 3.86416999388363
+// 2.73359236010339
+// "J1.a:"
+// -9.99999682931835
+// 0.486977067678998
+// -8.09484806957997
+// -15.8842930776654
+// -3.33333333333328
+// "torque.tau:"
+// 0.0
+// 10.0
+// -8.47089867868356e-14
+// -9.99999999999999
+// 1.65389620401801e-13
+// "torque.flange_b.phi:"
+// 0.0
+// 2.25827034012585
+// 3.94549238960656
+// 5.13079213731251
+// 5.94288692365284
+// "torque.flange_b.tau:"
+// -0.0
+// -10.0
+// 8.47089867868356e-14
+// 9.99999999999999
+// -1.65389620401801e-13
+// "clutch1.phi_rel:"
+// 0.0
+// -1.94759757734662
+// -2.78491596224066
+// -3.12582123313981
+// -3.13771214825832
+// "clutch1.tau:"
+// -9.99999682931835
+// -9.513022932321
+// -8.09484806957989
+// -5.88429307766539
+// -3.33333333333344
+// "clutch1.flange_a.phi:"
+// 0.0
+// 2.25827034012585
+// 3.94549238960656
+// 5.13079213731251
+// 5.94288692365284
+// "clutch1.flange_a.tau:"
+// 9.99999682931835
+// 9.513022932321
+// 8.09484806957989
+// 5.88429307766539
+// 3.33333333333344
+// "clutch1.flange_b.phi:"
+// 0.0
+// 0.31067276277923
+// 1.16057642736589
+// 2.0049709041727
+// 2.80517477539452
+// "clutch1.flange_b.tau:"
+// -9.99999682931835
+// -9.513022932321
+// -8.09484806957989
+// -5.88429307766539
+// -3.33333333333344
+// "clutch1.w_relfric:"
+// -10.0
+// -5.39161525163019
+// -2.26767582128977
+// -0.644138661168051
+// 1.98241423277068e-12
+// "clutch1.a_relfric:"
+// 19.9999936586367
+// 9.026045864642
+// 6.18969613915986
+// 18.8264396164981
+// 0.0
+// "clutch1.tau0:"
+// 9.99999682931835
+// 9.513022932321
+// 8.09484806957989
+// 5.88429307766539
+// 3.09774248102838
+// "clutch1.tau0_max:"
+// 10.9999965122502
+// 10.4643252255531
+// 8.90433287653788
+// 6.47272238543193
+// 3.40751672913122
+// "clutch1.free:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch1.sa:"
+// 19.9999936586367
+// 9.026045864642
+// 6.18969613915986
+// 18.8264396164981
+// -3.33333333333344
+// "clutch1.startForward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch1.startBackward:"
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch1.locked:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// "clutch1.mode:"
+// -1.0
+// -1.0
+// -1.0
+// -1.0
+// 0.0
+// "clutch1.w_rel:"
+// -10.0
+// -5.39161525163019
+// -2.26767582128977
+// -0.644138661168051
+// 1.98241423277068e-12
+// "clutch1.a_rel:"
+// 19.9999936586367
+// 9.026045864642
+// 6.18969613915986
+// 18.8264396164981
+// 0.0
+// "clutch1.fn:"
+// 19.9999936586367
+// 19.026045864642
+// 16.1896961391598
+// 11.7685861553308
+// 6.19548496205675
+// "clutch1.f_normalized:"
+// 0.999999682931835
+// 0.9513022932321
+// 0.809484806957989
+// 0.588429307766539
+// 0.309774248102838
+// "sin1.y:"
+// 0.0
+// 10.0
+// -8.47089867868356e-14
+// -9.99999999999999
+// 1.65389620401801e-13
+// "step1.y:"
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// "J2.phi:"
+// 0.0
+// 0.31067276277923
+// 1.16057642736589
+// 2.0049709041727
+// 2.80517477539452
+// "J2.flange_a.phi:"
+// 0.0
+// 0.31067276277923
+// 1.16057642736589
+// 2.0049709041727
+// 2.80517477539452
+// "J2.flange_a.tau:"
+// 9.99999682931835
+// 9.513022932321
+// 8.09484806957989
+// 5.88429307766539
+// 3.33333333333344
+// "J2.flange_b.phi:"
+// 0.0
+// 0.31067276277923
+// 1.16057642736589
+// 2.0049709041727
+// 2.80517477539452
+// "J2.flange_b.tau:"
+// -0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// -6.66666666666672
+// "J2.w:"
+// 0.0
+// 2.45924643669459
+// 3.67833126539913
+// 3.22003133271558
+// 2.73359236010538
+// "J2.a:"
+// 9.99999682931835
+// 9.513022932321
+// -1.90515193042011
+// 2.9421465388327
+// -3.33333333333328
+// "clutch2.phi_rel:"
+// 0.0
+// -0.31067276277923
+// -1.11052370322143
+// -1.39787540393391
+// -1.29356292611039
+// "clutch2.tau:"
+// -0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// -6.66666666666672
+// "clutch2.flange_a.phi:"
+// 0.0
+// 0.31067276277923
+// 1.16057642736589
+// 2.0049709041727
+// 2.80517477539452
+// "clutch2.flange_a.tau:"
+// 0.0
+// 0.0
+// 10.0
+// 2.9421465388327
+// 6.66666666666672
+// "clutch2.flange_b.phi:"
+// 0.0
+// 0.0
+// 0.0500527241444601
+// 0.607095500238787
+// 1.51161184928413
+// "clutch2.flange_b.tau:"
+// -0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// -6.66666666666672
+// "clutch2.w_relfric:"
+// 0.0
+// -2.45924643669459
+// -2.67833126540002
+// 2.16227036275995e-12
+// 0.78550697376132
+// "clutch2.a_relfric:"
+// -9.99999682931835
+// -9.513022932321
+// 11.9051519304201
+// 0.0
+// 0.0
+// "clutch2.tau0:"
+// 0.0
+// 0.0
+// 10.0
+// 10.0
+// 10.0
+// "clutch2.tau0_max:"
+// 0.0
+// 0.0
+// 11.0
+// 11.0
+// 11.0
+// "clutch2.free:"
+// 1.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch2.sa:"
+// -9.99999682931835
+// -9.513022932321
+// 11.9051519304201
+// -2.9421465388327
+// -6.66666666666672
+// "clutch2.startForward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch2.startBackward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch2.locked:"
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// "clutch2.mode:"
+// 2.0
+// 2.0
+// -1.0
+// 0.0
+// 0.0
+// "clutch2.w_rel:"
+// 0.0
+// -2.45924643669459
+// -2.67833126540002
+// 2.16227036275995e-12
+// 0.78550697376132
+// "clutch2.a_rel:"
+// -9.99999682931835
+// -9.513022932321
+// 11.9051519304201
+// 0.0
+// 0.0
+// "clutch2.fn:"
+// 0.0
+// 0.0
+// 20.0
+// 20.0
+// 20.0
+// "clutch2.f.normalized:"
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// "J3.phi:"
+// 0.0
+// 0.0
+// 0.0500527241444601
+// 0.607095500238787
+// 1.51161184928413
+// "J3.flange_a.phi:"
+// 0.0
+// 0.0
+// 0.0500527241444601
+// 0.607095500238787
+// 1.51161184928413
+// "J3.flange_a.tau:"
+// 0.0
+// 0.0
+// 10.0
+// 2.9421465388327
+// 6.66666666666672
+// "J3.flange_b.phi:"
+// 0.0
+// 0.0
+// 0.0500527241444601
+// 0.607095500238787
+// 1.51161184928413
+// "J3.flange_b.tau:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -10.0
+// "J3.w:"
+// 0.0
+// 0.0
+// 0.999999999999109
+// 3.22003133271775
+// 3.5190993338667
+// "J3.a:"
+// 0.0
+// 0.0
+// 10.0
+// 2.9421465388327
+// -3.33333333333328
+// "clutch3.phi_rel:"
+// 0.0
+// 0.0
+// -0.0500527241444601
+// -0.607095500238787
+// -1.46154841146039
+// "clutch3.tau:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -10.0
+// "clutch3.flange_a.phi:"
+// 0.0
+// 0.0
+// 0.0500527241444601
+// 0.607095500238787
+// 1.51161184928413
+// "clutch3.flange_a.tau:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 10.0
+// "clutch3.flange_b.phi:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0500634378237371
+// "clutch3.flange_b.tau:"
+// -0.0
+// 0.0
+// 0.0
+// 0.0
+// -10.0
+// "clutch3.w_relfric:"
+// 0.0
+// 0.0
+// -0.999999999999109
+// -3.22003133271775
+// -2.5190993338669
+// "clutch3.a_relfric:"
+// 0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// 13.3333333333333
+// "clutch3.tau0:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 10.0
+// "clutch3.tau0_max:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 11.0
+// "clutch3.free:"
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 0.0
+// "clutch3.sa:"
+// 0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// 13.3333333333333
+// "clutch3.startForward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch3.startBackward:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch3.locked:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// "clutch3.mode:"
+// 2.0
+// 2.0
+// 2.0
+// 2.0
+// -1.0
+// "clutch3.w_rel:"
+// 0.0
+// 0.0
+// -0.999999999999109
+// -3.22003133271775
+// -2.5190993338669
+// "clutch3.a_rel:"
+// 0.0
+// 0.0
+// -10.0
+// -2.9421465388327
+// 13.3333333333333
+// "clutch3.fn:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 20.0
+// "clutch3.f_normalized:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// "J4.phi:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0500634378237371
+// "J4.flange_a.phi:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0500634378237371
+// "J4.flange_a.tau:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 10.0
+// "J4.flange_b.phi:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0500634378237371
+// "J4.w:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.999999999999795
+// "J4.a:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 10.0
+// "sin2.y:"
+// 0.999999682931835
+// 0.9513022932321
+// 0.809484806957989
+// 0.588429307766539
+// 0.309774248102838
+// "step2.y:"
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// endResult

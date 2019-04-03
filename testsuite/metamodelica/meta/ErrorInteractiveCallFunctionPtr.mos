@@ -1,0 +1,23 @@
+// name: ErrorInteractiveCallFunctionPtr
+// cflags: -g=MetaModelica -d=gen
+// teardown_command: rm -f ErrorInteractiveCallFunctionPtr_*
+// status: correct
+
+loadFile("ErrorInteractiveCallFunctionPtr.mo");
+ErrorInteractiveCallFunctionPtr.func(intAdd,1,2);
+getErrorString();
+generateCode(ErrorInteractiveCallFunctionPtr.func);
+getErrorString();
+ErrorInteractiveCallFunctionPtr.applyIntAdd(1,2);
+getErrorString();
+// Result:
+// true
+//
+// "[metamodelica/meta/ErrorInteractiveCallFunctionPtr.mos:7:1-7:49:writable] Error: Cannot evaluate function pointers (got intAdd).
+// "
+// false
+// "Error: ErrorInteractiveCallFunctionPtr_func has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead.
+// "
+// 3
+// ""
+// endResult

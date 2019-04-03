@@ -1,0 +1,47 @@
+// name: CheckConstraintViolation
+// status: correct
+
+
+setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model CheckConstraintViolation
+  input Real u(start = 0);
+  Real x(start = 0, fixed = true, nominal = 1e-5); //   3 < x < 0 // no soulution
+  Real con1(max = 1) = x+1 annotation(isConstraint = true);
+  Real con2(min = 2) = x-1 annotation(isConstraint = true);
+equation
+  der(x) = u*x;
+end CheckConstraintViolation;
+");
+getErrorString();
+
+echo(false);
+res := optimize(CheckConstraintViolation,numberOfIntervals=200, tolerance = 1e-12, simflags="-lv LOG_IPOPT -ipopt_max_iter 2");
+messages:=res.messages;
+
+echo(true);
+res.resultFile;
+
+  if regexBool(messages, "EXIT: Problem has inconsistent variable bounds or constraint sides.") then
+    print("EXIT: Problem has inconsistent variable bounds or constraint sides.\n");
+  else
+    print("\nCheck test!\n");
+    exit(1);
+  end if;
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "CheckConstraintViolation_res.mat"
+// EXIT: Problem has inconsistent variable bounds or constraint sides.
+//
+// "Warning: Alias variables $con$con2 = x with invalid limits min 3.0 > max 0.0
+// "
+// endResult

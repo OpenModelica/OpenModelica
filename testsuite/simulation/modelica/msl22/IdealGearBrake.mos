@@ -1,0 +1,37 @@
+// name:     IdealGearBrake
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.RotationalModels.* output.log
+// 
+//  Simulate Rotational gear models and simulate. 
+//
+loadModel(Modelica,{"2.2.2"}); getErrorString();
+loadFile("TestModels.mo"); getErrorString();
+
+simulate(TestModels.RotationalModels.Gears.IdealGearBrake, tolerance=1e-5, numberOfIntervals=100); getErrorString();
+val(inertia1.w,0.1);
+val(inertia1.w,0.5);
+val(inertia2.w,0.1);
+val(inertia2.w,0.5);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.Gears.IdealGearBrake_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.Gears.IdealGearBrake', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.01163200428262507
+// 0.1126936797219051
+// 0.02435508953123749
+// 0.2245075767959462
+// endResult

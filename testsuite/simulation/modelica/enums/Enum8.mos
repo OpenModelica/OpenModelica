@@ -1,0 +1,31 @@
+// name:     Enumeration8
+// keywords: Enumeration enum String string
+// status:   correct
+// teardown_command: rm -rf Enumeration8_*  Enumeration8 Enumeration8.exe Enumeration8.cpp Enumeration8.makefile Enumeration8.libs Enumeration8.log output.log
+//
+// String(Enum.e1)
+//
+// 
+loadFile("Enum8.mo");
+instantiateModel(Enumeration8);
+simulate(Enumeration8,startTime=0.0, stopTime=1.0, numberOfIntervals=500, tolerance=1e-5); 
+
+//val(s, 1.0);
+//val(ss, 1.0);
+
+// Result:
+// true
+// "class Enumeration8
+// parameter String s = String(Enum.test2,0,true,6);
+// Real x;
+// String ss;
+// equation
+//   der(x) = x;
+//   ss = String(Enum.test1,0,true,6);
+// end Enumeration8;
+// "
+// record SimulationResult
+//     resultFile = "Enumeration8_res.mat"
+// end SimulationResult;
+// ""
+// endResult

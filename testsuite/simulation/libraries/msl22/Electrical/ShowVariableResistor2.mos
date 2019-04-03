@@ -1,0 +1,72 @@
+//name:         ShowVariableResistor2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.ShowVariableResistor, method="dassl");
+
+"Ramp1.y:";
+val(Ramp1.y,0.0);
+val(Ramp1.y,0.25);
+val(Ramp1.y,0.5);
+val(Ramp1.y,0.75);
+val(Ramp1.y,1.0);
+
+"VariableResistor.v:";
+val(VariableResistor.v,0.0);
+val(VariableResistor.v,0.25);
+val(VariableResistor.v,0.5);
+val(VariableResistor.v,0.75);
+val(VariableResistor.v,1.0);
+
+"VariableResistor.i:";
+val(VariableResistor.i,0.0);
+val(VariableResistor.i,0.25);
+val(VariableResistor.i,0.5);
+val(VariableResistor.i,0.75);
+val(VariableResistor.i,1.0);
+
+"R2.v:";
+val(R2.v,0.0);
+val(R2.v,0.25);
+val(R2.v,0.5);
+val(R2.v,0.75);
+val(R2.v,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.ShowVariableResistor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowVariableResistor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Ramp1.y:"
+// 2.0
+// 2.625
+// 3.25
+// 3.875
+// 4.5
+// "VariableResistor.v:"
+// 0.0
+// -0.5675675675675675
+// -7.611099250848241e-17
+// 0.6595744680851062
+// 1.6978606021123e-16
+// "VariableResistor.i:"
+// 0.0
+// -0.2162162162162162
+// -2.34187669256869e-17
+// 0.1702127659574468
+// 3.773023560249555e-17
+// "R2.v:"
+// 0.0
+// -0.3333333333333334
+// -4.076600168545497e-17
+// 0.3333333333333334
+// 8.153200337090993e-17
+// endResult

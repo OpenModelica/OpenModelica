@@ -1,0 +1,43 @@
+// name:     While-statement
+// keywords: while
+// status:   correct
+// 
+//  Test the interactive While-statement
+//
+s:="";
+i:=1;
+while i<=10 loop s:="aa"+s;i:=i+1;end while;  //Normal loop. It concatenates 10 strings.
+s;
+i;
+
+s:= ""; //Simple loop containing a if-statement
+i:= 1;  
+while i <= 20 loop
+  if mod(i,2)==0 then
+    a:="_";
+  else
+    a:="a";
+  end if;
+  s := s + a;
+  i := i + 1;
+end while;
+s;
+
+while false loop  //should not enter the loop
+  s := "no";
+end while;
+s;
+
+// Result:
+// ""
+// 1
+// 
+// "aaaaaaaaaaaaaaaaaaaa"
+// 11
+// ""
+// 1
+// 
+// "a_a_a_a_a_a_a_a_a_a_"
+// 
+// "a_a_a_a_a_a_a_a_a_a_"
+// endResult

@@ -1,0 +1,44 @@
+// name:     CoupledClutches
+// keywords: CoupledClutches FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml CoupledClutches.fmu CoupledClutches_me_FMU.mo CoupledClutches.lib* CoupledClutches.so CoupledClutches.dll CoupledClutches_*.c CoupledClutches_*.h CoupledClutches_*.o CoupledClutches_*.json
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+loadModel(Modelica); getErrorString();
+loadFile("CoupledClutches.mo"); getErrorString();
+translateModelFMU(CoupledClutches, version="1.0"); getErrorString();
+
+importFMU("CoupledClutches.fmu"); getErrorString();
+loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
+simulate(CoupledClutches_me_FMU, numberOfIntervals=150, variableFilter="J1_w1|J2_w1|J3_w1|J4_w1"); getErrorString();
+
+val(J1_w1, 1);
+val(J2_w1, 1);
+val(J3_w1, 1);
+val(J4_w1, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "CoupledClutches.fmu"
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "CoupledClutches_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CoupledClutches_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CoupledClutches_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'J1_w1|J2_w1|J3_w1|J4_w1', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.235521367082617
+// 3.382300587835984
+// 3.382300487836021
+// 0.0
+// endResult

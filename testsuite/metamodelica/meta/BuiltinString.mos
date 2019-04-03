@@ -1,0 +1,25 @@
+// name:     BuiltinString
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Builtin function testing
+//
+loadFile("BuiltinString.mo");
+
+BuiltinString.func("123","456","x",5);
+getErrorString();
+BuiltinString.func("10737","41823","x",8);
+getErrorString();
+BuiltinString.funcStringAppendList({"10737","yzzzz","41823","x"});
+getErrorString();
+
+// Result:
+// true
+// ("123456","123456",6,-1,false,"5",123456,123456.0,{"1","2","3","4","5","6"},"654321","6543x1",120,"E")
+// ""
+// ("1073741823","1073741823",10,-1,false,"8",1073741823,1073741823.0,{"1","0","7","3","7","4","1","8","2","3"},"3281473701","3281473x01",120,"H")
+// ""
+// "10737yzzzz41823x"
+// ""
+// endResult

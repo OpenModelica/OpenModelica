@@ -1,0 +1,24 @@
+// name: bug_3347
+// status: correct
+
+// setGrammarParModelica();
+setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
+
+setDefaultOpenCLDevice(1);
+getErrorString();
+
+loadFile("bug_3347.mo");
+getErrorString();
+
+x:=ParSqrt.test(4);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// {1.0,1.414213562373095}
+// ""
+// endResult

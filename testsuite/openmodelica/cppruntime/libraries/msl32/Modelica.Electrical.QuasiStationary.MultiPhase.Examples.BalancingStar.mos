@@ -1,0 +1,57 @@
+// name:     Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar
+// teardown_command: rm -f Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+
+simulate(Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar.mat",
+  "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar_diff.csv",0.01,0.0001,
+  {"voltageSource.plug_p.reference.gamma",
+   "voltageSource.voltageSource[2].pin_p.reference.gamma",
+   "voltageSource.voltageSource[3].pin_p.reference.gamma"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar
+// [lib/omlibrary/Modelica 3.2.1/Electrical/QuasiStationary/MultiPhase.mo:2257:7-2257:38:writable] Warning: Operator Overloading: 
+// - No exact match overloading found for operator ' - ' on record array of type: 'Modelica.SIunits.ComplexVoltage'
+// - Automatically expanded using operator function: .Modelica.SIunits.ComplexVoltage.'-'.subtract.
+// Error: Too many equations, over-determined system. The model has 1361 equation(s) and 1355 variable(s).
+// Error: Internal error Circular Equalities Detected for Variables:
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.pin_p.reference.gamma
+// star.plugToPins_p.pin_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.pin_p.reference.gamma
+// star.pin_n.reference.gamma
+// star.plugToPins_p.pin_p.reference.gamma
+// star.pin_n.reference.gamma
+// star.plugToPins_p.pin_p.reference.gamma
+// star.plugToPins_p.pin_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.pin_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.pin_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// star.plugToPins_p.plugToPin_p.plug_p.reference.gamma
+// 
+// Error: Internal error Optimisation Module removeSimpleEquations failed.
+// "
+// end SimulationResult;
+// ""
+// {"Error opening file: Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar_res.mat"}
+// endResult

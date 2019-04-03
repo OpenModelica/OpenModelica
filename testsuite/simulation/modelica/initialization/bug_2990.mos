@@ -1,0 +1,86 @@
+// name: bug_2990
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_2990* _initializationTests.bug_2990* output.log bug_2990.mat
+
+loadString("
+within ;
+package initializationTests
+  model bug_2990
+    parameter Real L = 2.5;
+    parameter Real a = 0.24;
+    Real x(start = 1.0, min=-L^2.0, max=L^2.0);
+    Real y;
+  equation
+    der(x)=y;
+    der(y)=-a*x;
+  end bug_2990;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT"); getErrorString();
+simulate(initializationTests.bug_2990, simflags="-lv=LOG_INIT -iim=none"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2990_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2990', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// |                 | |       | | x(min=-6.25)
+// LOG_INIT          | info    | updating max-values
+// |                 | |       | | x(max=6.25)
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real L(start=2.5, fixed=true) = 2.5
+// |                 | |       | | | [2] parameter Real a(start=0.24, fixed=true) = 0.24
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=1, nominal=1) = 1 (pre: 1)
+// |                 | |       | | | [2] Real y(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = 0 (pre: 0)
+// |                 | |       | | | [4] Real der(y) = -0.24 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2990_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2990', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT -iim=none'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// |                 | |       | | x(min=-6.25)
+// LOG_INIT          | info    | updating max-values
+// |                 | |       | | x(max=6.25)
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: none            [sets all variables to their start values and skips the initialization process]
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real L(start=2.5, fixed=true) = 2.5
+// |                 | |       | | | [2] parameter Real a(start=0.24, fixed=true) = 0.24
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=1, nominal=1) = 1 (pre: 1)
+// |                 | |       | | | [2] Real y(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = 0 (pre: 0)
+// |                 | |       | | | [4] Real der(y) = 0 (pre: 0)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

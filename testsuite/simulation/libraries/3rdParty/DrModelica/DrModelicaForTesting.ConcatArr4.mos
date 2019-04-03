@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.ConcatArr4.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.ConcatArr4
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.ConcatArr4.* DrModelicaForTesting.ConcatArr4_* DrModelicaForTesting.ConcatArr4 DrModelicaForTesting.ConcatArr4.exe DrModelicaForTesting.ConcatArr4.cpp DrModelicaForTesting.ConcatArr4.makefile DrModelicaForTesting.ConcatArr4.libs DrModelicaForTesting.ConcatArr4.log DrModelicaForTesting.ConcatArr4.c DrModelicaForTesting.ConcatArr4.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.ConcatArr4, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.ConcatArr4_res.mat",
+  "ReferenceFiles/ConcatArr4_ref.mat","DrModelicaForTesting.ConcatArr4_diff.csv",0.01,0.013,
+  {"A[1,1,1]","B[1,1,1]", "C[1,1,1]","R[1,1,1]"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.ConcatArr4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.ConcatArr4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,15 @@
+// status: correct
+// Test that we return the correct, evaluated icon and not just unparsing
+// of the Icon annotation
+
+loadFile("Buildings.PartialFlowMachine.mo");getErrorString();
+loadModel(Modelica,{"3.2.2"});getErrorString();
+getIconAnnotation(Buildings.Fluid.Movers.BaseClasses.PartialFlowMachine);getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// {-100.0,-100.0,100.0,100.0,false,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{0, 50}, {100, 50}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None), Line(true, {0.0, 0.0}, 0, {{0, 80}, {100, 80}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None), Line(false, {0.0, 0.0}, 0, {{0, 100}, {0, 40}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {0, 127, 255}, LinePattern.Solid, FillPattern.HorizontalCylinder, 0.25, BorderPattern.None, {{-100, 16}, {100, -14}}, 0), Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {0, 100, 199}, LinePattern.Solid, FillPattern.Sphere, 0.25, {{-58, 50}, {54, -58}}, 0, 360), Polygon(true, {0.0, 0.0}, 0, {0, 0, 0}, {255, 255, 255}, LinePattern.None, FillPattern.HorizontalCylinder, 0.25, {{0, 50}, {0, -56}, {54, 2}, {0, 50}}, Smooth.None), Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {0, 100, 199}, LinePattern.Solid, FillPattern.Sphere, 0.25, {{4, 14}, {34, -16}}, 0, 360), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {135, 135, 135}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-34, 40}, {32, 100}}, 0), Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {135, 135, 135}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-34, 100}, {32, 40}}, 0, 360), Text(true, {0.0, 0.0}, 0, {0, 0, 0}, {135, 135, 135}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-22, 92}, {20, 46}}, "M", 0, {TextStyle.Bold}, TextAlignment.Center), Text(true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{64, 98}, {114, 84}}, "P", 0, TextAlignment.Center)}}
+// ""
+// endResult

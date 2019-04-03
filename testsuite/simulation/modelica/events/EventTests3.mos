@@ -1,0 +1,38 @@
+// name:     EventTest3
+// keywords: EventHandling, Realations
+// status: correct
+// teardown_command: rm -rf testEvents3* output.log
+
+loadString("
+model testEvents3
+  Real x;
+equation
+  der(x) = 1.0;
+  when time > 0.5 then
+    reinit(x, 0.0);
+  end when;
+end testEvents3;
+"); getErrorString();
+
+simulate(testEvents3, simflags="-lv=LOG_EVENTS"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testEvents3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     messages = "LOG_EVENTS        | info    | status of relations at time=0
+// |                 | |       | | [1] (pre: false) false = time > 0.5
+// LOG_EVENTS        | info    | status of zero crossings at time=0
+// |                 | |       | | [1] (pre:  0) -1 = time > 0.5
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_EVENTS        | info    | state event at time=0.50000000015
+// |                 | |       | | [1] time > 0.5
+// |                 | |       | | reinit x = 0
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

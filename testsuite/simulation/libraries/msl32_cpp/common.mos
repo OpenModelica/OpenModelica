@@ -1,0 +1,7 @@
+//
+// These commands are common to all msl32 Cpp Runtime Tests
+//
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+//outputFormat :="mat";
+//referenceFile := "ReferenceFiles/" + typeNameString(modelName) + ".mat";

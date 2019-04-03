@@ -1,0 +1,21 @@
+// name:     Extends Basic
+// keywords: Function, Extends
+// status: correct
+// teardown_command: rm -rf ExtendsBasic ExtendsBasic.exe ExtendsBasic_* ExtendsBasic.cpp ExtendsBasic.makefile ExtendsBasic.log ExtendsBasic.libs output.log
+// 
+//  Generate code from an extended base type
+//
+loadFile("ExtendsBasic.mo");
+simulate(ExtendsBasic);
+val(r,0.0);
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ExtendsBasic_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExtendsBasic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// endResult

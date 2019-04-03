@@ -1,0 +1,47 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+loadString("
+package P
+  constant Integer n = 1;
+  constant list<Integer> nl = {1,2};
+
+  function f
+    input Integer x;
+    output Boolean eq;
+  algorithm
+    eq := match x
+      case n then true;
+      else false;
+    end match;
+  end f;
+
+  function flst
+    input list<Integer> x;
+    output Boolean eq;
+  algorithm
+    eq := match x
+      case nl then true;
+      else false;
+    end match;
+  end flst;
+
+end P;
+
+function test
+  input Integer x;
+  output Boolean eq;
+algorithm
+  eq := P.f(x) and P.flst({x,2*x});
+end test;
+");getErrorString();
+test(1) and not test(2);getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult

@@ -1,0 +1,13 @@
+// name:     ChatteringFunction1
+// keywords: EventHandling, Chattering
+// status: correct
+// teardown_command: rm -rf ChatteringFunction1* output.log
+// 
+//  Simulate model containing EventIterations
+//
+loadFile("ChatteringPackage.mo");
+
+simulate(Chattering.ChatteringFunction1);
+
+// Result:
+// endResult

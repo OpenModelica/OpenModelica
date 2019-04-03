@@ -1,0 +1,36 @@
+// name:     ForIterator1
+// keywords: for iterators
+// status: correct
+// teardown_command: rm -rf ForIterator1_* ForIterator1 ForIterator1.exe ForIterator1.cpp ForIterator1.makefile ForIterator1.libs ForIterator1.log output.log
+//
+// For Iterator handling
+//
+loadFile("ForIterator1.mo");
+simulate(ForIterator1, startTime=0.0, stopTime=1.0, tolerance=1e-5, numberOfIntervals=100);
+val(arr1[1],0.0); 
+val(arr2[3],0.0);
+val(arr3[2,2],0.0);
+val(arr4[3,3],0.0);
+val(i1,0.0); 
+val(i2,0.0);
+val(r1,0.0);
+val(r2,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ForIterator1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ForIterator1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 6.3
+// 15.0
+// 12.0
+// 27.0
+// 45.0
+// 15.0
+// 10.6
+// 14.0
+// endResult

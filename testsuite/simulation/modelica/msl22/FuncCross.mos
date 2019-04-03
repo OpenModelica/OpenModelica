@@ -1,0 +1,26 @@
+// name:     FuncCross
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f FuncCrossTest* output.log
+// 
+//  Simulate models and read in data.
+//
+loadFile("FuncCross.mo");
+simulate(FuncCrossTest, numberOfIntervals=50, tolerance=1e-5);
+val(r[1],0.0);
+val(r[2],0.0);
+val(r[3],0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "FuncCrossTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'FuncCrossTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// -1.0
+// 5.0
+// -1.0
+// endResult

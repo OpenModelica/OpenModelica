@@ -1,0 +1,23 @@
+// name:     ChatteringEvents2
+// keywords: EventHandling, Chattering
+// status: correct
+// teardown_command: rm -rf Chattering.ChatteringEvents2* output.log
+// 
+//  Simulate model containing EventIterations
+//
+loadFile("ChatteringPackage.mo");
+
+simulate(Chattering.ChatteringEvents2, simflags="-abortSlowSimulation");
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Chattering.ChatteringEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-abortSlowSimulation'",
+//     messages = "Simulation execution failed for model: Chattering.ChatteringEvents2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | info    | Chattering detected around time 0.422197395603..0.422197406875 (100 state events in a row with a total time delta less than the step size 0.002). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: x > 0.0
+// assert            | debug   | Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.
+// "
+// end SimulationResult;
+// endResult

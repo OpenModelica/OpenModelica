@@ -1,0 +1,1751 @@
+// name: TestWater.mos [instantiate/check/simulate]
+// status: correct
+// teardown_command: rm -rf *TestMedia.TestModels* output.log
+// provided by Francesco Casella
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("TestMedia.mo"); getErrorString();
+
+instantiateModel(TestMedia.TestModels.TestWater); getErrorString();
+checkModel(TestMedia.TestModels.TestWater); getErrorString();
+simulate(TestMedia.TestModels.TestWater); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "function Modelica.Math.acos \"Inverse cosine (-1 <= u <= 1)\"
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//
+//   external \"C\" y = acos(u);
+// end Modelica.Math.acos;
+//
+// function Modelica.Math.asin \"Inverse sine (-1 <= u <= 1)\"
+//   input Real u;
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\");
+//
+//   external \"C\" y = asin(u);
+// end Modelica.Math.asin;
+//
+// function Modelica.Math.log \"Natural (base e) logarithm (u shall be > 0)\"
+//   input Real u;
+//   output Real y;
+//
+//   external \"C\" y = log(u);
+// end Modelica.Math.log;
+//
+// function Modelica.Media.Common.GibbsDerivs \"Automatically generated record constructor for Modelica.Media.Common.GibbsDerivs\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", min = -1000000000.0, max = 1000000000.0, nominal = 100000.0, start = 100000.0, displayUnit = \"bar\");
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real pi(unit = \"1\");
+//   input Real tau(unit = \"1\");
+//   input Real g(unit = \"1\");
+//   input Real gpi(unit = \"1\");
+//   input Real gpipi(unit = \"1\");
+//   input Real gtau(unit = \"1\");
+//   input Real gtautau(unit = \"1\");
+//   input Real gtaupi(unit = \"1\");
+//   output GibbsDerivs res;
+// end Modelica.Media.Common.GibbsDerivs;
+//
+// function Modelica.Media.Common.HelmholtzDerivs \"Automatically generated record constructor for Modelica.Media.Common.HelmholtzDerivs\"
+//   input Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0);
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real delta(unit = \"1\");
+//   input Real tau(unit = \"1\");
+//   input Real f(unit = \"1\");
+//   input Real fdelta(unit = \"1\");
+//   input Real fdeltadelta(unit = \"1\");
+//   input Real ftau(unit = \"1\");
+//   input Real ftautau(unit = \"1\");
+//   input Real fdeltatau(unit = \"1\");
+//   output HelmholtzDerivs res;
+// end Modelica.Media.Common.HelmholtzDerivs;
+//
+// function Modelica.Media.Common.Helmholtz_ph \"function to calculate analytic derivatives for computing d and t given p and h\"
+//   input Modelica.Media.Common.HelmholtzDerivs f \"dimensionless derivatives of Helmholtz function\";
+//   output Modelica.Media.Common.NewtonDerivatives_ph nderivs \"derivatives for Newton iteration to calculate d and t from p and h\";
+//   protected Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") \"isochoric heat capacity\";
+// algorithm
+//   cv := (-f.R) * f.tau ^ 2.0 * f.ftautau;
+//   nderivs.p := f.d * f.R * f.T * f.delta * f.fdelta;
+//   nderivs.h := f.R * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//   nderivs.pd := f.R * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//   nderivs.pt := f.R * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//   nderivs.ht := cv + nderivs.pt / f.d;
+//   nderivs.hd := (nderivs.pd - f.T * nderivs.pt / f.d) / f.d;
+// end Modelica.Media.Common.Helmholtz_ph;
+//
+// function Modelica.Media.Common.IF97BaseTwoPhase \"Automatically generated record constructor for Modelica.Media.Common.IF97BaseTwoPhase\"
+//   input Integer phase = 0;
+//   input Integer region(min = 1, max = 5);
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", min = -1000000000.0, max = 1000000000.0, nominal = 100000.0, start = 100000.0, displayUnit = \"bar\");
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0);
+//   input Real s(quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\", nominal = 1000.0);
+//   input Real pt(quantity = \"DerPressureByTemperature\", unit = \"Pa/K\");
+//   input Real pd(quantity = \"DerPressureByDensity\", unit = \"Pa.m3/kg\");
+//   input Real vt;
+//   input Real vp;
+//   input Real x;
+//   input Real dpT;
+//   output IF97BaseTwoPhase res;
+// end Modelica.Media.Common.IF97BaseTwoPhase;
+//
+// function Modelica.Media.Common.IF97PhaseBoundaryProperties \"Automatically generated record constructor for Modelica.Media.Common.IF97PhaseBoundaryProperties\"
+//   input Boolean region3boundary;
+//   input Real R(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\");
+//   input Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0);
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real s(quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\", nominal = 1000.0);
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real dpT(quantity = \"DerPressureByTemperature\", unit = \"Pa/K\");
+//   input Real pt(quantity = \"DerPressureByTemperature\", unit = \"Pa/K\");
+//   input Real pd(quantity = \"DerPressureByDensity\", unit = \"Pa.m3/kg\");
+//   input Real vt(unit = \"m3/(kg.K)\");
+//   input Real vp(unit = \"m3/(kg.Pa)\");
+//   output IF97PhaseBoundaryProperties res;
+// end Modelica.Media.Common.IF97PhaseBoundaryProperties;
+//
+// function Modelica.Media.Common.NewtonDerivatives_ph \"Automatically generated record constructor for Modelica.Media.Common.NewtonDerivatives_ph\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", min = -1000000000.0, max = 1000000000.0, nominal = 100000.0, start = 100000.0, displayUnit = \"bar\");
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real pd(quantity = \"DerPressureByDensity\", unit = \"Pa.m3/kg\");
+//   input Real pt(quantity = \"DerPressureByTemperature\", unit = \"Pa/K\");
+//   input Real hd;
+//   input Real ht;
+//   output NewtonDerivatives_ph res;
+// end Modelica.Media.Common.NewtonDerivatives_ph;
+//
+// function Modelica.Media.Common.PhaseBoundaryProperties \"Automatically generated record constructor for Modelica.Media.Common.PhaseBoundaryProperties\"
+//   input Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0);
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real u(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0);
+//   input Real s(quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\", nominal = 1000.0);
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real pt(quantity = \"DerPressureByTemperature\", unit = \"Pa/K\");
+//   input Real pd(quantity = \"DerPressureByDensity\", unit = \"Pa.m3/kg\");
+//   output PhaseBoundaryProperties res;
+// end Modelica.Media.Common.PhaseBoundaryProperties;
+//
+// function Modelica.Media.Common.cv2Phase \"compute isochoric specific heat capacity inside the two-phase region\"
+//   input Modelica.Media.Common.PhaseBoundaryProperties liq \"properties on the boiling curve\";
+//   input Modelica.Media.Common.PhaseBoundaryProperties vap \"properties on the condensation curve\";
+//   input Real x(quantity = \"MassFraction\", unit = \"1\", min = 0.0, max = 1.0, start = 0.2, nominal = 0.01) \"vapour mass fraction\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"preoperties\";
+//   output Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") \"isochoric specific heat capacity\";
+//   protected Real dpT \"derivative of pressure w.r.t. temperature\";
+//   protected Real dxv \"derivative of vapour mass fraction w.r.t. specific volume\";
+//   protected Real dvTl \"derivative of liquid specific volume w.r.t. temperature\";
+//   protected Real dvTv \"derivative of vapour specific volume w.r.t. temperature\";
+//   protected Real duTl \"derivative of liquid specific inner energy w.r.t. temperature\";
+//   protected Real duTv \"derivative of vapour specific inner energy w.r.t. temperature\";
+//   protected Real dxt \"derivative of vapour mass fraction w.r.t. temperature\";
+// algorithm
+//   dxv := if liq.d <> vap.d then liq.d * vap.d / (liq.d - vap.d) else 0.0;
+//   dpT := (vap.s - liq.s) * dxv;
+//   dvTl := (liq.pt - dpT) / (liq.d ^ 2.0 * liq.pd);
+//   dvTv := (vap.pt - dpT) / (vap.d ^ 2.0 * vap.pd);
+//   dxt := (-dxv) * (dvTl + x * (dvTv - dvTl));
+//   duTl := liq.cv + (T * liq.pt - p) * dvTl;
+//   duTv := vap.cv + (T * vap.pt - p) * dvTv;
+//   cv := duTl + x * (duTv - duTl) + dxt * (vap.u - liq.u);
+// end Modelica.Media.Common.cv2Phase;
+//
+// function Modelica.Media.Common.gibbsToBoundaryProps \"calulate phase boundary property record from dimensionless Gibbs function\"
+//   input Modelica.Media.Common.GibbsDerivs g \"dimensionless derivatives of Gibbs function\";
+//   output Modelica.Media.Common.PhaseBoundaryProperties sat \"phase boundary properties\";
+//   protected Real vt \"derivative of specific volume w.r.t. temperature\";
+//   protected Real vp \"derivative of specific volume w.r.t. pressure\";
+// algorithm
+//   sat.d := g.p / (g.gpi * g.pi * g.T * g.R);
+//   sat.h := g.R * g.T * g.tau * g.gtau;
+//   sat.u := g.T * g.R * (g.tau * g.gtau - g.pi * g.gpi);
+//   sat.s := g.R * (g.tau * g.gtau - g.g);
+//   sat.cp := (-g.R) * g.tau ^ 2.0 * g.gtautau;
+//   sat.cv := g.R * ((g.gpi - g.tau * g.gtaupi) ^ 2.0 / g.gpipi - g.tau ^ 2.0 * g.gtautau);
+//   vt := g.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / g.p;
+//   vp := g.R * g.T * g.p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//   sat.pt := g.p * (g.tau * g.gtaupi - g.gpi) / (g.pi * g.gpipi * g.T);
+//   sat.pd := (-g.R) * g.T * g.gpi ^ 2.0 / g.gpipi;
+// end Modelica.Media.Common.gibbsToBoundaryProps;
+//
+// function Modelica.Media.Common.helmholtzToBoundaryProps \"calulate phase boundary property record from dimensionless Helmholtz function\"
+//   input Modelica.Media.Common.HelmholtzDerivs f \"dimensionless derivatives of Helmholtz function\";
+//   output Modelica.Media.Common.PhaseBoundaryProperties sat \"phase boundary property record\";
+//   protected Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+// algorithm
+//   p := f.R * f.d * f.T * f.delta * f.fdelta;
+//   sat.d := f.d;
+//   sat.h := f.R * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//   sat.s := f.R * (f.tau * f.ftau - f.f);
+//   sat.u := f.R * f.T * f.tau * f.ftau;
+//   sat.cp := f.R * ((f.delta * (f.fdelta - f.tau * f.fdeltatau)) ^ 2.0 / (2.0 * f.delta * f.fdelta + f.delta ^ 2.0 * f.fdeltadelta) - f.tau ^ 2.0 * f.ftautau);
+//   sat.cv := f.R * (-f.tau ^ 2.0) * f.ftautau;
+//   sat.pt := f.R * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//   sat.pd := f.R * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+// end Modelica.Media.Common.helmholtzToBoundaryProps;
+//
+// function Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants \"Automatically generated record constructor for Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real triplePointTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real triplePointPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants res;
+// end Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants;
+//
+// function Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants$waterConstants \"Automatically generated record constructor for Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants$waterConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real triplePointTemperature(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real triplePointPressure(min = 0.0, max = 100000000.0, nominal = 100000.0, start = 100000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real meltingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(min = 1.0, max = 10000.0, nominal = 300.0, start = 300.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(min = -100000000.0, max = 100000000.0, nominal = 1000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants$waterConstants res;
+// end Modelica.Media.Interfaces.PartialTwoPhaseMedium.FluidConstants$waterConstants;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3a_ph \"Region 3 a: inverse function T(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature\";
+//   protected constant Real[31] n = {-1.33645667811215e-07, 4.55912656802978e-06, -1.46294640700979e-05, 0.0063934131297008, 372.783927268847, -7186.54377460447, 573494.7521034, -2675693.29111439, -3.34066283302614e-05, -0.0245479214069597, 47.8087847764996, 7.646641318189041e-06, 0.00128350627676972, 0.0171219081377331, -8.510073045832129, -0.0136513461629781, -3.84460997596657e-06, 0.00337423807911655, -0.551624873066791, 0.72920227710747, -0.009925227573760411, -0.119308831407288, 0.793929190615421, 0.454270731799386, 0.20999859125991, -0.00642109823904738, -0.023515586860454, 0.00252233108341612, -0.00764885133368119, 0.0136176427574291, -0.0133027883575669};
+//   protected constant Real[31] I = {-12.0, -12.0, -12.0, -12.0, -12.0, -12.0, -12.0, -12.0, -10.0, -10.0, -10.0, -8.0, -8.0, -8.0, -8.0, -5.0, -3.0, -2.0, -2.0, -2.0, -1.0, -1.0, 0.0, 0.0, 1.0, 3.0, 3.0, 4.0, 4.0, 10.0, 12.0};
+//   protected constant Real[31] J = {0.0, 1.0, 2.0, 6.0, 14.0, 16.0, 20.0, 22.0, 1.0, 5.0, 12.0, 0.0, 2.0, 4.0, 10.0, 2.0, 0.0, 1.0, 3.0, 4.0, 0.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 3.0, 4.0, 5.0};
+//   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2300000.0 \"normalization enthalpy\";
+//   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
+//   protected constant Real Tstar(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 760.0 \"normalization temperature\";
+//   protected Real eta = 4.347826086956522e-07 * h \"normalized specific enthalpy\";
+//   protected Real pi = 1e-08 * p \"normalized specific pressure\";
+// algorithm
+//   T := 760.0 * (0.793929190615421 + (-1.33645667811215e-07) / (0.24 + pi) ^ 12.0 + 4.55912656802978e-06 * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) + (-1.46294640700979e-05) * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 2.0 + 0.0063934131297008 * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 6.0 + 372.783927268847 * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 14.0 + (-7186.54377460447) * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 16.0 + 573494.7521034 * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 20.0 + (-2675693.29111439) * (0.24 + pi) ^ (-12.0) * (-0.615 + eta) ^ 22.0 + (-3.34066283302614e-05) * (0.24 + pi) ^ (-10.0) * (-0.615 + eta) + (-0.0245479214069597) * (0.24 + pi) ^ (-10.0) * (-0.615 + eta) ^ 5.0 + 47.8087847764996 * (0.24 + pi) ^ (-10.0) * (-0.615 + eta) ^ 12.0 + 7.646641318189041e-06 / (0.24 + pi) ^ 8.0 + 0.00128350627676972 * (0.24 + pi) ^ (-8.0) * (-0.615 + eta) ^ 2.0 + 0.0171219081377331 * (0.24 + pi) ^ (-8.0) * (-0.615 + eta) ^ 4.0 + (-8.510073045832129) * (0.24 + pi) ^ (-8.0) * (-0.615 + eta) ^ 10.0 + (-0.0136513461629781) * (0.24 + pi) ^ (-5.0) * (-0.615 + eta) ^ 2.0 + (-3.84460997596657e-06) / (0.24 + pi) ^ 3.0 + 0.00337423807911655 * (0.24 + pi) ^ (-2.0) * (-0.615 + eta) + (-0.551624873066791) * (0.24 + pi) ^ (-2.0) * (-0.615 + eta) ^ 3.0 + 0.72920227710747 * (0.24 + pi) ^ (-2.0) * (-0.615 + eta) ^ 4.0 + (-0.009925227573760411) / (0.24 + pi) + (-0.119308831407288) * (-0.615 + eta) ^ 2.0 / (0.24 + pi) + 0.454270731799386 * (-0.615 + eta) + 0.20999859125991 * (0.24 + pi) * (-0.615 + eta) + (-0.00642109823904738) * (0.24 + pi) ^ 3.0 + (-0.023515586860454) * (0.24 + pi) ^ 3.0 * (-0.615 + eta) + 0.00252233108341612 * (0.24 + pi) ^ 4.0 + (-0.00764885133368119) * (0.24 + pi) ^ 4.0 * (-0.615 + eta) ^ 3.0 + 0.0136176427574291 * (0.24 + pi) ^ 10.0 * (-0.615 + eta) ^ 4.0 + (-0.0133027883575669) * (0.24 + pi) ^ 12.0 * (-0.615 + eta) ^ 5.0);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3a_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3b_ph \"Region 3 b: inverse function T(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature\";
+//   protected constant Real[33] n = {3.2325457364492e-05, -0.000127575556587181, -0.000475851877356068, 0.00156183014181602, 0.105724860113781, -85.85142211325341, 724.140095480911, 0.00296475810273257, -0.00592721983365988, -0.0126305422818666, -0.115716196364853, 84.90009697395951, -0.0108602260086615, 0.0154304475328851, 0.0750455441524466, 0.0252520973612982, -0.0602507901232996, -3.07622221350501, -0.0574011959864879, 5.03471360939849, -0.925081888584834, 3.91733882917546, -77.314600713019, 9493.087620985871, -1410437.19679409, 8491662.30819026, 0.861095729446704, 0.32334644281172, 0.873281936020439, -0.436653048526683, 0.286596714529479, -0.131778331276228, 0.00676682064330275};
+//   protected constant Real[33] I = {-12.0, -12.0, -10.0, -10.0, -10.0, -10.0, -10.0, -8.0, -8.0, -8.0, -8.0, -8.0, -6.0, -6.0, -6.0, -4.0, -4.0, -3.0, -2.0, -2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 1.0, 3.0, 5.0, 6.0, 8.0};
+//   protected constant Real[33] J = {0.0, 1.0, 0.0, 1.0, 5.0, 10.0, 12.0, 0.0, 1.0, 2.0, 4.0, 10.0, 0.0, 1.0, 2.0, 0.0, 1.0, 5.0, 0.0, 4.0, 2.0, 4.0, 6.0, 10.0, 14.0, 16.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+//   protected constant Real Tstar(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 860.0 \"normalization temperature\";
+//   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
+//   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2800000.0 \"normalization enthalpy\";
+//   protected Real pi = 1e-08 * p \"normalized specific pressure\";
+//   protected Real eta = 3.571428571428572e-07 * h \"normalized specific enthalpy\";
+// algorithm
+//   T := 860.0 * (0.861095729446704 + 3.2325457364492e-05 / (0.298 + pi) ^ 12.0 + (-0.000127575556587181) * (0.298 + pi) ^ (-12.0) * (-0.72 + eta) + (-0.000475851877356068) / (0.298 + pi) ^ 10.0 + 0.00156183014181602 * (0.298 + pi) ^ (-10.0) * (-0.72 + eta) + 0.105724860113781 * (0.298 + pi) ^ (-10.0) * (-0.72 + eta) ^ 5.0 + (-85.85142211325341) * (0.298 + pi) ^ (-10.0) * (-0.72 + eta) ^ 10.0 + 724.140095480911 * (0.298 + pi) ^ (-10.0) * (-0.72 + eta) ^ 12.0 + 0.00296475810273257 / (0.298 + pi) ^ 8.0 + (-0.00592721983365988) * (0.298 + pi) ^ (-8.0) * (-0.72 + eta) + (-0.0126305422818666) * (0.298 + pi) ^ (-8.0) * (-0.72 + eta) ^ 2.0 + (-0.115716196364853) * (0.298 + pi) ^ (-8.0) * (-0.72 + eta) ^ 4.0 + 84.90009697395951 * (0.298 + pi) ^ (-8.0) * (-0.72 + eta) ^ 10.0 + (-0.0108602260086615) / (0.298 + pi) ^ 6.0 + 0.0154304475328851 * (0.298 + pi) ^ (-6.0) * (-0.72 + eta) + 0.0750455441524466 * (0.298 + pi) ^ (-6.0) * (-0.72 + eta) ^ 2.0 + 0.0252520973612982 / (0.298 + pi) ^ 4.0 + (-0.0602507901232996) * (0.298 + pi) ^ (-4.0) * (-0.72 + eta) + (-3.07622221350501) * (0.298 + pi) ^ (-3.0) * (-0.72 + eta) ^ 5.0 + (-0.0574011959864879) / (0.298 + pi) ^ 2.0 + 5.03471360939849 * (0.298 + pi) ^ (-2.0) * (-0.72 + eta) ^ 4.0 + (-0.925081888584834) * (-0.72 + eta) ^ 2.0 / (0.298 + pi) + 3.91733882917546 * (-0.72 + eta) ^ 4.0 / (0.298 + pi) + (-77.314600713019) * (-0.72 + eta) ^ 6.0 / (0.298 + pi) + 9493.087620985871 * (-0.72 + eta) ^ 10.0 / (0.298 + pi) + (-1410437.19679409) * (-0.72 + eta) ^ 14.0 / (0.298 + pi) + 8491662.30819026 * (-0.72 + eta) ^ 16.0 / (0.298 + pi) + 0.32334644281172 * (-0.72 + eta) ^ 2.0 + 0.873281936020439 * (0.298 + pi) * (-0.72 + eta) + (-0.436653048526683) * (0.298 + pi) ^ 3.0 * (-0.72 + eta) + 0.286596714529479 * (0.298 + pi) ^ 5.0 * (-0.72 + eta) + (-0.131778331276228) * (0.298 + pi) ^ 6.0 * (-0.72 + eta) + 0.00676682064330275 * (0.298 + pi) ^ 8.0 * (-0.72 + eta));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3b_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT \"derivative of pressure wrt temperature along the saturation pressure curve\"
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real dpt(unit = \"Pa/K\") \"temperature derivative of pressure\";
+//   protected Real[31] o \"vector of auxiliary variables\";
+//   protected Real Tlim \"temeprature limited to TCRIT\";
+// algorithm
+//   Tlim := min(T, 647.096);
+//   o[1] := -650.17534844798 + Tlim;
+//   o[2] := 1.0 / o[1];
+//   o[3] := (-0.23855557567849) * o[2];
+//   o[4] := o[3] + Tlim;
+//   o[5] := (-4823.2657361591) * o[4];
+//   o[6] := o[4] ^ 2.0;
+//   o[7] := 14.91510861353 * o[6];
+//   o[8] := 405113.40542057 + o[5] + o[7];
+//   o[9] := o[8] ^ 2.0;
+//   o[10] := o[9] ^ 2.0;
+//   o[11] := o[1] ^ 2.0;
+//   o[12] := 1.0 / o[11];
+//   o[13] := 0.23855557567849 * o[12];
+//   o[14] := 1.0 + o[13];
+//   o[15] := 12020.82470247 * o[4];
+//   o[16] := (-17.073846940092) * o[6];
+//   o[17] := -3232555.0322333 + o[15] + o[16];
+//   o[18] := (-4823.2657361591) * o[14];
+//   o[19] := 29.83021722706 * o[14] * o[4];
+//   o[20] := o[18] + o[19];
+//   o[21] := 1167.0521452767 * o[4];
+//   o[22] := -724213.16703206 + o[21] + o[6];
+//   o[23] := o[17] ^ 2.0;
+//   o[24] := (-4.0) * o[22] * o[8];
+//   o[25] := o[23] + o[24];
+//   o[26] := sqrt(o[25]);
+//   o[27] := (-12020.82470247) * o[4];
+//   o[28] := 17.073846940092 * o[6];
+//   o[29] := 3232555.0322333 + o[26] + o[27] + o[28];
+//   o[30] := o[29] ^ 2.0;
+//   o[31] := o[30] ^ 2.0;
+//   dpt := 1000000.0 * ((-64.0) * o[10] * (o[14] * (-12020.82470247 + 34.147693880184 * o[4]) + 0.5 * (2.0 * o[17] * o[14] * (12020.82470247 + (-34.147693880184) * o[4]) + (-4.0) * (o[20] * o[22] + o[14] * (1167.0521452767 + 2.0 * o[4]) * o[8])) / o[26]) / (o[31] * o[29]) + 64.0 * o[20] * o[8] * o[9] / o[31]);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dtsatofp \"derivative of saturation temperature w.r.t. pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real dtsat(unit = \"K/Pa\") \"derivative of T w.r.t. p\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real[49] o \"vector of auxiliary variables\";
+// algorithm
+//   pi := max(1e-60, 1e-06 * p);
+//   o[1] := pi ^ 0.75;
+//   o[2] := 1.0 / o[1];
+//   o[3] := (-4.268461735023) * o[2];
+//   o[4] := sqrt(pi);
+//   o[5] := 1.0 / o[4];
+//   o[6] := 0.5 * o[5];
+//   o[7] := o[3] + o[6];
+//   o[8] := pi ^ 0.25;
+//   o[9] := (-3232555.0322333) * o[8];
+//   o[10] := (-724213.16703206) * o[4];
+//   o[11] := 405113.40542057 + o[10] + o[9];
+//   o[12] := (-4.0) * o[11] * o[7];
+//   o[13] := (-808138.758058325) * o[2];
+//   o[14] := (-362106.58351603) * o[5];
+//   o[15] := o[13] + o[14];
+//   o[16] := (-17.073846940092) * o[8];
+//   o[17] := 14.91510861353 + o[16] + o[4];
+//   o[18] := (-4.0) * o[15] * o[17];
+//   o[19] := 3005.2061756175 * o[2];
+//   o[20] := 583.52607263835 * o[5];
+//   o[21] := o[19] + o[20];
+//   o[22] := 12020.82470247 * o[8];
+//   o[23] := 1167.0521452767 * o[4];
+//   o[24] := -4823.2657361591 + o[22] + o[23];
+//   o[25] := 2.0 * o[21] * o[24];
+//   o[26] := o[12] + o[18] + o[25];
+//   o[27] := (-4.0) * o[11] * o[17];
+//   o[28] := o[24] ^ 2.0;
+//   o[29] := o[27] + o[28];
+//   o[30] := sqrt(o[29]);
+//   o[31] := 1.0 / o[30];
+//   o[32] := -o[30];
+//   o[33] := (-12020.82470247) * o[8];
+//   o[34] := (-1167.0521452767) * o[4];
+//   o[35] := 4823.2657361591 + o[32] + o[33] + o[34];
+//   o[36] := o[30];
+//   o[37] := -4823.2657361591 + o[22] + o[23] + o[36];
+//   o[38] := o[37] ^ 2.0;
+//   o[39] := 1.0 / o[38];
+//   o[40] := (-1.72207339365771) * o[30];
+//   o[41] := 21592.2055343628 * o[8];
+//   o[42] := o[30] * o[8];
+//   o[43] := (-8192.87114842946) * o[4];
+//   o[44] := (-0.510632954559659) * o[30] * o[4];
+//   o[45] := (-3100.02526152368) * o[1];
+//   o[46] := pi;
+//   o[47] := 1295.95640782102 * o[46];
+//   o[48] := 2862.09212505088 + o[40] + o[41] + o[42] + o[43] + o[44] + o[45] + o[47];
+//   o[49] := o[35] ^ (-2.0);
+//   dtsat := 5e-07 * (2.0 * (o[15] / o[35] - o[11] * ((-3005.2061756175) * o[2] + (-0.5) * o[26] * o[31] + (-583.52607263835) * o[5]) * o[49]) + (-20953.46356643991) * (o[39] * (1295.95640782102 + o[2] * (5398.05138359071 + 0.25 * o[30]) + o[26] * o[31] * (-0.861036696828853 + (-0.255316477279829) * o[4]) + (-4096.43557421473) * o[5] + (-0.255316477279829) * o[30] * o[5] + (-2325.01894614276) / o[8] + 0.5 * o[26] * o[31] * o[8]) + (-2.0) * (o[19] + o[20] + 0.5 * o[26] * o[31]) * o[48] / o[37] ^ 3.0) / sqrt(o[39] * o[48]));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dtsatofp;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3 \"Helmholtz function for region 3: f(d,T)\"
+//   input Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Modelica.Media.Common.HelmholtzDerivs f \"dimensionless Helmholtz function and dervatives wrt delta and tau\";
+//   protected Real[40] o \"vector of auxiliary variables\";
+// algorithm
+//   f.T := T;
+//   f.d := d;
+//   f.R := 461.526;
+//   f.tau := 647.096 / T;
+//   f.delta := if d == 322.0 and T == 647.096 then 0.999999999999999 else abs(0.003105590062111801 * d);
+//   o[1] := f.tau ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] * f.tau;
+//   o[4] := o[1] * f.tau;
+//   o[5] := o[2] ^ 2.0;
+//   o[6] := o[1] * o[5] * f.tau;
+//   o[7] := o[5] * f.tau;
+//   o[8] := (-0.64207765181607) * o[1];
+//   o[9] := 0.88521043984318 + o[8];
+//   o[10] := o[7] * o[9];
+//   o[11] := -1.1524407806681 + o[10];
+//   o[12] := o[11] * o[2];
+//   o[13] := -1.2654315477714 + o[12];
+//   o[14] := o[1] * o[13];
+//   o[15] := o[1] * o[2] * o[5] * f.tau;
+//   o[16] := o[2] * o[5];
+//   o[17] := o[1] * o[5];
+//   o[18] := o[5] ^ 2.0;
+//   o[19] := o[1] * o[18] * o[2];
+//   o[20] := o[1] * o[18] * o[2] * f.tau;
+//   o[21] := o[18] * o[5];
+//   o[22] := o[1] * o[18] * o[5];
+//   o[23] := 0.25116816848616 * o[2];
+//   o[24] := 0.078841073758308 + o[23];
+//   o[25] := o[15] * o[24];
+//   o[26] := -6.100523451393 + o[25];
+//   o[27] := o[26] * f.tau;
+//   o[28] := 9.7944563083754 + o[27];
+//   o[29] := o[2] * o[28];
+//   o[30] := -1.70429417648412 + o[29];
+//   o[31] := o[1] * o[30];
+//   o[32] := f.delta ^ 2.0;
+//   o[33] := (-10.9153200808732) * o[1];
+//   o[34] := 13.2781565976477 + o[33];
+//   o[35] := o[34] * o[7];
+//   o[36] := -6.9146446840086 + o[35];
+//   o[37] := o[2] * o[36];
+//   o[38] := -2.5308630955428 + o[37];
+//   o[39] := o[38] * f.tau;
+//   o[40] := o[18] * o[5] * f.tau;
+//   f.f := -15.732845290239 + f.tau * (20.944396974307 + (-7.6867707878716 + o[3] * (2.6185947787954 + o[4] * (-2.808078114862 + o[1] * (1.2053369696517 + (-0.008456681281250201) * o[6])))) * f.tau) + f.delta * (o[14] + f.delta * (0.38493460186671 + o[1] * (-0.85214708824206 + o[2] * (4.8972281541877 + (-3.0502617256965 + o[15] * (0.039420536879154 + 0.12558408424308 * o[2])) * f.tau)) + f.delta * (-0.2799932969871 + o[1] * (1.389979956946 + o[1] * (-2.018991502357 + o[16] * (-0.0082147637173963 + (-0.47596035734923) * o[17]))) + f.delta * (0.0439840744735 + o[1] * (-0.44476435428739 + o[1] * (0.90572070719733 + 0.70522450087967 * o[19])) + f.delta * (f.delta * (-0.022175400873096 + o[1] * (0.094260751665092 + 0.16436278447961 * o[21]) + f.delta * (f.delta * (f.delta * (o[1] * (0.0005792295362808399 + 0.0032308904703711 * o[21]) + f.delta * (8.096480299621501e-05 + (-4.4923899061815e-05) * f.delta * o[22] + (-0.00016557679795037) * f.tau)) + (-0.014834345352472) * o[22]) + (-0.013503372241348) * o[1])) + (0.10770512626332 + o[1] * (-0.32913623258954 + (-0.50871062041158) * o[20])) * f.tau))))) + 1.0658070028513 * log(f.delta);
+//   f.fdelta := (1.0658070028513 + f.delta * (o[14] + f.delta * (0.76986920373342 + o[31] + f.delta * (-0.8399798909613 + o[1] * (4.169939870838 + o[1] * (-6.056974507071 + o[16] * (-0.0246442911521889 + (-1.42788107204769) * o[17]))) + f.delta * (0.175936297894 + o[1] * (-1.77905741714956 + o[1] * (3.6228828287893 + 2.82089800351868 * o[19])) + f.delta * (f.delta * (-0.133052405238576 + o[1] * (0.56556450999055 + 0.98617670687766 * o[21]) + f.delta * (f.delta * (f.delta * (o[1] * (0.0052130658265276 + 0.0290780142333399 * o[21]) + f.delta * (0.00080964802996215 + (-0.0004941628896799601) * f.delta * o[22] + (-0.0016557679795037) * f.tau)) + (-0.118674762819776) * o[22]) + (-0.094523605689436) * o[1])) + (0.5385256313166 + o[1] * (-1.6456811629477 + (-2.5435531020579) * o[20])) * f.tau)))))) / f.delta;
+//   f.fdeltadelta := (-1.0658070028513 + o[32] * (0.76986920373342 + o[31] + f.delta * (-1.6799597819226 + o[1] * (8.339879741676 + o[1] * (-12.113949014142 + o[16] * (-0.049288582304378 + (-2.85576214409538) * o[17]))) + f.delta * (0.527808893682 + o[1] * (-5.3371722514487 + o[1] * (10.868648486368 + 8.462694010556 * o[19])) + f.delta * (f.delta * (-0.66526202619288 + o[1] * (2.82782254995276 + 4.9308835343883 * o[21]) + f.delta * (f.delta * (f.delta * (o[1] * (0.04170452661222 + 0.232624113866719 * o[21]) + f.delta * (0.0072868322696594 + (-0.0049416288967996) * f.delta * o[22] + (-0.0149019118155333) * f.tau)) + (-0.83072333973843) * o[22]) + (-0.56714163413662) * o[1])) + (2.1541025252664 + o[1] * (-6.5827246517908 + (-10.1742124082316) * o[20])) * f.tau))))) / o[32];
+//   f.ftau := 20.944396974307 + (-15.3735415757432 + o[3] * (18.3301634515678 + o[4] * (-28.08078114862 + o[1] * (14.4640436358204 + (-0.194503669468755) * o[6])))) * f.tau + f.delta * (o[39] + f.delta * (f.tau * (-1.70429417648412 + o[2] * (29.3833689251262 + (-21.3518320798755 + o[15] * (0.86725181134139 + 3.2651861903201 * o[2])) * f.tau)) + f.delta * ((2.779959913892 + o[1] * (-8.075966009428001 + o[16] * (-0.131436219478341 + (-12.37496929108) * o[17]))) * f.tau + f.delta * ((-0.8895287085747799 + o[1] * (3.6228828287893 + 18.3358370228714 * o[19])) * f.tau + f.delta * (0.10770512626332 + o[1] * (-0.9874086977686199 + (-13.2264761307011) * o[20]) + f.delta * ((0.188521503330184 + 4.2734323964699 * o[21]) * f.tau + f.delta * (f.delta * (f.delta * (f.delta * (-0.00016557679795037 + (-0.00116802137560719) * f.delta * o[40]) + (0.00115845907256168 + 0.08400315222964901 * o[21]) * f.tau) + (-0.38569297916427) * o[40]) + (-0.027006744482696) * f.tau)))))));
+//   f.ftautau := -15.3735415757432 + o[3] * (109.980980709407 + o[4] * (-252.72703033758 + o[1] * (159.104479994024 + (-4.2790807283126) * o[6]))) + f.delta * (-2.5308630955428 + o[2] * (-34.573223420043 + (185.894192367068 + (-174.645121293971) * o[1]) * o[7]) + f.delta * (-1.70429417648412 + o[2] * (146.916844625631 + (-128.110992479253 + o[15] * (18.2122880381691 + 81.629654758002 * o[2])) * f.tau) + f.delta * (2.779959913892 + o[1] * (-24.227898028284 + o[16] * (-1.97154329217511 + (-309.374232277) * o[17])) + f.delta * (-0.8895287085747799 + o[1] * (10.868648486368 + 458.39592557179 * o[19]) + f.delta * (f.delta * (0.188521503330184 + 106.835809911747 * o[21] + f.delta * (-0.027006744482696 + f.delta * (f.delta * (0.00115845907256168 + o[21] * (2.10007880574121 + (-0.0292005343901797) * o[32])) + (-9.642324479106801) * o[21]))) + (-1.97481739553724 + (-330.66190326753) * o[20]) * f.tau)))));
+//   f.fdeltatau := o[39] + f.delta * (f.tau * (-3.4085883529682 + o[2] * (58.766737850252 + (-42.703664159751 + o[15] * (1.73450362268278 + 6.5303723806402 * o[2])) * f.tau)) + f.delta * ((8.339879741676 + o[1] * (-24.227898028284 + o[16] * (-0.39430865843502 + (-37.12490787324) * o[17]))) * f.tau + f.delta * ((-3.5581148342991 + o[1] * (14.4915313151573 + 73.34334809148601 * o[19])) * f.tau + f.delta * (0.5385256313166 + o[1] * (-4.9370434888431 + (-66.132380653505) * o[20]) + f.delta * ((1.1311290199811 + 25.6405943788192 * o[21]) * f.tau + f.delta * (f.delta * (f.delta * (f.delta * (-0.0016557679795037 + (-0.0128482351316791) * f.delta * o[40]) + (0.0104261316530551 + 0.75602837006684 * o[21]) * f.tau) + (-3.08554383331418) * o[40]) + (-0.189047211378872) * f.tau))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1 \"Gibbs function for region 1: g(p,T)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Real pi1 \"dimensionless pressure\";
+//   protected Real tau1 \"dimensionless temperature\";
+//   protected Real[45] o \"vector of auxiliary variables\";
+//   protected Real pl \"auxiliary variable\";
+// algorithm
+//   pl := min(p, 22063999.0);
+//   assert(p > 611.657, \"IF97 medium function g1 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 100000000.0, \"IF97 medium function g1: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
+//   assert(T >= 273.15, \"IF97 medium function g1: the temperature (= \" + String(T, 6, 0, true) + \" K)  is lower than 273.15 K!\");
+//   g.p := p;
+//   g.T := T;
+//   g.R := 461.526;
+//   g.pi := 6.049606775559589e-08 * p;
+//   g.tau := 1386.0 / T;
+//   pi1 := 7.1 - g.pi;
+//   tau1 := -1.222 + g.tau;
+//   o[1] := tau1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   o[4] := o[3] * tau1;
+//   o[5] := 1.0 / o[4];
+//   o[6] := o[1] * o[2];
+//   o[7] := o[1] * tau1;
+//   o[8] := 1.0 / o[7];
+//   o[9] := o[1] * o[2] * o[3];
+//   o[10] := 1.0 / o[2];
+//   o[11] := o[2] * tau1;
+//   o[12] := 1.0 / o[11];
+//   o[13] := o[2] * o[3];
+//   o[14] := 1.0 / o[3];
+//   o[15] := pi1 ^ 2.0;
+//   o[16] := o[15] * pi1;
+//   o[17] := o[15] ^ 2.0;
+//   o[18] := o[17] ^ 2.0;
+//   o[19] := o[17] * o[18] * pi1;
+//   o[20] := o[15] * o[17];
+//   o[21] := o[3] ^ 2.0;
+//   o[22] := o[21] ^ 2.0;
+//   o[23] := o[22] * o[3] * tau1;
+//   o[24] := 1.0 / o[23];
+//   o[25] := o[22] * o[3];
+//   o[26] := 1.0 / o[25];
+//   o[27] := o[1] * o[2] * o[22] * tau1;
+//   o[28] := 1.0 / o[27];
+//   o[29] := o[1] * o[2] * o[22];
+//   o[30] := 1.0 / o[29];
+//   o[31] := o[1] * o[2] * o[21] * o[3] * tau1;
+//   o[32] := 1.0 / o[31];
+//   o[33] := o[2] * o[21] * o[3] * tau1;
+//   o[34] := 1.0 / o[33];
+//   o[35] := o[1] * o[3] * tau1;
+//   o[36] := 1.0 / o[35];
+//   o[37] := o[1] * o[3];
+//   o[38] := 1.0 / o[37];
+//   o[39] := 1.0 / o[6];
+//   o[40] := o[1] * o[22] * o[3];
+//   o[41] := 1.0 / o[40];
+//   o[42] := 1.0 / o[22];
+//   o[43] := o[1] * o[2] * o[21] * o[3];
+//   o[44] := 1.0 / o[43];
+//   o[45] := 1.0 / o[13];
+//   g.g := pi1 * (pi1 * (pi1 * (o[10] * (-3.1679644845054e-05 + o[2] * (-2.8270797985312e-06 + (-8.5205128120103e-10) * o[6])) + pi1 * (o[12] * (-2.2425281908e-06 + (-6.5171222895601e-07 + (-1.4341729937924e-13) * o[13]) * o[7]) + pi1 * (o[16] * ((-1.2734301741641e-09 + (-1.7424871230634e-10) * o[11]) * o[36] + o[19] * (o[15] * (1.4478307828521e-20 * o[32] + o[20] * (2.6335781662795e-23 * o[30] + pi1 * (pi1 * (1.8228094581404e-24 * o[26] + (-9.3537087292458e-26) * o[24] * pi1) + (-1.1947622640071e-23) * o[28]))) + (-6.8762131295531e-19) * o[34])) + (-4.0516996860117e-07) * o[14]))) + o[8] * (-0.00047184321073267 + o[7] * (-0.00030001780793026 + (4.7661393906987e-05 + o[1] * (-4.4141845330846e-06 + (-7.2694996297594e-16) * o[9])) * tau1))) + o[5] * (0.00028319080123804 + o[1] * (-0.00060706301565874 + o[6] * (-0.018990068218419 + tau1 * (-0.032529748770505 + (-0.021841717175414 + (-5.283835796993e-05) * o[1]) * tau1))))) + (0.14632971213167 + tau1 * (-0.84548187169114 + tau1 * (-3.756360367204 + tau1 * (3.3855169168385 + tau1 * (-0.95791963387872 + tau1 * (0.15772038513228 + (-0.016616417199501 + 0.00081214629983568 * tau1) * tau1)))))) / o[1];
+//   g.gpi := pi1 * (pi1 * (o[10] * (9.5038934535162e-05 + o[2] * (8.4812393955936e-06 + 2.55615384360309e-09 * o[6])) + pi1 * (o[12] * (8.970112763199999e-06 + (2.60684891582404e-06 + 5.7366919751696e-13 * o[13]) * o[7]) + pi1 * (2.02584984300585e-06 * o[14] + o[16] * ((1.01874413933128e-08 + 1.39398969845072e-09 * o[11]) * o[36] + o[19] * (1.44400475720615e-17 * o[34] + o[15] * (o[20] * (pi1 * (3.5842867920213e-22 * o[28] + pi1 * (2.99318679335866e-24 * o[24] * pi1 + (-5.6507093202352e-23) * o[26])) + (-7.6373766822106e-22) * o[30]) + (-3.3300108005598e-19) * o[32])))))) + o[8] * (0.00094368642146534 + o[7] * (0.00060003561586052 + (-9.5322787813974e-05 + o[1] * (8.828369066169199e-06 + 1.45389992595188e-15 * o[9])) * tau1))) + o[5] * (-0.00028319080123804 + o[1] * (0.00060706301565874 + o[6] * (0.018990068218419 + tau1 * (0.032529748770505 + (0.021841717175414 + 5.283835796993e-05 * o[1]) * tau1))));
+//   g.gpipi := pi1 * (o[10] * (-0.000190077869070324 + o[2] * (-1.69624787911872e-05 + (-5.1123076872062e-09) * o[6])) + pi1 * (o[12] * (-2.69103382896e-05 + (-7.8205467474721e-06 + (-1.72100759255088e-12) * o[13]) * o[7]) + pi1 * (o[16] * ((-7.131208975319e-08 + (-9.757927889154999e-09) * o[11]) * o[36] + o[19] * (o[15] * (7.326023761231599e-18 * o[32] + o[20] * (2.13846547101895e-20 * o[30] + pi1 * (pi1 * (1.69521279607057e-21 * o[26] + (-9.2788790594118e-23) * o[24] * pi1) + (-1.03944316968618e-20) * o[28]))) + (-2.8880095144123e-16) * o[34])) + (-8.103399372023399e-06) * o[14]))) + o[8] * (-0.00094368642146534 + o[7] * (-0.00060003561586052 + (9.5322787813974e-05 + o[1] * (-8.828369066169199e-06 + (-1.45389992595188e-15) * o[9])) * tau1));
+//   g.gtau := pi1 * (o[38] * (-0.00254871721114236 + o[1] * (0.0042494411096112 + (0.018990068218419 + (-0.021841717175414 + (-0.00015851507390979) * o[1]) * o[1]) * o[6])) + pi1 * (o[10] * (0.00141552963219801 + o[2] * (4.7661393906987e-05 + o[1] * (-1.32425535992538e-05 + (-1.2358149370591e-14) * o[9]))) + pi1 * (o[12] * (0.000126718579380216 + (-5.1123076872062e-09) * o[37]) + pi1 * (o[39] * (1.1212640954e-05 + (1.30342445791202e-06 + (-1.4341729937924e-12) * o[13]) * o[7]) + pi1 * (3.2413597488094e-06 * o[5] + o[16] * ((1.40077319158051e-08 + 1.04549227383804e-09 * o[11]) * o[45] + o[19] * (1.9941018075704e-17 * o[44] + o[15] * (o[20] * (pi1 * (4.6595728296277e-22 * o[26] + pi1 * (3.8350205789908e-24 * o[41] * pi1 + (-7.2912378325616e-23) * o[24])) + (-1.00075970318621e-21) * o[28]) + (-4.4882754268415e-19) * o[42])))))))) + o[8] * (-0.29265942426334 + tau1 * (0.84548187169114 + o[1] * (3.3855169168385 + tau1 * (-1.91583926775744 + tau1 * (0.47316115539684 + (-0.066465668798004 + 0.0040607314991784 * tau1) * tau1)))));
+//   g.gtautau := pi1 * (o[36] * (0.0254871721114236 + o[1] * (-0.033995528876889 + (-0.037980136436838 + (-0.00031703014781958) * o[2]) * o[6])) + pi1 * (o[12] * (-0.005662118528792 + o[6] * (-2.64851071985076e-05 + (-1.97730389929456e-13) * o[9])) + pi1 * ((-0.00063359289690108 + (-2.55615384360309e-08) * o[37]) * o[39] + pi1 * (pi1 * (o[16] * (o[19] * (o[15] * (o[20] * (3.9029628424262e-20 * o[26] + pi1 * (pi1 * (2.98940751135026e-21 * o[41] + (-1.61070864317613e-22) * pi1 / (o[1] * o[22] * o[3] * tau1)) + (-1.86382913185108e-20) * o[24])) + 1.43624813658928e-17 / (o[22] * tau1)) + (-5.9823054227112e-16) * o[32]) + (-1.68092782989661e-07 + (-7.3184459168663e-09) * o[11]) / (o[2] * o[3] * tau1)) + (-2.91722377392842e-05) * o[38]) + (-6.7275845724e-05 + (-3.9102733737361e-06 + (-1.29075569441316e-11) * o[13]) * o[7]) / (o[1] * o[2] * tau1))))) + o[10] * (0.8779782727900201 + tau1 * (-1.69096374338228 + o[7] * (-1.91583926775744 + tau1 * (0.94632231079368 + (-0.199397006394012 + 0.0162429259967136 * tau1) * tau1))));
+//   g.gtaupi := o[38] * (0.00254871721114236 + o[1] * (-0.0042494411096112 + (-0.018990068218419 + (0.021841717175414 + 0.00015851507390979 * o[1]) * o[1]) * o[6])) + pi1 * (o[10] * (-0.00283105926439602 + o[2] * (-9.5322787813974e-05 + o[1] * (2.64851071985076e-05 + 2.4716298741182e-14 * o[9]))) + pi1 * (o[12] * (-0.00038015573814065 + 1.53369230616185e-08 * o[37]) + pi1 * (o[39] * (-4.4850563816e-05 + (-5.2136978316481e-06 + 5.7366919751696e-12 * o[13]) * o[7]) + pi1 * (o[16] * ((-1.12061855326441e-07 + (-8.3639381907043e-09) * o[11]) * o[45] + o[19] * (o[15] * (1.03230334817355e-17 * o[42] + o[20] * (2.90220313924001e-20 * o[28] + pi1 * (pi1 * (2.2602837280941e-21 * o[24] + (-1.22720658527705e-22) * o[41] * pi1) + (-1.39787184888831e-20) * o[26]))) + (-4.1876137958978e-16) * o[44])) + (-1.62067987440468e-05) * o[5]))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2 \"Gibbs function for region 2: g(p,T)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Real tau2 \"dimensionless temperature\";
+//   protected Real[55] o \"vector of auxiliary variables\";
+// algorithm
+//   g.p := p;
+//   g.T := T;
+//   g.R := 461.526;
+//   assert(p > 0.0, \"IF97 medium function g2 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 100000000.0, \"IF97 medium function g2: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
+//   assert(T >= 273.15, \"IF97 medium function g2: the temperature (= \" + String(T, 6, 0, true) + \" K) is lower than 273.15 K!\");
+//   assert(T <= 1073.15, \"IF97 medium function g2: the input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than the limit of 1073.15 K\");
+//   g.pi := 1e-06 * p;
+//   g.tau := 540.0 / T;
+//   tau2 := -0.5 + g.tau;
+//   o[1] := tau2 ^ 2.0;
+//   o[2] := o[1] * tau2;
+//   o[3] := (-0.05032527872793) * o[2];
+//   o[4] := -0.057581259083432 + o[3];
+//   o[5] := o[4] * tau2;
+//   o[6] := -0.045996013696365 + o[5];
+//   o[7] := o[6] * tau2;
+//   o[8] := -0.017834862292358 + o[7];
+//   o[9] := o[8] * tau2;
+//   o[10] := o[1] ^ 2.0;
+//   o[11] := o[10] ^ 2.0;
+//   o[12] := o[11] ^ 2.0;
+//   o[13] := o[10] * o[11] * o[12] * tau2;
+//   o[14] := o[1] * o[10] * tau2;
+//   o[15] := o[10] * o[11] * tau2;
+//   o[16] := o[1] * o[12] * tau2;
+//   o[17] := o[1] * o[11] * tau2;
+//   o[18] := o[1] * o[10] * o[11];
+//   o[19] := o[10] * o[11] * o[12];
+//   o[20] := o[1] * o[10];
+//   o[21] := g.pi ^ 2.0;
+//   o[22] := o[21] ^ 2.0;
+//   o[23] := o[21] * o[22];
+//   o[24] := o[10] * o[12] * tau2;
+//   o[25] := o[12] ^ 2.0;
+//   o[26] := o[11] * o[12] * o[25] * tau2;
+//   o[27] := o[10] * o[12];
+//   o[28] := o[1] * o[10] * o[11] * tau2;
+//   o[29] := o[10] * o[12] * o[25] * tau2;
+//   o[30] := o[1] * o[10] * o[25] * tau2;
+//   o[31] := o[1] * o[11] * o[12];
+//   o[32] := o[1] * o[12];
+//   o[33] := g.tau ^ 2.0;
+//   o[34] := o[33] ^ 2.0;
+//   o[35] := (-5.3349095828174e-05) * o[13];
+//   o[36] := -0.087594591301146 + o[35];
+//   o[37] := o[2] * o[36];
+//   o[38] := -0.007878555448671 + o[37];
+//   o[39] := o[1] * o[38];
+//   o[40] := -0.0003789797503263 + o[39];
+//   o[41] := o[40] * tau2;
+//   o[42] := -6.6065283340406e-05 + o[41];
+//   o[43] := o[42] * tau2;
+//   o[44] := 5.7870447262208e-06 * tau2;
+//   o[45] := (-0.30195167236758) * o[2];
+//   o[46] := -0.172743777250296 + o[45];
+//   o[47] := o[46] * tau2;
+//   o[48] := -0.09199202739273001 + o[47];
+//   o[49] := o[48] * tau2;
+//   o[50] := o[1] * o[11];
+//   o[51] := o[10] * o[11];
+//   o[52] := o[11] * o[12] * o[25];
+//   o[53] := o[10] * o[12] * o[25];
+//   o[54] := o[1] * o[10] * o[25];
+//   o[55] := o[11] * o[12] * tau2;
+//   g.g := g.pi * (-0.0017731742473213 + o[9] + g.pi * (tau2 * (-3.3032641670203e-05 + (-0.00018948987516315 + o[1] * (-0.0039392777243355 + (-0.043797295650573 + (-2.6674547914087e-05) * o[13]) * o[2])) * tau2) + g.pi * (2.0481737692309e-08 + (4.3870667284435e-07 + o[1] * (-3.227767723857e-05 + (-0.0015033924542148 + (-0.040668253562649) * o[13]) * o[2])) * tau2 + g.pi * (g.pi * (2.2922076337661e-06 * o[14] + g.pi * ((-1.6714766451061e-11 + o[15] * (-0.0021171472321355 + (-23.895741934104) * o[16])) * o[2] + g.pi * (-5.905956432427e-18 + o[17] * (-1.2621808899101e-06 + (-0.038946842435739) * o[18]) + g.pi * (o[11] * (1.1256211360459e-11 + (-8.2311340897998) * o[19]) + g.pi * (1.9809712802088e-08 * o[15] + g.pi * (o[10] * (1.0406965210174e-19 + (-1.0234747095929e-13 + (-1.0018179379511e-09) * o[10]) * o[20]) + o[23] * (o[13] * (-8.0882908646985e-11 + 0.10693031879409 * o[24]) + o[21] * (o[21] * (o[27] * (8.9185845355421e-25 + (3.0629316876232e-13 + (-4.2002467698208e-06) * o[15]) * o[28]) + g.pi * (g.pi * (3.7826947613457e-06 * o[29] + g.pi * (o[31] * (7.3087610595061e-29 + o[18] * (5.5414715350778e-17 + (-9.436970724121e-07) * o[32])) * g.pi + (-1.2768608934681e-15) * o[30])) + (-5.9056029685639e-26) * o[24])) + (-0.33662250574171) * o[26])))))))) + tau2 * (-7.8847309559367e-10 + (1.2790717852285e-08 + 4.8225372718507e-07 * tau2) * tau2))))) + (-0.00560879118302 + g.tau * (0.07145273881455 + g.tau * (-0.4071049823928 + g.tau * (1.424081971444 + g.tau * (-4.38395111945 + g.tau * (-9.692768600217001 + g.tau * (10.08665568018 + (-0.2840863260772 + 0.02126846353307 * g.tau) * g.tau) + log(g.pi))))))) / (o[34] * g.tau);
+//   g.gpi := (1.0 + g.pi * (-0.0017731742473213 + o[9] + g.pi * (o[43] + g.pi * (6.1445213076927e-08 + (1.31612001853305e-06 + o[1] * (-9.683303171571e-05 + (-0.0045101773626444 + (-0.122004760687947) * o[13]) * o[2])) * tau2 + g.pi * (g.pi * (1.14610381688305e-05 * o[14] + g.pi * ((-1.00288598706366e-10 + o[15] * (-0.012702883392813 + (-143.374451604624) * o[16])) * o[2] + g.pi * (-4.1341695026989e-17 + o[17] * (-8.8352662293707e-06 + (-0.272627897050173) * o[18]) + g.pi * (o[11] * (9.0049690883672e-11 + (-65.84907271839801) * o[19]) + g.pi * (1.78287415218792e-07 * o[15] + g.pi * (o[10] * (1.0406965210174e-18 + (-1.0234747095929e-12 + (-1.0018179379511e-08) * o[10]) * o[20]) + o[23] * (o[13] * (-1.29412653835176e-09 + 1.71088510070544 * o[24]) + o[21] * (o[21] * (o[27] * (1.78371690710842e-23 + (6.1258633752464e-12 + (-8.4004935396416e-05) * o[15]) * o[28]) + g.pi * (g.pi * (8.3219284749605e-05 * o[29] + g.pi * (o[31] * (1.75410265428146e-27 + o[18] * (1.32995316841867e-15 + (-2.26487297378904e-05) * o[32])) * g.pi + (-2.93678005497663e-14) * o[30])) + (-1.24017662339842e-24) * o[24])) + (-6.0592051033508) * o[26])))))))) + tau2 * (-3.15389238237468e-09 + (5.116287140914e-08 + 1.92901490874028e-06 * tau2) * tau2)))))) / g.pi;
+//   g.gpipi := (-1.0 + o[21] * (o[43] + g.pi * (1.22890426153854e-07 + (2.6322400370661e-06 + o[1] * (-0.00019366606343142 + (-0.009020354725288801 + (-0.244009521375894) * o[13]) * o[2])) * tau2 + g.pi * (g.pi * (4.5844152675322e-05 * o[14] + g.pi * ((-5.0144299353183e-10 + o[15] * (-0.063514416964065 + (-716.87225802312) * o[16])) * o[2] + g.pi * (-2.48050170161934e-16 + o[17] * (-5.3011597376224e-05 + (-1.63576738230104) * o[18]) + g.pi * (o[11] * (6.303478361857e-10 + (-460.94350902879) * o[19]) + g.pi * (1.42629932175034e-06 * o[15] + g.pi * (o[10] * (9.366268689156601e-18 + (-9.2112723863361e-12 + (-9.016361441559899e-08) * o[10]) * o[20]) + o[23] * (o[13] * (-1.94118980752764e-08 + 25.6632765105816 * o[24]) + o[21] * (o[21] * (o[27] * (3.389062123506e-22 + (1.16391404129682e-10 + (-0.0015960937725319) * o[15]) * o[28]) + g.pi * (g.pi * (0.00174760497974171 * o[29] + g.pi * (o[31] * (4.0344361048474e-26 + o[18] * (3.05889228736295e-14 + (-0.00052092078397148) * o[32])) * g.pi + (-6.4609161209486e-13) * o[30])) + (-2.48035324679684e-23) * o[24])) + (-103.006486756963) * o[26])))))))) + tau2 * (-9.461677147124e-09 + (1.5348861422742e-07 + o[44]) * tau2))))) / o[21];
+//   g.gtau := (0.0280439559151 + g.tau * (-0.2858109552582 + g.tau * (1.2213149471784 + g.tau * (-2.848163942888 + g.tau * (4.38395111945 + o[33] * (10.08665568018 + (-0.5681726521544 + 0.06380539059921 * g.tau) * g.tau)))))) / (o[33] * o[34]) + g.pi * (-0.017834862292358 + o[49] + g.pi * (-3.3032641670203e-05 + (-0.0003789797503263 + o[1] * (-0.015757110897342 + (-0.306581069554011 + (-0.00096028372490713) * o[13]) * o[2])) * tau2 + g.pi * (4.3870667284435e-07 + o[1] * (-9.683303171571e-05 + (-0.009020354725288801 + (-1.42338887469272) * o[13]) * o[2]) + g.pi * (-7.8847309559367e-10 + g.pi * (1.60454534363627e-05 * o[20] + g.pi * (o[1] * (-5.0144299353183e-11 + o[15] * (-0.033874355714168 + (-836.35096769364) * o[16])) + g.pi * ((-1.38839897890111e-05 + (-0.97367106089347) * o[18]) * o[50] + g.pi * (o[14] * (9.0049690883672e-11 + (-296.320827232793) * o[19]) + g.pi * (2.57526266427144e-07 * o[51] + g.pi * (o[2] * (4.1627860840696e-19 + (-1.0234747095929e-12 + (-1.40254511313154e-08) * o[10]) * o[20]) + o[23] * (o[19] * (-2.34560435076256e-09 + 5.3465159397045 * o[24]) + o[21] * (o[21] * (o[16] * (1.78371690710842e-23 + (1.07202609066812e-11 + (-0.000201611844951398) * o[15]) * o[28]) + g.pi * (g.pi * (0.000200482822351322 * o[53] + g.pi * ((1.90027787547159e-27 + o[18] * (2.21658861403112e-15 + (-5.4734430199902e-05) * o[32])) * o[55] * g.pi + (-4.9797574845256e-14) * o[54])) + (-1.24017662339842e-24) * o[27])) + (-19.1874828272775) * o[52])))))))) + (2.558143570457e-08 + 1.44676118155521e-06 * tau2) * tau2))));
+//   g.gtautau := (-0.1682637354906 + g.tau * (1.429054776291 + g.tau * (-4.8852597887136 + g.tau * (8.544491828664 + g.tau * (-8.7679022389 + o[33] * (-0.5681726521544 + 0.12761078119842 * g.tau) * g.tau))))) / (o[33] * o[34] * g.tau) + g.pi * (-0.09199202739273001 + (-0.34548755450059 + (-1.5097583618379) * o[2]) * tau2 + g.pi * (-0.0003789797503263 + o[1] * (-0.047271332692026 + (-1.83948641732407 + (-0.03360993037175) * o[13]) * o[2]) + g.pi * ((-0.00019366606343142 + (-0.045101773626444 + (-48.395221739552) * o[13]) * o[2]) * tau2 + g.pi * (2.558143570457e-08 + 2.89352236311042e-06 * tau2 + g.pi * (9.6272720618176e-05 * o[10] * tau2 + g.pi * ((-1.00288598706366e-10 + o[15] * (-0.50811533571252 + (-28435.9329015838) * o[16])) * tau2 + g.pi * (o[11] * (-0.000138839897890111 + (-23.3681054614434) * o[18]) * tau2 + g.pi * ((6.303478361857e-10 + (-10371.2289531477) * o[19]) * o[20] + g.pi * (3.09031519712573e-06 * o[17] + g.pi * (o[1] * (1.24883582522088e-18 + (-9.2112723863361e-12 + (-1.823308647071e-07) * o[10]) * o[20]) + o[23] * (o[1] * o[11] * o[12] * (-6.5676921821352e-08 + 261.979281045521 * o[24]) * tau2 + o[21] * (o[21] * ((3.389062123506e-22 + (3.6448887082716e-10 + (-0.009475756712715701) * o[15]) * o[28]) * o[32] + g.pi * (g.pi * (0.0104251067622687 * o[1] * o[12] * o[25] * tau2 + g.pi * (o[11] * o[12] * (4.750694688679e-26 + o[18] * (8.6446955947214e-14 + (-0.0031198625213944) * o[32])) * g.pi + (-1.89230784411972e-12) * o[10] * o[25] * tau2)) + (-2.48035324679684e-23) * o[16])) + (-1074.49903832754) * o[1] * o[10] * o[12] * o[25] * tau2))))))))))));
+//   g.gtaupi := -0.017834862292358 + o[49] + g.pi * (-6.6065283340406e-05 + (-0.0007579595006526 + o[1] * (-0.031514221794684 + (-0.61316213910802 + (-0.00192056744981426) * o[13]) * o[2])) * tau2 + g.pi * (1.31612001853305e-06 + o[1] * (-0.00029049909514713 + (-0.0270610641758664 + (-4.2701666240781) * o[13]) * o[2]) + g.pi * (-3.15389238237468e-09 + g.pi * (8.0227267181813e-05 * o[20] + g.pi * (o[1] * (-3.00865796119098e-10 + o[15] * (-0.203246134285008 + (-5018.1058061618) * o[16])) + g.pi * ((-9.7187928523078e-05 + (-6.8156974262543) * o[18]) * o[50] + g.pi * (o[14] * (7.2039752706938e-10 + (-2370.56661786234) * o[19]) + g.pi * (2.3177363978443e-06 * o[51] + g.pi * (o[2] * (4.1627860840696e-18 + (-1.0234747095929e-11 + (-1.40254511313154e-07) * o[10]) * o[20]) + o[23] * (o[19] * (-3.7529669612201e-08 + 85.544255035272 * o[24]) + o[21] * (o[21] * (o[16] * (3.5674338142168e-22 + (2.14405218133624e-10 + (-0.004032236899028) * o[15]) * o[28]) + g.pi * (g.pi * (0.0044106220917291 * o[53] + g.pi * ((4.5606669011318e-26 + o[18] * (5.3198126736747e-14 + (-0.00131362632479764) * o[32])) * o[55] * g.pi + (-1.14534422144089e-12) * o[54])) + (-2.60437090913668e-23) * o[27])) + (-345.37469089099) * o[52])))))))) + (1.0232574281828e-07 + o[44]) * tau2)));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g5 \"base function for region 5: g(p,T)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Real[11] o \"vector of auxiliary variables\";
+// algorithm
+//   assert(p > 0.0, \"IF97 medium function g5 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 10000000.0, \"IF97 medium function g5: input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 10 Mpa in region 5\");
+//   assert(T <= 2273.15, \"IF97 medium function g5: input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than limit of 2273.15K in region 5\");
+//   g.p := p;
+//   g.T := T;
+//   g.R := 461.526;
+//   g.pi := 1e-06 * p;
+//   g.tau := 1000.0 / T;
+//   o[1] := g.tau ^ 2.0;
+//   o[2] := (-0.004594282089991) * o[1];
+//   o[3] := 0.0021774678714571 + o[2];
+//   o[4] := o[3] * g.tau;
+//   o[5] := o[1] * g.tau;
+//   o[6] := o[1] ^ 2.0;
+//   o[7] := o[6] ^ 2.0;
+//   o[8] := o[7] * g.tau;
+//   o[9] := (-7.9449656719138e-06) * o[8];
+//   o[10] := g.pi ^ 2.0;
+//   o[11] := (-0.013782846269973) * o[1];
+//   g.g := g.pi * (-0.00012563183589592 + o[4] + g.pi * (1.2919228289784e-07 * o[5] * g.pi + (-3.9724828359569e-06) * o[8])) + (-0.024805148933466 + g.tau * (0.36901534980333 + g.tau * (-3.1161318213925 + g.tau * (-13.179983674201 + (6.8540841634434 + (-0.32961626538917) * g.tau) * g.tau + log(g.pi))))) / o[5];
+//   g.gpi := (1.0 + g.pi * (-0.00012563183589592 + o[4] + g.pi * (o[9] + 3.8757684869352e-07 * o[5] * g.pi))) / g.pi;
+//   g.gpipi := (-1.0 + o[10] * (o[9] + 7.7515369738704e-07 * o[5] * g.pi)) / o[10];
+//   g.gtau := g.pi * (0.0021774678714571 + o[11] + g.pi * (3.8757684869352e-07 * o[1] * g.pi + (-3.5752345523612e-05) * o[7])) + (0.07441544680039799 + g.tau * (-0.73803069960666 + (3.1161318213925 + o[1] * (6.8540841634434 + (-0.65923253077834) * g.tau)) * g.tau)) / o[6];
+//   g.gtautau := (-0.297661787201592 + g.tau * (2.21409209881998 + (-6.232263642785 + (-0.65923253077834) * o[5]) * g.tau)) / (o[6] * g.tau) + g.pi * (g.pi * (7.7515369738704e-07 * g.pi * g.tau + (-0.000286018764188897) * o[1] * o[6] * g.tau) + (-0.027565692539946) * g.tau);
+//   g.gtaupi := 0.0021774678714571 + o[11] + g.pi * (1.16273054608056e-06 * o[1] * g.pi + (-7.1504691047224e-05) * o[7]);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g5;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p \"ergion 3 a b boundary for pressure/enthalpy\"
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"Enthalpy\";
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   protected constant Real[4] n = {2014.64004206875, 3.74696550136983, -0.0219921901054187, 8.7513168600995e-05};
+//   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 1000.0 \"normalization enthalpy\";
+//   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 1000000.0 \"normalization pressure\";
+//   protected Real pi = 1e-06 * p \"normalized specific pressure\";
+// algorithm
+//   h := 1000.0 * (2014.64004206875 + 3.74696550136983 * pi + (-0.0219921901054187) * pi ^ 2.0 + 8.7513168600995e-05 * pi ^ 3.0);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat \"region 4 saturation pressure as a functionx of temperature\"
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real p_sat(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   protected Real[8] o \"vector of auxiliary variables\";
+//   protected Real Tlim = min(T, 647.096);
+// algorithm
+//   assert(T >= 273.16, \"IF97 medium function psat: input temperature (= 611.657 K).
+//   lower than the triple point temperature 273.16 K\");
+//   o[1] := -650.17534844798 + Tlim;
+//   o[2] := 1.0 / o[1];
+//   o[3] := (-0.23855557567849) * o[2];
+//   o[4] := o[3] + Tlim;
+//   o[5] := (-4823.2657361591) * o[4];
+//   o[6] := o[4] ^ 2.0;
+//   o[7] := 14.91510861353 * o[6];
+//   o[8] := 405113.40542057 + o[5] + o[7];
+//   p_sat := 16000000.0 * (o[8] / (3232555.0322333 + (-12020.82470247) * o[4] + 17.073846940092 * o[6] + ((-3232555.0322333 + 12020.82470247 * o[4] + (-17.073846940092) * o[6]) ^ 2.0 + (-4.0) * (-724213.16703206 + 1167.0521452767 * o[4] + o[6]) * o[8]) ^ 0.5)) ^ 4.0;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat_der \"derivative function for psat\"
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   input Real der_T(unit = \"K/s\") \"temperature derivative\";
+//   output Real der_psat(unit = \"Pa/s\") \"pressure\";
+//   protected Real dpt;
+// algorithm
+//   dpt := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(T);
+//   der_psat := dpt * der_T;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat_der;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1 \"inverse function for region 1: T(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real eta1 \"dimensionless specific enthalpy\";
+//   protected Real[3] o \"vector of auxiliary variables\";
+// algorithm
+//   assert(p > 611.657, \"IF97 medium function tph1 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   pi := 1e-06 * p;
+//   eta1 := 1.0 + 4e-07 * h;
+//   o[1] := eta1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   T := -238.72489924521 + (-13.391744872602) * pi + eta1 * (404.21188637945 + 43.211039183559 * pi + eta1 * (113.49746881718 + (-54.010067170506) * pi + eta1 * (30.535892203916 * pi + eta1 * (o[1] * (-5.8457616048039 + o[2] * (pi * (0.009396540087836301 + (-2.5858641282073e-05 + 6.645618619163501e-08 * pi) * pi) + o[2] * o[3] * (-0.0001528548241314 + o[1] * o[3] * (-1.0866707695377e-06 + pi * (1.157364750534e-07 + pi * (-4.0644363084799e-09 + pi * (8.0670734103027e-11 + pi * (-9.347777121394701e-13 + (5.8265442020601e-15 + (-1.5020185953503e-17) * pi) * pi)))))))) + (-6.5964749423638) * pi))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2 \"reverse function for region 2: T(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real pi2b \"dimensionless pressure\";
+//   protected Real pi2c \"dimensionless pressure\";
+//   protected Real eta \"dimensionless specific enthalpy\";
+//   protected Real etabc \"dimensionless specific enthalpy\";
+//   protected Real eta2a \"dimensionless specific enthalpy\";
+//   protected Real eta2b \"dimensionless specific enthalpy\";
+//   protected Real eta2c \"dimensionless specific enthalpy\";
+//   protected Real[8] o \"vector of auxiliary variables\";
+// algorithm
+//   pi := 1e-06 * p;
+//   eta := 5e-07 * h;
+//   etabc := 0.001 * h;
+//   if pi < 4.0 then
+//     eta2a := -2.1 + eta;
+//     o[1] := eta2a ^ 2.0;
+//     o[2] := o[1] ^ 2.0;
+//     o[3] := pi ^ 2.0;
+//     o[4] := o[3] ^ 2.0;
+//     o[5] := o[3] * pi;
+//     T := 1089.8952318288 + (1.844574935579 + (-0.0061707422868339) * pi) * pi + eta2a * (849.51654495535 + (-4.1792700549624) * pi + eta2a * (-107.81748091826 + (6.2478196935812 + (-0.31078046629583) * pi) * pi + eta2a * (33.153654801263 + (-17.344563108114) * pi + o[2] * (-7.4232016790248 + pi * (-200.58176862096 + 11.670873077107 * pi) + o[1] * (271.96065473796 * pi + o[1] * (eta2a * (1.3865724283226 * o[4] + o[1] * o[2] * (3091.9688604755 * pi + o[1] * (11.765048724356 + o[2] * (o[2] * (o[2] * (o[4] * (235988.32556514 + 7399.9835474766 * pi) + o[1] * (19127.72923966 * o[3] * o[4] + o[1] * (o[3] * (128127984.04046 + (-551966.9703006) * o[5]) + o[1] * (o[1] * (2822454697.3002 * o[3] + o[1] * (o[3] * (-3594897141.0703 + 3715408.5996233 * o[5]) + o[1] * pi * (252266.40357872 + pi * (1722734991.3197 + pi * (12848734.66465 + (-13105236.545054 + (-415351.64835634) * o[3]) * pi))))) + (-985549096.23276) * o[3])))) + (-62.459855192507) * o[3] * o[4] * pi) + (-13551.334240775) * o[5])))) + (-455.11318285818) * pi))))));
+//   elseif pi < 905.84278514723 + (-0.67955786399241 + 0.00012809002730136 * etabc) * etabc then
+//     eta2b := -2.6 + eta;
+//     pi2b := -2.0 + pi;
+//     o[1] := pi2b ^ 2.0;
+//     o[2] := o[1] * pi2b;
+//     o[3] := o[1] ^ 2.0;
+//     o[4] := eta2b ^ 2.0;
+//     o[5] := o[4] ^ 2.0;
+//     o[6] := o[4] * o[5];
+//     o[7] := o[5] ^ 2.0;
+//     T := 1489.5041079516 + 0.9374714737793201 * pi2b + eta2b * (743.0779831403401 + o[2] * (0.00011032831789999 + (-1.7565233969407e-18) * o[1] * o[3]) + eta2b * (-97.70831879783699 + pi2b * (3.3593118604916 + pi2b * (-0.021810755324761 + pi2b * (0.00018955248387902 + (2.8640237477456e-07 + (-8.1456365207833e-14) * o[2]) * pi2b))) + o[5] * (3.3809355601454 * pi2b + o[4] * (o[5] * (2.4742464705674 + (0.16844539671904 + o[1] * (0.0030891541160537 + (-1.0779857357512e-05) * pi2b)) * pi2b + o[6] * (-0.63281320016026 + pi2b * (0.73875745236695 + (-0.046333324635812 + o[1] * (-7.6462712454814e-05 + 2.821728163504e-07 * pi2b)) * pi2b) + o[6] * (1.1385952129658 + pi2b * (-0.47128737436186 + o[1] * (0.0013555504554949 + (1.4052392818316e-05 + 1.2704902271945e-06 * pi2b) * pi2b)) + o[5] * (-0.47811863648625 + (0.15020273139707 + o[2] * (-3.1083814331434e-05 + o[1] * (-1.1030139238909e-08 + (-2.5180545682962e-11) * pi2b))) * pi2b + o[5] * o[7] * (0.0085208123431544 + pi2b * (-0.002176411421975 + pi2b * (7.1280351959551e-05 + o[1] * (-1.0302738212103e-06 + (7.3803353468292e-08 + 8.6934156344163e-15 * o[3]) * pi2b)))))))) + (-0.10829784403677) * o[1]))));
+//   else
+//     eta2c := -1.8 + eta;
+//     pi2c := 25.0 + pi;
+//     o[1] := pi2c ^ 2.0;
+//     o[2] := o[1] ^ 2.0;
+//     o[3] := o[1] * o[2] * pi2c;
+//     o[4] := 1.0 / o[3];
+//     o[5] := o[1] * o[2];
+//     o[6] := eta2c ^ 2.0;
+//     o[7] := o[2] ^ 2.0;
+//     o[8] := o[6] ^ 2.0;
+//     T := eta2c * ((859777.2253558 + o[1] * (482.19755109255 + 1.126159740723e-12 * o[5])) / o[1] + eta2c * ((-583401318515.9 + (20825544563.171 + 31081.088422714 * o[2]) * pi2c) / o[5] + o[6] * (o[8] * (o[6] * o[5] * (1.2324579690832e-07 + o[6] * (-1.1606921130984e-06 + o[8] * (2.7846367088554e-05 + (-0.00059270038474176 + 0.0012918582991878 * o[6]) * o[8]))) + (-10.842984880077) * pi2c) + o[4] * (7326335090218.1 + o[7] * (3.7966001272486 + (-0.04536417267666 + (-1.7804982240686e-11) * o[2]) * pi2c))))) + o[4] * (-3236839855524.2 + pi2c * (358250899454.47 + pi2c * (-10783068217.47 + o[1] * pi2c * (610747.8356451601 + pi2c * (-25745.72360417 + (1208.2315865936 + 1.4559115658698e-13 * o[5]) * pi2c)))));
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat \"region 4 saturation temperature as a function of pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real t_sat(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real[20] o \"vector of auxiliary variables\";
+// algorithm
+//   assert(p > 611.657, \"IF97 medium function tsat called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   pi := 1e-06 * min(p, 22064000.0);
+//   o[1] := pi ^ 0.25;
+//   o[2] := (-3232555.0322333) * o[1];
+//   o[3] := pi ^ 0.5;
+//   o[4] := (-724213.16703206) * o[3];
+//   o[5] := 405113.40542057 + o[2] + o[4];
+//   o[6] := (-17.073846940092) * o[1];
+//   o[7] := 14.91510861353 + o[3] + o[6];
+//   o[8] := (-4.0) * o[5] * o[7];
+//   o[9] := 12020.82470247 * o[1];
+//   o[10] := 1167.0521452767 * o[3];
+//   o[11] := -4823.2657361591 + o[10] + o[9];
+//   o[12] := o[11] ^ 2.0;
+//   o[13] := o[12] + o[8];
+//   o[14] := o[13] ^ 0.5;
+//   o[15] := -o[14];
+//   o[16] := (-12020.82470247) * o[1];
+//   o[17] := (-1167.0521452767) * o[3];
+//   o[18] := 4823.2657361591 + o[15] + o[16] + o[17];
+//   o[19] := 1.0 / o[18];
+//   o[20] := 2.0 * o[19] * o[5];
+//   t_sat := 0.5 * (650.17534844798 + o[20] - ((650.17534844798 + o[20]) ^ 2.0 + (-4.0) * (-0.23855557567849 + 1300.35069689596 * o[19] * o[5])) ^ 0.5);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat_der \"derivative function for tsat\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real der_p(unit = \"Pa/s\") \"pressure derivatrive\";
+//   output Real der_tsat(unit = \"K/s\") \"temperature derivative\";
+//   protected Real dtp;
+// algorithm
+//   dtp := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dtsatofp(p);
+//   der_tsat := dtp * der_p;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat_der;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3a_ph \"Region 3 a: inverse function v(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real v(quantity = \"SpecificVolume\", unit = \"m3/kg\", min = 3e-05, max = 1000000.0) \"specific volume\";
+//   protected constant Real[32] n = {0.00529944062966028, -0.170099690234461, 11.1323814312927, -2178.98123145125, -0.000506061827980875, 0.556495239685324, -9.43672726094016, -0.297856807561527, 93.9353943717186, 0.0192944939465981, 0.421740664704763, -3689141.2628233, -0.00737566847600639, -0.354753242424366, -1.99768169338727, 1.15456297059049, 5683.6687581596, 0.00808169540124668, 0.172416341519307, 1.04270175292927, -0.297691372792847, 0.560394465163593, 0.275234661176914, -0.148347894866012, -0.0651142513478515, -2.92468715386302, 0.0664876096952665, 3.52335014263844, -0.0146340792313332, -2.24503486668184, 1.10533464706142, -0.0408757344495612};
+//   protected constant Real[32] I = {-12.0, -12.0, -12.0, -12.0, -10.0, -10.0, -10.0, -8.0, -8.0, -6.0, -6.0, -6.0, -4.0, -4.0, -3.0, -2.0, -2.0, -1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 4.0, 5.0, 8.0};
+//   protected constant Real[32] J = {6.0, 8.0, 12.0, 18.0, 4.0, 7.0, 10.0, 5.0, 12.0, 3.0, 4.0, 22.0, 2.0, 3.0, 7.0, 3.0, 16.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 0.0, 1.0, 2.0, 0.0, 2.0, 0.0, 2.0, 2.0, 2.0};
+//   protected constant Real vstar(quantity = \"Volume\", unit = \"m3\") = 0.0028 \"normalization temperature\";
+//   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
+//   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2100000.0 \"normalization enthalpy\";
+//   protected Real pi = 1e-08 * p \"normalized specific pressure\";
+//   protected Real eta = 4.761904761904762e-07 * h \"normalized specific enthalpy\";
+// algorithm
+//   v := 0.0028 * (0.560394465163593 + (0.128 + pi) ^ (-12.0) * (0.00529944062966028 * (-0.727 + eta) ^ 6.0 + (-0.170099690234461) * (-0.727 + eta) ^ 8.0) + 11.1323814312927 * (0.128 + pi) ^ (-12.0) * (-0.727 + eta) ^ 12.0 + (-2178.98123145125) * (0.128 + pi) ^ (-12.0) * (-0.727 + eta) ^ 18.0 + (-0.000506061827980875) * (0.128 + pi) ^ (-10.0) * (-0.727 + eta) ^ 4.0 + 0.556495239685324 * (0.128 + pi) ^ (-10.0) * (-0.727 + eta) ^ 7.0 + (-9.43672726094016) * (0.128 + pi) ^ (-10.0) * (-0.727 + eta) ^ 10.0 + (-0.297856807561527) * (0.128 + pi) ^ (-8.0) * (-0.727 + eta) ^ 5.0 + 93.9353943717186 * (0.128 + pi) ^ (-8.0) * (-0.727 + eta) ^ 12.0 + 0.0192944939465981 * (0.128 + pi) ^ (-6.0) * (-0.727 + eta) ^ 3.0 + 0.421740664704763 * (0.128 + pi) ^ (-6.0) * (-0.727 + eta) ^ 4.0 + (-3689141.2628233) * (0.128 + pi) ^ (-6.0) * (-0.727 + eta) ^ 22.0 + (-0.00737566847600639) * (0.128 + pi) ^ (-4.0) * (-0.727 + eta) ^ 2.0 + (-0.354753242424366) * (0.128 + pi) ^ (-4.0) * (-0.727 + eta) ^ 3.0 + (-1.99768169338727) * (0.128 + pi) ^ (-3.0) * (-0.727 + eta) ^ 7.0 + 1.15456297059049 * (0.128 + pi) ^ (-2.0) * (-0.727 + eta) ^ 3.0 + 5683.6687581596 * (0.128 + pi) ^ (-2.0) * (-0.727 + eta) ^ 16.0 + 0.00808169540124668 / (0.128 + pi) + 0.172416341519307 * (-0.727 + eta) / (0.128 + pi) + 1.04270175292927 * (-0.727 + eta) ^ 2.0 / (0.128 + pi) + (-0.297691372792847) * (-0.727 + eta) ^ 3.0 / (0.128 + pi) + 0.275234661176914 * (-0.727 + eta) + (-0.148347894866012) * (0.128 + pi) + (-0.0651142513478515) * (0.128 + pi) * (-0.727 + eta) + (-2.92468715386302) * (0.128 + pi) * (-0.727 + eta) ^ 2.0 + 0.0664876096952665 * (0.128 + pi) ^ 2.0 + 3.52335014263844 * ((0.128 + pi) * (-0.727 + eta)) ^ 2.0 + (-0.0146340792313332) * (0.128 + pi) ^ 3.0 + (-2.24503486668184) * (0.128 + pi) ^ 4.0 * (-0.727 + eta) ^ 2.0 + 1.10533464706142 * (0.128 + pi) ^ 5.0 * (-0.727 + eta) ^ 2.0 + (-0.0408757344495612) * (0.128 + pi) ^ 8.0 * (-0.727 + eta) ^ 2.0);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3a_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3b_ph \"Region 3 b: inverse function v(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   output Real v(quantity = \"SpecificVolume\", unit = \"m3/kg\", min = 3e-05, max = 1000000.0) \"specific volume\";
+//   protected constant Real[30] n = {-2.25196934336318e-09, 1.40674363313486e-08, 2.3378408528056e-06, -3.31833715229001e-05, 0.00107956778514318, -0.271382067378863, 1.07202262490333, -0.853821329075382, -2.15214194340526e-05, 0.00076965608822273, -0.00431136580433864, 0.453342167309331, -0.507749535873652, -100.475154528389, -0.219201924648793, -3.21087965668917, 607.567815637771, 0.000557686450685932, 0.18749904002955, 0.00905368030448107, 0.285417173048685, 0.0329924030996098, 0.239897419685483, 4.82754995951394, -11.8035753702231, 0.169490044091791, -0.0179967222507787, 0.0371810116332674, -0.0536288335065096, 1.6069710109252};
+//   protected constant Real[30] I = {-12.0, -12.0, -8.0, -8.0, -8.0, -8.0, -8.0, -8.0, -6.0, -6.0, -6.0, -6.0, -6.0, -6.0, -4.0, -4.0, -4.0, -3.0, -3.0, -2.0, -2.0, -1.0, -1.0, -1.0, -1.0, 0.0, 1.0, 1.0, 2.0, 2.0};
+//   protected constant Real[30] J = {0.0, 1.0, 0.0, 1.0, 3.0, 6.0, 7.0, 8.0, 0.0, 1.0, 2.0, 5.0, 6.0, 10.0, 3.0, 6.0, 10.0, 0.0, 2.0, 1.0, 2.0, 0.0, 1.0, 4.0, 5.0, 0.0, 0.0, 1.0, 2.0, 6.0};
+//   protected constant Real vstar(quantity = \"Volume\", unit = \"m3\") = 0.008800000000000001 \"normalization temperature\";
+//   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = 100000000.0 \"normalization pressure\";
+//   protected constant Real hstar(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) = 2800000.0 \"normalization enthalpy\";
+//   protected Real pi = 1e-08 * p \"normalized specific pressure\";
+//   protected Real eta = 3.571428571428572e-07 * h \"normalized specific enthalpy\";
+// algorithm
+//   v := 0.008800000000000001 * (0.169490044091791 + (-2.25196934336318e-09) / (0.06610000000000001 + pi) ^ 12.0 + 1.40674363313486e-08 * (0.06610000000000001 + pi) ^ (-12.0) * (-0.72 + eta) + 2.3378408528056e-06 / (0.06610000000000001 + pi) ^ 8.0 + (-3.31833715229001e-05) * (0.06610000000000001 + pi) ^ (-8.0) * (-0.72 + eta) + 0.00107956778514318 * (0.06610000000000001 + pi) ^ (-8.0) * (-0.72 + eta) ^ 3.0 + (-0.271382067378863) * (0.06610000000000001 + pi) ^ (-8.0) * (-0.72 + eta) ^ 6.0 + 1.07202262490333 * (0.06610000000000001 + pi) ^ (-8.0) * (-0.72 + eta) ^ 7.0 + (-0.853821329075382) * (0.06610000000000001 + pi) ^ (-8.0) * (-0.72 + eta) ^ 8.0 + (-2.15214194340526e-05) / (0.06610000000000001 + pi) ^ 6.0 + 0.00076965608822273 * (0.06610000000000001 + pi) ^ (-6.0) * (-0.72 + eta) + (-0.00431136580433864) * (0.06610000000000001 + pi) ^ (-6.0) * (-0.72 + eta) ^ 2.0 + 0.453342167309331 * (0.06610000000000001 + pi) ^ (-6.0) * (-0.72 + eta) ^ 5.0 + (-0.507749535873652) * (0.06610000000000001 + pi) ^ (-6.0) * (-0.72 + eta) ^ 6.0 + (-100.475154528389) * (0.06610000000000001 + pi) ^ (-6.0) * (-0.72 + eta) ^ 10.0 + (-0.219201924648793) * (0.06610000000000001 + pi) ^ (-4.0) * (-0.72 + eta) ^ 3.0 + (-3.21087965668917) * (0.06610000000000001 + pi) ^ (-4.0) * (-0.72 + eta) ^ 6.0 + 607.567815637771 * (0.06610000000000001 + pi) ^ (-4.0) * (-0.72 + eta) ^ 10.0 + 0.000557686450685932 / (0.06610000000000001 + pi) ^ 3.0 + 0.18749904002955 * (0.06610000000000001 + pi) ^ (-3.0) * (-0.72 + eta) ^ 2.0 + 0.00905368030448107 * (0.06610000000000001 + pi) ^ (-2.0) * (-0.72 + eta) + 0.285417173048685 * (0.06610000000000001 + pi) ^ (-2.0) * (-0.72 + eta) ^ 2.0 + 0.0329924030996098 / (0.06610000000000001 + pi) + 0.239897419685483 * (-0.72 + eta) / (0.06610000000000001 + pi) + 4.82754995951394 * (-0.72 + eta) ^ 4.0 / (0.06610000000000001 + pi) + (-11.8035753702231) * (-0.72 + eta) ^ 5.0 / (0.06610000000000001 + pi) + (-0.0179967222507787) * (0.06610000000000001 + pi) + 0.0371810116332674 * (0.06610000000000001 + pi) * (-0.72 + eta) + (-0.0536288335065096) * ((0.06610000000000001 + pi) * (-0.72 + eta)) ^ 2.0 + 1.6069710109252 * (0.06610000000000001 + pi) ^ 2.0 * (-0.72 + eta) ^ 6.0);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3b_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.dtofph3 \"inverse iteration in region 3: (d,T) = f(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Real delp(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"iteration accuracy\";
+//   input Real delh(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"iteration accuracy\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Integer error \"error flag: iteration failed if different from 0\";
+//   protected Real Tguess(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"initial temperature\";
+//   protected Real dguess(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"initial density\";
+//   protected Integer i \"iteration counter\";
+//   protected Real dh \"Newton-error in h-direction\";
+//   protected Real dp \"Newton-error in p-direction\";
+//   protected Real det \"determinant of directional derivatives\";
+//   protected Real deld \"Newton-step in d-direction\";
+//   protected Real delt \"Newton-step in T-direction\";
+//   protected Modelica.Media.Common.HelmholtzDerivs f \"dimensionless Helmholtz function and dervatives wrt delta and tau\";
+//   protected Modelica.Media.Common.NewtonDerivatives_ph nDerivs \"derivatives needed in Newton iteration\";
+//   protected Boolean found = false \"flag for iteration success\";
+//   protected Integer subregion \"1 for subregion 3a, 2 for subregion 3b\";
+// algorithm
+//   if p < 22064000.0 then
+//     subregion := if h < 10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p) then 1 else if h > -10.0 + Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p) then 2 else 0;
+//     assert(subregion <> 0, \"inverse iteration of dt from ph called in 2 phase region: this can not work\");
+//   else
+//     subregion := if h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p(p) then 1 else 2;
+//   end if;
+//   T := if subregion == 1 then Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3a_ph(p, h) else Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3b_ph(p, h);
+//   d := if subregion == 1 then 1.0 / Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3a_ph(p, h) else 1.0 / Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.v3b_ph(p, h);
+//   i := 0;
+//   error := 0;
+//   while i < 50 and not found loop
+//     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(d, T);
+//     nDerivs := Modelica.Media.Common.Helmholtz_ph(f);
+//     dh := nDerivs.h - h;
+//     dp := nDerivs.p - p;
+//     if abs(dh / h) <= delh and abs(dp / p) <= delp then
+//       found := true;
+//     end if;
+//     det := nDerivs.ht * nDerivs.pd - nDerivs.pt * nDerivs.hd;
+//     delt := (nDerivs.pd * dh - nDerivs.hd * dp) / det;
+//     deld := (nDerivs.ht * dp - nDerivs.pt * dh) / det;
+//     T := T - delt;
+//     d := d - deld;
+//     dguess := d;
+//     Tguess := T;
+//     i := 1 + i;
+//     (d, T) := Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.fixdT(dguess, Tguess);
+//   end while;
+//   if not found then
+//     error := 1;
+//   end if;
+//   assert(error <> 1, \"error in inverse function dtofph3: iteration failed\");
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.dtofph3;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.fixdT \"region limits for inverse iteration in region 3\"
+//   input Real din(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   input Real Tin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   output Real dout(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   output Real Tout(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   protected Real Tmin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"approximation of minimum temperature\";
+//   protected Real Tmax(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"approximation of maximum temperature\";
+// algorithm
+//   if din > 765.0 then
+//     dout := 765.0;
+//   elseif din < 110.0 then
+//     dout := 110.0;
+//   else
+//     dout := din;
+//   end if;
+//   if dout < 390.0 then
+//     Tmax := 554.3557377 + 0.809344262 * dout;
+//   else
+//     Tmax := 1116.85 + (-0.632948717) * dout;
+//   end if;
+//   if dout < 322.0 then
+//     Tmin := 647.096 * (1.0 + (-1e-06) * (-322.0 + dout) ^ 2.0);
+//   else
+//     Tmin := 647.096 * (1.0 + (-6.944444444444445e-07) * (-322.0 + dout) ^ 2.0);
+//   end if;
+//   if Tin < Tmin then
+//     Tout := Tmin;
+//   elseif Tin > Tmax then
+//     Tout := Tmax;
+//   else
+//     Tout := Tin;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.fixdT;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.tofph5 \"inverse iteration in region 5: (p,T) = f(p,h)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Real reldh(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"iteration accuracy\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Integer error \"error flag: iteration failed if different from 0\";
+//   protected Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Real proh(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"h for current guess in T\";
+//   protected constant Real Tguess(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) = 1500.0 \"initial temperature\";
+//   protected Integer i \"iteration counter\";
+//   protected Real relerr \"relative error in h\";
+//   protected Real dh \"Newton-error in h-direction\";
+//   protected Real dT \"Newton-step in T-direction\";
+//   protected Boolean found \"flag for iteration success\";
+// algorithm
+//   i := 0;
+//   error := 0;
+//   T := 1500.0;
+//   found := false;
+//   while i < 50 and not found loop
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g5(p, T);
+//     proh := 461.526 * T * g.tau * g.gtau;
+//     dh := proh - h;
+//     relerr := dh / h;
+//     if abs(relerr) < reldh then
+//       found := true;
+//     end if;
+//     dT := (-0.002166725168246209) * dh / (g.tau ^ 2.0 * g.gtautau);
+//     T := T - dT;
+//     i := 1 + i;
+//   end while;
+//   if not found then
+//     error := 1;
+//   end if;
+//   assert(error <> 1, \"error in inverse function tofph5: iteration failed\");
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.tofph5;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT1 \"intermediate function for isentropic specific enthalpy in region 1\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real[13] o \"vector of auxiliary variables\";
+//   protected Real pi1 \"dimensionless pressure\";
+//   protected Real tau \"dimensionless temperature\";
+//   protected Real tau1 \"dimensionless temperature\";
+// algorithm
+//   tau := 1386.0 / T;
+//   pi1 := 7.1 + (-6.049606775559589e-08) * p;
+//   assert(p > 611.657, \"IF97 medium function hofpT1  called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   tau1 := -1.222 + tau;
+//   o[1] := tau1 ^ 2.0;
+//   o[2] := o[1] * tau1;
+//   o[3] := o[1] ^ 2.0;
+//   o[4] := o[3] ^ 2.0;
+//   o[5] := o[1] * o[4];
+//   o[6] := o[1] * o[3];
+//   o[7] := o[3] * tau1;
+//   o[8] := o[3] * o[4];
+//   o[9] := pi1 ^ 2.0;
+//   o[10] := o[9] ^ 2.0;
+//   o[11] := o[10] ^ 2.0;
+//   o[12] := o[4] ^ 2.0;
+//   o[13] := o[12] ^ 2.0;
+//   h := 461.526 * T * tau * (pi1 * ((-0.00254871721114236 + o[1] * (0.00424944110961118 + (0.018990068218419 + (-0.021841717175414 + (-0.00015851507390979) * o[1]) * o[1]) * o[6])) / o[5] + pi1 * ((0.00141552963219801 + o[3] * (4.7661393906987e-05 + o[1] * (-1.32425535992538e-05 + (-1.2358149370591e-14) * o[1] * o[3] * o[4]))) / o[3] + pi1 * ((0.000126718579380216 + (-5.11230768720618e-09) * o[5]) / o[7] + pi1 * ((1.1212640954e-05 + o[2] * (1.30342445791202e-06 + (-1.4341729937924e-12) * o[8])) / o[6] + pi1 * (o[9] * pi1 * ((1.40077319158051e-08 + 1.04549227383804e-09 * o[7]) / o[8] + o[10] * o[11] * pi1 * (1.9941018075704e-17 / (o[4] * o[3] * o[12] * o[1]) + o[9] * (o[10] * o[9] * (pi1 * (4.65957282962769e-22 / (o[4] * o[13]) + pi1 * (3.83502057899078e-24 * pi1 / (o[4] * o[13] * o[1]) + (-7.2912378325616e-23) / (tau1 * o[4] * o[13]))) + (-1.00075970318621e-21) / (tau1 * o[3] * o[13] * o[1])) + (-4.48827542684151e-19) / o[13]))) + 3.24135974880936e-06 / (tau1 * o[4])))))) + (-0.29265942426334 + tau1 * (0.84548187169114 + o[1] * (3.3855169168385 + tau1 * (-1.91583926775744 + tau1 * (0.47316115539684 + (-0.066465668798004 + 0.0040607314991784 * tau1) * tau1))))) / o[2]);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT1;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT2 \"intermediate function for isentropic specific enthalpy in region 2\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real[16] o \"vector of auxiliary variables\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real tau \"dimensionless temperature\";
+//   protected Real tau2 \"dimensionless temperature\";
+// algorithm
+//   assert(p > 611.657, \"IF97 medium function hofpT2 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   pi := 1e-06 * p;
+//   tau := 540.0 / T;
+//   tau2 := -0.5 + tau;
+//   o[1] := tau ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := tau2 ^ 2.0;
+//   o[4] := o[3] * tau2;
+//   o[5] := o[3] ^ 2.0;
+//   o[6] := o[5] ^ 2.0;
+//   o[7] := o[6] ^ 2.0;
+//   o[8] := o[5] * o[6] * o[7] * tau2;
+//   o[9] := o[3] * o[5];
+//   o[10] := o[5] * o[6] * tau2;
+//   o[11] := o[3] * o[7] * tau2;
+//   o[12] := o[3] * o[5] * o[6];
+//   o[13] := o[5] * o[6] * o[7];
+//   o[14] := pi ^ 2.0;
+//   o[15] := o[14] ^ 2.0;
+//   o[16] := o[7] ^ 2.0;
+//   h := 461.526 * T * tau * ((0.0280439559151 + tau * (-0.2858109552582 + tau * (1.2213149471784 + tau * (-2.848163942888 + tau * (4.38395111945 + o[1] * (10.08665568018 + (-0.5681726521544 + 0.06380539059921 * tau) * tau)))))) / (o[2] * o[1]) + pi * (-0.017834862292358 + tau2 * (-0.09199202739273001 + (-0.172743777250296 + (-0.30195167236758) * o[4]) * tau2) + pi * (-3.3032641670203e-05 + (-0.0003789797503263 + o[3] * (-0.015757110897342 + o[4] * (-0.306581069554011 + (-0.000960283724907132) * o[8]))) * tau2 + pi * (4.3870667284435e-07 + o[3] * (-9.683303171571e-05 + o[4] * (-0.009020354725288801 + (-1.42338887469272) * o[8])) + pi * (-7.8847309559367e-10 + (2.558143570457e-08 + 1.44676118155521e-06 * tau2) * tau2 + pi * (1.60454534363627e-05 * o[9] + pi * ((-5.0144299353183e-11 + o[10] * (-0.033874355714168 + (-836.35096769364) * o[11])) * o[3] + pi * ((-1.38839897890111e-05 + (-0.973671060893475) * o[12]) * o[3] * o[6] + pi * ((9.0049690883672e-11 + (-296.320827232793) * o[13]) * o[3] * o[5] * tau2 + pi * (2.57526266427144e-07 * o[5] * o[6] + pi * (o[4] * (4.1627860840696e-19 + (-1.0234747095929e-12 + (-1.40254511313154e-08) * o[5]) * o[9]) + o[14] * o[15] * (o[13] * (-2.34560435076256e-09 + 5.3465159397045 * o[5] * o[7] * tau2) + o[14] * (o[14] * (o[11] * (1.78371690710842e-23 + (1.07202609066812e-11 + (-0.000201611844951398) * o[10]) * o[3] * o[5] * o[6] * tau2) + pi * (pi * (0.000200482822351322 * o[16] * o[5] * o[7] + pi * (o[6] * o[7] * (1.90027787547159e-27 + o[12] * (2.21658861403112e-15 + (-5.47344301999018e-05) * o[3] * o[7])) * pi * tau2 + (-4.97975748452559e-14) * o[16] * o[3] * o[5])) + (-1.24017662339842e-24) * o[5] * o[7])) + (-19.1874828272775) * o[16] * o[6] * o[7])))))))))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT2;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.boilingcurve_p \"properties on the boiling curve\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Modelica.Media.Common.IF97PhaseBoundaryProperties bpro \"property record\";
+//   protected Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives\";
+//   protected Modelica.Media.Common.HelmholtzDerivs f \"dimensionless Helmholtz function and dervatives\";
+//   protected Real plim(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = min(p, 22063999.9999999) \"pressure limited to critical pressure - epsilon\";
+// algorithm
+//   bpro.R := 461.526;
+//   bpro.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(plim);
+//   bpro.dpT := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(bpro.T);
+//   bpro.region3boundary := bpro.T > 623.15;
+//   if not bpro.region3boundary then
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(p, bpro.T);
+//     bpro.d := p / (g.gpi * g.pi * bpro.T * bpro.R);
+//     bpro.h := if p > plim then 2087546.84511715 else bpro.R * bpro.T * g.tau * g.gtau;
+//     bpro.s := g.R * (g.tau * g.gtau - g.g);
+//     bpro.cp := (-bpro.R) * g.tau ^ 2.0 * g.gtautau;
+//     bpro.vt := bpro.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p;
+//     bpro.vp := bpro.R * bpro.T * p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//     bpro.pt := p * (g.tau * g.gtaupi - g.gpi) / (g.pi * g.gpipi * bpro.T);
+//     bpro.pd := (-bpro.R) * bpro.T * g.gpi ^ 2.0 / g.gpipi;
+//   else
+//     bpro.d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhol_p_R4b(plim);
+//     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(bpro.d, bpro.T);
+//     bpro.h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b(plim);
+//     bpro.s := f.R * (f.tau * f.ftau - f.f);
+//     bpro.cv := bpro.R * (-f.tau ^ 2.0) * f.ftautau;
+//     bpro.pt := bpro.R * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     bpro.pd := bpro.R * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.boilingcurve_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d1n \"density in region 1 as function of p and T\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real pi1 \"dimensionless pressure\";
+//   protected Real tau \"dimensionless temperature\";
+//   protected Real tau1 \"dimensionless temperature\";
+//   protected Real gpi \"dimensionless Gibbs-derivative w.r.t. pi\";
+//   protected Real[11] o \"auxiliary variables\";
+// algorithm
+//   pi := 6.049606775559589e-08 * p;
+//   tau := 1386.0 / T;
+//   pi1 := 7.1 - pi;
+//   tau1 := -1.222 + tau;
+//   o[1] := tau1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   o[4] := o[1] * o[2];
+//   o[5] := o[1] * tau1;
+//   o[6] := o[2] * tau1;
+//   o[7] := pi1 ^ 2.0;
+//   o[8] := o[7] ^ 2.0;
+//   o[9] := o[8] ^ 2.0;
+//   o[10] := o[3] ^ 2.0;
+//   o[11] := o[10] ^ 2.0;
+//   gpi := pi1 * (pi1 * ((9.5038934535162e-05 + o[2] * (8.4812393955936e-06 + 2.55615384360309e-09 * o[4])) / o[2] + pi1 * ((8.970112763199999e-06 + (2.60684891582404e-06 + 5.7366919751696e-13 * o[2] * o[3]) * o[5]) / o[6] + pi1 * (2.02584984300585e-06 / o[3] + o[7] * pi1 * (o[8] * o[9] * pi1 * (o[7] * (o[7] * o[8] * (pi1 * (pi1 * (2.99318679335866e-24 * pi1 / (o[11] * o[3] * tau1) + (-5.65070932023524e-23) / (o[11] * o[3])) + 3.5842867920213e-22 / (o[1] * o[11] * o[2] * tau1)) + (-7.63737668221055e-22) / (o[1] * o[11] * o[2])) + (-3.33001080055983e-19) / (o[1] * o[10] * o[2] * o[3] * tau1)) + 1.44400475720615e-17 / (o[10] * o[2] * o[3] * tau1)) + (1.01874413933128e-08 + 1.39398969845072e-09 * o[6]) / (o[1] * o[3] * tau1))))) + (0.00094368642146534 + o[5] * (0.00060003561586052 + (-9.5322787813974e-05 + o[1] * (8.828369066169199e-06 + 1.45389992595188e-15 * o[1] * o[2] * o[3])) * tau1)) / o[5]) + (-0.00028319080123804 + o[1] * (0.00060706301565874 + o[4] * (0.018990068218419 + tau1 * (0.032529748770505 + (0.021841717175414 + 5.283835796993e-05 * o[1]) * tau1)))) / (o[3] * tau1);
+//   d := 0.002166725168246209 * p / (gpi * pi * T);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d1n;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d2n \"density in region 2  as function of p and T\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature (K)\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real tau \"dimensionless temperature\";
+//   protected Real tau2 \"dimensionless temperature\";
+//   protected Real gpi \"dimensionless Gibbs-derivative w.r.t. pi\";
+//   protected Real[12] o \"auxiliary variables\";
+// algorithm
+//   pi := 1e-06 * p;
+//   tau := 540.0 / T;
+//   tau2 := -0.5 + tau;
+//   o[1] := tau2 ^ 2.0;
+//   o[2] := o[1] * tau2;
+//   o[3] := o[1] ^ 2.0;
+//   o[4] := o[3] ^ 2.0;
+//   o[5] := o[4] ^ 2.0;
+//   o[6] := o[3] * o[4] * o[5] * tau2;
+//   o[7] := o[3] * o[4] * tau2;
+//   o[8] := o[1] * o[3] * o[4];
+//   o[9] := pi ^ 2.0;
+//   o[10] := o[9] ^ 2.0;
+//   o[11] := o[3] * o[5] * tau2;
+//   o[12] := o[5] ^ 2.0;
+//   gpi := (1.0 + pi * (-0.0017731742473213 + tau2 * (-0.017834862292358 + tau2 * (-0.045996013696365 + (-0.057581259083432 + (-0.05032527872793) * o[2]) * tau2)) + pi * (tau2 * (-6.6065283340406e-05 + (-0.0003789797503263 + o[1] * (-0.007878555448671 + o[2] * (-0.087594591301146 + (-5.3349095828174e-05) * o[6]))) * tau2) + pi * (6.1445213076927e-08 + (1.31612001853305e-06 + o[1] * (-9.683303171571e-05 + o[2] * (-0.0045101773626444 + (-0.122004760687947) * o[6]))) * tau2 + pi * (tau2 * (-3.15389238237468e-09 + (5.116287140914e-08 + 1.92901490874028e-06 * tau2) * tau2) + pi * (1.14610381688305e-05 * o[1] * o[3] * tau2 + pi * (o[2] * (-1.00288598706366e-10 + o[7] * (-0.012702883392813 + (-143.374451604624) * o[1] * o[5] * tau2)) + pi * (-4.1341695026989e-17 + o[1] * o[4] * (-8.8352662293707e-06 + (-0.272627897050173) * o[8]) * tau2 + pi * (o[4] * (9.0049690883672e-11 + (-65.8490727183984) * o[3] * o[4] * o[5]) + pi * (1.78287415218792e-07 * o[7] + pi * (o[3] * (1.0406965210174e-18 + o[1] * (-1.0234747095929e-12 + (-1.0018179379511e-08) * o[3]) * o[3]) + o[10] * o[9] * ((-1.29412653835176e-09 + 1.71088510070544 * o[11]) * o[6] + o[9] * (o[9] * (o[3] * o[5] * (1.78371690710842e-23 + o[1] * o[3] * o[4] * (6.1258633752464e-12 + (-8.4004935396416e-05) * o[7]) * tau2) + pi * (pi * (8.32192847496054e-05 * o[12] * o[3] * o[5] * tau2 + pi * (o[1] * o[4] * o[5] * (1.75410265428146e-27 + (1.32995316841867e-15 + (-2.26487297378904e-05) * o[1] * o[5]) * o[8]) * pi + (-2.93678005497663e-14) * o[1] * o[12] * o[3] * tau2)) + (-1.24017662339842e-24) * o[11])) + (-6.05920510335078) * o[12] * o[4] * o[5] * tau2))))))))))))) / pi;
+//   d := 0.002166725168246209 * p / (gpi * pi * T);
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d2n;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p \"properties on the dew curve\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Modelica.Media.Common.IF97PhaseBoundaryProperties bpro \"property record\";
+//   protected Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives\";
+//   protected Modelica.Media.Common.HelmholtzDerivs f \"dimensionless Helmholtz function and dervatives\";
+//   protected Real plim(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) = min(p, 22063999.9999999) \"pressure limited to critical pressure - epsilon\";
+// algorithm
+//   bpro.R := 461.526;
+//   bpro.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(plim);
+//   bpro.dpT := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(bpro.T);
+//   bpro.region3boundary := bpro.T > 623.15;
+//   if not bpro.region3boundary then
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, bpro.T);
+//     bpro.d := p / (g.gpi * g.pi * bpro.T * bpro.R);
+//     bpro.h := if p > plim then 2087546.84511715 else bpro.R * bpro.T * g.tau * g.gtau;
+//     bpro.s := g.R * (g.tau * g.gtau - g.g);
+//     bpro.cp := (-bpro.R) * g.tau ^ 2.0 * g.gtautau;
+//     bpro.vt := bpro.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p;
+//     bpro.vp := bpro.R * bpro.T * p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//     bpro.pt := p * (g.tau * g.gtaupi - g.gpi) / (g.pi * g.gpipi * bpro.T);
+//     bpro.pd := (-bpro.R) * bpro.T * g.gpi ^ 2.0 / g.gpipi;
+//   else
+//     bpro.d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhov_p_R4b(plim);
+//     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(bpro.d, bpro.T);
+//     bpro.h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b(plim);
+//     bpro.s := f.R * (f.tau * f.ftau - f.f);
+//     bpro.cv := bpro.R * (-f.tau ^ 2.0) * f.ftautau;
+//     bpro.pt := bpro.R * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     bpro.pd := bpro.R * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p \"liquid specific enthalpy on the boundary between regions 4 and 3 or 1\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+// algorithm
+//   h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.boilingcurve_p(p));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b \"explicit approximation of liquid specific enthalpy on the boundary between regions 4 and 3\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real x \"auxiliary variable\";
+// algorithm
+//   x := acos(4.532269760696156e-08 * p);
+//   h := 2087546.84511715 * (1.0 + x * (-0.4945586958175176 + x * (1.346800016564904 + x * (-3.889388153209752 + x * (6.679385472887931 + x * (-6.75820241066552 + x * (3.558919744656498 + (-0.717981855497894 + (-0.0001152032945617821) * x) * x)))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp1 \"explicit lower specific enthalpy limit of region 1 as function of pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi1 \"dimensionless pressure\";
+//   protected Real[3] o \"vector of auxiliary variables\";
+// algorithm
+//   pi1 := 7.1 + (-6.049606775559589e-08) * p;
+//   assert(p > 611.657, \"IF97 medium function hlowerofp1 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   o[1] := pi1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   h := 639675.036 * (0.173379420894777 + pi1 * (-0.022914084306349 + pi1 * (-0.00017146768241932 + pi1 * (-4.18695814670391e-06 + pi1 * (-2.41630417490008e-07 + pi1 * (1.73545618580828e-11 + o[1] * pi1 * (8.43755552264362e-14 + o[2] * o[3] * pi1 * (5.35429206228374e-35 + o[1] * (-8.12140581014818e-38 + o[1] * o[2] * (-1.43870236842915e-44 + pi1 * (1.73894459122923e-45 + (-7.06381628462585e-47 + 9.64504638626269e-49 * pi1) * pi1)))))))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp1;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp2 \"explicit lower specific enthalpy limit of region 2 as function of pressure (meets region 4 saturation pressure curve at 623.15 K)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real q1 \"auxiliary variable\";
+//   protected Real q2 \"auxiliary variable\";
+//   protected Real[18] o \"vector of auxiliary variables\";
+// algorithm
+//   pi := 1e-06 * p;
+//   assert(p > 611.657, \"IF97 medium function hlowerofp2 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   q1 := 572.54459862746 + 31.3220101646784 * (-13.91883977887 + pi) ^ 0.5;
+//   q2 := -0.5 + 540.0 / q1;
+//   o[1] := q1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   o[4] := pi ^ 2.0;
+//   o[5] := o[4] ^ 2.0;
+//   o[6] := q2 ^ 2.0;
+//   o[7] := o[6] ^ 2.0;
+//   o[8] := o[6] * o[7];
+//   o[9] := o[5] ^ 2.0;
+//   o[10] := o[7] ^ 2.0;
+//   o[11] := o[9] ^ 2.0;
+//   o[12] := o[10] ^ 2.0;
+//   o[13] := o[12] ^ 2.0;
+//   o[14] := o[7] * q2;
+//   o[15] := o[6] * q2;
+//   o[16] := o[10] * o[6];
+//   o[17] := o[13] * o[6];
+//   o[18] := o[13] * o[6] * q2;
+//   h := (4636975733.03507 + 3.74686560065793 * o[2] + 3.57966647812489e-06 * o[1] * o[2] + 2.81881548488163e-13 * o[3] + (-76465233.24521451) * q1 + (-0.00450789338787835) * o[2] * q1 + o[1] * (2513837.07870341 + (-1.55131504410292e-09) * o[2] * q1 + (-4781981.98764471) * o[10] * o[11] * o[12] * o[13] * o[4] + 49.9651389369988 * o[11] * o[12] * o[13] * o[4] * o[5] * o[7] + o[4] * (o[15] * (1.03746636552761e-13 + (-0.00349547959376899) * o[16] + (-2.55074501962569e-07) * o[8]) * o[9] + ((-242662.235426958) * o[10] * o[12] + (-3.46022402653609) * o[16]) * o[5] * pi + (0.109336249381227 + (-2248.08924686956) * o[14] + (-354742.725841972) * o[17] + (-24.1331193696374) * o[6]) * pi) + o[11] * ((-3.09081828396912e-19) * o[12] * o[5] * o[7] * pi + (-1.24107527851371e-08) * o[13] * o[4] * o[5] * o[6] * o[7] * pi) + 3.99891272904219 * o[5] * o[8] * pi + 0.0641817365250892 * o[10] * o[7] * o[9] * pi + pi * (-4444.87643334512 + (-75253.6156722047) * o[14] + (-43051.9020511789) * o[6] + (-22926.6247146068) * q2) + o[4] * (-8.23252840892034 + (-3927.0508365636) * o[15] + (-239.325789467604) * o[18] + (-76407.3727417716) * o[8] + (-94.4508644545118) * q2) + 0.360567666582363 * o[5] * (-0.0161221195808321 + q2) * (0.0338039844460968 + q2) + o[11] * (1332480.30241755 * o[12] * o[13] * q2 + (-0.000584580992538624) * o[10] * o[12] * o[7]) + o[9] * (2.24425477627799e-05 * o[6] * o[7] * q2 + (-73850273.6990986) * o[18]) + o[4] * o[5] * ((-208438767.026518) * o[17] + (-1.24971648677697e-05) * o[6] + (-8442.30378348203) * o[10] * o[6] * o[7] * q2) + o[11] * (o[9] * (o[10] * o[12] * (4.73594929247646e-22 * q2 + (-13.6411358215175) * o[13] * q2) + 5.524271694068359e-10 * o[13] * o[6] * o[7] * q2) + o[5] * (2.67174673301715e-06 * o[17] + 4.44545133805865e-18 * o[12] * o[6] * q2 + (-50.2465185106411) * o[10] * o[13] * o[6] * o[7] * q2)))) / o[1];
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp2;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp5 \"explicit lower specific enthalpy limit of region 5 as function of pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi \"dimensionless pressure\";
+// algorithm
+//   pi := 1e-06 * p;
+//   assert(p > 611.657, \"IF97 medium function hlowerofp5 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   h := 461526.0 * (9.01505286876203 + pi * (-0.009790434902460921 + (-2.03245575263501e-05 + 3.36540214679088e-07 * pi) * pi));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp5;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp1 \"explicit upper specific enthalpy limit of region 1 as function of pressure (meets region 4 saturation pressure curve at 623.15 K)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi1 \"dimensionless pressure\";
+//   protected Real[3] o \"vector of auxiliary variables\";
+// algorithm
+//   pi1 := 7.1 + (-6.049606775559589e-08) * p;
+//   assert(p > 611.657, \"IF97 medium function hupperofp1 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   o[1] := pi1 ^ 2.0;
+//   o[2] := o[1] ^ 2.0;
+//   o[3] := o[2] ^ 2.0;
+//   h := 639675.036 * (2.42896927729349 + pi1 * (-0.00141131225285294 + pi1 * (0.00143759406818289 + pi1 * (0.000125338925082983 + pi1 * (1.23617764767172e-05 + pi1 * (3.17834967400818e-06 + o[1] * pi1 * (1.46754947271665e-08 + o[2] * o[3] * pi1 * (1.86779322717506e-17 + o[1] * (-4.18568363667416e-19 + o[1] * o[2] * (-9.19148577641497e-22 + pi1 * (4.27026404402408e-22 + (-6.66749357417962e-23 + 3.49930466305574e-24 * pi1) * pi1)))))))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp1;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp2 \"explicit upper specific enthalpy limit of region 2 as function of pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi \"dimensionless pressure\";
+//   protected Real[2] o \"vector of auxiliary variables\";
+// algorithm
+//   pi := 1e-06 * p;
+//   assert(p > 611.657, \"IF97 medium function hupperofp2 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   o[1] := pi ^ 2.0;
+//   o[2] := o[1] ^ 3.0;
+//   h := 4160663.37647071 + pi * (-4518.48617188327 + pi * (-8.53409968320258 + pi * (0.109090430596056 + pi * (-0.000172486052272327 + pi * (4.2261295097284e-15 + pi * (-1.27295130636232e-10 + pi * (-3.79407294691742e-25 + pi * (7.56960433802525e-23 + pi * (7.16825117265975e-32 + pi * (3.37267475986401e-21 + (-7.5656940729795e-74 + o[1] * (-8.00969737237617e-134 + (1.6746290980312e-65 + pi * (-3.71600586812966e-69 + pi * (8.066305891708841e-129 + (-1.76117969553159e-103 + 1.88543121025106e-84 * pi) * pi))) * o[1])) * o[2]))))))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp2;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp5 \"explicit upper specific enthalpy limit of region 5 as function of pressure\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real pi \"dimensionless pressure\";
+// algorithm
+//   pi := 1e-06 * p;
+//   assert(p > 611.657, \"IF97 medium function hupperofp5 called with too low pressure
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   h := 461526.0 * (15.9838891400332 + pi * (-0.000489898813722568 + (-5.01510211858761e-08 + 7.5006972718273e-08 * pi) * pi));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp5;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p \"vapour specific enthalpy on the boundary between regions 4 and 3 or 2\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+// algorithm
+//   h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p(p));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b \"explicit approximation of vapour specific enthalpy on the boundary between regions 4 and 3\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   protected Real x \"auxiliary variable\";
+// algorithm
+//   x := acos(4.532269760696156e-08 * p);
+//   h := 2087546.84511715 * (1.0 + x * (0.4880153718655694 + x * (0.2079670746250689 + x * (-6.084122698421623 + x * (25.08887602293532 + x * (-48.38215180269516 + x * (45.66489164833212 + (-16.98555442961553 + 0.0006616936460057692 * x) * x)))))));
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p \"Inline after index reduction\" \"Icon for a function\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Modelica.Media.Common.IF97PhaseBoundaryProperties bpro \"property record\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+// algorithm
+//   h := bpro.h;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p_der \"derivative function for the specific enthalpy along the phase boundary\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Modelica.Media.Common.IF97PhaseBoundaryProperties bpro \"property record\";
+//   input Real p_der \"derivative of pressure\";
+//   output Real h_der \"time derivative of specific enthalpy along the phase boundary\";
+// algorithm
+//   if bpro.region3boundary then
+//     h_der := p_der * (bpro.d * bpro.pd + (bpro.T * bpro.pt ^ 2.0 + bpro.d ^ 2.0 * bpro.pd * bpro.cv) / bpro.dpT - bpro.T * bpro.pt) / (bpro.d ^ 2.0 * bpro.pd);
+//   else
+//     h_der := p_der * (1.0 / bpro.d + bpro.cp / bpro.dpT - bpro.T * bpro.vt);
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p_der;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.region_ph \"return the current region (valid values: 1,2,3,4,5) in IF97 for given pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Integer phase = 0 \"phase: 2 for two-phase, 1 for one phase, 0 if not known\";
+//   input Integer mode = 0 \"mode: 0 means check, otherwise assume region=mode\";
+//   output Integer region \"region (valid values: 1,2,3,4,5) in IF97\";
+//   protected Boolean hsubcrit;
+//   protected Real Ttest(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0);
+//   protected Real hl(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"bubble enthalpy\";
+//   protected Real hv(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"dew enthalpy\";
+// algorithm
+//   if mode <> 0 then
+//     region := mode;
+//   else
+//     hl := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p(p);
+//     hv := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p(p);
+//     if phase == 2 then
+//       region := 4;
+//     else
+//       if p < 611.657 or p > 100000000.0 or h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp1(p) or p < 10000000.0 and h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp5(p) or p >= 10000000.0 and h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp2(p) then
+//         region := -1;
+//       else
+//         hsubcrit := h < 2087546.84511715;
+//         if p < 16529200.0 then
+//           if hsubcrit then
+//             if phase == 1 then
+//               region := 1;
+//             else
+//               if h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT1(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(p)) then
+//                 region := 1;
+//               else
+//                 region := 4;
+//               end if;
+//             end if;
+//           else
+//             if h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp5(p) then
+//               if p < 10000000.0 and h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp5(p) then
+//                 region := 5;
+//               else
+//                 region := -2;
+//               end if;
+//             else
+//               if phase == 1 then
+//                 region := 2;
+//               else
+//                 if h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Isentropic.hofpT2(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(p)) then
+//                   region := 2;
+//                 else
+//                   region := 4;
+//                 end if;
+//               end if;
+//             end if;
+//           end if;
+//         else
+//           if hsubcrit then
+//             if h < Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp1(p) then
+//               region := 1;
+//             else
+//               if h < hl or p > 22064000.0 then
+//                 region := 3;
+//               else
+//                 region := 4;
+//               end if;
+//             end if;
+//           else
+//             if h > Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp2(p) then
+//               region := 2;
+//             else
+//               if h > hv or p > 22064000.0 then
+//                 region := 3;
+//               else
+//                 region := 4;
+//               end if;
+//             end if;
+//           end if;
+//         end if;
+//       end if;
+//     end if;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.region_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhol_p_R4b \"explicit approximation of liquid density on the boundary between regions 4 and 3\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real dl(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"liquid density\";
+//   protected Real x \"auxiliary variable\";
+// algorithm
+//   if p < 22064000.0 then
+//     x := acos(4.532269760696156e-08 * p);
+//     dl := 322.0 * (1.0 + x * (1.903224079094824 + x * (-2.531486180240112 + x * (-8.191449323843552 + x * (94.34196116778385 + x * (-369.3676833623383 + x * (796.6627910598293 + x * (-994.5385383600702 + x * (673.2581177021598 + (-191.4307733640516 + 0.00052536560808895 * x) * x)))))))));
+//   else
+//     dl := 322.0;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhol_p_R4b;
+//
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhov_p_R4b \"explicit approximation of vapour density on the boundary between regions 4 and 2\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real dv(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"vapour density\";
+//   protected Real x \"auxiliary variable\";
+// algorithm
+//   if p < 22064000.0 then
+//     x := acos(4.532269760696156e-08 * p);
+//     dv := 322.0 * (1.0 + x * (-1.84638508033626 + x * (-1.144787271887849 + x * (59.18702203076563 + x * (-403.5391431811611 + x * (1437.200724533239 + x * (-3015.853540307519 + x * (3740.579034867006 + x * (-2537.375817253895 + (725.8761975803782 + (-0.001115111165833234) * x) * x)))))))));
+//   else
+//     dv := 322.0;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhov_p_R4b;
+//
+// function Modelica.Media.Water.IF97_Utilities.T_ph \"temperature as function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Integer phase = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   input Integer region = 0 \"if 0, region is unknown, otherwise known and this input\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Temperature\";
+// algorithm
+//   T := Modelica.Media.Water.IF97_Utilities.T_props_ph(p, h, Modelica.Media.Water.IF97_Utilities.waterBaseProp_ph(p, h, phase, region));
+// end Modelica.Media.Water.IF97_Utilities.T_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.T_ph_der \"derivative function of T_ph\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Modelica.Media.Common.IF97BaseTwoPhase aux \"auxiliary record\";
+//   input Real p_der \"derivative of pressure\";
+//   input Real h_der \"derivative of specific enthalpy\";
+//   output Real T_der \"derivative of temperature\";
+// algorithm
+//   if aux.region == 4 then
+//     T_der := p_der / aux.dpT;
+//   elseif aux.region == 3 then
+//     T_der := (aux.T * aux.pt - aux.rho * aux.pd) * p_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0) + aux.rho ^ 2.0 * aux.pd * h_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0);
+//   else
+//     T_der := (aux.T * aux.vt + (-1.0) / aux.rho) * p_der / aux.cp + h_der / aux.cp;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.T_ph_der;
+//
+// function Modelica.Media.Water.IF97_Utilities.T_props_ph \"Inline after index reduction\" \"temperature as function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Modelica.Media.Common.IF97BaseTwoPhase properties \"auxiliary record\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+// algorithm
+//   T := properties.T;
+// end Modelica.Media.Water.IF97_Utilities.T_props_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.hl_p \"compute the saturated liquid specific h(p)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+// algorithm
+//   h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.boilingcurve_p(p));
+// end Modelica.Media.Water.IF97_Utilities.hl_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.hv_p \"compute the saturated vapour specific h(p)\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+// algorithm
+//   h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p(p, Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p(p));
+// end Modelica.Media.Water.IF97_Utilities.hv_p;
+//
+// function Modelica.Media.Water.IF97_Utilities.rho_ph \"density as function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Integer phase = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   input Integer region = 0 \"if 0, region is unknown, otherwise known and this input\";
+//   output Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+// algorithm
+//   rho := Modelica.Media.Water.IF97_Utilities.rho_props_ph(p, h, Modelica.Media.Water.IF97_Utilities.waterBaseProp_ph(p, h, phase, region));
+// end Modelica.Media.Water.IF97_Utilities.rho_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.rho_ph_der \"derivative function of rho_ph\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Modelica.Media.Common.IF97BaseTwoPhase aux \"auxiliary record\";
+//   input Real p_der \"derivative of pressure\";
+//   input Real h_der \"derivative of specific enthalpy\";
+//   output Real rho_der \"derivative of density\";
+// algorithm
+//   if aux.region == 4 then
+//     rho_der := aux.rho * (1.0 + aux.rho * aux.cv / aux.dpT) * p_der / (aux.T * aux.dpT) - h_der * aux.rho ^ 2.0 / (aux.T * aux.dpT);
+//   elseif aux.region == 3 then
+//     rho_der := aux.rho * (aux.cv * aux.rho + aux.pt) * p_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0) - aux.rho ^ 2.0 * aux.pt * h_der / (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0);
+//   else
+//     rho_der := (-aux.rho ^ 2.0) * ((aux.vp + (aux.T * aux.vt ^ 2.0 - aux.vt / aux.rho) / aux.cp) * p_der + aux.vt * h_der / aux.cp);
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.rho_ph_der;
+//
+// function Modelica.Media.Water.IF97_Utilities.rho_props_ph \"Inline after index reduction\" \"density as function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Modelica.Media.Common.IF97BaseTwoPhase properties \"auxiliary record\";
+//   output Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density\";
+// algorithm
+//   rho := properties.rho;
+// end Modelica.Media.Water.IF97_Utilities.rho_props_ph;
+//
+// function Modelica.Media.Water.IF97_Utilities.rhol_T \"compute the saturated liquid d(T)\"
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density of water at the boiling point\";
+//   protected Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"saturation pressure\";
+// algorithm
+//   p := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat(T);
+//   if T < 623.15 then
+//     d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d1n(p, T);
+//   elseif T < 647.096 then
+//     d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhol_p_R4b(p);
+//   else
+//     d := 322.0;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.rhol_T;
+//
+// function Modelica.Media.Water.IF97_Utilities.rhov_T \"compute the saturated vapour d(T)\"
+//   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"density of steam at the condensation point\";
+//   protected Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"saturation pressure\";
+// algorithm
+//   p := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat(T);
+//   if T < 623.15 then
+//     d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.d2n(p, T);
+//   elseif T < 647.096 then
+//     d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhov_p_R4b(p);
+//   else
+//     d := 322.0;
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.rhov_T;
+//
+// function Modelica.Media.Water.IF97_Utilities.waterBaseProp_ph \"intermediate property record for water\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";
+//   input Integer phase = 0 \"phase: 2 for two-phase, 1 for one phase, 0 if unknown\";
+//   input Integer region = 0 \"if 0, do region computation, otherwise assume the region is this input\";
+//   output Modelica.Media.Common.IF97BaseTwoPhase aux \"auxiliary record\";
+//   protected Modelica.Media.Common.GibbsDerivs g \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Modelica.Media.Common.HelmholtzDerivs f \"dimensionless Helmholtz funcion and dervatives wrt delta and tau\";
+//   protected Integer error \"error flag for inverse iterations\";
+//   protected Real h_liq(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"liquid specific enthalpy\";
+//   protected Real d_liq(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"liquid density\";
+//   protected Real h_vap(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"vapour specific enthalpy\";
+//   protected Real d_vap(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 1e-06, max = 30000.0) \"vapour density\";
+//   protected Modelica.Media.Common.PhaseBoundaryProperties liq \"phase boundary property record\";
+//   protected Modelica.Media.Common.PhaseBoundaryProperties vap \"phase boundary property record\";
+//   protected Modelica.Media.Common.GibbsDerivs gl \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Modelica.Media.Common.GibbsDerivs gv \"dimensionless Gibbs funcion and dervatives wrt pi and tau\";
+//   protected Modelica.Media.Common.HelmholtzDerivs fl \"dimensionless Helmholtz function and dervatives wrt delta and tau\";
+//   protected Modelica.Media.Common.HelmholtzDerivs fv \"dimensionless Helmholtz function and dervatives wrt delta and tau\";
+//   protected Real t1(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature at phase boundary, using inverse from region 1\";
+//   protected Real t2(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"temperature at phase boundary, using inverse from region 2\";
+// algorithm
+//   aux.region := if region == 0 then if phase == 2 then 4 else Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.region_ph(p, h, phase, 0) else region;
+//   aux.phase := if phase <> 0 then phase else if aux.region == 4 then 2 else 1;
+//   aux.p := max(p, 611.657);
+//   aux.h := max(h, 1000.0);
+//   aux.R := 461.526;
+//   if aux.region == 1 then
+//     aux.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1(aux.p, aux.h);
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(p, aux.T);
+//     aux.s := aux.R * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (g.gpi * g.pi * aux.T * aux.R);
+//     aux.vt := aux.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p;
+//     aux.vp := aux.R * aux.T * p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//     aux.cp := (-aux.R) * g.tau ^ 2.0 * g.gtautau;
+//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) ^ 2.0 / g.gpipi - g.tau ^ 2.0 * g.gtautau);
+//     aux.x := 0.0;
+//     aux.dpT := (-aux.vt) / aux.vp;
+//   elseif aux.region == 2 then
+//     aux.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2(aux.p, aux.h);
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, aux.T);
+//     aux.s := aux.R * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (g.gpi * g.pi * aux.T * aux.R);
+//     aux.vt := aux.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p;
+//     aux.vp := aux.R * aux.T * p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//     aux.cp := (-aux.R) * g.tau ^ 2.0 * g.gtautau;
+//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) ^ 2.0 / g.gpipi - g.tau ^ 2.0 * g.gtautau);
+//     aux.x := 1.0;
+//     aux.dpT := (-aux.vt) / aux.vp;
+//   elseif aux.region == 3 then
+//     (aux.rho, aux.T, error) := Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.dtofph3(aux.p, aux.h, 1e-07, 1e-06);
+//     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(aux.rho, aux.T);
+//     aux.h := aux.R * aux.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//     aux.s := aux.R * (f.tau * f.ftau - f.f);
+//     aux.pd := aux.R * aux.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//     aux.pt := aux.R * aux.rho * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     aux.cv := abs(aux.R * (-f.tau ^ 2.0) * f.ftautau);
+//     aux.cp := (aux.rho ^ 2.0 * aux.pd * aux.cv + aux.T * aux.pt ^ 2.0) / (aux.rho ^ 2.0 * aux.pd);
+//     aux.x := 0.0;
+//     aux.dpT := aux.pt;
+//   elseif aux.region == 4 then
+//     h_liq := Modelica.Media.Water.IF97_Utilities.hl_p(p);
+//     h_vap := Modelica.Media.Water.IF97_Utilities.hv_p(p);
+//     aux.x := if h_vap <> h_liq then (h - h_liq) / (h_vap - h_liq) else 1.0;
+//     if p < 16529200.0 then
+//       t1 := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1(aux.p, h_liq);
+//       t2 := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2(aux.p, h_vap);
+//       gl := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(aux.p, t1);
+//       gv := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(aux.p, t2);
+//       liq := Modelica.Media.Common.gibbsToBoundaryProps(gl);
+//       vap := Modelica.Media.Common.gibbsToBoundaryProps(gv);
+//       aux.T := t1 + aux.x * (t2 - t1);
+//     else
+//       aux.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(aux.p);
+//       d_liq := Modelica.Media.Water.IF97_Utilities.rhol_T(aux.T);
+//       d_vap := Modelica.Media.Water.IF97_Utilities.rhov_T(aux.T);
+//       fl := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(d_liq, aux.T);
+//       fv := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(d_vap, aux.T);
+//       liq := Modelica.Media.Common.helmholtzToBoundaryProps(fl);
+//       vap := Modelica.Media.Common.helmholtzToBoundaryProps(fv);
+//     end if;
+//     aux.dpT := if liq.d <> vap.d then (vap.s - liq.s) * liq.d * vap.d / (liq.d - vap.d) else Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(aux.T);
+//     aux.s := liq.s + aux.x * (vap.s - liq.s);
+//     aux.rho := liq.d * vap.d / (vap.d + aux.x * (liq.d - vap.d));
+//     aux.cv := Modelica.Media.Common.cv2Phase(liq, vap, aux.x, aux.T, p);
+//     aux.cp := liq.cp + aux.x * (vap.cp - liq.cp);
+//     aux.pt := liq.pt + aux.x * (vap.pt - liq.pt);
+//     aux.pd := liq.pd + aux.x * (vap.pd - liq.pd);
+//   elseif aux.region == 5 then
+//     (aux.T, error) := Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.tofph5(aux.p, aux.h, 1e-07);
+//     assert(error == 0, \"error in inverse iteration of steam tables\");
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g5(aux.p, aux.T);
+//     aux.s := aux.R * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (g.gpi * g.pi * aux.T * aux.R);
+//     aux.vt := aux.R * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi) / p;
+//     aux.vp := aux.R * aux.T * p ^ (-2.0) * g.pi ^ 2.0 * g.gpipi;
+//     aux.cp := (-aux.R) * g.tau ^ 2.0 * g.gtautau;
+//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) ^ 2.0 / g.gpipi - g.tau ^ 2.0 * g.gtautau);
+//     aux.dpT := (-aux.vt) / aux.vp;
+//   else
+//     assert(false, \"error in region computation of IF97 steam tables(p = \" + String(p, 6, 0, true) + \", h = \" + String(h, 6, 0, true) + \")\");
+//   end if;
+// end Modelica.Media.Water.IF97_Utilities.waterBaseProp_ph;
+//
+// function Modelica.SIunits.Conversions.from_degC \"Convert from °Celsius to Kelvin\"
+//   input Real Celsius(quantity = \"ThermodynamicTemperature\", unit = \"degC\") \"Celsius value\";
+//   output Real Kelvin(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 6000.0, start = 288.15, nominal = 300.0) \"Kelvin value\";
+// algorithm
+//   Kelvin := 273.15 + Celsius;
+// end Modelica.SIunits.Conversions.from_degC;
+//
+// function TestMedia.TestModels.TestWater.Medium.FluidConstants \"Automatically generated record constructor for TestMedia.TestModels.TestWater.Medium.FluidConstants\"
+//   input String iupacName;
+//   input String casRegistryNumber;
+//   input String chemicalFormula;
+//   input String structureFormula;
+//   input Real molarMass(min = 0.001, max = 0.25, nominal = 0.032, quantity = \"MolarMass\", unit = \"kg/mol\");
+//   input Real criticalTemperature(start = 500.0, nominal = 500.0, min = 1.0, max = 10000.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real criticalPressure(start = 5000000.0, nominal = 1000000.0, min = 0.0, max = 100000000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real criticalMolarVolume(min = 1e-06, max = 1000000.0, nominal = 1.0, quantity = \"MolarVolume\", unit = \"m3/mol\");
+//   input Real acentricFactor;
+//   input Real triplePointTemperature(start = 500.0, nominal = 500.0, min = 1.0, max = 10000.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real triplePointPressure(start = 5000000.0, nominal = 1000000.0, min = 0.0, max = 100000000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   input Real meltingPoint(start = 500.0, nominal = 500.0, min = 1.0, max = 10000.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real normalBoilingPoint(start = 500.0, nominal = 500.0, min = 1.0, max = 10000.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real dipoleMoment(min = 0.0, max = 2.0, unit = \"debye\", quantity = \"ElectricDipoleMoment\");
+//   input Boolean hasIdealGasHeatCapacity = false;
+//   input Boolean hasCriticalData = false;
+//   input Boolean hasDipoleMoment = false;
+//   input Boolean hasFundamentalEquation = false;
+//   input Boolean hasLiquidHeatCapacity = false;
+//   input Boolean hasSolidHeatCapacity = false;
+//   input Boolean hasAccurateViscosityData = false;
+//   input Boolean hasAccurateConductivityData = false;
+//   input Boolean hasVapourPressureCurve = false;
+//   input Boolean hasAcentricFactor = false;
+//   input Real HCRIT0(start = 100000.0, nominal = 500000.0, min = -100000000.0, max = 100000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real SCRIT0(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   input Real deltah(start = 100000.0, nominal = 500000.0, min = -100000000.0, max = 100000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\") = 0.0;
+//   input Real deltas(min = -1000000.0, max = 1000000.0, nominal = 1000.0, quantity = \"SpecificEntropy\", unit = \"J/(kg.K)\") = 0.0;
+//   output FluidConstants res;
+// end TestMedia.TestModels.TestWater.Medium.FluidConstants;
+//
+// function TestMedia.TestModels.TestWater.Medium.ThermodynamicState \"Automatically generated record constructor for TestMedia.TestModels.TestWater.Medium.ThermodynamicState\"
+//   input Integer phase(min = 0, max = 2);
+//   input Real h(start = 100000.0, nominal = 500000.0, min = -100000000.0, max = 100000000.0, quantity = \"SpecificEnergy\", unit = \"J/kg\");
+//   input Real d(start = 150.0, nominal = 500.0, min = 0.0, max = 100000.0, quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\");
+//   input Real T(start = 500.0, nominal = 500.0, min = 1.0, max = 10000.0, quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\");
+//   input Real p(start = 5000000.0, nominal = 1000000.0, min = 0.0, max = 100000000.0, quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\");
+//   output ThermodynamicState res;
+// end TestMedia.TestModels.TestWater.Medium.ThermodynamicState;
+//
+// function TestMedia.TestModels.TestWater.Medium.density \"return density of ideal gas\"
+//   input TestMedia.TestModels.TestWater.Medium.ThermodynamicState state \"thermodynamic state record\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 150.0, nominal = 500.0) \"Density\";
+// algorithm
+//   d := state.d;
+// end TestMedia.TestModels.TestWater.Medium.density;
+//
+// function TestMedia.TestModels.TestWater.Medium.density_ph \"Computes density as a function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0) \"Specific enthalpy\";
+//   input Integer phase(min = 0, max = 2) = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   output Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 150.0, nominal = 500.0) \"Density\";
+// algorithm
+//   d := Modelica.Media.Water.IF97_Utilities.rho_ph(p, h, phase, 0);
+// end TestMedia.TestModels.TestWater.Medium.density_ph;
+//
+// function TestMedia.TestModels.TestWater.Medium.setState_ph \"Return thermodynamic state from p and h\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0) \"Specific enthalpy\";
+//   input Integer phase(min = 0, max = 2) = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   output TestMedia.TestModels.TestWater.Medium.ThermodynamicState state \"thermodynamic state record\";
+// algorithm
+//   state := TestMedia.TestModels.TestWater.Medium.setState_phX(p, h, {}, phase);
+// end TestMedia.TestModels.TestWater.Medium.setState_ph;
+//
+// function TestMedia.TestModels.TestWater.Medium.setState_phX \"Return thermodynamic state of water as function of p and h\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0) \"Specific enthalpy\";
+//   input Real[:] X(quantity = \"MassFraction\", unit = \"kg/kg\", min = 0.0, max = 1.0, nominal = 0.1) = {1.0} \"Mass fractions\";
+//   output TestMedia.TestModels.TestWater.Medium.ThermodynamicState state \"thermodynamic state record\";
+//   input Integer phase(min = 0, max = 2) = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+// algorithm
+//   state := TestMedia.TestModels.TestWater.Medium.ThermodynamicState(0, h, TestMedia.TestModels.TestWater.Medium.density_ph(p, h, 0), TestMedia.TestModels.TestWater.Medium.temperature_ph(p, h, 0), p);
+// end TestMedia.TestModels.TestWater.Medium.setState_phX;
+//
+// function TestMedia.TestModels.TestWater.Medium.temperature \"return temperature of ideal gas\"
+//   input TestMedia.TestModels.TestWater.Medium.ThermodynamicState state \"thermodynamic state record\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 500.0, nominal = 500.0) \"Temperature\";
+// algorithm
+//   T := state.T;
+// end TestMedia.TestModels.TestWater.Medium.temperature;
+//
+// function TestMedia.TestModels.TestWater.Medium.temperature_ph \"Computes temperature as a function of pressure and specific enthalpy\"
+//   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0) \"Pressure\";
+//   input Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0) \"Specific enthalpy\";
+//   input Integer phase(min = 0, max = 2) = 0 \"2 for two-phase, 1 for one-phase, 0 if not known\";
+//   output Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 500.0, nominal = 500.0) \"Temperature\";
+// algorithm
+//   T := Modelica.Media.Water.IF97_Utilities.T_ph(p, h, phase, 0);
+// end TestMedia.TestModels.TestWater.Medium.temperature_ph;
+//
+// class TestMedia.TestModels.TestWater
+//   Integer state.phase(min = 0, max = 2) \"phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g. interactive use\";
+//   Real state.h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0) \"specific enthalpy\";
+//   Real state.d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 150.0, nominal = 500.0) \"density\";
+//   Real state.T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 500.0, nominal = 500.0) \"temperature\";
+//   Real state.p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0) \"pressure\";
+//   Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, max = 100000000.0, start = 5000000.0, nominal = 1000000.0);
+//   Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", min = -100000000.0, max = 100000000.0, start = 100000.0, nominal = 500000.0);
+//   Real d(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0, max = 100000.0, start = 150.0, nominal = 500.0);
+//   Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 1.0, max = 10000.0, start = 500.0, nominal = 500.0);
+// equation
+//   h = 25000.0 + 300000.0 * time;
+//   p = 100000.0;
+//   state = TestMedia.TestModels.TestWater.Medium.setState_ph(p, h, 0);
+//   d = TestMedia.TestModels.TestWater.Medium.density(state);
+//   T = TestMedia.TestModels.TestWater.Medium.temperature(state);
+// end TestMedia.TestModels.TestWater;
+// "
+// ""
+// "Check of TestMedia.TestModels.TestWater completed successfully.
+// Class TestMedia.TestModels.TestWater has 9 equation(s) and 9 variable(s).
+// 2 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "TestMedia.TestModels.TestWater_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.TestWater', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,55 @@
+module Exp2:
+  datatype Exp     =  INT of int
+                   |  BINARY   of  Exp * BinOp * Exp
+                   |  UNARY    of  UnOp * Exp
+
+  datatype BinOp   =  ADD | SUB | MUL | DIV
+
+  datatype UnOp    =  NEG
+
+  relation eval:  Exp => int
+end
+
+relation eval: Exp => int  =
+
+  axiom eval( INT(ival) ) => ival                                     
+
+  rule  eval(e1) => v1  &
+        eval(e2) => v2  &
+        apply_binop(binop,v1,v2) => v3
+        ---------------------------------
+        eval( BINARY(e1,binop,e2) ) => v3
+
+  rule  eval(e) => v1  &  apply_unop(unop,v1) => v2
+        --------------------------------------------
+        eval( UNARY(unop,e) ) => v2
+
+end (* of eval *)
+
+relation apply_binop: (BinOp,int,int) => int =
+
+ rule   int_add(v1,v2) => v3
+        ----------------------
+        apply_binop(ADD,v1,v2) => v3
+
+ rule   int_sub(v1,v2) => v3
+        ----------------------
+        apply_binop(SUB,v1,v2) => v3
+
+ rule   int_mul(v1,v2) => v3
+        ----------------------
+        apply_binop(MUL,v1,v2) => v3
+
+ rule   int_div(v1,v2) => v3
+        -----------------------
+        apply_binop(DIV,v1,v2) => v3
+
+end (* of apply_binop *)
+
+relation apply_unop: (UnOp,int) => int =
+
+ rule   int_neg(v) => v2
+        -----------------------
+        apply_unop(NEG,v) => v2
+
+end (* of apply_unop *)

@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.FlatTank.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.FlatTank
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.FlatTank.* DrModelicaForTesting.FlatTank_* DrModelicaForTesting.FlatTank DrModelicaForTesting.FlatTank.exe DrModelicaForTesting.FlatTank.cpp DrModelicaForTesting.FlatTank.makefile DrModelicaForTesting.FlatTank.libs DrModelicaForTesting.FlatTank.log DrModelicaForTesting.FlatTank.c DrModelicaForTesting.FlatTank.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.FlatTank, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.FlatTank_res.mat",
+  "ReferenceFiles/FlatTank_ref.mat","DrModelicaForTesting.FlatTank_diff.csv",0.01,0.013,
+  {"h", "area","K","T"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.FlatTank_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.FlatTank', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

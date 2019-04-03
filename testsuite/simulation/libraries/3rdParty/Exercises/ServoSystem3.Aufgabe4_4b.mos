@@ -1,0 +1,44 @@
+// name: ServoSystem3.Aufgabe4_4b [simulate]
+// status: correct
+// provided by Martin Otter
+//
+
+loadModel(Modelica, {"3.2"}); getErrorString();
+loadFile("4/ServoSystem3/package.mo"); getErrorString();
+simulate(ServoSystem3.Aufgabe4_4b);  getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ServoSystem3.Aufgabe4_4b_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ServoSystem3.Aufgabe4_4b', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [Machines.mo:13716:7-13718:74:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.internalThermalPort, modification: redeclare final .Modelica.Electrical.Machines.Interfaces.DCMachines.ThermalPortDCPM internalThermalPort.
+// [Machines.mo:13712:7-13713:32:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.psi_eNominal, modification: final  = 1.0.
+// [Machines.mo:13711:7-13711:77:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.ViNominal, modification: final  = servo.motor.DCPM.VaNominal + (-Modelica.Electrical.Machines.Thermal.convertResistance(servo.motor.DCPM.Ra, servo.motor.DCPM.TaRef, servo.motor.DCPM.alpha20a, servo.motor.DCPM.TaNominal)) * servo.motor.DCPM.IaNominal - Modelica.Electrical.Machines.Losses.DCMachines.brushVoltageDrop(servo.motor.DCPM.brushParameters, servo.motor.DCPM.IaNominal).
+// Warning: Parameter servo.motor.DCPM.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.core.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.core.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [Machines.mo:13716:7-13718:74:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.internalThermalPort, modification: redeclare final .Modelica.Electrical.Machines.Interfaces.DCMachines.ThermalPortDCPM internalThermalPort.
+// [Machines.mo:13712:7-13713:32:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.psi_eNominal, modification: final  = 1.0.
+// [Machines.mo:13711:7-13711:77:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+// 	Element: servo.motor.DCPM.ViNominal, modification: final  = servo.motor.DCPM.VaNominal + (-Modelica.Electrical.Machines.Thermal.convertResistance(servo.motor.DCPM.Ra, servo.motor.DCPM.TaRef, servo.motor.DCPM.alpha20a, servo.motor.DCPM.TaNominal)) * servo.motor.DCPM.IaNominal - Modelica.Electrical.Machines.Losses.DCMachines.brushVoltageDrop(servo.motor.DCPM.brushParameters, servo.motor.DCPM.IaNominal).
+// Warning: Parameter servo.motor.DCPM.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.core.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter servo.motor.DCPM.core.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// "
+// endResult

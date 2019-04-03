@@ -1,0 +1,1811 @@
+// name:     asmaFlow.mos [BUG: #2429]
+// keywords: remove simple equation bug testing
+// status:   correct
+// teardown_command: rm -rf asmaFlow_* asmaFlow asmaFlow.exe
+
+
+setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadFile("asmaFlow.mo"); getErrorString();
+simulate(asmaFlow); getErrorString();
+val(aimc.flange.tau, 0);
+val(aimc.inertiaRotor.flange_b.tau, 0);
+
+
+
+// Result:
+// {true}
+// ""
+// true
+// ""
+// true
+// ""
+//
+// Unreplaceable Crefs: (0)
+// ========================================
+//
+//
+// Replacements: (321)
+// ========================================
+// const.y -> const.k
+// torque.tau -> const.k
+// torque.flange.tau -> -const.k
+// aimc.flange.phi -> speedSensor.flange.phi
+// torque.flange.phi -> speedSensor.flange.phi
+// aimc.strayLoad.flange.phi -> speedSensor.flange.phi
+// aimc.inertiaRotor.flange_b.phi -> speedSensor.flange.phi
+// aimc.inertiaRotor.phi -> speedSensor.flange.phi
+// aimc.inertiaRotor.flange_a.phi -> speedSensor.flange.phi
+// aimc.airGapS.flange.phi -> speedSensor.flange.phi
+// aimc.friction.flange.phi -> speedSensor.flange.phi
+// ground.p.v -> 0.0
+// star.pin_n.v -> 0.0
+// star.plug_p.pin[3].v -> 0.0
+// sinevoltage1.plug_p.pin[3].v -> 0.0
+// sinevoltage1.sineVoltage[3].p.v -> 0.0
+// star.plug_p.pin[2].v -> 0.0
+// sinevoltage1.plug_p.pin[2].v -> 0.0
+// sinevoltage1.sineVoltage[2].p.v -> 0.0
+// star.plug_p.pin[1].v -> 0.0
+// sinevoltage1.plug_p.pin[1].v -> 0.0
+// sinevoltage1.sineVoltage[1].p.v -> 0.0
+// terminalBox.plug_sp.pin[3].v -> -sinevoltage1.v[3]
+// terminalBox.plugSupply.pin[3].v -> -sinevoltage1.v[3]
+// sinevoltage1.plug_n.pin[3].v -> -sinevoltage1.v[3]
+// sinevoltage1.sineVoltage[3].n.v -> -sinevoltage1.v[3]
+// aimc.strayLoad.plug_p.pin[3].v -> -sinevoltage1.v[3]
+// terminalBox.plug_sp.pin[2].v -> -sinevoltage1.v[2]
+// terminalBox.plugSupply.pin[2].v -> -sinevoltage1.v[2]
+// sinevoltage1.plug_n.pin[2].v -> -sinevoltage1.v[2]
+// sinevoltage1.sineVoltage[2].n.v -> -sinevoltage1.v[2]
+// aimc.strayLoad.plug_p.pin[2].v -> -sinevoltage1.v[2]
+// terminalBox.plug_sp.pin[1].v -> -sinevoltage1.v[1]
+// terminalBox.plugSupply.pin[1].v -> -sinevoltage1.v[1]
+// sinevoltage1.plug_n.pin[1].v -> -sinevoltage1.v[1]
+// sinevoltage1.sineVoltage[1].n.v -> -sinevoltage1.v[1]
+// aimc.strayLoad.plug_p.pin[1].v -> -sinevoltage1.v[1]
+// terminalBox.plug_sn.pin[3].v -> aimc.plug_sn.pin[3].v
+// terminalBox.star.plug_p.pin[3].v -> aimc.plug_sn.pin[3].v
+// terminalBox.star.pin_n.v -> aimc.plug_sn.pin[3].v
+// terminalBox.starpoint.v -> aimc.plug_sn.pin[3].v
+// terminalBox.star.plug_p.pin[2].v -> aimc.plug_sn.pin[3].v
+// terminalBox.plug_sn.pin[2].v -> aimc.plug_sn.pin[3].v
+// aimc.plug_sn.pin[2].v -> aimc.plug_sn.pin[3].v
+// aimc.spacePhasorS.plug_n.pin[2].v -> aimc.plug_sn.pin[3].v
+// terminalBox.star.plug_p.pin[1].v -> aimc.plug_sn.pin[3].v
+// terminalBox.plug_sn.pin[1].v -> aimc.plug_sn.pin[3].v
+// aimc.plug_sn.pin[1].v -> aimc.plug_sn.pin[3].v
+// aimc.spacePhasorS.plug_n.pin[1].v -> aimc.plug_sn.pin[3].v
+// aimc.spacePhasorS.plug_n.pin[3].v -> aimc.plug_sn.pin[3].v
+// sinevoltage1.plug_p.pin[1].i -> sinevoltage1.i[1]
+// sinevoltage1.sineVoltage[1].p.i -> sinevoltage1.i[1]
+// sinevoltage1.sineVoltage[1].i -> sinevoltage1.i[1]
+// sinevoltage1.sineVoltage[1].n.i -> -sinevoltage1.i[1]
+// sinevoltage1.plug_n.pin[1].i -> -sinevoltage1.i[1]
+// terminalBox.plugSupply.pin[1].i -> sinevoltage1.i[1]
+// terminalBox.plug_sp.pin[1].i -> -sinevoltage1.i[1]
+// aimc.plug_sp.pin[1].i -> sinevoltage1.i[1]
+// aimc.strayLoad.plug_p.pin[1].i -> sinevoltage1.i[1]
+// aimc.strayLoad.i[1] -> sinevoltage1.i[1]
+// aimc.strayLoad.plug_n.pin[1].i -> -sinevoltage1.i[1]
+// aimc.rs.plug_p.pin[1].i -> sinevoltage1.i[1]
+// aimc.rs.resistor[1].p.i -> sinevoltage1.i[1]
+// aimc.rs.resistor[1].i -> sinevoltage1.i[1]
+// aimc.rs.resistor[1].n.i -> -sinevoltage1.i[1]
+// aimc.rs.plug_n.pin[1].i -> -sinevoltage1.i[1]
+// aimc.spacePhasorS.plug_p.pin[1].i -> sinevoltage1.i[1]
+// aimc.spacePhasorS.plug_n.pin[1].i -> -sinevoltage1.i[1]
+// aimc.plug_sn.pin[1].i -> -sinevoltage1.i[1]
+// terminalBox.plug_sn.pin[1].i -> sinevoltage1.i[1]
+// terminalBox.star.plug_p.pin[1].i -> sinevoltage1.i[1]
+// aimc.rs.i[1] -> sinevoltage1.i[1]
+// aimc.is[1] -> sinevoltage1.i[1]
+// star.plug_p.pin[1].i -> -sinevoltage1.i[1]
+// sinevoltage1.plug_p.pin[2].i -> sinevoltage1.i[2]
+// sinevoltage1.sineVoltage[2].p.i -> sinevoltage1.i[2]
+// sinevoltage1.sineVoltage[2].i -> sinevoltage1.i[2]
+// sinevoltage1.sineVoltage[2].n.i -> -sinevoltage1.i[2]
+// sinevoltage1.plug_n.pin[2].i -> -sinevoltage1.i[2]
+// terminalBox.plugSupply.pin[2].i -> sinevoltage1.i[2]
+// terminalBox.plug_sp.pin[2].i -> -sinevoltage1.i[2]
+// aimc.plug_sp.pin[2].i -> sinevoltage1.i[2]
+// aimc.strayLoad.plug_p.pin[2].i -> sinevoltage1.i[2]
+// aimc.strayLoad.i[2] -> sinevoltage1.i[2]
+// aimc.strayLoad.plug_n.pin[2].i -> -sinevoltage1.i[2]
+// aimc.rs.plug_p.pin[2].i -> sinevoltage1.i[2]
+// aimc.rs.resistor[2].p.i -> sinevoltage1.i[2]
+// aimc.rs.resistor[2].i -> sinevoltage1.i[2]
+// aimc.rs.resistor[2].n.i -> -sinevoltage1.i[2]
+// aimc.rs.plug_n.pin[2].i -> -sinevoltage1.i[2]
+// aimc.spacePhasorS.plug_p.pin[2].i -> sinevoltage1.i[2]
+// aimc.spacePhasorS.plug_n.pin[2].i -> -sinevoltage1.i[2]
+// aimc.plug_sn.pin[2].i -> -sinevoltage1.i[2]
+// terminalBox.plug_sn.pin[2].i -> sinevoltage1.i[2]
+// terminalBox.star.plug_p.pin[2].i -> sinevoltage1.i[2]
+// aimc.rs.i[2] -> sinevoltage1.i[2]
+// aimc.is[2] -> sinevoltage1.i[2]
+// star.plug_p.pin[2].i -> -sinevoltage1.i[2]
+// sinevoltage1.plug_p.pin[3].i -> sinevoltage1.i[3]
+// sinevoltage1.sineVoltage[3].p.i -> sinevoltage1.i[3]
+// sinevoltage1.sineVoltage[3].i -> sinevoltage1.i[3]
+// sinevoltage1.sineVoltage[3].n.i -> -sinevoltage1.i[3]
+// sinevoltage1.plug_n.pin[3].i -> -sinevoltage1.i[3]
+// terminalBox.plugSupply.pin[3].i -> sinevoltage1.i[3]
+// terminalBox.plug_sp.pin[3].i -> -sinevoltage1.i[3]
+// aimc.plug_sp.pin[3].i -> sinevoltage1.i[3]
+// aimc.strayLoad.plug_p.pin[3].i -> sinevoltage1.i[3]
+// aimc.strayLoad.i[3] -> sinevoltage1.i[3]
+// aimc.strayLoad.plug_n.pin[3].i -> -sinevoltage1.i[3]
+// aimc.rs.plug_p.pin[3].i -> sinevoltage1.i[3]
+// aimc.rs.resistor[3].p.i -> sinevoltage1.i[3]
+// aimc.rs.resistor[3].i -> sinevoltage1.i[3]
+// aimc.rs.resistor[3].n.i -> -sinevoltage1.i[3]
+// aimc.rs.plug_n.pin[3].i -> -sinevoltage1.i[3]
+// aimc.spacePhasorS.plug_p.pin[3].i -> sinevoltage1.i[3]
+// aimc.spacePhasorS.plug_n.pin[3].i -> -sinevoltage1.i[3]
+// aimc.plug_sn.pin[3].i -> -sinevoltage1.i[3]
+// terminalBox.plug_sn.pin[3].i -> sinevoltage1.i[3]
+// terminalBox.star.plug_p.pin[3].i -> sinevoltage1.i[3]
+// aimc.rs.i[3] -> sinevoltage1.i[3]
+// aimc.is[3] -> sinevoltage1.i[3]
+// star.plug_p.pin[3].i -> -sinevoltage1.i[3]
+// star.pin_n.i -> -ground.p.i
+// aimc.statorCore.spacePhasor.v_[2] -> aimc.lssigma.spacePhasor_a.v_[2]
+// aimc.spacePhasorS.spacePhasor.v_[2] -> aimc.lssigma.spacePhasor_a.v_[2]
+// aimc.statorCore.spacePhasor.v_[1] -> aimc.lssigma.spacePhasor_a.v_[1]
+// aimc.spacePhasorS.spacePhasor.v_[1] -> aimc.lssigma.spacePhasor_a.v_[1]
+// aimc.spacePhasorS.ground.v -> 0.0
+// aimc.lszero.n.v -> 0.0
+// aimc.spacePhasorS.zero.v -> aimc.lszero.v
+// aimc.spacePhasorS.plug_p.pin[3].v -> aimc.rs.plug_n.pin[3].v
+// aimc.rs.resistor[3].n.v -> aimc.rs.plug_n.pin[3].v
+// aimc.spacePhasorS.plug_p.pin[2].v -> aimc.rs.plug_n.pin[2].v
+// aimc.rs.resistor[2].n.v -> aimc.rs.plug_n.pin[2].v
+// aimc.spacePhasorS.plug_p.pin[1].v -> aimc.rs.plug_n.pin[1].v
+// aimc.rs.resistor[1].n.v -> aimc.rs.plug_n.pin[1].v
+// aimc.strayLoad.plug_n.pin[3].v -> -sinevoltage1.v[3]
+// aimc.rs.resistor[3].p.v -> -sinevoltage1.v[3]
+// aimc.strayLoad.plug_n.pin[2].v -> -sinevoltage1.v[2]
+// aimc.rs.resistor[2].p.v -> -sinevoltage1.v[2]
+// aimc.strayLoad.plug_n.pin[1].v -> -sinevoltage1.v[1]
+// aimc.rs.resistor[1].p.v -> -sinevoltage1.v[1]
+// aimc.thermalAmbient.constTs.y -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.temperatureStatorWinding.T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.temperatureStatorWinding.port.T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalCollectorStator.port_b.T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalCollectorStator.port_a[3].T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].T -> aimc.thermalAmbient.constTs.k
+// aimc.internalThermalPort.heatPortStatorWinding[3].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.heatPort[3].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[3].heatPort.T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[3].T_heatPort -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalCollectorStator.port_a[2].T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].T -> aimc.thermalAmbient.constTs.k
+// aimc.internalThermalPort.heatPortStatorWinding[2].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.heatPort[2].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[2].heatPort.T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[2].T_heatPort -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalCollectorStator.port_a[1].T -> aimc.thermalAmbient.constTs.k
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].T -> aimc.thermalAmbient.constTs.k
+// aimc.internalThermalPort.heatPortStatorWinding[1].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.heatPort[1].T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[1].heatPort.T -> aimc.thermalAmbient.constTs.k
+// aimc.rs.resistor[1].T_heatPort -> aimc.thermalAmbient.constTs.k
+// aimc.fixed.flange.phi -> aimc.fixed.phi0
+// aimc.airGapS.support.phi -> aimc.fixed.phi0
+// aimc.strayLoad.support.phi -> aimc.fixed.phi0
+// aimc.internalSupport.phi -> aimc.fixed.phi0
+// aimc.inertiaStator.flange_a.phi -> aimc.fixed.phi0
+// aimc.inertiaStator.phi -> aimc.fixed.phi0
+// aimc.inertiaStator.flange_b.phi -> aimc.fixed.phi0
+// aimc.friction.support.phi -> aimc.fixed.phi0
+// aimc.thermalAmbient.constTr.y -> aimc.thermalAmbient.constTr.k
+// aimc.thermalAmbient.temperatureRotorWinding.T -> aimc.thermalAmbient.constTr.k
+// aimc.thermalAmbient.temperatureRotorWinding.port.T -> aimc.thermalAmbient.constTr.k
+// aimc.thermalAmbient.thermalPort.heatPortRotorWinding.T -> aimc.thermalAmbient.constTr.k
+// aimc.internalThermalPort.heatPortRotorWinding.T -> aimc.thermalAmbient.constTr.k
+// aimc.squirrelCageR.heatPort.T -> aimc.thermalAmbient.constTr.k
+// aimc.squirrelCageR.T_heatPort -> aimc.thermalAmbient.constTr.k
+// aimc.lssigma.spacePhasor_b.v_[2] -> aimc.airGapS.spacePhasor_s.v_[2]
+// aimc.lssigma.spacePhasor_b.v_[1] -> aimc.airGapS.spacePhasor_s.v_[1]
+// aimc.squirrelCageR.spacePhasor_r.v_[2] -> aimc.airGapS.spacePhasor_r.v_[2]
+// aimc.squirrelCageR.spacePhasor_r.v_[1] -> aimc.airGapS.spacePhasor_r.v_[1]
+// aimc.inertiaStator.flange_b.tau -> 0.0
+// aimc.airGapS.i_rr[2] -> aimc.idq_rr[2]
+// aimc.airGapS.spacePhasor_r.i_[2] -> aimc.idq_rr[2]
+// aimc.squirrelCageR.spacePhasor_r.i_[2] -> -aimc.idq_rr[2]
+// aimc.ir[2] -> aimc.idq_rr[2]
+// aimc.airGapS.i_rr[1] -> aimc.idq_rr[1]
+// aimc.airGapS.spacePhasor_r.i_[1] -> aimc.idq_rr[1]
+// aimc.squirrelCageR.spacePhasor_r.i_[1] -> -aimc.idq_rr[1]
+// aimc.ir[1] -> aimc.idq_rr[1]
+// aimc.lssigma.spacePhasor_a.i_[2] -> aimc.lssigma.i_[2]
+// aimc.lssigma.spacePhasor_b.i_[2] -> -aimc.lssigma.i_[2]
+// aimc.airGapS.spacePhasor_s.i_[2] -> aimc.lssigma.i_[2]
+// aimc.airGapS.i_ss[2] -> aimc.lssigma.i_[2]
+// aimc.idq_ss[2] -> aimc.lssigma.i_[2]
+// aimc.lssigma.spacePhasor_a.i_[1] -> aimc.lssigma.i_[1]
+// aimc.lssigma.spacePhasor_b.i_[1] -> -aimc.lssigma.i_[1]
+// aimc.airGapS.spacePhasor_s.i_[1] -> aimc.lssigma.i_[1]
+// aimc.airGapS.i_ss[1] -> aimc.lssigma.i_[1]
+// aimc.idq_ss[1] -> aimc.lssigma.i_[1]
+// aimc.thermalAmbient.temperatureFriction.port.Q_flow -> aimc.powerBalance.lossPowerFriction
+// aimc.thermalAmbient.thermalPort.heatPortFriction.Q_flow -> aimc.powerBalance.lossPowerFriction
+// aimc.thermalAmbient.temperatureStrayLoad.port.Q_flow -> aimc.strayLoad.lossPower
+// aimc.thermalAmbient.thermalPort.heatPortStrayLoad.Q_flow -> aimc.strayLoad.lossPower
+// aimc.internalThermalPort.heatPortRotorCore.Q_flow -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortRotorCore.Q_flow -> 0.0
+// aimc.thermalAmbient.temperatureRotorCore.port.Q_flow -> 0.0
+// aimc.thermalAmbient.Q_flowRotorCore -> 0.0
+// aimc.thermalAmbient.temperatureStatorCore.port.Q_flow -> aimc.statorCore.lossPower
+// aimc.thermalAmbient.thermalPort.heatPortStatorCore.Q_flow -> aimc.statorCore.lossPower
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].Q_flow -> aimc.rs.resistor[1].LossPower
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].Q_flow -> aimc.rs.resistor[2].LossPower
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].Q_flow -> aimc.rs.resistor[3].LossPower
+// aimc.thermalAmbient.temperatureRotorWinding.port.Q_flow -> aimc.thermalAmbient.Q_flowRotorWinding
+// aimc.thermalAmbient.thermalPort.heatPortRotorWinding.Q_flow -> aimc.thermalAmbient.Q_flowRotorWinding
+// aimc.thermalAmbient.temperatureStatorWinding.port.Q_flow -> aimc.thermalAmbient.Q_flowStatorWinding
+// aimc.thermalAmbient.thermalCollectorStator.port_b.Q_flow -> -aimc.thermalAmbient.Q_flowStatorWinding
+// aimc.inertiaRotor.flange_a.tau -> aimc.tauElectrical
+// aimc.airGapS.flange.tau -> -aimc.tauElectrical
+// aimc.airGapS.tauElectrical -> aimc.tauElectrical
+// aimc.airGapS.support.tau -> aimc.tauElectrical
+// aimc.rs.resistor[1].heatPort.Q_flow -> -aimc.rs.resistor[1].LossPower
+// aimc.rs.heatPort[1].Q_flow -> -aimc.rs.resistor[1].LossPower
+// aimc.rs.resistor[2].heatPort.Q_flow -> -aimc.rs.resistor[2].LossPower
+// aimc.rs.heatPort[2].Q_flow -> -aimc.rs.resistor[2].LossPower
+// aimc.rs.resistor[3].heatPort.Q_flow -> -aimc.rs.resistor[3].LossPower
+// aimc.rs.heatPort[3].Q_flow -> -aimc.rs.resistor[3].LossPower
+// aimc.internalThermalPort.heatPortStatorWinding[1].Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortStatorWinding[2].Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortStatorWinding[3].Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortRotorWinding.Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortFriction.Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortStrayLoad.Q_flow -> 0.0
+// aimc.internalThermalPort.heatPortStatorCore.Q_flow -> 0.0
+// aimc.spacePhasorS.zero.i -> aimc.i_0_s
+// aimc.lszero.p.i -> -aimc.i_0_s
+// aimc.lszero.i -> -aimc.i_0_s
+// aimc.lszero.n.i -> aimc.i_0_s
+// aimc.spacePhasorS.ground.i -> -aimc.i_0_s
+// aimc.internalSupport.tau -> 0.0
+// terminalBox.starpoint.i -> 0.0
+// terminalBox.star.pin_n.i -> 0.0
+// sinevoltage1.sineVoltage[3].signalSource.y -> sinevoltage1.v[3]
+// sinevoltage1.sineVoltage[2].signalSource.y -> sinevoltage1.v[2]
+// sinevoltage1.sineVoltage[1].signalSource.y -> sinevoltage1.v[1]
+// speedSensor.flange.tau -> 0.0
+// aimc.squirrelCageR.heatPort.Q_flow -> -aimc.thermalAmbient.Q_flowRotorWinding
+// aimc.powerBalance.lossPowerRotorWinding -> aimc.thermalAmbient.Q_flowRotorWinding
+// aimc.airGapS.RotationMatrix[1,1] -> aimc.airGapS.RotationMatrix[2,2]
+// aimc.airGapS.RotationMatrix[1,2] -> -aimc.airGapS.RotationMatrix[2,1]
+// aimc.strayLoad.tau -> 0.0
+// aimc.strayLoad.support.tau -> 0.0
+// aimc.strayLoad.flange.tau -> -0.0
+// aimc.strayLoad.v[3] -> 0.0
+// aimc.strayLoad.v[2] -> 0.0
+// aimc.strayLoad.v[1] -> 0.0
+// aimc.strayLoad.heatPort.Q_flow -> -0.0
+// aimc.powerBalance.lossPowerStrayLoad -> 0.0
+// aimc.statorCore.spacePhasor.i_[2] -> 0.0
+// aimc.statorCore.spacePhasor.i_[1] -> 0.0
+// aimc.statorCore.heatPort.Q_flow -> -0.0
+// aimc.powerBalance.lossPowerStatorCore -> 0.0
+// aimc.airGapS.i_rs[2] -> aimc.idq_rs[2]
+// aimc.airGapS.i_rs[1] -> aimc.idq_rs[1]
+// aimc.airGapS.i_sr[2] -> aimc.idq_sr[2]
+// aimc.airGapS.i_sr[1] -> aimc.idq_sr[1]
+// aimc.friction.lossPower -> 0.0
+// aimc.friction.heatPort.Q_flow -> -0.0
+// aimc.powerBalance.lossPowerRotorCore -> 0.0
+// aimc.friction.tau -> 0.0
+// aimc.friction.support.tau -> 0.0
+// aimc.friction.flange.tau -> -0.0
+// aimc.flange.tau -> -(-const.k)
+// speedSensor.w -> aimc.inertiaRotor.w
+// aimc.inertiaStator.w -> 0.0
+// aimc.powerBalance.lossPowerFriction -> 0.0
+// aimc.thermalAmbient.Q_flowFriction -> 0.0
+// aimc.lszero.p.v -> aimc.lszero.v
+// aimc.statorCore.lossPower -> 0.0
+// aimc.thermalAmbient.Q_flowStatorCore -> 0.0
+// aimc.strayLoad.lossPower -> 0.0
+// aimc.thermalAmbient.Q_flowStrayLoad -> 0.0
+// aimc.plug_sp.pin[1].v -> -sinevoltage1.v[1]
+// aimc.rs.plug_p.pin[1].v -> -sinevoltage1.v[1]
+// sinevoltage1.sineVoltage[1].v -> sinevoltage1.v[1]
+// aimc.plug_sp.pin[2].v -> -sinevoltage1.v[2]
+// aimc.rs.plug_p.pin[2].v -> -sinevoltage1.v[2]
+// sinevoltage1.sineVoltage[2].v -> sinevoltage1.v[2]
+// aimc.plug_sp.pin[3].v -> -sinevoltage1.v[3]
+// aimc.rs.plug_p.pin[3].v -> -sinevoltage1.v[3]
+// sinevoltage1.sineVoltage[3].v -> sinevoltage1.v[3]
+// aimc.tauShaft -> -const.k
+// aimc.inertiaRotor.flange_b.tau -> const.k
+// aimc.spacePhasorS.spacePhasor.i_[1] -> -aimc.lssigma.i_[1]
+// aimc.spacePhasorS.spacePhasor.i_[2] -> -aimc.lssigma.i_[2]
+// aimc.thermalAmbient.thermalCollectorStator.port_a[3].Q_flow -> aimc.rs.resistor[3].LossPower
+// aimc.thermalAmbient.thermalCollectorStator.port_a[2].Q_flow -> aimc.rs.resistor[2].LossPower
+// aimc.thermalAmbient.thermalCollectorStator.port_a[1].Q_flow -> aimc.rs.resistor[1].LossPower
+// aimc.squirrelCageR.LossPower -> aimc.thermalAmbient.Q_flowRotorWinding
+// aimc.powerBalance.powerInertiaStator -> 0.0
+// aimc.inertiaStator.a -> 0.0
+// aimc.thermalAmbient.temperatureStrayLoad.port.T -> 293.15
+// aimc.thermalAmbient.thermalPort.heatPortStrayLoad.T -> 293.15
+// aimc.internalThermalPort.heatPortStrayLoad.T -> 293.15
+// aimc.strayLoad.heatPort.T -> 293.15
+// aimc.thermalAmbient.temperatureStatorCore.port.T -> 293.15
+// aimc.thermalAmbient.thermalPort.heatPortStatorCore.T -> 293.15
+// aimc.internalThermalPort.heatPortStatorCore.T -> 293.15
+// aimc.statorCore.heatPort.T -> 293.15
+// aimc.thermalAmbient.temperatureRotorCore.port.T -> 293.15
+// aimc.thermalAmbient.thermalPort.heatPortRotorCore.T -> 293.15
+// aimc.internalThermalPort.heatPortRotorCore.T -> 293.15
+// aimc.thermalAmbient.temperatureFriction.port.T -> 293.15
+// aimc.thermalAmbient.thermalPort.heatPortFriction.T -> 293.15
+// aimc.friction.heatPort.T -> 293.15
+// aimc.internalThermalPort.heatPortFriction.T -> 293.15
+// torque.phi_support -> 0.0
+// aimc.statorCore.Gc -> 0.0
+// aimc.statorCore.w -> aimc.statorCoreParameters.wRef
+//
+// ExtendReplacements: (161)
+// ========================================
+// const -> 0.0
+// torque -> 0.0
+// torque.flange -> 0.0
+// aimc -> 0.0
+// aimc.flange -> 0.0
+// aimc.strayLoad -> 0.0
+// aimc.strayLoad.flange -> 0.0
+// aimc.inertiaRotor -> 0.0
+// aimc.inertiaRotor.flange_b -> 0.0
+// aimc.inertiaRotor.flange_a -> 0.0
+// aimc.airGapS -> 0.0
+// aimc.airGapS.flange -> 0.0
+// aimc.friction -> 0.0
+// aimc.friction.flange -> 0.0
+// ground -> 0.0
+// ground.p -> 0.0
+// star -> 0.0
+// star.pin_n -> 0.0
+// star.plug_p -> 0.0
+// star.plug_p.pin -> 0.0
+// sinevoltage1 -> 0.0
+// sinevoltage1.plug_p -> 0.0
+// sinevoltage1.plug_p.pin -> 0.0
+// sinevoltage1.sineVoltage -> 0.0
+// sinevoltage1.sineVoltage[3].p -> 0.0
+// sinevoltage1.sineVoltage[2].p -> 0.0
+// sinevoltage1.sineVoltage[1].p -> 0.0
+// terminalBox -> 0.0
+// terminalBox.plug_sp -> 0.0
+// terminalBox.plug_sp.pin -> 0.0
+// terminalBox.plugSupply -> 0.0
+// terminalBox.plugSupply.pin -> 0.0
+// sinevoltage1.plug_n -> 0.0
+// sinevoltage1.plug_n.pin -> 0.0
+// sinevoltage1.sineVoltage[3].n -> 0.0
+// aimc.strayLoad.plug_p -> 0.0
+// aimc.strayLoad.plug_p.pin -> 0.0
+// sinevoltage1.sineVoltage[2].n -> 0.0
+// sinevoltage1.sineVoltage[1].n -> 0.0
+// terminalBox.plug_sn -> 0.0
+// terminalBox.plug_sn.pin -> 0.0
+// terminalBox.star -> 0.0
+// terminalBox.star.plug_p -> 0.0
+// terminalBox.star.plug_p.pin -> 0.0
+// terminalBox.star.pin_n -> 0.0
+// terminalBox.starpoint -> 0.0
+// aimc.plug_sn -> 0.0
+// aimc.plug_sn.pin -> 0.0
+// aimc.spacePhasorS -> 0.0
+// aimc.spacePhasorS.plug_n -> 0.0
+// aimc.spacePhasorS.plug_n.pin -> 0.0
+// aimc.plug_sp -> 0.0
+// aimc.plug_sp.pin -> 0.0
+// aimc.strayLoad.i -> 0.0
+// aimc.strayLoad.plug_n -> 0.0
+// aimc.strayLoad.plug_n.pin -> 0.0
+// aimc.rs -> 0.0
+// aimc.rs.plug_p -> 0.0
+// aimc.rs.plug_p.pin -> 0.0
+// aimc.rs.resistor -> 0.0
+// aimc.rs.resistor[1].p -> 0.0
+// aimc.rs.resistor[1].n -> 0.0
+// aimc.rs.plug_n -> 0.0
+// aimc.rs.plug_n.pin -> 0.0
+// aimc.spacePhasorS.plug_p -> 0.0
+// aimc.spacePhasorS.plug_p.pin -> 0.0
+// aimc.rs.i -> 0.0
+// aimc.is -> 0.0
+// aimc.rs.resistor[2].p -> 0.0
+// aimc.rs.resistor[2].n -> 0.0
+// aimc.rs.resistor[3].p -> 0.0
+// aimc.rs.resistor[3].n -> 0.0
+// aimc.statorCore -> 0.0
+// aimc.statorCore.spacePhasor -> 0.0
+// aimc.statorCore.spacePhasor.v_ -> 0.0
+// aimc.spacePhasorS.spacePhasor -> 0.0
+// aimc.spacePhasorS.spacePhasor.v_ -> 0.0
+// aimc.spacePhasorS.ground -> 0.0
+// aimc.lszero -> 0.0
+// aimc.lszero.n -> 0.0
+// aimc.spacePhasorS.zero -> 0.0
+// aimc.thermalAmbient -> 0.0
+// aimc.thermalAmbient.constTs -> 0.0
+// aimc.thermalAmbient.temperatureStatorWinding -> 0.0
+// aimc.thermalAmbient.temperatureStatorWinding.port -> 0.0
+// aimc.thermalAmbient.thermalCollectorStator -> 0.0
+// aimc.thermalAmbient.thermalCollectorStator.port_b -> 0.0
+// aimc.thermalAmbient.thermalCollectorStator.port_a -> 0.0
+// aimc.thermalAmbient.thermalPort -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding -> 0.0
+// aimc.internalThermalPort -> 0.0
+// aimc.internalThermalPort.heatPortStatorWinding -> 0.0
+// aimc.rs.heatPort -> 0.0
+// aimc.rs.resistor[3].heatPort -> 0.0
+// aimc.rs.resistor[2].heatPort -> 0.0
+// aimc.rs.resistor[1].heatPort -> 0.0
+// aimc.fixed -> 0.0
+// aimc.fixed.flange -> 0.0
+// aimc.airGapS.support -> 0.0
+// aimc.strayLoad.support -> 0.0
+// aimc.internalSupport -> 0.0
+// aimc.inertiaStator -> 0.0
+// aimc.inertiaStator.flange_a -> 0.0
+// aimc.inertiaStator.flange_b -> 0.0
+// aimc.friction.support -> 0.0
+// aimc.thermalAmbient.constTr -> 0.0
+// aimc.thermalAmbient.temperatureRotorWinding -> 0.0
+// aimc.thermalAmbient.temperatureRotorWinding.port -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortRotorWinding -> 0.0
+// aimc.internalThermalPort.heatPortRotorWinding -> 0.0
+// aimc.squirrelCageR -> 0.0
+// aimc.squirrelCageR.heatPort -> 0.0
+// aimc.lssigma -> 0.0
+// aimc.lssigma.spacePhasor_b -> 0.0
+// aimc.lssigma.spacePhasor_b.v_ -> 0.0
+// aimc.squirrelCageR.spacePhasor_r -> 0.0
+// aimc.squirrelCageR.spacePhasor_r.v_ -> 0.0
+// aimc.airGapS.i_rr -> 0.0
+// aimc.airGapS.spacePhasor_r -> 0.0
+// aimc.airGapS.spacePhasor_r.i_ -> 0.0
+// aimc.squirrelCageR.spacePhasor_r.i_ -> 0.0
+// aimc.ir -> 0.0
+// aimc.lssigma.spacePhasor_a -> 0.0
+// aimc.lssigma.spacePhasor_a.i_ -> 0.0
+// aimc.lssigma.spacePhasor_b.i_ -> 0.0
+// aimc.airGapS.spacePhasor_s -> 0.0
+// aimc.airGapS.spacePhasor_s.i_ -> 0.0
+// aimc.airGapS.i_ss -> 0.0
+// aimc.idq_ss -> 0.0
+// aimc.thermalAmbient.temperatureFriction -> 0.0
+// aimc.thermalAmbient.temperatureFriction.port -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortFriction -> 0.0
+// aimc.thermalAmbient.temperatureStrayLoad -> 0.0
+// aimc.thermalAmbient.temperatureStrayLoad.port -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortStrayLoad -> 0.0
+// aimc.internalThermalPort.heatPortRotorCore -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortRotorCore -> 0.0
+// aimc.thermalAmbient.temperatureRotorCore -> 0.0
+// aimc.thermalAmbient.temperatureRotorCore.port -> 0.0
+// aimc.thermalAmbient.temperatureStatorCore -> 0.0
+// aimc.thermalAmbient.temperatureStatorCore.port -> 0.0
+// aimc.thermalAmbient.thermalPort.heatPortStatorCore -> 0.0
+// aimc.internalThermalPort.heatPortFriction -> 0.0
+// aimc.internalThermalPort.heatPortStrayLoad -> 0.0
+// aimc.internalThermalPort.heatPortStatorCore -> 0.0
+// aimc.lszero.p -> 0.0
+// sinevoltage1.sineVoltage[3].signalSource -> 0.0
+// sinevoltage1.sineVoltage[2].signalSource -> 0.0
+// sinevoltage1.sineVoltage[1].signalSource -> 0.0
+// speedSensor -> 0.0
+// speedSensor.flange -> 0.0
+// aimc.powerBalance -> 0.0
+// aimc.airGapS.RotationMatrix -> 0.0
+// aimc.strayLoad.v -> 0.0
+// aimc.strayLoad.heatPort -> 0.0
+// aimc.statorCore.spacePhasor.i_ -> 0.0
+// aimc.statorCore.heatPort -> 0.0
+// aimc.airGapS.i_rs -> 0.0
+// aimc.airGapS.i_sr -> 0.0
+// aimc.friction.heatPort -> 0.0
+// aimc.spacePhasorS.spacePhasor.i_ -> 0.0
+//
+// DerConstReplacements: (3)
+// ========================================
+// aimc.inertiaRotor.phi -> speedSensor.w
+// aimc.inertiaStator.phi -> 0.0
+// aimc.inertiaStator.w -> 0.0
+//
+// Unreplaceable Crefs: (2)
+// ========================================
+// $res2.$pDERLSJac0.dummyVarLSJac0
+// $res1.$pDERLSJac0.dummyVarLSJac0
+//
+// Unreplaceable Crefs: (5)
+// ========================================
+// $res5.$pDERLSJac1.dummyVarLSJac1
+// $res4.$pDERLSJac1.dummyVarLSJac1
+// $res3.$pDERLSJac1.dummyVarLSJac1
+// $res2.$pDERLSJac1.dummyVarLSJac1
+// $res1.$pDERLSJac1.dummyVarLSJac1
+//
+// Unreplaceable Crefs: (1)
+// ========================================
+// $cse1
+//
+// Replacements: (20)
+// ========================================
+// ground.p.i -> 0.0
+// aimc.airGapS.RotationMatrix[2,1] -> $cse1
+// aimc.strayLoad.w -> aimc.inertiaRotor.w
+// $DER.aimc.strayLoad.phi -> aimc.inertiaRotor.w
+// aimc.rs.resistor[3].v -> aimc.rs.v[3]
+// aimc.rs.resistor[2].v -> aimc.rs.v[2]
+// aimc.rs.resistor[1].v -> aimc.rs.v[1]
+// aimc.powerBalance.lossPowerStatorWinding -> aimc.thermalAmbient.Q_flowStatorWinding
+// aimc.powerBalance.lossPowerTotal -> aimc.thermalAmbient.Q_flowTotal
+// aimc.friction.w -> aimc.inertiaRotor.w
+// $DER.aimc.friction.phi -> aimc.inertiaRotor.w
+// aimc.inertiaStator.flange_a.tau -> 0.0
+// aimc.fixed.flange.tau -> -aimc.tauElectrical
+// aimc.wMechanical -> aimc.inertiaRotor.w
+// $DER.aimc.phiMechanical -> aimc.inertiaRotor.w
+// $DER.ground.p.i -> 0.0
+// $DER.aimc.airGapS.psi_mr[1] -> aimc.airGapS.spacePhasor_r.v_[1]
+// $DER.aimc.airGapS.psi_mr[2] -> aimc.airGapS.spacePhasor_r.v_[2]
+// $DER.aimc.airGapS.psi_ms[1] -> aimc.airGapS.spacePhasor_s.v_[1]
+// $DER.aimc.airGapS.psi_ms[2] -> aimc.airGapS.spacePhasor_s.v_[2]
+//
+// ExtendReplacements: (23)
+// ========================================
+// ground -> 0.0
+// ground.p -> 0.0
+// aimc -> 0.0
+// aimc.airGapS -> 0.0
+// aimc.airGapS.RotationMatrix -> 0.0
+// aimc.strayLoad -> 0.0
+// $DER -> 0.0
+// $DER.aimc -> 0.0
+// $DER.aimc.strayLoad -> 0.0
+// aimc.rs -> 0.0
+// aimc.rs.resistor -> 0.0
+// aimc.powerBalance -> 0.0
+// aimc.friction -> 0.0
+// $DER.aimc.friction -> 0.0
+// aimc.inertiaStator -> 0.0
+// aimc.inertiaStator.flange_a -> 0.0
+// aimc.fixed -> 0.0
+// aimc.fixed.flange -> 0.0
+// $DER.ground -> 0.0
+// $DER.ground.p -> 0.0
+// $DER.aimc.airGapS -> 0.0
+// $DER.aimc.airGapS.psi_mr -> 0.0
+// $DER.aimc.airGapS.psi_ms -> 0.0
+//
+// Unreplaceable Crefs: (2)
+// ========================================
+// $res2.$pDERLSJac2.dummyVarLSJac2
+// $res1.$pDERLSJac2.dummyVarLSJac2
+//
+// Unreplaceable Crefs: (5)
+// ========================================
+// $res5.$pDERLSJac3.dummyVarLSJac3
+// $res4.$pDERLSJac3.dummyVarLSJac3
+// $res3.$pDERLSJac3.dummyVarLSJac3
+// $res2.$pDERLSJac3.dummyVarLSJac3
+// $res1.$pDERLSJac3.dummyVarLSJac3
+//
+// ########################################
+// dumpindxdae
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: star.pin_n.i:VARIABLE(flow=true unit = "A" )  "Current flowing into the pin" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): star.pin_n.i = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: ground.p.i:DUMMY_STATE(flow=true unit = "A" )  "Current flowing into the pin" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): ground.p.i = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  "Cut torque in the flange" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.ground.p.i:DUMMY_DER(flow=true fixed = false )  "Current flowing into the pin" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.ground.p.i = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.phiMechanical:DUMMY_DER(fixed = false )  "Mechanical angle of rotor against stator" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.phiMechanical = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.wMechanical:VARIABLE(start = 0.0 unit = "rad/s" fixed = false )  "Mechanical angular velocity of rotor against stator" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.wMechanical = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.friction.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.friction.phi = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.friction.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.friction.w = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.aimc.strayLoad.phi:DUMMY_DER(fixed = false )  "Angle between shaft and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.aimc.strayLoad.phi = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: aimc.strayLoad.w:VARIABLE(unit = "rad/s" fixed = false )  "Relative angular velocity of flange and support" type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): aimc.strayLoad.w = aimc.inertiaRotor.w   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (93)
+// ========================================
+// 1: sinevoltage1.i[3]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs" type: Real  [3]
+// 2: sinevoltage1.i[2]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs" type: Real  [3]
+// 3: sinevoltage1.i[1]:DUMMY_STATE(unit = "A" )  "Currents flowing into positive plugs" type: Real  [3]
+// 4: sinevoltage1.v[3]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 5: sinevoltage1.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 6: sinevoltage1.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 7: speedSensor.flange.phi:STATE(1,aimc.inertiaRotor.w)(flow=false unit = "rad" )  "Absolute rotation angle of flange" type: Real 
+// 8: aimc.thermalAmbient.Q_flowTotal:VARIABLE(unit = "W" final = true )  type: Real 
+// 9: aimc.thermalAmbient.Q_flowRotorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of rotor (squirrel cage)" type: Real 
+// 10: aimc.thermalAmbient.Q_flowStatorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of stator windings" type: Real 
+// 11: aimc.airGapS.i_ms[2]:DUMMY_STATE(unit = "A" )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 12: aimc.airGapS.i_ms[1]:DUMMY_STATE(unit = "A" )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 13: aimc.airGapS.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 14: aimc.airGapS.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 15: aimc.airGapS.spacePhasor_s.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 16: aimc.airGapS.spacePhasor_s.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 17: aimc.airGapS.RotationMatrix[2,2]:DUMMY_STATE()  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 18: aimc.airGapS.psi_mr[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real  [2]
+// 19: aimc.airGapS.psi_mr[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real  [2]
+// 20: aimc.airGapS.psi_ms[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real  [2]
+// 21: aimc.airGapS.psi_ms[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real  [2]
+// 22: aimc.airGapS.gamma:DUMMY_STATE(unit = "rad" )  "Rotor displacement angle" type: Real 
+// 23: aimc.strayLoad.iRMS:VARIABLE(unit = "A" )  type: Real 
+// 24: aimc.strayLoad.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real 
+// 25: aimc.spacePhasorS.i[3]:DUMMY_STATE(unit = "A" )  "Instantaneous phase currents" type: Real  [3]
+// 26: aimc.spacePhasorS.i[2]:DUMMY_STATE(unit = "A" )  "Instantaneous phase currents" type: Real  [3]
+// 27: aimc.spacePhasorS.i[1]:DUMMY_STATE(unit = "A" )  "Instantaneous phase currents" type: Real  [3]
+// 28: aimc.spacePhasorS.v[3]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real  [3]
+// 29: aimc.spacePhasorS.v[2]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real  [3]
+// 30: aimc.spacePhasorS.v[1]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real  [3]
+// 31: aimc.lszero.v:VARIABLE(unit = "V" )  "Voltage drop between the two pins (= p.v - n.v)" type: Real 
+// 32: aimc.lssigma.spacePhasor_a.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 33: aimc.lssigma.spacePhasor_a.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real  [2]
+// 34: aimc.lssigma.i_[2]:DUMMY_STATE(unit = "A" )  type: Real  [2]
+// 35: aimc.lssigma.i_[1]:DUMMY_STATE(unit = "A" )  type: Real  [2]
+// 36: aimc.lssigma.v_[2]:VARIABLE(unit = "V" )  type: Real  [2]
+// 37: aimc.lssigma.v_[1]:VARIABLE(unit = "V" )  type: Real  [2]
+// 38: aimc.rs.resistor[3].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real  [3]
+// 39: aimc.rs.resistor[2].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real  [3]
+// 40: aimc.rs.resistor[1].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real  [3]
+// 41: aimc.rs.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real  [3]
+// 42: aimc.rs.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real  [3]
+// 43: aimc.rs.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real  [3]
+// 44: aimc.rs.v[3]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 45: aimc.rs.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 46: aimc.rs.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real  [3]
+// 47: aimc.plug_sn.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real  [3]
+// 48: aimc.idq_rr[2]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real  [2]
+// 49: aimc.idq_rr[1]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real  [2]
+// 50: aimc.idq_rs[2]:DUMMY_STATE(unit = "A" )  "Rotor space phasor current / stator fixed frame" type: Real  [2]
+// 51: aimc.idq_rs[1]:DUMMY_STATE(unit = "A" )  "Rotor space phasor current / stator fixed frame" type: Real  [2]
+// 52: aimc.idq_sr[2]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real  [2]
+// 53: aimc.idq_sr[1]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real  [2]
+// 54: aimc.i_0_s:DUMMY_STATE(start = 0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current" type: Real 
+// 55: aimc.vs[3]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real  [3]
+// 56: aimc.vs[2]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real  [3]
+// 57: aimc.vs[1]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real  [3]
+// 58: aimc.powerBalance.powerInertiaRotor:VARIABLE(unit = "W" final = true )  "Rotor inertia power" type: Real 
+// 59: aimc.powerBalance.powerMechanical:VARIABLE(unit = "W" final = true )  "Mechanical power" type: Real 
+// 60: aimc.powerBalance.powerStator:VARIABLE(unit = "W" final = true )  "Electrical power (stator)" type: Real 
+// 61: aimc.friction.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real 
+// 62: aimc.inertiaRotor.a:VARIABLE(unit = "rad/s2" )  "Absolute angular acceleration of component (= der(w))" type: Real 
+// 63: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(start = 0.0 unit = "rad/s" )  "Absolute angular velocity of component (= der(phi))" type: Real 
+// 64: aimc.tauElectrical:VARIABLE(unit = "N.m" )  "Electromagnetic torque" type: Real 
+// 65: aimc.phiMechanical:DUMMY_STATE(start = 0.0 unit = "rad" )  "Mechanical angle of rotor against stator" type: Real 
+// 66: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle" type: Real 
+// 67: $DER.aimc.airGapS.RotationMatrix[2,1]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 68: $DER.aimc.airGapS.RotationMatrix[2,2]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 69: $DER.aimc.idq_rs[1]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real  [2]
+// 70: $DER.aimc.idq_rs[2]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real  [2]
+// 71: $DER.aimc.airGapS.i_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 72: $DER.aimc.airGapS.i_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 73: $DER.sinevoltage1.i[1]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real  [3]
+// 74: $DER.sinevoltage1.i[2]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real  [3]
+// 75: $DER.sinevoltage1.i[3]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real  [3]
+// 76: $DER.aimc.lssigma.i_[1]:DUMMY_DER(fixed = false )  type: Real  [2]
+// 77: $DER.aimc.lssigma.i_[2]:DUMMY_DER(fixed = false )  type: Real  [2]
+// 78: $DER.aimc.spacePhasorS.i[1]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real  [3]
+// 79: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real  [3]
+// 80: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real  [3]
+// 81: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current" type: Real 
+// 82: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 83: aimc.airGapS.RotationMatrix[2,1]:DUMMY_STATE(fixed = false )  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 84: aimc.rs.resistor[3].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 85: aimc.rs.resistor[2].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 86: aimc.rs.resistor[1].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 87: aimc.powerBalance.lossPowerStatorWinding:VARIABLE(unit = "W" fixed = false final = true )  "Stator copper losses" type: Real 
+// 88: aimc.powerBalance.lossPowerTotal:VARIABLE(unit = "W" fixed = false final = true )  "Total loss power" type: Real 
+// 89: aimc.fixed.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = false )  "Cut torque in the flange" type: Real 
+// 90: $DER.aimc.airGapS.psi_mr[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real  [2]
+// 91: $DER.aimc.airGapS.psi_mr[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real  [2]
+// 92: $DER.aimc.airGapS.psi_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real  [2]
+// 93: $DER.aimc.airGapS.psi_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real  [2]
+//
+//
+// Equations (93, 93)
+// ========================================
+// 1/1 (1): aimc.phiMechanical = speedSensor.flange.phi - aimc.fixed.phi0   [binding |0|0|0|0|]
+// 2/2 (1): aimc.friction.phi = speedSensor.flange.phi - aimc.fixed.phi0   [dynamic |0|0|0|0|]
+// 3/3 (1): aimc.strayLoad.phi = speedSensor.flange.phi - aimc.fixed.phi0   [dynamic |0|0|0|0|]
+// 4/4 (1): aimc.airGapS.gamma = /*Real*/(aimc.airGapS.p) * (speedSensor.flange.phi - aimc.fixed.phi0)   [dynamic |0|0|0|0|]
+// 5/5 (1): aimc.airGapS.RotationMatrix[2,2] = cos(aimc.airGapS.gamma)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse1 = sin(aimc.airGapS.gamma)   [unknown |0|0|0|0|]
+// 7/7 (1): aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] - $cse1 * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 8/8 (1): aimc.lssigma.i_[2] = $cse1 * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 9/9 (1): aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] - $cse1 * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 10/10 (1): aimc.airGapS.i_ms[1] = aimc.lssigma.i_[1] + aimc.idq_rs[1]   [dynamic |0|0|0|0|]
+// 11/11 (1): aimc.idq_rs[2] = $cse1 * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 12/12 (1): aimc.airGapS.i_ms[2] = aimc.lssigma.i_[2] + aimc.idq_rs[2]   [dynamic |0|0|0|0|]
+// 13/13 (1): aimc.airGapS.psi_ms[2] = aimc.airGapS.L[2,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 14/14 (1): aimc.airGapS.psi_ms[1] = aimc.airGapS.L[1,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 15/15 (1): aimc.airGapS.psi_mr[2] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[2] - $cse1 * aimc.airGapS.psi_ms[1]   [dynamic |0|0|0|0|]
+// 16/16 (1): aimc.airGapS.psi_mr[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[1] + $cse1 * aimc.airGapS.psi_ms[2]   [dynamic |0|0|0|0|]
+// 17/17 (1): (-sinevoltage1.i[1]) - sinevoltage1.i[3] - sinevoltage1.i[2] = 0.0   [dynamic |0|0|0|0|]
+// 18/18 (1): aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 19/19 (1): aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 20/20 (1): aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 21/21 (1): aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 22/22 (1): aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 23/23 (1): aimc.i_0_s = (aimc.spacePhasorS.i[1] + aimc.spacePhasorS.i[2] + aimc.spacePhasorS.i[3]) / (-3.0)   [dynamic |0|0|0|0|]
+// 24/24 (1): sinevoltage1.v[3] = sinevoltage1.sineVoltage[3].signalSource.offset + (if time < sinevoltage1.sineVoltage[3].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[3].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[3].signalSource.freqHz * (time - sinevoltage1.sineVoltage[3].signalSource.startTime) + sinevoltage1.sineVoltage[3].signalSource.phase))   [dynamic |0|0|0|0|]
+// 25/25 (1): sinevoltage1.v[2] = sinevoltage1.sineVoltage[2].signalSource.offset + (if time < sinevoltage1.sineVoltage[2].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[2].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[2].signalSource.freqHz * (time - sinevoltage1.sineVoltage[2].signalSource.startTime) + sinevoltage1.sineVoltage[2].signalSource.phase))   [dynamic |0|0|0|0|]
+// 26/26 (1): sinevoltage1.v[1] = sinevoltage1.sineVoltage[1].signalSource.offset + (if time < sinevoltage1.sineVoltage[1].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[1].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[1].signalSource.freqHz * (time - sinevoltage1.sineVoltage[1].signalSource.startTime) + sinevoltage1.sineVoltage[1].signalSource.phase))   [dynamic |0|0|0|0|]
+// 27/27 (1): der(speedSensor.flange.phi) = aimc.inertiaRotor.w   [dynamic |0|0|0|0|]
+// 28/28 (1): aimc.thermalAmbient.Q_flowRotorWinding = 1.5 * aimc.squirrelCageR.Rr_actual * (aimc.idq_rr[1] ^ 2.0 + aimc.idq_rr[2] ^ 2.0)   [dynamic |0|0|0|0|]
+// 29/29 (1): aimc.tauElectrical = 1.5 * /*Real*/(aimc.airGapS.p) * (aimc.lssigma.i_[2] * aimc.airGapS.psi_ms[1] - aimc.lssigma.i_[1] * aimc.airGapS.psi_ms[2])   [dynamic |0|0|0|0|]
+// 30/30 (1): $DER.aimc.airGapS.gamma = /*Real*/(aimc.airGapS.p) * aimc.inertiaRotor.w   [dynamic |0|0|0|0|]
+// 31/31 (1): $DER.aimc.airGapS.RotationMatrix[2,2] = (-$cse1) * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
+// 32/32 (1): $DER.aimc.airGapS.RotationMatrix[2,1] = aimc.airGapS.RotationMatrix[2,2] * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
+// 33/33 (1): aimc.strayLoad.iRMS = sqrt(sinevoltage1.i[1] ^ 2.0 / 3.0 + sinevoltage1.i[2] ^ 2.0 / 3.0 + sinevoltage1.i[3] ^ 2.0 / 3.0)   [binding |0|0|0|0|]
+// 34/34 (1): aimc.rs.v[3] = aimc.rs.resistor[3].R_actual * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 35/35 (1): aimc.rs.resistor[3].LossPower = aimc.rs.v[3] * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 36/36 (1): aimc.rs.plug_n.pin[3].v = (-sinevoltage1.v[3]) - aimc.rs.v[3]   [dynamic |0|0|0|0|]
+// 37/37 (1): aimc.rs.v[2] = aimc.rs.resistor[2].R_actual * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 38/38 (1): aimc.rs.resistor[2].LossPower = aimc.rs.v[2] * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 39/39 (1): aimc.rs.plug_n.pin[2].v = (-sinevoltage1.v[2]) - aimc.rs.v[2]   [dynamic |0|0|0|0|]
+// 40/40 (1): aimc.rs.v[1] = aimc.rs.resistor[1].R_actual * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 41/41 (1): aimc.rs.resistor[1].LossPower = aimc.rs.v[1] * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 42/42 (1): aimc.thermalAmbient.Q_flowStatorWinding = aimc.rs.resistor[1].LossPower + aimc.rs.resistor[2].LossPower + aimc.rs.resistor[3].LossPower   [dynamic |0|0|0|0|]
+// 43/43 (1): aimc.thermalAmbient.Q_flowTotal = aimc.thermalAmbient.Q_flowStatorWinding + aimc.thermalAmbient.Q_flowRotorWinding   [binding |0|0|0|0|]
+// 44/44 (1): aimc.rs.plug_n.pin[1].v = (-sinevoltage1.v[1]) - aimc.rs.v[1]   [dynamic |0|0|0|0|]
+// 45/45 (1): aimc.inertiaRotor.a = (aimc.tauElectrical + const.k) / aimc.inertiaRotor.J   [dynamic |0|0|0|0|]
+// 46/46 (1): aimc.powerBalance.powerInertiaRotor = aimc.inertiaRotor.J * aimc.inertiaRotor.a * aimc.inertiaRotor.w   [binding |0|0|0|0|]
+// 47/47 (1): der(aimc.inertiaRotor.w) = aimc.inertiaRotor.a   [dynamic |0|0|0|0|]
+// 48/48 (1): aimc.powerBalance.powerMechanical = (-aimc.inertiaRotor.w) * const.k   [binding |0|0|0|0|]
+// 49/49 (1): (-$DER.sinevoltage1.i[1]) - $DER.sinevoltage1.i[2] - $DER.sinevoltage1.i[3] = 0.0   [dynamic |0|0|0|0|]
+// 50/50 (1): $DER.aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 51/51 (1): $DER.aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 52/52 (1): $DER.aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 53/53 (1): (-3.0) * $DER.aimc.i_0_s = $DER.aimc.spacePhasorS.i[1] + $DER.aimc.spacePhasorS.i[2] + $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 54/54 (1): (-aimc.lszero.L) * $DER.aimc.i_0_s = aimc.lszero.v   [dynamic |0|0|0|0|]
+// 55/55 (1): 3.0 * aimc.lszero.v = aimc.spacePhasorS.v[1] + aimc.spacePhasorS.v[2] + aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 56/56 (1): aimc.lssigma.spacePhasor_a.v_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 57/57 (1): aimc.lssigma.v_[2] = aimc.lssigma.spacePhasor_a.v_[2] - aimc.airGapS.spacePhasor_s.v_[2]   [dynamic |0|0|0|0|]
+// 58/58 (1): aimc.airGapS.spacePhasor_r.v_[2] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.spacePhasor_s.v_[2] + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[2] + (-$cse1) * aimc.airGapS.spacePhasor_s.v_[1] - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.airGapS.psi_ms[1]   [dynamic |0|0|0|0|]
+// 59/59 (1): aimc.airGapS.spacePhasor_r.v_[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.spacePhasor_s.v_[1] + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[1] + $cse1 * aimc.airGapS.spacePhasor_s.v_[2] + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.airGapS.psi_ms[2]   [dynamic |0|0|0|0|]
+// 60/60 (1): aimc.airGapS.spacePhasor_r.v_[1] = (-aimc.idq_rr[1]) * aimc.squirrelCageR.Rr_actual - der(aimc.idq_rr[1]) * aimc.squirrelCageR.Lrsigma   [dynamic |0|0|0|0|]
+// 61/61 (1): $DER.aimc.idq_rs[2] = $cse1 * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 62/62 (1): $DER.aimc.airGapS.i_ms[2] = $DER.aimc.lssigma.i_[2] + $DER.aimc.idq_rs[2]   [dynamic |0|0|0|0|]
+// 63/63 (1): aimc.lssigma.v_[2] = aimc.lssigma.L[2] * $DER.aimc.lssigma.i_[2]   [dynamic |0|0|0|0|]
+// 64/64 (1): $DER.aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] + (-$cse1) * der(aimc.idq_rr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 65/65 (1): aimc.airGapS.spacePhasor_r.v_[2] = (-aimc.idq_rr[2]) * aimc.squirrelCageR.Rr_actual - der(aimc.idq_rr[2]) * aimc.squirrelCageR.Lrsigma   [dynamic |0|0|0|0|]
+// 66/66 (1): aimc.airGapS.spacePhasor_s.v_[1] = aimc.airGapS.L[1,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 67/67 (1): aimc.airGapS.spacePhasor_s.v_[2] = aimc.airGapS.L[2,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 68/68 (1): $DER.aimc.airGapS.i_ms[1] = $DER.aimc.lssigma.i_[1] + $DER.aimc.idq_rs[1]   [dynamic |0|0|0|0|]
+// 69/69 (1): aimc.lssigma.v_[1] = aimc.lssigma.spacePhasor_a.v_[1] - aimc.airGapS.spacePhasor_s.v_[1]   [dynamic |0|0|0|0|]
+// 70/70 (1): aimc.lssigma.v_[1] = aimc.lssigma.L[1] * $DER.aimc.lssigma.i_[1]   [dynamic |0|0|0|0|]
+// 71/71 (1): aimc.lssigma.spacePhasor_a.v_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 72/72 (1): aimc.spacePhasorS.v[3] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[3].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 73/73 (1): aimc.spacePhasorS.v[2] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[2].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 74/74 (1): aimc.spacePhasorS.v[1] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[1].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 75/75 (1): $DER.aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 76/76 (1): $DER.aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 77/77 (1): aimc.vs[1] = (-sinevoltage1.v[1]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 78/78 (1): aimc.vs[2] = (-sinevoltage1.v[2]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 79/79 (1): aimc.vs[3] = (-sinevoltage1.v[3]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 80/80 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower(aimc.vs, sinevoltage1.i)   [unknown |0|0|0|0|]
+// 81/81 (1): $DER.aimc.lssigma.i_[2] = $cse1 * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 82/82 (1): $DER.aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] + (-$cse1) * der(aimc.idq_sr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 83/83 (1): aimc.airGapS.RotationMatrix[2,1] = $cse1   [binding |0|0|0|0|]
+// 84/84 (1): aimc.rs.resistor[3].v = aimc.rs.v[3]   [binding |0|0|0|0|]
+// 85/85 (1): aimc.rs.resistor[2].v = aimc.rs.v[2]   [binding |0|0|0|0|]
+// 86/86 (1): aimc.rs.resistor[1].v = aimc.rs.v[1]   [binding |0|0|0|0|]
+// 87/87 (1): aimc.powerBalance.lossPowerStatorWinding = aimc.thermalAmbient.Q_flowStatorWinding   [binding |0|0|0|0|]
+// 88/88 (1): aimc.powerBalance.lossPowerTotal = aimc.thermalAmbient.Q_flowTotal   [binding |0|0|0|0|]
+// 89/89 (1): aimc.fixed.flange.tau = -aimc.tauElectrical   [binding |0|0|0|0|]
+// 90/90 (1): $DER.aimc.airGapS.psi_mr[1] = aimc.airGapS.spacePhasor_r.v_[1]   [binding |0|0|0|0|]
+// 91/91 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]   [binding |0|0|0|0|]
+// 92/92 (1): $DER.aimc.airGapS.psi_ms[1] = aimc.airGapS.spacePhasor_s.v_[1]   [binding |0|0|0|0|]
+// 93/93 (1): $DER.aimc.airGapS.psi_ms[2] = aimc.airGapS.spacePhasor_s.v_[2]   [binding |0|0|0|0|]
+//
+//
+// Simple Equations (4, 0)
+// ========================================
+// 1/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[1].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[1].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic |0|0|0|0|]
+// 2/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[2].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[2].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic |0|0|0|0|]
+// 3/1 (0): algorithm
+//   assert(1.0 + aimc.rs.resistor[3].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[3].T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic |0|0|0|0|]
+// 4/1 (0): algorithm
+//   assert(1.0 + aimc.squirrelCageR.alpha * (aimc.thermalAmbient.constTr.k - aimc.squirrelCageR.T_ref) >= 1e-15, "Temperature outside scope of model!");
+//    [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 93 variables and equations
+// var 1 is solved in eqn 17
+// var 2 is solved in eqn 18
+// var 3 is solved in eqn 22
+// var 4 is solved in eqn 24
+// var 5 is solved in eqn 25
+// var 6 is solved in eqn 26
+// var 7 is solved in eqn 27
+// var 8 is solved in eqn 43
+// var 9 is solved in eqn 28
+// var 10 is solved in eqn 42
+// var 11 is solved in eqn 12
+// var 12 is solved in eqn 10
+// var 13 is solved in eqn 58
+// var 14 is solved in eqn 60
+// var 15 is solved in eqn 59
+// var 16 is solved in eqn 66
+// var 17 is solved in eqn 5
+// var 18 is solved in eqn 15
+// var 19 is solved in eqn 16
+// var 20 is solved in eqn 13
+// var 21 is solved in eqn 14
+// var 22 is solved in eqn 4
+// var 23 is solved in eqn 33
+// var 24 is solved in eqn 3
+// var 25 is solved in eqn 20
+// var 26 is solved in eqn 21
+// var 27 is solved in eqn 19
+// var 28 is solved in eqn 72
+// var 29 is solved in eqn 73
+// var 30 is solved in eqn 56
+// var 31 is solved in eqn 55
+// var 32 is solved in eqn 57
+// var 33 is solved in eqn 71
+// var 34 is solved in eqn 8
+// var 35 is solved in eqn 7
+// var 36 is solved in eqn 63
+// var 37 is solved in eqn 69
+// var 38 is solved in eqn 35
+// var 39 is solved in eqn 38
+// var 40 is solved in eqn 41
+// var 41 is solved in eqn 36
+// var 42 is solved in eqn 39
+// var 43 is solved in eqn 44
+// var 44 is solved in eqn 34
+// var 45 is solved in eqn 37
+// var 46 is solved in eqn 40
+// var 47 is solved in eqn 74
+// var 48 is solved in eqn 65
+// var 49 is solved in eqn 61
+// var 50 is solved in eqn 11
+// var 51 is solved in eqn 9
+// var 52 is solved in eqn 81
+// var 53 is solved in eqn 82
+// var 54 is solved in eqn 23
+// var 55 is solved in eqn 79
+// var 56 is solved in eqn 78
+// var 57 is solved in eqn 77
+// var 58 is solved in eqn 46
+// var 59 is solved in eqn 48
+// var 60 is solved in eqn 80
+// var 61 is solved in eqn 2
+// var 62 is solved in eqn 45
+// var 63 is solved in eqn 47
+// var 64 is solved in eqn 29
+// var 65 is solved in eqn 1
+// var 66 is solved in eqn 30
+// var 67 is solved in eqn 32
+// var 68 is solved in eqn 31
+// var 69 is solved in eqn 64
+// var 70 is solved in eqn 62
+// var 71 is solved in eqn 68
+// var 72 is solved in eqn 67
+// var 73 is solved in eqn 75
+// var 74 is solved in eqn 76
+// var 75 is solved in eqn 49
+// var 76 is solved in eqn 70
+// var 77 is solved in eqn 51
+// var 78 is solved in eqn 53
+// var 79 is solved in eqn 52
+// var 80 is solved in eqn 50
+// var 81 is solved in eqn 54
+// var 82 is solved in eqn 6
+// var 83 is solved in eqn 83
+// var 84 is solved in eqn 84
+// var 85 is solved in eqn 85
+// var 86 is solved in eqn 86
+// var 87 is solved in eqn 87
+// var 88 is solved in eqn 88
+// var 89 is solved in eqn 89
+// var 90 is solved in eqn 90
+// var 91 is solved in eqn 91
+// var 92 is solved in eqn 92
+// var 93 is solved in eqn 93
+//
+//
+// StrongComponents
+// ========================================
+// {48:59}
+// {30:66}
+// {28:9}
+// {27:7}
+// {26:6}
+// {25:5}
+// {24:4}
+// {4:22}
+// {5:17}
+// {32:67}
+// {6:82}
+// {7:35}
+// {8:34}
+// {{{22:3}, {21:25}, {20:1}, {18:2}}
+// ,{17, 19:26, 27}} Size: 2 linear
+// {37:45}
+// {39:42}
+// {85:85}
+// {38:39}
+// {34:44}
+// {36:41}
+// {84:84}
+// {35:38}
+// {33:23}
+// {40:46}
+// {44:43}
+// {86:86}
+// {41:40}
+// {42:10}
+// {43:8}
+// {88:88}
+// {87:87}
+// {23:54}
+// {9:51}
+// {10:12}
+// {11:50}
+// {12:11}
+// {13:20}
+// {14:21}
+// {29:64}
+// {45:62}
+// {46:58}
+// {47:63}
+// {89:89}
+// {15:18}
+// {16:19}
+// {31:68}
+// {{{74:30}, {73:29}, {72:28}, {56:32}, {71:33}, {55:31}, {54:81}, {69:37}, {70:76}, {59:14}, {58:13}, {60:49}, {65:48}, {64:69}, {61:70}, {68:71}, {67:72}, {57:36}, {63:77}, {75:73}, {51:80}, {76:74}, {50:75}}
+// ,{62, 53, 49, 52, 66:79, 78, 15, 16, 47}} Size: 5 linear
+// {91:91}
+// {93:93}
+// {90:90}
+// {77:57}
+// {78:56}
+// {79:55}
+// {80:60}
+// {92:92}
+// {82, 81:52, 53} Size: 2 Jacobian Linear
+// {83:83}
+// {3:24}
+// {2:61}
+// {1:65}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (259)
+// ========================================
+// 1: aimc.friction.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = -0.0  "Cut torque in the flange" type: Real 
+// 2: aimc.friction.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 3: aimc.statorCore.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 4: aimc.strayLoad.heatPort.Q_flow:VARIABLE(flow=true unit = "W" fixed = true )  = -0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 5: aimc.strayLoad.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = -0.0  "Cut torque in the flange" type: Real 
+// 6: sinevoltage1.freqHz[3]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 7: sinevoltage1.sineVoltage[3].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[3]  "Frequency of sine wave" type: Real  [3]
+// 8: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.188790204786391  "Phases of sine waves" type: Real  [3]
+// 9: sinevoltage1.sineVoltage[3].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[3]  "Phase of sine wave" type: Real  [3]
+// 10: sinevoltage1.V[3]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 11: sinevoltage1.sineVoltage[3].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[3]  "Amplitude of sine wave" type: Real  [3]
+// 12: sinevoltage1.sineVoltage[3].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 13: sinevoltage1.startTime[3]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 14: sinevoltage1.sineVoltage[3].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[3]  "Time offset" type: Real  [3]
+// 15: sinevoltage1.sineVoltage[3].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[3].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 16: sinevoltage1.offset[3]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 17: sinevoltage1.sineVoltage[3].offset:PARAM(unit = "V" )  = sinevoltage1.offset[3]  "Voltage offset" type: Real  [3]
+// 18: sinevoltage1.sineVoltage[3].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[3].offset  "Offset of output signal" type: Real  [3]
+// 19: sinevoltage1.sineVoltage[3].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[3].phase  "Phase of sine wave" type: Real  [3]
+// 20: sinevoltage1.sineVoltage[3].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[3].freqHz  "Frequency of sine wave" type: Real  [3]
+// 21: sinevoltage1.sineVoltage[3].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[3].V  "Amplitude of sine wave" type: Real  [3]
+// 22: sinevoltage1.freqHz[2]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 23: sinevoltage1.sineVoltage[2].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[2]  "Frequency of sine wave" type: Real  [3]
+// 24: sinevoltage1.phase[2]:PARAM(unit = "rad" )  = -2.094395102393195  "Phases of sine waves" type: Real  [3]
+// 25: sinevoltage1.sineVoltage[2].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[2]  "Phase of sine wave" type: Real  [3]
+// 26: sinevoltage1.V[2]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 27: sinevoltage1.sineVoltage[2].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[2]  "Amplitude of sine wave" type: Real  [3]
+// 28: sinevoltage1.sineVoltage[2].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 29: sinevoltage1.startTime[2]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 30: sinevoltage1.sineVoltage[2].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[2]  "Time offset" type: Real  [3]
+// 31: sinevoltage1.sineVoltage[2].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[2].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 32: sinevoltage1.offset[2]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 33: sinevoltage1.sineVoltage[2].offset:PARAM(unit = "V" )  = sinevoltage1.offset[2]  "Voltage offset" type: Real  [3]
+// 34: sinevoltage1.sineVoltage[2].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[2].offset  "Offset of output signal" type: Real  [3]
+// 35: sinevoltage1.sineVoltage[2].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[2].phase  "Phase of sine wave" type: Real  [3]
+// 36: sinevoltage1.sineVoltage[2].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[2].freqHz  "Frequency of sine wave" type: Real  [3]
+// 37: sinevoltage1.sineVoltage[2].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[2].V  "Amplitude of sine wave" type: Real  [3]
+// 38: sinevoltage1.freqHz[1]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real  [3]
+// 39: sinevoltage1.sineVoltage[1].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[1]  "Frequency of sine wave" type: Real  [3]
+// 40: sinevoltage1.phase[1]:PARAM(unit = "rad" )  = -0.0  "Phases of sine waves" type: Real  [3]
+// 41: sinevoltage1.sineVoltage[1].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[1]  "Phase of sine wave" type: Real  [3]
+// 42: sinevoltage1.V[1]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real  [3]
+// 43: sinevoltage1.sineVoltage[1].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[1]  "Amplitude of sine wave" type: Real  [3]
+// 44: sinevoltage1.sineVoltage[1].signalSource.pi:CONST(protected = true )  = 3.141592653589793  type: Real  [3]
+// 45: sinevoltage1.startTime[1]:PARAM(unit = "s" )  = 0.0  "Time offsets" type: Real  [3]
+// 46: sinevoltage1.sineVoltage[1].startTime:PARAM(unit = "s" )  = sinevoltage1.startTime[1]  "Time offset" type: Real  [3]
+// 47: sinevoltage1.sineVoltage[1].signalSource.startTime:PARAM(unit = "s" )  = sinevoltage1.sineVoltage[1].startTime  "Output = offset for time < startTime" type: Real  [3]
+// 48: sinevoltage1.offset[1]:PARAM(unit = "V" )  = 0.0  "Voltage offsets" type: Real  [3]
+// 49: sinevoltage1.sineVoltage[1].offset:PARAM(unit = "V" )  = sinevoltage1.offset[1]  "Voltage offset" type: Real  [3]
+// 50: sinevoltage1.sineVoltage[1].signalSource.offset:PARAM()  = sinevoltage1.sineVoltage[1].offset  "Offset of output signal" type: Real  [3]
+// 51: sinevoltage1.sineVoltage[1].signalSource.phase:PARAM(unit = "rad" )  = sinevoltage1.sineVoltage[1].phase  "Phase of sine wave" type: Real  [3]
+// 52: sinevoltage1.sineVoltage[1].signalSource.freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.sineVoltage[1].freqHz  "Frequency of sine wave" type: Real  [3]
+// 53: sinevoltage1.sineVoltage[1].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[1].V  "Amplitude of sine wave" type: Real  [3]
+// 54: sinevoltage1.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 55: sinevoltage1.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 56: sinevoltage1.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 57: const.k:PARAM(start = 1.0 )  = -15.0  "Constant output value" type: Real 
+// 58: torque.useSupport:PARAM(final = true )  = false  "= true, if support flange enabled, otherwise implicitly grounded" type: Boolean 
+// 59: star.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 60: star.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 61: aimc.TrOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of rotor resistance" type: Real 
+// 62: aimc.thermalAmbient.Tr:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TrOperational  "Temperature of rotor (squirrel cage)" type: Real 
+// 63: aimc.thermalAmbient.constTr.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Tr  "Constant output value" type: Real 
+// 64: aimc.TsOperational:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Operational temperature of stator resistance" type: Real 
+// 65: aimc.thermalAmbient.Ts:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 final = true )  = aimc.TsOperational  "Temperature of stator windings" type: Real 
+// 66: aimc.thermalAmbient.constTs.k:PARAM(start = 1.0 final = true )  = aimc.thermalAmbient.Ts  "Constant output value" type: Real 
+// 67: aimc.thermalAmbient.thermalCollectorStator.m:PARAM(min = 1 final = true )  = 3  "Number of collected heat flows" type: Integer 
+// 68: aimc.thermalAmbient.temperatureFriction.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 69: aimc.thermalAmbient.temperatureStrayLoad.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 70: aimc.thermalAmbient.temperatureRotorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 71: aimc.thermalAmbient.temperatureStatorCore.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Fixed temperature at port" type: Real 
+// 72: aimc.thermalAmbient.thermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
+// 73: aimc.thermalAmbient.TDefault:CONST(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = 293.15  "Default temperature" type: Real 
+// 74: aimc.thermalAmbient.useTemperatureInputs:PARAM(final = true )  = false  "If true, temperature inputs are used; else, temperatures are constant" type: Boolean 
+// 75: aimc.thermalAmbient.m:PARAM(final = true )  = 3  "Number of stator phases" type: Integer 
+// 76: aimc.fixed.phi0:PARAM(unit = "rad" )  = 0.0  "Fixed offset angle of housing" type: Real 
+// 77: aimc.TrRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of rotor resistance" type: Real 
+// 78: aimc.alpha20r:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of rotor resistance at 20 degC" type: Real 
+// 79: aimc.squirrelCageR.alpha:PARAM(unit = "1/K" )  = aimc.alpha20r / (1.0 + aimc.alpha20r * (-293.15 + aimc.TrRef))  "Temperature coefficient of resistance at T_ref" type: Real 
+// 80: aimc.squirrelCageR.T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Reference temperature" type: Real 
+// 81: aimc.Rr:PARAM(start = 0.04 unit = "Ohm" )  = 0.4  "Rotor resistance per phase (equivalent three phase winding) at TRef" type: Real 
+// 82: aimc.squirrelCageR.Rr:PARAM(unit = "Ohm" )  = aimc.Rr  "Rotor resistance per phase translated to stator at T_ref" type: Real 
+// 83: aimc.Lrsigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.002  "Rotor stray inductance per phase (equivalent three phase winding)" type: Real 
+// 84: aimc.squirrelCageR.Lrsigma:PARAM(unit = "H" )  = aimc.Lrsigma  "Rotor stray inductance per phase translated to stator" type: Real 
+// 85: aimc.squirrelCageR.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Fixed device temperature if useHeatPort = false" type: Real 
+// 86: aimc.squirrelCageR.useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean 
+// 87: aimc.Lm:PARAM(start = 2.898223593858831 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.06931  "Stator main field inductance per phase" type: Real 
+// 88: aimc.airGapS.Lm:PARAM(unit = "H" )  = aimc.Lm  "Main field inductance" type: Real 
+// 89: aimc.airGapS.L[2,2]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
+// 90: aimc.airGapS.L[2,1]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
+// 91: aimc.airGapS.L[1,2]:PARAM(unit = "H" protected = true )  = 0.0  "Inductance matrix" type: Real  [2,2]
+// 92: aimc.airGapS.L[1,1]:PARAM(unit = "H" protected = true )  = aimc.airGapS.Lm  "Inductance matrix" type: Real  [2,2]
+// 93: aimc.p:PARAM(min = 1 start = 2 )  = 2  "Number of pole pairs (Integer)" type: Integer 
+// 94: aimc.airGapS.p:PARAM(min = 1 )  = aimc.p  "Number of pole pairs" type: Integer 
+// 95: aimc.airGapS.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
+// 96: aimc.internalThermalPort.m:PARAM(flow=false final = true )  = 3  "Number of stator phases" type: Integer 
+// 97: aimc.strayLoad.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
+// 98: aimc.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = 1.0  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
+// 99: aimc.strayLoad.strayLoadParameters.power_w:PARAM(min = 1e-60 )  = aimc.strayLoadParameters.power_w  "Exponent of stray load loss torque w.r.t. angular velocity" type: Real 
+// 100: aimc.fsNominal:PARAM(start = 50.0 unit = "Hz" )  = 50.0  "Nominal frequency" type: Real 
+// 101: aimc.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that PRef refers to" type: Real 
+// 102: aimc.strayLoad.strayLoadParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.strayLoadParameters.wRef  "Reference angular velocity that PRef refers to" type: Real 
+// 103: aimc.strayLoadParameters.IRef:PARAM(min = 1e-60 start = 100.0 unit = "A" )  "Reference RMS current that PRef refers to" type: Real 
+// 104: aimc.strayLoad.strayLoadParameters.IRef:PARAM(min = 1e-60 unit = "A" )  = aimc.strayLoadParameters.IRef  "Reference RMS current that PRef refers to" type: Real 
+// 105: aimc.strayLoad.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
+// 106: aimc.strayLoad.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 107: aimc.strayLoad.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 108: aimc.strayLoad.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 109: aimc.strayLoad.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 110: aimc.spacePhasorS.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 111: aimc.spacePhasorS.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 112: aimc.spacePhasorS.InverseTransformation[3,2]:PARAM(protected = true )  = -0.8660254037844384  type: Real  [3,2]
+// 113: aimc.spacePhasorS.InverseTransformation[3,1]:PARAM(protected = true )  = -0.5000000000000004  type: Real  [3,2]
+// 114: aimc.spacePhasorS.InverseTransformation[2,2]:PARAM(protected = true )  = 0.8660254037844387  type: Real  [3,2]
+// 115: aimc.spacePhasorS.InverseTransformation[2,1]:PARAM(protected = true )  = -0.4999999999999998  type: Real  [3,2]
+// 116: aimc.spacePhasorS.InverseTransformation[1,2]:PARAM(protected = true )  = 0.0  type: Real  [3,2]
+// 117: aimc.spacePhasorS.InverseTransformation[1,1]:PARAM(protected = true )  = 1.0  type: Real  [3,2]
+// 118: aimc.spacePhasorS.TransformationMatrix[2,3]:PARAM(protected = true )  = -0.5773502691896255  type: Real  [2,3]
+// 119: aimc.spacePhasorS.TransformationMatrix[2,2]:PARAM(protected = true )  = 0.5773502691896257  type: Real  [2,3]
+// 120: aimc.spacePhasorS.TransformationMatrix[2,1]:PARAM(protected = true )  = 0.0  type: Real  [2,3]
+// 121: aimc.spacePhasorS.TransformationMatrix[1,3]:PARAM(protected = true )  = -0.3333333333333336  type: Real  [2,3]
+// 122: aimc.spacePhasorS.TransformationMatrix[1,2]:PARAM(protected = true )  = -0.3333333333333331  type: Real  [2,3]
+// 123: aimc.spacePhasorS.TransformationMatrix[1,1]:PARAM(protected = true )  = 0.6666666666666666  type: Real  [2,3]
+// 124: aimc.spacePhasorS.turnsRatio:PARAM()  = 1.0  "Turns ratio" type: Real 
+// 125: aimc.spacePhasorS.pi:CONST()  = 3.141592653589793  type: Real 
+// 126: aimc.spacePhasorS.m:CONST()  = 3  "Number of phases" type: Integer 
+// 127: aimc.statorCore.turnsRatio:PARAM(min = 1e-60 )  = 1.0  "Effective number of stator turns / effective number of rotor turns (if used as rotor core)" type: Real 
+// 128: aimc.statorCoreParameters.m:PARAM()  = 3  "Number of phases (1 for DC, 3 for induction machines)" type: Integer 
+// 129: aimc.statorCore.coreParameters.m:PARAM()  = aimc.statorCoreParameters.m  "Number of phases (1 for DC, 3 for induction machines)" type: Integer 
+// 130: aimc.statorCore.m:PARAM(final = true )  = aimc.statorCore.coreParameters.m  "Number of phases" type: Integer 
+// 131: aimc.statorCoreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal  "Reference angular velocity that reference core losses PRef refer to" type: Real 
+// 132: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 1e-06 * aimc.statorCoreParameters.wRef  type: Real 
+// 133: aimc.statorCore.coreParameters.wMin:PARAM(unit = "rad/s" final = true )  = aimc.statorCoreParameters.wMin  type: Real 
+// 134: aimc.statorCore.coreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
+// 135: aimc.statorCore.coreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
+// 136: aimc.statorCore.coreParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Reference angular velocity that reference core losses PRef refer to" type: Real 
+// 137: aimc.statorCoreParameters.VRef:PARAM(min = 1e-60 start = 100.0 unit = "V" )  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
+// 138: aimc.statorCore.coreParameters.VRef:PARAM(min = 1e-60 unit = "V" )  = aimc.statorCoreParameters.VRef  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real 
+// 139: aimc.statorCore.coreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
+// 140: aimc.statorCore.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 141: aimc.Lssigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.004  "Stator stray inductance per phase" type: Real 
+// 142: aimc.Lszero:PARAM(unit = "H" )  = aimc.Lssigma  "Stator zero sequence inductance" type: Real 
+// 143: aimc.lszero.L:PARAM(start = 1.0 unit = "H" )  = aimc.Lszero  "Inductance" type: Real 
+// 144: aimc.lssigma.L[2]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
+// 145: aimc.lssigma.L[1]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real  [2]
+// 146: aimc.TsRef:PARAM(min = 0.0 start = 293.15 unit = "K" nominal = 300.0 )  "Reference temperature of stator resistance" type: Real 
+// 147: aimc.alpha20s:PARAM(start = 0.0 unit = "1/K" )  "Temperature coefficient of stator resistance at 20 degC" type: Real 
+// 148: aimc.rs.alpha[3]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 149: aimc.rs.resistor[3].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[3]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 150: aimc.rs.T_ref[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 151: aimc.rs.resistor[3].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[3]  "Reference temperature" type: Real  [3]
+// 152: aimc.Rs:PARAM(start = 0.03 unit = "Ohm" )  = 0.435  "Stator resistance per phase at TRef" type: Real 
+// 153: aimc.rs.R[3]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 154: aimc.rs.resistor[3].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[3]  "Resistance at temperature T_ref" type: Real  [3]
+// 155: aimc.rs.T[3]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 156: aimc.rs.resistor[3].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[3]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 157: aimc.rs.resistor[3].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 158: aimc.rs.alpha[2]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 159: aimc.rs.resistor[2].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[2]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 160: aimc.rs.T_ref[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 161: aimc.rs.resistor[2].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[2]  "Reference temperature" type: Real  [3]
+// 162: aimc.rs.R[2]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 163: aimc.rs.resistor[2].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[2]  "Resistance at temperature T_ref" type: Real  [3]
+// 164: aimc.rs.T[2]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 165: aimc.rs.resistor[2].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[2]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 166: aimc.rs.resistor[2].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 167: aimc.rs.alpha[1]:PARAM(unit = "1/K" )  = aimc.alpha20s / (1.0 + aimc.alpha20s * (-293.15 + aimc.TsRef))  "Temperature coefficients of resistances at reference temperatures" type: Real  [3]
+// 168: aimc.rs.resistor[1].alpha:PARAM(unit = "1/K" )  = aimc.rs.alpha[1]  "Temperature coefficient of resistance (R_actual = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 169: aimc.rs.T_ref[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Reference temperatures" type: Real  [3]
+// 170: aimc.rs.resistor[1].T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T_ref[1]  "Reference temperature" type: Real  [3]
+// 171: aimc.rs.R[1]:PARAM(start = 1.0 unit = "Ohm" )  = aimc.Rs  "Resistances R_ref at temperatures T_ref" type: Real  [3]
+// 172: aimc.rs.resistor[1].R:PARAM(start = 1.0 unit = "Ohm" )  = aimc.rs.R[1]  "Resistance at temperature T_ref" type: Real  [3]
+// 173: aimc.rs.T[1]:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TsRef  "Fixed device temperatures if useHeatPort = false" type: Real  [3]
+// 174: aimc.rs.resistor[1].T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.rs.T[1]  "Fixed device temperature if useHeatPort = false" type: Real  [3]
+// 175: aimc.rs.resistor[1].useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean  [3]
+// 176: aimc.rs.useHeatPort:PARAM(final = true )  = true  "=true, if all HeatPorts are enabled" type: Boolean 
+// 177: aimc.rs.mh:PARAM(min = 1 final = true )  = 3  "Number of heatPorts=number of phases" type: Integer 
+// 178: aimc.rs.plug_n.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 179: aimc.rs.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 180: aimc.rs.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 181: aimc.plug_sn.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 182: aimc.plug_sp.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 183: aimc.strayLoadParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference stray load torque at reference angular velocity and reference current" type: Real 
+// 184: aimc.strayLoadParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference stray load losses at IRef and wRef" type: Real 
+// 185: aimc.statorCoreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real 
+// 186: aimc.statorCoreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real 
+// 187: aimc.statorCoreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real 
+// 188: aimc.friction.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
+// 189: aimc.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = 6.283185307179586 * aimc.fsNominal / /*Real*/(aimc.p)  "Reference angular velocity that the PRef refer to" type: Real 
+// 190: aimc.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = 0.001 * aimc.frictionParameters.wRef  "Linear angular velocity range" type: Real 
+// 191: aimc.friction.frictionParameters.wLinear:PARAM(unit = "rad/s" final = true )  = aimc.frictionParameters.wLinear  "Linear angular velocity range" type: Real 
+// 192: aimc.friction.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
+// 193: aimc.friction.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
+// 194: aimc.frictionParameters.power_w:PARAM(min = 1e-60 )  = 2.0  "Exponent of friction torque w.r.t. angular velocity" type: Real 
+// 195: aimc.friction.frictionParameters.power_w:PARAM(min = 1e-60 )  = aimc.frictionParameters.power_w  "Exponent of friction torque w.r.t. angular velocity" type: Real 
+// 196: aimc.friction.frictionParameters.wRef:PARAM(min = 1e-60 unit = "rad/s" )  = aimc.frictionParameters.wRef  "Reference angular velocity that the PRef refer to" type: Real 
+// 197: aimc.friction.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
+// 198: aimc.friction.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean 
+// 199: aimc.inertiaStator.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
+// 200: aimc.Jr:PARAM(start = 0.29 unit = "kg.m2" )  = 2.0  "Rotor's moment of inertia" type: Real 
+// 201: aimc.Js:PARAM(start = aimc.Jr unit = "kg.m2" )  "Stator's moment of inertia" type: Real 
+// 202: aimc.inertiaStator.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Js  "Moment of inertia" type: Real 
+// 203: aimc.inertiaRotor.stateSelect:PARAM(min = StateSelect.never max = StateSelect.always )  = StateSelect.default  "Priority to use phi and w as states" type: enumeration(never, avoid, default, prefer, always) 
+// 204: aimc.inertiaRotor.J:PARAM(min = 0.0 start = 1.0 unit = "kg.m2" )  = aimc.Jr  "Moment of inertia" type: Real 
+// 205: aimc.frictionParameters.tauLinear:PARAM(unit = "N.m" final = true )  = 0.0  "Torque corresponding with linear angular velocity range" type: Real 
+// 206: aimc.frictionParameters.linear:PARAM(final = true )  = 0.001  "Linear angular velocity range with respect to reference angular velocity" type: Real 
+// 207: aimc.frictionParameters.tauRef:PARAM(unit = "N.m" final = true )  = 0.0  "Reference friction torque at reference angular velocity" type: Real 
+// 208: aimc.frictionParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference friction losses at wRef" type: Real 
+// 209: aimc.useThermalPort:PARAM(final = true )  = false  "Enable / disable (=fixed temperatures) thermal port" type: Boolean 
+// 210: aimc.useSupport:PARAM(final = true )  = false  "Enable / disable (=fixed stator) support" type: Boolean 
+// 211: aimc.pi:CONST(unit = "rad" )  = 3.141592653589793  type: Real 
+// 212: aimc.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
+// 213: terminalBox.star.plug_p.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 214: terminalBox.star.m:PARAM(min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 215: terminalBox.plugSupply.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 216: terminalBox.plug_sn.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 217: terminalBox.plug_sp.m:PARAM(flow=false min = 1 final = true )  = 3  "Number of phases" type: Integer 
+// 218: terminalBox.terminalConnection:PARAM(start = "Y" final = true )  "Choose Y=star/D=delta" type: String 
+// 219: terminalBox.m:PARAM(final = true )  = 3  "Number of phases" type: Integer 
+// 220: DeltaOmEl:PARAM(unit = "rad/s" )  = 25.0  "Controller Delta Omega" type: Real 
+// 221: ground.p.v:VARIABLE(flow=false unit = "V" fixed = true )  = 0.0  "Potential at the pin" type: Real 
+// 222: aimc.spacePhasorS.ground.v:VARIABLE(flow=false unit = "V" fixed = true )  = 0.0  "Potential at the pin" type: Real 
+// 223: aimc.inertiaStator.flange_b.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = 0.0  "Cut torque in the flange" type: Real 
+// 224: aimc.internalThermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 225: aimc.internalThermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 226: aimc.internalThermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 227: aimc.internalThermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 228: aimc.internalThermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 229: aimc.internalThermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 230: aimc.internalThermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 231: aimc.internalThermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" fixed = true final = true )  = 0.0  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 232: aimc.internalSupport.tau:VARIABLE(flow=true unit = "N.m" fixed = true protected = true )  = 0.0  "Reaction torque in the support/housing" type: Real 
+// 233: terminalBox.starpoint.i:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "Current flowing into the pin" type: Real 
+// 234: speedSensor.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = 0.0  "Cut torque in the flange" type: Real 
+// 235: aimc.strayLoad.tau:VARIABLE(unit = "N.m" fixed = true )  = 0.0  "Torque" type: Real 
+// 236: aimc.strayLoad.v[3]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 237: aimc.strayLoad.v[2]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 238: aimc.strayLoad.v[1]:VARIABLE(unit = "V" fixed = true )  = 0.0  "Voltage drops between the two plugs" type: Real  [3]
+// 239: aimc.statorCore.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
+// 240: aimc.statorCore.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" fixed = true )  = 0.0  "1=real, 2=imaginary part" type: Real  [2]
+// 241: aimc.powerBalance.lossPowerRotorCore:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Rotor core losses" type: Real 
+// 242: aimc.friction.tau:VARIABLE(unit = "N.m" fixed = true )  = 0.0  "Torque" type: Real 
+// 243: aimc.inertiaStator.w:DUMMY_STATE(unit = "rad/s" fixed = true )  = 0.0  "Absolute angular velocity of component (= der(phi))" type: Real 
+// 244: aimc.powerBalance.lossPowerFriction:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Friction losses" type: Real 
+// 245: aimc.rs.resistor[1].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[1].R * (1.0 + aimc.rs.resistor[1].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[1].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 246: aimc.rs.resistor[2].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[2].R * (1.0 + aimc.rs.resistor[2].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[2].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 247: aimc.rs.resistor[3].R_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.rs.resistor[3].R * (1.0 + aimc.rs.resistor[3].alpha * (aimc.thermalAmbient.constTs.k - aimc.rs.resistor[3].T_ref))  "Actual resistance = R*(1 + alpha*(T_heatPort - T_ref))" type: Real  [3]
+// 248: aimc.statorCore.lossPower:VARIABLE(unit = "W" fixed = true )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
+// 249: aimc.strayLoad.lossPower:VARIABLE(unit = "W" fixed = true )  = 0.0  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
+// 250: aimc.squirrelCageR.Rr_actual:VARIABLE(unit = "Ohm" fixed = true )  = aimc.squirrelCageR.Rr * (1.0 + aimc.squirrelCageR.alpha * (aimc.thermalAmbient.constTr.k - aimc.squirrelCageR.T_ref))  "Actual resistance = Rr*(1 + alpha*(T_heatPort - T_ref))" type: Real 
+// 251: aimc.powerBalance.powerInertiaStator:VARIABLE(unit = "W" fixed = true final = true )  = 0.0  "Stator inertia power" type: Real 
+// 252: aimc.inertiaStator.a:VARIABLE(unit = "rad/s2" fixed = true )  = 0.0  "Absolute angular acceleration of component (= der(w))" type: Real 
+// 253: aimc.thermalAmbient.temperatureStrayLoad.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 254: aimc.thermalAmbient.temperatureStatorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 255: aimc.thermalAmbient.temperatureRotorCore.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 256: aimc.thermalAmbient.temperatureFriction.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" fixed = true nominal = 300.0 final = true )  = 293.15  "Port temperature" type: Real 
+// 257: torque.phi_support:VARIABLE(unit = "rad" fixed = true protected = true )  = 0.0  "Absolute angle of support flange" type: Real 
+// 258: aimc.statorCore.Gc:VARIABLE(unit = "S" fixed = true )  = 0.0  "Variable core loss conductance" type: Real 
+// 259: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" fixed = true protected = true )  = max(abs(aimc.statorCoreParameters.wRef), aimc.statorCore.coreParameters.wMin)  "Limited angular velocity" type: Real 
+//
+//
+// Alias Variables (281)
+// ========================================
+// 1: const.y:VARIABLE()  = const.k  "Connector of Real output signal" type: Real 
+// 2: torque.tau:VARIABLE(unit = "N.m" )  = const.k  "Accelerating torque acting at flange (= -flange.tau)" type: Real 
+// 3: torque.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -const.k  "Cut torque in the flange" type: Real 
+// 4: aimc.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 5: torque.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 6: aimc.strayLoad.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 7: aimc.inertiaRotor.flange_b.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 8: aimc.inertiaRotor.phi:DUMMY_STATE(unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of component" type: Real 
+// 9: aimc.inertiaRotor.flange_a.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 10: aimc.airGapS.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 11: aimc.friction.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real 
+// 12: star.pin_n.v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real 
+// 13: star.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 14: sinevoltage1.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 15: sinevoltage1.sineVoltage[3].p.v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 16: star.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 17: sinevoltage1.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 18: sinevoltage1.sineVoltage[2].p.v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 19: star.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 20: sinevoltage1.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 21: sinevoltage1.sineVoltage[1].p.v:VARIABLE(flow=false unit = "V" )  = ground.p.v  "Potential at the pin" type: Real  [3]
+// 22: terminalBox.plug_sp.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 23: terminalBox.plugSupply.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 24: sinevoltage1.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 25: sinevoltage1.sineVoltage[3].n.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 26: aimc.strayLoad.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 27: terminalBox.plug_sp.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 28: terminalBox.plugSupply.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 29: sinevoltage1.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 30: sinevoltage1.sineVoltage[2].n.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 31: aimc.strayLoad.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 32: terminalBox.plug_sp.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 33: terminalBox.plugSupply.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 34: sinevoltage1.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 35: sinevoltage1.sineVoltage[1].n.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 36: aimc.strayLoad.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 37: terminalBox.plug_sn.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 38: terminalBox.star.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 39: terminalBox.star.pin_n.v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real 
+// 40: terminalBox.starpoint.v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real 
+// 41: terminalBox.star.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 42: terminalBox.plug_sn.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 43: aimc.plug_sn.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 44: aimc.spacePhasorS.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 45: terminalBox.star.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 46: terminalBox.plug_sn.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 47: aimc.plug_sn.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 48: aimc.spacePhasorS.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 49: aimc.spacePhasorS.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.plug_sn.pin[3].v  "Potential at the pin" type: Real  [3]
+// 50: sinevoltage1.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 51: sinevoltage1.sineVoltage[1].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 52: sinevoltage1.sineVoltage[1].i:VARIABLE(unit = "A" )  = sinevoltage1.i[1]  "Current flowing from pin p to pin n" type: Real  [3]
+// 53: sinevoltage1.sineVoltage[1].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 54: sinevoltage1.plug_n.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 55: terminalBox.plugSupply.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 56: terminalBox.plug_sp.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 57: aimc.plug_sp.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 58: aimc.strayLoad.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 59: aimc.strayLoad.i[1]:VARIABLE(unit = "A" )  = sinevoltage1.i[1]  "Currents flowing into positive plugs" type: Real  [3]
+// 60: aimc.strayLoad.plug_n.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 61: aimc.rs.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 62: aimc.rs.resistor[1].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 63: aimc.rs.resistor[1].i:VARIABLE(unit = "A" )  = sinevoltage1.i[1]  "Current flowing from pin p to pin n" type: Real  [3]
+// 64: aimc.rs.resistor[1].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 65: aimc.rs.plug_n.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 66: aimc.spacePhasorS.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 67: aimc.spacePhasorS.plug_n.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 68: aimc.plug_sn.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 69: terminalBox.plug_sn.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 70: terminalBox.star.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 71: aimc.rs.i[1]:VARIABLE(unit = "A" )  = sinevoltage1.i[1]  "Currents flowing into positive plugs" type: Real  [3]
+// 72: aimc.is[1]:VARIABLE(unit = "A" )  = sinevoltage1.i[1]  "Stator instantaneous currents" type: Real  [3]
+// 73: star.plug_p.pin[1].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[1]  "Current flowing into the pin" type: Real  [3]
+// 74: sinevoltage1.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 75: sinevoltage1.sineVoltage[2].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 76: sinevoltage1.sineVoltage[2].i:VARIABLE(unit = "A" )  = sinevoltage1.i[2]  "Current flowing from pin p to pin n" type: Real  [3]
+// 77: sinevoltage1.sineVoltage[2].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 78: sinevoltage1.plug_n.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 79: terminalBox.plugSupply.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 80: terminalBox.plug_sp.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 81: aimc.plug_sp.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 82: aimc.strayLoad.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 83: aimc.strayLoad.i[2]:VARIABLE(unit = "A" )  = sinevoltage1.i[2]  "Currents flowing into positive plugs" type: Real  [3]
+// 84: aimc.strayLoad.plug_n.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 85: aimc.rs.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 86: aimc.rs.resistor[2].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 87: aimc.rs.resistor[2].i:VARIABLE(unit = "A" )  = sinevoltage1.i[2]  "Current flowing from pin p to pin n" type: Real  [3]
+// 88: aimc.rs.resistor[2].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 89: aimc.rs.plug_n.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 90: aimc.spacePhasorS.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 91: aimc.spacePhasorS.plug_n.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 92: aimc.plug_sn.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 93: terminalBox.plug_sn.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 94: terminalBox.star.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 95: aimc.rs.i[2]:VARIABLE(unit = "A" )  = sinevoltage1.i[2]  "Currents flowing into positive plugs" type: Real  [3]
+// 96: aimc.is[2]:VARIABLE(unit = "A" )  = sinevoltage1.i[2]  "Stator instantaneous currents" type: Real  [3]
+// 97: star.plug_p.pin[2].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[2]  "Current flowing into the pin" type: Real  [3]
+// 98: sinevoltage1.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 99: sinevoltage1.sineVoltage[3].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 100: sinevoltage1.sineVoltage[3].i:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Current flowing from pin p to pin n" type: Real  [3]
+// 101: sinevoltage1.sineVoltage[3].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 102: sinevoltage1.plug_n.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 103: terminalBox.plugSupply.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 104: terminalBox.plug_sp.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 105: aimc.plug_sp.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 106: aimc.strayLoad.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 107: aimc.strayLoad.i[3]:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Currents flowing into positive plugs" type: Real  [3]
+// 108: aimc.strayLoad.plug_n.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 109: aimc.rs.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 110: aimc.rs.resistor[3].p.i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 111: aimc.rs.resistor[3].i:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Current flowing from pin p to pin n" type: Real  [3]
+// 112: aimc.rs.resistor[3].n.i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 113: aimc.rs.plug_n.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 114: aimc.spacePhasorS.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 115: aimc.spacePhasorS.plug_n.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 116: aimc.plug_sn.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 117: terminalBox.plug_sn.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 118: terminalBox.star.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 119: aimc.rs.i[3]:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Currents flowing into positive plugs" type: Real  [3]
+// 120: aimc.is[3]:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Stator instantaneous currents" type: Real  [3]
+// 121: star.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real  [3]
+// 122: aimc.statorCore.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 123: aimc.spacePhasorS.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 124: aimc.statorCore.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 125: aimc.spacePhasorS.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 126: aimc.lszero.n.v:VARIABLE(flow=false unit = "V" )  = aimc.spacePhasorS.ground.v  "Potential at the pin" type: Real 
+// 127: aimc.spacePhasorS.zero.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real 
+// 128: aimc.spacePhasorS.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real  [3]
+// 129: aimc.rs.resistor[3].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real  [3]
+// 130: aimc.spacePhasorS.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real  [3]
+// 131: aimc.rs.resistor[2].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real  [3]
+// 132: aimc.spacePhasorS.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real  [3]
+// 133: aimc.rs.resistor[1].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real  [3]
+// 134: aimc.strayLoad.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 135: aimc.rs.resistor[3].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 136: aimc.strayLoad.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 137: aimc.rs.resistor[2].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 138: aimc.strayLoad.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 139: aimc.rs.resistor[1].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 140: aimc.thermalAmbient.constTs.y:VARIABLE(final = true )  = aimc.thermalAmbient.constTs.k  "Connector of Real output signal" type: Real 
+// 141: aimc.thermalAmbient.temperatureStatorWinding.T:VARIABLE(unit = "K" final = true )  = aimc.thermalAmbient.constTs.k  type: Real 
+// 142: aimc.thermalAmbient.temperatureStatorWinding.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real 
+// 143: aimc.thermalAmbient.thermalCollectorStator.port_b.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real 
+// 144: aimc.thermalAmbient.thermalCollectorStator.port_a[3].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 145: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 146: aimc.internalThermalPort.heatPortStatorWinding[3].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 147: aimc.rs.heatPort[3].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 148: aimc.rs.resistor[3].heatPort.T:VARIABLE(flow=false min = 0.0 start = aimc.rs.resistor[3].T unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 149: aimc.rs.resistor[3].T_heatPort:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Temperature of HeatPort" type: Real  [3]
+// 150: aimc.thermalAmbient.thermalCollectorStator.port_a[2].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 151: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 152: aimc.internalThermalPort.heatPortStatorWinding[2].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 153: aimc.rs.heatPort[2].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 154: aimc.rs.resistor[2].heatPort.T:VARIABLE(flow=false min = 0.0 start = aimc.rs.resistor[2].T unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 155: aimc.rs.resistor[2].T_heatPort:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Temperature of HeatPort" type: Real  [3]
+// 156: aimc.thermalAmbient.thermalCollectorStator.port_a[1].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 157: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 158: aimc.internalThermalPort.heatPortStatorWinding[1].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 159: aimc.rs.heatPort[1].T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 160: aimc.rs.resistor[1].heatPort.T:VARIABLE(flow=false min = 0.0 start = aimc.rs.resistor[1].T unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Port temperature" type: Real  [3]
+// 161: aimc.rs.resistor[1].T_heatPort:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTs.k  "Temperature of HeatPort" type: Real  [3]
+// 162: aimc.fixed.flange.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 163: aimc.airGapS.support.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 164: aimc.strayLoad.support.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 165: aimc.internalSupport.phi:VARIABLE(flow=false unit = "rad" protected = true )  = aimc.fixed.phi0  "Absolute rotation angle of the support/housing" type: Real 
+// 166: aimc.inertiaStator.flange_a.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 167: aimc.inertiaStator.phi:DUMMY_STATE(unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of component" type: Real 
+// 168: aimc.inertiaStator.flange_b.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 169: aimc.friction.support.phi:VARIABLE(flow=false unit = "rad" )  = aimc.fixed.phi0  "Absolute rotation angle of flange" type: Real 
+// 170: aimc.thermalAmbient.constTr.y:VARIABLE(final = true )  = aimc.thermalAmbient.constTr.k  "Connector of Real output signal" type: Real 
+// 171: aimc.thermalAmbient.temperatureRotorWinding.T:VARIABLE(unit = "K" final = true )  = aimc.thermalAmbient.constTr.k  type: Real 
+// 172: aimc.thermalAmbient.temperatureRotorWinding.port.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTr.k  "Port temperature" type: Real 
+// 173: aimc.thermalAmbient.thermalPort.heatPortRotorWinding.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTr.k  "Port temperature" type: Real 
+// 174: aimc.internalThermalPort.heatPortRotorWinding.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.constTr.k  "Port temperature" type: Real 
+// 175: aimc.squirrelCageR.heatPort.T:VARIABLE(flow=false min = 0.0 start = aimc.squirrelCageR.T unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTr.k  "Port temperature" type: Real 
+// 176: aimc.squirrelCageR.T_heatPort:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.constTr.k  "Temperature of HeatPort" type: Real 
+// 177: aimc.lssigma.spacePhasor_b.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 178: aimc.lssigma.spacePhasor_b.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 179: aimc.squirrelCageR.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 180: aimc.squirrelCageR.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 181: aimc.airGapS.i_rr[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real  [2]
+// 182: aimc.airGapS.spacePhasor_r.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 183: aimc.squirrelCageR.spacePhasor_r.i_[2]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 184: aimc.ir[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor cage currents" type: Real  [2]
+// 185: aimc.airGapS.i_rr[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real  [2]
+// 186: aimc.airGapS.spacePhasor_r.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 187: aimc.squirrelCageR.spacePhasor_r.i_[1]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 188: aimc.ir[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor cage currents" type: Real  [2]
+// 189: aimc.lssigma.spacePhasor_a.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 190: aimc.lssigma.spacePhasor_b.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 191: aimc.airGapS.spacePhasor_s.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 192: aimc.airGapS.i_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 193: aimc.idq_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator space phasor current / stator fixed frame" type: Real  [2]
+// 194: aimc.lssigma.spacePhasor_a.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 195: aimc.lssigma.spacePhasor_b.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 196: aimc.airGapS.spacePhasor_s.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 197: aimc.airGapS.i_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 198: aimc.idq_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator space phasor current / stator fixed frame" type: Real  [2]
+// 199: aimc.thermalAmbient.temperatureFriction.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 200: aimc.thermalAmbient.thermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 201: aimc.thermalAmbient.temperatureStrayLoad.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 202: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 203: aimc.thermalAmbient.thermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 204: aimc.thermalAmbient.temperatureRotorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 205: aimc.thermalAmbient.Q_flowRotorCore:VARIABLE(unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate of stator core losses" type: Real 
+// 206: aimc.thermalAmbient.temperatureStatorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 207: aimc.thermalAmbient.thermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 208: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 209: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 210: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 211: aimc.thermalAmbient.temperatureRotorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 212: aimc.thermalAmbient.thermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 213: aimc.thermalAmbient.temperatureStatorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 214: aimc.thermalAmbient.thermalCollectorStator.port_b.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = -aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 215: aimc.inertiaRotor.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real 
+// 216: aimc.airGapS.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -aimc.tauElectrical  "Cut torque in the flange" type: Real 
+// 217: aimc.airGapS.tauElectrical:VARIABLE(unit = "N.m" )  = aimc.tauElectrical  type: Real 
+// 218: aimc.airGapS.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real 
+// 219: aimc.rs.resistor[1].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 220: aimc.rs.heatPort[1].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 221: aimc.rs.resistor[2].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 222: aimc.rs.heatPort[2].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 223: aimc.rs.resistor[3].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 224: aimc.rs.heatPort[3].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 225: aimc.spacePhasorS.zero.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real 
+// 226: aimc.lszero.p.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real 
+// 227: aimc.lszero.i:DUMMY_STATE(start = 0.0 unit = "A" )  = -aimc.i_0_s  "Current flowing from pin p to pin n" type: Real 
+// 228: aimc.lszero.n.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real 
+// 229: aimc.spacePhasorS.ground.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real 
+// 230: terminalBox.star.pin_n.i:VARIABLE(flow=true unit = "A" )  = terminalBox.starpoint.i  "Current flowing into the pin" type: Real 
+// 231: sinevoltage1.sineVoltage[3].signalSource.y:VARIABLE()  = sinevoltage1.v[3]  "Connector of Real output signal" type: Real  [3]
+// 232: sinevoltage1.sineVoltage[2].signalSource.y:VARIABLE()  = sinevoltage1.v[2]  "Connector of Real output signal" type: Real  [3]
+// 233: sinevoltage1.sineVoltage[1].signalSource.y:VARIABLE()  = sinevoltage1.v[1]  "Connector of Real output signal" type: Real  [3]
+// 234: aimc.squirrelCageR.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real 
+// 235: aimc.powerBalance.lossPowerRotorWinding:VARIABLE(unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Rotor copper losses" type: Real 
+// 236: aimc.airGapS.RotationMatrix[1,1]:VARIABLE()  = aimc.airGapS.RotationMatrix[2,2]  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 237: aimc.airGapS.RotationMatrix[1,2]:VARIABLE()  = -$cse1  "Matrix of rotation from rotor to stator" type: Real  [2,2]
+// 238: aimc.strayLoad.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.strayLoad.tau  "Cut torque in the flange" type: Real 
+// 239: aimc.powerBalance.lossPowerStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Stray load losses" type: Real 
+// 240: aimc.powerBalance.lossPowerStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Stator core losses" type: Real 
+// 241: aimc.airGapS.i_rs[2]:VARIABLE(unit = "A" )  = aimc.idq_rs[2]  "Rotor current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 242: aimc.airGapS.i_rs[1]:VARIABLE(unit = "A" )  = aimc.idq_rs[1]  "Rotor current space phasor with respect to the stator fixed frame" type: Real  [2]
+// 243: aimc.airGapS.i_sr[2]:VARIABLE(unit = "A" )  = aimc.idq_sr[2]  "Stator current space phasor with respect to the rotor fixed frame" type: Real  [2]
+// 244: aimc.airGapS.i_sr[1]:VARIABLE(unit = "A" )  = aimc.idq_sr[1]  "Stator current space phasor with respect to the rotor fixed frame" type: Real  [2]
+// 245: aimc.friction.lossPower:VARIABLE(unit = "W" )  = aimc.powerBalance.lossPowerFriction  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real 
+// 246: aimc.friction.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.friction.tau  "Cut torque in the flange" type: Real 
+// 247: aimc.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -(-const.k)  "Cut torque in the flange" type: Real 
+// 248: speedSensor.w:VARIABLE(unit = "rad/s" )  = aimc.inertiaRotor.w  "Absolute angular velocity of flange as output signal" type: Real 
+// 249: aimc.thermalAmbient.Q_flowFriction:VARIABLE(unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate of friction losses" type: Real 
+// 250: aimc.lszero.p.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real 
+// 251: aimc.thermalAmbient.Q_flowStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate of stator core losses" type: Real 
+// 252: aimc.thermalAmbient.Q_flowStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate of stray load losses" type: Real 
+// 253: aimc.plug_sp.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 254: aimc.rs.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real  [3]
+// 255: sinevoltage1.sineVoltage[1].v:VARIABLE(unit = "V" )  = sinevoltage1.v[1]  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 256: aimc.plug_sp.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 257: aimc.rs.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real  [3]
+// 258: sinevoltage1.sineVoltage[2].v:VARIABLE(unit = "V" )  = sinevoltage1.v[2]  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 259: aimc.plug_sp.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 260: aimc.rs.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real  [3]
+// 261: sinevoltage1.sineVoltage[3].v:VARIABLE(unit = "V" )  = sinevoltage1.v[3]  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
+// 262: aimc.tauShaft:VARIABLE(unit = "N.m" )  = -const.k  "Shaft torque" type: Real 
+// 263: aimc.inertiaRotor.flange_b.tau:VARIABLE(flow=true unit = "N.m" )  = const.k  "Cut torque in the flange" type: Real 
+// 264: aimc.spacePhasorS.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real  [2]
+// 265: aimc.spacePhasorS.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real  [2]
+// 266: aimc.thermalAmbient.thermalCollectorStator.port_a[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 267: aimc.thermalAmbient.thermalCollectorStator.port_a[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 268: aimc.thermalAmbient.thermalCollectorStator.port_a[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real  [3]
+// 269: aimc.squirrelCageR.LossPower:VARIABLE(unit = "W" )  = aimc.thermalAmbient.Q_flowRotorWinding  "Loss power leaving component via HeatPort" type: Real 
+// 270: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real 
+// 271: aimc.internalThermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real 
+// 272: aimc.strayLoad.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real 
+// 273: aimc.thermalAmbient.thermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real 
+// 274: aimc.internalThermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real 
+// 275: aimc.statorCore.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real 
+// 276: aimc.thermalAmbient.thermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real 
+// 277: aimc.internalThermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real 
+// 278: aimc.thermalAmbient.thermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real 
+// 279: aimc.friction.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real 
+// 280: aimc.internalThermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real 
+// 281: aimc.statorCore.w:VARIABLE(unit = "rad/s" )  = aimc.statorCoreParameters.wRef  "Remagnetization angular velocity" type: Real 
+//
+//
+// Zero Crossings (3)
+// ========================================
+// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
+// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25]
+// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26]
+//
+//
+// Relations (3)
+// ========================================
+// time < sinevoltage1.sineVoltage[3].signalSource.startTime with index = 0 in equations [24]
+// time < sinevoltage1.sineVoltage[2].signalSource.startTime with index = 1 in equations [25]
+// time < sinevoltage1.sineVoltage[1].signalSource.startTime with index = 2 in equations [26]
+//
+//
+// record SimulationResult
+//     resultFile = "asmaFlow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 3.2.1/Electrical/Machines.mo:4746:9-4748:76:writable] Warning: Parameter aimc.TrOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:4743:9-4745:73:writable] Warning: Parameter aimc.alpha20r has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:4740:9-4742:73:writable] Warning: Parameter aimc.TrRef has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:10940:7-10941:52:writable] Warning: Parameter aimc.strayLoadParameters.IRef has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:10964:7-10965:79:writable] Warning: Parameter aimc.statorCoreParameters.VRef has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12803:7-12804:76:writable] Warning: Parameter aimc.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=aimc.Jr) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12927:7-12929:71:writable] Warning: Parameter aimc.alpha20s has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12924:7-12926:71:writable] Warning: Parameter aimc.TsRef has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:12918:7-12920:69:writable] Warning: Parameter aimc.TsOperational has no value, and is fixed during initialization (fixed=true), using available start value (start=293.15) as default value.
+// [Modelica 3.2.1/Electrical/Machines.mo:15348:7-15350:33:writable] Warning: Parameter terminalBox.terminalConnection has no value, and is fixed during initialization (fixed=true), using available start value (start="Y") as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// -15.0
+// -15.0
+// endResult

@@ -1,0 +1,26 @@
+// name: PVectorTest
+// cflags: -g=MetaModelica -d=rml
+// status: correct
+// teardown_command: rm -f PVectorTest_*
+
+loadFile("../../../OMCompiler/Compiler/Util/List.mo");
+loadFile("../../../OMCompiler/Compiler/Util/BasePVector.mo");
+getErrorString();
+loadFile("PVectorTest.mo");
+getErrorString();
+simulate(PVectorTest, numberOfIntervals=1);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PVectorTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PVectorTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,37 @@
+// name:     Modelica.Electrical.Analog.Examples.SimpleTriacCircuit
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.SimpleTriacCircuit);
+compareVars :=
+{
+   "L.i",
+   "simpleTriac.thyristor.vControl",
+   "simpleTriac.thyristor1.vControl"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// Modelica.Electrical.Analog.Examples.SimpleTriacCircuit
+// {"L.i","simpleTriac.thyristor.vControl","simpleTriac.thyristor1.vControl"}
+// Simulation options: startTime = 0.0, stopTime = 0.001, numberOfIntervals = 2000, tolerance = 1e-12, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.SimpleTriacCircuit', options = '', outputFormat = 'mat', variableFilter = 'time|L.i|simpleTriac.thyristor.vControl|simpleTriac.thyristor1.vControl', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.SimpleTriacCircuit_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,102 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase);
+compareVars :=
+{
+   "loadInertia3.phi",
+   "loadInertia3.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w",
+   "smpm3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smpm3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smpm3.stator.strayReluctance.port_p.Phi.im",
+   "smpm3.stator.strayReluctance.port_p.Phi.re",
+   "smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smpmM.stator.strayReluctance.port_p.Phi.im",
+   "smpmM.stator.strayReluctance.port_p.Phi.re",
+   "vfController.x",
+   "vfController3.x"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase
+// {"loadInertia3.phi","loadInertia3.w","loadInertiaM.phi","loadInertiaM.w","smpm3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smpm3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smpm3.stator.strayReluctance.port_p.Phi.im","smpm3.stator.strayReluctance.port_p.Phi.re","smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smpmM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smpmM.stator.strayReluctance.port_p.Phi.im","smpmM.stator.strayReluctance.port_p.Phi.re","vfController.x","vfController3.x"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 3000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMPM_Inverter_MultiPhase_res.mat
+// Messages: 
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   Internal t = 0.00820405 and h = 8.16291e-19 are such that t + h = t on the next step. The solver will continue anyway.
+//
+//
+// [CVODE WARNING]  CVode
+//   The above warning has been issued mxhnil times and will not be issued again for this problem.
+//
+//
+// [CVODE ERROR]  CVode
+//   At t = 0.00820405 and h = 6.58473e-25, the corrector convergence test failed repeatedly or with |h| = hmin.
+//
+//
+// SUNDIALS_ERROR: CVode() failed with flag = -4
+//
+//
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

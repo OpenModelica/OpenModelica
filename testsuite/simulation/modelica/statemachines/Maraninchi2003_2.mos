@@ -1,0 +1,20 @@
+// name:     Maraninchi2003_2
+// keywords: state machines
+// status: correct
+//
+
+loadFile("Maraninchi2003_2.mo");
+echo(false);
+simulate(Maraninchi2003_2, startTime=0, stopTime=20, numberOfIntervals=0); getErrorString();
+echo(true);
+val(x,20.0);
+val(y,20.0);
+val(z,20.0);
+
+// Result:
+// true
+// true
+// 21.0
+// 1.0
+// 101.0
+// endResult

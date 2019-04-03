@@ -1,0 +1,65 @@
+// name: ocpOnlyInputs
+// status: correct
+
+setCommandLineOptions("+gDynOpt");
+
+loadString(
+"
+model foo
+  parameter Real p = 1;
+  input Real u;
+  Real cost = (u-sin(time))^2 annotation(isLagrange = true);
+end foo;
+"
+);
+getErrorString();
+
+optimize(foo, numberOfIntervals=5, tolerance = 1e-8);
+getErrorString();
+val(cost,0.0);
+val(cost,0.1);
+val(cost,0.2);
+val(cost,0.3);
+val(cost,0.4);
+val(cost,0.5);
+val(cost,0.65);
+val(cost,0.80);
+val(cost,1.0);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// Input[0]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.761202296554772e-08
+// 2.239522000891023e-20
+// 2.368721032875032e-20
+// 1.032540013644675e-18
+// 1.484187436812034e-18
+// 4.315814315931177e-18
+// 1.958276902580842e-17
+// 1.126044639739534e-17
+// 1.54940272954526e-17
+// endResult

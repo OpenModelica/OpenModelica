@@ -1,0 +1,41 @@
+// name: RefArrayDim2
+// keywords: multi-dimensional RefArray external F77 LAPACK, ticket:4093
+// status: correct
+// teardown_command: rm -f *AliasArrayTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica);
+loadString("
+model AliasArrayTest
+  Real[3,3] A = {{t, 2, 3}, {4, t, 6}, {7, 8, t}}; // RefArrayDim2
+  Real[:] b = (t + 1) * {1, 2, 3};
+  Real t = time;
+  output Real[3] x;
+equation
+  x = Modelica.Math.Matrices.solve(A, b);
+  annotation(experiment(StopTime = 0));
+end AliasArrayTest;
+");
+getErrorString();
+
+simulate(AliasArrayTest); getErrorString();
+val(x[1], 0);
+val(x[2], 0);
+val(x[3], 0);
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasArrayTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AliasArrayTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.2
+// 0.2
+// 0.2
+// endResult

@@ -1,0 +1,35 @@
+// name:     BouncingBall
+// keywords: events
+// status: correct
+// teardown_command: rm -rf BouncingBall_* BouncingBall.log BouncingBall.libs BouncingBall BouncingBall.exe BouncingBall.cpp BouncingBall.makefile output.log
+//
+// Event handling
+//
+loadFile("BouncingBall.mo");
+simulate(BouncingBall, stopTime=3.0);
+echo(false);
+s:=readSimulationResultSize("BouncingBall_res.mat");
+res:=readSimulationResult("BouncingBall_res.mat",{flying},s);
+res2:=readSimulationResult("BouncingBall_res.mat",{n_bounce},s);
+res3:=readSimulationResult("BouncingBall_res.mat",{h},s);
+echo(true);
+res[1,1];
+res[1,s];
+res2[1,s];
+if res3[1,s] > -1e-2 then 1 else 0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 0.0
+// 33.0
+// 1
+// endResult

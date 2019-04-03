@@ -1,0 +1,43 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+//
+
+loadString("
+model ModelTestSolve
+  Real x,y,z;
+equation
+  ( 1 / x ) * 2 = 1;
+  ( y / 1 ) * 2 = 1;
+  4 = ( 1 / z ) * 3;
+end ModelTestSolve;
+"); getErrorString();
+
+simulate(ModelTestSolve, simflags="-lv LOG_NLS_V"); getErrorString();
+val(x,0.5);
+val(y,0.5);
+val(z,0.5);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelTestSolve_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
+//     messages = "LOG_NLS           | info    | initialize mixed system solvers
+// |                 | |       | | 0 mixed systems
+// LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 0 non-linear systems
+// LOG_NLS           | info    | update static data of non-linear system solvers
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | info    | free mixed system solvers
+// LOG_NLS           | info    | free non-linear system solvers
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 0.5
+// 0.75
+// endResult

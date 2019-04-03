@@ -1,0 +1,49 @@
+// name: qss_example4
+// status: correct
+
+// Quantization-Based New Integration Methods for Stiff ODEs
+// Migoni, Kofman, Cellier
+// May 2010, p. 21
+
+loadString("
+within ;
+package qssTests
+  model example4
+    Real x1(nominal=100), x2(nominal=100), x3(nominal=5e-4);
+  initial equation
+    x1 = 1;
+    x2 = 1;
+    x3 = 0;
+  equation
+    der(x1) = -0.013 * x1 - 1000 * x1 * x3;
+    der(x2) = -2500 * x2 * x3;
+    der(x3) = -0.013 * x1 - 1000 * x1 * x3 - 2500 * x2 * x3;
+  end example4;
+end qssTests;
+"); getErrorString();
+
+simulate(qssTests.example4, stopTime=500, method="qss"); getErrorString();
+val(x1, {0.0, 500.0}); getErrorString();
+val(x2, {0.0, 500.0}); getErrorString();
+val(x3, {0.0, 500.0}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "qssTests.example4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 500.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | This QSS method is under development and should not be used yet.
+// stdout            | warning | All derivatives are zero at time 420.433938!.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,0.0}
+// ""
+// {1.0,1.999999999988223}
+// ""
+// {0.0,0.0}
+// ""
+// endResult

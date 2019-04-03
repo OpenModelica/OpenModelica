@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.CondAssignFuncCall.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.CondAssignFuncCall
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.CondAssignFuncCall.* DrModelicaForTesting.CondAssignFuncCall_* DrModelicaForTesting.CondAssignFuncCall DrModelicaForTesting.CondAssignFuncCall.exe DrModelicaForTesting.CondAssignFuncCall.cpp DrModelicaForTesting.CondAssignFuncCall.makefile DrModelicaForTesting.CondAssignFuncCall.libs DrModelicaForTesting.CondAssignFuncCall.log DrModelicaForTesting.CondAssignFuncCall.c DrModelicaForTesting.CondAssignFuncCall.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.CondAssignFuncCall, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.CondAssignFuncCall_res.mat",
+  "ReferenceFiles/CondAssignFuncCall_ref.mat","DrModelicaForTesting.CondAssignFuncCall_diff.csv",0.01,0.013,
+  {"a","b"});
+   
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.CondAssignFuncCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.CondAssignFuncCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

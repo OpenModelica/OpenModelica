@@ -1,0 +1,111 @@
+//name: forceInlineComplexEq4
+// status: correct
+
+setCommandLineOptions("--postOptModules+=forceInlineFunctionInLoops --initOptModules+=forceInlineFunctionInLoops +d=backenddaeinfo,dumpLoops ");
+loadString("
+model foo
+  function f
+     input Real x1;
+     input Real x2;
+     output Real y1;
+     output Real y2;
+    protected
+     Real a = x1 - x2 + 10;
+     Real b = 23*a; 
+    algorithm
+     y1 := b*x2 - a;
+     y2 := 3*x2-5;
+  end f;
+
+  Real x1, x2, x3, x4;
+equation
+  (x1, x2) = f(3*x1 + cos(time), 3*x2 +1+x3-5*x4);
+  (x4, x3) = f(sin(time), x1 + x3 - x2);
+end foo;
+");
+getErrorString();
+
+simulate(foo);
+getErrorString();
+
+val(x1,{0,1});
+val(x2,{0,1});
+val(x3,{0,1});
+// Result:
+// true
+// true
+// ""
+//
+// system 1
+// torn nonlinear Equationsystem:
+//
+// internal vars
+// 1: x4:VARIABLE()  type: Real 
+// 2: x1:VARIABLE()  type: Real 
+//
+// residual vars
+// 1: x2:VARIABLE()  type: Real 
+// 2: x3:VARIABLE()  type: Real 
+//
+// internal equation
+// 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
+// 2/2 (1): x3 = -5.0 + 3.0 * (x1 + x3 - x2)   [unknown |0|0|0|0|]
+//
+// residual equations
+// 1/1 (1): x1 = 23.0 * (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4))   [unknown |0|0|0|0|]
+// 2/2 (1): x4 = 23.0 * (10.0 + $cse4 - (x1 + x3 - x2)) * (x1 + x3 - x2) - (10.0 + $cse4 - (x1 + x3 - x2))   [unknown |0|0|0|0|]
+//
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 4
+//  * Number of variables: 4
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (1):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {2 2}
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (3):
+//  * Single equations (assignments): 2
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {2 2}
+// "
+// {0.07675361072941356,0.07423981665119062}
+// {-4.868670267708994,-4.868661846237778}
+// {-4.918135817657611,-4.914352494333452}
+// endResult

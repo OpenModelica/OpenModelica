@@ -1,0 +1,43 @@
+// status: correct
+// Bug #2889
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+loadString("function FuncID11<IT1, OT1>
+  input FuncType inFunc;
+  output FuncType outFunc = inFunc;
+
+  partial function FuncType
+    input IT1 inArg1;
+    output OT1 outArg1;
+  end FuncType;
+end FuncID11;
+
+function f1
+  input Real x;
+  input Real y;
+  output Real z = x + y;
+end f1;
+
+function test
+  partial function pf
+    input Real x;
+    output Real z;
+  end pf;
+
+  output Real x;
+protected
+  pf mypf;
+algorithm
+  mypf := FuncID11(function f1(y = 3));
+  x := mypf(2);
+end test;");getErrorString();
+test();getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 5.0
+// ""
+// endResult

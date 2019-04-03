@@ -1,0 +1,96 @@
+// name: DumpTest
+// cflags: +g=MetaModelica
+// status: correct
+
+runScript("LoadCompilerSources.mos");getErrorString();
+loadFile("DumpTest.mo");getErrorString();
+setCommandLineOptions("-d=rml,noevalfunc,gen");
+
+echo(false);
+body:=Absyn.PARTS({},{},{},{},NONE());
+restr:=Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE()));
+prog:=Absyn.PROGRAM({Absyn.CLASS("dummyClass",true,true,true,restr,body,Absyn.dummyInfo)},Absyn.TOP());
+echo(true);
+"DumpGraphviz.dump";
+DumpGraphviz.dump(prog);
+getErrorString();
+"Dump.dump";
+DumpTest.dump(prog);
+getErrorString();
+"Dump.unparseStr";
+Dump.unparseStr(prog,false);
+getErrorString();
+"Dump.getAstAsCorbaString";
+DumpTest.getAstAsCorbaString(prog);
+getErrorString();
+
+exp:=DAE.ICONST(42);
+getErrorString();
+"ExpressionDump.printExpStr";
+ExpressionDump.printExpStr(exp);
+getErrorString();
+
+dae:=DAE.DAE({});
+getErrorString();
+"DAEDump.dumpDebugDAE";
+DAEDump.dumpDebugDAE(dae);
+getErrorString();
+
+val:=Values.INTEGER(42);
+getErrorString();
+"ValuesUtil.valString";
+ValuesUtil.valString(val);
+getErrorString();
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+// true
+// "DumpGraphviz.dump"
+// graph AST {
+// GVNOD0[label="ROOT"];GVNOD1[label="PURE FUNCTION"];GVNOD1 -- GVNOD0;
+// }
+//
+// ""
+// "Dump.dump"
+// "Absyn.PROGRAM([
+// Absyn.CLASS(\"dummyClass\", true, true, true, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE)), Absyn.PARTS([], NONE()), SOURCEINFO(\"\", false, 0, 0, 0, 0))
+// ],Absyn.TOP)
+// "
+// ""
+// "Dump.unparseStr"
+// "final encapsulated partial pure function dummyClass
+// end dummyClass;"
+// ""
+// "Dump.getAstAsCorbaString"
+// "record Absyn.PROGRAM
+// classes = {record Absyn.CLASS name = \"dummyClass\", partialPrefix = true, finalPrefix = true, encapsulatedPrefix = true, restriction = record Absyn.R_FUNCTION functionRestriction = record Absyn.FR_NORMAL_FUNCTION purity = record Absyn.PURE end Absyn.PURE; end Absyn.FR_NORMAL_FUNCTION;end Absyn.R_FUNCTION;, body = record Absyn.PARTS typeVars = {}, classParts = {}, ann = {}, comment = NONE() end Absyn.PARTS;, info = record SOURCEINFO fileName = \"\", isReadOnly = false, lineNumberStart = 0, columnNumberStart = 0, lineNumberEnd = 0, columnNumberEnd = 0, lastModified = 0.0 end SOURCEINFO; end Absyn.CLASS;},
+// within_ = record Absyn.TOP end Absyn.TOP;
+// end Absyn.PROGRAM;"
+// ""
+// record DAE.Exp.ICONST
+//     integer = 42
+// end DAE.Exp.ICONST;
+// ""
+// "ExpressionDump.printExpStr"
+// "42"
+// ""
+// record DAE.DAElist.DAE
+//     elementLst = {}
+// end DAE.DAElist.DAE;
+// ""
+// "DAEDump.dumpDebugDAE"
+// ""
+// ""
+// record Values.Value.INTEGER
+//     integer = 42
+// end Values.Value.INTEGER;
+// ""
+// "ValuesUtil.valString"
+// "42"
+// ""
+// endResult

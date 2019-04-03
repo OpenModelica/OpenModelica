@@ -1,0 +1,65 @@
+// name: clockedAlgloopTest
+// keywords: synchronous clocked equations, continuous equations
+// status: correct
+// teardown_command: rm -f *MixingUnit*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model MixingUnit
+  \"Example from Modelica_Synchronous,
+    see Mixing unit demo from Foellinger, Nichtlineare Regelungen II, p. 280\"
+  input Real T_c(unit=\"K\", start = 308.5) \"Cooling temperature\";
+  output Real c(unit=\"mol/l\", start = 0.3, fixed = true) \"Concentration\";
+  output Real T(unit=\"K\", start = 300, fixed = true) \"Temperature in mixing unit\";
+  parameter Real c0(unit=\"mol/l\") = 0.848 \"Nominal concentration\";
+  parameter Real T0(unit=\"K\") = 308.5 \"Nominal temperature\";
+  parameter Real a1 = 0.2674;
+  parameter Real a21 = 1.815;
+  parameter Real a22 = 0.4682;
+  parameter Real b = 1.5476;
+  parameter Real k0 = 1.05e14;
+  parameter Real eps = 34.2894;
+  Real gamma \"Reaction speed\";
+protected
+  parameter Real tau0(unit = \"s\") = 60;
+  parameter Real wk0 = k0/c0;
+  parameter Real weps = eps*T0;
+  parameter Real wa11 = a1/tau0;
+  parameter Real wa12 = c0/tau0;
+  parameter Real wa13 = c0*a1/tau0;
+  parameter Real wa21 = a21/tau0;
+  parameter Real wa22 = a22*T0/tau0;
+  parameter Real wa23 = T0*(a21 - b)/tau0;
+  parameter Real wb = b/tau0;
+equation
+  gamma = c*wk0*exp( -weps/T);
+  der(c) = if firstTick() then 0 else -wa11*c - wa12*gamma + wa13;
+  der(T) = if firstTick() then 0 else -wa21*T + wa22*gamma + wa23 + wb*sample(T_c, Clock(Clock(tau0), solverMethod=\"ImplicitEuler\"));
+  annotation(experiment(StopTime = 1500));
+end MixingUnit;
+");
+getErrorString();
+
+simulate(MixingUnit);
+val(c, 0.0);
+val(T, 0.0);
+val(c, 1500.0);
+val(T, 1500.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MixingUnit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1500.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MixingUnit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.3
+// 300.0
+// 0.239778
+// 323.7585
+// ""
+// endResult

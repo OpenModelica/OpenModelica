@@ -1,0 +1,44 @@
+// name:     ticket5114
+// keywords: array cref newInst
+// status: correct
+// teardown_command: rm -rf Test5114*
+
+loadModel(Modelica);
+loadString("
+model A
+  parameter Modelica.Mechanics.MultiBody.Frames.Orientation R_start =
+    Modelica.Mechanics.MultiBody.Frames.axesRotations(
+      {1, 2, 3},
+      angles_start,
+      {0.0, 0.0, 0.0});
+
+  parameter Real angles_start[3](each fixed = false);
+initial equation
+  angles_start = {0, 0, 0};
+end A;
+
+model Test5114
+  A a[1];
+end Test5114;
+");
+getErrorString();
+
+setDebugFlags("newInst");
+simulate(Test5114);
+getErrorString();
+
+
+// Result:
+// true
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "Test5114_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test5114', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

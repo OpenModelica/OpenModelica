@@ -1,0 +1,31 @@
+// name: problem3-symSolverImpSsc
+// status: correct
+// teardown_command: rm -f testSolver.problem3* output.log
+
+loadFile("./testSolverPackage.mo");
+getErrorString();
+
+setCommandLineOptions("--symSolver=impEuler"); getErrorString();
+simulate(testSolver.problem3, startTime = 0, stopTime=1, numberOfIntervals=5, method="symSolverSsc"); getErrorString();
+
+val(x,{0,1});
+val(x1,{0,1});
+val(x2,{0,1});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-06, method = 'symSolverSsc', fileNamePrefix = 'testSolver.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.999999999999998}
+// {1.0,2.001243856656994}
+// {1.0,0.3681081146451554}
+// endResult

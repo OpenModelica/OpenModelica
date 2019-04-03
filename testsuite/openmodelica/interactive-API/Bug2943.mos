@@ -1,0 +1,40 @@
+// name: Bug2943.mos [BUG: #2943]
+// status: correct
+// teardown_command: rm -rf TestMyModel.mo
+
+loadString("model TestMyModel
+  Modelica.Fluid.Vessels.OpenTank tank annotation(Placement(visible = true, transformation(origin = {20, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Fluid.Vessels.OpenTank opentank1 annotation(Placement(visible = true, transformation(origin = {-60, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+equation
+  connect(opentank1.heatPort, tank.heatPort) annotation(Line(points = {{-70, 0}, {-87.395, 0}, {-87.395, 40.056}, {10.9244, 40.056}, {10.9244, 40.056}}, color = {191, 0, 0}));
+  annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})));
+end TestMyModel;");
+getErrorString();
+setSourceFile(TestMyModel, "TestMyModel.mo");
+getErrorString();
+save(TestMyModel);
+getErrorString();
+readFile("TestMyModel.mo"); 
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "model TestMyModel
+//   Modelica.Fluid.Vessels.OpenTank tank annotation(
+//     Placement(visible = true, transformation(origin = {20, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   Modelica.Fluid.Vessels.OpenTank opentank1 annotation(
+//     Placement(visible = true, transformation(origin = {-60, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+// equation
+//   connect(opentank1.heatPort, tank.heatPort) annotation(
+//     Line(points = {{-70, 0}, {-87.395, 0}, {-87.395, 40.056}, {10.9244, 40.056}, {10.9244, 40.056}}, color = {191, 0, 0}));
+//   annotation(
+//     Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})),
+//     Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})));
+// end TestMyModel;"
+// ""
+// endResult

@@ -1,0 +1,45 @@
+//name:        Simulate Modelica.Blocks.Examples [version 3.1]
+//keyword:     simulate MSL 3.1 Modelica.Blocks.CombiTables
+//status:      correct
+//
+// instantiate/check/simulate model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+str := "
+model TrivialLookupTable 
+  Modelica.Blocks.Tables.CombiTable1Ds t(table = [-10,20;0,0;10,10], columns = {2}); 
+equation 
+  t.u = time;
+end TrivialLookupTable;
+";
+loadString(str);getErrorString();
+
+simulate(TrivialLookupTable,startTime=-15,stopTime=15,method="euler",numberOfIntervals=12);
+arr:=-15:2.5:15;
+val(t.y[1], arr);getErrorString();
+
+// Result:
+// true
+// ""
+// "
+// model TrivialLookupTable 
+//   Modelica.Blocks.Tables.CombiTable1Ds t(table = [-10,20;0,0;10,10], columns = {2}); 
+// equation 
+//   t.u = time;
+// end TrivialLookupTable;
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TrivialLookupTable_res.mat",
+//     simulationOptions = "startTime = -15.0, stopTime = 15.0, numberOfIntervals = 12, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'TrivialLookupTable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {-15.0,-12.5,-10.0,-7.5,-5.0,-2.5,0.0,2.5,5.0,7.5,10.0,12.5,15.0}
+// {30.0,25.0,20.0,15.0,10.0,5.0,0.0,2.5,5.0,7.5,10.0,12.5,15.0}
+// ""
+// endResult

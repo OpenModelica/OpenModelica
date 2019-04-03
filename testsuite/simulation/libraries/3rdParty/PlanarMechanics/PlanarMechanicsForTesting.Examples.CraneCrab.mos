@@ -1,0 +1,34 @@
+// name:     PlanarMechanicsForTesting.Examples.CraneCrab.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.CraneCrab.* PlanarMechanicsForTesting.Examples.CraneCrab_* PlanarMechanicsForTesting.Examples.CraneCrab PlanarMechanicsForTesting.Examples.CraneCrab.exe PlanarMechanicsForTesting.Examples.CraneCrab.cpp PlanarMechanicsForTesting.Examples.CraneCrab.makefile PlanarMechanicsForTesting.Examples.CraneCrab.libs PlanarMechanicsForTesting.Examples.CraneCrab.log PlanarMechanicsForTesting.Examples.CraneCrab.c PlanarMechanicsForTesting.Examples.CraneCrab.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.CraneCrab, tolerance=0.0001); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.CraneCrab_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//CraneCrab.mat","PlanarMechanicsForTesting.Examples.CraneCrab_diff.csv",0.01,0.002,
+  {"prismatic.s", "revolute.phi", "revolute.w"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.CraneCrab_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.CraneCrab', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

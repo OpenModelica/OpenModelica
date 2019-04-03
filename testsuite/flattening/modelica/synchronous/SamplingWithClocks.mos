@@ -1,0 +1,37 @@
+// name: SamplingWithClocks
+// keywords: synchronous features
+// status: correct
+//
+//  "Modelica by Example" by Michael M. Tiller
+//
+
+loadString("
+model SamplingWithClocks \"Using clocks to sub and super sample\"
+  Real x, y, z, w;
+equation
+  x = sample(time, Clock(0.1));
+  y = sample(time, Clock(0.1));
+  z = subSample(x, 2);
+  w = superSample(x, 3);
+end SamplingWithClocks;
+"); getErrorString();
+
+instantiateModel(SamplingWithClocks); getErrorString();
+
+// Result:
+// true
+// ""
+// "class SamplingWithClocks \"Using clocks to sub and super sample\"
+//   Real x;
+//   Real y;
+//   Real z;
+//   Real w;
+// equation
+//   x = sample(time, Clock(0.1));
+//   y = sample(time, Clock(0.1));
+//   z = subSample(x, 2);
+//   w = superSample(x, 3);
+// end SamplingWithClocks;
+// "
+// ""
+// endResult

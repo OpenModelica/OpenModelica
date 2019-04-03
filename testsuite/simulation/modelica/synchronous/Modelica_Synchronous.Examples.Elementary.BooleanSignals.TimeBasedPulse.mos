@@ -1,0 +1,28 @@
+// name: Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse
+// keywords: synchronous features
+// status: correct
+//
+
+loadFile("Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse.mo"); getErrorString();
+simulate(Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse, startTime=0, stopTime=1, numberOfIntervals = 0); getErrorString();
+val(pulse.y, 0.0);
+val(pulse.y, 0.1);
+val(pulse.y, 0.2);
+val(pulse.y, 0.3); // 2015-10-14: Fails because value at 0.3 should be 0.0 but is 1.0
+val(pulse.y, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 1.0
+// 0.0
+// 1.0
+// endResult

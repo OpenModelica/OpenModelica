@@ -1,0 +1,114 @@
+// name: wrapFunctionCalls8
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls8
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+      output Real y3;
+    algorithm
+      y1 := x1;
+      y2 := y1 + x2;
+      y1 := y2+1.0;
+      y2 := x1 * y2;
+      y3 := x2*x1;
+    end f1;
+
+  	parameter Real p1 = 5;
+    Real x, a, b, c, d;
+  equation
+    x = sin(cos(p1));
+    c = sin(f1(x, sin(cos(p1)))) + 5;
+    // x = sin(cos(time));
+    // c = sin(f1(x, sin(cos(time)))) + 5;
+    (,b,) = f1(x, x);
+    a = sin(x);
+    d = f1(x, x);
+  end wrapFunctionCalls8;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls8); getErrorString();
+
+system("xz --keep --decompress --force ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat.xz");
+(success, failVars) := OpenModelica.Scripting.diffSimulationResults("CSE.wrapFunctionCalls8_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat", "CSE.wrapFunctionCalls8_diff.csv"); getErrorString();
+if success then
+  print("Files equal!\n");
+else
+  print("Files not equal!\n");
+  for v in failVars loop
+    curFile := "CSE.wrapFunctionCalls8." + v + ".html";
+    success := writeFile(curFile, OpenModelica.Scripting.diffSimulationResultsHtml(v, "CSE.wrapFunctionCalls8_res.mat", "./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat", 0.01)); getErrorString();
+    if success then
+      print("Created diff file " + curFile + "\n");
+    else
+      print("Creating diff file " + curFile + " failed\n");
+    end if;
+  end for; getErrorString();
+end if;
+system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (1)
+// ========================================
+// 1: c:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (1, 1)
+// ========================================
+// 1/1 (1): c = 5.0 + $cse1   [dynamic |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (9)
+// ========================================
+// 1: x:VARIABLE(fixed = true )  = sin(cos(p1))  type: Real 
+// 2: p1:PARAM()  = 5.0  type: Real 
+// 3: a:VARIABLE(fixed = true )  = sin(x)  type: Real 
+// 4: b in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real 
+// 5: d in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real 
+// 6: $cse4:VARIABLE(fixed = true protected = true )  = cos(p1)  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(fixed = true protected = true )  = sin($cse4)  type: Real  unreplaceable
+// 8: $cse2 in ($cse2, _, _):VARIABLE(fixed = true protected = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(fixed = true protected = true )  = sin($cse2)  type: Real  unreplaceable
+//
+//
+// ########### CSE Replacements (6/46)
+// ========================================
+// 1: $cse1 - sin($cse2) - {}
+// 2: ($cse2, _, _) - CSE.wrapFunctionCalls8.f1(x, $cse3) - {}
+// 3: $cse3 - sin($cse4) - {}
+// 4: $cse4 - cos(p1) - {}
+// 5: (d, b, _) - CSE.wrapFunctionCalls8.f1(x, x) - {}
+// 6: a - sin(x) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0
+//
+// ""
+// Files equal!
+//
+// 0
+// endResult

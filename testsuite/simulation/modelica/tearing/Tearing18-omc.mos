@@ -1,0 +1,65 @@
+// name:      Tearing18-omc
+// keywords:  tearing
+// status:    correct
+
+loadFile("Tearing18.mo"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("omcTearing"); getErrorString();
+simulate(Tearing18); getErrorString();
+
+val(x0,0.0); getErrorString();
+val(x3,0.0); getErrorString();
+val(x4,0.0); getErrorString();
+val(x5,0.0); getErrorString();
+val(x6,0.0); getErrorString();
+val(x7,0.0); getErrorString();
+val(x8,0.0); getErrorString();
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: Tearing18
+// Error: Solving non-linear system failed.
+// For more information please use -lv LOG_NLS.
+// stdout            | warning | Integrator attempt to handle a problem with a called assert.
+// Error: Solving non-linear system failed.
+// For more information please use -lv LOG_NLS.
+// stdout            | info    | model terminate | Simulation terminated by an assert at time: 0.085
+// "
+// end SimulationResult; getErrorString();
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 7
+//  * Number of variables: 7
+// Notification: Model statistics after passing the back-end:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics (2):
+//  * Single equations (assignments): 1
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 5}
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// 
+// 
+// 
+// 
+// 
+// 
+// 
+// endResult

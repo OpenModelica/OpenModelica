@@ -1,0 +1,86 @@
+// name: simplifyCon1
+// status: correct
+
+loadModel(Modelica);
+getErrorString();
+
+setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model simplifyCon1
+    input Real u(min = -10, max = 10);
+    Real x(min = -5, max = 10);
+    Real con(min=-1,max=1) annotation(isConstraint = true);
+    Real con2(min=-1,max=1) annotation(isConstraint = true);
+    Real con3(min=-1,max=1) annotation(isConstraint = true);
+    Real con4(min=-1,max=1) annotation(isConstraint = true);
+    Real con5(min=-1,max=1) annotation(isConstraint = true);
+    Real con6(min=-1,max=1) annotation(isConstraint = true);
+    Real con7(min=-1,max=1) annotation(isConstraint = true);
+    Real con8(min=-1,max=1) annotation(isConstraint = true);
+    Real con9(min=-1,max=1) annotation(isConstraint = true);
+    Real cost =x annotation(isLagrange=true);
+    parameter Real p = 4;
+    final parameter Real p1 = 4;
+initial equation
+   x = 0;
+equation
+   con = 2*x;
+   con2 = p*u;
+   con3 = p*x;
+   con4 = p1*u;
+   con5 = p1*u;
+   con6 = p*x*p*sin(p);
+   con7 = x*u;
+   con8 = x*(time +1);
+   con9 = x*(p + 1);
+   der(x) = u-x;
+end simplifyCon1;
+");
+getErrorString();
+
+optimize(simplifyCon1, numberOfIntervals=20, tolerance = 1e-8, stopTime = 5);
+getErrorString();
+
+val(x,5);
+val(u,5);
+val(x,2);
+val(u,2);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "simplifyCon1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'simplifyCon1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x(start = 0, nominal = 0.0825843, min = -0.0825843, max = 0.0825843, init = 0)
+// Input[1]:u(start = 0, nominal = 0.25, min = -0.25, max = 0.25)
+// --------------------------------------------------------
+// number of nonlinear constraints: 3
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.08258429430068139
+// -0.08258429155929739
+// -0.08258429430068139
+// -0.08258429209272602
+// endResult

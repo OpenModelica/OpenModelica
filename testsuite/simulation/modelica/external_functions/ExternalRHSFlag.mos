@@ -1,0 +1,149 @@
+// name: ExternalRHSFlag
+// keyword: external functions, libraries
+// status: correct
+// teardown_command: rm -rf ExternalRHSFlag.o ExternalRHSFunc.a ExternalRHSFlagFunc* output.log
+//
+// External functions, that uses the RHS final flag.
+//
+//
+loadString("
+function ExternalRHSFunc
+  input Real x;
+  output Real y;
+  external \"C\" annotation(Library=\"libExternalRHSFlag.a\");
+end ExternalRHSFunc;
+
+model ExternalRHSFlagFunc
+  Real x;
+equation
+  der(x) = ExternalRHSFunc(x);
+end ExternalRHSFlagFunc;
+");
+getErrorString();
+system("gcc -c -o libExternalRHSFlag.a ExternalRHSFlag.c");
+simulate(ExternalRHSFlagFunc, tolerance=1e-5, numberOfIntervals=100, simflags="-noEquidistantTimeGrid");
+getErrorString();
+
+// Result:
+// true
+// ""
+// 0
+// record SimulationResult
+//     resultFile = "ExternalRHSFlagFunc_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExternalRHSFlagFunc', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
+//     messages = "RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag NOT set!
+// RHSFinlaFlag set!
+// RHSFinlaFlag set!
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,28 @@
+// name:     IfEquation6
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf testIfEqn6* _testIfEqn6.h output.log
+// 
+// 
+
+loadModel(Modelica); getErrorString();
+
+loadFile("IfEquation6.mo"); getErrorString();
+
+simulate(testIfEqn6, startTime=0, stopTime=1.0, numberOfIntervals=0); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testIfEqn6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 0, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testIfEqn6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

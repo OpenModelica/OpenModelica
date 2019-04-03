@@ -1,0 +1,50 @@
+// name:     simulate SolidComponents using dasslSymJac
+// keywords: SiemensPower SolidComponents
+// status:   correct
+// teardown_command: rm -rf SiemensPower.Components.SolidComponents.Tests.wall_test* _SiemensPower.Components.SolidComponents.Tests.wall_test* output.log
+//
+//  Test SiemensPower component SolidComponents
+//
+
+loadModel(SiemensPower, {"2.1 beta"});getErrorString();
+
+// test jacobians
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-jacobian=symbolical"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
+  { "heatInput.C1signal.y",
+    "wall.layer[1].T[1]",
+    "wall.layer[1].T[2]",
+    "wall.layer[1].T[3]",
+    "wall.layer[1].T[4]",
+    "wall.layer[1].T[5]",
+    "wall.layer[2].T[1]",
+    "wall.layer[2].T[2]",
+    "wall.layer[2].T[3]",
+    "wall.layer[2].T[4]",
+    "wall.layer[2].T[5]",
+    "wall.layer[3].T[1]",
+    "wall.layer[3].T[2]",
+    "wall.layer[3].T[3]",
+    "wall.layer[3].T[4]",
+    "wall.layer[3].T[5]"
+});
+
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

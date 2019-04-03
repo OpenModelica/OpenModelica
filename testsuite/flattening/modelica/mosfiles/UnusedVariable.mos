@@ -1,0 +1,26 @@
+// name: UnusedVariable
+// status: correct
+
+loadString("
+model M
+  Real r = 1.5;
+  Real y;
+  Real z = r;
+equation
+  1.5 = 5;
+end M;
+");
+// setCommandLineOptions("+preOptModules=partitionIndependentBlocks");
+translateModel(M);getErrorString();
+
+// Result:
+// true
+// false
+// "Error: An independent subset of the model has imbalanced number of equations (1) and variables (0).
+// variables:
+//
+// equations:
+// 1 : 1.5 = 5.0
+// Error: pre-optimization module clockPartitioning (simulation) failed.
+// "
+// endResult

@@ -1,0 +1,89 @@
+// name:     Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater
+// teardown_command: rm -f Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater);
+compareVars :=
+{
+   "B5.level",
+   "B5.medium.h",
+   "volume5.medium.p",
+   "volume5.medium.h",
+   "P1.medium.p",
+   "P1.medium.h",
+   "P2.medium.p",
+   "P2.medium.h",
+   "B1.level",
+   "B1.medium.h",
+   "B2.level",
+   "B2.medium.h",
+   "B3.level",
+   "B3.medium.h",
+   "B4.level",
+   "B4.medium.h",
+   "B7.level",
+   "B7.medium.h",
+   "B6.level",
+   "B6.medium.h",
+   "volume4.medium.p",
+   "volume4.medium.h",
+   "pipeB1B2.mediums[1].p",
+   "pipeB1B2.mediums[1].h",
+   "pipeB1B2.mediums[2].p",
+   "pipeB1B2.mediums[2].h",
+   "pipePump1B1.mediums[1].p",
+   "pipePump1B1.mediums[1].h",
+   "pipePump1B1.mediums[2].p",
+   "pipePump1B1.mediums[2].h",
+   "pipePump2B2.mediums[1].p",
+   "pipePump2B2.mediums[1].h",
+   "pipePump2B2.mediums[2].p",
+   "pipePump2B2.mediums[2].h"
+};
+
+runScript(modelTesting);getErrorString();
+
+ 
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater
+// {"B5.level","B5.medium.h","volume5.medium.p","volume5.medium.h","P1.medium.p","P1.medium.h","P2.medium.p","P2.medium.h","B1.level","B1.medium.h","B2.level","B2.medium.h","B3.level","B3.medium.h","B4.level","B4.medium.h","B7.level","B7.medium.h","B6.level","B6.medium.h","volume4.medium.p","volume4.medium.h","pipeB1B2.mediums[1].p","pipeB1B2.mediums[1].h","pipeB1B2.mediums[2].p","pipeB1B2.mediums[2].h","pipePump1B1.mediums[1].p","pipePump1B1.mediums[1].h","pipePump1B1.mediums[2].p","pipePump1B1.mediums[2].h","pipePump2B2.mediums[1].p","pipePump2B2.mediums[1].h","pipePump2B2.mediums[2].p","pipePump2B2.mediums[2].h"}
+// Compilation succeeded
+// Warning: Aliasset with several free start values
+//          Candidate pipePump2B2.m_flows[1](start = 0.0)
+//          Candidate P2.port_b.m_flow(start = P2.m_flow_start)
+//          Candidate V25.m_flow(start = V25.m_flow_start)
+//          Select value from pipePump2B2.m_flows[1](start = 0.0)
+// Warning: Aliasset with several free start values
+//          Candidate V24.m_flow(start = V24.m_flow_start)
+//          Candidate P2.port_a.m_flow(start = P2.m_flow_start)
+//          Select value from V24.m_flow(start = V24.m_flow_start)
+// Warning: Aliasset with several free start values
+//          Candidate pipePump1B1.m_flows[1](start = 0.0)
+//          Candidate P1.port_b.m_flow(start = P1.m_flow_start)
+//          Candidate V22.m_flow(start = V22.m_flow_start)
+//          Select value from pipePump1B1.m_flows[1](start = 0.0)
+// Warning: Aliasset with several free start values
+//          Candidate V23.m_flow(start = V23.m_flow_start)
+//          Candidate P1.port_a.m_flow(start = P1.m_flow_start)
+//          Select value from V23.m_flow(start = V23.m_flow_start)
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "true
+// "
+// ""
+// endResult

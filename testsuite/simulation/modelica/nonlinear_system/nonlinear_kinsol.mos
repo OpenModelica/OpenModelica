@@ -1,0 +1,41 @@
+// name: nonlinear [kinsol]
+// status: correct
+// teardown_command: rm -f nonlinear_system.nonlinear* _nonlinear_system.nonlinear* output.log
+
+loadFile("nonlinear.mo"); getErrorString();
+simulate(nonlinear_system.nonlinear, simflags="-nls=kinsol"); getErrorString();
+
+val(a[1],{0.0,1.0});
+val(a[2],{0.0,1.0});
+val(b[1],{0.0,1.0});
+val(b[2],{0.0,1.0});
+val(c[1,1],{0.0,1.0});
+val(c[1,2],{0.0,1.0});
+val(c[2,1],{0.0,1.0});
+val(c[2,2],{0.0,1.0});
+val(d[1],{0.0,1.0});
+val(d[2],{0.0,1.0});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinear_system.nonlinear_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'nonlinear_system.nonlinear', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {0.0,0.0}
+// {0.0,0.0}
+// {1.0,1.0}
+// {1.0,1.0}
+// {0.0,0.0}
+// {0.0,0.0}
+// {0.0,0.0}
+// {0.0,0.0}
+// {0.0,0.0}
+// {0.0,0.0}
+// endResult

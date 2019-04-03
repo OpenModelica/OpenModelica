@@ -1,0 +1,74 @@
+// name:     EventTest
+// keywords: EventHandling, Realations
+// status: correct
+// teardown_command: rm -rf testEvents* output.log
+// depends: EventTests.mat
+//
+//  Simulate model containing EventIterations
+//
+
+loadString("
+model testEvents
+  parameter Real p = 1;
+  Real x(start=-0.25, fixed=true);
+  Real y(start=0.25, fixed=true);
+  Real a(start=p, fixed=true);
+  Boolean v1,v2,v3,v4;
+  Boolean w1,w2,w3,w4;
+equation
+  der(x) = a;
+  der(y) = -a;
+
+  v1 = if x >  p then true else false;
+  v2 = if x >= p then true else false;
+  v3 = if x <  p then true else false;
+  v4 = if x <= p then true else false;
+
+  w1 = if x >  y then true else false;
+  w2 = if x >= y then true else false;
+  w3 = if x <  y then true else false;
+  w4 = if x <= y then true else false;
+
+  when sample(1, 1) then
+    a = -pre(a);
+  end when;
+end testEvents;
+"); getErrorString();
+
+simulate(testEvents, tolerance=1e-6, startTime=0, stopTime=10, numberOfIntervals=100, simflags="-lv=LOG_SOTI"); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("testEvents_res.mat", "EventTests.mat", "testEvents_diff.csv", 0.01, 0.001, {"v1", "v2", "v3", "v4", "w1", "w2", "w3", "w4"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=-0.25, nominal=1) = -0.25 (pre: -0.25)
+// |                 | |       | | | [2] Real y(start=0.25, nominal=1) = 0.25 (pre: 0.25)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [3] Real der(x) = 1 (pre: 0)
+// |                 | |       | | | [4] Real der(y) = -1 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [5] Real a(start=1, nominal=1) = 1 (pre: 1)
+// |                 | |       | | boolean variables
+// |                 | |       | | | [1] Boolean $whenCondition1(start=false) = false (pre: false)
+// |                 | |       | | | [2] Boolean v1(start=false) = false (pre: false)
+// |                 | |       | | | [3] Boolean v2(start=false) = false (pre: false)
+// |                 | |       | | | [4] Boolean v3(start=true) = true (pre: true)
+// |                 | |       | | | [5] Boolean v4(start=true) = true (pre: true)
+// |                 | |       | | | [6] Boolean w1(start=false) = false (pre: false)
+// |                 | |       | | | [7] Boolean w2(start=false) = false (pre: false)
+// |                 | |       | | | [8] Boolean w3(start=true) = true (pre: true)
+// |                 | |       | | | [9] Boolean w4(start=true) = true (pre: true)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

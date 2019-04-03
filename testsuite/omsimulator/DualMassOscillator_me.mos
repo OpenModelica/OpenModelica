@@ -1,0 +1,86 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf DualMassOscillator_me.lua DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log temp-DualMassOscillator_me/
+
+loadFile("DualMassOscillator.mo"); getErrorString();
+
+buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("DualMassOscillator_me.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-DualMassOscillator_me/\")
+
+oms_newModel(\"DualMassOscillator\")
+oms_addSystem(\"DualMassOscillator.root\", oms_system_sc)
+oms_addSubModel(\"DualMassOscillator.root.system1\", \"DualMassOscillator.System1.fmu\")
+oms_addSubModel(\"DualMassOscillator.root.system2\", \"DualMassOscillator.System2.fmu\")
+
+oms_addConnection(\"DualMassOscillator.root.system1.F\", \"DualMassOscillator.root.system2.F\")
+oms_addConnection(\"DualMassOscillator.root.system1.s1\", \"DualMassOscillator.root.system2.s1\")
+oms_addConnection(\"DualMassOscillator.root.system1.v1\", \"DualMassOscillator.root.system2.v1\")
+oms_addConnection(\"DualMassOscillator.root.system1.a1\", \"DualMassOscillator.root.system2.a1\")
+
+oms_setResultFile(\"DualMassOscillator\", \"\")
+oms_setStopTime(\"DualMassOscillator\", 0.1)
+oms_setFixedStepSize(\"DualMassOscillator.root\", 1e-4)
+oms_setTolerance(\"DualMassOscillator.root\", 1e-6)
+
+oms_instantiate(\"DualMassOscillator\")
+oms_setReal(\"DualMassOscillator.root.system2.s2_start\", 2.5)
+
+oms_initialize(\"DualMassOscillator\")
+print(\"info:    Initialization\")
+print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
+print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
+
+oms_simulate(\"DualMassOscillator\")
+print(\"info:    Simulation\")
+print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
+print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
+
+oms_terminate(\"DualMassOscillator\")
+oms_delete(\"DualMassOscillator\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_me.lua");
+
+simulate(DualMassOscillator.CoupledSystem, stopTime=0.1, simflags="-override=system2.s2_start=2.5"); getErrorString();
+val(system1.s1, {0.0,0.1});
+val(system2.s2, {0.0,0.1});
+
+// Result:
+// true
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "
+// "DualMassOscillator.System1.fmu"
+// ""
+// "DualMassOscillator.System2.fmu"
+// ""
+// true
+// ""
+// info:    maximum step size for 'DualMassOscillator.root': 0.100000
+// info:    No result file will be created
+// info:    Initialization
+// info:      system1.s1: 1.0
+// info:      system2.s2: 2.5
+// info:    Simulation
+// info:      system1.s1: 0.9112797974079
+// info:      system2.s2: 1.9556338147396
+// info:    Final Statistics for 'DualMassOscillator.root':
+//          NumSteps = 1301 NumRhsEvals  = 1545 NumLinSolvSetups = 138
+//          NumNonlinSolvIters = 1544 NumNonlinSolvConvFails = 0 NumErrTestFails = 49
+// 0
+// record SimulationResult
+//     resultFile = "DualMassOscillator.CoupledSystem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DualMassOscillator.CoupledSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=system2.s2_start=2.5'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,0.9112773579994231}
+// {2.5,1.955636409834865}
+// endResult

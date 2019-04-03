@@ -1,0 +1,20 @@
+// name: ErrorFunctionCallNumArgs
+// status: correct
+loadFile("ErrorFunctionCallNumArgs.mo");
+ErrorFunctionCallNumArgs.f0();
+getErrorString();
+ErrorFunctionCallNumArgs.f1();
+getErrorString();
+ErrorFunctionCallNumArgs.f2();
+getErrorString();
+// Result:
+// true
+// 
+// "[flattening/modelica/mosfiles/ErrorFunctionCallNumArgs.mo:12:3-12:12:writable] Error: Function parameter i was not given by the function call, and does not have a default value.
+// "
+// "1"
+// ""
+// 
+// "[flattening/modelica/mosfiles/ErrorFunctionCallNumArgs.mo:22:3-22:15:writable] Error: Failed to elaborate expression: fn(1, 2).
+// "
+// endResult

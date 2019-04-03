@@ -1,0 +1,58 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+// cause the model uses for Bodies I = zeros(3,3) and I is final it cannot be evaluated. If it is evaluated
+// index reduction method fails becauses z_a is removed from the equation
+// frame_a.t = I*z_a + cross(w_a, I*w_a) + cross(r_CM, frame_a.f);
+// In result of that there are 2 equations for frame_a.t and none for z_a
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2,stopTime=3.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2.mat","Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_diff.csv",0.01,0.00001,
+  {"freeMotion.r_rel_a[1]",
+  "freeMotion.r_rel_a[2]",
+  "freeMotion.r_rel_a[3]",
+  "freeMotion.v_rel_a[1]",
+  "freeMotion.v_rel_a[2]",
+  "freeMotion.v_rel_a[3]",
+  "freeMotion.w_rel_b[1]",
+  "freeMotion.w_rel_b[2]",
+  "freeMotion.w_rel_b[3]",
+  "referenceSystem.pointMass1.w_a[1]",
+  "referenceSystem.pointMass1.w_a[2]",
+  "referenceSystem.pointMass1.w_a[3]",
+  "referenceSystem.pointMass3.v_0[1]",
+  "referenceSystem.pointMass6.frame_a.r_0[1]",
+  "referenceSystem.pointMass6.frame_a.r_0[2]",
+  "referenceSystem.pointMass6.frame_a.r_0[3]",
+  "referenceSystem.pointMass6.v_0[2]",
+  "referenceSystem.pointMass6.v_0[3]",
+  "referenceSystem.pointMass1.Q[1]",
+  "referenceSystem.pointMass1.Q[2]",
+  "referenceSystem.pointMass1.Q[3]",
+  "referenceSystem.pointMass1.Q[4]",
+  "freeMotion.Q[1]",
+  "freeMotion.Q[2]",
+  "freeMotion.Q[3]",
+  "freeMotion.Q[4]"});
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

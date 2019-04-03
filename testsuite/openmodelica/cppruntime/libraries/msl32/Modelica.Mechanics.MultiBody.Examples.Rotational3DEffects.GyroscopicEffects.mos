@@ -1,0 +1,56 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_diff.csv",0.02,0.06,
+  {"bodyCylinder2.body.frame_a.R.T[1,1]",
+   "bodyCylinder2.body.frame_a.R.T[1,2]",
+   "bodyCylinder2.body.frame_a.R.T[1,3]",
+   "bodyCylinder2.body.frame_a.R.T[2,1]",
+   "bodyCylinder2.body.frame_a.R.T[2,2]",
+   "bodyCylinder2.body.frame_a.R.T[2,3]",
+   "bodyCylinder2.body.frame_a.R.T[3,1]",
+   "bodyCylinder2.body.frame_a.R.T[3,2]",
+   "bodyCylinder2.body.frame_a.R.T[3,3]",
+   "bodyCylinder2.body.w_a[1]",
+   "bodyCylinder2.body.w_a[2]",
+   "bodyCylinder2.body.w_a[3]",
+   "revolute.phi",
+   "revolute.w",   
+   "bodyCylinder3.body.frame_a.R.T[1,1]",
+   "bodyCylinder3.body.frame_a.R.T[1,2]",
+   "bodyCylinder3.body.frame_a.R.T[1,3]",
+   "bodyCylinder3.body.frame_a.R.T[2,1]",
+   "bodyCylinder3.body.frame_a.R.T[2,2]",
+   "bodyCylinder3.body.frame_a.R.T[2,3]",
+   "bodyCylinder3.body.frame_a.R.T[3,1]",
+   "bodyCylinder3.body.frame_a.R.T[3,2]",
+   "bodyCylinder3.body.frame_a.R.T[3,3]",
+   "bodyCylinder3.body.w_a[1]",
+   "bodyCylinder3.body.w_a[2]",
+   "bodyCylinder3.body.w_a[3]",
+   "rotor1D.phi",
+   "rotor1D.w"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.00000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

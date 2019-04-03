@@ -1,0 +1,24 @@
+// name:     tupleTest
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f tplTest* tplTest.cpp tplTest tplTest.exe tplTest.makefile tplTest.log tplTest.libs
+// 
+//  Simulate models and read in data.
+//
+loadFile("tupleTest.mo");
+simulate(tplTest, stopTime=0.1, numberOfIntervals=50, tolerance=1e-5);
+val(x,0.0);
+val(y,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "tplTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'tplTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// -1.0
+// endResult

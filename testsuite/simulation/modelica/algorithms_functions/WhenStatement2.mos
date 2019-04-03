@@ -1,0 +1,44 @@
+// name:     WhenStatement2
+// keywords: when
+// status: correct
+// teardown_command: rm -rf WhenStat2_* WhenStat2 WhenStat2.exe WhenStat2.cpp WhenStat2.makefile WhenStat2.libs WhenStat2.log output.log
+// 
+//  
+// Drmodelica: 9.1 When-Statements (p. 293)
+// 
+loadFile("WhenStatement2.mo");
+simulate(WhenStat2, tolerance=1e-3, numberOfIntervals=400); // 2 intervals == 3 values
+echo(false); // turns of output 
+size:=readSimulationResultSize("WhenStat2_res.mat");
+res:=readSimulationResult("WhenStat2_res.mat",{x,y1,y3},size); 
+
+x:=res[1,1];
+y1:=res[2,400];
+y3:=res[3,400];
+x:=1000*x;
+y1:=1000*y1;
+y3:=1000*y3;
+x:=floor(x);
+y1:=floor(y1);
+y3:=floor(y3);
+
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y1/1000.0;
+y3/1000.0;
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WhenStat2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 400, tolerance = 0.001, method = 'dassl', fileNamePrefix = 'WhenStat2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 0.909
+// 9.909000000000001
+// endResult

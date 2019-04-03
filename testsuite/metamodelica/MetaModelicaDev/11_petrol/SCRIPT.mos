@@ -1,0 +1,122 @@
+// name:     11  Petrol
+// keywords: MetaModelica
+// cflags: +g=MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Absyn.mo");
+loadFile("FCEmit.mo");
+loadFile("FCode.mo");
+loadFile("Flatten.mo");
+loadFile("Main.mo");
+loadFile("Parse.mo");
+loadFile("Static.mo");
+loadFile("TCode.mo");
+loadFile("Types.mo");
+getErrorString();
+Main.main({});
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// ""
+// #include "petrol.h"
+// void *display[16];
+// struct rec0 {
+//  int rec0_n;
+// };
+// struct rec1 {
+//  int rec1_val;
+//  int rec1_c;
+//  int rec1_buf[10];
+//  int rec1_bufp;
+// };
+// struct rec2 {
+//  int rec2_n;
+//  int rec2_temp;
+// };
+// extern void factorial(void);
+// extern int factorial_fact(int );
+// extern void factorial_write_int(int );
+// void factorial(void)
+// {
+//  struct rec0 frame;
+//  void *saveFP = display[0];
+//  display[0] = &frame;
+//  *P_OFFSET(rec0_n,(struct rec0 (*))(display[0])) = petrol_read();
+//  *P_OFFSET(rec0_n,(struct rec0 (*))(display[0])) = ((*(P_OFFSET(rec0_n,(struct rec0 (*))(display[0])))) - (48));
+//  factorial_write_int(factorial_fact(*(P_OFFSET(rec0_n,(struct rec0 (*))(display[0])))));
+//  petrol_write(10);
+// epilogue:;
+//  display[0] = saveFP;
+// }
+// int factorial_fact(int n)
+// {
+//  int retval;
+//  struct rec2 frame;
+//  void *saveFP = display[1];
+//  display[1] = &frame;
+//  frame.rec2_n = n;
+//  if( ((*(P_OFFSET(rec2_n,(struct rec2 (*))(display[1])))) == (0)) ) {
+//  retval = 1;
+//  goto epilogue;
+//  } else {
+//  *P_OFFSET(rec2_temp,(struct rec2 (*))(display[1])) = factorial_fact(((*(P_OFFSET(rec2_n,(struct rec2 (*))(display[1])))) - (1)));
+//  retval = ((*(P_OFFSET(rec2_n,(struct rec2 (*))(display[1])))) * (*(P_OFFSET(rec2_temp,(struct rec2 (*))(display[1])))));
+//  goto epilogue;
+//  }
+// epilogue:;
+//  display[1] = saveFP;
+//  return retval;
+// }
+// void factorial_write_int(int val)
+// {
+//  struct rec1 frame;
+//  void *saveFP = display[1];
+//  display[1] = &frame;
+//  frame.rec1_val = val;
+//  if( ((*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1])))) == (0)) ) {
+//  petrol_write(48);
+//  goto epilogue;
+//  } else {
+//  }
+//  if( ((*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1])))) < (0)) ) {
+//  petrol_write(45);
+//  *P_OFFSET(rec1_val,(struct rec1 (*))(display[1])) = ((0) - (*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1])))));
+//  } else {
+//  }
+//  *P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])) = 0;
+//  while( ((0) < (*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1]))))) ) {
+//  *P_OFFSET(rec1_c,(struct rec1 (*))(display[1])) = ((*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1])))) % (10));
+//  *(((int (*))(P_OFFSET(rec1_buf,(struct rec1 (*))(display[1])))) + (*(P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1]))))) = ((*(P_OFFSET(rec1_c,(struct rec1 (*))(display[1])))) + (48));
+//  *P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])) = ((*(P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])))) + (1));
+//  *P_OFFSET(rec1_val,(struct rec1 (*))(display[1])) = ((*(P_OFFSET(rec1_val,(struct rec1 (*))(display[1])))) / (10));
+//  }
+//  while( ((0) < (*(P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1]))))) ) {
+//  *P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])) = ((*(P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])))) - (1));
+//  petrol_write(*((((int (*))(P_OFFSET(rec1_buf,(struct rec1 (*))(display[1])))) + (*(P_OFFSET(rec1_bufp,(struct rec1 (*))(display[1])))))));
+//  }
+// epilogue:;
+//  display[1] = saveFP;
+// }
+// int main(void)
+// {
+//  factorial();
+//  return 0;
+// }
+//
+// ""
+// endResult

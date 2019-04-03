@@ -1,0 +1,68 @@
+// name: VDPcheckError
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("VDP.mo");
+getErrorString();
+
+optimize(nmpcVDP, stopTime=20.0, numberOfIntervals=50, tolerance = 1e-8, simflags = "-lv LOG_IPOPT_ERROR");
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcVDP_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcVDP', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:cost(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
+// State[1]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:x2(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// Input[3]:u(start = 0, nominal = 1, min = -0.5, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 0.144636 for the approximation of the state x1(time = 15.2)
+// LOG_IPOPT_ERROR   | info    | max error is 0.267034 for the approximation of the state x1(time = 5.05798)
+// LOG_IPOPT_ERROR   | info    | max error is 0.69755 for the approximation of the state x1(time = 2.06202)
+// LOG_IPOPT_ERROR   | info    | max error is 0.12243 for the approximation of the state x1(time = 2.65798)
+// LOG_IPOPT_ERROR   | info    | max error is 0.158649 for the approximation of the state x1(time = 15.458)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0968439 for the approximation of the state x1(time = 15.6)
+// LOG_IPOPT_ERROR   | info    | max error is 0.118733 for the approximation of the state x1(time = 18.658)
+// LOG_IPOPT_ERROR   | info    | max error is 0.22888 for the approximation of the state x1(time = 18.658)
+// LOG_IPOPT_ERROR   | info    | max error is 0.217755 for the approximation of the state x1(time = 18.658)
+// LOG_IPOPT_ERROR   | info    | max error is 0.254165 for the approximation of the state x1(time = 11.858)
+// LOG_IPOPT_ERROR   | info    | max error is 0.269232 for the approximation of the state x1(time = 11.858)
+// LOG_IPOPT_ERROR   | info    | max error is 0.212767 for the approximation of the state x1(time = 11.858)
+// LOG_IPOPT_ERROR   | info    | max error is 0.187089 for the approximation of the state x1(time = 11.858)
+// LOG_IPOPT_ERROR   | info    | max error is 0.147116 for the approximation of the state x1(time = 11.858)
+// LOG_IPOPT_ERROR   | info    | max error is 0.111047 for the approximation of the state cost(time = 6.25798)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00248027 for the approximation of the state cost(time = 7.85798)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00974811 for the approximation of the state cost(time = 6.25798)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000207942 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 9.73268e-05 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 3.38264e-05 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 8.89167e-06 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 1.67145e-06 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 1.29372e-07 for the approximation of the state cost(time = 1.2)
+// LOG_IPOPT_ERROR   | info    | max error is 2.65482e-08 for the approximation of the state cost(time = 1.45798)
+// LOG_IPOPT_ERROR   | info    | max error is 4.16174e-09 for the approximation of the state cost(time = 1.45798)
+// LOG_IPOPT_ERROR   | info    | max error is 1.8794e-10 for the approximation of the state cost(time = 1.45798)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

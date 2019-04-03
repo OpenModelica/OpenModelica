@@ -1,0 +1,32 @@
+// name:     Modelica.Mechanics.Translational.Examples.Oscillator
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Oscillator);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Oscillator_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Oscillator.mat","Modelica.Mechanics.Translational.Examples.Oscillator_diff.csv",0.01,0.0001,
+  {"mass1.s",
+  "mass1.v",
+  "damper1.s_rel",
+  "damper1.v_rel",
+  "der(mass1.s)",
+  "der(mass1.v)",
+  "der(damper1.s_rel)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Oscillator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

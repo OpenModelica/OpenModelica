@@ -1,0 +1,91 @@
+// name: cseFunctionCall4
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package types
+    record R
+      Real r1;
+      Integer r2;
+    end R;
+  end types;
+  
+  package functions
+    function f3
+      input Real x1;
+      input Real x2;
+      output types.R y;
+    algorithm
+      y.r1 := if x1>x2 then sin(x1) else cos(x2);
+      y.r2 := integer(ceil(y.r1));
+      for i in 1:y.r2 loop
+        y.r1 := y.r1+x1*x2;
+      end for;
+    end f3;
+  end functions;
+  
+  model FunctionCallTest4
+    import CSE.functions.*;
+    import CSE.types.*;
+    Real x;
+    R y,z;
+  equation
+    x = sin(time*cos(time));
+    y = f3(time, x);
+    z = f3(time, x);
+  end FunctionCallTest4;
+
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (6)
+// ========================================
+// 1: z.r2:DISCRETE()  type: Integer 
+// 2: z.r1:VARIABLE()  type: Real 
+// 3: y.r2:DISCRETE()  type: Integer 
+// 4: y.r1:VARIABLE()  type: Real 
+// 5: x:VARIABLE()  type: Real 
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (4, 6)
+// ========================================
+// 1/1 (2): y = z   [dynamic |0|0|0|0|]
+// 2/3 (2): z = CSE.functions.f3(time, x)   [unknown |0|0|0|0|]
+// 3/5 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 4/6 (1): x = sin(time * $cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (3/47)
+// ========================================
+// 1: x - sin(time * $cse1) - {}
+// 2: $cse1 - cos(time) - {}
+// 3: z - CSE.functions.f3(time, x) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

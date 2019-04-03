@@ -1,0 +1,23 @@
+// name: StringArrayReturn
+// status: correct
+// teardown_command: rm -f StringArrayReturn_*
+
+setCommandLineOptions("-d=noevalfunc,gen");
+loadString("
+package StringArrayReturn
+  function f
+    input Integer dim;
+    output String[dim] out = fill(\"test\", dim);
+  end f;
+end StringArrayReturn;
+");getErrorString();
+
+StringArrayReturn.f(3);getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// {"test","test","test"}
+// ""
+// endResult

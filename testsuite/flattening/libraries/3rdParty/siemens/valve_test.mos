@@ -1,0 +1,21 @@
+// name:     valve_test
+// keywords: fluid media siemens
+// status:   correct
+// teardown_command: rm -rf SiemensPowerOMCtest.Components.Valves.Tests.valve_test* _SiemensPowerOMCtest.Components.Valves.Tests.valve_test* output.log
+//
+//  Siemens fluid test.
+//
+
+loadModel(SiemensPower, {"OMCtest"});
+getErrorString();
+checkModel(SiemensPower.Components.Valves.Tests.valve_test);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of SiemensPower.Components.Valves.Tests.valve_test completed successfully.
+// Class SiemensPower.Components.Valves.Tests.valve_test has 237 equation(s) and 239 variable(s).
+// 116 of these are trivial equation(s)."
+// ""
+// endResult

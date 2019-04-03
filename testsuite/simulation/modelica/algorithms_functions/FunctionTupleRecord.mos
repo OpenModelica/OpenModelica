@@ -1,0 +1,11 @@
+// status: correct
+
+loadFile("FunctionTupleRecord.mo");getErrorString();
+buildModel(FunctionTupleRecord);getErrorString();
+
+// Result:
+// true
+// ""
+// {"FunctionTupleRecord","FunctionTupleRecord_init.xml"}
+// ""
+// endResult

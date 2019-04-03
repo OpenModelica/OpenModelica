@@ -1,0 +1,53 @@
+// name:      Ticket4254
+// keywords:  parameter
+// status:    correct
+
+loadString("
+model foo
+  Real s(start = -0.05, fixed = true), v(start = 0, fixed = true), a, Tw, Pw, Aw;
+  parameter Real m = 0.1;
+  parameter Real Av = 1;
+equation
+  if s > 0 then
+    Tw = 0;
+    Pw + Aw = 0;
+    Pw = s * Av;
+  else
+    Pw = 0;
+    Aw + Tw = 0;
+    Aw = s * Av;
+  end if;
+
+  // mechanical equation
+  v = der(s);
+  a = der(v);
+  m*a = 1;
+annotation(
+ experiment(StartTime = 0, StopTime = 0.15, Tolerance = 1e-06, Interval = 0.00015),
+   __OpenModelica_simulationFlags(noEquidistantTimeGrid =  \"()\"));
+end foo;
+");getErrorString();
+
+simulate(foo);getErrorString(); 
+filterSimulationResults("foo_res.mat", "Ticket4254.mat", {"Pw"});
+
+res := OpenModelica.Scripting.compareSimulationResults("foo_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/linear_system/Ticket4254.mat",
+  "Ticket4254_diff.csv",0.01,0.0001,
+  {"Pw"});
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.15, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// {"Files Equal!"}
+// endResult

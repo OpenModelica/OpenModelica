@@ -1,0 +1,51 @@
+// name:     ArrayMult
+// keywords: array
+// status: correct
+// teardown_command: rm -rf ArrayMult_* ArrayMult ArrayMult.exe ArrayMult.cpp ArrayMult.makefile ArrayMult.libs ArrayMult.log output.log
+//
+// Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// 
+loadFile("ArrayMult.mo");
+simulate(ArrayMult,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("ArrayMult_res.mat");
+res:=readSimulationResult("ArrayMult_res.mat",{m1[1],m2[2],m3,m4[2],m5[1],m6[1],m7[2,2],m8[1,2]},size); 
+m1 := res[1,1];
+m2 := res[2,1];
+m3 := res[3,1];
+m4 := res[4,1];
+m5 := res[5,1];
+m6 := res[6,1];
+m7 := res[7,1];
+m8 := res[8,1];
+
+
+echo(true); // turns on output
+m1;
+m2;
+m3;
+m4;
+m5;
+m6;
+m7;
+m8;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArrayMult_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ArrayMult', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 2.0
+// 6.0
+// 11.0
+// 11.0
+// 35.0
+// 35.0
+// 10.0
+// 4.0
+// endResult

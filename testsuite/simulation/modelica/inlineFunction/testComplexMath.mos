@@ -1,0 +1,45 @@
+// name: testComplexMath
+// status: correct
+
+// use new inline method
+setCommandLineOptions("+inlineMethod=append");
+loadModel(Modelica);
+getErrorString();
+loadString("
+model A
+  Real x;
+  Real y;
+  Complex c = Complex(x,y);
+  Complex c2 = Complex(2*x,2*y);
+  Real z, w;
+  Complex c3 = Complex(z);
+  Real tmp0;
+equation
+  der(x) = sin(time*y);
+  der(y) = cos(time*x);
+  tmp0 = c.re;
+  z = tmp0;
+  w = Modelica.ComplexMath.imag(z*Modelica.ComplexMath.conj(c2)); 
+end A;
+");
+getErrorString();
+simulate(A);
+getErrorString();
+val(z,{0,0.5,1.0});
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "A_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {0.0,0.04147451142667286,0.3099044610647076}
+// endResult

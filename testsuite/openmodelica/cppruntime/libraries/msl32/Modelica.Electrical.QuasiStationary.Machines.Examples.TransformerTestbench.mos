@@ -1,0 +1,38 @@
+// name:     Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+// teardown_command: rm -f Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mat",
+  "Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_diff.csv",0.01,0.0001,
+  {"source.plug_p.reference.gamma",
+   "source.voltageSource[2].pin_p.reference.gamma",
+   "source.voltageSource[3].pin_p.reference.gamma"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 100, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation failed for model: Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+// [lib/omlibrary/Modelica 3.2.1/Electrical/QuasiStationary/MultiPhase.mo:2257:7-2257:38:writable] Warning: Operator Overloading: 
+// - No exact match overloading found for operator ' - ' on record array of type: 'Modelica.SIunits.ComplexVoltage'
+// - Automatically expanded using operator function: .Modelica.SIunits.ComplexVoltage.'-'.subtract.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/QuasiStationary/Machines.mo:100:9-100:79:writable] Error: Variable transformer.VectorGroup not found in scope Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.
+// Error: Error occurred while flattening model Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+// "
+// end SimulationResult;
+// ""
+// {"Error opening file: Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench_res.mat"}
+// endResult

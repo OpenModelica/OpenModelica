@@ -1,0 +1,141 @@
+// name:     Record-in-Record Constructor
+// keywords: algorithm
+// status:   correct
+// setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o External_C_RecordTest.o External_C_RecordTest.c
+// teardown_command: rm -f External_C_RecordTest.o
+
+loadFile("RecordTest.mo");
+
+left:=RecordTest.ADD(1.0,2.0);
+right:=RecordTest.ADD(3.0,4.0);
+
+plus1:=RecordTest.mk_plus1(left,right);
+plus2:=RecordTest.mk_plus2(right,right);
+plus3:=RecordTest.mk_plus3(right,left);
+res:=RecordTest.mk_plus4(1.0,2.0,3.0,4.0);
+res:=RecordTest.MULT_PLUS(plus1,plus2,plus3);
+setCommandLineOptions("-d=gen");
+"No explicit external call";
+res := RecordTest.mk_plus_ext(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+"Explicit external call, return value";
+res_explicit := RecordTest.mk_plus_ext_explicit(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+"Explicit external call, return by input argument reference";
+res_by_ref := RecordTest.mk_plus_ext_by_reference(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+
+// Result:
+// true
+// record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;
+// record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// record RecordTest.MULT_PLUS
+//     plus1 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;,
+//     plus2 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;,
+//     plus3 = record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// end RecordTest.MULT_PLUS;
+// true
+// "No explicit external call"
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// "Explicit external call, return value"
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// "Explicit external call, return by input argument reference"
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// endResult

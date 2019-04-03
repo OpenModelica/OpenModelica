@@ -1,0 +1,45 @@
+// name:     Modelica.Mechanics.Rotational.Examples.Backlash
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.Backlash);
+compareVars :=
+{
+   "springDamper.phi_rel",
+   "springDamper.w_rel",
+   "elastoBacklash.phi_rel",
+   "elastoBacklash.w_rel",
+   "inertia1.flange_a.tau",
+   "inertia1.phi",
+   "inertia2.flange_a.tau",
+   "inertia2.phi",
+   "inertia1.flange_b.tau",
+   "inertia2.flange_b.tau"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Rotational.Examples.Backlash
+// {"springDamper.phi_rel","springDamper.w_rel","elastoBacklash.phi_rel","elastoBacklash.w_rel","inertia1.flange_a.tau","inertia1.phi","inertia2.flange_a.tau","inertia2.phi","inertia1.flange_b.tau","inertia2.flange_b.tau"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.Backlash', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Rotational.Examples.Backlash_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

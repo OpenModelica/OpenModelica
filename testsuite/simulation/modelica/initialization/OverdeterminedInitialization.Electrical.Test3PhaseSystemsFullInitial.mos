@@ -1,0 +1,25 @@
+// name: OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+buildModel(OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial","OverdeterminedInitialization.Electrical.Test3PhaseSystemsFullInitial_init.xml"}
+// "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. The following 3 initial equations are redundant, so they are removed from the initialization sytem:
+//          $DER.LR1.i_dq0[2] = 0.0
+//          $DER.LR2.i_dq0[3] = 0.0
+//          LR2.R1.R_actual = LR2.R1.R * (1.0 + LR2.R1.alpha * (LR2.R1.T - LR2.R1.T_ref)).
+// "
+// endResult

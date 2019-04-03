@@ -1,0 +1,43 @@
+// name:     ZeroStates
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml ZeroStates20.fmu ZeroStates20* ZeroStates20/* output.log
+//
+
+loadString("
+model ZeroStates20
+  Real x(start=1), y;
+  parameter Real a=2;
+equation
+  1 = a * x+time;
+  y = x+a;
+end ZeroStates20;
+");
+getErrorString();
+translateModelFMU(ZeroStates20, version="2.0");
+getErrorString();
+importFMU("ZeroStates20.fmu");
+loadFile("ZeroStates20_me_FMU.mo");
+getErrorString();
+simulate(ZeroStates20_me_FMU);
+val(y,0);
+val(y,1);
+
+// Result:
+// true
+// ""
+// "ZeroStates20.fmu"
+// ""
+// "ZeroStates20_me_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ZeroStates20_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ZeroStates20_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 2.5
+// 2.0
+// endResult

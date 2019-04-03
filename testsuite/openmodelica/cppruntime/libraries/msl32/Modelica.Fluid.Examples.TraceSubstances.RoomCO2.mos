@@ -1,0 +1,39 @@
+// name:     Modelica.Fluid.Examples.TraceSubstances.RoomCO2
+// teardown_command: rm -f Modelica.Fluid.Examples.TraceSubstances.RoomCO2_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+
+simulate(Modelica.Fluid.Examples.TraceSubstances.RoomCO2, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.TraceSubstances.RoomCO2_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.TraceSubstances.RoomCO2.mat",
+  "Modelica.Fluid.Examples.TraceSubstances.RoomCO2_diff.csv",0.01,0.0001,
+  {"volume.medium.p",
+   "volume.medium.Xi[1]",
+   "volume.medium.T",
+   "volume.mC[1]"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.TraceSubstances.RoomCO2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.TraceSubstances.RoomCO2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: Aliasset with several free start values
+//          Candidate volume.medium.Xi[1](start = volume.X_start[1])
+//          Candidate volume.medium.X[1](start = 0.01)
+//          Select value from volume.medium.Xi[1](start = volume.X_start[1])
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

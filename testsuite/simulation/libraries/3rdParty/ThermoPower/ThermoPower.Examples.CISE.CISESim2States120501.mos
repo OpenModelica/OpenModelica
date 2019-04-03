@@ -1,0 +1,18 @@
+// name: ThermoPower.Examples.CISE.CISESim2States120501
+// keywords: over-determined initialization
+// status: correct
+
+// Test1
+loadModel(ThermoPower); getErrorString();
+simulate(ThermoPower.Examples.CISE.CISESim2States120501); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.CISE.CISESim2States120501', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation Failed. Model: ThermoPower.Examples.CISE.CISESim2States120501 does not exist! Please load it first before simulation."
+// end SimulationResult;
+// ""
+// endResult

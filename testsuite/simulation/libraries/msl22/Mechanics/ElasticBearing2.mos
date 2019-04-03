@@ -1,0 +1,619 @@
+//name:         ElasticBearing2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Rotational.Examples.ElasticBearing,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+
+"shaft.phi:";
+val(shaft.phi,0.0);
+val(shaft.phi,0.25);
+val(shaft.phi,0.5);
+val(shaft.phi,0.75);
+val(shaft.phi,1.0);
+
+"shaft.flange_a.phi:";
+val(shaft.flange_a.phi,0.0);
+val(shaft.flange_a.phi,0.25);
+val(shaft.flange_a.phi,0.5);
+val(shaft.flange_a.phi,0.75);
+val(shaft.flange_a.phi,1.0);
+
+"shaft.flange_a.tau:";
+val(shaft.flange_a.tau,0.0);
+val(shaft.flange_a.tau,0.25);
+val(shaft.flange_a.tau,0.5);
+val(shaft.flange_a.tau,0.75);
+val(shaft.flange_a.tau,1.0);
+
+"shaft.flange_b.phi:";
+val(shaft.flange_b.phi,0.0);
+val(shaft.flange_b.phi,0.25);
+val(shaft.flange_b.phi,0.5);
+val(shaft.flange_b.phi,0.75);
+val(shaft.flange_b.phi,1.0);
+
+"shaft.flange_b.tau:";
+val(shaft.flange_b.tau,0.0);
+val(shaft.flange_b.tau,0.25);
+val(shaft.flange_b.tau,0.5);
+val(shaft.flange_b.tau,0.75);
+val(shaft.flange_b.tau,1.0);
+
+"shaft.w:";
+val(shaft.w,0.0);
+val(shaft.w,0.25);
+val(shaft.w,0.5);
+val(shaft.w,0.75);
+val(shaft.w,1.0);
+
+"shaft.a:";
+val(shaft.a,0.0);
+val(shaft.a,0.25);
+val(shaft.a,0.5);
+val(shaft.a,0.75);
+val(shaft.a,1.0);
+
+"load.phi:";
+val(load.phi,0.0);
+val(load.phi,0.25);
+val(load.phi,0.5);
+val(load.phi,0.75);
+val(load.phi,1.0);
+
+"load.flange_a.phi:";
+val(load.flange_a.phi,0.0);
+val(load.flange_a.phi,0.25);
+val(load.flange_a.phi,0.5);
+val(load.flange_a.phi,0.75);
+val(load.flange_a.phi,1.0);
+
+"load.flange_a.tau:";
+val(load.flange_a.tau,0.0);
+val(load.flange_a.tau,0.25);
+val(load.flange_a.tau,0.5);
+val(load.flange_a.tau,0.75);
+val(load.flange_a.tau,1.0);
+
+"load.flange_b.phi:";
+val(load.flange_b.phi,0.0);
+val(load.flange_b.phi,0.25);
+val(load.flange_b.phi,0.5);
+val(load.flange_b.phi,0.75);
+val(load.flange_b.phi,1.0);
+
+"load.w:";
+val(load.w,0.0);
+val(load.w,0.25);
+val(load.w,0.5);
+val(load.w,0.75);
+val(load.w,1.0);
+
+"load.a:";
+val(load.a,0.0);
+val(load.a,0.25);
+val(load.a,0.5);
+val(load.a,0.75);
+val(load.a,1.0);
+
+"spring.phi_rel:";
+val(spring.phi_rel,0.0);
+val(spring.phi_rel,0.25);
+val(spring.phi_rel,0.5);
+val(spring.phi_rel,0.75);
+val(spring.phi_rel,1.0);
+
+"spring.tau:";
+val(spring.tau,0.0);
+val(spring.tau,0.25);
+val(spring.tau,0.5);
+val(spring.tau,0.75);
+val(spring.tau,1.0);
+
+"spring.flange_a.phi:";
+val(spring.flange_a.phi,0.0);
+val(spring.flange_a.phi,0.25);
+val(spring.flange_a.phi,0.5);
+val(spring.flange_a.phi,0.75);
+val(spring.flange_a.phi,1.0);
+
+"spring.flange_a.tau:";
+val(spring.flange_a.tau,0.0);
+val(spring.flange_a.tau,0.25);
+val(spring.flange_a.tau,0.5);
+val(spring.flange_a.tau,0.75);
+val(spring.flange_a.tau,1.0);
+
+"spring.flange_b.phi:";
+val(spring.flange_b.phi,0.0);
+val(spring.flange_b.phi,0.25);
+val(spring.flange_b.phi,0.5);
+val(spring.flange_b.phi,0.75);
+val(spring.flange_b.phi,1.0);
+
+"spring.flange_b.tau:";
+val(spring.flange_b.tau,0.0);
+val(spring.flange_b.tau,0.25);
+val(spring.flange_b.tau,0.5);
+val(spring.flange_b.tau,0.75);
+val(spring.flange_b.tau,1.0);
+
+"fixed.flange_b.tau:";
+val(fixed.flange_b.tau,0.0);
+val(fixed.flange_b.tau,0.25);
+val(fixed.flange_b.tau,0.5);
+val(fixed.flange_b.tau,0.75);
+val(fixed.flange_b.tau,1.0);
+
+"springDamper.phi_rel:";
+val(springDamper.phi_rel,0.0);
+val(springDamper.phi_rel,0.25);
+val(springDamper.phi_rel,0.5);
+val(springDamper.phi_rel,0.75);
+val(springDamper.phi_rel,1.0);
+
+"springDamper.tau:";
+val(springDamper.tau,0.0);
+val(springDamper.tau,0.25);
+val(springDamper.tau,0.5);
+val(springDamper.tau,0.75);
+val(springDamper.tau,1.0);
+
+"springDamper.flange_a.tau:";
+val(springDamper.flange_a.tau,0.0);
+val(springDamper.flange_a.tau,0.25);
+val(springDamper.flange_a.tau,0.5);
+val(springDamper.flange_a.tau,0.75);
+val(springDamper.flange_a.tau,1.0);
+
+"springDamper.flange_b.phi:";
+val(springDamper.flange_b.phi,0.0);
+val(springDamper.flange_b.phi,0.25);
+val(springDamper.flange_b.phi,0.5);
+val(springDamper.flange_b.phi,0.75);
+val(springDamper.flange_b.phi,1.0);
+
+"springDamper.flange_b.tau:";
+val(springDamper.flange_b.tau,0.0);
+val(springDamper.flange_b.tau,0.25);
+val(springDamper.flange_b.tau,0.5);
+val(springDamper.flange_b.tau,0.75);
+val(springDamper.flange_b.tau,1.0);
+
+"springDamper.w_rel:";
+val(springDamper.w_rel,0.0);
+val(springDamper.w_rel,0.25);
+val(springDamper.w_rel,0.5);
+val(springDamper.w_rel,0.75);
+val(springDamper.w_rel,1.0);
+
+"torque.tau:";
+val(torque.tau,0.0);
+val(torque.tau,0.25);
+val(torque.tau,0.5);
+val(torque.tau,0.75);
+val(torque.tau,1.0);
+
+"torque.flange_b.phi:";
+val(torque.flange_b.phi,0.0);
+val(torque.flange_b.phi,0.25);
+val(torque.flange_b.phi,0.5);
+val(torque.flange_b.phi,0.75);
+val(torque.flange_b.phi,1.0);
+
+"torque.flange_b.tau:";
+val(torque.flange_b.tau,0.0);
+val(torque.flange_b.tau,0.25);
+val(torque.flange_b.tau,0.5);
+val(torque.flange_b.tau,0.75);
+val(torque.flange_b.tau,1.0);
+
+"ramp.y:";
+val(ramp.y,0.0);
+val(ramp.y,0.25);
+val(ramp.y,0.5);
+val(ramp.y,0.75);
+val(ramp.y,1.0);
+
+"idealGear.flange_a.phi:";
+val(idealGear.flange_a.phi,0.0);
+val(idealGear.flange_a.phi,0.25);
+val(idealGear.flange_a.phi,0.5);
+val(idealGear.flange_a.phi,0.75);
+val(idealGear.flange_a.phi,1.0);
+
+"idealGear.flange_a.tau:";
+val(idealGear.flange_a.tau,0.0);
+val(idealGear.flange_a.tau,0.25);
+val(idealGear.flange_a.tau,0.5);
+val(idealGear.flange_a.tau,0.75);
+val(idealGear.flange_a.tau,1.0);
+
+"idealGear.flange_b.phi:";
+val(idealGear.flange_b.phi,0.0);
+val(idealGear.flange_b.phi,0.25);
+val(idealGear.flange_b.phi,0.5);
+val(idealGear.flange_b.phi,0.75);
+val(idealGear.flange_b.phi,1.0);
+
+"idealGear.flange_b.tau:";
+val(idealGear.flange_b.tau,0.0);
+val(idealGear.flange_b.tau,0.25);
+val(idealGear.flange_b.tau,0.5);
+val(idealGear.flange_b.tau,0.75);
+val(idealGear.flange_b.tau,1.0);
+
+"idealGear.tau_support:";
+val(idealGear.tau_support,0.0);
+val(idealGear.tau_support,0.25);
+val(idealGear.tau_support,0.5);
+val(idealGear.tau_support,0.75);
+val(idealGear.tau_support,1.0);
+
+"idealGear.bearing.phi:";
+val(idealGear.bearing.phi,0.0);
+val(idealGear.bearing.phi,0.25);
+val(idealGear.bearing.phi,0.5);
+val(idealGear.bearing.phi,0.75);
+val(idealGear.bearing.phi,1.0);
+
+"idealGear.bearing.tau:";
+val(idealGear.bearing.tau,0.0);
+val(idealGear.bearing.tau,0.25);
+val(idealGear.bearing.tau,0.5);
+val(idealGear.bearing.tau,0.75);
+val(idealGear.bearing.tau,1.0);
+
+"idealGear.phi_a:";
+val(idealGear.phi_a,0.0);
+val(idealGear.phi_a,0.25);
+val(idealGear.phi_a,0.5);
+val(idealGear.phi_a,0.75);
+val(idealGear.phi_a,1.0);
+
+"idealGear.phi_b:";
+val(idealGear.phi_b,0.0);
+val(idealGear.phi_b,0.25);
+val(idealGear.phi_b,0.5);
+val(idealGear.phi_b,0.75);
+val(idealGear.phi_b,1.0);
+
+"housing.phi:";
+val(housing.phi,0.0);
+val(housing.phi,0.25);
+val(housing.phi,0.5);
+val(housing.phi,0.75);
+val(housing.phi,1.0);
+
+"housing.flange_a.phi:";
+val(housing.flange_a.phi,0.0);
+val(housing.flange_a.phi,0.25);
+val(housing.flange_a.phi,0.5);
+val(housing.flange_a.phi,0.75);
+val(housing.flange_a.phi,1.0);
+
+"housing.flange_a.tau:";
+val(housing.flange_a.tau,0.0);
+val(housing.flange_a.tau,0.25);
+val(housing.flange_a.tau,0.5);
+val(housing.flange_a.tau,0.75);
+val(housing.flange_a.tau,1.0);
+
+"housing.flange_b.phi:";
+val(housing.flange_b.phi,0.0);
+val(housing.flange_b.phi,0.25);
+val(housing.flange_b.phi,0.5);
+val(housing.flange_b.phi,0.75);
+val(housing.flange_b.phi,1.0);
+
+"housing.flange_b.tau:";
+val(housing.flange_b.tau,0.0);
+val(housing.flange_b.tau,0.25);
+val(housing.flange_b.tau,0.5);
+val(housing.flange_b.tau,0.75);
+val(housing.flange_b.tau,1.0);
+
+"housing.w:";
+val(housing.w,0.0);
+val(housing.w,0.25);
+val(housing.w,0.5);
+val(housing.w,0.75);
+val(housing.w,1.0);
+
+"housing.a:";
+val(housing.a,0.0);
+val(housing.a,0.25);
+val(housing.a,0.5);
+val(housing.a,0.75);
+val(housing.a,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Rotational.Examples.ElasticBearing_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.ElasticBearing', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "shaft.phi:"
+// 0.0
+// 0.03704995489826229
+// 0.1348614407951699
+// 0.3031676072739362
+// 0.6488419784921037
+// "shaft.flange_a.phi:"
+// 0.0
+// 0.03704995489826229
+// 0.1348614407951699
+// 0.3031676072739362
+// 0.6488419784921037
+// "shaft.flange_a.tau:"
+// 0.0
+// 5.0
+// 10.0
+// 15.0
+// 20.0
+// "shaft.flange_b.phi:"
+// 0.0
+// 0.03704995489826229
+// 0.1348614407951699
+// 0.3031676072739362
+// 0.6488419784921037
+// "shaft.flange_b.tau:"
+// 0.0
+// -3.794463349301461
+// -9.302479696619256
+// -11.56761557845383
+// -18.31763897671296
+// "shaft.w:"
+// 0.0
+// 0.3491709218545491
+// 0.4016505526348541
+// 1.072960022276014
+// 1.60176550521494
+// "shaft.a:"
+// 0.0
+// 1.205536650698539
+// 0.6975203033807436
+// 3.432384421546169
+// 1.68236102328704
+// "load.phi:"
+// 0.0
+// 0.0009160626104567905
+// 0.01692227123704266
+// 0.06619890119754457
+// 0.1610834389658046
+// "load.flange_a.phi:"
+// 0.0
+// 0.0009160626104567905
+// 0.01692227123704266
+// 0.06619890119754457
+// 0.1610834389658046
+// "load.flange_a.tau:"
+// -0.0
+// 11.38339004790438
+// 27.90743908985777
+// 34.70284673536149
+// 54.95291693013888
+// "load.flange_b.phi:"
+// 0.0
+// 0.0009160626104567905
+// 0.01692227123704266
+// 0.06619890119754457
+// 0.1610834389658046
+// "load.w:"
+// 0.0
+// 0.01654974476592648
+// 0.1259009669191694
+// 0.2731223987404144
+// 0.5038940697641033
+// "load.a:"
+// -0.0
+// 0.2276678009580877
+// 0.5581487817971553
+// 0.6940569347072298
+// 1.099058338602777
+// "spring.phi_rel:"
+// 0.0
+// -0.01138339004790438
+// -0.02790743908985777
+// -0.03470284673536149
+// -0.05495291693013887
+// "spring.tau:"
+// 0.0
+// -11.38339004790438
+// -27.90743908985777
+// -34.70284673536149
+// -54.95291693013888
+// "spring.flange_a.phi:"
+// 0.0
+// 0.01229945265836117
+// 0.04482971032690043
+// 0.1009017479329061
+// 0.2160363558959435
+// "spring.flange_a.tau:"
+// -0.0
+// 11.38339004790438
+// 27.90743908985777
+// 34.70284673536149
+// 54.95291693013888
+// "spring.flange_b.phi:"
+// 0.0
+// 0.0009160626104567905
+// 0.01692227123704266
+// 0.06619890119754457
+// 0.1610834389658046
+// "spring.flange_b.tau:"
+// 0.0
+// -11.38339004790438
+// -27.90743908985777
+// -34.70284673536149
+// -54.95291693013888
+// "fixed.flange_b.tau:"
+// 0.0
+// -12.58316917152901
+// -28.61574579730972
+// -38.1209825413771
+// -56.64655546862716
+// "springDamper.phi_rel:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "springDamper.tau:"
+// 0.0
+// -7.583169171529008
+// -18.61574579730972
+// -23.1209825413771
+// -36.64655546862716
+// "springDamper.flange_a.tau:"
+// -0.0
+// 7.583169171529008
+// 18.61574579730972
+// 23.1209825413771
+// 36.64655546862716
+// "springDamper.flange_b.phi:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "springDamper.flange_b.tau:"
+// 0.0
+// -7.583169171529008
+// -18.61574579730972
+// -23.1209825413771
+// -36.64655546862716
+// "springDamper.w_rel:"
+// 0.0
+// -0.0006646025181754138
+// -5.101477590312808e-05
+// -0.00056175609600475
+// -0.0002030509943207259
+// "torque.tau:"
+// 0.0
+// 5.0
+// 10.0
+// 15.0
+// 20.0
+// "torque.flange_b.phi:"
+// 0.0
+// 0.03704995489826229
+// 0.1348614407951699
+// 0.3031676072739362
+// 0.6488419784921037
+// "torque.flange_b.tau:"
+// -0.0
+// -5.0
+// -10.0
+// -15.0
+// -20.0
+// "ramp.y:"
+// 0.0
+// 5.0
+// 10.0
+// 15.0
+// 20.0
+// "idealGear.flange_a.phi:"
+// 0.0
+// 0.03704995489826229
+// 0.1348614407951699
+// 0.3031676072739362
+// 0.6488419784921037
+// "idealGear.flange_a.tau:"
+// -0.0
+// 3.794463349301461
+// 9.302479696619256
+// 11.56761557845383
+// 18.31763897671296
+// "idealGear.flange_b.phi:"
+// 0.0
+// 0.01229945265836117
+// 0.04482971032690043
+// 0.1009017479329061
+// 0.2160363558959435
+// "idealGear.flange_b.tau:"
+// 0.0
+// -11.38339004790438
+// -27.90743908985777
+// -34.70284673536149
+// -54.95291693013888
+// "idealGear.tau_support:"
+// 0.0
+// 7.588926698602922
+// 18.60495939323851
+// 23.13523115690766
+// 36.63527795342591
+// "idealGear.bearing.phi:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "idealGear.bearing.tau:"
+// 0.0
+// 7.588926698602922
+// 18.60495939323851
+// 23.13523115690766
+// 36.63527795342591
+// "idealGear.phi_a:"
+// 0.0
+// 0.03712575335985167
+// 0.1350475957024042
+// 0.3033987890115451
+// 0.6492084338942402
+// "idealGear.phi_b:"
+// 0.0
+// 0.01237525111995056
+// 0.04501586523413473
+// 0.101132929670515
+// 0.2164028112980801
+// "housing.phi:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "housing.flange_a.phi:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "housing.flange_a.tau:"
+// -0.0
+// 7.583169171529008
+// 18.61574579730972
+// 23.1209825413771
+// 36.64655546862716
+// "housing.flange_b.phi:"
+// 0.0
+// -7.579846158938131e-05
+// -0.0001861549072343021
+// -0.0002311817376089707
+// -0.0003664554021365556
+// "housing.flange_b.tau:"
+// -0.0
+// -7.588926698602922
+// -18.60495939323851
+// -23.13523115690766
+// -36.63527795342591
+// "housing.w:"
+// 0.0
+// -0.0006646025181754138
+// -5.101477590312808e-05
+// -0.00056175609600475
+// -0.0002030509943207259
+// "housing.a:"
+// -0.0
+// -0.001151505414782861
+// 0.002157280814242313
+// -0.002849723106112379
+// 0.002255503040250062
+// endResult

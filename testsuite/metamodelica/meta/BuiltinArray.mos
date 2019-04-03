@@ -1,0 +1,25 @@
+// name:     BuiltinArray
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Builtin function testing
+//
+
+loadFile("BuiltinArray.mo");
+BuiltinArray.test(3,2,1);
+getErrorString();
+
+// Result:
+// true
+// MetaArray(2, 2, 2)
+// MetaArray(2, 2, 2)
+// MetaArray(3, 2, 2)
+// 3
+// 3
+// {3, 2, 2}
+// MetaArray(4, 3, 2, 2)
+// MetaArray(3, 2, 2, 4, 3, 2, 2)
+//
+// ""
+// endResult

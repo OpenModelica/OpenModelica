@@ -1,0 +1,56 @@
+// name:     conflictingStartValues
+// keywords: initialization conflict
+// status: correct
+//
+// ticket:4329
+
+loadString("
+type T = Real(start = 10, nominal=100);
+model conflictingStartValues
+  T x;
+  Real y(start = 3);
+  Real z(start = -4);
+  T a;
+  Real b(start = p, nominal=1000);
+  Real c(start = -10);
+  parameter Real p = 100;
+equation
+  x = y;
+  x + z = 0;
+  (x-3)*(x+11) = 0;
+  a = b;
+  a + c = 0;
+  (a-3)*(a+11) = 0;
+end conflictingStartValues;
+");getErrorString();
+
+setCommandLineOptions("-d=aliasConflicts"); getErrorString();
+simulate(conflictingStartValues, stopTime=0.0, simflags="-output=x,a"); getErrorString();
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "conflictingStartValues_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'conflictingStartValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=x,a'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=0,x=3,a=3
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Alias set with conflicting start values
+//  * Candidate: c(start = 10.0, confidence number = 6)
+//  * Candidate: b(start = p = 100.0, confidence number = 1)
+// => Select value from b(start = p = 100.0) for variable: a
+// Warning: Alias set with conflicting nominal values
+//  * Candidate: b(nominal = 1000.0, confidence number = 6)
+//  * Candidate: a(nominal = 100.0, confidence number = 6)
+// => Select value from a(nominal = 100.0) for variable: a
+// Warning: Alias set with conflicting start values
+//  * Candidate: z(start = 4.0, confidence number = 6)
+//  * Candidate: y(start = 3.0, confidence number = 6)
+// => Select value from y(start = 3.0) for variable: x
+// "
+// endResult

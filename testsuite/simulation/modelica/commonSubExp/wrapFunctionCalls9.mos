@@ -1,0 +1,62 @@
+// name: wrapFunctionCalls9
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls9
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+      output Real y3;
+    algorithm
+      y1 := x1;
+      y2 := y1 + x2;
+      y1 := y2+1.0;
+      y2 := x1 * y2;
+      y3 := x2*x1;
+    end f1;
+
+    parameter Real p1 = 5;
+    Real x;
+  equation
+    (,x,) = f1(p1, p1);
+  end wrapFunctionCalls9;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls9); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated globalKnownVars (simulation) (2)
+// ========================================
+// 1: p1:PARAM()  = 5.0  type: Real 
+// 2: x in (_, x, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls9.f1(p1, p1)  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: (_, x, _) - CSE.wrapFunctionCalls9.f1(p1, p1) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls9_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,52 @@
+// name: 04_HandleEvents
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("HandleEvents1.mo"); getErrorString();
+loadFile("HandleEvents2.mo"); getErrorString();
+
+simulate(HandleEvents1, stopTime=10000, numberOfIntervals=10000);
+res := OpenModelica.Scripting.compareSimulationResults("HandleEvents1_res.mat",
+  "ReferenceFiles/HandleEvents1.mat",
+  "HandleEvents1_diff.csv", 0.01, 0.0001,
+  {"u", "y"}); getErrorString();
+
+simulate(HandleEvents2, stopTime=10000, numberOfIntervals=10000);
+res := OpenModelica.Scripting.compareSimulationResults("HandleEvents2_res.mat",
+  "ReferenceFiles/HandleEvents2.mat",
+  "HandleEvents2_diff.csv", 0.01, 0.0001,
+  {"u", "y"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HandleEvents1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10000.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HandleEvents1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// record SimulationResult
+//     resultFile = "HandleEvents2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10000.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HandleEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

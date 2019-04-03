@@ -1,0 +1,31 @@
+// name: none_ocp
+// status: correct
+
+setCommandLineOptions("+gDynOpt");
+
+loadString(
+"
+model foo
+  parameter Real p = 1;
+  Real y = time;
+end foo;
+"
+);
+getErrorString();
+
+optimize(foo, numberOfIntervals=5, tolerance = 1e-8);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 5, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

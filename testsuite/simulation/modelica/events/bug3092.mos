@@ -1,0 +1,106 @@
+// name: bug3092
+// keywords: events, when, elsewhen
+// status: correct
+// cflags:
+// teardown_command: rm -rf TestModel.TestQueueModel*  output.log
+//  
+//
+
+loadString("
+package TestModel
+  package QueueOperations
+    function AddIn
+      input Real qin[:, :];
+      input Integer qinlength;
+      input Real qinfo[size(qin, 1)];
+      output Real qout[size(qin, 1), size(qin, 2)];
+      output Integer qoutlength;
+    algorithm 
+      qout := qin;
+      qoutlength := qinlength + 1;
+      for i in 1:qinlength loop
+        qout[:, i + 1] := qin[:, i];
+      end for;
+      qout[:, 1] := qinfo;
+    end AddIn;
+
+    function DeleteOut
+      input Real qin[:, :];
+      input Integer qinlength;
+      output Real qout[size(qin, 1), size(qin, 2)];
+      output Integer qoutlength;
+    algorithm 
+      qout := qin;
+      qoutlength := qinlength - 1;
+    end DeleteOut;
+
+    function ReadOut
+      input Real qin[:, :];
+      input Integer qlength;
+      output Real qinfo[size(qin, 1)];
+    algorithm 
+      qinfo := qin[:, qlength];
+    end ReadOut;
+  end QueueOperations;
+
+  model TestQueueModel
+    import TQ = TestModel.QueueOperations;
+    Real numberqueue[3, 10](start = zeros(3, 10));
+    Integer queuelength(start = 3);
+    Real P;
+    Real SPC;
+    Real DD;
+    //Integer counter(start = 0);
+  equation 
+    when time > 1 then
+      (numberqueue, queuelength) = TQ.AddIn(pre(numberqueue), pre(queuelength), {2.125, 3, 4});
+    elsewhen time > 1.5 then
+      (numberqueue, queuelength) = TQ.DeleteOut(pre(numberqueue), pre(queuelength));
+    elsewhen time > 2 then
+      (numberqueue, queuelength) = TQ.AddIn(pre(numberqueue), pre(queuelength), {2.125, 3, 4});
+    elsewhen time > 2.5 then
+      (numberqueue, queuelength) = TQ.DeleteOut(pre(numberqueue), pre(queuelength));
+    elsewhen time > 3 then
+      (numberqueue, queuelength) = TQ.AddIn(pre(numberqueue), pre(queuelength), {2.125, 3, 4});
+    elsewhen time > 3.5 then
+      (numberqueue, queuelength) = TQ.DeleteOut(pre(numberqueue), pre(queuelength));
+    elsewhen time > 4 then
+      (numberqueue, queuelength) = TQ.AddIn(pre(numberqueue), pre(queuelength), {2.125, 3, 4});
+    end when;
+    {P, SPC, DD} = TQ.ReadOut(numberqueue, queuelength);
+  end TestQueueModel;
+end TestModel;
+");
+getErrorString();
+
+simulate(TestModel.TestQueueModel, stopTime=10);
+getErrorString();
+
+val(P,0);
+val(P,10);
+
+val(SPC,0);
+val(SPC,10);
+
+val(DD,0);
+val(DD,10);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestModel.TestQueueModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestModel.TestQueueModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.0
+// 2.125
+// 0.0
+// 3.0
+// 0.0
+// 4.0
+// endResult

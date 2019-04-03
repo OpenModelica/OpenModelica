@@ -1,0 +1,44 @@
+// name:     Bug3974.mos [BUG #3974]
+// keywords: check that we generate a file for diffSimulationResultsHtml API
+// status:   correct
+// teardown_command: rm -rf ModelTestBug3974*
+// 
+
+loadString("
+model ModelTestBug3974
+  parameter Real a = 1;
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = a * x;
+end ModelTestBug3974;
+"); getErrorString();
+buildModel(ModelTestBug3974); getErrorString();
+system("ModelTestBug3974 -r ModelTestBug39741.mat"); getErrorString();
+system("ModelTestBug3974 -override a=2 -r ModelTestBug39742.mat"); getErrorString();
+writeFile("ModelTestBug3974.html", diffSimulationResultsHtml("x", "ModelTestBug39741.mat", "ModelTestBug39742.mat")); getErrorString();
+echo(false);
+str := readFile("ModelTestBug3974.html"); getErrorString();
+v := regexBool(str, "<(.*)>.*"); getErrorString();
+echo(true);
+"Do we have <html> inside the read file?";
+v;
+
+// Result:
+// true
+// ""
+// {"ModelTestBug3974","ModelTestBug3974_init.xml"}
+// ""
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// true
+// ""
+// true
+// "Do we have <html> inside the read file?"
+// true
+// endResult

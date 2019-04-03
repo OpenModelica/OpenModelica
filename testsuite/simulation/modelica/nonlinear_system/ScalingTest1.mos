@@ -1,0 +1,59 @@
+// name: ScalingTest1
+// status: correct
+//
+//
+
+loadModel(Modelica); getErrorString();
+loadString("
+model ScalingTest1
+  parameter Real nom1 =  1e30;
+  parameter Real nom2 =  1e-12;
+  parameter Real fnom1 = 1e25;
+  parameter Real fnom2 = 1e-13;
+  Real x1(start=4*nom1,nominal=nom1);
+  Real x2(start=2*nom2,nominal=nom2);
+equation
+  0 = sin(x1/nom1)*cos(x2/nom2)*fnom2 - cos(x1/nom1)*sin(x2/nom2)*fnom2;
+  0 = log(x1/nom1)*log(x2/nom2)*fnom1 - log(3)^2*fnom1;
+end ScalingTest1;
+"); getErrorString();
+
+simulate(ScalingTest1); getErrorString();
+val(x1, 0.0); getErrorString();
+val(x2, 0.0); getErrorString();
+
+simulate(ScalingTest1, simflags="-override nom1=1,nom2=1,fnom1=1,fnom2=1"); getErrorString();
+val(x1, 0.0); getErrorString();
+val(x2, 0.0); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalingTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ScalingTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.217839301454226e+30
+// ""
+// 2.076246647864433e-12
+// ""
+// record SimulationResult
+//     resultFile = "ScalingTest1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ScalingTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override nom1=1,nom2=1,fnom1=1,fnom2=1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.217839301454226
+// ""
+// 2.076246647864433
+// ""
+// endResult

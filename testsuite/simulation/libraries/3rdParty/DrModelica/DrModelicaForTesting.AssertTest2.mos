@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.AssertTest2.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.AssertTest2
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.AssertTest2.* DrModelicaForTesting.AssertTest2_* DrModelicaForTesting.AssertTest2 DrModelicaForTesting.AssertTest2.exe DrModelicaForTesting.AssertTest2.cpp DrModelicaForTesting.AssertTest2.makefile DrModelicaForTesting.AssertTest2.libs DrModelicaForTesting.AssertTest2.log DrModelicaForTesting.AssertTest2.c DrModelicaForTesting.AssertTest2.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.AssertTest2, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.AssertTest2_res.mat",
+  "ReferenceFiles/AssertTest2_ref.mat","DrModelicaForTesting.AssertTest2_diff.csv",0.01,0.013,
+  {"assertTest1.lowlimit","assertTest1.highlimit", "assertTest1.x"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.AssertTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.AssertTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

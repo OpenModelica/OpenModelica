@@ -1,0 +1,43 @@
+// name:     DefaultComponentName 
+// keywords: API 
+// status:   correct
+// 
+// getDefaultComponentName and getDefaultComponentPrefixes 
+//
+
+loadFile("DefaultComponentName.mo");
+getDefaultComponentName(A);
+getDefaultComponentName(DefaultCompartment);
+addComponent(a,A,B);
+addComponent(a2,A2,B);
+addComponent(a3,A3,B,comment="foobar");
+addComponent(a5,DefaultCompartment,B);
+updateComponent(a5,DefaultCompartment,B,comment="foo2");
+list(B);
+
+getDefaultComponentPrefixes(DefaultCompartment);
+
+getDefaultComponentPrefixes(A);
+
+getDefaultComponentPrefixes(A2);
+getDefaultComponentPrefixes(A3);
+// Result:
+// true
+// "AAABB"
+// "compartment"
+// true
+// true
+// true
+// true
+// true
+// "model B
+//   inner parameter A a;
+//   A2 a2;
+//   outer replaceable A3 a3 \"foobar\";
+//   inner DefaultCompartment a5 \"foo2\";
+// end B;"
+// "inner"
+// "inner parameter"
+// {}
+// "outer replaceable"
+// endResult

@@ -1,0 +1,44 @@
+// name: paramdlowdump.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=paramdlowdump
+// 
+
+loadString("
+model testParamdlowdump
+  parameter Boolean b1 = true;
+  parameter Boolean b2 = not b1;
+  parameter Boolean b3 = b1 or b2;
+  
+  parameter Integer i1 = 1;
+  parameter Integer i2 = i1 + 1;
+  parameter Integer i3 = i1 + i2;
+  
+  parameter Real r1 = 1.0;
+  parameter Real r2 = r1 + 1;
+  parameter Real r3 = r1 + r2;
+end testParamdlowdump;
+"); getErrorString();
+
+setDebugFlags("paramdlowdump"); getErrorString();
+buildModel(testParamdlowdump); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// parameters in order (6)
+// ========================================
+// 1: r2=1.0 + r1 [Real ]
+// 2: r3=r1 + r2 [Real ]
+// 3: i2=1 + i1 [Integer ]
+// 4: i3=i1 + i2 [Integer ]
+// 5: b2=not b1 [Boolean ]
+// 6: b3=b1 or b2 [Boolean ]
+//
+// {"testParamdlowdump","testParamdlowdump_init.xml"}
+// ""
+// endResult

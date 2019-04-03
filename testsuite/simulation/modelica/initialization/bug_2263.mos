@@ -1,0 +1,56 @@
+// name: bug_2263
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_2263* _initializationTests.bug_2263* output.log
+
+loadString("
+within ;
+package initializationTests
+  model bug_2263
+    Real x(start=0, fixed=true);
+    Real d(start=0, fixed=true);
+  initial equation
+    pre(x) = -1;
+  equation
+    der(x) = 0;
+    when sample(0.0, 1.0) then
+      d = pre(x);
+    end when;
+  end bug_2263;
+end initializationTests;
+"); getErrorString();
+
+// var    | equation
+// -------+--------------------------------------
+// x      | x = 0       (implicit)
+// der(x) | der(x) = 0  (equation)
+// pre(x) | pre(x) = -1 (initial equation)
+//        | x = pre(x)  (implicit)
+// d      | d = pre(d)  (equation: inactive when)
+// pre(d) | pre(d) = 0  (implicit)
+// -------+--------------------------------------
+// 5      | 6
+
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+simulate(initializationTests.bug_2263, startTime=0.0, stopTime=0.0, simflags="-iim=symbolic"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2263', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=symbolic'",
+//     messages = "Simulation execution failed for model: initializationTests.bug_2263
+// LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != -1 = $PRE.x - x
+// stdout            | warning | Error in initialization. Storing results and exiting.
+// |                 | |       | Use -lv=LOG_INIT -w for more information.
+// "
+// end SimulationResult;
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: x = $PRE.x ($START.x = -1.0)
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

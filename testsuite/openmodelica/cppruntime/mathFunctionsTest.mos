@@ -1,0 +1,76 @@
+// name: mathFunctionsTest
+// keywords: built-in math functions
+// status: correct
+// teardown_command: rm -f *MathFunctions.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica);
+loadString("
+package MathFunctions
+  function f
+    input Real x;
+    output Real acos = Modelica.Math.acos(x);
+    output Real asin = Modelica.Math.asin(x);
+    output Real atan = Modelica.Math.atan(2*x);
+    output Real cos = Modelica.Math.cos(acos);
+    output Real cosh = Modelica.Math.cosh(Modelica.Math.log(x));
+    output Real sin = Modelica.Math.sin(asin);
+    output Real sinh = Modelica.Math.sinh(Modelica.Math.log(x));
+    output Real tan = Modelica.Math.tan(atan);
+    output Real tanh = Modelica.Math.tanh(Modelica.Math.log(x));
+  end f;
+  function g
+    input Real x;
+    output Real exp = Modelica.Math.exp(x);
+    output Real log = Modelica.Math.log(exp);
+    output Real log10 = Modelica.Math.log10(10^x);
+    output Real sqrt = Modelica.Math.sqrt(4*x);
+  end g;
+  model Test
+    input Real u = 0; // avoid pre-evaluation
+    Real x = u + 1;
+    Real acos, asin, atan, cos, cosh, sin, sinh, tan, tanh;
+    Real exp, log, log10, sqrt;
+  equation
+    (acos, asin, atan, cos, cosh, sin, sinh, tan, tanh) = f(x);
+    (exp, log, log10, sqrt) = g(x);
+    annotation(experiment(StopTime = 0));
+  end Test;
+end MathFunctions;
+");
+getErrorString();
+
+simulate(MathFunctions.Test);
+val(cos, 0);
+val(cosh, 0);
+val(log, 0);
+val(log10, 0);
+val(sin, 0);
+val(sinh, 0);
+val(sqrt, 0);
+val(tan, 0);
+val(tanh, 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "MathFunctions.Test_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MathFunctions.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 0.0
+// 2.0
+// 2.0
+// 0.0
+// ""
+// endResult

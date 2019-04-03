@@ -1,0 +1,40 @@
+// name:     BouncingBall_OMEdit_flags
+// keywords: events
+// status: correct
+// teardown_command: rm -rf  BouncingBall.log libModelica.dll BouncingBall.cpp BouncingBall.libs BouncingBall.h BouncingBall.makefile output.log Functions.h Functions.cpp
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Event handling
+//
+
+loadFile("../BouncingBall.mo");
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
+res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
+  "../ReferenceFiles/BouncingBall.mat",
+  "BouncingBall_diff.csv",0.01,0.0001,
+  {"h","v"});
+
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
+//     messages = "<message stream=\"other\" type=\"warning\" text=\"Warning: unrecognized command line options -dasslJacobian=coloredNumerical \" />
+// <message stream=\"solver\" type=\"info\" text=\"SimManager: Start simulation at t = 0.000000\" />
+// <message stream=\"solver\" type=\"info\" text=\"SimManager: Simulation stop time: 1.000000\" />
+// <message stream=\"solver\" type=\"info\" text=\"Simulation info from solver:\" >
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: number steps = 23\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: function evaluations 'f' = 24\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: linear solver setups 'nsetups' = 22\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: nonlinear iterations 'nni' = 23\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: convergence failures 'ncfn' = 0\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: number of evaluateODE calls 'eODE' = 88\" />
+// </message>
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

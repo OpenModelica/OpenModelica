@@ -1,0 +1,32 @@
+// name:     DAEexample
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf DAEexample_* DAEexample DAEexample.exe DAEexample.cpp DAEexample.makefile DAEexample.libs DAEexample.log output.log
+//
+// Equation handling
+//
+loadFile("DAEexample.mo");
+simulate(DAEexample, startTime=0.0, stopTime=1.0, tolerance=1e-5, numberOfIntervals=100);
+val(x,0.0);
+val(x,0.5);
+val(x,1.0);
+val(y,0.0);
+val(y,0.5);
+val(y,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DAEexample_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DAEexample', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.9
+// 0.9814703682259254
+// 1.201674501169268
+// 0.5122399993895521
+// 0.6531549220567328
+// 1.025924252124678
+// endResult

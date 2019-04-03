@@ -1,0 +1,2 @@
+simulateModel("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic"); 
+exit();

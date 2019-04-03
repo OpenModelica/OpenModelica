@@ -1,0 +1,76 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.exe ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.cpp ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.makefile ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.libs ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.log ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.c ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_diff.csv",
+0.01, 0.0001,
+{"StaticCentrifugalPump1.Q",
+ "StaticCentrifugalPump1.deltaH",
+ "StaticCentrifugalPump1.deltaP"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 200.000000
+// |                 | |       | StaticCentrifugalPump1.hn >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= StaticCentrifugalPump1.hn, has value: -1.7295e-29
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

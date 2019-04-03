@@ -1,0 +1,22 @@
+// name:     SiemensPower.Components.Pipes.Tests.tube_test.mos
+// keywords: SiemensPower fluid
+// status:   correct
+// teardown_comment:
+//
+//
+//
+
+setCommandLineOptions("+d=acceptTooManyFields");
+loadModel(SiemensPower, {"2.2"}); getErrorString();
+
+checkModel(SiemensPower.Components.Pipes.Tests.tube_test); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// "Check of SiemensPower.Components.Pipes.Tests.tube_test completed successfully.
+// Class SiemensPower.Components.Pipes.Tests.tube_test has 2465 equation(s) and 2465 variable(s).
+// 1568 of these are trivial equation(s)."
+// ""
+// endResult

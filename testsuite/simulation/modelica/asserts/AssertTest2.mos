@@ -1,0 +1,27 @@
+// name:     AssertTest2
+// keywords: assert
+// status:   correct
+// teardown_command: rm -rf Test2* output.log
+// 
+// Drmodelica: 9.1 assert (p. 298) 
+// 
+
+loadFile("AssertTest2.mo");
+
+simulate(Test2, startTime = 0, stopTime=10, tolerance=1e-5); // 2 intervals == 3 values
+getErrorString(); // simulation failed, check error string.
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: Test2
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | 5.0 >= assertTest.lowlimit and 5.0 <= assertTest.highlimit
+// assert            | error   | Variable x out of limit
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

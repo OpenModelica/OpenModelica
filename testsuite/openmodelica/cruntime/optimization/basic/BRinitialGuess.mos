@@ -1,0 +1,76 @@
+// name: BatchReactorInitialGuess
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("BatchReactor.mo");
+getErrorString();
+
+optimize(nmpcBatchReactor, numberOfIntervals=20, tolerance = 1e-8,  simflags="-ipopt_max_iter=12 -exInputFile ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR");
+getErrorString();
+
+
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 0.00000001, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_jac=NUM'",
+//     messages = "
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+// 
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_max_iter=12 -exInputFile ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:y1(start = 1, nominal = 1, min = 0, max = 1, init = 1)
+// State[1]:y2(start = 0, nominal = 1, min = 0, max = 1, init = 0)
+// Input[2]:u(start = 0.743547, nominal = 1, min = 0, max = 5)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// max_iter = 12
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max error is 0.0234335 for the approximation of the state y2(time = 0.05)
+// LOG_IPOPT_ERROR   | info    | max error is 1.36655e-06 for the approximation of the state y1(time = 0.907753)
+// LOG_IPOPT_ERROR   | info    | max error is 7.77502e-06 for the approximation of the state y1(time = 0.932247)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000570247 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00018889 for the approximation of the state y2(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 8.96125e-05 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 4.04166e-05 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 1.04278e-05 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 2.48493e-06 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 5.38457e-07 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 8.0196e-08 for the approximation of the state y1(time = 0.95)
+// LOG_IPOPT_ERROR   | info    | max error is 3.63279e-09 for the approximation of the state y1(time = 0.95)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

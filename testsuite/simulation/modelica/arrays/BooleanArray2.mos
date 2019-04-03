@@ -1,0 +1,40 @@
+// name:     BooleanArray2
+// keywords: boolean,array
+// status: correct
+// teardown_command: rm -rf Bug2112* output.log
+//
+// Boolean array handling, fill
+//
+//
+
+loadString("
+// 3 variables
+// 5 equations
+model Bug2112
+  Boolean b[3];
+equation
+ for i in 2:3 loop
+   b[i] = time>0.1+i/10;
+  end for;
+  /*output of algorithm is considered the whole array (3 equations)
+   Spec 3.3 rev1 11.1.2*/
+algorithm 
+  b[1] := false;
+  for i in 2:3 loop
+   b[1] := b[1] or change(b[i]);
+  end for;
+end Bug2112;
+");
+getErrorString();
+
+// Bug2112 has 5 equations and 3 variables
+checkModel(Bug2112); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of Bug2112 completed successfully.
+// Class Bug2112 has 5 equation(s) and 3 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

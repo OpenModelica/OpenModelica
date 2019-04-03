@@ -1,0 +1,34 @@
+// name: testSens1
+// status: correct
+
+loadString("
+model VanDerPol  \"Van der Pol oscillator model\"
+  Real x(start = 2);
+  Real y(start = 0);
+  parameter Real lambda = 1;
+equation
+  der(x) = y;
+  der(y) = lambda*(1 - x*x)*y - x;
+end VanDerPol;
+");
+getErrorString();
+
+setCommandLineOptions("+calculateSensitivities");
+simulate(VanDerPol, stopTime=20, numberOfIntervals=2000, simflags="-s ida -idaSensitivity");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "VanDerPol_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VanDerPol', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s ida -idaSensitivity'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

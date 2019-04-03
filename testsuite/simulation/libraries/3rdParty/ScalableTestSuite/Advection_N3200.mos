@@ -1,0 +1,32 @@
+// status: correct
+// This is a test for equationsPerFile compiling as it should
+
+loadFile("Advection_N3200.mo");getErrorString();
+
+setCommandLineOptions("--daeMode -d=nogen");
+extraSimFlags := "-mei=4000 -daeMode -s=ida -idaLS=klu --equationsPerFile=200";
+setCFlags(getCFlags() + " -Os");
+
+file := "AdvectionReaction_N_3200_total_06inz_part2.c";
+if regularFileExists(file) then
+  print("Files not cleaned up properly: " + file);
+end if;
+translateModel(AdvectionReaction_N_3200_total);getErrorString();
+if not regularFileExists(file) then
+  print("Files not created properly: " + file);
+else
+  print("OK");
+end if;
+
+// Result:
+// true
+// ""
+// true
+// "-mei=4000 -daeMode -s=ida -idaLS=klu --equationsPerFile=200"
+// true
+// "AdvectionReaction_N_3200_total_06inz_part2.c"
+//
+// true
+// ""
+// OK
+// endResult

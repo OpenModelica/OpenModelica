@@ -1,0 +1,16 @@
+// name: Return
+// keywords: return function
+// status: correct
+// 
+// tests the return statement within functions
+//
+
+loadFile("Return.mo");
+var := ReturnFunc(4);
+var;
+
+// Result:
+// true
+// 8
+// 8
+// endResult

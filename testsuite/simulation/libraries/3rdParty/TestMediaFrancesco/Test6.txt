@@ -1,0 +1,2717 @@
+#1
+char Aclass(3,11)
+Atrajectory
+1.1
+ 
+
+char name(129,94)
+Time
+_dummy
+_derdummy
+medium1.baseProperties.p
+medium1.baseProperties.d
+medium1.baseProperties.T
+medium1.baseProperties.h
+medium1.baseProperties.u
+medium1.baseProperties.R
+medium1.baseProperties.MM
+medium1.baseProperties.state.phase
+medium1.baseProperties.state.h
+medium1.baseProperties.state.d
+medium1.baseProperties.state.T
+medium1.baseProperties.state.p
+medium1.baseProperties.T_degC
+medium1.baseProperties.p_bar
+medium1.baseProperties.standardOrderComponents
+medium1.baseProperties.sat.psat
+medium1.baseProperties.sat.Tsat
+medium1.baseProperties.phase
+_GlobalScope.Modelica.Media.Water.waterConstants[1].molarMass
+_GlobalScope.Modelica.Media.Water.waterConstants[1].criticalTemperature
+_GlobalScope.Modelica.Media.Water.waterConstants[1].criticalPressure
+_GlobalScope.Modelica.Media.Water.waterConstants[1].criticalMolarVolume
+_GlobalScope.Modelica.Media.Water.waterConstants[1].acentricFactor
+_GlobalScope.Modelica.Media.Water.waterConstants[1].triplePointTemperature
+_GlobalScope.Modelica.Media.Water.waterConstants[1].triplePointPressure
+_GlobalScope.Modelica.Media.Water.waterConstants[1].meltingPoint
+_GlobalScope.Modelica.Media.Water.waterConstants[1].normalBoilingPoint
+_GlobalScope.Modelica.Media.Water.waterConstants[1].dipoleMoment
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasIdealGasHeatCapacity
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasCriticalData
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasDipoleMoment
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasFundamentalEquation
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasLiquidHeatCapacity
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasSolidHeatCapacity
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasAccurateViscosityData
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasAccurateConductivityData
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasVapourPressureCurve
+_GlobalScope.Modelica.Media.Water.waterConstants[1].hasAcentricFactor
+_GlobalScope.Modelica.Media.Water.waterConstants[1].HCRIT0
+_GlobalScope.Modelica.Media.Water.waterConstants[1].SCRIT0
+_GlobalScope.Modelica.Media.Water.waterConstants[1].deltah
+_GlobalScope.Modelica.Media.Water.waterConstants[1].deltas
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].molarMass
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalTemperature
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalPressure
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalMolarVolume
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].acentricFactor
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].triplePointTemperature
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].triplePointPressure
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].meltingPoint
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].normalBoilingPoint
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].dipoleMoment
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasIdealGasHeatCapacity
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasCriticalData
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasDipoleMoment
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasFundamentalEquation
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasLiquidHeatCapacity
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasSolidHeatCapacity
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAccurateViscosityData
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAccurateConductivityData
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasVapourPressureCurve
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAcentricFactor
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].HCRIT0
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].SCRIT0
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].deltah
+_GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].deltas
+medium1.completeState.state.phase
+medium1.completeState.state.h
+medium1.completeState.state.d
+medium1.completeState.state.T
+medium1.completeState.state.p
+medium1.completeState.p
+medium1.completeState.h
+medium1.completeState.T
+medium1.completeState.d
+medium1.completeState.s
+medium1.completeState.cp
+medium1.completeState.cv
+medium1.completeState.beta
+medium1.completeState.kappa
+medium1.completeState.d_d_dp_h
+medium1.completeState.d_d_dh_p
+medium1.completeState.MM
+medium2.baseProperties.p
+medium2.baseProperties.d
+medium2.baseProperties.T
+medium2.baseProperties.h
+medium2.baseProperties.u
+medium2.baseProperties.R
+medium2.baseProperties.MM
+medium2.baseProperties.state.phase
+medium2.baseProperties.state.h
+medium2.baseProperties.state.d
+medium2.baseProperties.state.T
+medium2.baseProperties.state.p
+medium2.baseProperties.T_degC
+medium2.baseProperties.p_bar
+medium2.baseProperties.standardOrderComponents
+medium2.baseProperties.sat.psat
+medium2.baseProperties.sat.Tsat
+medium2.baseProperties.phase
+medium2.completeState.state.phase
+medium2.completeState.state.h
+medium2.completeState.state.d
+medium2.completeState.state.T
+medium2.completeState.state.p
+medium2.completeState.p
+medium2.completeState.h
+medium2.completeState.T
+medium2.completeState.d
+medium2.completeState.s
+medium2.completeState.cp
+medium2.completeState.cv
+medium2.completeState.beta
+medium2.completeState.kappa
+medium2.completeState.d_d_dp_h
+medium2.completeState.d_d_dh_p
+medium2.completeState.MM
+completeConstants.Tc
+completeConstants.pc
+completeConstants.vc
+completeConstants.MM
+p1
+p2
+h1
+h2
+
+char description(129,89)
+Time in [s]
+dummy
+derdummy
+Absolute pressure of medium [Pa|bar]
+Density of medium [kg/m3|g/cm3]
+Temperature of medium [K|degC]
+Specific enthalpy of medium [J/kg]
+Specific internal energy of medium [J/kg]
+Gas constant (of mixture if applicable) [J/(kg.K)]
+Molar mass (of mixture or single fluid) [kg/mol]
+phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g. interactive use
+specific enthalpy [J/kg]
+density [kg/m3|g/cm3]
+temperature [K|degC]
+pressure [Pa|bar]
+Temperature of medium in [degC] [degC;]
+Absolute pressure of medium in [bar] [bar]
+if true, and reducedX = true, the last element of X will be computed from the other ones
+saturation pressure [Pa|bar]
+saturation temperature [K|degC]
+2 for two-phase, 1 for one-phase, 0 if not known
+molar mass [kg/mol]
+critical temperature [K|degC]
+critical pressure [Pa|bar]
+critical molar Volume [m3/mol]
+Pitzer acentric factor
+triple point temperature [K|degC]
+triple point pressure [Pa|bar]
+melting point at 101325 Pa [K|degC]
+normal boiling point (at 101325 Pa) [K|degC]
+dipole moment of molecule in Debye (1 debye = 3.33564e10-30 C.m) [debye]
+true if ideal gas heat capacity is available
+true if critical data are known
+true if a dipole moment known
+true if a fundamental equation
+true if liquid heat capacity is available
+true if solid heat capacity is available
+true if accurate data for a viscosity function is available
+true if accurate data for thermal conductivity is available
+true if vapour pressure data, e.g. Antoine coefficents are known
+true if Pitzer accentric factor is known
+Critical specific enthalpy of the fundamental equation [J/kg]
+Critical specific entropy of the fundamental equation [J/(kg.K)]
+Difference between specific enthalpy model (h_m) and f.eq. (h_f) (h_m - h_f) [J/kg]
+Difference between specific enthalpy model (s_m) and f.eq. (s_f) (s_m - s_f) [J/(kg.K)]
+molar mass [kg/mol]
+critical temperature [K|degC]
+critical pressure [Pa|bar]
+critical molar Volume [m3/mol]
+Pitzer acentric factor
+triple point temperature [K|degC]
+triple point pressure [Pa|bar]
+melting point at 101325 Pa [K|degC]
+normal boiling point (at 101325 Pa) [K|degC]
+dipole moment of molecule in Debye (1 debye = 3.33564e10-30 C.m) [debye]
+true if ideal gas heat capacity is available
+true if critical data are known
+true if a dipole moment known
+true if a fundamental equation
+true if liquid heat capacity is available
+true if solid heat capacity is available
+true if accurate data for a viscosity function is available
+true if accurate data for thermal conductivity is available
+true if vapour pressure data, e.g. Antoine coefficents are known
+true if Pitzer accentric factor is known
+Critical specific enthalpy of the fundamental equation [J/kg]
+Critical specific entropy of the fundamental equation [J/(kg.K)]
+Difference between specific enthalpy model (h_m) and f.eq. (h_f) (h_m - h_f) [J/kg]
+Difference between specific enthalpy model (s_m) and f.eq. (s_f) (s_m - s_f) [J/(kg.K)]
+phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g. interactive use
+specific enthalpy [J/kg]
+density [kg/m3|g/cm3]
+temperature [K|degC]
+pressure [Pa|bar]
+[Pa|bar]
+[J/kg]
+[K|degC]
+[kg/m3|g/cm3]
+[J/(kg.K)]
+[J/(kg.K)]
+[J/(kg.K)]
+[1/K]
+[1/Pa]
+[s2/m2]
+[kg.s2/m5]
+[kg/mol]
+Absolute pressure of medium [Pa|bar]
+Density of medium [kg/m3|g/cm3]
+Temperature of medium [K|degC]
+Specific enthalpy of medium [J/kg]
+Specific internal energy of medium [J/kg]
+Gas constant (of mixture if applicable) [J/(kg.K)]
+Molar mass (of mixture or single fluid) [kg/mol]
+phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g. interactive use
+specific enthalpy [J/kg]
+density [kg/m3|g/cm3]
+temperature [K|degC]
+pressure [Pa|bar]
+Temperature of medium in [degC] [degC;]
+Absolute pressure of medium in [bar] [bar]
+if true, and reducedX = true, the last element of X will be computed from the other ones
+saturation pressure [Pa|bar]
+saturation temperature [K|degC]
+2 for two-phase, 1 for one-phase, 0 if not known
+phase of the fluid: 1 for 1-phase, 2 for two-phase, 0 for not known, e.g. interactive use
+specific enthalpy [J/kg]
+density [kg/m3|g/cm3]
+temperature [K|degC]
+pressure [Pa|bar]
+[Pa|bar]
+[J/kg]
+[K|degC]
+[kg/m3|g/cm3]
+[J/(kg.K)]
+[J/(kg.K)]
+[J/(kg.K)]
+[1/K]
+[1/Pa]
+[s2/m2]
+[kg.s2/m5]
+[kg/mol]
+[K|degC]
+[Pa|bar]
+[m3/mol]
+[kg/mol]
+[Pa|bar]
+[Pa|bar]
+[J/kg]
+[J/kg]
+
+
+# Matrix with 4 columns defining the data of the signals:
+#
+# dataInfo(i,1)=    j: name i data is stored in matrix "data_j".
+#                      (1,1)=0, means that name(1) is used as abscissa
+#                      for ALL data matrices!
+#
+# dataInfo(i,2)=    k: name i data is stored in column abs(k) of matrix
+#                      data_j with sign(k) used as sign.
+#
+# dataInfo(i,3)=    0: Linear interpolation of the column data
+#              = 1..4: Piecewise convex hermite spline interpolation
+#                      of the column data. Curve is differentiable upto
+#                      order 1..4. The spline is defined by a polygon.
+#                      It touches the polygon in the middle of every segment
+#                      and at the beginning and final point. Between such
+#                      points the spline is convex. The polygon is also the
+#                      convex envelope of the spline.
+#
+# dataInfo(i,4)=   -1: name i is not defined outside of the defined time range
+#              =    0: Keep first/last value outside of time range
+#              =    1: Linear interpolation through first/last two points outside
+#                      of time range.
+#
+int dataInfo(129,4)
+   0   1   0  -1   # Time
+   2   2   0  -1   # _dummy
+   2   3   0  -1   # _derdummy
+   1   2   0   0   # medium1.baseProperties.p
+   2   8   0  -1   # medium1.baseProperties.d
+   2   9   0  -1   # medium1.baseProperties.T
+   2   7   0  -1   # medium1.baseProperties.h
+   2   4   0  -1   # medium1.baseProperties.u
+   1   3   0   0   # medium1.baseProperties.R
+   1   4   0   0   # medium1.baseProperties.MM
+   2   6   0  -1   # medium1.baseProperties.state.phase
+   2   7   0  -1   # medium1.baseProperties.state.h
+   2   8   0  -1   # medium1.baseProperties.state.d
+   2   9   0  -1   # medium1.baseProperties.state.T
+   1   5   0   0   # medium1.baseProperties.state.p
+   2   5   0  -1   # medium1.baseProperties.T_degC
+   1   6   0   0   # medium1.baseProperties.p_bar
+   1   7   0   0   # medium1.baseProperties.standardOrderComponents
+   1   8   0   0   # medium1.baseProperties.sat.psat
+   1   9   0   0   # medium1.baseProperties.sat.Tsat
+   2   6   0  -1   # medium1.baseProperties.phase
+   1  10   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].molarMass
+   1  11   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].criticalTemperature
+   1  12   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].criticalPressure
+   1  13   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].criticalMolarVolume
+   1  14   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].acentricFactor
+   1  15   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].triplePointTemperature
+   1  16   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].triplePointPressure
+   1  17   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].meltingPoint
+   1  18   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].normalBoilingPoint
+   1  19   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].dipoleMoment
+   1  20   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasIdealGasHeatCapacity
+   1  21   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasCriticalData
+   1  22   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasDipoleMoment
+   1  23   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasFundamentalEquation
+   1  24   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasLiquidHeatCapacity
+   1  25   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasSolidHeatCapacity
+   1  26   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasAccurateViscosityData
+   1  27   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasAccurateConductivityData
+   1  28   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasVapourPressureCurve
+   1  29   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].hasAcentricFactor
+   1  30   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].HCRIT0
+   1  31   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].SCRIT0
+   1  32   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].deltah
+   1  33   0   0   # _GlobalScope.Modelica.Media.Water.waterConstants[1].deltas
+   1  34   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].molarMass
+   1  35   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalTemperature
+   1  36   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalPressure
+   1  37   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].criticalMolarVolume
+   1  38   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].acentricFactor
+   1  39   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].triplePointTemperature
+   1  40   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].triplePointPressure
+   1  41   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].meltingPoint
+   1  42   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].normalBoilingPoint
+   1  43   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].dipoleMoment
+   1  44   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasIdealGasHeatCapacity
+   1  45   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasCriticalData
+   1  46   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasDipoleMoment
+   1  47   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasFundamentalEquation
+   1  48   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasLiquidHeatCapacity
+   1  49   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasSolidHeatCapacity
+   1  50   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAccurateViscosityData
+   1  51   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAccurateConductivityData
+   1  52   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasVapourPressureCurve
+   1  53   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].hasAcentricFactor
+   1  54   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].HCRIT0
+   1  55   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].SCRIT0
+   1  56   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].deltah
+   1  57   0   0   # _GlobalScope.Modelica.Media.Water.WaterIF97_base.fluidConstants[1].deltas
+   2   6   0  -1   # medium1.completeState.state.phase
+   2   7   0  -1   # medium1.completeState.state.h
+   2   8   0  -1   # medium1.completeState.state.d
+   2   9   0  -1   # medium1.completeState.state.T
+   1  58   0   0   # medium1.completeState.state.p
+   1  59   0   0   # medium1.completeState.p
+   2   7   0  -1   # medium1.completeState.h
+   2   9   0  -1   # medium1.completeState.T
+   2   8   0  -1   # medium1.completeState.d
+   2  10   0  -1   # medium1.completeState.s
+   2  11   0  -1   # medium1.completeState.cp
+   2  12   0  -1   # medium1.completeState.cv
+   2  13   0  -1   # medium1.completeState.beta
+   2  14   0  -1   # medium1.completeState.kappa
+   2  15   0  -1   # medium1.completeState.d_d_dp_h
+   2  16   0  -1   # medium1.completeState.d_d_dh_p
+   2  17   0  -1   # medium1.completeState.MM
+   2  25   0  -1   # medium2.baseProperties.p
+   2  23   0  -1   # medium2.baseProperties.d
+   2  24   0  -1   # medium2.baseProperties.T
+   1  60   0   0   # medium2.baseProperties.h
+   2  18   0  -1   # medium2.baseProperties.u
+   1  61   0   0   # medium2.baseProperties.R
+   1  62   0   0   # medium2.baseProperties.MM
+   2  22   0  -1   # medium2.baseProperties.state.phase
+   1  63   0   0   # medium2.baseProperties.state.h
+   2  23   0  -1   # medium2.baseProperties.state.d
+   2  24   0  -1   # medium2.baseProperties.state.T
+   2  25   0  -1   # medium2.baseProperties.state.p
+   2  19   0  -1   # medium2.baseProperties.T_degC
+   2  20   0  -1   # medium2.baseProperties.p_bar
+   1  64   0   0   # medium2.baseProperties.standardOrderComponents
+   2  25   0  -1   # medium2.baseProperties.sat.psat
+   2  21   0  -1   # medium2.baseProperties.sat.Tsat
+   2  22   0  -1   # medium2.baseProperties.phase
+   2  22   0  -1   # medium2.completeState.state.phase
+   1  65   0   0   # medium2.completeState.state.h
+   2  23   0  -1   # medium2.completeState.state.d
+   2  24   0  -1   # medium2.completeState.state.T
+   2  25   0  -1   # medium2.completeState.state.p
+   2  25   0  -1   # medium2.completeState.p
+   1  66   0   0   # medium2.completeState.h
+   2  24   0  -1   # medium2.completeState.T
+   2  23   0  -1   # medium2.completeState.d
+   2  26   0  -1   # medium2.completeState.s
+   2  27   0  -1   # medium2.completeState.cp
+   2  28   0  -1   # medium2.completeState.cv
+   2  29   0  -1   # medium2.completeState.beta
+   2  30   0  -1   # medium2.completeState.kappa
+   2  31   0  -1   # medium2.completeState.d_d_dp_h
+   2  32   0  -1   # medium2.completeState.d_d_dh_p
+   2  33   0  -1   # medium2.completeState.MM
+   1  67   0   0   # completeConstants.Tc
+   1  68   0   0   # completeConstants.pc
+   1  69   0   0   # completeConstants.vc
+   1  70   0   0   # completeConstants.MM
+   1  71   0   0   # p1
+   2  25   0  -1   # p2
+   2   7   0  -1   # h1
+   1  72   0   0   # h2
+
+double data_1(2,72)
+  0  100000  4.615236365065450E+002  1.801526800000000E-002  100000  1  1
+  100000  3.727559186113380E+002  1.801526800000000E-002  6.470960000000000E+002
+  2.206400000000000E+007  5.594803726708070E-005  3.440000000000000E-001
+  2.731600000000000E+002  6.116570000000000E+002  2.731500000000000E+002
+  3.731240000000000E+002  1.800000000000000E+000  0  1  0  0  0  0  0  0
+  0  0  0  0  0  0  1.801526800000000E-002  6.470960000000000E+002  2.206400000000000E+007
+  5.594803726708070E-005  3.440000000000000E-001  2.731600000000000E+002
+  6.116570000000000E+002  2.731500000000000E+002  3.731240000000000E+002
+  1.800000000000000E+000  0  1  0  0  0  0  0  0  0  0  0  0  0  0  100000
+  100000  3200000  4.615236365065450E+002  1.801526800000000E-002  3200000
+  1  3200000  3200000  6.470960000000000E+002  2.206400000000000E+007  5.594803726708070E-005
+  1.801526800000000E-002  100000  3200000
+  1  100000  4.615236365065450E+002  1.801526800000000E-002  100000  1  1
+  100000  3.727559186113380E+002  1.801526800000000E-002  6.470960000000000E+002
+  2.206400000000000E+007  5.594803726708070E-005  3.440000000000000E-001
+  2.731600000000000E+002  6.116570000000000E+002  2.731500000000000E+002
+  3.731240000000000E+002  1.800000000000000E+000  0  1  0  0  0  0  0  0
+  0  0  0  0  0  0  1.801526800000000E-002  6.470960000000000E+002  2.206400000000000E+007
+  5.594803726708070E-005  3.440000000000000E-001  2.731600000000000E+002
+  6.116570000000000E+002  2.731500000000000E+002  3.731240000000000E+002
+  1.800000000000000E+000  0  1  0  0  0  0  0  0  0  0  0  0  0  0  100000
+  100000  3200000  4.615236365065450E+002  1.801526800000000E-002  3200000
+  1  3200000  3200000  6.470960000000000E+002  2.206400000000000E+007  5.594803726708070E-005
+  1.801526800000000E-002  100000  3200000
+
+double data_2(206,33)                            
+ 0.000000000000000E+000 1.000000000000000E+000 0.000000000000000E+000
+     9.989973298395512E+004 2.384481907532484E+001 1.000000000000000E+000
+     1.000000000000000E+005 9.973369503211875E+002 2.969948190753248E+002
+     3.509960475618159E+002 4.182468217770754E+003 4.142777044920007E+003
+     2.457083733205864E-004 4.529527962568119E-010 5.062067525373667E-007
+     -5.859077151494693E-005 1.801526800000000E-002 2.907970551690626E+006
+     3.697051758307904E+002 1.000000000000000E+001 4.530356323914667E+002
+     1.000000000000000E+000 3.424312191079462E+000 6.428551758307904E+002
+     1.000000000000000E+006 7.368899825213199E+003 2.123279639040659E+003
+     1.618729872471506E+003 1.652627906705124E-003 1.016215810563709E-006
+     3.431271622406483E-006 -2.665270171763805E-006 1.801526800000000E-002
+ 5.000000000000000E-003 1.000000000000000E+000 0.000000000000000E+000
+     1.148996384033020E+005 2.743105246465473E+001 1.000000000000000E+000
+     1.150000000000000E+005 9.963970611284148E+002 3.005810524646547E+002
+     4.011871261290376E+002 4.180876553957236E+003 4.128293162372478E+003
+     2.797445532806026E-004 4.489560696827860E-010 5.086227807403783E-007
+     -6.666942856555930E-005 1.801526800000000E-002 2.908038398814353E+006
+     3.706899552393951E+002 1.115000000000000E+001 4.578211973348059E+002
+     1.000000000000000E+000 3.818995359225394E+000 6.438399552393951E+002
+     1.115000000000000E+006 7.319493959679643E+003 2.133097787852875E+003
+     1.623533207227400E+003 1.661253084766019E-003 9.130638776646254E-007
+     3.432797054925986E-006 -2.974227368922611E-006 1.801526800000000E-002
+ 1.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     1.298995318216004E+005 3.101788690076478E+001 1.000000000000000E+000
+     1.300000000000000E+005 9.953400329628333E+002 3.041678869007648E+002
+     4.507750973731003E+002 4.179745288183718E+003 4.113106008606917E+003
+     3.117851773329297E-004 4.457819958047372E-010 5.112248138144698E-007
+     -7.424669382634414E-005 1.801526800000000E-002 2.908105566048788E+006
+     3.716701127258478E+002 1.230000000000000E+001 4.622333319760883E+002
+     1.000000000000000E+000 4.213852190842347E+000 6.448201127258478E+002
+     1.230000000000000E+006 7.275020661213493E+003 2.142911622811133E+003
+     1.628320169487877E+003 1.669862797927055E-003 8.291980789249217E-007
+     3.434302079468569E-006 -3.283642187828677E-006 1.801526800000000E-002
+ 1.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     1.448994138714894E+005 3.460514726284555E+001 1.000000000000000E+000
+     1.450000000000000E+005 9.941728693682907E+002 3.077551472628455E+002
+     4.997766130441530E+002 4.179009295333644E+003 4.097293375252005E+003
+     3.421048891260561E-004 4.433587712558684E-010 5.140190646589150E-007
+     -8.138565272567029E-005 1.801526800000000E-002 2.908172076324415E+006
+     3.726456572267642E+002 1.345000000000000E+001 4.663330179616740E+002
+     1.000000000000000E+000 4.608880408220250E+000 6.457956572267642E+002
+     1.345000000000000E+006 7.234596210771637E+003 2.152719573758880E+003
+     1.633089655890813E+003 1.678456622278824E-003 7.596714011011018E-007
+     3.435787355365971E-006 -3.593503741391109E-006 1.801526800000000E-002
+ 2.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     1.598992850965373E+005 3.819265530768109E+001 1.000000000000000E+000
+     1.600000000000000E+005 9.929017112843634E+002 3.113426553076811E+002
+     5.482071178817710E+002 4.178625358075256E+003 4.080932445403960E+003
+     3.709303322734447E-004 4.416253603634874E-010 5.170075242354129E-007
+     -8.813840201535191E-005 1.801526800000000E-002 2.908237951564387E+006
+     3.736165992261200E+002 1.460000000000000E+001 4.701669987204562E+002
+     1.000000000000000E+000 5.004077836128164E+000 6.467665992261200E+002
+     1.460000000000000E+006 7.197554832920230E+003 2.162520158141716E+003
+     1.637840640264382E+003 1.687034152152865E-003 7.010954773040075E-007
+     3.437253502528733E-006 -3.903801857196924E-006 1.801526800000000E-002
+ 2.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     1.748991459665779E+005 4.178022962519810E+001 1.000000000000000E+000
+     1.750000000000000E+005 9.915319854532338E+002 3.149302296251981E+002
+     5.960811095045942E+002 4.178565004881449E+003 4.064097740655156E+003
+     3.984505659842778E-004 4.405297211040173E-010 5.201895024589667E-007
+     -9.454836297480659E-005 1.801526800000000E-002 2.908303212681952E+006
+     3.745829507427667E+002 1.575000000000000E+001 4.737719462442369E+002
+     1.000000000000000E+000 5.399442395238711E+000 6.477329507427667E+002
+     1.575000000000000E+006 7.163382441742761E+003 2.172311976680815E+003
+     1.642572169552642E+003 1.695594999110173E-003 6.510715574897305E-007
+     3.438701103155921E-006 -4.214527020809879E-006 1.801526800000000E-002
+ 3.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     1.898989968897510E+005 4.536768559273662E+001 1.000000000000000E+000
+     1.900000000000000E+005 9.900685211920776E+002 3.185176855927366E+002
+     6.434123159480064E+002 4.178809556783711E+003 4.046859760220251E+003
+     4.248249979264386E-004 4.400273812437916E-010 5.235627030623360E-007
+     -1.006520760869951E-004 1.801526800000000E-002 2.908367879578585E+006
+     3.755447253161113E+002 1.690000000000000E+001 4.771771973133483E+002
+     1.000000000000000E+000 5.794972095521954E+000 6.486947253161113E+002
+     1.690000000000000E+006 7.131673794733533E+003 2.182093709205215E+003
+     1.647283359912784E+003 1.704138790937624E-003 6.078538045991002E-007
+     3.440130703351614E-006 -4.525670322369878E-006 1.801526800000000E-002
+ 3.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.048988382220255E+005 4.895483532793321E+001 1.000000000000000E+000
+     2.050000000000000E+005 9.885156429853862E+002 3.221048353279332E+002
+     6.902138171797934E+002 4.179346736507585E+003 4.029284149099474E+003
+     4.501894620814633E-004 4.400802894118639E-010 5.271239683045900E-007
+     -1.064805946076102E-004 1.801526800000000E-002 2.908431971143065E+006
+     3.765019379896543E+002 1.805000000000000E+001 4.804066131331284E+002
+     1.000000000000000E+000 6.190665029620477E+000 6.496519379896542E+002
+     1.805000000000000E+006 7.102103782130394E+003 2.191864110637223E+003
+     1.651973392977545E+003 1.712665170654341E-003 5.701413029682514E-007
+     3.441542814655485E-006 -4.837223406307075E-006 1.801526800000000E-002
+ 4.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.198986702747905E+005 5.254148764009176E+001 1.000000000000000E+000
+     2.200000000000000E+005 9.868772444927001E+002 3.256914876400917E+002
+     7.364981288546653E+002 4.180168378583388E+003 4.011431261418667E+003
+     4.746609045630673E-004 4.406558832819746E-010 5.308697901613134E-007
+     -1.120605686516290E-004 1.801526800000000E-002 2.908495505251676E+006
+     3.774546052920665E+002 1.920000000000000E+001 4.834798805416928E+002
+     1.000000000000000E+000 6.586519366219958E+000 6.506046052920665E+002
+     1.920000000000000E+006 7.074407600294816E+003 2.201622007126142E+003
+     1.656641512277001E+003 1.721173795530688E-003 5.369448137095363E-007
+     3.442937915494819E-006 -5.149178423998039E-006 1.801526800000000E-002
+ 4.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.348984933209530E+005 5.612744797990672E+001 1.000000000000000E+000
+     2.350000000000000E+005 9.851568481884690E+002 3.292774479799067E+002
+     7.822772609078055E+002 4.181268911255058E+003 3.993356012132898E+003
+     4.983410200553086E-004 4.417263302300755E-010 5.347966567533090E-007
+     -1.174150907441520E-004 1.801526800000000E-002 2.908558498769750E+006
+     3.784027452155002E+002 2.035000000000000E+001 4.864134455158799E+002
+     1.000000000000000E+000 6.982533343431673E+000 6.515527452155002E+002
+     2.035000000000000E+006 7.048366701703839E+003 2.211366292326389E+003
+     1.661287019814494E+003 1.729664336122933E-003 5.074987088513345E-007
+     3.444316452565111E-006 -5.461527989204065E-006 1.801526800000000E-002
+ 5.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.498983075998738E+005 5.971251838738965E+001 1.000000000000000E+000
+     2.500000000000000E+005 9.833576538250744E+002 3.328625183873896E+002
+     8.275627596226984E+002 4.182644375648959E+003 3.975107933634073E+003
+     5.213190934235470E-004 4.432679058521129E-010 5.389012829526772E-007
+     -1.225643575121432E-004 1.801526800000000E-002 2.908620967554789E+006
+     3.793463771908165E+002 2.150000000000000E+001 4.892211975673358E+002
+     1.000000000000000E+000 7.378705262206104E+000 6.524963771908165E+002
+     2.150000000000000E+006 7.023798612624097E+003 2.221095923816681E+003
+     1.665909272791890E+003 1.738136475327129E-003 4.812011684693162E-007
+     3.445678842146415E-006 -5.774265136145100E-006 1.801526800000000E-002
+ 5.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.648981133213908E+005 6.329649743783341E+001 1.000000000000000E+000
+     2.650000000000000E+005 9.814825781446366E+002 3.364464974378334E+002
+     8.723657390385210E+002 4.184291815448341E+003 3.956731373145422E+003
+     5.436742363372803E-004 4.452604833681587E-010 5.431807600063337E-007
+     -1.275261895408591E-004 1.801526800000000E-002 2.908682926461366E+006
+     3.802855220594202E+002 2.265000000000000E+001 4.919149811348029E+002
+     1.000000000000000E+000 7.775033479799166E+000 6.534355220594201E+002
+     2.265000000000000E+006 7.000549407232587E+003 2.230809919657572E+003
+     1.670507680479742E+003 1.746589907455998E-003 4.575725959053195E-007
+     3.447025471362454E-006 -6.087383280075337E-006 1.801526800000000E-002
+ 6.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.798979106691246E+005 6.687918018563505E+001 1.000000000000000E+000
+     2.800000000000000E+005 9.795342876920486E+002 3.400291801856350E+002
+     9.166969056340706E+002 4.186208918882315E+003 3.938265782372904E+003
+     5.654771610565812E-004 4.476871127931017E-010 5.476326489752186E-007
+     -1.323164416527898E-004 1.801526800000000E-002 2.908744389348053E+006
+     3.812202020413902E+002 2.380000000000000E+001 4.945049841798295E+002
+     1.000000000000000E+000 8.171516403315296E+000 6.543702020413901E+002
+     2.380000000000000E+006 6.978488047619313E+003 2.240507355085071E+003
+     1.675081701228211E+003 1.755024337343003E-003 4.362260890740305E-007
+     3.448356699389443E-006 -6.400876180239710E-006 1.801526800000000E-002
+ 6.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     2.948976998032105E+005 7.046035810577439E+001 1.000000000000000E+000
+     2.950000000000000E+005 9.775152261509584E+002 3.436103581057744E+002
+     9.605665788895091E+002 4.188393829625044E+003 3.919746063205944E+003
+     5.867915982758569E-004 4.505336732598600E-010 5.522550356264107E-007
+     -1.369493283642472E-004 1.801526800000000E-002 2.908805369086612E+006
+     3.821504406995907E+002 2.495000000000000E+001 4.970000379227570E+002
+     1.000000000000000E+000 8.568152483354339E+000 6.553004406995907E+002
+     2.495000000000000E+006 6.957502060667742E+003 2.250187359338510E+003
+     1.679630839614886E+003 1.763439479477999E-003 4.168460780179162E-007
+     3.449672858621533E-006 -6.714737905103256E-006 1.801526800000000E-002
+ 7.000000000000001E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.098974808625713E+005 7.403981903273370E+001 1.000000000000000E+000
+     3.100000000000000E+005 9.754276372994427E+002 3.471898190327337E+002
+     1.003984709408113E+003 4.190845068100823E+003 3.901202942860331E+003
+     6.076754397606427E-004 4.537885853658141E-010 5.570465593028962E-007
+     -1.414376835264967E-004 1.801526800000000E-002 2.908865877573668E+006
+     3.830762628994577E+002 2.610000000000000E+001 4.994078511588783E+002
+     1.000000000000000E+000 8.964940207791779E+000 6.562262628994577E+002
+     2.610000000000000E+006 6.937494189916254E+003 2.259849112621183E+003
+     1.684154643725814E+003 1.771835057179119E-003 3.991726100020575E-007
+     3.450974255799628E-006 -7.028962799757869E-006 1.801526800000000E-002
+ 7.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.248972539668197E+005 7.761734709660971E+001 1.000000000000000E+000
+     3.250000000000000E+005 9.732735844359966E+002 3.507673470966097E+002
+     1.046960895653285E+003 4.193561522488626E+003 3.882663359249556E+003
+     6.281816670371125E-004 4.574425731218881E-010 5.620064246426919E-007
+     -1.457931687601344E-004 1.801526800000000E-002 2.908925925745141E+006
+     3.839976947641387E+002 2.725000000000000E+001 5.017351956602280E+002
+     1.000000000000000E+000 9.361878095725006E+000 6.571476947641387E+002
+     2.725000000000000E+006 6.918379769878498E+003 2.269491843192584E+003
+     1.688652702566281E+003 1.780210801805824E-003 3.829896137934555E-007
+     3.452261173110426E-006 -7.343545455424113E-006 1.801526800000000E-002
+ 8.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.398970192178562E+005 8.119272265616053E+001 1.000000000000000E+000
+     3.400000000000000E+005 9.710549669392699E+002 3.543427226561605E+002
+     1.089504399933737E+003 4.196542481413817E+003 3.864150843007876E+003
+     6.483591128402676E-004 4.614884672003278E-010 5.671344024076864E-007
+     -1.500264419274437E-004 1.801526800000000E-002 2.908985523593656E+006
+     3.849147636246847E+002 2.840000000000000E+001 5.039880544892067E+002
+     1.000000000000000E+000 9.758964691620726E+000 6.580647636246847E+002
+     2.840000000000000E+006 6.900084643455377E+003 2.279114824591413E+003
+     1.693124643598006E+003 1.788566452018192E-003 3.681160152225501E-007
+     3.453533869262171E-006 -7.658480680977557E-006 1.801526800000000E-002
+ 8.500000000000001E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.548967767012200E+005 8.476572222848370E+001 1.000000000000000E+000
+     3.550000000000000E+005 9.687735344819353E+002 3.579157222284837E+002
+     1.131624163989429E+003 4.199787689339187E+003 3.845685886845397E+003
+     6.682530911103497E-004 4.659210428401166E-010 5.724308238160767E-007
+     -1.541472943136597E-004 1.801526800000000E-002 2.909044680189210E+006
+     3.858274979649740E+002 2.955000000000000E+001 5.061717418318452E+002
+     1.000000000000000E+000 1.015619855970205E+001 6.589774979649740E+002
+     2.955000000000000E+006 6.882543492965323E+003 2.288717372988765E+003
+     1.697570130399608E+003 1.796901753087799E-003 3.543989272821064E-007
+     3.454792580543889E-006 -7.973763476442125E-006 1.801526800000000E-002
+ 9.000000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.698965264872310E+005 8.833611841501295E+001 1.000000000000000E+000
+     3.700000000000000E+005 9.664308993093365E+002 3.614861184150129E+002
+     1.173328824349328E+003 4.203297412055716E+003 3.827286296100602E+003
+     6.879059231075235E-004 4.707368870829832E-010 5.778965714394128E-007
+     -1.581647632171432E-004 1.801526800000000E-002 2.909103403703328E+006
+     3.867359273610606E+002 3.070000000000000E+001 5.082910007061806E+002
+     1.000000000000000E+000 1.055357827861640E+001 6.598859273610606E+002
+     3.070000000000000E+006 6.865698489956289E+003 2.298298844671173E+003
+     1.701988860447287E+003 1.805216456265702E-003 3.417083707890540E-007
+     3.456037521874462E-006 -8.289389008404758E-006 1.801526800000000E-002
+ 9.500000000000000E-002 1.000000000000000E+000 0.000000000000000E+000
+     3.848962686319605E+005 9.190367982346766E+001 1.000000000000000E+000
+     3.850000000000000E+005 9.640285469089019E+002 3.650536798234676E+002
+     1.214626727517909E+003 4.207072504168455E+003 3.808967516713813E+003
+     7.073573810016519E-004 4.759342910573425E-010 5.835330687750767E-007
+     -1.620872251373505E-004 1.801526800000000E-002 2.909161701437005E+006
+     3.876400824146341E+002 3.185000000000000E+001 5.103500832998795E+002
+     1.000000000000000E+000 1.095110243642872E+001 6.607900824146341E+002
+     3.185000000000000E+006 6.849498193398339E+003 2.307858633653491E+003
+     1.706380563012859E+003 1.813510318213271E-003 3.299331387640794E-007
+     3.457268887848088E-006 -8.605352587317885E-006 1.801526800000000E-002
+ 1.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     3.998960031780538E+005 9.546817098537224E+001 1.000000000000000E+000
+     4.000000000000000E+005 9.615678453307396E+002 3.686181709853722E+002
+     1.255525944979353E+003 4.211114473610899E+003 3.790742938569973E+003
+     7.266450655787057E-004 4.815131638629705E-010 5.893422699296781E-007
+     -1.659224735891829E-004 1.801526800000000E-002 2.909219579852661E+006
+     3.885399946802776E+002 3.300000000000000E+001 5.123528175362263E+002
+     1.000000000000000E+000 1.134876962598747E+001 6.616899946802776E+002
+     3.300000000000000E+006 6.833896643350562E+003 2.317396169421778E+003
+     1.710744997176348E+003 1.821783100501767E-003 3.189775255315178E-007
+     3.458486853782443E-006 -8.921649646668063E-006 1.801526800000000E-002
+ 1.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.148957301554296E+005 9.902935226870454E+001 1.000000000000000E+000
+     4.150000000000000E+005 9.590500533686933E+002 3.721793522687045E+002
+     1.296034287970931E+003 4.215425540388817E+003 3.772624173402179E+003
+     7.458047311124110E-004 4.874749652819127E-010 5.953266503708660E-007
+     -1.696777846798376E-004 1.801526800000000E-002 2.909277044610411E+006
+     3.894356965862138E+002 3.415000000000001E+001 5.143026626233585E+002
+     1.000000000000000E+000 1.174657844071397E+001 6.625856965862138E+002
+     3.415000000000000E+006 6.818852609891831E+003 2.326910914806653E+003
+     1.715081949950504E+003 1.830034569186815E-003 3.087587167039422E-007
+     3.459691576775851E-006 -9.238275724000935E-006 1.801526800000000E-002
+ 1.058121619388672E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.173321709111427E+005 9.960747443251773E+001 1.000000000000000E+000
+     4.174364858166016E+005 9.586357727121874E+002 3.727574744325177E+002
+     1.302577771248152E+003 4.216151394033639E+003 3.769691794723857E+003
+     7.489071418943097E-004 4.884796869764642E-010 5.963154421156665E-007
+     -1.702806919304377E-004 1.801526800000000E-002 2.909286340039279E+006
+     3.895807923424320E+002 3.433679724593946E+001 5.146146051412800E+002
+     1.000000000000000E+000 1.181120875110540E+001 6.627307923424320E+002
+     3.433679724593945E+006 6.816459025860596E+003 2.328454231165553E+003
+     1.715783804002228E+003 1.831372847071429E-003 3.071633729784970E-007
+     3.459886022322590E-006 -9.289736816960835E-006 1.801526800000000E-002
+ 1.058121619388672E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.173321709111151E+005 9.960747443243042E+001 2.000000000000000E+000
+     4.174364858166016E+005 9.586357724581983E+002 3.727574744324304E+002
+     1.302577771248154E+003 4.216151394033180E+003 4.214070395292375E+003
+     7.489071420923028E-004 4.884796871058388E-010 8.125896737625965E-001
+     -6.891805411623367E-001 1.801526800000000E-002 2.909286340039279E+006
+     3.895807923424320E+002 3.433679724593946E+001 5.146146051412800E+002
+     1.000000000000000E+000 1.181120875110540E+001 6.627307923424320E+002
+     3.433679724593945E+006 6.816459025860596E+003 2.328454231165553E+003
+     1.715783804002228E+003 1.831372847071429E-003 3.071633729784970E-007
+     3.459886022322590E-006 -9.289736816960835E-006 1.801526800000000E-002
+ 1.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.289534994192852E+005 9.960748329002752E+001 2.000000000000000E+000
+     4.300000000000000E+005 9.555656427031714E+001 3.727574832900275E+002
+     1.336281999860545E+003 4.204240593401743E+003 4.586283401346417E+003
+     7.509860659423193E-003 4.925764555768416E-009 8.850959337814837E-003
+     -6.847732503133576E-003 1.801526800000000E-002 2.909334100608910E+006
+     3.903272213482277E+002 3.530000000000000E+001 5.162027557169959E+002
+     1.000000000000000E+000 1.214452747086919E+001 6.634772213482277E+002
+     3.530000000000000E+006 6.804328966434192E+003 2.336402363987811E+003
+     1.719391234514729E+003 1.838264494464055E-003 2.992046893401395E-007
+     3.460883196779697E-006 -9.555226443803860E-006 1.801526800000000E-002
+ 1.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.428285924130035E+005 9.960749386540908E+001 2.000000000000000E+000
+     4.450000000000000E+005 4.605307663050049E+001 3.727574938654091E+002
+     1.376522606255045E+003 4.190019889953370E+003 5.030680962499964E+003
+     1.557417981913490E-002 1.028390262792457E-008 2.271309926335023E-003
+     -1.590534230079799E-003 1.801526800000000E-002 2.909390752031052E+006
+     3.912146028764499E+002 3.645000000000000E+001 5.180559513595030E+002
+     1.000000000000000E+000 1.254261530035502E+001 6.643646028764499E+002
+     3.645000000000000E+006 6.790292163472049E+003 2.345870040630610E+003
+     1.723672688555984E+003 1.846472650412513E-003 2.902525096047916E-007
+     3.462061837692204E-006 -9.872497502259492E-006 1.801526800000000E-002
+ 1.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.567036854067218E+005 9.960750444079059E+001 2.000000000000000E+000
+     4.600000000000000E+005 3.033691025848056E+001 3.727575044407906E+002
+     1.416763212649545E+003 4.175799186504995E+003 5.475078521211334E+003
+     2.362984880543173E-002 1.570884876171939E-008 1.079108175070720E-003
+     -6.901895879125214E-004 1.801526800000000E-002 2.909447002394811E+006
+     3.920978756746939E+002 3.760000000000000E+001 5.198648550046687E+002
+     1.000000000000000E+000 1.294084050411066E+001 6.652478756746939E+002
+     3.760000000000000E+006 6.776711784030465E+003 2.355313496155970E+003
+     1.727926172714420E+003 1.854658814832350E-003 2.818469428267927E-007
+     3.463227608479725E-006 -1.019008465389399E-005 1.801526800000000E-002
+ 1.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.705787784004401E+005 9.960751501617216E+001 2.000000000000000E+000
+     4.750000000000000E+005 2.261818317587953E+001 3.727575150161721E+002
+     1.457003819044046E+003 4.161578483056622E+003 5.919476077480531E+003
+     3.167670482107888E-002 2.120186029237335E-008 6.518201158434108E-004
+     -3.836552372885920E-004 1.801526800000000E-002 2.909502854609503E+006
+     3.929770747320328E+002 3.875000000000000E+001 5.216318516677334E+002
+     1.000000000000000E+000 1.333920164616790E+001 6.661270747320327E+002
+     3.875000000000000E+006 6.763560166029224E+003 2.364732308144949E+003
+     1.732151569131569E+003 1.862822769183892E-003 2.739393110582455E-007
+     3.464380604331437E-006 -1.050798370015491E-005 1.801526800000000E-002
+ 1.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.844538713941585E+005 9.960752559155372E+001 2.000000000000000E+000
+     4.900000000000000E+005 1.803059523262290E+001 3.727575255915537E+002
+     1.497244425438546E+003 4.147357779608248E+003 6.363873631307552E+003
+     3.971458095790244E-002 2.676422630520710E-008 4.472518417854918E-004
+     -2.438067992853685E-004 1.801526800000000E-002 2.909558311037761E+006
+     3.938522354063015E+002 3.990000000000001E+001 5.233591305322281E+002
+     1.000000000000000E+000 1.373769727843290E+001 6.670022354063015E+002
+     3.990000000000000E+006 6.750812079807140E+003 2.374126078879729E+003
+     1.736348780099020E+003 1.870964298635046E-003 2.664865482001403E-007
+     3.465520907853554E-006 -1.082619047996476E-005 1.801526800000000E-002
+ 1.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     4.983289643878768E+005 9.960753616693529E+001 2.000000000000000E+000
+     5.050000000000000E+005 1.499017631059723E+001 3.727575361669353E+002
+     1.537485031833046E+003 4.133137076159875E+003 6.808271182692397E+003
+     4.774330606620374E-002 3.239726864419626E-008 3.319632339630004E-004
+     -1.685152288549973E-004 1.801526800000000E-002 2.909611007144911E+006
+     3.947277301049757E+002 4.105000000000000E+001 5.250487061836142E+002
+     1.000000000000000E+000 1.413621074146048E+001 6.678777301049756E+002
+     4.105000000000000E+006 6.738459928426567E+003 2.383486067439072E+003
+     1.740515241697558E+003 1.879059073494887E-003 2.594499259251648E-007
+     3.466619952415851E-006 -1.114450611709154E-005 1.801526800000000E-002
+ 1.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.122040573815951E+005 9.960754674231686E+001 2.000000000000000E+000
+     5.200000000000001E+005 1.282718522888007E+001 3.727575467423168E+002
+     1.577725638227547E+003 4.118916372711501E+003 7.252668731635071E+003
+     5.576270461916426E-002 3.810234295921670E-008 2.597913920756714E-004
+     -1.233923946596700E-004 1.801526800000000E-002 2.909664566485084E+006
+     3.955969304266664E+002 4.220000000000000E+001 5.267024370131635E+002
+     1.000000000000000E+000 1.453491208052356E+001 6.687469304266664E+002
+     4.220000000000000E+006 6.726458831606890E+003 2.392824287968759E+003
+     1.744654507639674E+003 1.887143369338701E-003 2.527961202528865E-007
+     3.467721602627205E-006 -1.146321654063684E-005 1.801526800000000E-002
+ 1.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.260791503753135E+005 9.960755731769842E+001 2.000000000000000E+000
+     5.350000000000000E+005 1.120969461510381E+001 3.727575573176984E+002
+     1.617966244622047E+003 4.104695669263128E+003 7.697066278135565E+003
+     6.377259657201492E-002 4.388083979372273E-008 2.111704376516978E-004
+     -9.423521171449920E-005 1.801526800000000E-002 2.909717733430219E+006
+     3.964621850972681E+002 4.335000000000000E+001 5.283220412355655E+002
+     1.000000000000000E+000 1.493374035977466E+001 6.696121850972680E+002
+     4.335000000000000E+006 6.714797575360644E+003 2.402136128881107E+003
+     1.748765285876534E+003 1.895204334426298E-003 2.464944150211066E-007
+     3.468810713075130E-006 -1.178221713530653E-005 1.801526800000000E-002
+ 1.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.399542433690317E+005 9.960756789307993E+001 2.000000000000000E+000
+     5.500000000000000E+005 9.954451782330457E+000 3.727575678930799E+002
+     1.658206851016548E+003 4.090474965814753E+003 8.141463822193886E+003
+     7.177279721573361E-002 4.973418571469201E-008 1.765930003496272E-004
+     -7.431223619804078E-005 1.801526800000000E-002 2.909770510251861E+006
+     3.973235274148167E+002 4.450000000000001E+001 5.299091108844855E+002
+     1.000000000000000E+000 1.533269415131353E+001 6.704735274148167E+002
+     4.450000000000000E+006 6.703458235628676E+003 2.411421287482466E+003
+     1.752847552097006E+003 1.903241787908388E-003 2.405175021858045E-007
+     3.469887345714612E-006 -1.210150394768406E-005 1.801526800000000E-002
+ 1.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.538293363627500E+005 9.960757846846150E+001 2.000000000000000E+000
+     5.650000000000000E+005 8.952019615606169E+000 3.727575784684615E+002
+     1.698447457411048E+003 4.076254262366380E+003 8.585861363810031E+003
+     7.976311702501948E-002 5.566384448676463E-008 1.509594211010116E-004
+     -6.009905921422755E-005 1.801526800000000E-002 2.909822899110812E+006
+     3.981809903123955E+002 4.565000000000001E+001 5.314651240866731E+002
+     1.000000000000000E+000 1.573177203167133E+001 6.713309903123954E+002
+     4.565000000000000E+006 6.692424262229708E+003 2.420679481414104E+003
+     1.756901297122726E+003 1.911255555773268E-003 2.348408254580336E-007
+     3.470951557090768E-006 -1.242107306173623E-005 1.801526800000000E-002
+ 1.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.677044293564684E+005 9.960758904384306E+001 2.000000000000000E+000
+     5.800000000000000E+005 8.133010081366775E+000 3.727575890438430E+002
+     1.738688063805548E+003 4.062033558918006E+003 9.030258902984002E+003
+     8.774336150028297E-002 6.167131829260761E-008 1.313212290186974E-004
+     -4.960531734185100E-005 1.801526800000000E-002 2.909874902062243E+006
+     3.990346063616714E+002 4.680000000000000E+001 5.329914558642237E+002
+     1.000000000000000E+000 1.613097258136571E+001 6.721846063616714E+002
+     4.680000000000000E+006 6.681680342059678E+003 2.429910447655736E+003
+     1.760926525988364E+003 1.919245470655984E-003 2.294422422242708E-007
+     3.472003398707908E-006 -1.274092059397912E-005 1.801526800000000E-002
+ 1.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.815795223501867E+005 9.960759961922463E+001 2.000000000000000E+000
+     5.950000000000000E+005 7.451299619085552E+000 3.727575996192246E+002
+     1.778928670200049E+003 4.047812855469633E+003 9.474656439715800E+003
+     9.571333100337355E-002 6.775814900164092E-008 1.158701668897914E-004
+     -4.163798001894465E-005 1.801526800000000E-002 2.909926521060589E+006
+     3.998844077764119E+002 4.795000000000000E+001 5.344893876731123E+002
+     1.000000000000000E+000 1.653029438448442E+001 6.730344077764119E+002
+     4.795000000000000E+006 6.671212278902262E+003 2.439113941578355E+003
+     1.764923257071341E+003 1.927211371651477E-003 2.243017341156049E-007
+     3.473042917375172E-006 -1.306104268909634E-005 1.801526800000000E-002
+ 1.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     5.954546153439051E+005 9.960761019460620E+001 2.000000000000000E+000
+     6.100000000000000E+005 6.875033033801332E+000 3.727576101946062E+002
+     1.819169276594549E+003 4.033592152021259E+003 9.919053974005417E+003
+     1.036728205867544E-001 7.392591948937638E-008 1.034431780329762E-004
+     -3.544664737410106E-005 1.801526800000000E-002 2.909977757964238E+006
+     4.007304264159833E+002 4.910000000000000E+001 5.359601158524891E+002
+     1.000000000000000E+000 1.692973602829591E+001 6.738804264159833E+002
+     4.910000000000000E+006 6.661006887487600E+003 2.448289736043764E+003
+     1.768891521268346E+003 1.935153104131549E-003 2.194011582497767E-007
+     3.474070155530140E-006 -1.338143551597152E-005 1.801526800000000E-002
+ 1.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.093297083376234E+005 9.960762076998771E+001 2.000000000000000E+000
+     6.250000000000000E+005 6.381502154174542E+000 3.727576207699877E+002
+     1.859409882989049E+003 4.019371448572885E+003 1.036345150585286E+004
+     1.116216198158168E-001 8.017625500974072E-008 9.326223430490527E-005
+     -3.054016748406236E-005 1.801526800000000E-002 2.910028614540017E+006
+     4.015726937888293E+002 5.025000000000001E+001 5.374047591315966E+002
+     1.000000000000000E+000 1.732929610288553E+001 6.747226937888293E+002
+     5.025000000000000E+006 6.651051899819284E+003 2.457437620548328E+003
+     1.772831361216202E+003 1.943070519565508E-003 2.147240326303619E-007
+     3.475085151541892E-006 -1.370209526410077E-005 1.801526800000000E-002
+ 1.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.232048013313416E+005 9.960763134536927E+001 2.000000000000000E+000
+     6.400000000000000E+005 5.954082590675801E+000 3.727576313453693E+002
+     1.899650489383550E+003 4.005150745124512E+003 1.080784903525813E+004
+     1.195595125840107E-001 8.651082462288182E-008 8.478943869482097E-005
+     -2.658613899067959E-005 1.801526800000000E-002 2.910079092467495E+006
+     4.024112410559317E+002 5.140000000000001E+001 5.388243653184769E+002
+     1.000000000000000E+000 1.772897320081590E+001 6.755612410559317E+002
+     5.140000000000000E+006 6.641335882103368E+003 2.466557400408626E+003
+     1.776742830554746E+003 1.950963475344362E-003 2.102553503536207E-007
+     3.476087939994803E-006 -1.402301814035250E-005 1.801526800000000E-002
+ 1.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.370798943250600E+005 9.960764192075084E+001 2.000000000000000E+000
+     6.550000000000000E+005 5.580324235467139E+000 3.727576419207508E+002
+     1.939891095778050E+003 3.990930041676138E+003 1.125224656222123E+004
+     1.274862769204501E-001 9.293134268109310E-008 7.764233440824178E-005
+     -2.335309342223288E-005 1.801526800000000E-002 2.910129193343098E+006
+     4.032460990342501E+002 5.255000000000000E+001 5.402199172758998E+002
+     1.000000000000000E+000 1.812876591681048E+001 6.763960990342500E+002
+     5.255000000000000E+006 6.631848160871416E+003 2.475648895986746E+003
+     1.780625993229463E+003 1.958831834608491E-003 2.059814182100792E-007
+     3.477078551954358E-006 -1.434420036604571E-005 1.801526800000000E-002
+ 1.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.509549873187783E+005 9.960765249613240E+001 2.000000000000000E+000
+     6.700000000000000E+005 5.250718478050665E+000 3.727576524961324E+002
+     1.980131702172550E+003 3.976709338227764E+003 1.169664408674215E+004
+     1.354016847896338E-001 9.943957037563477E-008 7.154233631911058E-005
+     -2.067583247979935E-005 1.801526800000000E-002 2.910178918684047E+006
+     4.040772982001437E+002 5.370000000000000E+001 5.415923382743375E+002
+     1.000000000000000E+000 1.852867284745861E+001 6.772272982001437E+002
+     5.370000000000000E+006 6.622578757102929E+003 2.484711941953158E+003
+     1.784480922831785E+003 1.966675466078651E-003 2.018897160239367E-007
+     3.478057015216080E-006 -1.466563817431899E-005 1.801526800000000E-002
+ 1.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.648300803124966E+005 9.960766307151397E+001 2.000000000000000E+000
+     6.850000000000000E+005 4.957877946433110E+000 3.727576630715140E+002
+     2.020372308567051E+003 3.962488634779390E+003 1.214104160882090E+004
+     1.433055018829018E-001 1.060373173473839E-007 6.628220795645124E-005
+     -1.843389828915217E-005 1.801526800000000E-002 2.910228269932129E+006
+     4.049048686927735E+002 5.485000000000000E+001 5.429424967988194E+002
+     1.000000000000000E+000 1.892869259094146E+001 6.780548686927734E+002
+     5.485000000000000E+006 6.613518327329896E+003 2.493746386585155E+003
+     1.788307701975015E+003 1.974494243890292E-003 1.979687736867678E-007
+     3.479023354538775E-006 -1.498732780776563E-005 1.801526800000000E-002
+ 2.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.787051733062150E+005 9.960767364689554E+001 2.000000000000000E+000
+     7.000000000000000E+005 4.695976231127780E+000 3.727576736468955E+002
+     2.060612914961551E+003 3.948267931331017E+003 1.258543912845747E+004
+     1.511974874012264E-001 1.127264433644066E-007 6.170491475859044E-005
+     -1.653778313358986E-005 1.801526800000000E-002 2.910277248457313E+006
+     4.057288403174841E+002 5.600000000000001E+001 5.442712108756215E+002
+     1.000000000000000E+000 1.932882374677743E+001 6.788788403174841E+002
+     5.600000000000000E+006 6.604658110853814E+003 2.502752091099002E+003
+     1.792106421704014E+003 1.982288047431086E-003 1.942080633419941E-007
+     3.479977591863032E-006 -1.530926551631174E-005 1.801526800000000E-002
+ 2.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     6.925802662999333E+005 9.960768422227704E+001 2.000000000000000E+000
+     7.150000000000000E+005 4.460356279776076E+000 3.727576842222770E+002
+     2.100853521356052E+003 3.934047227882643E+003 1.302983664565186E+004
+     1.590773938289156E-001 1.195088600697204E-007 5.768950168114067E-005
+     -1.491985493728730E-005 1.801526800000000E-002 2.910325855561196E+006
+     4.065492425491692E+002 5.715000000000001E+001 5.455792519756152E+002
+     1.000000000000000E+000 1.972906491558602E+001 6.796992425491692E+002
+     5.715000000000000E+006 6.595989882329514E+003 2.511728929013988E+003
+     1.795877180936777E+003 1.990056761181619E-003 1.905979045860544E-007
+     3.480919746515975E-006 -1.563144755531634E-005 1.801526800000000E-002
+ 2.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.064553592936515E+005 9.960769479765861E+001 2.000000000000000E+000
+     7.300000000000000E+005 4.247251051617734E+000 3.727576947976586E+002
+     2.141094127750552E+003 3.919826524434269E+003 1.347423416040408E+004
+     1.669449666977814E-001 1.263865328026955E-007 5.414143631481138E-005
+     -1.352824166932532E-005 1.801526800000000E-002 2.910374092480321E+006
+     4.073661045356139E+002 5.830000000000000E+001 5.468673485433205E+002
+     1.000000000000000E+000 2.012941469886933E+001 6.805161045356139E+002
+     5.830000000000000E+006 6.587505909074016E+003 2.520676785546737E+003
+     1.799620085936253E+003 1.997800274559218E-003 1.871293808889709E-007
+     3.481849835403212E-006 -1.595387018387402E-005 1.801526800000000E-002
+ 2.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.203304522873699E+005 9.960770537304018E+001 2.000000000000000E+000
+     7.450000000000000E+005 4.053580599242316E+000 3.727577053730402E+002
+     2.181334734145052E+003 3.905605820985896E+003 1.391863167271413E+004
+     1.747999443413026E-001 1.333614824977417E-007 5.098586508745346E-005
+     -1.232262127263740E-005 1.801526800000000E-002 2.910421960389331E+006
+     4.081794551008201E+002 5.945000000000000E+001 5.481361891942319E+002
+     1.000000000000000E+000 2.052987169881017E+001 6.813294551008200E+002
+     5.945000000000000E+006 6.579198912546463E+003 2.529595557034170E+003
+     1.803335249810732E+003 2.005518481764863E-003 1.837942657151368E-007
+     3.482767873188722E-006 -1.627652966330262E-005 1.801526800000000E-002
+ 2.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.342055452810882E+005 9.960771594842174E+001 2.000000000000000E+000
+     7.600000000000000E+005 3.876802246441085E+000 3.727577159484217E+002
+     2.221575340539553E+003 3.891385117537522E+003 1.436302918258200E+004
+     1.826420576382798E-001 1.404357876641330E-007 4.816281413802293E-005
+     -1.127126758044561E-005 1.801526800000000E-002 2.910469460404007E+006
+     4.089893227483127E+002 6.060000000000000E+001 5.493864256173881E+002
+     1.000000000000000E+000 2.093043451808589E+001 6.821393227483127E+002
+     6.060000000000000E+006 6.571062033519495E+003 2.538485150383636E+003
+     1.807022792041302E+003 2.013211281633158E-003 1.805849570557923E-007
+     3.483673872463620E-006 -1.659942225579947E-005 1.801526800000000E-002
+ 2.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.480806382748066E+005 9.960772652380331E+001 2.000000000000000E+000
+     7.750000000000000E+005 3.714798330690412E+000 3.727577265238033E+002
+     2.261815946934053E+003 3.877164414089148E+003 1.480742669000769E+004
+     1.904710297454594E-001 1.476115864510447E-007 4.562371554140606E-005
+     -1.034894155484731E-005 1.801526800000000E-002 2.910516593584164E+006
+     4.097957356644237E+002 6.175000000000001E+001 5.506186752153975E+002
+     1.000000000000000E+000 2.133110175969727E+001 6.829457356644236E+002
+     6.175000000000000E+006 6.563088800525549E+003 2.547345482548795E+003
+     1.810682838034875E+003 2.020878577485360E-003 1.774944192766220E-007
+     3.484567843904397E-006 -1.692254422325172E-005 1.801526800000000E-002
+ 2.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.619557312685249E+005 9.960773709918487E+001 2.000000000000000E+000
+     7.900000000000000E+005 3.565790962763321E+000 3.727577370991849E+002
+     2.302056553328554E+003 3.862943710640775E+003 1.525182419499121E+004
+     1.982865758185651E-001 1.548910788021130E-007 4.332885384672565E-005
+     -9.535362290272621E-006 1.801526800000000E-002 2.910563360936425E+006
+     4.105987217215608E+002 6.290000000000001E+001 5.518335235101342E+002
+     1.000000000000000E+000 2.173187202681135E+001 6.837487217215607E+002
+     6.290000000000000E+006 6.555273101215435E+003 2.556176480029934E+003
+     1.814315518701463E+003 2.028520276985399E-003 1.745161313442997E-007
+     3.485449796421416E-006 -1.724589182618656E-005 1.801526800000000E-002
+ 2.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.758308242622432E+005 9.960774767456638E+001 2.000000000000000E+000
+     8.050000000000000E+005 3.428276510074956E+000 3.727577476745664E+002
+     2.342297159723054E+003 3.848723007192401E+003 1.569622169753256E+004
+     2.060884027211490E-001 1.622765287040776E-007 4.124546261295302E-005
+     -8.814082520405142E-006 1.801526800000000E-002 2.910609763416879E+006
+     4.113983084814531E+002 6.405000000000001E+001 5.530315263387754E+002
+     1.000000000000000E+000 2.213274392261784E+001 6.845483084814531E+002
+     6.405000000000000E+006 6.547609156312459E+003 2.564978078397440E+003
+     1.817920970054338E+003 2.036136291998948E-003 1.716440406302733E-007
+     3.486319737298311E-006 -1.756946132284976E-005 1.801526800000000E-002
+ 2.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     7.897059172559615E+005 9.960775824994795E+001 2.000000000000000E+000
+     8.200000000000000E+005 3.300974676966537E+000 3.727577582499479E+002
+     2.382537766117554E+003 3.834502303744027E+003 1.614061919763173E+004
+     2.138762087206338E-001 1.697702665343340E-007 3.934628718314187E-005
+     -8.171650794344120E-006 1.801526800000000E-002 2.910655801933626E+006
+     4.121945231983791E+002 6.520000000000000E+001 5.542132118618646E+002
+     1.000000000000000E+000 2.253371605019829E+001 6.853445231983791E+002
+     6.520000000000000E+006 6.540091495884893E+003 2.573750221837288E+003
+     1.821499332831898E+003 2.043726538455478E-003 1.688725216032057E-007
+     3.487177672322824E-006 -1.789324896840042E-005 1.801526800000000E-002
+ 2.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.035810102496798E+005 9.960776882532952E+001 2.000000000000000E+000
+     8.350000000000000E+005 3.182788523586471E+000 3.727577688253295E+002
+     2.422778372512054E+003 3.820281600295653E+003 1.658501669528872E+004
+     2.216496831708887E-001 1.773746915125127E-007 3.760848666075168E-005
+     -7.596979743770069E-006 1.801526800000000E-002 2.910701477349206E+006
+     4.129873928223743E+002 6.635000000000001E+001 5.553790824025456E+002
+     1.000000000000000E+000 2.293478701240712E+001 6.861373928223743E+002
+     6.635000000000000E+006 6.532714937693521E+003 2.582492862717372E+003
+     1.825050752140019E+003 2.051290936213322E-003 1.661963388169651E-007
+     3.488023605909728E-006 -1.821725101421217E-005 1.801526800000000E-002
+ 2.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.174561032433981E+005 9.960777940071108E+001 2.000000000000000E+000
+     8.500000000000000E+005 3.072772776656318E+000 3.727577794007111E+002
+     2.463018978906554E+003 3.806060896847280E+003 1.702941419050354E+004
+     2.294085061806333E-001 1.850922742614979E-007 3.601278589985906E-005
+     -7.080864476098435E-006 1.801526800000000E-002 2.910746790482933E+006
+     4.137769440024204E+002 6.750000000000000E+001 5.565296161338077E+002
+     1.000000000000000E+000 2.333595541176431E+001 6.869269440024203E+002
+     6.750000000000000E+006 6.525474567400255E+003 2.591205961173710E+003
+     1.828575377113868E+003 2.058829408927726E-003 1.636106136818975E-007
+     3.488857541216311E-006 -1.854146370727095E-005 1.801526800000000E-002
+ 2.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.313311962371165E+005 9.960778997609265E+001 2.000000000000000E+000
+     8.650000000000000E+005 2.970108492842860E+000 3.727577899760926E+002
+     2.503259585301055E+003 3.791840193398906E+003 1.747381168327618E+004
+     2.371523482669274E-001 1.929255594836332E-007 3.454281399806499E-005
+     -6.615611663101246E-006 1.801526800000000E-002 2.910791742113126E+006
+     4.145632030896126E+002 6.865000000000001E+001 5.576652686286915E+002
+     1.000000000000000E+000 2.373721985035882E+001 6.877132030896125E+002
+     6.865000000000000E+006 6.518365720449073E+003 2.599889484715434E+003
+     1.832073360598027E+003 2.066341883921919E-003 1.611107945757592E-007
+     3.489679480250931E-006 -1.886588328966138E-005 1.801526800000000E-002
+ 2.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.452062892308348E+005 9.960780055147421E+001 2.000000000000000E+000
+     8.800000000000000E+005 2.874082637044329E+000 3.727578005514742E+002
+     2.543500191695555E+003 3.777619489950533E+003 1.791820917360665E+004
+     2.448808699929598E-001 2.008771687582007E-007 3.318458346894671E-005
+     -6.194751174138199E-006 1.801526800000000E-002 2.910836332979246E+006
+     4.153461961403104E+002 6.980000000000001E+001 5.587864742866644E+002
+     1.000000000000000E+000 2.413857892976238E+001 6.884961961403104E+002
+     6.980000000000000E+006 6.511383965452618E+003 2.608543407847732E+003
+     1.835544858844053E+003 2.073828292061161E-003 1.586926299091632E-007
+     3.490489423975085E-006 -1.919050599813317E-005 1.801526800000000E-002
+ 2.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.590813822245532E+005 9.960781112685572E+001 2.000000000000000E+000
+     8.950000000000000E+005 2.784071498106411E+000 3.727578111268557E+002
+     2.583740798090056E+003 3.763398786502159E+003 1.836260666149495E+004
+     2.525937215892972E-001 2.089498034666356E-007 3.192607662899086E-005
+     -5.812809908286981E-006 1.801526800000000E-002 2.910880563783941E+006
+     4.161259489192668E+002 7.095000000000000E+001 5.598936476479476E+002
+     1.000000000000000E+000 2.454003125095297E+001 6.892759489192667E+002
+     7.095000000000000E+006 6.504525088936732E+003 2.617167711711796E+003
+     1.838990031224474E+003 2.081288567629785E-003 1.563521438103312E-007
+     3.491287372399441E-006 -1.951532806374101E-005 1.801526800000000E-002
+ 2.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.729564752182714E+005 9.960782170223729E+001 2.000000000000000E+000
+     9.100000000000000E+005 2.699527126244860E+000 3.727578217022373E+002
+     2.623981404484556E+003 3.749178083053785E+003 1.880700414694107E+004
+     2.602905425577059E-001 2.171462478523321E-007 3.075691448202473E-005
+     -5.465132952326121E-006 1.801526800000000E-002 2.910924435195006E+006
+     4.169024869027375E+002 7.210000000000001E+001 5.609871846062721E+002
+     1.000000000000000E+000 2.494157541424768E+001 6.900524869027374E+002
+     7.210000000000000E+006 6.497785081311879E+003 2.625762383740980E+003
+     1.842409039962367E+003 2.088722648211252E-003 1.540856141367150E-007
+     3.492073324674214E-006 -1.984034571155130E-005 1.801526800000000E-002
+ 2.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     8.868315682119898E+005 9.960783227761885E+001 2.000000000000000E+000
+     9.250000000000001E+005 2.619966168780681E+000 3.727578322776188E+002
+     2.664222010879057E+003 3.734957379605411E+003 1.925140162994502E+004
+     2.679709612566062E-001 2.254693722223221E-007 2.966808965268028E-005
+     -5.147741076143709E-006 1.801526800000000E-002 2.910967947847263E+006
+     4.176758352815718E+002 7.325000000000001E+001 5.620674635293769E+002
+     1.000000000000000E+000 2.534321001924432E+001 6.908258352815718E+002
+     7.325000000000001E+006 6.491160123954989E+003 2.634327417332370E+003
+     1.845802049875674E+003 2.096130474571187E-003 1.518895525577803E-007
+     3.492847279174245E-006 -2.016555516040983E-005 1.801526800000000E-002
+ 2.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.007066612057082E+005 9.960784285300042E+001 2.000000000000000E+000
+     9.400000000000001E+005 2.544960623568257E+000 3.727578428530004E+002
+     2.704462617273557E+003 3.720736676157037E+003 1.969579911050679E+004
+     2.756345944671539E-001 2.339221362985599E-007 2.865174946349785E-005
+     -4.857216366291701E-006 1.801526800000000E-002 2.911011102344357E+006
+     4.184460189642825E+002 7.440000000000002E+001 5.631348462956293E+002
+     1.000000000000000E+000 2.574493366477155E+001 6.915960189642825E+002
+     7.440000000000001E+006 6.484646577297849E+003 2.642862811533069E+003
+     1.849169228135502E+003 2.103511990543421E-003 1.497606864848659E-007
+     3.493609233579173E-006 -2.049095262276511E-005 1.801526800000000E-002
+ 2.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.145817541994265E+005 9.960785342838199E+001 2.000000000000000E+000
+     9.550000000000001E+005 2.474130136508319E+000 3.727578534283820E+002
+     2.744703223668058E+003 3.706515972708664E+003 2.014019658862638E+004
+     2.832810469388878E-001 2.425075927270339E-007 2.770101857797202E-005
+     -4.590609822556484E-006 1.801526800000000E-002 2.911053899260479E+006
+     4.192130625800977E+002 7.555000000000001E+001 5.641896792542398E+002
+     1.000000000000000E+000 2.614674494884663E+001 6.923630625800977E+002
+     7.555000000000001E+006 6.478240969829391E+003 2.651368570740431E+003
+     1.852510744037620E+003 2.110867142918994E-003 1.476959426513158E-007
+     3.494359184948936E-006 -2.081653430454232E-005 1.801526800000000E-002
+ 2.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.284568471931446E+005 9.960786400376355E+001 2.000000000000000E+000
+     9.699999999999999E+005 2.407135550470267E+000 3.727578640037635E+002
+     2.784943830062557E+003 3.692295269260290E+003 2.058459406430379E+004
+     2.909099109138102E-001 2.512288907534442E-007 2.680985309365411E-005
+     -4.345366226199204E-006 1.801526800000000E-002 2.911096339142023E+006
+     4.199769904819906E+002 7.670000000000000E+001 5.652322941157504E+002
+     1.000000000000000E+000 2.654864246864119E+001 6.931269904819906E+002
+     7.670000000000000E+006 6.471939987929063E+003 2.659844704415683E+003
+     1.855826768786500E+003 2.118195881338182E-003 1.456924321696909E-007
+     3.495097129795009E-006 -2.114229640506381E-005 1.801526800000000E-002
+ 2.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.423319401868631E+005 9.960787457914506E+001 2.000000000000000E+000
+     9.850000000000000E+005 2.343673474677450E+000 3.727578745791450E+002
+     2.825184436457058E+003 3.678074565811917E+003 2.102899153753904E+004
+     2.985207656276976E-001 2.600892800747458E-007 2.597291980773407E-005
+     -4.119262686481980E-006 1.801526800000000E-002 2.911138422509162E+006
+     4.207378267496918E+002 7.785000000000001E+001 5.662630087788634E+002
+     1.000000000000000E+000 2.695062482045376E+001 6.938878267496917E+002
+     7.785000000000000E+006 6.465740466457003E+003 2.668291226810246E+003
+     1.859117475291205E+003 2.125498158185464E-003 1.437474369133293E-007
+     3.495823064147532E-006 -2.146823511701169E-005 1.801526800000000E-002
+ 3.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.562070331805814E+005 9.960788515452663E+001 2.000000000000000E+000
+     1.000000000000000E+006 2.283471691067482E+000 3.727578851545266E+002
+     2.865425042851558E+003 3.663853862363543E+003 2.147338900833211E+004
+     3.061131767873577E-001 2.690921148764490E-007 2.518549576234071E-005
+     -3.910358091791100E-006 1.801526800000000E-002 2.911180149857372E+006
+     4.214955951926801E+002 7.900000000000000E+001 5.672821280990199E+002
+     1.000000000000000E+000 2.735269059968948E+001 6.946455951926801E+002
+     7.900000000000000E+006 6.459639380034388E+003 2.676708156704192E+003
+     1.862383037972516E+003 2.132773928487482E-003 1.418583970873157E-007
+     3.496536983618713E-006 -2.179434662642951E-005 1.801526800000000E-002
+ 3.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.700821261742996E+005 9.960789572990819E+001 2.000000000000000E+000
+     1.015000000000000E+006 2.226285250901252E+000 3.727578957299082E+002
+     2.905665649246059E+003 3.649633158915169E+003 2.191778647668300E+004
+     3.136866960224730E-001 2.782408580662197E-007 2.444338422865492E-005
+     -3.716951308750689E-006 1.801526800000000E-002 2.911221521658880E+006
+     4.222503193531542E+002 8.015000000000001E+001 5.682899446036020E+002
+     1.000000000000000E+000 2.775483840084604E+001 6.954003193531542E+002
+     8.015000000000000E+006 6.453633834954180E+003 2.685095517156324E+003
+     1.865623632580716E+003 2.140023149813946E-003 1.400228998694025E-007
+     3.497238883462613E-006 -2.212062711275891E-005 1.801526800000000E-002
+ 3.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.839572191680180E+005 9.960790630528976E+001 2.000000000000000E+000
+     1.030000000000000E+006 2.171893143572651E+000 3.727579063052897E+002
+     2.945906255640559E+003 3.635412455466796E+003 2.236218394259173E+004
+     3.212408603105723E-001 2.875390857150009E-007 2.374284409414097E-005
+     -3.537546440949140E-006 1.801526800000000E-002 2.911262538364068E+006
+     4.230020225089847E+002 8.130000000000001E+001 5.692867391581901E+002
+     1.000000000000000E+000 2.815706681750598E+001 6.961520225089847E+002
+     8.130000000000000E+006 6.447721061668312E+003 2.693453335265296E+003
+     1.868839436023442E+003 2.147245782181482E-003 1.382386690149492E-007
+     3.497928758631672E-006 -2.244707274890907E-005 1.801526800000000E-002
+ 3.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     9.978323121617363E+005 9.960791688067133E+001 2.000000000000000E+000
+     1.045000000000000E+006 2.120095442093673E+000 3.727579168806713E+002
+     2.986146862035059E+003 3.621191752018422E+003 2.280658140605827E+004
+     3.287751913735841E-001 2.969904917176213E-007 2.308053023816104E-005
+     -3.370823816840645E-006 1.801526800000000E-002 2.911303200402804E+006
+     4.237507276766461E+002 8.245000000000000E+001 5.702727815878898E+002
+     1.000000000000000E+000 2.855937444233476E+001 6.969007276766461E+002
+     8.245000000000000E+006 6.441898407802675E+003 2.701781641941332E+003
+     1.872030626203120E+003 2.154441787960406E-003 1.365035553317601E-007
+     3.498606603830029E-006 -2.277367970135556E-005 1.801526800000000E-002
+ 3.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.011707405155455E+006 9.960792745605289E+001 2.000000000000000E+000
+     1.060000000000000E+006 2.070710847530591E+000 3.727579274560529E+002
+     3.026387468429560E+003 3.606971048570048E+003 2.325097886708264E+004
+     3.362891950443207E-001 3.065988926856561E-007 2.245344296346680E-005
+     -3.215615651952596E-006 1.801526800000000E-002 2.911343508185727E+006
+     4.244964576141288E+002 8.360000000000001E+001 5.712483312572891E+002
+     1.000000000000000E+000 2.896175986708446E+001 6.976464576141287E+002
+     8.360000000000000E+006 6.436163331656177E+003 2.710080471688074E+003
+     1.875197381863461E+003 2.161611131784405E-003 1.348155279410640E-007
+     3.499272413563982E-006 -2.310044413026649E-005 1.801526800000000E-002
+ 3.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.025582498149173E+006 9.960793803143440E+001 2.000000000000000E+000
+     1.075000000000000E+006 2.023574568821034E+000 3.727579380314344E+002
+     3.066628074824060E+003 3.592750345121674E+003 2.369537632566483E+004
+     3.437823606011246E-001 3.163682330861472E-007 2.185888492804086E-005
+     -3.070885544108113E-006 1.801526800000000E-002 2.911383462105481E+006
+     4.252392348238309E+002 8.475000000000000E+001 5.722136376123825E+002
+     1.000000000000000E+000 2.936422168260280E+001 6.983892348238309E+002
+     8.475000000000000E+006 6.430513396143992E+003 2.718349862394085E+003
+     1.878339882444533E+003 2.168753780463109E-003 1.331726662499668E-007
+     3.499926182189637E-006 -2.342736218965375E-005 1.801526800000000E-002
+ 3.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.039457591142891E+006 9.960794860681597E+001 2.000000000000000E+000
+     1.090000000000000E+006 1.978536485720647E+000 3.727579486068159E+002
+     3.106868681218561E+003 3.578529641673301E+003 2.413977378180485E+004
+     3.512541600688025E-001 3.263025906407273E-007 2.129442431831798E-005
+     -2.935711126962385E-006 1.801526800000000E-002 2.911423062537890E+006
+     4.259790815554313E+002 8.590000000000001E+001 5.731689406874002E+002
+     1.000000000000000E+000 2.976675847884716E+001 6.991290815554313E+002
+     8.590000000000000E+006 6.424946263149222E+003 2.726589855133640E+003
+     1.881458307946019E+003 2.175869702897514E-003 1.315731525687057E-007
+     3.500567903957995E-006 -2.375443002754688E-005 1.801526800000000E-002
+ 3.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.053332684136610E+006 9.960795918219753E+001 2.000000000000000E+000
+     1.105000000000000E+006 1.935459551729034E+000 3.727579591821975E+002
+     3.147109287613061E+003 3.564308938224927E+003 2.458417123550270E+004
+     3.587040474838314E-001 3.364061820006670E-007 2.075786323951006E-005
+     -2.809269337878930E-006 1.801526800000000E-002 2.911462309843100E+006
+     4.267160198087406E+002 8.705000000000001E+001 5.741144715792987E+002
+     1.000000000000000E+000 3.016936884490352E+001 6.998660198087406E+002
+     8.705000000000000E+006 6.419459688250292E+003 2.734800493976379E+003
+     1.884552838798166E+003 2.182958869998251E-003 1.300152653130819E-007
+     3.501197573057592E-006 -2.408164378618832E-005 1.801526800000000E-002
+ 3.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.067207777130328E+006 9.960796975757910E+001 2.000000000000000E+000
+     1.120000000000000E+006 1.894218401200297E+000 3.727579697575791E+002
+     3.187349894007562E+003 3.550088234776553E+003 2.502856868675836E+004
+     3.661314581216890E-001 3.466833687144405E-007 2.024721048555074E-005
+     -2.690823859349623E-006 1.801526800000000E-002 2.911501204366658E+006
+     4.274500713365352E+002 8.820000000000000E+001 5.750504528922932E+002
+     1.000000000000000E+000 3.057205136900981E+001 7.006000713365352E+002
+     8.820000000000000E+006 6.414051515794538E+003 2.742981825805444E+003
+     1.887623655740099E+003 2.190021254606649E-003 1.284973727386636E-007
+     3.501815183654818E-006 -2.440899960224771E-005 1.801526800000000E-002
+ 3.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.081082870124046E+006 9.960798033296067E+001 2.000000000000000E+000
+     1.135000000000000E+006 1.854698130817948E+000 3.727579803329606E+002
+     3.227590500402062E+003 3.535867531328180E+003 2.547296613557185E+004
+     3.735358076840151E-001 3.571386635055544E-007 1.976065800065301E-005
+     -2.579714375045189E-006 1.801526800000000E-002 2.911539746440559E+006
+     4.281812576473683E+002 8.935000000000001E+001 5.759770991548019E+002
+     1.000000000000000E+000 3.097480463858369E+001 7.013312576473683E+002
+     8.935000000000000E+006 6.408719674290987E+003 2.751133900143779E+003
+     1.890670939705070E+003 2.197056831418575E-003 1.270179271588547E-007
+     3.502420729932097E-006 -2.473649360705397E-005 1.801526800000000E-002
+ 3.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.094957963117765E+006 9.960799090834217E+001 2.000000000000000E+000
+     1.150000000000000E+006 1.816793230489523E+000 3.727579909083422E+002
+     3.267831106796562E+003 3.521646827879806E+003 2.591736358194318E+004
+     3.809164914431389E-001 3.677767368796189E-007 1.929656046470988E-005
+     -2.475347346907248E-006 1.801526800000000E-002 2.911577936384249E+006
+     4.289096000083638E+002 9.050000000000001E+001 5.768946172107339E+002
+     1.000000000000000E+000 3.137762724025442E+001 7.020596000083638E+002
+     9.050000000000000E+006 6.403462172097942E+003 2.759256768988224E+003
+     1.893694871712331E+003 2.204065576911013E-003 1.255754596037895E-007
+     3.503014206123997E-006 -2.506412192684385E-005 1.801526800000000E-002
+ 3.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.108833056111483E+006 9.960800148372374E+001 2.000000000000000E+000
+     1.165000000000000E+006 1.780406642712924E+000 3.727580014837237E+002
+     3.308071713191062E+003 3.507426124431432E+003 2.636176102587232E+004
+     3.882728833413492E-001 3.786024240809907E-007 1.885341753196247E-005
+     -2.377188072069205E-006 1.801526800000000E-002 2.911615774505581E+006
+     4.296351194479870E+002 9.165000000000001E+001 5.778032065870835E+002
+     1.000000000000000E+000 3.178051775989868E+001 7.027851194479870E+002
+     9.165000000000000E+006 6.398277093382933E+003 2.767350486651095E+003
+     1.896695632765251E+003 2.211047469271356E-003 1.241685748813380E-007
+     3.503595606551429E-006 -2.539188068302558E-005 1.801526800000000E-002
+ 3.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.122708149105201E+006 9.960801205910531E+001 2.000000000000000E+000
+     1.180000000000000E+006 1.745448932757004E+000 3.727580120591053E+002
+     3.348312319585562E+003 3.493205420983059E+003 2.680615846735928E+004
+     3.956043350420809E-001 3.896207324207513E-007 1.842985833130208E-005
+     -2.284753820589491E-006 1.801526800000000E-002 2.911653261101746E+006
+     4.303578367587982E+002 9.280000000000001E+001 5.787030598395168E+002
+     1.000000000000000E+000 3.218347478268007E+001 7.035078367587981E+002
+     9.280000000000000E+006 6.393162594334727E+003 2.775415109608942E+003
+     1.899673403755398E+003 2.218002488329343E-003 1.227959470053415E-007
+     3.504164925653987E-006 -2.571976599245616E-005 1.801526800000000E-002
+ 3.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.136583242098920E+006 9.960802263448687E+001 2.000000000000000E+000
+     1.195000000000000E+006 1.711837554719044E+000 3.727580226344869E+002
+     3.388552925980063E+003 3.478984717534685E+003 2.725055590640409E+004
+     4.029101749300021E-001 4.008368489993578E-007 1.802462790097708E-005
+     -2.197607889131746E-006 1.801526800000000E-002 2.911690396460148E+006
+     4.310777725001848E+002 9.395000000000000E+001 5.795943628775075E+002
+     1.000000000000000E+000 3.258649689309203E+001 7.042277725001848E+002
+     9.395000000000000E+006 6.388116899608692E+003 2.783450696358213E+003
+     1.902628365372260E+003 2.224930615491626E-003 1.214563149596141E-007
+     3.504722158020584E-006 -2.604777396773138E-005 1.801526800000000E-002
+ 3.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.150458335092638E+006 9.960803320986844E+001 2.000000000000000E+000
+     1.210000000000000E+006 1.679496200779486E+000 3.727580332098684E+002
+     3.428793532374563E+003 3.464764014086311E+003 2.769495334300670E+004
+     4.101897070567606E-001 4.122561488489866E-007 1.763657528325209E-005
+     -2.115354433488273E-006 1.801526800000000E-002 2.911727180859260E+006
+     4.317949470010742E+002 9.510000000000001E+001 5.804772952704997E+002
+     1.000000000000000E+000 3.298958267500428E+001 7.049449470010742E+002
+     9.510000000000000E+006 6.383138298988557E+003 2.791457307277500E+003
+     1.905560698018333E+003 2.231831833678914E-003 1.201484787692919E-007
+     3.505267298418423E-006 -2.637590071748771E-005 1.801526800000000E-002
+ 3.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.164333428086356E+006 9.960804378525000E+001 2.000000000000000E+000
+     1.225000000000000E+006 1.648354222855142E+000 3.727580437852500E+002
+     3.469034138769063E+003 3.450543310637938E+003 2.813935077716714E+004
+     4.174422100289101E-001 4.238842035224259E-007 1.726464304799014E-005
+     -2.037633965506037E-006 1.801526800000000E-002 2.911763614569440E+006
+     4.325093803626251E+002 9.625000000000001E+001 5.813520305363863E+002
+     1.000000000000000E+000 3.339273071171225E+001 7.056593803626250E+002
+     9.625000000000000E+006 6.378225144248890E+003 2.799435004496185E+003
+     1.908470581729303E+003 2.238706127265663E-003 1.188712958538234E-007
+     3.505800341820437E-006 -2.670414234671487E-005 1.801526800000000E-002
+ 3.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.178208521080074E+006 9.960805436063151E+001 2.000000000000000E+000
+     1.240000000000000E+006 1.618346117424835E+000 3.727580543606315E+002
+     3.509274745163564E+003 3.436322607189564E+003 2.858374820888542E+004
+     4.246669358342872E-001 4.357267901573499E-007 1.690785805000271E-005
+     -1.964119418550308E-006 1.801526800000000E-002 2.911799697853709E+006
+     4.332210924609008E+002 9.740000000000001E+001 5.822187364135606E+002
+     1.000000000000000E+000 3.379593958598957E+001 7.063710924609007E+002
+     9.740000000000000E+006 6.373375846204009E+003 2.807383851769135E+003
+     1.911358196099056E+003 2.245553482022229E-003 1.176236776383262E-007
+     3.506321283431219E-006 -2.703249495707815E-005 1.801526800000000E-002
+ 3.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.192083614073793E+006 9.960806493601308E+001 2.000000000000000E+000
+     1.255000000000000E+006 1.589411065621078E+000 3.727580649360131E+002
+     3.549515351558064E+003 3.422101903741190E+003 2.902814563816150E+004
+     4.318631086028238E-001 4.477899010469591E-007 1.656532325476102E-005
+     -1.894512700926077E-006 1.801526800000000E-002 2.911835430968505E+006
+     4.339301029495210E+002 9.855000000000001E+001 5.830775751176225E+002
+     1.000000000000000E+000 3.419920788014326E+001 7.070801029495210E+002
+     9.855000000000000E+006 6.368588871930233E+003 2.815303914357294E+003
+     1.914223720209295E+003 2.252373885059479E-003 1.164045864022076E-007
+     3.506830118711563E-006 -2.736095464724989E-005 1.801526800000000E-002
+ 3.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.205958707067511E+006 9.960807551139465E+001 2.000000000000000E+000
+     1.270000000000000E+006 1.561492521792433E+000 3.727580755113946E+002
+     3.589755957952565E+003 3.407881200292817E+003 2.947254306499542E+004
+     4.390299232974833E-001 4.600797537502980E-007 1.623621049182355E-005
+     -1.828541669301694E-006 1.801526800000000E-002 2.911870814164402E+006
+     4.346364312622934E+002 9.970000000000000E+001 5.839287035837920E+002
+     1.000000000000000E+000 3.460253417607175E+001 7.077864312622934E+002
+     9.970000000000000E+006 6.363862742149332E+003 2.823195258913896E+003
+     1.917067332563519E+003 2.259167324775788E-003 1.152130323458904E-007
+     3.507326843401673E-006 -2.768951751324932E-005 1.801526800000000E-002
+ 3.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.219833800061229E+006 9.960808608677621E+001 2.000000000000000E+000
+     1.285000000000000E+006 1.534537844679587E+000 3.727580860867762E+002
+     3.629996564347065E+003 3.393660496844443E+003 2.991694048938717E+004
+     4.461665443306807E-001 4.726028017780920E-007 1.591975401601626E-005
+     -1.765957464643586E-006 1.801526800000000E-002 2.911905847686803E+006
+     4.353400966158273E+002 1.008500000000000E+002 5.847722736959777E+002
+     1.000000000000000E+000 3.500591705532514E+001 7.084900966158273E+002
+     1.008500000000000E+007 6.359196028762126E+003 2.831057953376063E+003
+     1.919889211025138E+003 2.265933790806348E-003 1.140480708582367E-007
+     3.507811453543057E-006 -2.801817964878972E-005 1.801526800000000E-002
+ 4.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.233708893054948E+006 9.960809666215778E+001 2.000000000000000E+000
+     1.300000000000000E+006 1.508497966143310E+000 3.727580966621578E+002
+     3.670237170741565E+003 3.379439793396069E+003 3.036133791133673E+004
+     4.532721041011876E-001 4.853657458926879E-007 1.561524477373786E-005
+     -1.706532161875036E-006 1.801526800000000E-002 2.911940531776597E+006
+     4.360411180121237E+002 1.020000000000000E+002 5.856084325033859E+002
+     1.000000000000000E+000 3.540935509916804E+001 7.091911180121236E+002
+     1.020000000000000E+007 6.354587352522025E+003 2.838892066861653E+003
+     1.922689532759555E+003 2.272673273974800E-003 1.129087999688314E-007
+     3.508283945499262E-006 -2.834693714563267E-005 1.801526800000000E-002
+ 4.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.247583986048666E+006 9.960810723753934E+001 2.000000000000000E+000
+     1.315000000000000E+006 1.483327093058152E+000 3.727581072375393E+002
+     3.710477777136066E+003 3.365219089947696E+003 3.080573533084413E+004
+     4.603457014461443E-001 4.983755460636745E-007 1.532202528633784E-005
+     -1.650056691736134E-006 1.801526800000000E-002 2.911974866670801E+006
+     4.367395142411485E+002 1.031500000000000E+002 5.864373224254584E+002
+     1.000000000000000E+000 3.581284688864438E+001 7.098895142411485E+002
+     1.031500000000000E+007 6.350035380839069E+003 2.846697669571062E+003
+     1.925468474179975E+003 2.279385766247053E-003 1.117943579706972E-007
+     3.508744315975388E-006 -2.867578609394836E-005 1.801526800000000E-002
+ 4.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.261459079042384E+006 9.960811781292085E+001 2.000000000000000E+000
+     1.330000000000000E+006 1.458982438561602E+000 3.727581178129208E+002
+     3.750718383530566E+003 3.350998386499322E+003 3.125013274790935E+004
+     4.673864000023696E-001 5.116394341239981E-007 1.503948507481176E-005
+     -1.596338999403991E-006 1.801526800000000E-002 2.912008852603164E+006
+     4.374353038833843E+002 1.043000000000000E+002 5.872590814459080E+002
+     1.000000000000000E+000 3.621639100464438E+001 7.105853038833843E+002
+     1.043000000000000E+007 6.345538825705775E+003 2.854474832693842E+003
+     1.928226210896766E+003 2.286071260687309E-003 1.107039212002902E-007
+     3.509192562036525E-006 -2.900472258268179E-005 1.801526800000000E-002
+ 4.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.275334172036103E+006 9.960812838830242E+001 2.000000000000000E+000
+     1.345000000000000E+006 1.435423979340671E+000 3.727581283883024E+002
+     3.790958989925067E+003 3.336777683050948E+003 3.169453016253239E+004
+     4.743932264707139E-001 5.251649271749348E-007 1.476705656046191E-005
+     -1.545202409540306E-006 1.801526800000000E-002 2.912042489804752E+006
+     4.381285053123605E+002 1.054500000000000E+002 5.880738432965530E+002
+     1.000000000000000E+000 3.661998602797341E+001 7.112785053123605E+002
+     1.054500000000000E+007 6.341096441736811E+003 2.862223628319961E+003
+     1.930962917670236E+003 2.292729751416186E-003 1.096367019627661E-007
+     3.509628681125110E-006 -2.933374269992366E-005 1.801526800000000E-002
+ 4.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.289209265029821E+006 9.960813896368398E+001 2.000000000000000E+000
+     1.360000000000000E+006 1.412614236059643E+000 3.727581389636840E+002
+     3.831199596319567E+003 3.322556979602574E+003 3.213892757471326E+004
+     4.813651687766890E-001 5.389598417921217E-007 1.450421138500067E-005
+     -1.496484171736308E-006 1.801526800000000E-002 2.912075778504507E+006
+     4.388191366971669E+002 1.066000000000000E+002 5.888817376315632E+002
+     1.000000000000000E+000 3.702363053942256E+001 7.119691366971669E+002
+     1.066000000000000E+007 6.336707024315095E+003 2.869944129355467E+003
+     1.933678768366596E+003 2.299361233570905E-003 1.085919465915508E-007
+     3.510052671077269E-006 -2.966284253328610E-005 1.801526800000000E-002
+ 4.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.303084358023539E+006 9.960814953906555E+001 2.000000000000000E+000
+     1.375000000000000E+006 1.390518074395163E+000 3.727581495390655E+002
+     3.871440202714068E+003 3.308336276154201E+003 3.258332498445195E+004
+     4.883011741200765E-001 5.530323090890636E-007 1.425045710108771E-005
+     -1.450034163960298E-006 1.801526800000000E-002 2.912108718929781E+006
+     4.395072160049436E+002 1.077500000000000E+002 5.896828901927345E+002
+     1.000000000000000E+000 3.742732311984082E+001 7.126572160049436E+002
+     1.077500000000000E+007 6.332369407837392E+003 2.877636409442463E+003
+     1.936373935916997E+003 2.305965703267489E-003 1.075689336321788E-007
+     3.510464530138178E-006 -2.999201817028195E-005 1.801526800000000E-002
+ 4.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.316959451017258E+006 9.960816011444712E+001 2.000000000000000E+000
+     1.390000000000000E+006 1.369102524457032E+000 3.727581601144471E+002
+     3.911680809108568E+003 3.294115572705827E+003 3.302772239174847E+004
+     4.952001469056142E-001 5.673907906991095E-007 1.400533419070461E-005
+     -1.405713734692836E-006 1.801526800000000E-002 2.912141311306848E+006
+     4.401927610033532E+002 1.089000000000000E+002 5.904774229663440E+002
+     1.000000000000000E+000 3.783106235020884E+001 7.133427610033532E+002
+     1.089000000000000E+007 6.328082464053155E+003 2.885300542883141E+003
+     1.939048592279463E+003 2.312543157564889E-003 1.065669721412147E-007
+     3.510864256976486E-006 -3.032126569870801E-005 1.801526800000000E-002
+ 4.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.330834544010976E+006 9.960817068982868E+001 2.000000000000000E+000
+     1.405000000000000E+006 1.348336616642650E+000 3.727581706898287E+002
+     3.951921415503068E+003 3.279894869257453E+003 3.347211979660281E+004
+     5.020609465462126E-001 5.820440957419029E-007 1.376841337425689E-005
+     -1.363394667050843E-006 1.801526800000000E-002 2.912173555861393E+006
+     4.408757892630316E+002 1.100500000000000E+002 5.912654543320998E+002
+     1.000000000000000E+000 3.823484681171393E+001 7.140257892630316E+002
+     1.100500000000000E+007 6.323845100490687E+003 2.892936604567797E+003
+     1.941702908403608E+003 2.319093594431014E-003 1.055854000918395E-007
+     3.511251850697836E-006 -3.065058120703067E-005 1.801526800000000E-002
+ 4.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.344709637004694E+006 9.960818126521019E+001 2.000000000000000E+000
+     1.420000000000000E+006 1.328191232206371E+000 3.727581812652102E+002
+     3.992162021897569E+003 3.265674165809080E+003 3.391651719901498E+004
+     5.088823851294506E-001 5.970013988457948E-007 1.353929317800031E-005
+     -1.322958250430283E-006 1.801526800000000E-002 2.912205452818980E+006
+     4.415563181600185E+002 1.112000000000000E+002 5.920470992046430E+002
+     1.000000000000000E+000 3.863867508582645E+001 7.147063181600184E+002
+     1.112000000000000E+007 6.319656258965189E+003 2.900544669906629E+003
+     1.944337054197941E+003 2.325617012710581E-003 1.046235828783801E-007
+     3.511627310857512E-006 -3.097996078477463E-005 1.801526800000000E-002
+ 4.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.358584729998413E+006 9.960819184059176E+001 2.000000000000000E+000
+     1.435000000000000E+006 1.308638967027437E+000 3.727581918405917E+002
+     4.032402628292069E+003 3.251453462360706E+003 3.436091459898496E+004
+     5.156632249373143E-001 6.122722593036939E-007 1.331759773143602E-005
+     -1.284294447099843E-006 1.801526800000000E-002 2.912237002405500E+006
+     4.422343648781690E+002 1.123500000000000E+002 5.928224691680676E+002
+     1.000000000000000E+000 3.904254575437715E+001 7.153843648781690E+002
+     1.123500000000000E+007 6.315514914163632E+003 2.908124814765165E+003
+     1.946951198499714E+003 2.332113412094731E-003 1.036809119126919E-007
+     3.511990637472271E-006 -3.130940052291315E-005 1.801526800000000E-002
+ 4.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.372459822992131E+006 9.960820241597332E+001 2.000000000000000E+000
+     1.450000000000000E+006 1.289654007236167E+000 3.727582024159733E+002
+     4.072643234686570E+003 3.237232758912332E+003 3.480531199651279E+004
+     5.224021758082981E-001 6.278666414463985E-007 1.310297476980885E-005
+     -1.247301142806856E-006 1.801526800000000E-002 2.912268204847596E+006
+     4.429099464115444E+002 1.135000000000000E+002 5.935916726038641E+002
+     1.000000000000000E+000 3.944645739963559E+001 7.160599464115444E+002
+     1.135000000000000E+007 6.311420072301768E+003 2.915677115403211E+003
+     1.949545509047107E+003 2.338582793092356E-003 1.027568033058805E-007
+     3.512341831031332E-006 -3.163889651426004E-005 1.801526800000000E-002
+ 4.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.386334915985849E+006 9.960821299135489E+001 2.000000000000000E+000
+     1.465000000000000E+006 1.271212015511373E+000 3.727582129913549E+002
+     4.112883841081070E+003 3.223012055463958E+003 3.524970939159843E+004
+     5.290978923300570E-001 6.437949363246533E-007 1.289509381985751E-005
+     -1.211883471854236E-006 1.801526800000000E-002 2.912299060373069E+006
+     4.435830795667823E+002 1.146500000000000E+002 5.943548148126574E+002
+     1.000000000000000E+000 3.985040860438948E+001 7.167330795667823E+002
+     1.146500000000000E+007 6.307370769848922E+003 2.923201648417168E+003
+     1.952120152453693E+003 2.345025157003084E-003 1.018506966293698E-007
+     3.512680892506646E-006 -3.196844485386294E-005 1.801526800000000E-002
+ 4.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.400210008979568E+006 9.960822356673646E+001 2.000000000000000E+000
+     1.480000000000000E+006 1.253290026995896E+000 3.727582235667364E+002
+     4.153124447475570E+003 3.208791352015585E+003 3.569410678424190E+004
+     5.357489708497683E-001 6.600679847990712E-007 1.269364454957774E-005
+     -1.177953208309191E-006 1.801526800000000E-002 2.912329569211267E+006
+     4.442537809654476E+002 1.158000000000000E+002 5.951119981301348E+002
+     1.000000000000000E+000 4.025439795202460E+001 7.174037809654476E+002
+     1.158000000000000E+007 6.303366072316459E+003 2.930698490685547E+003
+     1.954675294185026E+003 2.351440505891840E-003 1.009620537498002E-007
+     3.513007823362352E-006 -3.229804163939714E-005 1.801526800000000E-002
+ 4.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.414085101973286E+006 9.960823414211802E+001 2.000000000000000E+000
+     1.495000000000000E+006 1.235866353894248E+000 3.727582341421180E+002
+     4.193365053870070E+003 3.194570648567211E+003 3.613850417444320E+004
+     5.423539462882484E-001 6.766971021457402E-007 1.249833526502494E-005
+     -1.145428216040491E-006 1.801526800000000E-002 2.912359731593454E+006
+     4.449220670463627E+002 1.169500000000000E+002 5.958633220374285E+002
+     1.000000000000000E+000 4.065842402660561E+001 7.180720670463627E+002
+     1.169500000000000E+007 6.299405073106231E+003 2.938167719317640E+003
+     1.957211098537282E+003 2.357828842564960E-003 1.000903577326759E-007
+     3.513322625563571E-006 -3.262768297155980E-005 1.801526800000000E-002
+ 4.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.427960194967004E+006 9.960824471749953E+001 2.000000000000000E+000
+     1.510000000000000E+006 1.218920497919038E+000 3.727582447174995E+002
+     4.233605660264571E+003 3.180349945118837E+003 3.658290156220231E+004
+     5.489112887426251E-001 6.936941042948752E-007 1.230889153915464E-005
+     -1.114231951176045E-006 1.801526800000000E-002 2.912389547753158E+006
+     4.455879540679167E+002 1.181000000000000E+002 5.966088832663579E+002
+     1.000000000000000E+000 4.106248541295729E+001 7.187379540679167E+002
+     1.181000000000000E+007 6.295486892415399E+003 2.945609411605137E+003
+     1.959727728617834E+003 2.364190170547783E-003 9.923511181007344E-008
+     3.513625301584483E-006 -3.295736495446430E-005 1.801526800000000E-002
+ 4.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.441835287960723E+006 9.960825529288110E+001 2.000000000000000E+000
+     1.525000000000000E+006 1.202433069843030E+000 3.727582552928811E+002
+     4.273846266659071E+003 3.166129241670464E+003 3.702729894751924E+004
+     5.554193998610101E-001 7.110713358303737E-007 1.212505495941731E-005
+     -1.084293011347300E-006 1.801526800000000E-002 2.912419017926507E+006
+     4.462514581103577E+002 1.192500000000000E+002 5.973487758997349E+002
+     1.000000000000000E+000 4.146658069674606E+001 7.194014581103577E+002
+     1.192500000000000E+007 6.291610676194424E+003 2.953023644976609E+003
+     1.962225346327661E+003 2.370524494063624E-003 9.839583840808753E-008
+     3.513915854415713E-006 -3.328708369603354E-005 1.801526800000000E-002
+ 4.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.455710380954441E+006 9.960826586826266E+001 2.000000000000000E+000
+     1.540000000000000E+006 1.186385715493023E+000 3.727582658682626E+002
+     4.314086873053571E+003 3.151908538222090E+003 3.747169633039402E+004
+     5.618766089711220E-001 7.288416998897118E-007 1.194658198232446E-005
+     -1.055544726759029E-006 1.801526800000000E-002 2.912448142352541E+006
+     4.469125950780609E+002 1.204000000000000E+002 5.980830914670556E+002
+     1.000000000000000E+000 4.187070846456206E+001 7.200625950780609E+002
+     1.204000000000000E+007 6.287775595155098E+003 2.960410496954743E+003
+     1.964704112345501E+003 2.376831818014158E-003 9.757207823001976E-008
+     3.514194287571095E-006 -3.361683530839312E-005 1.801526800000000E-002
+ 4.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.469585473948159E+006 9.960827644364423E+001 2.000000000000000E+000
+     1.555000000000000E+006 1.170761047591680E+000 3.727582764436442E+002
+     4.354327479448072E+003 3.137687834773716E+003 3.791609371082662E+004
+     5.682811689431501E-001 7.470186901163693E-007 1.177324288451615E-005
+     -1.027924788707214E-006 1.801526800000000E-002 2.912476921273517E+006
+     4.475713807017794E+002 1.215500000000000E+002 5.988119190358244E+002
+     1.000000000000000E+000 4.227486730400133E+001 7.207213807017794E+002
+     1.215500000000000E+007 6.283980843825823E+003 2.967770045116220E+003
+     1.967164186113683E+003 2.383112147961075E-003 9.676338939161793E-008
+     3.514460605093788E-006 -3.394661590826278E-005 1.801526800000000E-002
+ 4.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.483460566941878E+006 9.960828701902580E+001 2.000000000000000E+000
+     1.570000000000000E+006 1.155542582915201E+000 3.727582870190258E+002
+     4.394568085842572E+003 3.123467131325343E+003 3.836049108881703E+004
+     5.746312517653297E-001 7.656164248310741E-007 1.160482080101119E-005
+     -1.001374911676442E-006 1.801526800000000E-002 2.912505354935185E+006
+     4.482278305408738E+002 1.227000000000000E+002 5.995353452987287E+002
+     1.000000000000000E+000 4.267905580374807E+001 7.213778305408738E+002
+     1.227000000000000E+007 6.280225639651419E+003 2.975102367054092E+003
+     1.969605725825503E+003 2.389365490108999E-003 9.596934660495117E-008
+     3.514714811561810E-006 -3.427642161734657E-005 1.801526800000000E-002
+ 4.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.497335659935596E+006 9.960829759440730E+001 2.000000000000000E+000
+     1.585000000000000E+006 1.140714684289338E+000 3.727582975944073E+002
+     4.434808692237073E+003 3.109246427876969E+003 3.880488846436528E+004
+     5.809249438086843E-001 7.846496836037260E-007 1.144111084233250E-005
+     -9.758405255921002E-007 1.801526800000000E-002 2.912533443587059E+006
+     4.488819599855211E+002 1.238500000000000E+002 6.002534546569177E+002
+     1.000000000000000E+000 4.308327255365716E+001 7.220319599855211E+002
+     1.238500000000000E+007 6.276509222134995E+003 2.982407540342620E+003
+     1.972028888414132E+003 2.395591851289606E-003 9.518954040775882E-008
+     3.514956912092970E-006 -3.460624856272105E-005 1.801526800000000E-002
+ 5.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.511210752929314E+006 9.960830816978887E+001 2.000000000000000E+000
+     1.600000000000000E+006 1.126262506994672E+000 3.727583081697889E+002
+     4.475049298631573E+003 3.095025724428595E+003 3.924928583747134E+004
+     5.871602407551516E-001 8.041339464250978E-007 1.128191928308968E-005
+     -9.512704951906459E-007 1.801526800000000E-002 2.912561187482668E+006
+     4.495337842589062E+002 1.250000000000000E+002 6.009663292995592E+002
+     1.000000000000000E+000 4.348751614483611E+001 7.226837842589061E+002
+     1.250000000000000E+007 6.272830852019574E+003 2.989685642504392E+003
+     1.974433829542912E+003 2.401791238946854E-003 9.442357643534421E-008
+     3.515186912349215E-006 -3.493609287722087E-005 1.801526800000000E-002
+ 5.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.525085845923032E+006 9.960831874517044E+001 2.000000000000000E+000
+     1.615000000000000E+006 1.112171949194994E+000 3.727583187451704E+002
+     4.515289905026073E+003 3.080805020980221E+003 3.969368320813523E+004
+     5.933350421608452E-001 8.240854356965114E-007 1.112706281538521E-005
+     -9.276168638109744E-007 1.801526800000000E-002 2.912588586879790E+006
+     4.501833184193896E+002 1.261500000000000E+002 6.016740492799146E+002
+     1.000000000000000E+000 4.389178516972734E+001 7.233333184193896E+002
+     1.261500000000000E+007 6.269189810507192E+003 2.996936750979688E+003
+     1.976820703597020E+003 2.407963661123334E-003 9.367107473229869E-008
+     3.515404818540465E-006 -3.526595069982237E-005 1.801526800000000E-002
+ 5.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.538960938916751E+006 9.960832932055200E+001 2.000000000000000E+000
+     1.630000000000000E+006 1.098429606040825E+000 3.727583293205520E+002
+     4.555530511420574E+003 3.066584317531848E+003 4.013808057635695E+004
+     5.994471456234551E-001 8.445211612768703E-007 1.097636786110300E-005
+     -9.048346192079580E-007 1.801526800000000E-002 2.912615642040678E+006
+     4.508305773626573E+002 1.273000000000000E+002 6.023766925880567E+002
+     1.000000000000000E+000 4.429607822219002E+001 7.239805773626573E+002
+     1.273000000000000E+007 6.265585398513565E+003 3.004160943097976E+003
+     1.979189663676407E+003 2.414109126447649E-003 9.293166910153644E-008
+     3.515610637427901E-006 -3.559581817602384E-005 1.801526800000000E-002
+ 5.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.552836031910469E+006 9.960833989593357E+001 2.000000000000000E+000
+     1.645000000000000E+006 1.085022727134068E+000 3.727583398959336E+002
+     4.595771117815074E+003 3.052363614083474E+003 4.058247794213650E+004
+     6.054942405197485E-001 8.654589688499495E-007 1.082966993775039E-005
+     -8.828814792511180E-007 1.801526800000000E-002 2.912642353232261E+006
+     4.514755758238515E+002 1.284500000000000E+002 6.030743352204710E+002
+     1.000000000000000E+000 4.470039389758137E+001 7.246255758238515E+002
+     1.284500000000000E+007 6.262016935956298E+003 3.011358296051418E+003
+     1.981540861589928E+003 2.420227644122740E-003 9.220500648830092E-008
+     3.515804376326724E-006 -3.592569145822249E-005 1.801526800000000E-002
+ 5.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.566711124904187E+006 9.960835047131513E+001 2.000000000000000E+000
+     1.660000000000000E+006 1.071939177070093E+000 3.727583504713151E+002
+     4.636011724209574E+003 3.038142910635101E+003 4.102687530547386E+004
+     6.114739012757425E-001 8.869175919010074E-007 1.068681307306739E-005
+     -8.617176956018887E-007 1.801526800000000E-002 2.912668720726343E+006
+     4.521183283796775E+002 1.296000000000000E+002 6.037670512466320E+002
+     1.000000000000000E+000 4.510473079283786E+001 7.252683283796774E+002
+     1.296000000000000E+007 6.258483761074884E+003 3.018528886870357E+003
+     1.983874447850656E+003 2.426319223915211E-003 9.149074639697159E-008
+     3.515986043108448E-006 -3.625556670608835E-005 1.801526800000000E-002
+ 5.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.580586217897906E+006 9.960836104669664E+001 2.000000000000000E+000
+     1.675000000000000E+006 1.059167398800581E+000 3.727583610466966E+002
+     4.676252330604075E+003 3.023922207186727E+003 4.147127266636906E+004
+     6.173835801283506E-001 9.089167076209111E-007 1.054764926409768E-005
+     -8.413058736661367E-007 1.801526800000000E-002 2.912694744799782E+006
+     4.527588494504952E+002 1.307500000000000E+002 6.044549128727741E+002
+     1.000000000000000E+000 4.550908750655557E+001 7.259088494504952E+002
+     1.307500000000000E+007 6.254985229780838E+003 3.025672792400634E+003
+     1.986190571672254E+003 2.432383876145472E-003 9.078856033865022E-008
+     3.516155646202700E-006 -3.658544008693380E-005 1.801526800000000E-002
+ 5.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.594461310891624E+006 9.960837162207821E+001 2.000000000000000E+000
+     1.690000000000000E+006 1.046696379584645E+000 3.727583716220782E+002
+     4.716492936998576E+003 3.009701503738353E+003 4.191567002482207E+004
+     6.232205993331024E-001 9.314769970884177E-007 1.041203797684432E-005
+     -8.216108072980398E-007 1.801526800000000E-002 2.912720425734652E+006
+     4.533971533023880E+002 1.319000000000000E+002 6.051379905029390E+002
+     1.000000000000000E+000 4.591346263907009E+001 7.265471533023880E+002
+     1.319000000000000E+007 6.251520715036293E+003 3.032790089282708E+003
+     1.988489380966390E+003 2.438421611678753E-003 9.009813130764773E-008
+     3.516313194598534E-006 -3.691530777607907E-005 1.801526800000000E-002
+ 5.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.608336403885342E+006 9.960838219745978E+001 2.000000000000000E+000
+     1.705000000000000E+006 1.034515619317379E+000 3.727583821974598E+002
+     4.756733543393076E+003 2.995480800289979E+003 4.236006738083291E+004
+     6.289821427678389E-001 9.546202101175146E-007 1.027984568301302E-005
+     -8.025993268900672E-007 1.801526800000000E-002 2.912745763818403E+006
+     4.540332540492112E+002 1.330500000000000E+002 6.058163527974797E+002
+     1.000000000000000E+000 4.631785479253578E+001 7.271832540492112E+002
+     1.330500000000000E+007 6.248089606259683E+003 3.039880853932456E+003
+     1.990771022341131E+003 2.444432441916908E-003 8.941915328512385E-008
+     3.516458697845345E-006 -3.724516595721376E-005 1.801526800000000E-002
+ 5.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.622211496879061E+006 9.960839277284134E+001 2.000000000000000E+000
+     1.720000000000000E+006 1.022615101044401E+000 3.727583927728413E+002
+     4.796974149787576E+003 2.981260096841605E+003 4.280446473440157E+004
+     6.346652468770505E-001 9.783692351972231E-007 1.015094543068532E-005
+     -7.842401596243439E-007 1.801526800000000E-002 2.912770759343995E+006
+     4.546671656546223E+002 1.342000000000000E+002 6.064900667291256E+002
+     1.000000000000000E+000 4.672226257100409E+001 7.278171656546223E+002
+     1.342000000000000E+007 6.244691308757029E+003 3.046945162523600E+003
+     1.993035641100252E+003 2.450416378790944E-003 8.875133076824917E-008
+     3.516592166053302E-006 -3.757501082275311E-005 1.801526800000000E-002
+ 5.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.636086589872779E+006 9.960840334822291E+001 2.000000000000000E+000
+     1.735000000000000E+006 1.010985263488353E+000 3.727584033482229E+002
+     4.837214756182077E+003 2.967039393393232E+003 4.324886208552808E+004
+     6.402667908956363E-001 1.002748174996604E-006 1.002521644606673E-005
+     -7.665038007853176E-007 1.801526800000000E-002 2.912795412610032E+006
+     4.552989019340903E+002 1.353500000000000E+002 6.071591976367160E+002
+     1.000000000000000E+000 4.712668458050116E+001 7.284489019340903E+002
+     1.353500000000000E+007 6.241325243177592E+003 3.053983090971674E+003
+     1.995283381243413E+003 2.456373434754253E-003 8.809437832337213E-008
+     3.516713609893387E-006 -3.790483857418961E-005 1.801526800000000E-002
+ 5.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.649961682866498E+006 9.960841392360447E+001 2.000000000000000E+000
+     1.750000000000000E+006 9.996169754290099E-001 3.727584139236045E+002
+     4.877455362576577E+003 2.952818689944858E+003 4.369325943421238E+004
+     6.457834862843064E-001 1.027782427958566E-006 9.902543763725137E-006
+     -7.493623951443176E-007 1.801526800000000E-002 2.912819723920878E+006
+     4.559284765568840E+002 1.365000000000000E+002 6.078238092767589E+002
+     1.000000000000000E+000 4.753111942910459E+001 7.290784765568840E+002
+     1.365000000000000E+007 6.237990844992553E+003 3.060994714919478E+003
+     1.997514385467183E+003 2.462303622776528E-003 8.744802016177485E-008
+     3.516823040597038E-006 -3.823464542243968E-005 1.801526800000000E-002
+ 5.550000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.663836775860216E+006 9.960842449898598E+001 2.000000000000000E+000
+     1.765000000000000E+006 9.885015117926945E-001 3.727584244989860E+002
+     4.917695968971077E+003 2.938597986496485E+003 4.413765678045453E+004
+     6.512118653014327E-001 1.053498776563101E-006 9.782817882977409E-006
+     -7.327896275250900E-007 1.801526800000000E-002 2.912843693586757E+006
+     4.565559030480434E+002 1.376500000000000E+002 6.084839638728655E+002
+     1.000000000000000E+000 4.793556572701892E+001 7.297059030480434E+002
+     1.376500000000000E+007 6.234687563995694E+003 3.067980109723895E+003
+     1.999728795166819E+003 2.468206956338235E-003 8.681198973669624E-008
+     3.516920469955383E-006 -3.856442758818427E-005 1.801526800000000E-002
+ 5.600000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.677711868853934E+006 9.960843507436755E+001 2.000000000000000E+000
+     1.780000000000000E+006 9.776305313194297E-001 3.727584350743675E+002
+     4.957936575365578E+003 2.924377283048111E+003 4.458205412425449E+004
+     6.565482686278714E-001 1.079925482904760E-006 9.665934448298345E-006
+     -7.167606217470509E-007 1.801526800000000E-002 2.912867321923853E+006
+     4.571811947903285E+002 1.388000000000000E+002 6.091397221631829E+002
+     1.000000000000000E+000 4.834002208665032E+001 7.303311947903285E+002
+     1.388000000000000E+007 6.231414863824873E+003 3.074939350444085E+003
+     2.001926750438789E+003 2.474083449425703E-003 8.618602936038855E-008
+     3.517005910318088E-006 -3.889418130220427E-005 1.801526800000000E-002
+ 5.650000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.691586961847652E+006 9.960844564974912E+001 2.000000000000000E+000
+     1.795000000000000E+006 9.669960556876822E-001 3.727584456497491E+002
+     4.998177181760078E+003 2.910156579599737E+003 4.502645146561229E+004
+     6.617888319519097E-001 1.107092392301401E-006 9.551793951821485E-006
+     -7.012518472212283E-007 1.801526800000000E-002 2.912890609254389E+006
+     4.578043650261479E+002 1.399500000000000E+002 6.097911434459368E+002
+     1.000000000000000E+000 4.874448712268018E+001 7.309543650261479E+002
+     1.399500000000000E+007 6.228172221503281E+003 3.081872511830917E+003
+     2.004108390083994E+003 2.479933116526740E-003 8.556988984005566E-008
+     3.517079374591893E-006 -3.922390280571020E-005 1.801526800000000E-002
+ 5.700000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.705462054841371E+006 9.960845622513068E+001 2.000000000000000E+000
+     1.810000000000000E+006 9.565904499869082E-001 3.727584562251307E+002
+     5.038417788154578E+003 2.895935876151363E+003 4.547084880452789E+004
+     6.669294714109488E-001 1.135031045732740E-006 9.440301456175607E-006
+     -6.862410325436783E-007 1.801526800000000E-002 2.912913555906697E+006
+     4.584254268594713E+002 1.411000000000000E+002 6.104382856231476E+002
+     1.000000000000000E+000 4.914895945213720E+001 7.315754268594712E+002
+     1.411000000000000E+007 6.224959126999596E+003 3.088779668317601E+003
+     2.006273851611631E+003 2.485755972626715E-003 8.496333013159426E-008
+     3.517140876238737E-006 -3.955358835066511E-005 1.801526800000000E-002
+ 5.750000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.719337147835089E+006 9.960846680051225E+001 2.000000000000000E+000
+     1.825000000000000E+006 9.464064044374567E-001 3.727584668005122E+002
+     5.078658394549078E+003 2.881715172702990E+003 4.591524614100135E+004
+     6.719658677746146E-001 1.163774801999260E-006 9.331366336058408E-006
+     -6.717070854936195E-007 1.801526800000000E-002 2.912936162215284E+006
+     4.590443932577161E+002 1.422500000000000E+002 6.110812052426011E+002
+     1.000000000000000E+000 4.955343769446871E+001 7.321943932577161E+002
+     1.422500000000000E+007 6.221775082805982E+003 3.095660894011485E+003
+     2.008423271243676E+003 2.491552033205144E-003 8.436611701013146E-008
+     3.517190429273594E-006 -3.988323420010225E-005 1.801526800000000E-002
+ 5.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.733212240828807E+006 9.960847737589381E+001 2.000000000000000E+000
+     1.840000000000000E+006 9.364369172658530E-001 3.727584773758938E+002
+     5.118899000943577E+003 2.867494469254616E+003 4.635964347503259E+004
+     6.768934492405004E-001 1.193358970596192E-006 9.224902037090271E-006
+     -6.576300188994141E-007 1.801526800000000E-002 2.912958428520878E+006
+     4.596612770536212E+002 1.434000000000000E+002 6.117199575381579E+002
+     1.000000000000000E+000 4.995792047161022E+001 7.328112770536212E+002
+     1.434000000000000E+007 6.218619603533172E+003 3.102516262686908E+003
+     2.010556783919959E+003 2.497321314232635E-003 8.377802475641468E-008
+     3.517228048261960E-006 -4.021283662843492E-005 1.801526800000000E-002
+ 5.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.747087333822526E+006 9.960848795127532E+001 2.000000000000000E+000
+     1.855000000000000E+006 9.266752786511536E-001 3.727584879512753E+002
+     5.159139607338079E+003 2.853273765806242E+003 4.680404080662170E+004
+     6.817073726984646E-001 1.223820956415365E-006 9.120825850618943E-006
+     -6.439908818856325E-007 1.801526800000000E-002 2.912980355170471E+006
+     4.602760909470956E+002 1.445500000000000E+002 6.123545964685090E+002
+     1.000000000000000E+000 5.036240640805382E+001 7.334260909470955E+002
+     1.445500000000000E+007 6.215492215521776E+003 3.109345847779079E+003
+     2.012674523303754E+003 2.503063832168274E-003 8.319883485817137E-008
+     3.517253748317025E-006 -4.054239192176087E-005 1.801526800000000E-002
+ 5.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.760962426816244E+006 9.960849852665689E+001 2.000000000000000E+000
+     1.870000000000000E+006 9.171150556650277E-001 3.727584985266569E+002
+     5.199380213732579E+003 2.839053062357869E+003 4.724843813576862E+004
+     6.864025033020432E-001 1.255200417521729E-006 9.019058703261080E-006
+     -6.307716960594010E-007 1.801526800000000E-002 2.913001942517351E+006
+     4.608888475070489E+002 1.457000000000000E+002 6.129851747543721E+002
+     1.000000000000000E+000 5.076689413091530E+001 7.340388475070489E+002
+     1.457000000000000E+007 6.212392456469043E+003 3.116149722378942E+003
+     2.014776621787902E+003 2.508779603957340E-003 8.262833572561133E-008
+     3.517267545096572E-006 -4.087189637815928E-005 1.801526800000000E-002
+ 5.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.774837519809962E+006 9.960850910203845E+001 2.000000000000000E+000
+     1.885000000000000E+006 9.077500781345264E-001 3.727585091020384E+002
+     5.239620820127080E+003 2.824832358909495E+003 4.769283546247336E+004
+     6.909733921657902E-001 1.287539437403927E-006 8.919524960070892E-006
+     -6.179553962346140E-007 1.801526800000000E-002 2.913023190921122E+006
+     4.614995591732032E+002 1.468500000000000E+002 6.136117439142474E+002
+     1.000000000000000E+000 5.117138226999970E+001 7.346495591732032E+002
+     1.468500000000000E+007 6.209319875070351E+003 3.122927959228943E+003
+     2.016863210501407E+003 2.514468647029349E-003 8.206632242029582E-008
+     3.517269454799587E-006 -4.120134630798091E-005 1.801526800000000E-002
+ 6.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.788712612803681E+006 9.960851967742002E+001 2.000000000000000E+000
+     1.900000000000000E+006 8.985744253622594E-001 3.727585196774200E+002
+     5.279861426521580E+003 2.810611655461121E+003 4.813723278673592E+004
+     6.954142519848626E-001 1.320882713272079E-006 8.822152240320339E-006
+     -6.055257753289348E-007 1.801526800000000E-002 2.913044100747717E+006
+     4.621082382578848E+002 1.480000000000000E+002 6.142343542988022E+002
+     1.000000000000000E+000 5.157586945786500E+001 7.352582382578847E+002
+     1.480000000000000E+007 6.206274030674740E+003 3.129680630719643E+003
+     2.018934419316470E+003 2.520130979296359E-003 8.151259639664582E-008
+     3.517259494162527E-006 -4.153073803413071E-005 1.801526800000000E-002
+ 6.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.802587705797399E+006 9.960853025280159E+001 2.000000000000000E+000
+     1.915000000000000E+006 8.895824136439170E-001 3.727585302528016E+002
+     5.320102032916081E+003 2.796390952012747E+003 4.858163010855632E+004
+     6.997189303474493E-001 1.355277762174435E-006 8.726871244960749E-006
+     -5.934674331012177E-007 1.801526800000000E-002 2.913064672369405E+006
+     4.627148969477937E+002 1.491500000000000E+002 6.148530551239113E+002
+     1.000000000000000E+000 5.198035432988510E+001 7.358648969477937E+002
+     1.491500000000000E+007 6.203254492953846E+003 3.136407808887186E+003
+     2.020990376855953E+003 2.525766619151600E-003 8.096696525540868E-008
+     3.517237680455453E-006 -4.186006789234420E-005 1.801526800000000E-002
+ 6.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.816462798791117E+006 9.960854082818315E+001 2.000000000000000E+000
+     1.930000000000000E+006 8.807685845278377E-001 3.727585408281831E+002
+     5.360342639310581E+003 2.782170248564374E+003 4.902602742793453E+004
+     7.038808804812505E-001 1.390775146931684E-006 8.633615594913058E-006
+     -5.817657284264726E-007 1.801526800000000E-002 2.913084906164781E+006
+     4.633195473057587E+002 1.503000000000000E+002 6.154678945023896E+002
+     1.000000000000000E+000 5.238483552431031E+001 7.364695473057586E+002
+     1.503000000000000E+007 6.200260841583561E+003 3.143109565411482E+003
+     2.023031210501232E+003 2.531375585468260E-003 8.042924250844046E-008
+     3.517204031477790E-006 -4.218933223145511E-005 1.801526800000000E-002
+ 6.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.830337891784836E+006 9.960855140356466E+001 2.000000000000000E+000
+     1.945000000000000E+006 8.721276937656606E-001 3.727585514035646E+002
+     5.400583245705081E+003 2.767949545116000E+003 4.947042474487057E+004
+     7.078931291414929E-001 1.427428724148120E-006 8.542321679404148E-006
+     -5.704067348321029E-007 1.801526800000000E-002 2.913104802518758E+006
+     4.639222012724674E+002 1.514500000000000E+002 6.160789194745416E+002
+     1.000000000000000E+000 5.278931168232676E+001 7.370722012724674E+002
+     1.514500000000000E+007 6.197292665937933E+003 3.149785971615140E+003
+     2.025057046400396E+003 2.536957897598535E-003 7.989924735420370E-008
+     3.517158565553903E-006 -4.251852741365665E-005 1.801526800000000E-002
+ 6.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.844212984778554E+006 9.960856197894623E+001 2.000000000000000E+000
+     1.960000000000000E+006 8.636547009070661E-001 3.727585619789462E+002
+     5.440823852099582E+003 2.753728841667627E+003 4.991482205936444E+004
+     7.117482413092153E-001 1.465295916858075E-006 8.452928513630581E-006
+     -5.593771990431873E-007 1.801526800000000E-002 2.913124361822540E+006
+     4.645228706681810E+002 1.526000000000000E+002 6.166861760374821E+002
+     1.000000000000000E+000 5.319378144811390E+001 7.376728706681810E+002
+     1.526000000000000E+007 6.194349564794669E+003 3.156437098463068E+003
+     2.027068009476816E+003 2.542513575372822E-003 7.937680446341489E-008
+     3.517101301528439E-006 -4.284764981475426E-005 1.801526800000000E-002
+ 6.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.858088077772272E+006 9.960857255432779E+001 2.000000000000000E+000
+     1.975000000000000E+006 8.553447594952223E-001 3.727585725543278E+002
+     5.481064458494083E+003 2.739508138219253E+003 5.035921937141613E+004
+     7.154382813239669E-001 1.504438014710574E-006 8.365377605089019E-006
+     -5.486645023063113E-007 1.801526800000000E-002 2.913143584473602E+006
+     4.651215671944261E+002 1.537500000000000E+002 6.172897091733508E+002
+     1.000000000000000E+000 5.359824346890048E+001 7.382715671944261E+002
+     1.537500000000000E+007 6.191431146051746E+003 3.163063016562704E+003
+     2.029064223438001E+003 2.548042639099100E-003 7.886174377430989E-008
+     3.517032258761452E-006 -4.317669582441149E-005 1.801526800000000E-002
+ 6.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.871963170765990E+006 9.960858312970936E+001 2.000000000000000E+000
+     1.990000000000000E+006 8.471932078228629E-001 3.727585831297093E+002
+     5.521305064888583E+003 2.725287434770879E+003 5.080361668102563E+004
+     7.189547700235542E-001 1.544920504992785E-006 8.279612827965498E-006
+     -5.382566242811249E-007 1.801526800000000E-002 2.913162470875643E+006
+     4.657183024356693E+002 1.549000000000000E+002 6.178895628763946E+002
+     1.000000000000000E+000 5.400269639501873E+001 7.388683024356693E+002
+     1.549000000000000E+007 6.188537026454637E+003 3.169663796164829E+003
+     2.031045810784757E+003 2.553545109562417E-003 7.835390029702764E-008
+     3.516951457123312E-006 -4.350566184638752E-005 1.801526800000000E-002
+ 6.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.885838263759709E+006 9.960859370509093E+001 2.000000000000000E+000
+     2.005000000000000E+006 8.391955602119517E-001 3.727585937050909E+002
+     5.561545671283083E+003 2.711066731322505E+003 5.124801398819299E+004
+     7.222886374039297E-001 1.586813438252867E-006 8.195580305023786E-006
+     -5.281421093066379E-007 1.801526800000000E-002 2.913181021438552E+006
+     4.663130878609721E+002 1.560500000000000E+002 6.184857801790307E+002
+     1.000000000000000E+000 5.440713887995666E+001 7.394630878609721E+002
+     1.560500000000000E+007 6.185666831333685E+003 3.176239507164935E+003
+     2.033012892820609E+003 2.559021008024493E-003 7.785311392664118E-008
+     3.516858916989417E-006 -4.383454429876702E-005 1.801526800000000E-002
+ 6.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.899713356753427E+006 9.960860428047249E+001 2.000000000000000E+000
+     2.020000000000000E+006 8.313474987826559E-001 3.727586042804725E+002
+     5.601786277677584E+003 2.696846027874131E+003 5.169241129291814E+004
+     7.254301702432554E-001 1.630191832816142E-006 8.113228296477002E-006
+     -5.183100348654210E-007 1.801526800000000E-002 2.913199236578352E+006
+     4.669059348256258E+002 1.572000000000000E+002 6.190784031768136E+002
+     1.000000000000000E+000 5.481156958040867E+001 7.400559348256257E+002
+     1.572000000000000E+007 6.182820194351151E+003 3.182790219105111E+003
+     2.034965589661482E+003 2.564470356223411E-003 7.735922926439365E-008
+     3.516754659234723E-006 -4.416333961418173E-005 1.801526800000000E-002
+ 6.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.913588449747145E+006 9.960861485585400E+001 2.000000000000000E+000
+     2.035000000000000E+006 8.236448656798933E-001 3.727586148558540E+002
+     5.642026884072084E+003 2.682625324425758E+003 5.213680859520112E+004
+     7.283689540538784E-001 1.675136123108569E-006 8.032507095366739E-006
+     -5.087499820835632E-007 1.801526800000000E-002 2.913217116717142E+006
+     4.674968545727668E+002 1.583500000000000E+002 6.196674730524784E+002
+     1.000000000000000E+000 5.521598715632444E+001 7.406468545727668E+002
+     1.583500000000000E+007 6.179996757257549E+003 3.189316001176389E+003
+     2.036904020245595E+003 2.569893176373392E-003 7.687209544672174E-008
+     3.516638705228090E-006 -4.449204424002483E-005 1.801526800000000E-002
+ 6.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.927463542740864E+006 9.960862543123557E+001 2.000000000000000E+000
+     2.050000000000000E+006 8.160836557280512E-001 3.727586254312355E+002
+     5.682267490466584E+003 2.668404620977384E+003 5.258120589504195E+004
+     7.310938086324164E-001 1.721732657424085E-006 7.953368929010466E-006
+     -4.994520081175701E-007 1.801526800000000E-002 2.913234662283036E+006
+     4.680858582349734E+002 1.595000000000000E+002 6.202530300989604E+002
+     1.000000000000000E+000 5.562039027095594E+001 7.412358582349734E+002
+     1.595000000000000E+007 6.177196169656840E+003 3.195816922221548E+003
+     2.038828302343569E+003 2.575289491164600E-003 7.639156598167348E-008
+     3.516511076826485E-006 -4.482065463865664E-005 1.801526800000000E-002
+ 6.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.941338635734582E+006 9.960863600661713E+001 2.000000000000000E+000
+     2.065000000000000E+006 8.086600094866101E-001 3.727586360066171E+002
+     5.722508096861085E+003 2.654183917529011E+003 5.302560319244060E+004
+     7.335927163688178E-001 1.770074251616732E-006 7.875767866111558E-006
+     -4.904066202915134E-007 1.801526800000000E-002 2.913251873710095E+006
+     4.686729568358427E+002 1.606500000000000E+002 6.208351137414846E+002
+     1.000000000000000E+000 5.602477759090260E+001 7.418229568358427E+002
+     1.606500000000000E+007 6.174418088780084E+003 3.202293050738309E+003
+     2.040738552568728E+003 2.580659323762997E-003 7.591749859234979E-008
+     3.516371796368994E-006 -4.514916728760253E-005 1.801526800000000E-002
+ 6.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.955213728728300E+006 9.960864658199870E+001 2.000000000000000E+000
+     2.080000000000000E+006 8.013702066813748E-001 3.727586465819987E+002
+     5.762748703255585E+003 2.639963214080637E+003 5.347000048739705E+004
+     7.358527423471473E-001 1.820260806187882E-006 7.799659729156878E-006
+     -4.816047518587825E-007 1.801526800000000E-002 2.913268751438243E+006
+     4.692581612915490E+002 1.618000000000000E+002 6.214137625587341E+002
+     1.000000000000000E+000 5.642914778615449E+001 7.424081612915489E+002
+     1.618000000000000E+007 6.171662179267260E+003 3.208744454882917E+003
+     2.042634886387568E+003 2.586002697810186E-003 7.544975506702028E-008
+     3.516220886670702E-006 -4.547757867974248E-005 1.801526800000000E-002
+ 6.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.969088821722019E+006 9.960865715738026E+001 2.000000000000000E+000
+     2.095000000000000E+006 7.942106599878235E-001 3.727586571573802E+002
+     5.802989309650086E+003 2.625742510632264E+003 5.391439777991136E+004
+     7.378599451203298E-001 1.872399995401488E-006 7.725002011754913E-006
+     -4.730377392728474E-007 1.801526800000000E-002 2.913285295913193E+006
+     4.698414824123819E+002 1.629500000000000E+002 6.219890143030938E+002
+     1.000000000000000E+000 5.683349953013393E+001 7.429914824123819E+002
+     1.629500000000000E+007 6.168928112956819E+003 3.215171202474060E+003
+     2.044517418130388E+003 2.591319637423299E-003 7.498820111558359E-008
+     3.516058371016445E-006 -4.580588532349299E-005 1.801526800000000E-002
+ 6.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.982963914715737E+006 9.960866773276177E+001 2.000000000000000E+000
+     2.110000000000000E+006 7.871779091447479E-001 3.727586677327618E+002
+     5.843229916044586E+003 2.611521807183890E+003 5.435879506998346E+004
+     7.395992768636737E-001 1.926608038430425E-006 7.651753800593182E-006
+     -4.646973008606107E-007 1.801526800000000E-002 2.913301507586359E+006
+     4.704229309042671E+002 1.641000000000000E+002 6.225609059200176E+002
+     1.000000000000000E+000 5.723783149973487E+001 7.435729309042671E+002
+     1.641000000000000E+007 6.166215568682699E+003 3.221573360997091E+003
+     2.046386261002050E+003 2.596610167194806E-003 7.453270623206082E-008
+     3.515884273154420E-006 -4.613408374298041E-005 1.801526800000000E-002
+ 6.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     1.996839007709455E+006 9.960867830814334E+001 2.000000000000000E+000
+     2.125000000000000E+006 7.802686153778924E-001 3.727586783081433E+002
+     5.883470522439086E+003 2.597301103735516E+003 5.480319235761339E+004
+     7.410544714022554E-001 1.983010564156900E-006 7.579875701717287E-006
+     -4.565755168002981E-007 1.801526800000000E-002 2.913317386914758E+006
+     4.710025173702655E+002 1.652500000000000E+002 6.231294735665106E+002
+     1.000000000000000E+000 5.764214237536083E+001 7.441525173702655E+002
+     1.652500000000000E+007 6.163524232078448E+003 3.227950997608568E+003
+     2.048241527092868E+003 2.601874312192379E-003 7.408314356282842E-008
+     3.515698617289674E-006 -4.646217047820685E-005 1.801526800000000E-002
+ 6.800000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.010714100703174E+006 9.960868888352491E+001 2.000000000000000E+000
+     2.140000000000000E+006 7.734795561147075E-001 3.727586888835249E+002
+     5.923711128833586E+003 2.583080400287142E+003 5.524758964280117E+004
+     7.422079183585274E-001 2.041743583170776E-006 7.509329770855549E-006
+     -4.486648103134800E-007 1.801526800000000E-002 2.913332934360920E+006
+     4.715802523120555E+002 1.664000000000000E+002 6.236947526287108E+002
+     1.000000000000000E+000 5.804643084096059E+001 7.447302523120554E+002
+     1.664000000000000E+007 6.160853795388237E+003 3.234304179141022E+003
+     2.050083327389622E+003 2.607112097958645E-003 7.363938978031242E-008
+     3.515501428077500E-006 -4.679014208520729E-005 1.801526800000000E-002
+ 6.850000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.024589193696892E+006 9.960869945890647E+001 2.000000000000000E+000
+     2.155000000000000E+006 7.668076199726461E-001 3.727586994589065E+002
+     5.963951735228086E+003 2.568859696838768E+003 5.569198692554676E+004
+     7.430405213705746E-001 2.102954582795456E-006 7.440079447533242E-006
+     -4.409579299878060E-007 1.801526800000000E-002 2.913348150392779E+006
+     4.721561461313954E+002 1.675500000000000E+002 6.242567777385827E+002
+     1.000000000000000E+000 5.845069558406208E+001 7.453061461313954E+002
+     1.675500000000000E+007 6.158203957284351E+003 3.240632972107968E+003
+     2.051911771786636E+003 2.612323550510910E-003 7.320132496188190E-008
+     3.515292730616705E-006 -4.711799513619902E-005 1.801526800000000E-002
+ 6.900000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.038464286690611E+006 9.960871003428804E+001 2.000000000000000E+000
+     2.170000000000000E+006 7.602498020046203E-001 3.727587100342880E+002
+     6.004192341622586E+003 2.554638993390395E+003 5.613638420585017E+004
+     7.435315379780739E-001 2.166803763699915E-006 7.372089492738601E-006
+     -4.334479331534249E-007 1.801526800000000E-002 2.913363035483576E+006
+     4.727302091315676E+002 1.687000000000000E+002 6.248155827897989E+002
+     1.000000000000000E+000 5.885493529580464E+001 7.458802091315675E+002
+     1.687000000000000E+007 6.155574422691012E+003 3.246937442709126E+003
+     2.053726969096974E+003 2.617508696340836E-003 7.276883247369356E-008
+     3.515072550442814E-006 -4.744572621972335E-005 1.801526800000000E-002
+ 6.950000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.052339379684329E+006 9.960872060966960E+001 2.000000000000000E+000
+     2.185000000000000E+006 7.538031991863593E-001 3.727587206096696E+002
+     6.044432948017087E+003 2.540418289942021E+003 5.658078148371142E+004
+     7.436583983496437E-001 2.233465439925475E-006 7.305325929919761E-006
+     -4.261281702419190E-007 1.801526800000000E-002 2.913377590111737E+006
+     4.733024515188023E+002 1.698500000000000E+002 6.253712009526290E+002
+     1.000000000000000E+000 5.925914867096898E+001 7.464524515188023E+002
+     1.698500000000000E+007 6.152964902614223E+003 3.253217656835838E+003
+     2.055529027063684E+003 2.622667562414018E-003 7.234179885925248E-008
+     3.514840913521153E-006 -4.777333194077850E-005 1.801526800000000E-002
+ 7.000000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.066214472678047E+006 9.960873118505111E+001 2.000000000000000E+000
+     2.200000000000000E+006 7.474650061314283E-001 3.727587311850511E+002
+     6.084673554411588E+003 2.526197586493648E+003 5.702517875913048E+004
+     7.433964995160662E-001 2.303129628088595E-006 7.239755989107249E-006
+     -4.189922700619417E-007 1.801526800000000E-002 2.913391814760767E+006
+     4.738728834036848E+002 1.710000000000000E+002 6.259236646879677E+002
+     1.000000000000000E+000 5.966333440800570E+001 7.470228834036848E+002
+     1.710000000000000E+007 6.150375113977372E+003 3.259473680076621E+003
+     2.057318052371106E+003 2.627800176169501E-003 7.192011373246732E-008
+     3.514597846239886E-006 -4.810080892094570E-005 1.801526800000000E-002
+ 7.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.080089565671765E+006 9.960874176043268E+001 2.000000000000000E+000
+     2.215000000000000E+006 7.412325110206210E-001 3.727587417604327E+002
+     6.124914160806088E+003 2.511976883045274E+003 5.746957603210736E+004
+     7.427189711590621E-001 2.376003856269195E-006 7.175348053970963E-006
+     -4.120341259306669E-007 1.801526800000000E-002 2.913405709919129E+006
+     4.744415148025412E+002 1.721500000000000E+002 6.264730057604216E+002
+     1.000000000000000E+000 6.006749120906175E+001 7.475915148025412E+002
+     1.721500000000000E+007 6.147804779462384E+003 3.265705577722904E+003
+     2.059094150656240E+003 2.632906565519197E-003 7.150366967498978E-008
+     3.514343375402973E-006 -4.842815379850650E-005 1.801526800000000E-002
+ 7.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.093964658665484E+006 9.960875233581425E+001 2.000000000000000E+000
+     2.230000000000000E+006 7.351030917333163E-001 3.727587523358142E+002
+     6.165154767200588E+003 2.497756179596900E+003 5.791397330264209E+004
+     7.415964082600536E-001 2.452315228849976E-006 7.112071611633840E-006
+     -4.052478826046706E-007 1.801526800000000E-002 2.913419276080122E+006
+     4.750083556388080E+002 1.733000000000000E+002 6.270192552504037E+002
+     1.000000000000000E+000 6.047161778000506E+001 7.481583556388080E+002
+     1.733000000000000E+007 6.145253627356218E+003 3.271913414774853E+003
+     2.060857426520136E+003 2.637986758847208E-003 7.109236213763920E-008
+     3.514077528223070E-006 -4.875536322855288E-005 1.801526800000000E-002
+ 7.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.107839751659202E+006 9.960876291119581E+001 2.000000000000000E+000
+     2.245000000000000E+006 7.290742121692061E-001 3.727587629111958E+002
+     6.205395373595089E+003 2.483535476148526E+003 5.835837057073462E+004
+     7.399965650060520E-001 2.532312790579346E-006 7.049897205076523E-006
+     -3.986279239580115E-007 1.801526800000000E-002 2.913432513741756E+006
+     4.755734157443819E+002 1.744500000000000E+002 6.275624435652417E+002
+     1.000000000000000E+000 6.087571283044734E+001 7.487234157443819E+002
+     1.744500000000000E+007 6.142721391402463E+003 3.278097255947302E+003
+     2.062607983539314E+003 2.643040785009031E-003 7.068608934572347E-008
+     3.513800332314351E-006 -4.908243388308929E-005 1.801526800000000E-002
+ 7.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.121714844652920E+006 9.960877348657738E+001 2.000000000000000E+000
+     2.260000000000000E+006 7.231434187495510E-001 3.727587734865774E+002
+     6.245635979989589E+003 2.469314772700153E+003 5.880276783638498E+004
+     7.378840032404511E-001 2.616270241698594E-006 6.988796387978626E-006
+     -3.921688613590815E-007 1.801526800000000E-002 2.913445423406626E+006
+     4.761367048609508E+002 1.756000000000000E+002 6.281026004491678E+002
+     1.000000000000000E+000 6.127977507376517E+001 7.492867048609508E+002
+     1.756000000000000E+007 6.140207810657838E+003 3.284257165675796E+003
+     2.064345924277206E+003 2.648068673330677E-003 7.028475220807855E-008
+     3.513511815685323E-006 -4.940936245112735E-005 1.801526800000000E-002
+ 7.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.135589937646639E+006 9.960878406195894E+001 2.000000000000000E+000
+     2.275000000000000E+006 7.173083370878273E-001 3.727587840619589E+002
+     6.285876586384089E+003 2.455094069251779E+003 5.924716509959318E+004
+     7.352196873837646E-001 2.704489066498889E-006 6.928741681852660E-006
+     -3.858655227013044E-007 1.801526800000000E-002 2.913458005581776E+006
+     4.766982326413067E+002 1.767500000000000E+002 6.286397549922128E+002
+     1.000000000000000E+000 6.168380322711916E+001 7.498482326413067E+002
+     1.767500000000000E+007 6.137712629353410E+003 3.290393208122680E+003
+     2.066071350295609E+003 2.653070453607658E-003 6.988825422965651E-008
+     3.513212006731576E-006 -4.973614563877282E-005 1.801526800000000E-002
+ 7.300000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.149465030640357E+006 9.960879463734045E+001 2.000000000000000E+000
+     2.290000000000000E+006 7.115666688202703E-001 3.727587946373404E+002
+     6.326117192778590E+003 2.440873365803405E+003 5.969156236035919E+004
+     7.319605160672128E-001 2.797302150665179E-006 6.869706535336161E-006
+     -3.797129420459821E-007 1.801526800000000E-002 2.913470260778575E+006
+     4.772580086506407E+002 1.779000000000000E+002 6.291739356378059E+002
+     1.000000000000000E+000 6.208779601147155E+001 7.504080086506407E+002
+     1.779000000000000E+007 6.135235596760371E+003 3.296505447183244E+003
+     2.067784362166129E+003 2.658046156103854E-003 6.949650142750149E-008
+     3.512900934228499E-006 -5.006278016930529E-005 1.801526800000000E-002
+ 7.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.163340123634075E+006 9.960880521272202E+001 2.000000000000000E+000
+     2.305000000000000E+006 7.059161885874288E-001 3.727588052127220E+002
+     6.366357799173090E+003 2.426652662355032E+003 6.013595961868302E+004
+     7.280587786352240E-001 2.895077978881570E-006 6.811665285516653E-006
+     -3.737063498385535E-007 1.801526800000000E-002 2.913482189512571E+006
+     4.778160423678178E+002 1.790500000000000E+002 6.297051701890943E+002
+     1.000000000000000E+000 6.249175215160182E+001 7.509660423678178E+002
+     1.790500000000000E+007 6.132776467060106E+003 3.302593946491922E+003
+     2.069485059481622E+003 2.662995811550272E-003 6.910940224996206E-008
+     3.512578627323990E-006 -5.038926278325038E-005 1.801526800000000E-002
+ 7.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.177215216627793E+006 9.960881578810358E+001 2.000000000000000E+000
+     2.320000000000000E+006 7.003547411584009E-001 3.727588157881036E+002
+     6.406598405567591E+003 2.412431958906658E+003 6.058035687456469E+004
+     7.234615220701269E-001 2.998225524274827E-006 6.754593121172188E-006
+     -3.678411636622735E-007 1.801526800000000E-002 2.913493792303365E+006
+     4.783723431866356E+002 1.802000000000000E+002 6.302334858137472E+002
+     1.000000000000000E+000 6.289567037612087E+001 7.515223431866356E+002
+     1.802000000000000E+007 6.130334999218541E+003 3.308658769428501E+003
+     2.071173540867628E+003 2.667919451143662E-003 6.872686749899453E-008
+     3.512245115531136E-006 -5.071559023844486E-005 1.801526800000000E-002
+ 7.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.191090309621512E+006 9.960882636348515E+001 2.000000000000000E+000
+     2.335000000000000E+006 6.948802386899454E-001 3.727588263634851E+002
+     6.446839011962091E+003 2.398211255458284E+003 6.102475412800418E+004
+     7.181098106278775E-001 3.107199966484941E-006 6.698466047817906E-006
+     -3.621129794958335E-007 1.801526800000000E-002 2.913505069674459E+006
+     4.789269204170639E+002 1.813500000000000E+002 6.307589090471113E+002
+     1.000000000000000E+000 6.329954941748321E+001 7.520769204170639E+002
+     1.813500000000000E+007 6.127910956864422E+003 3.314699979124329E+003
+     2.072849903993752E+003 2.672817106545001E-003 6.834881025542056E-008
+     3.511900428720866E-006 -5.104175931009466E-005 1.801526800000000E-002
+ 7.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.204965402615230E+006 9.960883693886672E+001 2.000000000000000E+000
+     2.350000000000000E+006 6.894906581131451E-001 3.727588369388667E+002
+     6.487079618356592E+003 2.383990552009911E+003 6.146915137900150E+004
+     7.119378563552572E-001 3.222509406959460E-006 6.643260854456172E-006
+     -3.565175634437788E-007 1.801526800000000E-002 2.913516022153126E+006
+     4.794797832864654E+002 1.825000000000000E+002 6.312814657935685E+002
+     1.000000000000000E+000 6.370338801199782E+001 7.526297832864653E+002
+     1.825000000000000E+007 6.125504108171534E+003 3.320717638468560E+003
+     2.074514245585056E+003 2.677688809877872E-003 6.797514580700880E-008
+     3.511544597114635E-006 -5.136776679082579E-005 1.801526800000000E-002
+ 7.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.218840495608949E+006 9.960884751424828E+001 2.000000000000000E+000
+     2.365000000000000E+006 6.841840386407496E-001 3.727588475142483E+002
+     6.527320224751092E+003 2.369769848561537E+003 6.191354862755664E+004
+     7.048719934309751E-001 3.344722790445897E-006 6.588955081934346E-006
+     -3.510508439107235E-007 1.801526800000000E-002 2.913526650270262E+006
+     4.800309409407993E+002 1.836500000000000E+002 6.318011813257901E+002
+     1.000000000000000E+000 6.410718489983712E+001 7.531809409407993E+002
+     1.836500000000000E+007 6.123114225744616E+003 3.326711810114352E+003
+     2.076166661433385E+003 2.682534593726680E-003 6.760579157925672E-008
+     3.511177651277072E-006 -5.169360949072848E-005 1.801526800000000E-002
+ 7.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.232715588602667E+006 9.960885808962979E+001 2.000000000000000E+000
+     2.380000000000000E+006 6.789584793887472E-001 3.727588580896298E+002
+     6.567560831145592E+003 2.355549145113163E+003 6.235794587366960E+004
+     6.968294625930109E-001 3.474479293248952E-006 6.535526992820447E-006
+     -3.457089041923528E-007 1.801526800000000E-002 2.913536954560245E+006
+     4.805804024458066E+002 1.848000000000000E+002 6.323180802816089E+002
+     1.000000000000000E+000 6.451093882504459E+001 7.537304024458066E+002
+     1.848000000000000E+007 6.120741086508867E+003 3.332682556485048E+003
+     2.077807246408661E+003 2.687354491134758E-003 6.724066706875480E-008
+     3.510799622108654E-006 -5.201928423739479E-005 1.801526800000000E-002
+ 7.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.246590681596385E+006 9.960886866501136E+001 2.000000000000000E+000
+     2.395000000000000E+006 6.738121371061041E-001 3.727588686650113E+002
+     6.607801437540093E+003 2.341328441664789E+003 6.280234311734040E+004
+     6.877169633200500E-001 3.612499505197272E-006 6.482955542712603E-006
+     -3.404879754580333E-007 1.801526800000000E-002 2.913546935560789E+006
+     4.811281767881769E+002 1.859500000000000E+002 6.328321866581509E+002
+     1.000000000000000E+000 6.491464853554076E+001 7.542781767881769E+002
+     1.859500000000000E+007 6.118384471602896E+003 3.338629939780345E+003
+     2.079436094470125E+003 2.692148535602332E-003 6.687969377902196E-008
+     3.510410540838396E-006 -5.234478787594947E-005 1.801526800000000E-002
+ 7.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.260465774590103E+006 9.960887924039292E+001 2.000000000000000E+000
+     2.410000000000000E+006 6.687432240069754E-001 3.727588792403929E+002
+     6.648042043934593E+003 2.327107738216416E+003 6.324674035856900E+004
+     6.774289202962696E-001 3.759598818291538E-006 6.431220352903422E-006
+     -3.353844301015569E-007 1.801526800000000E-002 2.913556593812800E+006
+     4.816742728766986E+002 1.871000000000000E+002 6.333435238028108E+002
+     1.000000000000000E+000 6.531831278312752E+001 7.548242728766986E+002
+     1.871000000000000E+007 6.116044166275024E+003 3.344554021982382E+003
+     2.081053298677527E+003 2.696916761084339E-003 6.652279515870521E-008
+     3.510010439016531E-006 -5.267011726907428E-005 1.801526800000000E-002
+ 7.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.274340867583822E+006 9.960888981577449E+001 2.000000000000000E+000
+     2.425000000000000E+006 6.637500057000308E-001 3.727588898157745E+002
+     6.688282650329094E+003 2.312887034768042E+003 6.369113759735544E+004
+     6.658453961407960E-001 3.916703547363838E-006 6.380301684325372E-006
+     -3.303947754381056E-007 1.801526800000000E-002 2.913565929860230E+006
+     4.822186995433904E+002 1.882500000000000E+002 6.338521144004375E+002
+     1.000000000000000E+000 6.572193032349125E+001 7.553686995433903E+002
+     1.882500000000000E+007 6.113719959782728E+003 3.350454864861815E+003
+     2.082658951202268E+003 2.701659201988132E-003 6.616989654204305E-008
+     3.509599348507245E-006 -5.299526929702609E-005 1.801526800000000E-002
+ 7.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.288215960577540E+006 9.960890039115606E+001 2.000000000000000E+000
+     2.440000000000000E+006 6.588307992098589E-001 3.727589003911560E+002
+     6.728523256723594E+003 2.298666331319668E+003 6.413553483369971E+004
+     6.528295632256410E-001 4.084870456037961E-006 6.330180412707817E-006
+     -3.255156477269922E-007 1.801526800000000E-002 2.913574944249932E+006
+     4.827614655446147E+002 1.894000000000000E+002 6.343579804561048E+002
+     1.000000000000000E+000 6.612549991620448E+001 7.559114655446147E+002
+     1.894000000000000E+007 6.111411645295221E+003 3.356332529983806E+003
+     2.084253143338452E+003 2.706375893171051E-003 6.582092509149654E-008
+     3.509177301481442E-006 -5.332024085764935E-005 1.801526800000000E-002
+ 7.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.302091053571258E+006 9.960891096653762E+001 2.000000000000000E+000
+     2.455000000000000E+006 6.539839710857066E-001 3.727589109665376E+002
+     6.768763863118094E+003 2.284445627871295E+003 6.457993206760180E+004
+     6.382246219566851E-001 4.265310557833124E-006 6.280838004880599E-006
+     -3.207438065010726E-007 1.801526800000000E-002 2.913583637531514E+006
+     4.833025795621747E+002 1.905500000000000E+002 6.348611432726619E+002
+     1.000000000000000E+000 6.652902032472593E+001 7.564525795621747E+002
+     1.905500000000000E+007 6.109119019798970E+003 3.362187078713957E+003
+     2.085835965513901E+003 2.711066869937851E-003 6.547580974245558E-008
+     3.508744330409492E-006 -5.364502886638189E-005 1.801526800000000E-002
+ 7.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.315966146564977E+006 9.960892154191913E+001 2.000000000000000E+000
+     2.470000000000000E+006 6.492079355930898E-001 3.727589215419191E+002
+     6.809004469512594E+003 2.270224924422921E+003 6.502432929906171E+004
+     6.218500187684064E-001 4.459418325802751E-006 6.232256496162995E-006
+     -3.160761291849760E-007 1.801526800000000E-002 2.913592010257192E+006
+     4.838420502043924E+002 1.917000000000000E+002 6.353616234218804E+002
+     1.000000000000000E+000 6.693249031639974E+001 7.569920502043924E+002
+     1.917000000000000E+007 6.106841884006066E+003 3.368018572224180E+003
+     2.087407507301078E+003 2.715732168038028E-003 6.513448114993482E-008
+     3.508300468054096E-006 -5.396963025625551E-005 1.801526800000000E-002
+ 7.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.329841239558695E+006 9.960893211730070E+001 2.000000000000000E+000
+     2.485000000000000E+006 6.445011529840690E-001 3.727589321173007E+002
+     6.849245075907094E+003 2.256004220974547E+003 6.546872652807945E+004
+     6.034967708700175E-001 4.668807801018456E-006 6.184418468780627E-006
+     -3.115096059854683E-007 1.801526800000000E-002 2.913600062981647E+006
+     4.843798860071710E+002 1.928500000000000E+002 6.358594407079434E+002
+     1.000000000000000E+000 6.733590866245267E+001 7.575298860071709E+002
+     1.928500000000000E+007 6.104580042265393E+003 3.373827071498458E+003
+     2.088967857427942E+003 2.720371823662977E-003 6.479687163717466E-008
+     3.507845747463119E-006 -5.429404197789031E-005 1.801526800000000E-002
+ 8.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.343716332552414E+006 9.960894269268226E+001 2.000000000000000E+000
+     2.500000000000000E+006 6.398621278422285E-001 3.727589426926822E+002
+     6.889485682301594E+003 2.241783517526174E+003 6.591312375465501E+004
+     5.829216415245114E-001 4.895357578756829E-006 6.137307031256318E-006
+     -3.070413350383310E-007 1.801526800000000E-002 2.913607796261878E+006
+     4.849160954350380E+002 1.940000000000000E+002 6.363546141216515E+002
+     1.000000000000000E+000 6.773927413799088E+001 7.580660954350379E+002
+     1.940000000000000E+007 6.102333302476382E+003 3.379612637338551E+003
+     2.090517103788719E+003 2.724985873443075E-003 6.446291514606957E-008
+     3.507380201962523E-006 -5.461826099948443E-005 1.801526800000000E-002
+ 8.050000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.357591425546132E+006 9.960895326806383E+001 2.000000000000000E+000
+     2.515000000000000E+006 6.352894074986174E-001 3.727589532680638E+002
+     6.929726288696095E+003 2.227562814077800E+003 6.635752097878841E+004
+     5.598398220607718E-001 5.141267327665255E-006 6.090905798724008E-006
+     -3.026685177971428E-007 1.801526800000000E-002 2.913615210657057E+006
+     4.854506868821726E+002 1.951500000000000E+002 6.368471617829384E+002
+     1.000000000000000E+000 6.814258552199495E+001 7.586006868821726E+002
+     1.951500000000000E+007 6.100101476005395E+003 3.385375330369600E+003
+     2.092055333454594E+003 2.729574354444607E-003 6.413254718934776E-008
+     3.506903865149327E-006 -5.494228430679771E-005 1.801526800000000E-002
+ 8.100000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.371466518539850E+006 9.960896384344540E+001 2.000000000000000E+000
+     2.530000000000000E+006 6.307815805151333E-001 3.727589638434454E+002
+     6.969966895090596E+003 2.213342110629426E+003 6.680191820047962E+004
+     5.339156540548692E-001 5.409129445329293E-006 6.045198874118089E-006
+     -2.983884546502851E-007 1.801526800000000E-002 2.913622306728389E+006
+     4.859836686734152E+002 1.963000000000000E+002 6.373371008692908E+002
+     1.000000000000000E+000 6.854584159731394E+001 7.591336686734152E+002
+     1.963000000000000E+007 6.097884377604542E+003 3.391115211045634E+003
+     2.093582632684322E+003 2.734137304166589E-003 6.380570480443052E-008
+     3.506416770884624E-006 -5.526610890313037E-005 1.801526800000000E-002
+ 8.150000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.385341611533568E+006 9.960897441882696E+001 2.000000000000000E+000
+     2.545000000000000E+006 6.263372752320190E-001 3.727589744188269E+002
+     7.010207501485096E+003 2.199121407181053E+003 6.724631541972865E+004
+     5.047507507323088E-001 5.702020800490174E-006 6.000170830193024E-006
+     -2.941985407533490E-007 1.801526800000000E-002 2.913629085038968E+006
+     4.865150490652591E+002 1.974500000000000E+002 6.378244475262114E+002
+     1.000000000000000E+000 6.894904115065874E+001 7.596650490652590E+002
+     1.974500000000000E+007 6.095681825332888E+003 3.396832339654999E+003
+     2.095099086934740E+003 2.738674760537501E-003 6.348232650890326E-008
+     3.505918953286678E-006 -5.558973180929770E-005 1.801526800000000E-002
+ 8.200000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.399216704527287E+006 9.960898499420847E+001 2.000000000000000E+000
+     2.560000000000000E+006 6.219551583763319E-001 3.727589849942085E+002
+     7.050448107879596E+003 2.184900703732679E+003 6.769071263653551E+004
+     4.718686253392575E-001 6.023621453060385E-006 5.955806692330932E-006
+     -2.900962620649316E-007 1.801526800000000E-002 2.913635546153635E+006
+     4.870448362468271E+002 1.986000000000000E+002 6.383092167552532E+002
+     1.000000000000000E+000 6.935218297259381E+001 7.601948362468271E+002
+     1.986000000000000E+007 6.093493640479936E+003 3.402526776325648E+003
+     2.096604780871194E+003 2.743186761911856E-003 6.316235225753225E-008
+     3.505410446724054E-006 -5.591315006359856E-005 1.801526800000000E-002
+ 8.250000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.413091797521005E+006 9.960899556959004E+001 2.000000000000000E+000
+     2.575000000000000E+006 6.176339337284248E-001 3.727589955695900E+002
+     7.090688714274097E+003 2.170680000284305E+003 6.813510985090020E+004
+     4.346945663665056E-001 6.378370084218918E-006 5.912091922097242E-006
+     -2.860791915745578E-007 1.801526800000000E-002 2.913641690638841E+006
+     4.875730383408298E+002 1.997500000000000E+002 6.387914222734036E+002
+     1.000000000000000E+000 6.975526585752829E+001 7.607230383408298E+002
+     1.997500000000000E+007 6.091319647491364E+003 3.408198581030363E+003
+     2.098099798377874E+003 2.747673347066716E-003 6.284572340076559E-008
+     3.504891285808845E-006 -5.623636072178032E-005 1.801526800000000E-002
+ 8.300000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.426966890514724E+006 9.960900614497160E+001 2.000000000000000E+000
+     2.590000000000000E+006 6.133723408436301E-001 3.727590061449716E+002
+     7.130929320668597E+003 2.156459296835932E+003 6.857950706282273E+004
+     3.925289517504897E-001 6.771670099389518E-006 5.869012401506729E-006
+     -2.821449857121558E-007 1.801526800000000E-002 2.913647519062506E+006
+     4.880996634045068E+002 2.009000000000000E+002 6.392710763357760E+002
+     1.000000000000000E+000 7.015828860370631E+001 7.612496634045068E+002
+     2.009000000000000E+007 6.089159673896881E+003 3.413847813591856E+003
+     2.099584222568045E+003 2.752134555198080E-003 6.253238264465838E-008
+     3.504361505389957E-006 -5.655936085699928E-005 1.801526800000000E-002
+ 8.350000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.440841983508442E+006 9.960901672035317E+001 2.000000000000000E+000
+     2.605000000000000E+006 6.091691538265046E-001 3.727590167203532E+002
+     7.171169927063097E+003 2.142238593387558E+003 6.902390427230306E+004
+     3.445113631565424E-001 7.210166785132441E-006 5.826554417964461E-006
+     -2.782913809291702E-007 1.801526800000000E-002 2.913653031993887E+006
+     4.886247194305527E+002 2.020500000000000E+002 6.397481895108590E+002
+     1.000000000000000E+000 7.056125001319623E+001 7.617747194305526E+002
+     2.020500000000000E+007 6.087013550240134E+003 3.419474533687765E+003
+     2.101058135794197E+003 2.756570425917183E-003 6.222227401216584E-008
+     3.503821140546458E-006 -5.688214755977644E-005 1.801526800000000E-002
+ 8.400000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.454717076502160E+006 9.960902729573473E+001 2.000000000000000E+000
+     2.620000000000000E+006 6.050231801551285E-001 3.727590272957347E+002
+     7.211410533457598E+003 2.128017889939184E+003 6.946830147934122E+004
+     2.895715744927771E-001 7.702125840559659E-006 5.784704649848231E-006
+     -2.745161904420005E-007 1.801526800000000E-002 2.913658230003442E+006
+     4.891482143480249E+002 2.032000000000000E+002 6.402227703932821E+002
+     1.000000000000000E+000 7.096414889187921E+001 7.622982143480249E+002
+     2.032000000000000E+007 6.084881110010634E+003 3.425078800855522E+003
+     2.102521619658070E+003 2.760980999246702E-003 6.191534280575021E-008
+     3.503270226581033E-006 -5.720471793795007E-005 1.801526800000000E-002
+ 8.450000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.468592169495878E+006 9.960903787111624E+001 2.000000000000000E+000
+     2.635000000000000E+006 6.009332595530900E-001 3.727590378711162E+002
+     7.251651139852098E+003 2.113797186490810E+003 6.991269868393721E+004
+     2.263614499208921E-001 8.257959350824019E-006 5.743450152700771E-006
+     -2.708173011290130E-007 1.801526800000000E-002 2.913663113662695E+006
+     4.896701560232358E+002 2.043500000000000E+002 6.406948252344371E+002
+     1.000000000000000E+000 7.136698404943721E+001 7.628201560232358E+002
+     2.043500000000000E+007 6.082762189577585E+003 3.430660674497149E+003
+     2.103974755020612E+003 2.765366315616879E-003 6.161153557124944E-008
+     3.502708799013496E-006 -5.752706911662382E-005 1.801526800000000E-002
+ 8.500000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.482467262489596E+006 9.960904844649781E+001 2.000000000000000E+000
+     2.650000000000000E+006 5.968982629069152E-001 3.727590484464978E+002
+     7.291891746246599E+003 2.099576483042437E+003 7.035709588609102E+004
+     1.531584737950378E-001 8.890970856319730E-006 5.702778346002014E-006
+     -2.671926705729072E-007 1.801526800000000E-002 2.913667683544111E+006
+     4.901905522606285E+002 2.055000000000000E+002 6.411643574624669E+002
+     1.000000000000000E+000 7.176975429934002E+001 7.633405522606284E+002
+     2.055000000000000E+007 6.080656628125586E+003 3.436220213883902E+003
+     2.105417622011801E+003 2.769726415861555E-003 6.131080006295876E-008
+     3.502136893574402E-006 -5.784919823811143E-005 1.801526800000000E-002
+ 8.550000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.496342355483315E+006 9.960905902187938E+001 2.000000000000000E+000
+     2.665000000000000E+006 5.929170912268202E-001 3.727590590218794E+002
+     7.332132352641099E+003 2.085355779594063E+003 7.080149308580266E+004
+     6.772609773996452E-002 9.618433936956079E-006 5.662677000493163E-006
+     -2.636403242407063E-007 1.801526800000000E-002 2.913671940220969E+006
+     4.907094108036366E+002 2.066500000000000E+002 6.416313670526380E+002
+     1.000000000000000E+000 7.217245845883183E+001 7.638594108036366E+002
+     2.066500000000000E+007 6.078564267592111E+003 3.441757478160809E+003
+     2.106850300040378E+003 2.774061341214117E-003 6.101308520987736E-008
+     3.501554546198724E-006 -5.817110246187798E-005 1.801526800000000E-002
+ 8.583165190746560E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.505545757598574E+006 9.960906603657031E+001 2.000000000000000E+000
+     2.674949557223968E+006 5.903055316417438E-001 3.727590660365703E+002
+     7.358824100377717E+003 2.075923132745751E+003 7.109626344236893E+004
+     2.902049864748859E-003 1.016395767277240E-005 5.636386476492775E-006
+     -2.613229764202505E-007 1.801526800000000E-002 2.913674591196530E+006
+     4.910527271693026E+002 2.074127993871709E+002 6.419397428086706E+002
+     1.000000000000000E+000 7.243953662859730E+001 7.642027271693025E+002
+     2.074127993871709E+007 6.077183602796621E+003 3.445418107795661E+003
+     2.107795018793652E+003 2.776922846684291E-003 6.081725162227665E-008
+     3.501162530482421E-006 -5.838449731602373E-005 1.801526800000000E-002
+ 8.583165190746560E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.505545757598247E+006 9.960906603754177E+001 1.000000000000000E+000
+     2.674949557223968E+006 5.903055316406073E-001 3.727590660375417E+002
+     7.358824100377708E+003 2.075923132743093E+003 1.552686358814448E+003
+     2.902049878637292E-003 1.016395767265336E-005 5.885535975942508E-006
+     -8.252213530627637E-007 1.801526800000000E-002 2.913674591196530E+006
+     4.910527271693026E+002 2.074127993871709E+002 6.419397428086706E+002
+     1.000000000000000E+000 7.243953662859730E+001 7.642027271693025E+002
+     2.074127993871709E+007 6.077183602796621E+003 3.445418107795661E+003
+     2.107795018793652E+003 2.776922846684291E-003 6.081725162227665E-008
+     3.501162530482421E-006 -5.838449731602373E-005 1.801526800000000E-002
+ 8.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.509400373065100E+006 1.020452581857704E+002 1.000000000000000E+000
+     2.680000000000000E+006 5.861677530992461E-001 3.751952581857704E+002
+     7.372312015071355E+003 2.065371896456538E+003 1.545256368209710E+003
+     2.872972513962991E-003 1.015777386640064E-005 5.845763367987621E-006
+     -8.153707553176329E-007 1.801526800000000E-002 2.913675884267234E+006
+     4.912267393355265E+002 2.078000000000000E+002 6.420958496914634E+002
+     1.000000000000000E+000 7.257509534891747E+001 7.643767393355265E+002
+     2.078000000000000E+007 6.076484952606748E+003 3.447272526351125E+003
+     2.108272867803482E+003 2.778371133303409E-003 6.071834108307589E-008
+     3.500961793019646E-006 -5.849277896447822E-005 1.801526800000000E-002
+ 8.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.520835922175678E+006 1.093463772942380E+002 1.000000000000000E+000
+     2.695000000000000E+006 5.741712140024049E-001 3.824963772942380E+002
+     7.411873862554196E+003 2.041639333064527E+003 1.529211156798801E+003
+     2.793043426093198E-003 1.014164222060762E-005 5.729562259774357E-006
+     -7.854889493700222E-007 1.801526800000000E-002 2.913679516257435E+006
+     4.917425454802255E+002 2.089500000000000E+002 6.425577956532280E+002
+     1.000000000000000E+000 7.297766379434789E+001 7.648925454802255E+002
+     2.089500000000000E+007 6.074418530432087E+003 3.452765417360632E+003
+     2.109685403296166E+003 2.782655834149528E-003 6.042651886414111E-008
+     3.500358670362438E-006 -5.881422493949135E-005 1.801526800000000E-002
+ 8.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.532258333193260E+006 1.167239759620943E+002 1.000000000000000E+000
+     2.710000000000000E+006 5.626142805824540E-001 3.898739759620943E+002
+     7.450709323466127E+003 2.024779305163064E+003 1.518473764268226E+003
+     2.720265162290734E-003 1.012799071844683E-005 5.616789825796489E-006
+     -7.558651075567269E-007 1.801526800000000E-002 2.913682836766550E+006
+     4.922568368031311E+002 2.101000000000000E+002 6.430171882676508E+002
+     1.000000000000000E+000 7.338016262360560E+001 7.654068368031311E+002
+     2.101000000000000E+007 6.072364850906228E+003 3.458236209981874E+003
+     2.111087983820819E+003 2.786915486159626E-003 6.013757081465638E-008
+     3.499745214738412E-006 -5.913543759745379E-005 1.801526800000000E-002
+ 8.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.543673187190635E+006 1.241583321346749E+002 1.000000000000000E+000
+     2.725000000000000E+006 5.514904191534721E-001 3.973083321346749E+002
+     7.488829595086420E+003 2.011957530277503E+003 1.510742300900274E+003
+     2.652930016416079E-003 1.011619121064334E-005 5.507737989103841E-006
+     -7.271850745956525E-007 1.801526800000000E-002 2.913685846369888E+006
+     4.927696208119088E+002 2.112500000000000E+002 6.434740017967823E+002
+     1.000000000000000E+000 7.378259066888917E+001 7.659196208119088E+002
+     2.112500000000000E+007 6.070323766386880E+003 3.463684962898212E+003
+     2.112480685996462E+003 2.791150132123558E-003 5.985145024667912E-008
+     3.499121462838994E-006 -5.945641416578808E-005 1.801526800000000E-002
+ 8.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.555084178235502E+006 1.316358575694575E+002 1.000000000000000E+000
+     2.740000000000000E+006 5.407866079050625E-001 4.047858575694575E+002
+     7.526246571594237E+003 2.001922529327213E+003 1.505028213654778E+003
+     2.590117335671281E-003 1.010588265801805E-005 5.402449896136182E-006
+     -6.996778084636994E-007 1.801526800000000E-002 2.913688545642976E+006
+     4.932809049572697E+002 2.124000000000000E+002 6.439281984402495E+002
+     1.000000000000000E+000 7.418494676609818E+001 7.664309049572697E+002
+     2.124000000000000E+007 6.068295131696948E+003 3.469111734687841E+003
+     2.113863585767955E+003 2.795359815209582E-003 5.956811149417719E-008
+     3.498487451529876E-006 -5.977715188873064E-005 1.801526800000000E-002
+ 8.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.566493785903255E+006 1.391466675391641E+002 1.000000000000000E+000
+     2.755000000000000E+006 5.304864907460188E-001 4.122966675391641E+002
+     7.562976559144862E+003 1.994030048925187E+003 1.500842595046910E+003
+     2.531223817221918E-003 1.009681902986973E-005 5.300860984906835E-006
+     -6.734001028793808E-007 1.801526800000000E-002 2.913690935161448E+006
+     4.937906966337357E+002 2.135500000000000E+002 6.443797240259692E+002
+     1.000000000000000E+000 7.458722975481751E+001 7.669406966337357E+002
+     2.135500000000000E+007 6.066278804071591E+003 3.474516583827655E+003
+     2.115236758415091E+003 2.799544578959954E-003 5.928750988538806E-008
+     3.497843217845301E-006 -6.009764802725647E-005 1.801526800000000E-002
+ 8.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.577903741505755E+006 1.466831990087431E+002 1.000000000000000E+000
+     2.770000000000000E+006 5.205723463010378E-001 4.198331990087431E+002
+     7.599039143118517E+003 1.987882833672963E+003 1.497895494057064E+003
+     2.475794626895927E-003 1.008881265866951E-005 5.202860547368821E-006
+     -6.483431498331192E-007 1.801526800000000E-002 2.913693015500944E+006
+     4.942990031803868E+002 2.147000000000000E+002 6.448285016681928E+002
+     1.000000000000000E+000 7.498943847830157E+001 7.674490031803867E+002
+     2.147000000000000E+007 6.064274643106683E+003 3.479899568697010E+003
+     2.116600278561572E+003 2.803704467286493E-003 5.900960171606631E-008
+     3.497188798982402E-006 -6.041789985900187E-005 1.801526800000000E-002
+ 8.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.589315317993203E+006 1.542394197517166E+002 1.000000000000000E+000
+     2.785000000000000E+006 5.110262028405812E-001 4.273894197517166E+002
+     7.634455517043049E+003 1.983196882902698E+003 1.495984790327509E+003
+     2.423460077493260E-003 1.008171180067676E-005 5.108318835191023E-006
+     -6.244723415077512E-007 1.801526800000000E-002 2.913694787237001E+006
+     4.948058318815956E+002 2.158500000000000E+002 6.452744221955188E+002
+     1.000000000000000E+000 7.539157178345843E+001 7.679558318815956E+002
+     2.158500000000000E+007 6.062282510708666E+003 3.485260747581371E+003
+     2.117954220183877E+003 2.807839524466122E-003 5.873434422358642E-008
+     3.496524232295679E-006 -6.073790467818566E-005 1.801526800000000E-002
+ 9.000000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.600729500717589E+006 1.618103674568747E+002 1.000000000000000E+000
+     2.800000000000000E+006 5.018304282877202E-001 4.349603674568747E+002
+     7.669247272188045E+003 1.979749989873268E+003 1.494954067969610E+003
+     2.373909037691557E-003 1.007539045833156E-005 5.017099343653550E-006
+     -6.017425408230986E-007 1.801526800000000E-002 2.913696250944959E+006
+     4.953111899677433E+002 2.170000000000000E+002 6.457173292809550E+002
+     1.000000000000000E+000 7.579362852083442E+001 7.684611899677433E+002
+     2.170000000000000E+007 6.060302271045694E+003 3.490600178675898E+003
+     2.119298656620039E+003 2.811949795136403E-003 5.846169556186947E-008
+     3.495849555291582E-006 -6.105765979552880E-005 1.801526800000000E-002
+ 9.050000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.612147085729200E+006 1.693918721755159E+002 1.000000000000000E+000
+     2.815000000000000E+006 4.929680224682602E-001 4.425418721755159E+002
+     7.703435687788781E+003 1.977360210752362E+003 1.494675542479910E+003
+     2.326875411821281E-003 1.006974276865165E-005 4.929064616089983E-006
+     -5.801043047483528E-007 1.801526800000000E-002 2.913697407199863E+006
+     4.958150846159246E+002 2.181500000000000E+002 6.461569955738603E+002
+     1.000000000000000E+000 7.619560754459774E+001 7.689650846159245E+002
+     2.181500000000000E+007 6.058333790500081E+003 3.495917920088850E+003
+     2.120633660578286E+003 2.816035324290976E-003 5.819161477710236E-008
+     3.495164805623175E-006 -6.137716253817135E-005 1.801526800000000E-002
+ 9.100000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.623568736426938E+006 1.769803808569576E+002 1.000000000000000E+000
+     2.830000000000000E+006 4.844227481299477E-001 4.501303808569576E+002
+     7.737041367436485E+003 1.975875441138966E+003 1.495042198047262E+003
+     2.282129654431026E-003 1.006467927169138E-005 4.844079127684058E-006
+     -5.595066853764154E-007 1.801526800000000E-002 2.913698256576376E+006
+     4.963175229506335E+002 2.193000000000000E+002 6.465930829224577E+002
+     1.000000000000000E+000 7.659750771252348E+001 7.694675229506335E+002
+     2.193000000000000E+007 6.056376937621989E+003 3.501214029844971E+003
+     2.121959304145596E+003 2.820096157275083E-003 5.792406178422229E-008
+     3.494470021084945E-006 -6.169641024959012E-005 1.801526800000000E-002
+ 9.150000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.634995017012338E+006 1.845728395088595E+002 1.000000000000000E+000
+     2.845000000000000E+006 4.761791771668354E-001 4.577228395088595E+002
+     7.770084080122224E+003 1.975167340118084E+003 1.495963443986329E+003
+     2.239472571745216E-003 1.006012410346309E-005 4.762010793813841E-006
+     -5.398986631874848E-007 1.801526800000000E-002 2.913698799648684E+006
+     4.968185120444374E+002 2.204500000000000E+002 6.470250731679760E+002
+     1.000000000000000E+000 7.699932788597772E+001 7.699685120444374E+002
+     2.204500000000000E+007 6.054431583084279E+003 3.506488565888712E+003
+     2.123275658796121E+003 2.824132339780988E-003 5.765899734413655E-008
+     3.493765239607667E-006 -6.201540028951324E-005 1.801526800000000E-002
+ 9.200000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.646426413190981E+006 1.921666088545604E+002 1.000000000000000E+000
+     2.860000000000000E+006 4.682226931433327E-001 4.653166088545604E+002
+     7.802582712168136E+003 1.975127149782538E+003 1.497362236481747E+003
+     2.198730424682682E-003 1.005601275021777E-005 4.682731791446653E-006
+     -5.212299780570868E-007 1.801526800000000E-002 2.913699036990421E+006
+     4.973180589186347E+002 2.216000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.740106692990270E+001 7.704680589186347E+002
+     2.216000000000000E+007 6.052497599638570E+003 3.511741586087396E+003
+     2.124582795399523E+003 2.828143917843461E-003 5.739638304165276E-008
+     3.493050499253445E-006 -6.233413003383533E-005 1.801526800000000E-002
+ 9.250000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.657863345834056E+006 1.997594004068793E+002 1.000000000000000E+000
+     2.875000000000000E+006 4.605394717170881E-001 4.729094004068793E+002
+     7.834555275256248E+003 1.975662493407011E+003 1.499172910351333E+003
+     2.159750931796147E-003 1.005229020479735E-005 4.606119011133970E-006
+     -5.034516555783882E-007 1.801526800000000E-002 2.913698969174587E+006
+     4.978161705438979E+002 2.227500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.780272371280191E+001 7.709661705438979E+002
+     2.227500000000000E+007 6.050574862072386E+003 3.516973148234273E+003
+     2.125880784229183E+003 2.832130937835224E-003 5.713618126409294E-008
+     3.492325838210812E-006 -6.265259687453113E-005 1.801526800000000E-002
+ 9.300000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.669306180665386E+006 2.073492257852672E+002 1.000000000000000E+000
+     2.890000000000000E+006 4.531164502091521E-001 4.804992257852672E+002
+     7.866018940634160E+003 1.976694784532417E+003 1.501339429067546E+003
+     2.122399967361929E-003 1.004890943834237E-005 4.532054293184071E-006
+     -4.865163537943692E-007 1.801526800000000E-002 2.913698596773469E+006
+     4.983128538409037E+002 2.239000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.820429710672545E+001 7.714628538409037E+002
+     2.239000000000000E+007 6.048663247167408E+003 3.522183310051476E+003
+     2.127169694970318E+003 2.836093446462405E-003 5.687835518056684E-008
+     3.491591294789952E-006 -6.297079821956838E-005 1.801526800000000E-002
+ 9.350000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.680755235610134E+006 2.149343552260370E+002 1.000000000000000E+000
+     2.905000000000000E+006 4.459412921950894E-001 4.880843552260370E+002
+     7.896990083863042E+003 1.978157078428122E+003 1.503813927751977E+003
+     2.086558822052418E-003 1.004583012918031E-005 4.460424527338625E-006
+     -4.703785899987766E-007 1.801526800000000E-002 2.913697920358578E+006
+     4.988081156809466E+002 2.250500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.860578598725631E+001 7.719581156809466E+002
+     2.250500000000000E+007 6.046762633658771E+003 3.527372129192902E+003
+     2.128449596727974E+003 2.840031490760017E-003 5.662286872188174E-008
+     3.490846907418057E-006 -6.328873149282113E-005 1.801526800000000E-002
+ 9.400000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.692210786687248E+006 2.225132828818479E+002 1.000000000000000E+000
+     2.920000000000000E+006 4.390023502241119E-001 4.956632828818479E+002
+     7.927484332228689E+003 1.979992272528151E+003 1.506555484926613E+003
+     2.052121925996690E-003 1.004301760437622E-005 4.391121660541254E-006
+     -4.549948810197539E-007 1.801526800000000E-002 2.913696940500577E+006
+     4.993019628865400E+002 2.262000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.900718923349685E+001 7.724519628865400E+002
+     2.262000000000000E+007 6.044872902195375E+003 3.532539663247003E+003
+     2.129720558034922E+003 2.843945118087445E-003 5.636968656106537E-008
+     3.490092714634769E-006 -6.360639413398238E-005 1.801526800000000E-002
+ 9.450000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.703673072933659E+006 2.300846973859116E+002 1.000000000000000E+000
+     2.935000000000000E+006 4.322886283416619E-001 5.032346973859116E+002
+     7.957516611013454E+003 1.982151593395673E+003 1.509529082540708E+003
+     2.018994953256460E-003 1.004044195778869E-005 4.324042640311259E-006
+     -4.403238187634162E-007 1.801526800000000E-002 2.913695657769222E+006
+     4.997944022320025E+002 2.273500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.940850572805576E+001 7.729444022320025E+002
+     2.273500000000000E+007 6.042993935301190E+003 3.537685969739479E+003
+     2.130982646859446E+003 2.847834376123948E-003 5.611877409448053E-008
+     3.489328755087748E-006 -6.392378359847641E-005 1.801526800000000E-002
+ 9.500000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.715142300640960E+006 2.376474566429711E+002 1.000000000000000E+000
+     2.950000000000000E+006 4.257897453347885E-001 5.107974566429710E+002
+     7.987101186933536E+003 1.984593322768865E+003 1.512704724280721E+003
+     1.987093240922530E-003 1.003807731465662E-005 4.259089312204646E-006
+     -4.263260967886581E-007 1.801526800000000E-002 2.913694072733303E+006
+     5.002854404440303E+002 2.285000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 7.980973435703616E+001 7.734354404440303E+002
+     2.285000000000000E+007 6.041125617337537E+003 3.542811106135927E+003
+     2.132235930613024E+003 2.851699312864211E-003 5.587009742351102E-008
+     3.488555067528359E-006 -6.424089735737188E-005 1.801526800000000E-002
+ 9.550000000000001E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.726618647073405E+006 2.452005660952552E+002 1.000000000000000E+000
+     2.965000000000000E+006 4.194958992064831E-001 5.183505660952552E+002
+     8.016251708126701E+003 1.987281724209897E+003 1.516056687881155E+003
+     1.956340467573366E-003 1.003590121775513E-005 4.196168284591845E-006
+     -4.129645000006253E-007 1.801526800000000E-002 2.913692185960596E+006
+     5.007750842022557E+002 2.296500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.021087401002379E+001 7.739250842022557E+002
+     2.296500000000000E+007 6.039267834466245E+003 3.547915129844349E+003
+     2.133480476157884E+003 2.855539976613886E-003 5.562362333679795E-008
+     3.487771690807451E-006 -6.455773289729488E-005 1.801526800000000E-002
+ 9.600000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.738102263773229E+006 2.527431598933780E+002 1.000000000000000E+000
+     2.980000000000000E+006 4.133978331498444E-001 5.258931598933780E+002
+     8.044981240624478E+003 1.990186138305588E+003 1.519562891031584E+003
+     1.926667545485952E-003 1.003389411435570E-005 4.135190770607351E-006
+     -4.002038669519283E-007 1.801526800000000E-002 2.913689998017808E+006
+     5.012633401397931E+002 2.308000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.061192358007635E+001 7.744133401397930E+002
+     2.308000000000000E+007 6.037420474613761E+003 3.552998098217655E+003
+     2.134716349814499E+003 2.859356415985209E-003 5.537931929300843E-008
+     3.486978663871270E-006 -6.487428772034214E-005 1.801526800000000E-002
+ 9.650000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.749593279522035E+006 2.602744845265293E+002 1.000000000000000E+000
+     2.995000000000000E+006 4.074868031537023E-001 5.334244845265292E+002
+     8.073302301514187E+003 1.993280219488148E+003 1.523204353529353E+003
+     1.898011689067872E-003 1.003203892675757E-005 4.076072414771630E-006
+     -3.880110322497608E-007 1.801526800000000E-002 2.913687509470541E+006
+     5.017502148437692E+002 2.319500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.101288196371377E+001 7.749002148437692E+002
+     2.319500000000000E+007 6.035583427436097E+003 3.558060068556049E+003
+     2.135943617368927E+003 2.863148679892642E-003 5.513715340411731E-008
+     3.486176025757476E-006 -6.519055934399596E-005 1.801526800000000E-002
+ 9.700000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.761091803004296E+006 2.677938845562454E+002 1.000000000000000E+000
+     3.010000000000000E+006 4.017545472868687E-001 5.409438845562454E+002
+     8.101226889117704E+003 1.996541291813975E+003 1.526964740901754E+003
+     1.870315628705633E-003 1.003032069212152E-005 4.018733110049126E-006
+     -3.763547549830479E-007 1.801526800000000E-002 2.913684720883249E+006
+     5.022357148558426E+002 2.331000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.141374806090894E+001 7.753857148558426E+002
+     2.331000000000000E+007 6.033756584284638E+003 3.563101098109354E+003
+     2.137162344080082E+003 2.866916817548542E-003 5.489709441918471E-008
+     3.485363815591285E-006 -6.550654530103834E-005 1.801526800000000E-002
+ 9.750000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.772597925204821E+006 2.753007901651961E+002 1.000000000000000E+000
+     3.025000000000000E+006 3.961932566566599E-001 5.484507901651961E+002
+     8.128766510552661E+003 1.999949804651045E+003 1.530829976938198E+003
+     1.843526944789137E-003 1.002872625981104E-005 3.963096809784304E-006
+     -3.652056378073705E-007 1.801526800000000E-002 2.913681632819207E+006
+     5.027198466727081E+002 2.342500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.181452077507996E+001 7.758698466727080E+002
+     2.342500000000000E+007 6.031939838172746E+003 3.568121244079289E+003
+     2.138372594686892E+003 2.870660878458925E-003 5.465911170861220E-008
+     3.484542072581699E-006 -6.582224313946770E-005 1.801526800000000E-002
+ 9.800000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.784111721563519E+006 2.827947062833039E+002 1.000000000000000E+000
+     3.040000000000000E+006 3.907955480064039E-001 5.559447062833038E+002
+     8.155932207034228E+003 2.003488872287037E+003 1.534787914485305E+003
+     1.817597501252570E-003 1.002724403650213E-005 3.909091337935518E-006
+     -3.545360402956626E-007 1.801526800000000E-002 2.913678245840479E+006
+     5.032026167465888E+002 2.354000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.221519901308287E+001 7.763526167465888E+002
+     2.354000000000000E+007 6.030133083743172E+003 3.573120563621653E+003
+     2.139574433415341E+003 2.874380912419229E-003 5.442317524886143E-008
+     3.483710836017872E-006 -6.613765042241563E-005 1.801526800000000E-002
+ 9.850000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.795633253905776E+006 2.902752030922887E+002 1.000000000000000E+000
+     3.055000000000000E+006 3.855544378988025E-001 5.634252030922887E+002
+     8.182734577243162E+003 2.007143884058278E+003 1.538828055500574E+003
+     1.792482961726613E-003 1.002586377102404E-005 3.856648200228968E-006
+     -3.443199893344661E-007 1.801526800000000E-002 2.913674560507899E+006
+     5.036840314857157E+002 2.365500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.261578168520573E+001 7.768340314857156E+002
+     2.365500000000000E+007 6.028336217236266E+003 3.578099113848479E+003
+     2.140767923985429E+003 2.878076969510173E-003 5.418925560761933E-008
+     3.482870145265574E-006 -6.645276472806505E-005 1.801526800000000E-002
+ 9.900000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.807162572164270E+006 2.977419077394766E+002 1.000000000000000E+000
+     3.070000000000000E+006 3.804633184224388E-001 5.708919077394766E+002
+     8.209183799041437E+003 2.010902173778759E+003 1.542941312763078E+003
+     1.768142374465497E-003 1.002457637229698E-005 3.805702398229230E-006
+     -3.345330886824561E-007 1.801526800000000E-002 2.913670577381047E+006
+     5.041640972547938E+002 2.377000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.301626770516388E+001 7.773140972547938E+002
+     2.377000000000000E+007 6.026549136458862E+003 3.583056951830112E+003
+     2.141953129618028E+003 2.881749100093663E-003 5.395732392939486E-008
+     3.482020039763774E-006 -6.676758364957009E-005 1.801526800000000E-002
+ 9.950000000000000E-001 1.000000000000000E+000 0.000000000000000E+000
+     2.818699715906936E+006 3.051944971147785E+002 1.000000000000000E+000
+     3.085000000000000E+006 3.755159343542159E-001 5.783444971147785E+002
+     8.235289649769404E+003 2.014752739078052E+003 1.547119806831803E+003
+     1.744537814714441E-003 1.002337375488942E-005 3.756192247828766E-006
+     -3.251524292794999E-007 1.801526800000000E-002 2.913666297018238E+006
+     5.046428203754562E+002 2.388500000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.341665599009627E+001 7.777928203754561E+002
+     2.388500000000000E+007 6.024771740753951E+003 3.587994134597243E+003
+     2.143130113041625E+003 2.885397354808771E-003 5.372735192153309E-008
+     3.481160559021341E-006 -6.708210479497755E-005 1.801526800000000E-002
+ 1.000000000000000E+000 1.000000000000000E+000 0.000000000000000E+000
+     2.830244715685516E+006 3.126326915629992E+002 1.000000000000000E+000
+     3.100000000000000E+006 3.707063617090025E-001 5.857826915629992E+002
+     8.261061525312927E+003 2.018686002788543E+003 1.551356692850904E+003
+     1.721634075219958E-003 1.002224870766812E-005 3.708059203266487E-006
+     -3.161565014754239E-007 1.801526800000000E-002 2.913661719976513E+006
+     5.051202071267056E+002 2.400000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.381694546056281E+001 7.782702071267056E+002
+     2.400000000000000E+007 6.023003930971031E+003 3.592910719142870E+003
+     2.144298936498974E+003 2.889021784567760E-003 5.349931184063186E-008
+     3.480291742613823E-006 -6.739632578714928E-005 1.801526800000000E-002
+ 1.000000000000000E+000 1.000000000000000E+000 0.000000000000000E+000
+     2.830244715685516E+006 3.126326915629992E+002 1.000000000000000E+000
+     3.100000000000000E+006 3.707063617090025E-001 5.857826915629992E+002
+     8.261061525312927E+003 2.018686002788543E+003 1.551356692850904E+003
+     1.721634075219958E-003 1.002224870766812E-005 3.708059203266487E-006
+     -3.161565014754239E-007 1.801526800000000E-002 2.913661719976513E+006
+     5.051202071267056E+002 2.400000000000000E+002 6.470959999987749E+002
+     1.000000000000000E+000 8.381694546056281E+001 7.782702071267056E+002
+     2.400000000000000E+007 6.023003930971031E+003 3.592910719142870E+003
+     2.144298936498974E+003 2.889021784567760E-003 5.349931184063186E-008
+     3.480291742613823E-006 -6.739632578714928E-005 1.801526800000000E-002
+

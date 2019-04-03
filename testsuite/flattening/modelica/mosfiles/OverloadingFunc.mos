@@ -1,0 +1,38 @@
+// name:     OverloadingFunc
+// keywords: function, overload, dynload
+// status:   correct
+//
+// Test so that overloading (or rather replacing) a function works.
+//
+
+loadFile("Overloading1.mo");
+TestFunc(5);
+loadFile("Overloading2.mo");
+TestFunc(5);
+deleteClass(TestFunc);
+loadFile("Overloading1.mo");
+TestFunc(5);
+loadFile("Overloading3.mo");
+TestClass.TestFunc(5);
+loadFile("Overloading4.mo");
+TestClass.TestFunc(5);
+deleteClass(TestClass);
+loadFile("Overloading3.mo");
+TestClass.TestFunc(5);
+
+// Result:
+// true
+// 125.0
+// true
+// 243.0
+// true
+// true
+// 125.0
+// true
+// 15.0
+// true
+// 8.0
+// true
+// true
+// 15.0
+// endResult

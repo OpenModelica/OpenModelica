@@ -1,0 +1,94 @@
+// name:     Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+// teardown_command: rm -f Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation);
+compareVars :=
+{
+   "HEX.pipe_1.mediums[1].T",
+   "HEX.pipe_1.mediums[2].T",
+   "HEX.pipe_1.mediums[3].T",
+   "HEX.pipe_1.mediums[4].T",
+   "HEX.pipe_1.mediums[5].T",
+   "HEX.pipe_1.mediums[6].T",
+   "HEX.pipe_1.mediums[7].T",
+   "HEX.pipe_1.mediums[8].T",
+   "HEX.pipe_1.mediums[9].T",
+   "HEX.pipe_1.mediums[10].T",
+   "HEX.pipe_1.mediums[11].T",
+   "HEX.pipe_1.mediums[12].T",
+   "HEX.pipe_1.mediums[13].T",
+   "HEX.pipe_1.mediums[14].T",
+   "HEX.pipe_1.mediums[15].T",
+   "HEX.pipe_1.mediums[16].T",
+   "HEX.pipe_1.mediums[17].T",
+   "HEX.pipe_1.mediums[18].T",
+   "HEX.pipe_1.mediums[19].T",
+   "HEX.pipe_1.mediums[20].T",
+   "HEX.pipe_2.mediums[1].T",
+   "HEX.pipe_2.mediums[2].T",
+   "HEX.pipe_2.mediums[3].T",
+   "HEX.pipe_2.mediums[4].T",
+   "HEX.pipe_2.mediums[5].T",
+   "HEX.pipe_2.mediums[6].T",
+   "HEX.pipe_2.mediums[7].T",
+   "HEX.pipe_2.mediums[8].T",
+   "HEX.pipe_2.mediums[9].T",
+   "HEX.pipe_2.mediums[10].T",
+   "HEX.pipe_2.mediums[11].T",
+   "HEX.pipe_2.mediums[12].T",
+   "HEX.pipe_2.mediums[13].T",
+   "HEX.pipe_2.mediums[14].T",
+   "HEX.pipe_2.mediums[15].T",
+   "HEX.pipe_2.mediums[16].T",
+   "HEX.pipe_2.mediums[17].T",
+   "HEX.pipe_2.mediums[18].T",
+   "HEX.pipe_2.mediums[19].T",
+   "HEX.pipe_2.mediums[20].T",
+   "HEX.wall.T[1]",
+   "HEX.wall.T[2]",
+   "HEX.wall.T[3]",
+   "HEX.wall.T[4]",
+   "HEX.wall.T[5]",
+   "HEX.wall.T[6]",
+   "HEX.wall.T[7]",
+   "HEX.wall.T[8]",
+   "HEX.wall.T[9]",
+   "HEX.wall.T[10]",
+   "HEX.wall.T[11]",
+   "HEX.wall.T[12]",
+   "HEX.wall.T[13]",
+   "HEX.wall.T[14]",
+   "HEX.wall.T[15]",
+   "HEX.wall.T[16]",
+   "HEX.wall.T[17]",
+   "HEX.wall.T[18]",
+   "HEX.wall.T[19]",
+   "HEX.wall.T[20]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+// {"HEX.pipe_1.mediums[1].T","HEX.pipe_1.mediums[2].T","HEX.pipe_1.mediums[3].T","HEX.pipe_1.mediums[4].T","HEX.pipe_1.mediums[5].T","HEX.pipe_1.mediums[6].T","HEX.pipe_1.mediums[7].T","HEX.pipe_1.mediums[8].T","HEX.pipe_1.mediums[9].T","HEX.pipe_1.mediums[10].T","HEX.pipe_1.mediums[11].T","HEX.pipe_1.mediums[12].T","HEX.pipe_1.mediums[13].T","HEX.pipe_1.mediums[14].T","HEX.pipe_1.mediums[15].T","HEX.pipe_1.mediums[16].T","HEX.pipe_1.mediums[17].T","HEX.pipe_1.mediums[18].T","HEX.pipe_1.mediums[19].T","HEX.pipe_1.mediums[20].T","HEX.pipe_2.mediums[1].T","HEX.pipe_2.mediums[2].T","HEX.pipe_2.mediums[3].T","HEX.pipe_2.mediums[4].T","HEX.pipe_2.mediums[5].T","HEX.pipe_2.mediums[6].T","HEX.pipe_2.mediums[7].T","HEX.pipe_2.mediums[8].T","HEX.pipe_2.mediums[9].T","HEX.pipe_2.mediums[10].T","HEX.pipe_2.mediums[11].T","HEX.pipe_2.mediums[12].T","HEX.pipe_2.mediums[13].T","HEX.pipe_2.mediums[14].T","HEX.pipe_2.mediums[15].T","HEX.pipe_2.mediums[16].T","HEX.pipe_2.mediums[17].T","HEX.pipe_2.mediums[18].T","HEX.pipe_2.mediums[19].T","HEX.pipe_2.mediums[20].T","HEX.wall.T[1]","HEX.wall.T[2]","HEX.wall.T[3]","HEX.wall.T[4]","HEX.wall.T[5]","HEX.wall.T[6]","HEX.wall.T[7]","HEX.wall.T[8]","HEX.wall.T[9]","HEX.wall.T[10]","HEX.wall.T[11]","HEX.wall.T[12]","HEX.wall.T[13]","HEX.wall.T[14]","HEX.wall.T[15]","HEX.wall.T[16]","HEX.wall.T[17]","HEX.wall.T[18]","HEX.wall.T[19]","HEX.wall.T[20]"}
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

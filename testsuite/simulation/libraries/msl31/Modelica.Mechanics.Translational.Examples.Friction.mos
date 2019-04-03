@@ -1,0 +1,38 @@
+// name:     Modelica.Mechanics.Translational.Examples.Friction
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Friction);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Friction_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl31/Modelica.Mechanics.Translational.Examples.Friction.mat","Modelica.Mechanics.Translational.Examples.Friction_diff.csv",0.01,0.0001,
+  {"stop1.s",
+  "stop1.v",
+  "stop2.s",
+  "stop2.v",
+  "mass.s",
+  "mass.v",
+  "der(stop1.s)",
+  "der(stop1.v)",
+  "der(stop2.s)",
+  "der(stop2.v)",
+  "der(mass.s)",
+  "der(mass.v)"});
+  
+  
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Friction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

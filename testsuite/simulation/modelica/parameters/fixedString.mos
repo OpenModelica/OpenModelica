@@ -1,0 +1,36 @@
+// status: correct
+
+loadString("
+model NonFixedString
+  parameter String s(fixed=false);
+initial equation
+  s = \"abc\";
+end NonFixedString;
+model FixedString
+  parameter String s(fixed=true)=\"abc\";
+end FixedString;
+");getErrorString();
+simulate(FixedString, simflags="-output=s");getErrorString();
+simulate(NonFixedString, simflags="-output=s");getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FixedString_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'FixedString', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=s'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,s=\"abc\"
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "NonFixedString_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NonFixedString', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=s'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,s=\"abc\"
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

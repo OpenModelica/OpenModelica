@@ -1,0 +1,19 @@
+// name:     Simplify1
+// keywords: simplification
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+// teardown_command: rm -f Simplify1.c* Simplify1.h Simplify1.libs Simplify1.log Simplify1.makefile Simplify1_records.c Simplify1.so
+//
+// Checks that terms are not removed in simplification that shouldn't be.
+//
+
+loadFile("Simplify1.mo"); getErrorString();
+Simplify1({3,7,2}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// 49 == 49
+//
+// ""
+// endResult

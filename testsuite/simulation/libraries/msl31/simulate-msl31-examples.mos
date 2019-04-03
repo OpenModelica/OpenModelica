@@ -1,0 +1,173 @@
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+// Modelica.Blocks.Examples
+simulate(Modelica.Blocks.Examples.PID_Controller);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.InverseModel);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.ShowLogicalSources);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.LogicalNetwork1);  getErrorString(); 
+simulate(Modelica.Blocks.Examples.BusUsage);  getErrorString(); 
+
+
+// Modelica.Electrical.Analog.Examples
+simulate(Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassOPV);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC.Rn);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC.Rp);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CharacteristicThyristors);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.ChuaCircuit);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.CompareTransformers);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.ControlledSwitchWithArc);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.DifferenceAmplifier);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.HeatingMOSInverter);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.HeatingRectifier);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.HeatingResistor);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.NandGate);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.OvervoltageProtection);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.Rectifier);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.ShowVariableResistor);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.SwitchWithArc);  getErrorString(); 
+simulate(Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest);  getErrorString(); 
+
+
+// Modelica.Electrical.Digital.Examples
+simulate(Modelica.Electrical.Digital.Examples.Multiplexer);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.FlipFlop);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.HalfAdder);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.FullAdder);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.Adder4);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.Counter3);  getErrorString(); 
+simulate(Modelica.Electrical.Digital.Examples.Counter);  getErrorString(); 
+
+
+// Modelica.Electrical.Machines.Examples
+simulate(Modelica.Electrical.Machines.Examples.AIMC_DOL);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.AIMC_YD);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.AIMS_Start);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.AIMC_Inverter);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.SMR_Inverter);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.SMPM_Inverter);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.SMEE_Generator);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.DCPM_Start);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.DCEE_Start);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.DCSE_Start);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.TransformerTestbench);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.Rectifier6pulse);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.Rectifier12pulse);  getErrorString(); 
+simulate(Modelica.Electrical.Machines.Examples.AIMC_Steinmetz);  getErrorString(); 
+
+
+// Modelica.Electrical.MultiPhase.Examples
+simulate(Modelica.Electrical.MultiPhase.Examples.TransformerYY);  getErrorString(); 
+simulate(Modelica.Electrical.MultiPhase.Examples.TransformerYD);  getErrorString(); 
+simulate(Modelica.Electrical.MultiPhase.Examples.Rectifier);  getErrorString(); 
+
+
+// Modelica.Magnetic.FluxTubes.Examples
+simulate(Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor);  getErrorString(); 
+simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceCurrentBehaviour);  getErrorString(); 
+simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ForceStrokeBehaviour);  getErrorString(); 
+simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke);  getErrorString(); 
+simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonQuasiStationary);  getErrorString(); 
+simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke);  getErrorString(); 
+
+
+// Modelica.Mechanics.MultiBody.Examples
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.LineForceWithTwoMasses);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravity);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetPulling);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringDamperSystem);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringMassSystem);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.SpringWithMass);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic);  getErrorString(); 
+// compile time to large
+//simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic);  getErrorString(); 
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.PlanarLoops_analytic);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive);  getErrorString(); 
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint);  getErrorString(); 
+
+
+// Modelica.Mechanics.Rotational.Examples
+simulate(Modelica.Mechanics.Rotational.Examples.First);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.FirstGrounded);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.Friction);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.CoupledClutches);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.LossyGearDemo1);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.LossyGearDemo2);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.ElasticBearing);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.Backlash);  getErrorString(); 
+simulate(Modelica.Mechanics.Rotational.Examples.RollingWheel);  getErrorString(); 
+
+
+// Modelica.Mechanics.Translational.Examples
+simulate(Modelica.Mechanics.Translational.Examples.SignConvention);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.InitialConditions);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.WhyArrows);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Accelerate);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Damper);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Oscillator);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Sensors);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Friction);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.PreLoad);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.ElastoGap);  getErrorString(); 
+simulate(Modelica.Mechanics.Translational.Examples.Brake);  getErrorString(); 
+
+
+// Modelica.Thermal.FluidHeatFlow.Examples
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.SimpleCooling);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.PumpDropOut);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.ParallelPumpDropOut);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.OneMass);  getErrorString(); 
+simulate(Modelica.Thermal.FluidHeatFlow.Examples.TwoMass);  getErrorString(); 
+
+
+// Modelica.Thermal.HeatTransfer
+simulate(Modelica.Thermal.HeatTransfer.Examples.TwoMasses);  getErrorString(); 
+simulate(Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature);  getErrorString(); 
+simulate(Modelica.Thermal.HeatTransfer.Examples.Motor);  getErrorString(); 
+
+
+// Modelica.Utilities.Examples
+simulate(Modelica.Utilities.Examples.readRealParameterModel);  getErrorString(); 
+
+
+// Modelica.StateGraph.Examples
+simulate(Modelica.StateGraph.Examples.FirstExample);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.FirstExample_Variant2);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.FirstExample_Variant3);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.ExecutionPaths);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.ShowCompositeStep);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.ShowExceptions);  getErrorString(); 
+simulate(Modelica.StateGraph.Examples.ControlledTanks);  getErrorString(); 
+
+
+system("rm -f *.c *.dll *.log *.makefile *.cpp *.exe *.h *.libs *_init.xml *_init.txt *_res.mat");

@@ -1,0 +1,78 @@
+// name:      Pendel3
+// keywords:  reshuffle
+// status:    correct
+//
+
+loadFile("Pendulum.mo");getErrorString();
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+setDebugFlags("backenddaeinfo,reshufflePost");getErrorString();
+simulate(Pendulum.Pendulum3, stopTime=1); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/resolveLoops/Pendulum3.mat",
+  "Pendulum_3_diff.csv",0.01,0.0001,
+  {"revolute[3].w",
+   "revolute[3].phi",
+   "revolute[2].w",
+   "revolute[2].phi",
+   "revolute[1].w",
+   "revolute[1].phi"
+   });
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Pendulum.Pendulum3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Pendulum.Pendulum3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 1495
+//  * Number of variables: 1495
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 568
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 36 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (756):
+//  * Single equations (assignments): 752
+//  * Array equations: 3
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(9,67.9%) 59}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 4
+//  * Number of states: 6 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (191):
+//  * Single equations (assignments): 187
+//  * Array equations: 3
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(8,70.3%) 55}
+//  * Non-linear torn systems: 0
+// "
+// {"Files Equal!"}
+// endResult

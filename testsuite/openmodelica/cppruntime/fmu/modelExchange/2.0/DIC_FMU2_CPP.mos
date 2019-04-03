@@ -1,0 +1,59 @@
+// name:     DIC_FMU2_CPP
+// keywords: double integrator FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml DIC.fmu *DIC*.so OMCppDIC*.cpp OMCppDIC*.h OMCppDIC*.o DIC*.json *DIC_me*
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadString("
+model DIC
+  parameter Real p = 1;
+  parameter Real y1_start = 1;
+  parameter Real y2_start = 0;
+  input Real u(start = 0);
+  output Real y1, y2;
+initial equation
+  y1 = y1_start;
+  y2 = y2_start;
+equation
+  der(y1) = p * (u - 2);
+  der(y2) = y1;
+end DIC;
+");
+translateModelFMU(DIC, version = "2.0"); getErrorString();
+
+loadModel(Modelica); getErrorString();
+importFMU("DIC.fmu"); getErrorString();
+loadFile("DIC_me_FMU.mo"); getErrorString();
+simulate(DIC_me_FMU); getErrorString();
+
+val(u, 0);
+val(y1, 0);
+val(y2, 0);
+val(y1, 1);
+val(y2, 1);
+
+// Result:
+// true
+// ""
+// true
+// "DIC.fmu"
+// ""
+// true
+// ""
+// "DIC_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DIC_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DIC_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 0.0
+// -0.9999999980000002
+// -4.048065787457232e-07
+// endResult

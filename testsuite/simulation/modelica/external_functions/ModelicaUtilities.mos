@@ -1,0 +1,37 @@
+// name:     ModelicaUtilities
+// keywords: ModelicaUtilities
+// status: correct
+// teardown_command: rm -rf ModelicaUtilities_* ModelicaUtilities.exe ModelicaUtilities ModelicaUtilities.cpp ModelicaUtilities.makefile ModelicaUtilities.libs ModelicaUtilities.log output.log
+// depends: ModelicaUtilities.myExtFunction.c
+//
+// Checks that ModelicaUtilities.h is implemented
+//
+
+// delete any possible generated headers and c files that we might have issues with!
+setCommandLineOptions("-d=gen");
+system("rm -f ModelicaUtilities.c ModelicaUtilities.h");
+loadFile("ModelicaUtilities.mo");
+ModelicaUtilities.myExtFunction("abc 123");getErrorString();
+ModelicaUtilities.myExtFunctionError("abc 123");getErrorString();
+simulate(ModelicaUtilities);
+
+// Result:
+// true
+// 0
+// true
+// "OK
+// "
+// ""
+// fail()
+// "Error: this is formatted error abc 123
+// "
+// record SimulationResult
+//     resultFile = "ModelicaUtilities_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaUtilities', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | info    | abc
+// stdout            | info    |  was normal - this is formatted abc
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult

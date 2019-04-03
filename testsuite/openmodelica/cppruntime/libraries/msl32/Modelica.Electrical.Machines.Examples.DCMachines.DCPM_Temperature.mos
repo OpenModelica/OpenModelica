@@ -1,0 +1,33 @@
+// name:     Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature.mat",
+  "Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_diff.csv",0.01,0.0001,
+  {"dcpm.la.i",
+   "loadInertia.phi",
+   "loadInertia.w"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 3000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

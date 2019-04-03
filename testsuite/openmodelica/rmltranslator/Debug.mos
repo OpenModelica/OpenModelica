@@ -1,0 +1,9 @@
+setEnvironmentVar("MODELICAUSERCFLAGS","-g");
+runScript("SCRIPT.mos");
+rmlfile:= "./rmltests/exp1/exp1.rml";
+Debugger.debug(rmlfile);
+str:=System.stringReplace(rmlfile,".rml",".mo"); 
+loadFile(str);
+Exp1.eval(Exp1.SUBop(Exp1.INTconst(30),Exp1.INTconst(20)));
+getErrorString();
+

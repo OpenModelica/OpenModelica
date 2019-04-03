@@ -1,0 +1,259 @@
+/*
+
+Script to test either instantiateModel, translateModel, buildModel or
+simulation (with or without suppression of messages) and verified simulation
+results.
+
+To call this script, you need to first have loaded ModelTesting.mo for the types in there
+
+Sample input (ModelTesting.mos has the defaults):
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiate; // or other enumerations, see ModelTesting.mo
+modelName := $ClassName(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum);
+referenceFile := "ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.mat";
+stopTime := 0.0; // For reading stopTime from annotation
+relTol := 0.01;
+absTol := 0.0001;
+compareVars := {"revolute1.phi","revolute1.w","revolute1.a","revolute2.phi","revolute2.w","revolute2.a"};
+
+*/
+
+echo(false);
+// setCommandLineOptions("+d=failtrace,showStatement +showErrorMessages"); getErrorString();
+
+b:=loadModel(packageName,{packageVersion});
+if not b then
+  print("loadModel("+typeNameString(packageName)+","+packageVersion+")\n");
+  print(OpenModelica.Scripting.cd() + "\n");
+  exit(1);
+end if;
+
+debug := false;
+startRun := true;
+alarm(timeout);
+print(if debug then "Start script ModelTesting.mos\n" else "");
+print(if debug then "Type: " + String(modelTestingType) + "\n" else "");
+getErrorString();
+if simulationRuntime == OpenModelicaModelTesting.SimulationRuntime.Cpp then
+  setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+else
+  simflags := simflags + " -abortSlowSimulation -alarm=" + String(timeoutSim);
+end if;
+if modelTestingType == OpenModelicaModelTesting.Kind.Instantiation then
+  print(if debug then "Start instantiateModel\n" else "");
+  str:=instantiateModel(modelName);
+  res:=str <> "";
+  error:=getErrorString();
+  print(if res then "Frontend succeeded\n" else "Frontend failed\n");
+  print(error);
+  if res then
+    res := translateModel(modelName);
+    if res then
+      print("The model now translates (generates code). Please update the test.\n");
+      exit(1);
+    end if;
+    getErrorString();
+  end if;
+  startRun := false;
+elseif modelTestingType == OpenModelicaModelTesting.Kind.Translation then
+  print(if debug then "Start translateModel\n" else "");
+  res:=translateModel(modelName);
+  error:=getErrorString();
+  print(if res then "Translation succeeded\n" else "Translation failed\n");
+  print(error);
+  if res then
+    res := buildModel(modelName);
+    if res[1] <> "" then
+      print("The model now compiles. Please update the test.\n");
+      exit(1);
+    end if;
+    getErrorString();
+  end if;
+  startRun := false;
+elseif modelTestingType == OpenModelicaModelTesting.Kind.Compilation then
+  print(if debug then "Start buildModel\n" else "");
+  res:=buildModel(modelName);
+  error:=getErrorString();
+  print(if res[1] <> "" then "Compilation succeeded\n" else "Compilation failed\n");
+  print(error);
+  if res[1] <> "" then
+    base := basename(res[1]);
+    info:=checkSettings();
+    os:=info.OS;
+    if os=="Windows_NT" then
+      prefix:="";
+      suffix:=".exe";
+    else
+      prefix:="./";
+      suffix:="";
+    end if;
+    res := system(prefix + base + suffix + " -noemit " + simflags, outputFile = base + ".out");
+    system("rm -f " + base + ".out");
+    if res == 0 then
+      print("The model now simulates. Please update the test.\n");
+      exit(1);
+    end if;
+    print(if debug and res <> 0 then "The model still does not simulate (exit " + String(res) + "). Please update the test.\n" else "");
+    getErrorString();
+  end if;
+  startRun := false;
+elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
+   (modelTestingType == OpenModelicaModelTesting.Kind.SimpleSimulation) or
+   (modelTestingType == OpenModelicaModelTesting.Kind.SuppressedSimulation) or
+   (modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation) then
+  print(if debug then "got simulation test\n" else "");
+
+  if size(compareVars,1) > 0 and simulationRuntime <> OpenModelicaModelTesting.SimulationRuntime.Cpp then
+    loadString("
+    function toRegex
+      input String str;
+      output String re;
+    algorithm
+      re := str;
+      re := OpenModelica.Scripting.stringReplace(re,\"[\",\".\");
+      re := OpenModelica.Scripting.stringReplace(re,\"]\",\".\");
+      re := OpenModelica.Scripting.stringReplace(re,\"(\",\"[(]\");
+      re := OpenModelica.Scripting.stringReplace(re,\")\",\"[)]\");
+    end toRegex;
+    ");
+    variableFilter := "time" + sum("|" + toRegex(var) for var in compareVars);getErrorString();
+    simflags := simflags + " -emit_protected";
+  else
+    variableFilter := ".*";
+  end if;
+
+  if stopTime > 0.0 then
+    res := simulate(modelName, stopTime = stopTime, outputFormat = outputFormat, simflags = simflags, variableFilter = variableFilter);
+  else
+    res := simulate(modelName, outputFormat = outputFormat, simflags = simflags, variableFilter = variableFilter);
+  end if;
+  print(if debug then "simulated\n" else "");
+  error := getErrorString();
+  resultFile := res.resultFile;
+  options := res.simulationOptions;
+  messages := res.messages;
+  print(if debug then "got messages\n" else "");
+  print("Simulation options: " + options + "\n");
+  if resultFile == "" then
+    print("Error: Simulation did not produce a result-file\n");
+    print("Errors: " + messages + error + "\n");
+    exit(1);
+  /* We got a result file. This means the simulation succeeded */
+  else
+    print("Result file: " + resultFile + "\n");
+    /* Print messages if we got them and did not suppress them */
+    if messages <> "" and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedSimulation and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+      print(if messages <> "" then "Messages: " + messages + "\n" else "");
+    elseif messages == "" and (modelTestingType == OpenModelicaModelTesting.Kind.SuppressedSimulation or modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation) then
+      print("Note: There were no messages so you do not need to suppress them any longer, Please update the test.\n");
+      exit(1);
+    end if;
+  end if;
+  /* We can only compare to a reference file if we have one */
+  modelNameStr := typeNameString(modelName);
+  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + modelNameStr + ".mat" else referenceFile;
+  if regularFileExists(referenceFile+".xz") then
+    system("if test ! -f "+referenceFile+" || test "+referenceFile+".xz -nt "+referenceFile+"; then xz --keep --decompress --force "+referenceFile+".xz ; fi");
+    referenceExists := true;
+  elseif regularFileExists(referenceFile) then
+    referenceExists := true;
+  else
+    referenceExists := false;
+  end if;
+  /* adrpo: we might run into sandbox and here we get a relative file, try to add ../ */
+  if not referenceExists then
+    if regularFileExists("../" + referenceFile+".xz") then
+      system("if test ! -f ../"+referenceFile+" || test ../"+referenceFile+".xz -nt ../"+referenceFile+"; then xz --keep --decompress --force ../"+referenceFile+".xz ; fi");
+      referenceExists := true;
+    elseif regularFileExists("../" + referenceFile) then
+      referenceExists := true;
+    else
+      referenceExists := false;
+    end if;
+  end if;
+
+  if referenceExists then
+    //in windows resultFile contains absolute path while compareResuslts accepts relative path
+    resultFile:=modelNameStr+"_res.mat";
+    // support for csv result files
+    resultFile:= if regularFileExists(resultFile) then resultFile else modelNameStr+"_res.csv";
+    csvFile := modelNameStr + ".csv";
+
+    if diffAlgorithm == OpenModelicaModelTesting.DiffAlgorithm.compareSimulationResults then
+      print(if debug then "try to compare results " + resultFile + " " + referenceFile + " " + csvFile + " " + String(relTol) + " " + String(absTol) + sum(" " + v + "," for v in compareVars) + "\n" else "");
+      res := OpenModelica.Scripting.compareSimulationResults(resultFile,referenceFile,csvFile,relTol,absTol,compareVars);
+      print(if debug then "compareSimulationResults finished: "+sum(r for r in res)+"\n" else "");
+      if size(res,1)==1 and res[1] == "Files Equal!" then
+        res := true;
+      else
+        failVars := res[2:size(res,1)];
+        res := false;
+      end if;
+    elseif diffAlgorithm == OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults then
+      print(if debug then "Trying diffSimulationResults.\n" else "");
+      (res,failVars) := OpenModelica.Scripting.diffSimulationResults(resultFile,referenceFile,csvFile+"diff.",relTol,vars=compareVars);
+      print(if debug then "diffSimulationResults returns "+String(res)+".\n" else "");
+    else
+      print("Unknown diff algorithm!\n");
+      exit(1);
+    end if;
+
+    if res and modelTestingType <> OpenModelicaModelTesting.Kind.VerifiedSimulation and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+      print("Note: Result files are now equal. Please update the test to do verified simulation!\n");
+      exit(1);
+    elseif modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation or modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+      if res then
+        print("Files Equal!\n");
+      end if;
+      if not res then
+        print("Failed variables: " + sum(var for var in failVars) + "\n");
+        print(error);
+        print(getErrorString());
+        minimalResult := OpenModelica.Scripting.stringReplace(resultFile, "_res.mat", ".minimal.mat");
+        OpenModelica.Scripting.filterSimulationResults(resultFile,minimalResult,vars=compareVars);
+        system("xz --best --keep --force '" + minimalResult + "'");
+        system("ls -lh '" + resultFile + "' '" + minimalResult + "'* '" + referenceFile + "'*");
+        print("Failed variables: " + sum(var for var in failVars) + "\n");
+        print(error);
+        print(getErrorString());
+        info:=checkSettings();
+        os:=info.OS;
+        dateCmd := if os=="Windows_NT" then "date /T" else "date";
+        system(dateCmd); // In case people somehow try to fool their tests, add some non-determinism
+        system("cp \"" + getInstallationDirectoryPath() + "/share/doc/omc/testmodels/dygraph-combined.js\" .");
+        for v in failVars[2:size(failVars,1)] loop
+          // Write some html files with the diffs
+          curFile := modelNameStr + "." + v + ".html";
+          writeFile(curFile, diffSimulationResultsHtml(v,resultFile,referenceFile));
+          print("Created diff file " + curFile + "\n");
+        end for;
+        print("This test cannot succeed automated testing because the test kind is wrong\n");
+        exit(1);
+      end if;
+    elseif modelTestingType <> OpenModelicaModelTesting.Kind.VerifiedSimulation and modelTestingType <> OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+      getErrorString();
+    end if;
+    print(if error <> "" then error + "\n" else "");
+    error := getErrorString();
+    print(if error <> "" then error + "\n" else "");
+  elseif modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation or modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation then
+    print("Error: Reference file " + referenceFile + " does not exist and we are doing verified simulation. Something does not add up!\n");
+    print(if error <> "" then error + "\n" else "");
+    exit(1);
+  else
+    print("Note: Reference file " + referenceFile + " does not exist. Cannot determine if the result improved!\n");
+    print(if error <> "" then error + "\n" else "");
+  end if;
+  error := getErrorString();
+  print(if error <> "" then error + "\n" else "");
+  startRun := false;
+else
+  print("Unknown model testing type\n");
+  startRun := false;
+end if;
+error := getErrorString();
+print(if error <> "" then error + "\n" else "");
+if startRun then
+  print("Unknown failure (script did not finish)\n");
+end if;
+echo(true);

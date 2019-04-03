@@ -1,0 +1,96 @@
+// name: sample2
+// keywords: events
+// status: correct
+// teardown_command: rm -rf *sampleTests.sample2* output.log
+//
+// Event handling
+//
+
+loadString("
+package sampleTests
+  model sample2
+   Real x(start=1, fixed=true);
+   Real y(start=0, fixed=true);
+   Boolean b(start = false, fixed=true);
+   
+  equation
+    when x > 1 and sample(0.0, 0.1) then
+       y = pre(y) + time;
+    end when;
+    
+    der(x) = x+y;
+    
+    when x > 5 or sample(1.0, 1.0) then
+      b = not pre(b);
+    end when;
+    
+    when b then
+      reinit(x, 0.1);
+    end when;
+  end sample2;
+end sampleTests;
+"); getErrorString();
+
+simulate(sampleTests.sample2, startTime=0.0, stopTime=5.0); getErrorString();
+"x";
+val(x, 0.0);
+val(x, 0.5);
+val(x, 1.5);
+val(x, 2.5);
+val(x, 3.5);
+val(x, 4.5);
+val(x, 5.0);
+"y";
+val(y, 0.0);
+val(y, 0.5);
+val(y, 1.5);
+val(y, 2.5);
+val(y, 3.5);
+val(y, 4.5);
+val(y, 5.0);
+"b";
+val(b, 0.0);
+val(b, 0.5);
+val(b, 1.5);
+val(b, 2.5);
+val(b, 3.5);
+val(b, 4.5);
+val(b, 5.0);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sampleTests.sample2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'sampleTests.sample2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "x"
+// 1.0
+// 1.876384390694979
+// 4.58774503727413
+// 42.86766948918781
+// 188.4870948394806
+// 643.0684843421939
+// 1132.157376535274
+// "y"
+// 0.0
+// 1.5
+// 9.399999999999999
+// 28.9
+// 58.40000000000002
+// 102.4
+// 126.4
+// "b"
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// endResult

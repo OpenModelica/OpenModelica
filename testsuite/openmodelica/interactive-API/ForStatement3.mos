@@ -1,0 +1,23 @@
+// name:     For-statement 3
+// keywords: for
+// status:   correct
+// 
+//  Test the interactive for-statement
+//
+g := 0.0;
+h := 5;
+for i in {23.0,77.12,88.23} loop
+  for j in i:0.5:(i+1) loop
+   g := g + j;
+   g := g + h / 2; 
+  end for;
+   h := h + g;  
+end for;
+g
+
+// Result:
+// 0.0
+// 5
+// 
+// 1479.09
+// endResult

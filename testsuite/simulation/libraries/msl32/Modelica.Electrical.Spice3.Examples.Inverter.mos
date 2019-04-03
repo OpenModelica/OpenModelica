@@ -1,0 +1,39 @@
+// name:     Modelica.Electrical.Spice3.Examples.Inverter
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Inverter);
+compareVars :=
+{
+   "mp.Dinternal",
+   "mp.Sinternal",
+   "mn.Dinternal",
+   "mn.Sinternal"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Spice3.Examples.Inverter
+// {"mp.Dinternal","mp.Sinternal","mn.Dinternal","mn.Sinternal"}
+// Simulation options: startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 1999, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|mp.Dinternal|mp.Sinternal|mn.Dinternal|mn.Sinternal', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Inverter_res.mat
+// Messages: stdout            | warning | The step-size 5.0025e-15 is too small. Adjust the step-size to 1e-12.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// "true
+// "
+// ""
+// endResult

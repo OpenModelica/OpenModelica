@@ -1,0 +1,76 @@
+// name: wrapFunctionCalls5
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls5
+    function f1
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+      output Real y3;
+    algorithm
+      y1 := x1;
+      y2 := x1 + y1;
+      y1 := y2+1.0;
+      y2 := x1 * y2;
+      y3 := x2*x1;
+    end f1;
+
+    Real x,y,z;
+    Real a,b,c;
+  equation
+    (a,b,c) = f1(time, time+1);
+    (x,y,z) = f1(time, time+1);
+  end wrapFunctionCalls5;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls --preOptModules-=clockPartitioning"); getErrorString();
+simulate(CSE.wrapFunctionCalls5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (6)
+// ========================================
+// 1: c:VARIABLE()  type: Real 
+// 2: b:VARIABLE()  type: Real 
+// 3: a:VARIABLE()  type: Real 
+// 4: z:VARIABLE()  type: Real 
+// 5: y:VARIABLE()  type: Real 
+// 6: x:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (2, 6)
+// ========================================
+// 1/1 (3): (x, y, z) = (a, b, c)   [dynamic |0|0|0|0|]
+// 2/4 (3): (a, b, c) = CSE.wrapFunctionCalls5.f1(time, 1.0 + time)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/48)
+// ========================================
+// 1: (a, b, c) - CSE.wrapFunctionCalls5.f1(time, 1.0 + time) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

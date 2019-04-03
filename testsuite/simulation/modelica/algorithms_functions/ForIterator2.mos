@@ -1,0 +1,20 @@
+// name:     ForIterator2
+// keywords: for iterators
+// status: correct
+// teardown_command: rm -rf ForIterator2_* ForIterator2 ForIterator2.exe ForIterator2.cpp ForIterator2.makefile ForIterator2.libs ForIterator2.log output.log
+//
+// For Iterator handling
+//
+
+setCommandLineOptions("-d=noevalfunc,gen");getErrorString();
+loadFile("ForIterator2.mo");getErrorString();
+ForIterator2.func();getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// (54.0,10.5,8.0,7.0,2,4,7,8)
+// ""
+// endResult

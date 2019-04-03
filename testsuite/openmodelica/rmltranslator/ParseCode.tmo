@@ -1,0 +1,94 @@
+encapsulated package %ParseCode% // %time%
+import Types;
+
+constant Boolean debug = false;
+// Note: AstItem must be defined, and TOKEN(someToken) must return a valid AstItem (usually a record in the uniontype)
+
+%prologue%
+
+uniontype AstStack
+  record ASTSTACK
+    list<OMCCTypes.Token> stackToken;
+    list<AstItem> stack;
+  end ASTSTACK;
+end AstStack;
+
+function initAstStack
+  output AstStack astStack;
+ algorithm 
+   astStack := ASTSTACK({},{});
+end initAstStack;
+
+function actionRed
+  input Integer act;
+  input AstStack astStack;
+  input String fileName;
+  output AstStack outStack;
+  output Boolean error=false;
+  output String errorMsg="";
+protected
+  list<OMCCTypes.Token> stackToken;
+  list<AstItem> stack;
+  AstItem yyval;
+algorithm
+  ASTSTACK(stackToken=stackToken,stack=stack) := astStack;
+  if debug then
+    print("reduce: " + intString(act) + ", " + intString(listLength(stack)) + " on stack with top token ctor " + intString(valueConstructor(listGet(stackToken,1))) + "\n");
+  end if;
+  _ := match act
+    local
+      //local variables
+%caseAction%    
+     else
+       equation
+          error = true;
+       then ();
+  end match;
+  if debug then
+    print("reduce: " + intString(act) + " to " + intString(listLength(stack)) + " on stack\n");
+  end if;
+  outStack := ASTSTACK(stackToken=stackToken,stack=stack);
+end actionRed;  
+
+function mergeStackTokens
+  input list<OMCCTypes.Token> skToken;
+  input Integer nTokens(min=2);
+  output list<OMCCTypes.Token> skTokenRes;
+protected
+  list<OMCCTypes.Token> skToken1:=skToken;
+  OMCCTypes.Token token;
+  OMCCTypes.Info tmpInfo;
+  Integer lns,cns,lne,cne,i;
+  String fn;
+algorithm
+  for i in 1:nTokens loop
+     token::skToken1 := skToken1;
+     if (i==nTokens) then
+        OMCCTypes.TOKEN(lineNumberStart=lns,columnNumberStart=cns) := token;
+     end if;
+     if (i==1) then
+        OMCCTypes.TOKEN(lineNumberEnd=lne,columnNumberEnd=cne) := token;
+     end if;
+  end for;
+  // TODO: merge the contents also?
+  token := OMCCTypes.TOKEN("grouped token",0,"",0,0,lns,cns,lne,cne);
+  skTokenRes := token::skToken1; 
+end mergeStackTokens;
+
+function push
+  input AstStack astStk;
+  input OMCCTypes.Token token;
+  output AstStack astStk2;
+protected
+  list<OMCCTypes.Token> stackToken;
+  list<AstItem> stack;
+algorithm
+  ASTSTACK(stackToken=stackToken,stack=stack) := astStk;
+  stackToken := token::stackToken;
+  stack := TOKEN(token)::stack;
+  astStk2 := ASTSTACK(stackToken=stackToken,stack=stack);
+end push;
+
+%epilogue%
+
+end %ParseCode%;

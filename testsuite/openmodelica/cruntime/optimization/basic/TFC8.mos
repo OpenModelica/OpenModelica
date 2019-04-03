@@ -1,0 +1,86 @@
+// name: testFinalCon_8
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString("
+model testFinalCon8
+  Real x1;
+  Real x2;
+  Real y1;
+  Real y2;
+  Real y3(start = -1);
+  input Real u;
+  
+  Real final_con1(min = -5, max = 5) annotation(isFinalConstraint = true);
+  Real final_con2(min = -5, max = 5) annotation(isFinalConstraint = true);
+  Real cost annotation(isLagrange = true);
+
+  parameter Real TGrid1[:] = {i/10 for i in 0:5} annotation(isTimeGrid = true); // 1/2
+  parameter Real TGrid2[:] = {1/2 + 1/2*exp(i-5) for i in 1:5} annotation(isTimeGrid = true); //1
+  parameter Real TGrid3[:] = {1 + 1*exp(i-5) for i in 1:5} annotation(isTimeGrid = true); //2
+  parameter Real TGrid4[:] = {2 + 3*exp(i-10) for i in 1:10} annotation(isTimeGrid = true); //5
+
+equation
+  der(x1) = x2*u - x1;
+  der(x2) = x1 + y1;
+  final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
+  final_con2 = x2 - 3;
+   0 = exp(y1 + y2) - exp(1 + u);
+   0 = exp(y1 - y2) - exp(1 + time);
+   y3^2 = 1 + time;
+  cost = u^2;
+end testFinalCon8;
+");
+getErrorString();
+
+optimize(testFinalCon8, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon8_res.mat","ReferenceFiles/testFinalCon8_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testFinalCon8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 3.25 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 2.09989 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.309263 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0557617 for the approximation of the state x1(time = 4.32669)
+// LOG_IPOPT_ERROR   | info    | max error is 0.009855 for the approximation of the state x1(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.000186212 for the approximation of the state x1(time = 4.32669)
+// LOG_IPOPT_ERROR   | info    | max error is 1.28519e-07 for the approximation of the state x1(time = 4.32669)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.99295e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

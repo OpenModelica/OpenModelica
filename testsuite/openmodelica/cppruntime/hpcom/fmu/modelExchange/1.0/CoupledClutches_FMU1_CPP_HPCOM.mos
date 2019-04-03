@@ -1,0 +1,64 @@
+// name:     CoupledClutches_HPCOM_FMI_1_0_CPP_HPCOM
+// keywords: CoupledClutches FMI-Export FMI-Import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml CoupledClutches.fmu CoupledClutches_me_FMU.mo CoupledClutches.lib* CoupledClutches.so CoupledClutches.dll CoupledClutches_*.c CoupledClutches_*.h CoupledClutches_*.o CoupledClutches_*.json
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+loadModel(Modelica); getErrorString();
+setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=list"); getErrorString();
+loadFile("CoupledClutches.mo"); getErrorString();
+translateModelFMU(CoupledClutches); getErrorString();
+
+
+setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+clearDebugFlags(); getErrorString();
+//importFMU("CoupledClutches.fmu", "<default>", 6, true, true); getErrorString();
+importFMU("CoupledClutches.fmu"); getErrorString();
+loadFile("CoupledClutches_me_FMU.mo"); getErrorString();
+simulate(CoupledClutches_me_FMU, numberOfIntervals=150, variableFilter="J1_w1|J2_w1|J3_w1|J4_w1"); getErrorString();
+
+val(J1_w1, 1);
+val(J2_w1, 1);
+val(J3_w1, 1);
+val(J4_w1, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe CoupledClutches_eqs_prof-file is missing.
+// Using list Scheduler for the DAE system
+// Using list Scheduler for the ODE system
+// Using list Scheduler for the ZeroFunc system
+// HpcOm is still under construction.
+// "SimCode: The model CoupledClutches has been translated to FMU"
+// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// "CoupledClutches_me_FMU.mo"
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe CoupledClutches_me_FMU_eqs_prof-file is missing.
+// Using level Scheduler for the DAE system
+// Using level Scheduler for the ODE system
+// Using level Scheduler for the ZeroFunc system
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "CoupledClutches_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.5, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CoupledClutches_me_FMU', options = '', outputFormat = 'mat', variableFilter = 'J1_w1|J2_w1|J3_w1|J4_w1', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 3.044323911098361
+// 3.242493326997348
+// 3.242493328798009
+// -1.000195481992705e-10
+// endResult

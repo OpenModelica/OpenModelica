@@ -1,0 +1,32 @@
+// name:     Modelica.Electrical.Analog.Examples.CompareTransformers
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.CompareTransformers_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.CompareTransformers, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CompareTransformers.mat",
+  "Modelica.Electrical.Analog.Examples.CompareTransformers_diff.csv",0.01,0.0001,
+  {"basicTransformer.i1",
+   "basicTransformer.i2",
+   "inductor21.i"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CompareTransformers_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 50.0, numberOfIntervals = 50000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CompareTransformers', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

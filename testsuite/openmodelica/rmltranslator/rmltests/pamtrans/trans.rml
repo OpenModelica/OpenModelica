@@ -1,0 +1,250 @@
+module Trans:
+
+with "Absyn.rml"
+with "Mcode.rml"
+
+end
+
+relation trans_expr:  Absyn.Exp => Mcode.MCode list  =
+
+  axiom  trans_expr(Absyn.INT(v)) => [Mcode.MLOAD( Mcode.N(v))]
+        (* integer constant *)
+
+  axiom  trans_expr(Absyn.IDENT(id)) => [Mcode.MLOAD( Mcode.I(id))]
+        (* identifier id *)
+
+  rule   trans_expr(e1) => cod1  &
+         trans_expr(e2) => [Mcode.MLOAD(operand2)]  &  (* expr2 simple *)
+         trans_binop(binop) => opcode  &
+         list_append(cod1, [Mcode.MB(opcode,operand2)]) => cod3
+         -----------------------------------    (* expr1 binop expr2 *)
+         trans_expr(Absyn.BINARY(e1,binop,e2)) => cod3
+
+  rule   trans_expr(e1) => cod1  &
+         trans_expr(e2) => cod2  &
+         trans_binop(binop) => opcode  &
+         gentemp => t1  &
+         gentemp => t2  &
+         list_append6(
+           cod1,                       
+           [Mcode.MSTO(t1)],                
+           cod2,                       
+           [Mcode.MSTO(t2)],                 
+           [Mcode.MLOAD(t1)],                
+           [Mcode.MB(opcode,t2)] ) => cod3   
+         -----------------------------------   
+         trans_expr(Absyn.BINARY(e1,binop,e2)) => cod3
+
+end (* trans_expr *)
+
+
+relation trans_binop:  Absyn.BinOp => Mcode.MBinOp  =
+  axiom  trans_binop(Absyn.ADD) =>  Mcode.MADD
+  axiom  trans_binop(Absyn.SUB)  =>  Mcode.MSUB
+  axiom  trans_binop(Absyn.MUL)  =>  Mcode.MMULT
+  axiom  trans_binop(Absyn.DIV)  =>  Mcode.MDIV
+end
+
+
+relation gentemp: () => Mcode.MOperand  =
+
+  rule   tick => no
+         ----------
+         gentemp => Mcode.T(no)
+
+end (* gentemp *)
+
+
+relation genlabel: () => Mcode.MOperand  =
+
+  rule   tick => no
+         ----------
+         genlabel => Mcode.L(no)
+
+end 
+
+
+ relation list_append3: ('a list, 'a list, 'a list) => 'a list =
+
+   rule   list_append(l1,l2)  => l12 &
+          list_append(l12,l3) => l13 
+          ----------------------------   
+          list_append3(l1,l2,l3)  =>  l13
+
+ end 
+
+
+relation list_append5: ('a list, 'a list, 'a list, 'a list, 'a list)
+          => ('a list) =
+
+  rule   list_append3(l1,l2,l3)  => l13 &
+         list_append3(l13,l4,l5) => l15 
+         ----------------------------   
+         list_append5(l1,l2,l3,l4,l5)  =>  l15
+
+end 
+ 
+  
+relation list_append6:('a list, 'a list, 'a list, 'a list, 'a list, 'a list )
+          => ('a list)  =
+
+  rule   list_append3(l1,l2,l3) => l13 &
+         list_append3(l4,l5,l6) => l46 &
+         list_append(l13,l46) => l16
+         -------------------------------
+         list_append6(l1,l2,l3,l4,l5,l6)  =>  l16
+
+end 
+
+
+relation list_append10: ('a list, 'a list, 'a list, 'a list, 'a list, 'a list,
+                         'a list, 'a list, 'a list, 'a list) => 'a list =
+
+  rule   list_append5(l1,l2,l3,l4,l5)  => l15 &
+         list_append6(l15,l6,l7,l8,l9,l10) => l110 
+         ----------------------------   
+         list_append10(l1,l2,l3,l4,l5,l6,l7,l8,l9,l10)  =>  l110
+
+end 
+
+ 
+(*************** Comparison expression translation **************)
+
+relation trans_comparison: (Absyn.Comparison, Mcode.MOperand) => (Mcode.MCode list)  =
+  rule   trans_expr(e1) => cod1  &
+         trans_expr(e2) => [Mcode.MLOAD(operand2)]  &
+         trans_relop(relop) => jmpop  &
+         list_append3(
+           cod1, 
+           [Mcode.MB(Mcode.MSUB, operand2)],
+           [Mcode.MJ(jmpop,lab)] ) => cod3
+         -----------------------------------    (* expr1 relop expr2 *)
+         trans_comparison(Absyn.RELATION(e1,relop,e2),lab) => cod3
+
+  rule   trans_expr(e1) => cod1  &
+         trans_expr(e2) => cod2  &
+         trans_relop(relop) => jmpop &
+         gentemp => t1  &
+         list_append5(
+           cod1, 
+           [Mcode.MSTO(t1)],
+           cod2,
+           [Mcode.MB(Mcode.MSUB,t1)],
+           [Mcode.MJ(jmpop,lab)] ) => cod3
+         -----------------------------------    
+         trans_comparison(Absyn.RELATION(e1,relop,e2),lab) => cod3
+
+end (* trans_comparison *)
+
+
+relation trans_relop:  Absyn.RelOp => Mcode.MCondJmp  =
+
+  axiom  trans_relop(Absyn.EQ)  =>  Mcode.MJNP
+  axiom  trans_relop(Absyn.LE)  =>  Mcode.MJP   (* Jump on Positive *)
+  axiom  trans_relop(Absyn.LT)  =>  Mcode.MJPZ  (* Jump on Positive or Zero *)
+  axiom  trans_relop(Absyn.GT)  =>  Mcode.MJNZ  (* Jump on Negative or Zero *)
+  axiom  trans_relop(Absyn.GE)  =>  Mcode.MJN   (* Jump on Negative *)
+  axiom  trans_relop(Absyn.NE)  =>  Mcode.MJZ   (* Jump on Zero *)
+end  
+
+(*************** Statement translation **************)
+
+relation trans_stmt:  (Absyn.Stmt) => Mcode.MCode list  =
+(* Statement translation: map the current state into a new state *)
+
+
+(* correct?? *)
+  rule  trans_expr(e1) => cod1 &
+        list_append(cod1, [Mcode.MSTO( Mcode.I(id) )] ) => cod2
+        -------------------------                      (* Assignment *)
+        trans_stmt(Absyn.ASSIGN(id,e1)) => cod2
+
+  axiom  trans_stmt(Absyn.SKIP) => []                  (* ; empty statement *)
+
+  rule   trans_stmt(s1) => s1cod  &
+         genlabel => l1  &
+         trans_comparison(comp,l1) => compcod  &
+         list_append3(
+           compcod,
+           s1cod,
+           [Mcode.MLABEL(l1 )] )  =>  cod3 
+         ---------------------------               (* IF comp then s1 *)
+         trans_stmt(Absyn.IF(comp,s1,Absyn.SKIP))  =>  cod3
+
+  rule   trans_stmt(s1) => s1cod  &
+         trans_stmt(s2) => s2cod  &
+         genlabel => l1  &
+         genlabel => l2  &
+         trans_comparison(comp,l1) => compcod  &
+         list_append6(
+           compcod,
+           s1cod,
+           [Mcode.MJMP(  l2 )],
+           [Mcode.MLABEL(l1 )],
+           s2cod,
+           [Mcode.MLABEL(l2 )] )  =>  cod3 
+         ---------------------------       (* IF comp then s1 else s2 *)
+         trans_stmt(Absyn.IF(comp,s1,s2))  =>  cod3
+
+  rule   trans_stmt(s1) => bodycod  &
+         genlabel => l1  &
+         genlabel => l2  &
+         trans_comparison(comp,l2) => compcod  &
+         list_append5(
+           [Mcode.MLABEL( l1 )],
+           compcod,
+           bodycod,
+           [Mcode.MJMP(   l1 )],
+           [Mcode.MLABEL( l2 )] )  =>  cod3
+         ---------------------------------------         (* WHILE ... *)
+         trans_stmt(Absyn.WHILE(comp,s1)) => cod3
+
+  rule   trans_expr(e1) => tocod  &
+         trans_stmt(s1) => bodycod &
+         gentemp  => t1 &
+         genlabel => l1 &
+         genlabel => l2 &
+         list_append10(
+           tocod,
+           [Mcode.MSTO(    t1 )],
+           [Mcode.MLABEL(  l1 )],
+           [Mcode.MLOAD(   t1 )],
+           [Mcode.MB(Mcode.MSUB, Mcode.N(1))],
+           [Mcode.MJ(Mcode.MJN,  l2)],
+           [Mcode.MSTO(    t1 )],
+           bodycod,
+           [Mcode.MJMP(    l1 )],
+           [Mcode.MLABEL(  l2 )] )  =>  cod3
+         -----------------------------------        (* TO e1 DO s1 .. *)
+         trans_stmt(Absyn.TODO(e1,s1)) => cod3
+
+  axiom  trans_stmt(Absyn.READ([])) => []                        (* READ [] *)
+
+  rule  trans_stmt(Absyn.READ(idlist_rest)) => cod2
+        -----------------------------------------      (* READ id1,..*)
+        trans_stmt(Absyn.READ(id::idlist_rest))
+          => Mcode.MGET(Mcode.I(id))::cod2
+
+  axiom  trans_stmt(Absyn.WRITE([])) => []                      (* WRITE [] *)
+ 
+  rule  trans_stmt(Absyn.WRITE(idlist_rest)) => cod2
+        ------------------------------------------    (* WRITE id1,..*)
+        trans_stmt(Absyn.WRITE(id::idlist_rest))
+          => Mcode.MPUT(Mcode.I(id))::cod2
+
+  rule  trans_stmt(stmt1) => cod1  &
+        trans_stmt(stmt2) => cod2  &
+        list_append(cod1, cod2)  =>  cod3
+        --------------------------------            (* stmt1 ; stmt2 *)
+        trans_stmt(Absyn.SEQ(stmt1,stmt2)) => cod3
+
+end (* trans_stmt *)
+
+relation trans_program:  Absyn.Stmt => Mcode.MCode list  =
+
+  rule  trans_stmt(progbody) => cod1  &
+        list_append(cod1, [Mcode.MHALT]) => programcode
+        -----------------------------------------
+        trans_program(progbody) => programcode
+
+end (* trans_program *)

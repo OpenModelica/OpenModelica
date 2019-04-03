@@ -1,0 +1,90 @@
+// name:     Modelica.Fluid.Examples.IncompressibleFluidNetwork
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.IncompressibleFluidNetwork);
+compareVars :=
+{
+   "pipe1.mediums[1].T",
+   "pipe1.mediums[2].T",
+   "pipe2.mediums[1].T",
+   "pipe2.mediums[2].T",
+   "pipe3.mediums[1].T",
+   "pipe3.mediums[2].T",
+   "pipe4.mediums[1].T",
+   "pipe4.mediums[2].T",
+   "pipe6.mediums[1].T",
+   "pipe6.mediums[2].T",
+   "pipe7.mediums[1].T",
+   "pipe7.mediums[2].T",
+   "pipe8.mediums[1].T",
+   "pipe8.mediums[2].T",
+   "pipe9.mediums[1].T",
+   "pipe9.mediums[2].T",
+   "pipe10.mediums[1].T",
+   "pipe10.mediums[2].T",
+   "pipe5.mediums[1].T",
+   "pipe5.mediums[2].T"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.IncompressibleFluidNetwork
+// {"pipe1.mediums[1].T","pipe1.mediums[2].T","pipe2.mediums[1].T","pipe2.mediums[2].T","pipe3.mediums[1].T","pipe3.mediums[2].T","pipe4.mediums[1].T","pipe4.mediums[2].T","pipe6.mediums[1].T","pipe6.mediums[2].T","pipe7.mediums[1].T","pipe7.mediums[2].T","pipe8.mediums[1].T","pipe8.mediums[2].T","pipe9.mediums[1].T","pipe9.mediums[2].T","pipe10.mediums[1].T","pipe10.mediums[2].T","pipe5.mediums[1].T","pipe5.mediums[2].T"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.IncompressibleFluidNetwork', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.IncompressibleFluidNetwork_res.mat
+// Files Equal!
+// Warning: Alias set with several free start values
+//  * candidate: pipe11.m_flows[3](start = 0.0)
+//  * candidate: valve3.m_flow(start = valve3.m_flow_start)
+// => select value from valve3.m_flow(start = valve3.m_flow_start) for variable: pipe11.m_flows[3]
+// Warning: Alias set with several free start values
+//  * candidate: pipe3.m_flows[3](start = 0.0)
+//  * candidate: pipe4.m_flows[1](start = 0.0)
+//  * candidate: valve2.m_flow(start = valve2.m_flow_start)
+// => select value from valve2.m_flow(start = valve2.m_flow_start) for variable: pipe3.m_flows[3]
+// Warning: Alias set with several free start values
+//  * candidate: pipe2.m_flows[3](start = 0.0)
+//  * candidate: pipe7.m_flows[1](start = 0.0)
+//  * candidate: valve1.m_flow(start = valve1.m_flow_start)
+// => select value from valve1.m_flow(start = valve1.m_flow_start) for variable: pipe2.m_flows[3]
+// Warning: Alias set with several free start values
+//  * candidate: pipe2.m_flows[1](start = 0.0)
+//  * candidate: pipe2.m_flows[2](start = 0.0)
+//  * candidate: pipe2.m_flows[3](start = valve1.m_flow_start)
+//  * candidate: pipe7.m_flows[2](start = 0.0)
+//  * candidate: pipe7.m_flows[3](start = 0.0)
+// => select value from pipe2.m_flows[3](start = valve1.m_flow_start) for variable: pipe2.m_flows[1]
+// Warning: Alias set with several free start values
+//  * candidate: pipe3.m_flows[1](start = 0.0)
+//  * candidate: pipe3.m_flows[2](start = 0.0)
+//  * candidate: pipe3.m_flows[3](start = valve2.m_flow_start)
+//  * candidate: pipe4.m_flows[2](start = 0.0)
+//  * candidate: pipe4.m_flows[3](start = 0.0)
+// => select value from pipe3.m_flows[3](start = valve2.m_flow_start) for variable: pipe3.m_flows[1]
+// Warning: Alias set with several free start values
+//  * candidate: pipe11.m_flows[1](start = 0.0)
+//  * candidate: pipe11.m_flows[2](start = 0.0)
+//  * candidate: pipe11.m_flows[3](start = valve3.m_flow_start)
+// => select value from pipe11.m_flows[3](start = valve3.m_flow_start) for variable: pipe11.m_flows[1]
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

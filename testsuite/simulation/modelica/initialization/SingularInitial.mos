@@ -1,0 +1,45 @@
+// name: SingularInitial
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.SingularInitial* _initializationTests.SingularInitial* output.log
+// 
+//  #2561
+// 
+loadString("
+within ;
+package initializationTests
+  model SingularInitial
+    Real x,y,z;
+  initial equation
+    z = 4;
+  equation
+    z = time * 2;
+    y = z * z;
+    der(x) = x + y;
+  end SingularInitial;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+simulate(initializationTests.SingularInitial, startTime=0.0, stopTime=0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.SingularInitial', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: initializationTests.SingularInitial
+// LOG_INIT          | error   | The initialization problem is inconsistent due to the following equation: 0 != 4 = 4.0 - z
+// stdout            | warning | Error in initialization. Storing results and exiting.
+// |                 | |       | Use -lv=LOG_INIT -w for more information.
+// "
+// end SimulationResult;
+// "Notification: The given system is mixed-determined.   [index = 1]
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,63 @@
+// name: wrapFunctionCalls14
+// keywords: cse, wrapFunctionCalls, fixed
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls14
+    parameter Real p1 (fixed=false);
+    parameter Real p2 = 2 * p1;
+    Real x;
+  initial equation
+    p1 = 5;
+  equation
+    x = sin(p2) + time;
+  end wrapFunctionCalls14;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls14); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 2)
+// ========================================
+// 1/1 (1): x = $cse1 + time   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse1 = sin(p2)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (2)
+// ========================================
+// 1: p1:PARAM(fixed = false )  type: Real 
+// 2: p2:PARAM(fixed = false )  = 2.0 * p1  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse1 - sin(p2) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls14_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls14', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

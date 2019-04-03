@@ -1,0 +1,37 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump);
+compareVars :=
+{
+   "speed.phi",
+   "speed.w",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]",
+   "smee.idq_rr[1]",
+   "smee.idq_rr[2]",
+   "smee.lesigma.i",
+   "voltageController.I.y"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// {"speed.phi","speed.w","smee.idq_sr[1]","smee.idq_sr[2]","smee.idq_rr[1]","smee.idq_rr[2]","smee.lesigma.i","voltageController.I.y"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// endResult

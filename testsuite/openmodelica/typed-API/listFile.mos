@@ -1,0 +1,51 @@
+// status: correct
+
+loadString("package A
+  constant Real a = 1.0;
+end A;", "<a.mo>");
+loadString("within A;
+package B
+  constant Real b = 2.0;
+end B;", "<b.mo>");
+loadString("within A.B;
+package C
+  constant Real c = 3.0;
+end C;", "<c.mo>");
+list();
+listFile(A);
+listFile(A.B);
+listFile(A.B.C);
+
+// Result:
+// true
+// true
+// true
+// "package A
+//   constant Real a = 1.0;
+//
+//   package B
+//     constant Real b = 2.0;
+//
+//     package C
+//       constant Real c = 3.0;
+//     end C;
+//   end B;
+// end A;"
+// "package A
+//   constant Real a = 1.0;
+//
+//
+// end A;"
+// "within A;
+//
+// package B
+//   constant Real b = 2.0;
+//
+//
+// end B;"
+// "within A.B;
+//
+// package C
+//   constant Real c = 3.0;
+// end C;"
+// endResult

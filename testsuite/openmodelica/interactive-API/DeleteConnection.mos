@@ -1,0 +1,28 @@
+// name: DeleteConnection
+// status: correct
+
+loadString("
+model M
+equation
+  connect(c1[1],c2);
+  connect(c1,c2);
+end M;
+");
+deleteConnection(c1[1],c2,M);
+list();
+deleteConnection(c1,c2,M);
+list();
+
+// Result:
+// true
+// Ok
+// "model M
+// equation
+//   connect(c1, c2);
+// end M;"
+// Ok
+// "model M
+// equation
+// 
+// end M;"
+// endResult

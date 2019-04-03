@@ -1,0 +1,50 @@
+// name:     Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.Explanatory.MeasuringTemperature);
+compareVars :=
+{
+   "openTankCold2.level",
+   "openTankCold2.medium.h",
+   "openTankCold1.level",
+   "openTankCold1.medium.h",
+   "openTankHot1.level",
+   "openTankHot1.medium.h",
+   "openTankHot2.level",
+   "openTankHot2.medium.h",
+   "openTankCold3.level",
+   "openTankCold3.medium.h",
+   "openTankHot3.level",
+   "openTankHot3.medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
+// {"openTankCold2.level","openTankCold2.medium.h","openTankCold1.level","openTankCold1.medium.h","openTankHot1.level","openTankHot1.medium.h","openTankHot2.level","openTankHot2.medium.h","openTankCold3.level","openTankCold3.medium.h","openTankHot3.level","openTankHot3.medium.h"}
+// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MeasuringTemperature', options = '', outputFormat = 'mat', variableFilter = 'time|openTankCold2.level|openTankCold2.medium.h|openTankCold1.level|openTankCold1.medium.h|openTankHot1.level|openTankHot1.medium.h|openTankHot2.level|openTankHot2.medium.h|openTankCold3.level|openTankCold3.medium.h|openTankHot3.level|openTankHot3.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.Explanatory.MeasuringTemperature_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

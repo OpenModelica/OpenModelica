@@ -1,0 +1,36 @@
+// name:     Modelica.Electrical.Digital.Examples.DLATREGSRL
+// teardown_command: rm -f Modelica.Electrical.Digital.Examples.DLATREGSRL_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Digital.Examples.DLATREGSRL, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.DLATREGSRL_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.DLATREGSRL.mat",
+  "Modelica.Electrical.Digital.Examples.DLATREGSRL_diff.csv",0.01,0.0001,
+  {"set.y",
+   "data_1.y",
+   "data_0.y",
+   "enable.y",
+   "reset.y",
+   "dLATREGSRL.dataOut[1]",
+   "dLATREGSRL.dataOut[2]"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Digital.Examples.DLATREGSRL_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.DLATREGSRL', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

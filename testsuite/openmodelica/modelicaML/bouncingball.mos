@@ -1,0 +1,39 @@
+// name:    Simulation ModelicaML model BouncingBall
+// keywords:  ModelicaML, solver, dassl, rungekutta
+// status: correct
+// teardown_command: rm -f BouncingBallExample.Ball BouncingBallExample.Ball_records.c BouncingBallExample.Ball_res.mat BouncingBallExample.Ball.makefile BouncingBallExample.Ball.libs BouncingBallExample.Ball.log BouncingBallExample.Ball_functions.h BouncingBallExample.Ball_functions.cpp BouncingBallExample.Ball.cpp BouncingBallExample.Ball_init.xml 
+// 
+// ModelicaML: 1.3.6 Examples from 29.Nov 2010
+
+loadFile("./BouncingBallExample/package.mo"); getErrorString();
+simulate(BouncingBallExample.Ball,stopTime=20,numberOfIntervals=2000); getErrorString();
+
+val(height,0);
+val(height,1.02);
+val(height,2.4);
+val(height,20);
+val(StateMachine_0.Region_0.Falling.active,0);
+val(StateMachine_0.Region_0.Falling.active,1.02);
+val(StateMachine_0.Region_0.Falling.active,2.4);
+val(StateMachine_0.Region_0.Falling.active,20);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "BouncingBallExample.Ball_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBallExample.Ball', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 5.096837999997607
+// 2.611216309764083
+// 0.001955588312375433
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// endResult

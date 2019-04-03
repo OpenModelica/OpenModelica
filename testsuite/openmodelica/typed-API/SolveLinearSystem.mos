@@ -1,0 +1,92 @@
+// name: SolveLinearSystem
+// status: correct
+// teardown_command: rm -f SolveLinearSystem_*
+
+solveLinearSystem({{2,0.5},{2,-0.5}},{14.0,30.0});getErrorString();
+solveLinearSystem({{2,0.5},{2,0.5}},{14.0,30.0});getErrorString();
+solveLinearSystem({{2,0.5,1},{2,-0.5,1},{2,-0.5,2}},{14.0,30.0,18.0});getErrorString();
+
+solveLinearSystem({{2,0.5},{2,-0.5}},{2.5,1.5});getErrorString();
+solveLinearSystem({{2,0.5},{2,-0.5}},{2.5,1.5},OpenModelica.Scripting.LinearSystemSolver.lpsolve55);getErrorString();
+solveLinearSystem({{2,0.5},{2,-0.5}},{2.5,1.5},OpenModelica.Scripting.LinearSystemSolver.lpsolve55,{1,2});getErrorString();
+solveLinearSystem({{2,0.5},{2,-0.5}},{3.0,1.5},OpenModelica.Scripting.LinearSystemSolver.lpsolve55,{1});getErrorString();
+
+loadString("
+model SolveLinearSystem
+  Real x,y,z;
+equation
+  2*x + y/2 + z = 14.0;
+  2*x - y/2 + z = 30.0;
+  2*x - y/2 + 2*z = 18.0;
+end SolveLinearSystem;
+");
+translateModel(SolveLinearSystem);getErrorString();
+clear();
+loadString("
+model SolveLinearSystem
+  Real x,y,z;
+equation
+  2*x + y/2 + z = 14.0;
+  2*x - y/2 + z = 30.0;
+  2*x - y/2 + z = 18.0;
+end SolveLinearSystem;
+");
+translateModel(SolveLinearSystem);getErrorString();
+
+// Result:
+// ({11.0,-16.0},0)
+// ""
+// ({14.0,30.0},2)
+// ""
+// ({17.0,-16.0,-12.0},0)
+// ""
+// ({1.0,1.0},0)
+// ""
+// ({1.0,1.0},0)
+// ""
+// ({1.0,1.0},0)
+// ""
+// ({0.0,0.0},2)
+// ""
+// true
+// true
+// ""
+// true
+// true
+// false
+// "Error: When solving linear system 
+// 1 : 2.0 * x + 0.5 * y + z = 14.0
+// 2 : 2.0 * x + -0.5 * y + z = 18.0
+// 3 : 2.0 * x + -0.5 * y + z = 30.0
+// [
+//   2.0 , 1.0 , 0.5 ;
+//   2.0 , 1.0 , -0.5 ;
+//   2.0 , 1.0 , -0.5
+// ]
+//   *
+// [
+//   x ;
+//   z ;
+//   y
+// ]
+//   =
+// [
+//   14.0 ;
+//   18.0 ;
+//   30.0
+// ]
+//   U(2,2) = 0.0, which means system is singular for variable z.
+// [BackEnd/BackendDAETransform.mo:457:7-457:48:writable] Error: Internal error BackendDAETransform.analyseStrongComponentBlock failed
+// variables:
+//   x
+//   z
+//   y
+// equations:
+//   2.0 * x + 0.5 * y + z = 14.0
+//   2.0 * x + -0.5 * y + z = 18.0
+//   2.0 * x + -0.5 * y + z = 30.0
+// [BackEnd/BackendDAETransform.mo:461:7-461:90:writable] Error: Internal error function analyseStrongComponentBlock failed
+// [BackEnd/BackendDAETransform.mo:106:5-106:111:writable] Error: Internal error function strongComponentsScalar failed (sorting strong components)
+// [BackEnd/BackendDAEUtil.mo:7150:5-7150:89:writable] Error: Internal error Transformation module sort components failed
+// "
+// endResult

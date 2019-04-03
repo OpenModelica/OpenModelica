@@ -1,0 +1,53 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start);
+compareVars :=
+{
+   "aimsE.i_0_r",
+   "aimsE.i_0_s",
+   "aimsE.idq_rr[1]",
+   "aimsE.idq_rr[2]",
+   "aimsE.idq_sr[1]",
+   "aimsE.idq_sr[2]",
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "aimsM.rotor.zeroInductor.i0",
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "aimsM.stator.zeroInductor.i[1]",
+   "aimsM.stator.zeroInductor.i[2]",
+   "aimsM.stator.zeroInductor.i[3]",
+   "loadInertiaE.phi",
+   "loadInertiaE.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start
+// {"aimsE.i_0_r","aimsE.i_0_s","aimsE.idq_rr[1]","aimsE.idq_rr[2]","aimsE.idq_sr[1]","aimsE.idq_sr[2]","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.rotor.zeroInductor.i0","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.stator.zeroInductor.i[1]","aimsM.stator.zeroInductor.i[2]","aimsM.stator.zeroInductor.i[3]","loadInertiaE.phi","loadInertiaE.w","loadInertiaM.phi","loadInertiaM.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start', options = '', outputFormat = 'mat', variableFilter = 'time|aimsE.i_0_r|aimsE.i_0_s|aimsE.idq_rr.1.|aimsE.idq_rr.2.|aimsE.idq_sr.1.|aimsE.idq_sr.2.|aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimsM.rotor.zeroInductor.i0|aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|aimsM.stator.zeroInductor.i.1.|aimsM.stator.zeroInductor.i.2.|aimsM.stator.zeroInductor.i.3.|loadInertiaE.phi|loadInertiaE.w|loadInertiaM.phi|loadInertiaM.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

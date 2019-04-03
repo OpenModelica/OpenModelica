@@ -1,0 +1,74 @@
+// status: correct
+
+loadModel(ModelicaTest);getErrorString();
+runScript("../common/ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState);
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// true
+// ""
+// "true
+// "
+// ""
+// true
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState
+// Simulation options: startTime = 0.0, stopTime = 6000.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState_res.mat
+// Note: Reference file ReferenceFiles/ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState.mat does not exist. Cannot determine if the result improved!
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Vessels.mo:271:9-272:69:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: tank.fluidLevel, modification: final  = tank.level.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:617:7-618:56:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: tank.initialize_p, modification: final  = false.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Vessels.mo:273:9-274:47:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: tank.fluidLevel_max, modification: final  = tank.height.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Vessels.mo:275:9-276:72:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: tank.vesselArea, modification: final  = tank.crossArea.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: heater.port_a_exposesState, modification: final  = heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: heater.port_b_exposesState, modification: final  = heater.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: heater.port_a_exposesState, modification: final  = heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: heater.port_b_exposesState, modification: final  = heater.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or heater.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: radiator.port_a_exposesState, modification: final  = radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: radiator.port_b_exposesState, modification: final  = radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: radiator.port_a_exposesState, modification: final  = radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: radiator.port_b_exposesState, modification: final  = radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or radiator.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: pipe.port_a_exposesState, modification: final  = pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: pipe.port_b_exposesState, modification: final  = pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:247:5-248:61:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: pipe.port_a_exposesState, modification: final  = pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_b or pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Interfaces.mo:249:5-250:63:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: pipe.port_b_exposesState, modification: final  = pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.a_vb or pipe.modelStructure == Modelica.Fluid.Types.ModelStructure.av_vb.
+// Warning: Aliasset with several free start values
+// Candidate pump.port_a.p(start = pump.p_a_start)
+// Candidate tank.ports[2].p(start = 100000.0)
+// Select value from pump.port_a.p(start = pump.p_a_start)
+// Warning: Aliasset with several free start values
+// Candidate pump.port_b.m_flow(start = pump.m_flow_start)
+// Candidate heater.m_flows[1](start = 0.0)
+// Candidate heater.flowModel.m_flows[1](start = 0.0)
+// Select value from heater.m_flows[1](start = 0.0)
+// Warning: Aliasset with several free start values
+// Candidate pipe.m_flows[3](start = 0.0)
+// Candidate radiator.m_flows[1](start = 0.0)
+// Candidate radiator.flowModel.m_flows[1](start = 0.0)
+// Candidate valve.m_flow(start = valve.m_flow_start)
+// Select value from pipe.m_flows[3](start = 0.0)
+//
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,53 @@
+// name: UnitCheck15
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck15
+    package Units
+      type AmountOfSubstance = Real(final quantity = \"AmountOfSubstance\", final unit = \"mmol\", min = 0);
+      type XXUnit = Real(final quantity = \"XXUnit\", final unit = \"mmol-1\", min = 0);
+      type MolarFlowRate = Real(final quantity = \"MolarFlowRate\", final unit = \"mmol/min\");
+    end Units;
+
+    parameter Units.MolarFlowRate v_18f = 1.0;
+    parameter Units.MolarFlowRate v_18r = 1.0;
+    parameter Units.AmountOfSubstance K_18ICIT = 1.0;
+    parameter Real K_18eq(unit = \"1\") = 1.0;
+
+    Units.AmountOfSubstance ICIT = 2, alphaKG = 3;
+    Units.MolarFlowRate v = v_18f * v_18r * (ICIT - alphaKG / K_18eq) / (K_18ICIT * v_18r + v_18r * ICIT + v_18f * alphaKG / K_18eq);
+  end UnitCheck15;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.UnitCheck15); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {v,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// {alphaKG,{0.001 * mol^(1)}}
+// {ICIT,{0.001 * mol^(1)}}
+// {K_18eq,{1.0 * 1}}
+// {K_18ICIT,{0.001 * mol^(1)}}
+// {v_18r,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// {v_18f,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// HashTable:
+// {v,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// {alphaKG,{0.001 * mol^(1)}}
+// {ICIT,{0.001 * mol^(1)}}
+// {K_18eq,{1.0 * 1}}
+// {K_18ICIT,{0.001 * mol^(1)}}
+// {v_18r,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// {v_18f,{1.666666666666667e-05 * mol^(1) * s^(-1)}}
+// ######## UnitCheck COMPLETED ########
+// true
+// ""
+// endResult

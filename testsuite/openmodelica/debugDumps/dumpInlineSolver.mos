@@ -1,0 +1,34 @@
+// name: dumpInlineSolver.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpInlineSolver
+// 
+
+// TODO: change this model to test the dump +d=dumpInlineSolver
+loadString("
+model testDumpInlineSolver
+  Real x;
+  Real y;
+  Real z;
+initial equation
+  der(z) = 0;
+equation
+  der(x) = x;
+  der(y) = x;
+  der(z) = der(y);
+end testDumpInlineSolver;
+"); getErrorString();
+
+setDebugFlags("dumpInlineSolver"); getErrorString();
+buildModel(testDumpInlineSolver); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"testDumpInlineSolver","testDumpInlineSolver_init.xml"}
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// endResult

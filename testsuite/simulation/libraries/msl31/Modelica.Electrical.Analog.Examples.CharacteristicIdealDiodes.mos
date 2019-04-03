@@ -1,0 +1,54 @@
+// name:     Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes.mat","Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_diff.csv",0.001,0.00001,
+  {"Ideal.v",
+  "Ideal.LossPower",
+  "With_Ron_Goff.v",
+  "With_Ron_Goff.p.v",
+  "With_Ron_Goff.n.v",
+  "With_Ron_Goff.LossPower",
+  "With_Ron_Goff_Vknee.v",
+  "With_Ron_Goff_Vknee.p.v",
+  "With_Ron_Goff_Vknee.n.v",
+  "With_Ron_Goff_Vknee.LossPower",
+  "Ground1.p.i",
+  "R1.p.v",
+  "R1.n.i",
+  "R1.LossPower",
+  "R2.n.i",
+  "R2.LossPower",
+  "R3.n.i",
+  "R3.LossPower",
+  "SineVoltage2.p.v",
+  "SineVoltage1.n.v",
+  "Ground1.p.v",
+  "R1.n.v",
+  "R2.n.v",
+  "R3.n.v",
+  "SineVoltage2.n.v",
+  "SineVoltage3.n.v",
+  "R3.R_actual",
+  "R2.R_actual",
+  "R1.R_actual"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

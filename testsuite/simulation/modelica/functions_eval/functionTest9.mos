@@ -1,0 +1,144 @@
+// name:      functionTest9
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+loadString("
+model functionTest9 
+  function hv 
+    input Real Tc; 
+    input Real T; 
+    output Real Ent2; 
+  protected 
+    Real temp, Ent;
+  algorithm 
+    temp := 298.15; 
+    Ent :=0.0;
+    if T> 298.15 then
+      Ent := Ent + 1;
+      Ent2 := Ent;
+    elseif temp < 200 then
+      Ent := Ent - 1;
+      Ent2 := -Ent;
+    else
+      Ent := Ent + 1;
+      Ent2 := Ent;
+    end if; 
+  end hv; 
+
+parameter Real Tc_model = 33, T_model = 400; 
+Real H; 
+
+equation 
+H = hv(Tc_model, T_model); 
+end functionTest9;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalFuncDump"); getErrorString();
+simulate(functionTest9); getErrorString();
+
+val(H, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// Start function evaluation of:
+// H := functionTest9.hv(Tc_model, T_model)
+//
+// assignment:
+//   temp := 298.15;
+// evaluated assignment to:
+//   temp := 298.15;
+//
+// assignment:
+//   Ent := 0.0;
+// evaluated assignment to:
+//   Ent := 0.0;
+//
+// IF-statement:
+//   if T > 298.15 then
+//     Ent := 1.0 + Ent;
+//     Ent2 := Ent;
+//   elseif temp < 200.0 then
+//     Ent := -1.0 + Ent;
+//     Ent2 := -Ent;
+//   else
+//     Ent := 1.0 + Ent;
+//     Ent2 := Ent;
+//   end if;
+// -->try to check if its the if case
+// -->is the if const? false and is it the if case ? false
+// -->try to check if its another case
+// -->is it an other case? false
+// -->try to predict the outputs 
+// assignment:
+//   Ent := 1.0 + Ent;
+// evaluated assignment to:
+//   Ent := 1.0;
+//
+// assignment:
+//   Ent2 := Ent;
+// evaluated assignment to:
+//   Ent2 := 1.0;
+//
+// assignment:
+//   Ent := -1.0 + Ent;
+// evaluated assignment to:
+//   Ent := -1.0;
+//
+// assignment:
+//   Ent2 := -Ent;
+// evaluated assignment to:
+//   Ent2 := 1.0;
+//
+// assignment:
+//   Ent := 1.0 + Ent;
+// evaluated assignment to:
+//   Ent := 1.0;
+//
+// assignment:
+//   Ent2 := Ent;
+// evaluated assignment to:
+//   Ent2 := 1.0;
+//
+// --> the predicted const outputs:
+// Ent2could it be predicted? true
+// assignment:
+//   Ent2 := 1.0;
+// evaluated assignment to:
+//   Ent2 := 1.0;
+//
+// evaluated IF-statements to:
+//   if T > 298.15 then
+//     Ent := 1.0;
+//     Ent2 := 1.0;
+//   elseif temp < 200.0 then
+//     Ent := -1.0;
+//     Ent2 := 1.0;
+//   else
+//     Ent := 1.0;
+//     Ent2 := 1.0;
+//   end if;
+//
+//   Ent2 := 1.0;
+//
+//
+// the function output is completely constant
+// Finish evaluation:
+//  of: 
+// functionTest9.hv(Tc_model, T_model)
+// to:
+// H := 1.0
+// record SimulationResult
+//     resultFile = "functionTest9_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTest9', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

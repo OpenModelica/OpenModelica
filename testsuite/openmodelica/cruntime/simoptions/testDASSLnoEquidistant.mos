@@ -1,0 +1,80 @@
+// name:     testDASSLnoEquidistant
+// keywords: emit, results, dassl
+// status: correct
+// teardown_command: rm -rf testModel* output.log
+//
+//
+loadString("
+model testModel
+  parameter Real m=0.5;
+  parameter Real g=9.82;
+  parameter Real L=1;
+  Real x(start=L),y(start=0),xd,yd;
+  Real Fo;
+  Real z;
+equation
+  der(y)=yd;
+  der(x)=xd;
+  m*der(xd) = -x*Fo/L;
+  m*der(yd) = -m*g-Fo*y/L; 
+  x*x+y*y=L^2;
+  der(z) = der(x)+der(y);
+  when sample(0, 3) then
+    reinit(z,0);
+  end when;
+end testModel;
+");
+
+simulate(testModel, stopTime=50.0, numberOfIntervals = 1000, method="dassl");
+val(x,5);
+val(y,5);
+val(z,5);
+val(x,25);
+val(y,25);
+val(z,25);
+val(x,45);
+val(y,45);
+val(z,45);
+
+simulate(testModel, stopTime=50.0, numberOfIntervals = 1000, method="dassl", simflags="-noEquidistantTimeGrid");
+val(x,5);
+val(y,5);
+val(z,5);
+val(x,25);
+val(y,25);
+val(z,25);
+val(x,45);
+val(y,45);
+val(z,45);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 50.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.9400817201005953
+// -0.3409492037425897
+// 1.765471500926861
+// -0.9938618504643484
+// -0.1106283064662084
+// -1.446513992917668
+// 0.9999849889806977
+// -0.005479216483586211
+// 0.0
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 50.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
+//     messages = ""
+// end SimulationResult;
+// 0.9399131777014711
+// -0.3409917555793044
+// 1.765205861008199
+// -0.9938699424805096
+// -0.1104526698113662
+// -1.446974688952034
+// 0.9999852421758935
+// -0.005432810545174873
+// 0.0
+// endResult

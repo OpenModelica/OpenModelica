@@ -1,0 +1,62 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump
+// keywords: simulation MSL Examples
+// status: correct
+// depends: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_eqs_prof.json
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=4 +hpcomScheduler=mcp"); getErrorString();
+simulate(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump); getErrorString();
+
+//res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDumpODE.graphml","ReferenceGraphs/Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_TaskGraphODE.graphml");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump.mat",
+  "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_diff.csv",0.01,0.0001,
+  {
+   "speed.phi",
+   "speed.w",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]",
+   "smee.idq_rr[1]",
+   "smee.idq_rr[2]",
+   "smee.lesigma.i",
+   "voltageController.I.y"
+});
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_eqs_prof-file is missing.
+// Using Modified Critical Path Scheduler for the DAE system
+// Using Modified Critical Path Scheduler for the ODE system
+// Using Modified Critical Path Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

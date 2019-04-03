@@ -1,0 +1,216 @@
+// name: SamplingWithClocks
+// keywords: synchronous features
+// status: correct
+//
+//  "Modelica by Example" by Michael M. Tiller
+//
+
+setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
+
+loadString("
+model SamplingWithClocks \"Using clocks to sub and super sample\"
+  Real x, y, z, w;
+equation
+  x = sample(time, Clock(0.1));
+  y = sample(time, Clock(0.1));
+  z = subSample(x, 2);
+  w = superSample(x, 3);
+end SamplingWithClocks;
+"); getErrorString();
+
+instantiateModel(SamplingWithClocks); getErrorString();
+translateModel(SamplingWithClocks); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class SamplingWithClocks \"Using clocks to sub and super sample\"
+//   Real x;
+//   Real y;
+//   Real z;
+//   Real w;
+// equation
+//   x = sample(time, Clock(0.1));
+//   y = sample(time, Clock(0.1));
+//   z = subSample(x, 2);
+//   w = superSample(x, 3);
+// end SamplingWithClocks;
+// "
+// ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (4 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(x)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): z = $getPart(x)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (2)
+// ========================================
+// 1: Clock(0.1)[1]
+// 2: Clock(0.1)[3]
+//
+//
+// Sub clocks (4)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+// 2: factor(1/1) shift(0/1)  event(false)
+// 3: factor(1/3) shift(0/1)  event(false)
+// 4: factor(2/1) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (4 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: x:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(x)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: z:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): z = $getPart(x)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (2)
+// ========================================
+// 1: Clock(0.1)[1]
+// 2: Clock(0.1)[3]
+//
+//
+// Sub clocks (4)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+// 2: factor(1/1) shift(0/1)  event(false)
+// 3: factor(1/3) shift(0/1)  event(false)
+// 4: factor(2/1) shift(0/1)  event(false)
+//
+// true
+// ""
+// endResult

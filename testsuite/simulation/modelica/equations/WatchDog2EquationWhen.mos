@@ -1,0 +1,43 @@
+// name:     WatchDog2EquationWhen
+// keywords: watchdog equation-when
+// status:   correct
+// teardown_command: rm -rf WatchDogSystem2_* WatchDogSystem2 WatchDogSystem2.exe WatchDogSystem2.cpp WatchDogSystem2.makefile WatchDogSystem2.libs WatchDogSystem2.log output.log
+// 
+//
+// Drmodelica: 13.2 WatchDog System. (p. 435)
+// 
+loadFile("WatchDog2EquationWhen.mo");
+simulate( WatchDogSystem2, stopTime=4, tolerance=1e-5, numberOfIntervals=100);
+echo(false); // turns of output 
+i11:=val(watchdog.internalTime1,0);
+i12:=val(watchdog.internalTime1,4);
+i21:=val(watchdog.internalTime2,0);
+i22:=val(watchdog.internalTime2,4);
+s1:=val(watchdog.dAlarm.signal,0);
+s2:=val(watchdog.dAlarm.signal,4);
+echo(true); // turns on output
+i11;
+i12;
+i21;
+i22;
+s1;
+s2;
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WatchDogSystem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'WatchDogSystem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.0
+// 1.000000002000015
+// 0.0
+// 0.2500000012503005
+// 0.0
+// 1.0
+// endResult

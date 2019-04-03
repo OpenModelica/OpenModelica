@@ -1,0 +1,42 @@
+// name: UnitCheck12
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck12
+    Real V;
+    Real A;
+    Real S(unit = \"m2\");
+  equation
+    A=5.0;
+    V=8.0;
+    S=V^2+sqrt(A);
+  end UnitCheck12;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
+translateModel(unitCheckTests.UnitCheck12); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #####################################
+// HashTable:
+// {S,{1.0 * m^(2)}}
+// {A,{MASTER(A)}}
+// {V,{MASTER(V)}}
+// HashTable:
+// {S,{1.0 * m^(2)}}
+// {A,{1.0 * m^(4)}}
+// {V,{1.0 * m^(1)}}
+// ######## UnitCheck COMPLETED ########
+// true
+// "Notification: "A" has the Unit "m4"
+// "V" has the Unit "m"
+// "
+// endResult

@@ -1,0 +1,49 @@
+// name: VDP
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("VDP.mo");
+getErrorString();
+
+optimize(nmpcVDP, stopTime=20.0, numberOfIntervals=50, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("nmpcVDP_res.mat","ReferenceFiles/nmpcVDP_ref.mat","nmpcVDP_res.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcVDP_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcVDP', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:cost(start = 10, nominal = 11, min = -Inf, max = +Inf, init = 10)
+// State[1]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[2]:x2(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// Input[3]:u(start = 0, nominal = 1, min = -0.5, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

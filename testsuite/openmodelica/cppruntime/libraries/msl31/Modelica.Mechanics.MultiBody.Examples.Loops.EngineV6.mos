@@ -1,0 +1,29 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat",
+  "Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6.mat","Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_diff.csv",0.01,0.00001,
+  {"filter.x","der(filter.x)","load.phi","load.w","der(load.w)"});
+
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

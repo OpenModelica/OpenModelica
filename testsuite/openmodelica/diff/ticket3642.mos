@@ -1,0 +1,41 @@
+// status: correct
+
+echo(false);
+s1 := "package P
+  model M
+  end M;
+
+  package Inner
+    model N
+      Real a;
+      // martin sjölund
+      Real b;
+    end N;
+  end Inner;
+
+end P;";
+loadString(s1, "P.mo");
+deleteClass(P.Inner);
+answer := "package P
+  model M
+  end M;
+
+end P;";
+s2 := listFile(P);
+res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>res then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nDelete P.Inner+listFile:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  writeFile("P.res", res);
+  writeFile("P.expected", answer);
+  print("Wrote to files P.res and P.expected\n");
+  exit(1);
+end if;
+print("OK\n");
+
+// Result:
+// OK
+// endResult

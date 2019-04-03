@@ -1,0 +1,226 @@
+// name:      parameterTest4
+// keywords:  parameter evaluation, loops
+// status:    correct
+
+loadString("
+model parameterTest4
+  parameter Boolean b1 = true;
+  parameter Boolean b2 = true;
+  parameter Real p1 = if b1 then p2 else 0;
+  parameter Real p2 = if b1 then 0 else p1;
+  parameter Real p3 = if b2 then p4 else 0;
+  parameter Real p4 = if b2 then 0 else p3;  
+equation
+
+end parameterTest4;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump"); getErrorString();
+simulate(parameterTest4); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
+// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
+// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
+// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 6
+// Number of parameters selected for evaluation: 2
+// Selected parameters for evaluation:
+// 6,5
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 6
+// 1: 5 2
+// 2: 5 1
+// 3: 6 4
+// 4: 6 3
+// 5:
+// 6:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 6
+// 1: 2 1
+// 2: 2 1
+// 3: 4 3
+// 4: 4 3
+// 5: 5 2 1
+// 6: 6 4 3
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (2)
+// ========================================
+// b1 -> true
+// b2 -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (2)
+// ========================================
+// b1 -> true
+// b2 -> true
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
+// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
+// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
+// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,1,1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 6
+// 5
+// 4,3
+// 2,1
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (4)
+// ========================================
+// b1 -> true
+// b2 -> true
+// p2 -> 0.0
+// p4 -> 0.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (4)
+// ========================================
+// b1 -> true
+// b2 -> true
+// p2 -> 0.0
+// p4 -> 0.0
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p4:PARAM(final = true )  = 0.0  type: Real 
+// 2: p3:PARAM()  = p4  type: Real 
+// 3: p2:PARAM(final = true )  = 0.0  type: Real 
+// 4: p1:PARAM()  = p2  type: Real 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,1,1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (4)
+// ========================================
+// b1 -> true
+// b2 -> true
+// p2 -> 0.0
+// p4 -> 0.0
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (4)
+// ========================================
+// b1 -> true
+// b2 -> true
+// p2 -> 0.0
+// p4 -> 0.0
+//
+// globalKnownVars (6)
+// ========================================
+// 1: p4:PARAM(final = true )  = 0.0  type: Real 
+// 2: p3:PARAM()  = p4  type: Real 
+// 3: p2:PARAM(final = true )  = 0.0  type: Real 
+// 4: p1:PARAM()  = p2  type: Real 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: -1,-1,-1,-1,1,1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (6)
+// ========================================
+// 1: p4:PARAM(final = true )  = 0.0  type: Real 
+// 2: p3:PARAM()  = p4  type: Real 
+// 3: p2:PARAM(final = true )  = 0.0  type: Real 
+// 4: p1:PARAM()  = p2  type: Real 
+// 5: b2:PARAM(final = true )  = true  type: Boolean 
+// 6: b1:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,592 @@
+//name:         Damper2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.Damper,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+"SlidingMass1.s:";
+val(SlidingMass1.s,0.0);
+val(SlidingMass1.s,0.25);
+val(SlidingMass1.s,0.5);
+val(SlidingMass1.s,0.75);
+val(SlidingMass1.s,1.0);
+
+"SlidingMass1.flange_a.s:";
+val(SlidingMass1.flange_a.s,0.0);
+val(SlidingMass1.flange_a.s,0.25);
+val(SlidingMass1.flange_a.s,0.5);
+val(SlidingMass1.flange_a.s,0.75);
+val(SlidingMass1.flange_a.s,1.0);
+
+"SlidingMass1.flange_b.s:";
+val(SlidingMass1.flange_b.s,0.0);
+val(SlidingMass1.flange_b.s,0.25);
+val(SlidingMass1.flange_b.s,0.5);
+val(SlidingMass1.flange_b.s,0.75);
+val(SlidingMass1.flange_b.s,1.0);
+
+"SlidingMass1.flange_b.f:";
+val(SlidingMass1.flange_b.f,0.0);
+val(SlidingMass1.flange_b.f,0.25);
+val(SlidingMass1.flange_b.f,0.5);
+val(SlidingMass1.flange_b.f,0.75);
+val(SlidingMass1.flange_b.f,1.0);
+
+"SlidingMass1.v:";
+val(SlidingMass1.v,0.0);
+val(SlidingMass1.v,0.25);
+val(SlidingMass1.v,0.5);
+val(SlidingMass1.v,0.75);
+val(SlidingMass1.v,1.0);
+
+"SlidingMass1.a:";
+val(SlidingMass1.a,0.0);
+val(SlidingMass1.a,0.25);
+val(SlidingMass1.a,0.5);
+val(SlidingMass1.a,0.75);
+val(SlidingMass1.a,1.0);
+
+"Damper1.flange_a.s:";
+val(Damper1.flange_a.s,0.0);
+val(Damper1.flange_a.s,0.25);
+val(Damper1.flange_a.s,0.5);
+val(Damper1.flange_a.s,0.75);
+val(Damper1.flange_a.s,1.0);
+
+"Damper1.flange_a.f:";
+val(Damper1.flange_a.f,0.0);
+val(Damper1.flange_a.f,0.25);
+val(Damper1.flange_a.f,0.5);
+val(Damper1.flange_a.f,0.75);
+val(Damper1.flange_a.f,1.0);
+
+"Damper1.flange_b.f:";
+val(Damper1.flange_b.f,0.0);
+val(Damper1.flange_b.f,0.25);
+val(Damper1.flange_b.f,0.5);
+val(Damper1.flange_b.f,0.75);
+val(Damper1.flange_b.f,1.0);
+
+"Damper1.s_rel:";
+val(Damper1.s_rel,0.0);
+val(Damper1.s_rel,0.25);
+val(Damper1.s_rel,0.5);
+val(Damper1.s_rel,0.75);
+val(Damper1.s_rel,1.0);
+
+"Damper1.f:";
+val(Damper1.f,0.0);
+val(Damper1.f,0.25);
+val(Damper1.f,0.5);
+val(Damper1.f,0.75);
+val(Damper1.f,1.0);
+
+"Damper1.v_rel:";
+val(Damper1.v_rel,0.0);
+val(Damper1.v_rel,0.25);
+val(Damper1.v_rel,0.5);
+val(Damper1.v_rel,0.75);
+val(Damper1.v_rel,1.0);
+
+"Fixed1.flange_b.f:";
+val(Fixed1.flange_b.f,0.0);
+val(Fixed1.flange_b.f,0.25);
+val(Fixed1.flange_b.f,0.5);
+val(Fixed1.flange_b.f,0.75);
+val(Fixed1.flange_b.f,1.0);
+
+"SlidingMass2.s:";
+val(SlidingMass2.s,0.0);
+val(SlidingMass2.s,0.25);
+val(SlidingMass2.s,0.5);
+val(SlidingMass2.s,0.75);
+val(SlidingMass2.s,1.0);
+
+"SlidingMass2.flange_a.s:";
+val(SlidingMass2.flange_a.s,0.0);
+val(SlidingMass2.flange_a.s,0.25);
+val(SlidingMass2.flange_a.s,0.5);
+val(SlidingMass2.flange_a.s,0.75);
+val(SlidingMass2.flange_a.s,1.0);
+
+"SlidingMass2.flange_b.s:";
+val(SlidingMass2.flange_b.s,0.0);
+val(SlidingMass2.flange_b.s,0.25);
+val(SlidingMass2.flange_b.s,0.5);
+val(SlidingMass2.flange_b.s,0.75);
+val(SlidingMass2.flange_b.s,1.0);
+
+"SlidingMass2.flange_b.f:";
+val(SlidingMass2.flange_b.f,0.0);
+val(SlidingMass2.flange_b.f,0.25);
+val(SlidingMass2.flange_b.f,0.5);
+val(SlidingMass2.flange_b.f,0.75);
+val(SlidingMass2.flange_b.f,1.0);
+
+"SlidingMass2.v:";
+val(SlidingMass2.v,0.0);
+val(SlidingMass2.v,0.25);
+val(SlidingMass2.v,0.5);
+val(SlidingMass2.v,0.75);
+val(SlidingMass2.v,1.0);
+
+"SlidingMass2.a:";
+val(SlidingMass2.a,0.0);
+val(SlidingMass2.a,0.25);
+val(SlidingMass2.a,0.5);
+val(SlidingMass2.a,0.75);
+val(SlidingMass2.a,1.0);
+
+"Damper2.flange_a.s:";
+val(Damper2.flange_a.s,0.0);
+val(Damper2.flange_a.s,0.25);
+val(Damper2.flange_a.s,0.5);
+val(Damper2.flange_a.s,0.75);
+val(Damper2.flange_a.s,1.0);
+
+"Damper2.flange_a.f:";
+val(Damper2.flange_a.f,0.0);
+val(Damper2.flange_a.f,0.25);
+val(Damper2.flange_a.f,0.5);
+val(Damper2.flange_a.f,0.75);
+val(Damper2.flange_a.f,1.0);
+
+"Damper2.flange_b.f:";
+val(Damper2.flange_b.f,0.0);
+val(Damper2.flange_b.f,0.25);
+val(Damper2.flange_b.f,0.5);
+val(Damper2.flange_b.f,0.75);
+val(Damper2.flange_b.f,1.0);
+
+"Damper2.s_rel:";
+val(Damper2.s_rel,0.0);
+val(Damper2.s_rel,0.25);
+val(Damper2.s_rel,0.5);
+val(Damper2.s_rel,0.75);
+val(Damper2.s_rel,1.0);
+
+"Damper2.f:";
+val(Damper2.f,0.0);
+val(Damper2.f,0.25);
+val(Damper2.f,0.5);
+val(Damper2.f,0.75);
+val(Damper2.f,1.0);
+
+"Damper2.v_rel:";
+val(Damper2.v_rel,0.0);
+val(Damper2.v_rel,0.25);
+val(Damper2.v_rel,0.5);
+val(Damper2.v_rel,0.75);
+val(Damper2.v_rel,1.0);
+
+"Fixed2.flange_b.f:";
+val(Fixed2.flange_b.f,0.0);
+val(Fixed2.flange_b.f,0.25);
+val(Fixed2.flange_b.f,0.5);
+val(Fixed2.flange_b.f,0.75);
+val(Fixed2.flange_b.f,1.0);
+
+"SlidingMass3.s:";
+val(SlidingMass3.s,0.0);
+val(SlidingMass3.s,0.25);
+val(SlidingMass3.s,0.5);
+val(SlidingMass3.s,0.75);
+val(SlidingMass3.s,1.0);
+
+"SlidingMass3.flange_a.s:";
+val(SlidingMass3.flange_a.s,0.0);
+val(SlidingMass3.flange_a.s,0.25);
+val(SlidingMass3.flange_a.s,0.5);
+val(SlidingMass3.flange_a.s,0.75);
+val(SlidingMass3.flange_a.s,1.0);
+
+"SlidingMass3.flange_b.s:";
+val(SlidingMass3.flange_b.s,0.0);
+val(SlidingMass3.flange_b.s,0.25);
+val(SlidingMass3.flange_b.s,0.5);
+val(SlidingMass3.flange_b.s,0.75);
+val(SlidingMass3.flange_b.s,1.0);
+
+"SlidingMass3.flange_b.f:";
+val(SlidingMass3.flange_b.f,0.0);
+val(SlidingMass3.flange_b.f,0.25);
+val(SlidingMass3.flange_b.f,0.5);
+val(SlidingMass3.flange_b.f,0.75);
+val(SlidingMass3.flange_b.f,1.0);
+
+"SlidingMass3.v:";
+val(SlidingMass3.v,0.0);
+val(SlidingMass3.v,0.25);
+val(SlidingMass3.v,0.5);
+val(SlidingMass3.v,0.75);
+val(SlidingMass3.v,1.0);
+
+"SlidingMass3.a:";
+val(SlidingMass3.a,0.0);
+val(SlidingMass3.a,0.25);
+val(SlidingMass3.a,0.5);
+val(SlidingMass3.a,0.75);
+val(SlidingMass3.a,1.0);
+
+"Fixed3.flange_b.f:";
+val(Fixed3.flange_b.f,0.0);
+val(Fixed3.flange_b.f,0.25);
+val(Fixed3.flange_b.f,0.5);
+val(Fixed3.flange_b.f,0.75);
+val(Fixed3.flange_b.f,1.0);
+
+"Spring1.flange_a.s:";
+val(Spring1.flange_a.s,0.0);
+val(Spring1.flange_a.s,0.25);
+val(Spring1.flange_a.s,0.5);
+val(Spring1.flange_a.s,0.75);
+val(Spring1.flange_a.s,1.0);
+
+"Spring1.flange_a.f:";
+val(Spring1.flange_a.f,0.0);
+val(Spring1.flange_a.f,0.25);
+val(Spring1.flange_a.f,0.5);
+val(Spring1.flange_a.f,0.75);
+val(Spring1.flange_a.f,1.0);
+
+"Spring1.flange_b.f:";
+val(Spring1.flange_b.f,0.0);
+val(Spring1.flange_b.f,0.25);
+val(Spring1.flange_b.f,0.5);
+val(Spring1.flange_b.f,0.75);
+val(Spring1.flange_b.f,1.0);
+
+"Spring1.s_rel:";
+val(Spring1.s_rel,0.0);
+val(Spring1.s_rel,0.25);
+val(Spring1.s_rel,0.5);
+val(Spring1.s_rel,0.75);
+val(Spring1.s_rel,1.0);
+
+"Spring1.f:";
+val(Spring1.f,0.0);
+val(Spring1.f,0.25);
+val(Spring1.f,0.5);
+val(Spring1.f,0.75);
+val(Spring1.f,1.0);
+
+"SpringDamper1.flange_a.s:";
+val(SpringDamper1.flange_a.s,0.0);
+val(SpringDamper1.flange_a.s,0.25);
+val(SpringDamper1.flange_a.s,0.5);
+val(SpringDamper1.flange_a.s,0.75);
+val(SpringDamper1.flange_a.s,1.0);
+
+"SpringDamper1.flange_a.f:";
+val(SpringDamper1.flange_a.f,0.0);
+val(SpringDamper1.flange_a.f,0.25);
+val(SpringDamper1.flange_a.f,0.5);
+val(SpringDamper1.flange_a.f,0.75);
+val(SpringDamper1.flange_a.f,1.0);
+
+"SpringDamper1.flange_b.f:";
+val(SpringDamper1.flange_b.f,0.0);
+val(SpringDamper1.flange_b.f,0.25);
+val(SpringDamper1.flange_b.f,0.5);
+val(SpringDamper1.flange_b.f,0.75);
+val(SpringDamper1.flange_b.f,1.0);
+
+"SpringDamper1.s_rel:";
+val(SpringDamper1.s_rel,0.0);
+val(SpringDamper1.s_rel,0.25);
+val(SpringDamper1.s_rel,0.5);
+val(SpringDamper1.s_rel,0.75);
+val(SpringDamper1.s_rel,1.0);
+
+"SpringDamper1.f:";
+val(SpringDamper1.f,0.0);
+val(SpringDamper1.f,0.25);
+val(SpringDamper1.f,0.5);
+val(SpringDamper1.f,0.75);
+val(SpringDamper1.f,1.0);
+
+"SpringDamper1.v_rel:";
+val(SpringDamper1.v_rel,0.0);
+val(SpringDamper1.v_rel,0.25);
+val(SpringDamper1.v_rel,0.5);
+val(SpringDamper1.v_rel,0.75);
+val(SpringDamper1.v_rel,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Damper_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Damper', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "SlidingMass1.s:"
+// 3.0
+// 3.39922725080513
+// 3.399998614666042
+// 3.399999841353669
+// 3.399999983850465
+// "SlidingMass1.flange_a.s:"
+// 2.5
+// 2.89922725080513
+// 2.899998614666042
+// 2.899999841353669
+// 2.899999983850465
+// "SlidingMass1.flange_b.s:"
+// 3.5
+// 3.89922725080513
+// 3.899998614666042
+// 3.899999841353669
+// 3.899999983850465
+// "SlidingMass1.flange_b.f:"
+// -250.0
+// -0.4829682466823095
+// -0.0008658336822716324
+// -9.915392980654253e-05
+// -1.009343225811675e-05
+// "SlidingMass1.v:"
+// 10.0
+// 0.01931872986729238
+// 3.463334729086529e-05
+// 3.966157192261701e-06
+// 4.037372903246699e-07
+// "SlidingMass1.a:"
+// -250.0
+// -0.4829682466823095
+// -0.0008658336822716324
+// -9.915392980654253e-05
+// -1.009343225811675e-05
+// "Damper1.flange_a.s:"
+// 3.5
+// 3.89922725080513
+// 3.899998614666042
+// 3.899999841353669
+// 3.899999983850465
+// "Damper1.flange_a.f:"
+// 250.0
+// 0.4829682466823095
+// 0.0008658336822716324
+// 9.915392980654253e-05
+// 1.009343225811675e-05
+// "Damper1.flange_b.f:"
+// -250.0
+// -0.4829682466823095
+// -0.0008658336822716324
+// -9.915392980654253e-05
+// -1.009343225811675e-05
+// "Damper1.s_rel:"
+// 1.0
+// 0.6007727491948702
+// 0.6000013853339579
+// 0.6000001586463308
+// 0.6000000161495347
+// "Damper1.f:"
+// -250.0
+// -0.4829682466823095
+// -0.0008658336822716324
+// -9.915392980654253e-05
+// -1.009343225811675e-05
+// "Damper1.v_rel:"
+// -10.0
+// -0.01931872986729238
+// -3.463334729086529e-05
+// -3.966157192261701e-06
+// -4.037372903246699e-07
+// "Fixed1.flange_b.f:"
+// 250.0
+// 0.4829682466823095
+// 0.0008658336822716324
+// 9.915392980654253e-05
+// 1.009343225811675e-05
+// "SlidingMass2.s:"
+// 3.0
+// 3.396503905413732
+// 3.393326132122883
+// 3.389411443514109
+// 3.385547184681227
+// "SlidingMass2.flange_a.s:"
+// 2.5
+// 2.896503905413732
+// 2.893326132122883
+// 2.889411443514109
+// 2.885547184681227
+// "SlidingMass2.flange_b.s:"
+// 3.5
+// 3.896503905413732
+// 3.893326132122883
+// 3.889411443514109
+// 3.885547184681227
+// "SlidingMass2.flange_b.f:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "SlidingMass2.v:"
+// 10.0
+// 0.003627400496786548
+// -0.0157229372583478
+// -0.01559743881937051
+// -0.01544623158120701
+// "SlidingMass2.a:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "Damper2.flange_a.s:"
+// 3.5
+// 3.896503905413732
+// 3.893326132122883
+// 3.889411443514109
+// 3.885547184681227
+// "Damper2.flange_a.f:"
+// 250.0
+// 0.0906850124196637
+// -0.393073431458695
+// -0.3899359704842628
+// -0.3861557895301753
+// "Damper2.flange_b.f:"
+// -250.0
+// -0.0906850124196637
+// 0.393073431458695
+// 0.3899359704842628
+// 0.3861557895301753
+// "Damper2.s_rel:"
+// 1.0
+// 0.603496094586268
+// 0.6066738678771166
+// 0.6105885564858915
+// 0.6144528153187734
+// "Damper2.f:"
+// -250.0
+// -0.0906850124196637
+// 0.393073431458695
+// 0.3899359704842628
+// 0.3861557895301753
+// "Damper2.v_rel:"
+// -10.0
+// -0.003627400496786548
+// 0.0157229372583478
+// 0.01559743881937051
+// 0.01544623158120701
+// "Fixed2.flange_b.f:"
+// 250.0
+// 0.4871889178333957
+// 0.0002527006641883656
+// -0.0005245269701542599
+// -0.0006086048489486462
+// "SlidingMass3.s:"
+// 3.0
+// 3.396503905413732
+// 3.393326132122883
+// 3.389411443514109
+// 3.385547184681227
+// "SlidingMass3.flange_a.s:"
+// 2.5
+// 2.896503905413732
+// 2.893326132122883
+// 2.889411443514109
+// 2.885547184681227
+// "SlidingMass3.flange_b.s:"
+// 3.5
+// 3.896503905413732
+// 3.893326132122883
+// 3.889411443514109
+// 3.885547184681227
+// "SlidingMass3.flange_b.f:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "SlidingMass3.v:"
+// 10.0
+// 0.003627400496786548
+// -0.0157229372583478
+// -0.01559743881937051
+// -0.01544623158120701
+// "SlidingMass3.a:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "Fixed3.flange_b.f:"
+// 250.0
+// 0.4871889178333957
+// 0.0002527006641883656
+// -0.0005245269701542599
+// -0.0006086048489486462
+// "Spring1.flange_a.s:"
+// 3.5
+// 3.896503905413732
+// 3.893326132122883
+// 3.889411443514109
+// 3.885547184681227
+// "Spring1.flange_a.f:"
+// -0.0
+// 0.396503905413732
+// 0.3933261321228834
+// 0.3894114435141085
+// 0.3855471846812266
+// "Spring1.flange_b.f:"
+// 0.0
+// -0.396503905413732
+// -0.3933261321228834
+// -0.3894114435141085
+// -0.3855471846812266
+// "Spring1.s_rel:"
+// 1.0
+// 0.603496094586268
+// 0.6066738678771166
+// 0.6105885564858915
+// 0.6144528153187734
+// "Spring1.f:"
+// 0.0
+// -0.396503905413732
+// -0.3933261321228834
+// -0.3894114435141085
+// -0.3855471846812266
+// "SpringDamper1.flange_a.s:"
+// 3.5
+// 3.896503905413732
+// 3.893326132122883
+// 3.889411443514109
+// 3.885547184681227
+// "SpringDamper1.flange_a.f:"
+// 250.0
+// 0.4871889178333957
+// 0.0002527006641883656
+// -0.0005245269701542599
+// -0.0006086048489486462
+// "SpringDamper1.flange_b.f:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "SpringDamper1.s_rel:"
+// 1.0
+// 0.603496094586268
+// 0.6066738678771166
+// 0.6105885564858915
+// 0.6144528153187734
+// "SpringDamper1.f:"
+// -250.0
+// -0.4871889178333957
+// -0.0002527006641883656
+// 0.0005245269701542599
+// 0.0006086048489486462
+// "SpringDamper1.v_rel:"
+// -10.0
+// -0.003627400496786548
+// 0.0157229372583478
+// 0.01559743881937051
+// 0.01544623158120701
+// endResult

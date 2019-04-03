@@ -1,0 +1,43 @@
+// name: Modelica.Math.Matrices.norm
+// status: correct
+
+loadModel(Modelica,{"3.1"});
+loadString("
+package TestNorm
+model M
+  parameter Real A[:,:]=[1,10,1000;0.01,0,10;0.005,0.01,10];
+  Real x1;
+  Real x2;
+  Real x3;
+  Real x4;
+equation
+  x1=Modelica.Math.Matrices.norm(A, 1); // Should return 1020
+  x2=Modelica.Math.Matrices.norm(A, 2); // Should return 1000.15
+  x3=Modelica.Math.Matrices.norm(A, Modelica.Constants.inf); // Should return 1011
+  x4=Modelica.Math.Matrices.norm(A); // Should return 1000.15
+end M;
+end TestNorm;
+");
+simulate(TestNorm.M,numberOfIntervals=10);
+getErrorString();
+val(x1,0.5);
+val(x2,0.5);
+val(x3,0.5);
+val(x4,0.5);
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestNorm.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestNorm.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1020.0
+// 1000.15047973064
+// 1011.0
+// 1000.15047973064
+// endResult

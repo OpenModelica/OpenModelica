@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.BouncingBall.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.BouncingBall
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.BouncingBall.* DrModelicaForTesting.BouncingBall_* DrModelicaForTesting.BouncingBall DrModelicaForTesting.BouncingBall.exe DrModelicaForTesting.BouncingBall.cpp DrModelicaForTesting.BouncingBall.makefile DrModelicaForTesting.BouncingBall.libs DrModelicaForTesting.BouncingBall.log DrModelicaForTesting.BouncingBall.c DrModelicaForTesting.BouncingBall.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.BouncingBall, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.BouncingBall_res.mat",
+  "ReferenceFiles/BouncingBall_ref.mat","DrModelicaForTesting.BouncingBall_diff.csv",0.01,0.013,
+  {"der(height)","c", "radius","height","velocity"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

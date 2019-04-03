@@ -1,0 +1,52 @@
+/*getInstallationDirectoryPath();
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"});
+
+loadFile("OMCC.mo");
+loadFile("AbsynMat.mo");
+loadFile("Absyn.mo");
+loadFile("../../../Compiler/Util/StringUtil.mo");
+loadFile("../../../Compiler/FrontEnd/Absyn.mo");
+loadFile("../../../Compiler/Util/List.mo");
+loadFile("../../../Compiler/Util/Config.mo");
+loadFile("../../../Compiler/Global/Global.mo");
+loadFile("../../../Compiler/Util/Debug.mo");
+loadFile("../../../Compiler/Util/ErrorExt.mo");
+loadFile("../../../Compiler/Util/Error.mo");
+loadFile("../../../Compiler/Util/Print.mo");
+loadFile("../../../Compiler/Util/Corba.mo");
+loadFile("../../../Compiler/Util/Settings.mo");
+loadFile("../../../Compiler/Util/Flags.mo");
+loadFile("../../../Compiler/Util/Util.mo");
+loadFile("../../../Compiler/Util/System.mo");
+loadFile("LexerGenerator.mo");
+loadFile("ParserGenerator.mo");
+loadFile("Lexer.mo");
+loadFile("Parser.mo");
+loadFile("Types.mo");
+OMCC.main({"Modelica"});
+getErrorString();
+*/
+
+OpenModelica.Scripting.setCFlags("-g " + getCFlags());getErrorString();
+files := {
+  "OMCC.mo",
+  "Absyn.mo",
+  "AbsynMat.mo",
+  "../../../OMCompiler/Compiler/Util/List.mo",
+  "../../../OMCompiler/Compiler/Util/Config.mo",
+  "../../../OMCompiler/Compiler/Global/Global.mo",
+  "../../../OMCompiler/Compiler/Util/Debug.mo",
+  "../../../OMCompiler/Compiler/Util/ErrorExt.mo",
+  "../../../OMCompiler/Compiler/Util/Error.mo",
+  "../../../OMCompiler/Compiler/Util/Print.mo",
+  "../../../OMCompiler/Compiler/Util/Corba.mo",
+  "../../../OMCompiler/Compiler/Util/Settings.mo",
+  "../../../OMCompiler/Compiler/Util/StringUtil.mo",
+  "../../../OMCompiler/Compiler/Util/Flags.mo",
+  "../../../OMCompiler/Compiler/Util/Util.mo",
+  "../../../OMCompiler/Compiler/Util/System.mo",
+  "LexerGenerator.mo",
+  "ParserGenerator.mo"};getErrorString();
+setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"});
+loadFile(files);getErrorString();
+OMCC.main({"Modelica"});getErrorString();

@@ -1,0 +1,6 @@
+//must poit to local package
+curDir:=cd();
+
+loadModel(Modelica,{"3.2.1"});
+buildModel(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6);
+getErrorString();

@@ -1,0 +1,36 @@
+// name:     Gear2
+// keywords: Simulate, readSimulationData
+// status:   correct
+// teardown_command: rm -f TestModels.RotationalModels.* output.log
+// 
+//  Simulate Rotational gear models and simulate. 
+//
+loadModel(Modelica,{"2.2.2"}); getErrorString();
+loadFile("TestModels.mo"); getErrorString();
+
+simulate(TestModels.RotationalModels.Gears.Gear2, stopTime=10.0, tolerance=1e-10, numberOfIntervals=1000); getErrorString();
+val(inertia1.w,0.58); // ~0.241
+val(inertia1.w,5.48); // ~0.365
+val(inertia1.w,6.15); // ~-0.285
+val(inertia2.w,1.0); // ~-0.120
+val(inertia2.w,3.5); // ~0.182
+val(inertia2.w,6.35); //~-0.122
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestModels.RotationalModels.Gears.Gear2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1000, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'TestModels.RotationalModels.Gears.Gear2', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.240324984866469
+// 0.340818760766937
+// -0.287746781688813
+// -0.121565697853613
+// 0.182566638394396
+// -0.123890016428111
+// endResult

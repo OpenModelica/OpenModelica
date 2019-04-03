@@ -1,0 +1,23 @@
+within ThermoSysPro.InstrumentationAndControl.Blocks.Tables;
+block Table2D
+  parameter Real Tu1[1,:]=[0,0] "Entrées 1 de la table";
+  parameter Real Tu2[1,:]=[0,0] "Entrées 2 de la table";
+  parameter Real Ty[size(Tu1, 2),size(Tu2, 2)]=[0,0;0,0] "Sorties de la table";
+  ThermoSysPro.InstrumentationAndControl.Connectors.OutputReal y annotation(Placement(transformation(x=110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false), iconTransformation(x=110.0, y=0.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Connectors.InputReal u1 annotation(Placement(transformation(x=-110.0, y=60.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false), iconTransformation(x=-110.0, y=60.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+  ThermoSysPro.InstrumentationAndControl.Connectors.InputReal u2 annotation(Placement(transformation(x=-110.0, y=-60.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false), iconTransformation(x=-110.0, y=-60.0, scale=0.1, aspectRatio=1.0, flipHorizontal=false, flipVertical=false)));
+protected
+  parameter Real Tu[1,:]=[Tu1,Tu2];
+  parameter Integer n[1,2]=[size(Tu1, 2),size(Tu2, 2)] "Taille de la table";
+  Real vu[2,1];
+  annotation(Icon(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={Rectangle(lineColor={0,0,255}, extent={{-80,80},{80,-80}}, fillPattern=FillPattern.None),Line(points={{-54,40},{-54,-40},{54,-40},{54,40},{28,40},{28,-40},{-28,-40},{-28,40},{-54,40},{-54,20},{54,20},{54,0},{-54,0},{-54,-20},{54,-20},{54,-40},{-54,-40},{-54,40},{54,40},{54,-40}}, color={0,0,0}),Line(points={{0,40},{0,-40}}, color={0,0,0}),Rectangle(extent={{-54,20},{-28,0}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-54,0},{-28,-20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-54,-20},{-28,-40}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-28,40},{0,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{0,40},{28,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{28,40},{54,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Line(points={{-54,40},{-28,20}}, color={0,0,0}),Line(points={{-28,40},{-54,20}}, color={0,0,0}),Text(lineColor={0,0,255}, extent={{-54,-40},{-30,-56}}, textString="u1"),Text(lineColor={0,0,255}, extent={{28,58},{52,44}}, textString="u2"),Text(lineColor={0,0,255}, extent={{-4,12},{30,-22}}, textString="y"),Line(color={0,0,255}, points={{82,0},{100,0}}),Text(lineColor={0,0,255}, extent={{-150,150},{150,110}}, textString="%name"),Line(color={0,0,255}, points={{-98,60},{-80,60}}),Line(color={0,0,255}, points={{-80,-60},{-100,-60}})}), Diagram(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={Rectangle(lineColor={0,0,255}, extent={{-80,80},{80,-80}}, fillPattern=FillPattern.None),Line(points={{-54,40},{-54,-40},{54,-40},{54,40},{28,40},{28,-40},{-28,-40},{-28,40},{-54,40},{-54,20},{54,20},{54,0},{-54,0},{-54,-20},{54,-20},{54,-40},{-54,-40},{-54,40},{54,40},{54,-40}}, color={0,0,0}),Line(points={{0,40},{0,-40}}, color={0,0,0}),Rectangle(extent={{-54,20},{-28,0}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-54,0},{-28,-20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-54,-20},{-28,-40}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{-28,40},{0,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{0,40},{28,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Rectangle(extent={{28,40},{54,20}}, lineColor={0,0,0}, fillColor={255,255,0}, fillPattern=FillPattern.Solid),Line(points={{-54,40},{-28,20}}, color={0,0,0}),Line(points={{-28,40},{-54,20}}, color={0,0,0}),Text(lineColor={0,0,255}, extent={{-54,-40},{-30,-56}}, textString="u1"),Text(lineColor={0,0,255}, extent={{28,58},{52,44}}, textString="u2"),Text(lineColor={0,0,255}, extent={{-4,12},{30,-22}}, textString="y"),Line(color={0,0,255}, points={{82,0},{100,0}}),Line(color={0,0,255}, points={{-80,-60},{-100,-60}}),Line(color={0,0,255}, points={{-98,60},{-80,60}})}), Documentation(info="<html>
+<p><b>Adapted from the ModelicaAdditions.Blocks.Tables library</b></p>
+</HTML>
+<html>
+<p><b>Version 1.0</b></p>
+</HTML>
+"));
+equation
+  vu=[u1.signal;u2.signal];
+  y.signal=Interpolate(n, Tu, Ty, vu);
+end Table2D;

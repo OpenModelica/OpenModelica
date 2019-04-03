@@ -1,0 +1,40 @@
+// name:      Inverter
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+simulate(Modelica.Electrical.Spice3.Examples.Inverter, stopTime=1e-11,numberOfIntervalls=2000);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.Inverter_res.mat",
+  "ReferenceFiles/Inverter.mat",
+  "Inverter_diff.csv", 0.01, 0.0001,
+  {"mn.D.v",
+   "mn.Dinternal",
+   "mn.cc.m_capgd",
+   "mn.cc.cBD",
+   "mn.irs",
+   "mn.ird"}); 
+getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Spice3.Examples.Inverter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 1999, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Inverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "stdout            | warning | The step-size 5.0025e-15 is too small. Adjust the step-size to 1e-12.
+// "
+// end SimulationResult;
+// "[Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mp.p: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn.p: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// [Modelica 3.2.1/Electrical/Spice3.mo:4636:5-4637:139:writable] Error: Variable mn.p: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Error: Duplicate modification of element  {start  =(untyped) 0.0}  and final  = (typed)0.0 DAE.PROP(Real(quantity = "InversePotential", unit = "1/V"), C_CONST), value: 0.0 on component m_lambda.
+// Error: Duplicate modification of element  {start  =(untyped) 2e-05}  and final  = (typed)2e-05 DAE.PROP(Real(quantity = "Transconductance", unit = "A/V2"), C_CONST), value: 2e-05 on component m_transconductance.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// ""
+// endResult

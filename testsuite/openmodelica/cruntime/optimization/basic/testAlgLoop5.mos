@@ -1,0 +1,150 @@
+// name: testAlgLoop5
+// status: correct
+
+setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all");
+//setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model testAlgLoop5
+  parameter Real one = 1;
+  Real t1(start=1, min = -0.4) annotation(tearingSelect = always);
+  Real t2(start=1,min=-2,max=1/2) annotation(tearingSelect = always);
+  Real t3(start=5);
+  Real t4(start=5, min=1, max=5);
+  Real x(start=1,fixed=true,min=-3,max=3.0);
+  Real y(start =1,fixed=true);
+  Real z(start =-1,fixed=true, max=0.5, min = -1);
+  input Real u(min=-5,max=5, start=1);
+  input Real u1(min=-1,max=2, start=1);
+  input Real u2(min=-1,max=2, start=1);
+  input Real u3(min=-1,max=1, start=1);
+  Real cost annotation(isLagrange = true);
+  Real costM = sin(u*u1) annotation(isMayer = true);
+  Real dummyCon = one*con annotation(tearingSelect = always);
+  Real con(min=1, start=1, max = 2.5) = 2*t3 + 3*t1 + t2 annotation(isConstraint=true);
+  Real conDer(min=-2, start=1, max = 2) = der(x) annotation(isConstraint=true);
+  Real fcon(min=0,max=0) = 10*der(x) annotation(isFinalConstraint = true);
+  Real fcon2(min=0) = u1 + u annotation(isFinalConstraint = true);
+  Real fcon3(min=10,max=10) =10*( t1 + t2 + t3 + u3) annotation(isFinalConstraint = true);
+  Real fcon4(min=10/2) = 10*u annotation(isFinalConstraint = true);
+  parameter Real tgrid[:] = {i*50/250 for i in 1:250}  annotation(isTimeGrid = true);
+equation
+  t3 = t1 + t2 +y + t4 + u3;
+  log(t1 + t2 + t3 + u + u2) = 0;
+  log((2*t3 + 3*t1 + t2)^2) = u1;
+  log(t4) = exp(t1 + t2 + t3);
+  der(x) = x + t1*t2 + u*t3;
+  der(y) = u2*x + y*z;
+  der(z) = y;
+  cost = cos(x)-sin(u*u1) + (u-1)^2 + u1^2 + (der(y)-sin(time))^2;
+end testAlgLoop5;
+");
+getErrorString();
+
+optimize(testAlgLoop5, tolerance = 1e-12,simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_init CONST -iit 0.2 -iim=none -iif=ReferenceFiles/testAlgLoop5_ref.mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop5_res.mat","ReferenceFiles/testAlgLoop5_ref.mat","testAlgLoop5_diff.csv",0.01,0.0001,{"u","u1","u2","u3","cost","fcon4","costM"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -ipopt_init CONST -iit 0.2 -iim=none -iif=ReferenceFiles/testAlgLoop5_ref.mat'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$t1 >= 0.0 and $EqCon$t1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$t1 <= 0.0, has value: 0.800631
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$t2 >= 0.0 and $EqCon$t2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$t2 <= 0.0, has value: -8.70033
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$$con$con >= 0.0 and $EqCon$$con$con <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$$con$con <= 0.0, has value: -0.761347
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$fcon3 >= 10.0 and $finalCon$fcon3 <= 10.0
+// assert            | warning | Variable violating min/max constraint: 10.0 <= $finalCon$fcon3 <= 10.0, has value: -5
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$fcon >= 0.0 and $finalCon$fcon <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$fcon <= 0.0, has value: -3.10835
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | t2 >= -2.0 and t2 <= 0.5
+// assert            | warning | Variable violating min/max constraint: -2.0 <= t2 <= 0.5, has value: 1
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | t4 >= 1.0 and t4 <= 5.0
+// assert            | warning | Variable violating min/max constraint: 1.0 <= t4 <= 5.0, has value: 5.20033
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x(start = 1, nominal = 3, min = -3, max = 3, init = 1)
+// State[1]:y(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// State[2]:z(start = -1, nominal = 1, min = -1, max = 0.5, init = -1)
+// Input[3]:$$con$con(start = 1, nominal = 2.5, min = 1, max = 2.5)
+// Input[4]:$t1(start = 1, nominal = 1, min = -0.4, max = +Inf)
+// Input[5]:$t2(start = 0.5, nominal = 2, min = -2, max = 0.5)
+// Input[6]:u(start = 1.54056, nominal = 5, min = -5, max = 5)
+// Input[7]:u1(start = 0.566079, nominal = 2, min = -1, max = 2)
+// Input[8]:u2(start = -0.239925, nominal = 2, min = -1, max = 2)
+// Input[9]:u3(start = -1, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 5
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 17.425 for the final constraint $finalCon$fcon3(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 11.1798 for the final constraint $finalCon$fcon3(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.17081 for the final constraint $finalCon$fcon3(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.81529 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.60632 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0277274 for the constraint $EqCon$$con$con(time = 0.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.438649 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.449637 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0593311 for the constraint $EqCon$$con$con(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.465635 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.265803 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.257776 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.219093 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0393324 for the final constraint $finalCon$fcon(time = 50)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00971726 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00522208 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0008537 for the constraint $EqCon$t2(time = 0.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000581587 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00030624 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000611677 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00027864 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00121425 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00112002 for the constraint $EqCon$t2(time = 48.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000855813 for the constraint $EqCon$t2(time = 48.2)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.22306e-05 for the constraint $EqCon$t2(time = 48.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.18283e-05 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.04517e-05 for the constraint $EqCon$t2(time = 48.8)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.29938e-06 for the constraint $EqCon$t2(time = 4.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.02641e-07 for the constraint $EqCon$t2(time = 4.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 3.68416e-08 for the constraint $EqCon$t2(time = 4.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.99957e-08 for the constraint $con$conDer(time = 47.4)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
+//   t2:VARIABLE(min = -2.0 max = 0.5 start = 1.0 )  type: Real 
+//   t1:VARIABLE(min = -0.4 start = 1.0 )  type: Real
+// Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
+//   t2:VARIABLE(min = -2.0 max = 0.5 start = 1.0 )  type: Real 
+//   t1:VARIABLE(min = -0.4 start = 1.0 )  type: Real
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

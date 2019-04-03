@@ -1,0 +1,40 @@
+// name:     WhenPriority
+// keywords: algorithm when elsewhen
+// status:   correct
+// teardown_command: rm -rf algorithms_functions.WhenPriority* _algorithms_functions.WhenPriority* output.log 
+// 
+//  Test of priority of else regarding elsewhen.
+
+loadString("
+package algorithms_functions
+  model WhenPriority
+    Integer i;
+  algorithm
+    when time >= 0.5 then
+      i := 1;
+    elsewhen time >= 0.5 then
+      i := 2;
+    end when;
+  end WhenPriority;
+end algorithms_functions;
+"); getErrorString();
+
+simulate(algorithms_functions.WhenPriority, numberOfIntervals=2, tolerance=1e-5); getErrorString();
+val(i, 0.0);
+val(i, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "algorithms_functions.WhenPriority_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'algorithms_functions.WhenPriority', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.0
+// 1.0
+// endResult

@@ -1,0 +1,80 @@
+// name: parameters
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.parameters* _initializationTests.parameters* output.log
+
+loadString("
+within ;
+package initializationTests
+  model parameters
+    parameter Real r1;
+    parameter Integer i1;
+    parameter Boolean b1;
+    parameter String s1;
+
+    parameter Real r2(fixed=false) = 2.0;
+    parameter Integer i2(fixed=false) = 2;
+    parameter Boolean b2(fixed=false) = true;
+
+    parameter Real r3(start=3.0);
+    parameter Integer i3(start=3);
+    parameter Boolean b3(start=true);
+    parameter String s3(start=\"three\");
+  end parameters;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.parameters, simflags="-lv=LOG_INIT"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.parameters_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.parameters', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real r1(start=0, fixed=true) = 0
+// |                 | |       | | | [2] parameter Real r2(start=2, fixed=false) = 2
+// |                 | |       | | | [3] parameter Real r3(start=3, fixed=true) = 3
+// |                 | |       | | integer parameters
+// |                 | |       | | | [1] parameter Integer i1(start=0, fixed=true) = 0
+// |                 | |       | | | [2] parameter Integer i2(start=2, fixed=false) = 2
+// |                 | |       | | | [3] parameter Integer i3(start=3, fixed=true) = 3
+// |                 | |       | | boolean parameters
+// |                 | |       | | | [1] parameter Boolean b1(start=false, fixed=true) = false
+// |                 | |       | | | [2] parameter Boolean b2(start=true, fixed=false) = true
+// |                 | |       | | | [3] parameter Boolean b3(start=true, fixed=true) = true
+// |                 | |       | | string parameters
+// |                 | |       | | | [1] parameter String s1(start=\"\") = \"\"
+// |                 | |       | | | [2] parameter String s3(start=\"three\") = \"three\"
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:17:5-17:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start="three") as default value.
+// [<interactive>:16:5-16:37:writable] Warning: Parameter b3 has no value, and is fixed during initialization (fixed=true), using available start value (start=true) as default value.
+// [<interactive>:15:5-15:34:writable] Warning: Parameter i3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
+// [<interactive>:14:5-14:33:writable] Warning: Parameter r3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3.0) as default value.
+// [<interactive>:8:5-8:24:writable] Warning: Parameter s1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:7:5-7:25:writable] Warning: Parameter b1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:6:5-6:25:writable] Warning: Parameter i1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:5:5-5:22:writable] Warning: Parameter r1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:12:5-12:45:writable] Warning: The parameter b2 has fixed = false and a binding equation b2 = true, which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// [<interactive>:11:5-11:42:writable] Warning: The parameter i2 has fixed = false and a binding equation i2 = 2, which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// [<interactive>:10:5-10:41:writable] Warning: The parameter r2 has fixed = false and a binding equation r2 = 2.0, which is probably redundant.
+// Setting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding.
+// "
+// endResult

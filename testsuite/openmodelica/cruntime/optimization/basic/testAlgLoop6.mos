@@ -1,0 +1,436 @@
+// name: testAlgLoop6
+// status: correct
+
+setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all");
+//setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model testAlgLoop6
+  Real y1(start = 0,min=-1,max=1);
+  Real y2(start = 0,min=-1,max=1);
+  Real y3(start = 0,min=-0.3,max=0.3);
+  Real x1(start=1,min=0);
+  Real x2(min=-1,max=1) annotation(tearingSelect = always);
+  input Real u(min=-1,max=1,start=0);
+  input Real u1(min=-1,max=1,start=0);
+  input Real u2(min=-5,max=5,start=0);
+  input Real u3(min=-1,max=1,start=1);
+  Real cost annotation(isLagrange = true);
+  Real con(min=-0.9,max=0.9,start=1) = y1 + u;
+  Real conDer(min=-1,max=1) = der(y1) annotation(tearingSelect = always);
+equation
+  sin(der(y1)) = con;
+  der(y2) = asin(con);
+  der(y3) = u1*y3 + y1;
+  log(x1) + exp(y3*x2) = y2;
+  cos(x2) + u2*sin(x1) = y1*u3;
+  cost = (y1-1)^2 +(1-y3)^2 + (con-1)*(con+1) + cos(x2)*sin(x1)*sin(time); 
+end testAlgLoop6;
+");
+getErrorString();
+
+optimize(testAlgLoop6, numberOfIntervals=70, tolerance = 1e-12, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif=ReferenceFiles/testAlgLoop6_ref.mat -iim=none",stopTime=5);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop6_res.mat","ReferenceFiles/testAlgLoop6_ref.mat","testFinalCon_diff.csv",0.01,0.0001,{"y1","der(y1)", "x1","x2","u1","u2","u3","cost","con","y3","y2"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 70, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif=ReferenceFiles/testAlgLoop6_ref.mat -iim=none'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$conDer >= 0.0 and $EqCon$conDer <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$conDer <= 0.0, has value: -0.770042
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$x2 >= 0.0 and $EqCon$x2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: 0.493305
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:y1(start = 0, nominal = 1, min = -1, max = 1, init = 0)
+// State[1]:y2(start = 0, nominal = 1, min = -1, max = 1, init = 0)
+// State[2]:y3(start = 0, nominal = 0.3, min = -0.3, max = 0.3, init = 0)
+// Input[3]:$conDer(start = 0, nominal = 1, min = -1, max = 1)
+// Input[4]:$x2(start = 0, nominal = 1, min = -1, max = 1)
+// Input[5]:u(start = 0.770042, nominal = 1, min = -1, max = 1)
+// Input[6]:u1(start = 1, nominal = 1, min = -1, max = 1)
+// Input[7]:u2(start = -1.4089, nominal = 5, min = -5, max = 5)
+// Input[8]:u3(start = 0.0114179, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 2
+// ========================================================
+//
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.14286
+// stdout            | warning | -1<= (y2=1.00447) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.21429
+// stdout            | warning | -1<= (y2=1.06724) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.28571
+// stdout            | warning | -1<= (y2=1.13002) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.35714
+// stdout            | warning | -1<= (y2=1.1928) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.42857
+// stdout            | warning | -1<= (y2=1.25558) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.5
+// stdout            | warning | -1<= (y2=1.31836) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.57143
+// stdout            | warning | -1<= (y2=1.38114) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.64286
+// stdout            | warning | -1<= (y2=1.44392) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.71429
+// stdout            | warning | -1<= (y2=1.5067) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.78571
+// stdout            | warning | -1<= (y2=1.56948) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.85714
+// stdout            | warning | -1<= (y2=1.63226) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 1.92857
+// stdout            | warning | -1<= (y2=1.69504) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2
+// stdout            | warning | -1<= (y2=1.75782) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.07143
+// stdout            | warning | -1<= (y2=1.82059) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.14286
+// stdout            | warning | -1<= (y2=1.88337) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.21429
+// stdout            | warning | -1<= (y2=1.94615) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.28571
+// stdout            | warning | -1<= (y2=2.00893) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.35714
+// stdout            | warning | -1<= (y2=2.07171) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.42857
+// stdout            | warning | -1<= (y2=2.13449) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.5
+// stdout            | warning | -1<= (y2=2.19727) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.57143
+// stdout            | warning | -1<= (y2=2.26005) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.64286
+// stdout            | warning | -1<= (y2=2.32283) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.71429
+// stdout            | warning | -1<= (y2=2.38561) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.78571
+// stdout            | warning | -1<= (y2=2.44839) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.85714
+// stdout            | warning | -1<= (y2=2.51116) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 2.92857
+// stdout            | warning | -1<= (y2=2.57394) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3
+// stdout            | warning | -1<= (y2=2.63672) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.07143
+// stdout            | warning | -1<= (y2=2.6995) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.14286
+// stdout            | warning | -1<= (y2=2.76228) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.21429
+// stdout            | warning | -1<= (y2=2.82506) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.28571
+// stdout            | warning | -1<= (y2=2.88784) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.35714
+// stdout            | warning | -1<= (y2=2.95062) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.42857
+// stdout            | warning | -1<= (y2=3.0134) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.5
+// stdout            | warning | -1<= (y2=3.07618) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.57143
+// stdout            | warning | -1<= (y2=3.13896) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.64286
+// stdout            | warning | -1<= (y2=3.20173) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.71429
+// stdout            | warning | -1<= (y2=3.26451) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.78571
+// stdout            | warning | -1<= (y2=3.32729) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.85714
+// stdout            | warning | -1<= (y2=3.39007) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 3.92857
+// stdout            | warning | -1<= (y2=3.45285) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4
+// stdout            | warning | -1<= (y2=3.51563) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.07143
+// stdout            | warning | -1<= (y2=3.57841) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.14286
+// stdout            | warning | -1<= (y2=3.64119) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.21429
+// stdout            | warning | -1<= (y2=3.70397) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.28571
+// stdout            | warning | -1<= (y2=3.76675) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.35714
+// stdout            | warning | -1<= (y2=3.82953) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.42857
+// stdout            | warning | -1<= (y2=3.89231) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.5
+// stdout            | warning | -1<= (y2=3.95508) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.57143
+// stdout            | warning | -1<= (y2=4.01786) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.64286
+// stdout            | warning | -1<= (y2=4.08064) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.71429
+// stdout            | warning | -1<= (y2=4.14342) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.78571
+// stdout            | warning | -1<= (y2=4.2062) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.85714
+// stdout            | warning | -1<= (y2=4.26898) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 4.92857
+// stdout            | warning | -1<= (y2=4.33176) <=1
+//
+// ********************************************
+// ********************************************
+// stdout            | warning | Initial guess failure at time 5
+// stdout            | warning | -1<= (y2=4.39454) <=1
+//
+// ********************************************
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 0.770042 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.486392 for the constraint $EqCon$conDer(time = 1.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.44764 for the constraint $EqCon$conDer(time = 1.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0874009 for the constraint $EqCon$x2(time = 2.42857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.011798 for the constraint $EqCon$x2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.00624e-05 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.71628e-06 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 3.81685e-05 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000352709 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.005094 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0179622 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0115929 for the constraint $EqCon$conDer(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0073304 for the approximation of the state y3(time = 4.57143)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00870101 for the approximation of the state y3(time = 4.42857)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00577808 for the approximation of the state y3(time = 4.35714)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0134631 for the approximation of the state y3(time = 3.71429)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0100536 for the approximation of the state y3(time = 3.71429)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0263399 for the approximation of the state y3(time = 3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0183736 for the approximation of the state y3(time = 3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00609303 for the approximation of the state y3(time = 3)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00507116 for the approximation of the state y3(time = 2.71429)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0030683 for the approximation of the state y3(time = 2.71429)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00293745 for the approximation of the state y3(time = 2.35714)
+// LOG_IPOPT_ERROR   | info    | max error is 0.0014371 for the approximation of the state y3(time = 2.07143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00385524 for the constraint $EqCon$x2(time = 2)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00345998 for the constraint $EqCon$x2(time = 2)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00952513 for the constraint $EqCon$x2(time = 1.78571)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00773478 for the constraint $EqCon$x2(time = 1.85714)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0183779 for the constraint $EqCon$x2(time = 1.57143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0143197 for the constraint $EqCon$x2(time = 1.57143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0304152 for the constraint $EqCon$x2(time = 1.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0223157 for the constraint $EqCon$x2(time = 1.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0220504 for the constraint $EqCon$x2(time = 1.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0142495 for the constraint $EqCon$x2(time = 1.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0204332 for the constraint $EqCon$x2(time = 0.714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.015431 for the constraint $EqCon$x2(time = 0.714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0189947 for the constraint $EqCon$x2(time = 0.642857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0142338 for the constraint $EqCon$x2(time = 0.642857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0234789 for the constraint $EqCon$x2(time = 0.571429)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.012016 for the constraint $EqCon$x2(time = 0.571429)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0254678 for the constraint $EqCon$x2(time = 0.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00980267 for the constraint $EqCon$x2(time = 0.428571)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0234567 for the constraint $EqCon$x2(time = 0.357143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00911585 for the constraint $EqCon$x2(time = 0.357143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0279971 for the constraint $EqCon$x2(time = 0.357143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00573109 for the constraint $EqCon$x2(time = 0.285714)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0658764 for the constraint $EqCon$x2(time = 0.285714)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00218058 for the constraint $EqCon$x2(time = 3)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0286712 for the constraint $EqCon$x2(time = 0.214286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00619124 for the constraint $EqCon$x2(time = 0.214286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0462015 for the constraint $EqCon$x2(time = 0.214286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00191801 for the constraint $EqCon$x2(time = 0.214286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00731684 for the constraint $EqCon$x2(time = 3.07143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00190648 for the constraint $EqCon$x2(time = 3.07143)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0204588 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00324755 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.060957 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0581662 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.21575e-05 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0153965 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00433548 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.199116 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0583938 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0950214 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.29268e-05 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000431219 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000509342 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.208e-06 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.93971e-08 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.31351e-11 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.06037e-12 for the constraint $EqCon$x2(time = 1.71429)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.5)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):
+//   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Notification: Following iteration variables are selected by the user for strong component 2 (DAE kind: simulation):
+//   x2:VARIABLE(min = -1.0 max = 1.0 )  type: Real
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

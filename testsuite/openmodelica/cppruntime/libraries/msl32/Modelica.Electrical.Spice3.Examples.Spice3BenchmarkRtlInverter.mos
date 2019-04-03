@@ -1,0 +1,44 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter);
+compareVars :=
+{
+   "Q1.vbe",
+   "Q1.vbc",
+   "Q1.vbx",
+   "Q1.vcs"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// true
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
+// {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs"}
+// Compilation succeeded
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:11425:17-11425:45:writable] Warning: temp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "true
+// "
+// ""
+// endResult

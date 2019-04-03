@@ -1,0 +1,68 @@
+// name: inlineFunction2
+// status: correct
+
+// use new inline method
+setCommandLineOptions("+inlineMethod=append");
+
+loadString("
+model foo
+  function f
+    input Real x;
+    output Real y;
+    output Real y1;
+  protected
+    Real a[2];
+  algorithm
+     a[1] := 1;
+     a[2] := 1;
+     y := sum(a)*x;
+     y1 := sum(a)*x + y;
+    annotation(Inline=true);
+  end f;
+
+  Real y(start=0,fixed=true);
+  Real dy = der(y);
+  Real w,w1;
+  Real[2] a;
+  Real[2] b(each start = 0);
+  Real[2] c;
+  Real[2] d;
+  Real z(start=0);
+equation
+  der(y) + 1 = f(der(y)) + b[1] + b[2];
+  (w1, w) = f(y);
+  (a[1], a[2]) = f(y);
+   der(b[1]) = (- w + a[1]);
+   der(b[2]) = (- w1 + a[2]);
+  (b[1], c[2]) = f(c[1]);
+  (d[1], d[2]) = f(d[2] + y - sum(c));
+  der(z) = f(exp(-abs(sum(a)*exp(-abs(sum(d))) +  sum(b)*exp(-abs(sum(c)))))*z + exp((y-time)));
+end foo;
+");
+getErrorString();
+//setCommandLineOptions("+d=backenddaeinfo");
+//getErrorString();
+
+simulate(foo);
+getErrorString();
+
+val(time,{0,0.5,1.0});
+val(y,{0,0.5,1.0});
+val(z,{0,0.5,1.0});
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {0.0,0.5,1.0}
+// {0.0,0.5,1.0}
+// {0.0,1.369569821601793,5.084529233982003}
+// endResult

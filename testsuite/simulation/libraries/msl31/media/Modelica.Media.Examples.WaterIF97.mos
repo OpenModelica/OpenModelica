@@ -1,0 +1,18 @@
+//name:        buildModel(Modelica.Media.Examples.WaterIF97)
+//keyword:     simulation
+//status:      correct
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+setDebugFlags("showStatement");
+
+buildModel(Modelica.Media.Examples.WaterIF97);
+
+// Result:
+// true
+// ""
+// true
+// Evaluating: buildModel(Modelica.Media.Examples.WaterIF97)
+// {"Modelica.Media.Examples.WaterIF97","Modelica.Media.Examples.WaterIF97_init.xml"}
+// endResult

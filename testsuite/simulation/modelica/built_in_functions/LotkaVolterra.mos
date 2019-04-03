@@ -1,0 +1,51 @@
+// name:     LotkaVolterra
+// keywords: der
+// status: correct
+// teardown_command: rm -rf LotkaVolterra_* LotkaVolterra LotkaVolterra.exe LotkaVolterra.cpp LotkaVolterra.makefile LotkaVolterra.libs LotkaVolterra.log output.log
+// 
+//  
+// Drmodelica: 15.4.1 Population Dynamics (p. 556) Not in the notebook
+// 
+loadFile("LotkaVolterra.mo");
+simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=300, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+//size:=readSimulationResultSize("LotkaVolterra_res.mat");
+//res:=readSimulationResult("LotkaVolterra_res.mat",{rabbits,foxes},size);
+decimals := 10.0;
+x1:=val(rabbits,180);
+y1:=val(foxes,200);
+x2:=val(rabbits,666.0);
+y2:=val(foxes,760.0);
+x1:=decimals*x1;
+y1:=decimals*y1;
+x2:=decimals*x2;
+y2:=decimals*y2;
+x1:=floor(x1);
+y1:=floor(y1);
+x2:=floor(x2);
+y2:=floor(y2);
+echo(true); // turns on output
+x1/decimals; // rounded value to 3 digits
+x2/decimals; 
+y1/decimals;
+y2/decimals;
+// dymola values, differs a bit.
+// 4311.1
+// 1161.7
+// 312.8
+// 43.2
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "LotkaVolterra_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 300, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 4310.2
+// 1156.6
+// 312.1
+// 43.6
+// endResult

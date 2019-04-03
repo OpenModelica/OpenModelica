@@ -1,0 +1,57 @@
+// name:     Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "3.1";
+referenceFileDir := "msl31";
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+diffAlgorithm := OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCSE_Start);
+compareVars :=
+{
+  "dcse.inertiaRotor.phi",
+  "dcse.inertiaRotor.w",
+  "dcse.la.i",
+  "der(dcse.inertiaRotor.w)",
+  "der(dcse.la.i)"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "3.1"
+// "msl31"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults
+// Modelica.Electrical.Machines.Examples.DCSE_Start
+// {"dcse.inertiaRotor.phi","dcse.inertiaRotor.w","dcse.la.i","der(dcse.inertiaRotor.w)","der(dcse.la.i)"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.inertiaRotor.phi|dcse.inertiaRotor.w|dcse.la.i|der[(]dcse.inertiaRotor.w[)]|der[(]dcse.la.i[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.DCSE_Start_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// [Modelica 3.1/Electrical/Machines.mo:3115:9-3117:50:writable] Warning: Parameter dcse.Le has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0005) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:3112:9-3114:50:writable] Warning: Parameter dcse.Re has no value, and is fixed during initialization (fixed=true), using available start value (start=0.01) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7500:7-7502:73:writable] Warning: Parameter dcse.La has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0015) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7497:7-7499:73:writable] Warning: Parameter dcse.Ra has no value, and is fixed during initialization (fixed=true), using available start value (start=0.05) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7494:7-7496:56:writable] Warning: Parameter dcse.wNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=147.6548547187203) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7491:7-7493:56:writable] Warning: Parameter dcse.IaNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7488:7-7490:56:writable] Warning: Parameter dcse.VaNominal has no value, and is fixed during initialization (fixed=true), using available start value (start=100.0) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7272:7-7274:46:writable] Warning: Parameter dcse.Js has no value, and is fixed during initialization (fixed=true), using available start value (start=dcse.Jr) as default value.
+// [Modelica 3.1/Electrical/Machines.mo:7268:7-7268:72:writable] Warning: Parameter dcse.Jr has no value, and is fixed during initialization (fixed=true), using available start value (start=0.15) as default value.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

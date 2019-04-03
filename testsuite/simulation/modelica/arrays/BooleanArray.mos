@@ -1,0 +1,32 @@
+// name:     BooleanArray
+// keywords: boolean,array
+// status: correct
+// teardown_command: rm -rf BooleanArray_* BooleanArray BooleanArray.exe BooleanArray.cpp BooleanArray.makefile BooleanArray.libs BooleanArray.log output.log
+//
+// Boolean array handling, fill
+//
+// 
+
+loadFile("BooleanArray.mo");
+simulate(BooleanArray);
+val(resArr[1],0.5);
+val(resArr[2],0.5);
+val(resArr[3],0.5);
+val(resArr[4],0.5);
+val(resArr[5],0.5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BooleanArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BooleanArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.0
+// 9.0
+// 0.0
+// 25.0
+// endResult

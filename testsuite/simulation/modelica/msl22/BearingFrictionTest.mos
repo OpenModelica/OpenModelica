@@ -1,0 +1,29 @@
+// name:     BearingFrictionTest
+// keywords: Simulation
+// status:   correct
+// teardown_command: rm -f BearingFrictionTest_* BearingFrictionTest.cpp BearingFrictionTest BearingFrictionTest.exe BearingFrictionTest.makefile BearingFrictionTest.log BearingFrictionTest.libs
+// 
+//  Simulate models and read in data.
+//  wbraun: The results do not fit to them of dymola.
+//          They differs after initialization.
+//
+
+loadModel(Modelica,{"2.2.2"});
+// BearingFriction test (mixed system of equations in columb friction)
+
+loadFile("BearingFrictionTest.mo");
+simulate(BearingFrictionTest, numberOfIntervals=50, tolerance=1e-5);
+
+{val(BearingFriction1.w,0.0),val(BearingFriction1.w,0.1),val(BearingFriction1.w,0.2),val(BearingFriction1.w,0.3),val(BearingFriction1.w,0.4),val(BearingFriction1.w,0.5),
+val(BearingFriction1.w,0.6),val(BearingFriction1.w,0.7),val(BearingFriction1.w,0.8),val(BearingFriction1.w,0.9),val(BearingFriction1.w,1.0)};
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "BearingFrictionTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'BearingFrictionTest', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {0.25,0.341439970154827,0.421719930287777,0.492182893467902,0.554098572765232,0.608452425521361,0.656177864683761,0.698083610943614,0.734882634907287,0.767201274318889,0.795580591782357}
+// endResult

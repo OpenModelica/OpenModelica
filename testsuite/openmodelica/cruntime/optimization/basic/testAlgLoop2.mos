@@ -1,0 +1,73 @@
+// name: testAlgLoop2
+// status: correct
+
+
+setCommandLineOptions("+gDynOpt +loop2con=all");
+//setCommandLineOptions("+gDynOpt");
+
+getErrorString();
+
+loadString("
+model testAlgLoop2
+  Real y(start = -1, min = 0, max = 10);
+  Real y_ = -sqrt(sin(time +1));
+  Real cost annotation(isLagrange = true);
+equation
+  y^2 = sin(time + 1); // -+sqrt(sin(time +1))
+  cost = (y + sqrt(sin(time +1)))^2;
+end testAlgLoop2;
+");
+getErrorString();
+
+optimize(testAlgLoop2, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop2_res.mat","ReferenceFiles/testAlgLoop2_ref.mat","testAlgLoop2_diff.csv",0.01,0.0001,{"y","y_","cost"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testAlgLoop2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$y >= 0.0 and $EqCon$y <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$y <= 0.0, has value: 0.158529
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | y >= 0.0 and y <= 10.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= y <= 10.0, has value: -1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// Input[0]:$y(start = 0, nominal = 10, min = 0, max = 10)
+// --------------------------------------------------------
+// number of nonlinear constraints: 1
+// ========================================================
+// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 0.989998 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 24.5024 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.88541 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.25766 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.17515 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0065263 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.05791e-05 for the constraint $EqCon$y(time = 0.572899)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.79795e-11 for the constraint $EqCon$y(time = 0.572899)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

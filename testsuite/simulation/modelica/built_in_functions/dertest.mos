@@ -1,0 +1,29 @@
+// name:     dertest 
+// keywords: Simulate, der(expr) 
+// status: correct
+// teardown_command: rm -rf dertest_* dertest dertest.exe dertest.cpp dertest.makefile dertest.libs dertest.log output.log
+// 
+//  Simulate model containing der(expr).
+//
+
+loadFile("dertest.mo");
+simulate(dertest, tolerance=1e-6, numberOfIntervals=50);
+val(x,0.0);
+val(x,1.0);
+val(y,0.0);
+val(y,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "dertest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dertest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 10.0
+// 4.19821202610832
+// -1.0
+// -1.429165554394553
+// endResult

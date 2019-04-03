@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.ArrayConstruct1.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.ArrayConstruct1
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.ArrayConstruct1.* DrModelicaForTesting.ArrayConstruct1_* DrModelicaForTesting.ArrayConstruct1 DrModelicaForTesting.ArrayConstruct1.exe DrModelicaForTesting.ArrayConstruct1.cpp DrModelicaForTesting.ArrayConstruct1.makefile DrModelicaForTesting.ArrayConstruct1.libs DrModelicaForTesting.ArrayConstruct1.log DrModelicaForTesting.ArrayConstruct1.c DrModelicaForTesting.ArrayConstruct1.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.ArrayConstruct1, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.ArrayConstruct1_res.mat",
+  "ReferenceFiles/ArrayConstruct1_ref.mat","DrModelicaForTesting.ArrayConstruct1_diff.csv",0.01,0.013,
+  {"a[1]","a[2]", "a[3]","c[1,1]","c[1,2]","c[2,1]","c[2,2]" ,"A[1]", "A[2]"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.ArrayConstruct1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.ArrayConstruct1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,31 @@
+// name: OverdeterminedInitialization.Fluid.DynamicPipeInitialValues
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+simulate(OverdeterminedInitialization.Fluid.DynamicPipeInitialValues); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "OverdeterminedInitialization.Fluid.DynamicPipeInitialValues_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'OverdeterminedInitialization.Fluid.DynamicPipeInitialValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: Assuming fixed start value for the following 1 variables:
+//          m_flow_initial:DISCRETE(unit = "kg/s" fixed = false )  type: Real
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          pipe.mediums[1].p = 10000000.0.
+// "
+// endResult

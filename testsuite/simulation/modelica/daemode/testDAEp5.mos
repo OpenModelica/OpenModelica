@@ -1,0 +1,44 @@
+// name: testDAE.p5
+// status: correct
+// teardown_command: rm -f testDAE.p5* output.log
+
+
+loadFile("./testDAEPackage.mo");
+getErrorString();
+
+setCommandLineOptions("--daeMode");
+simulate(testDAE.p5);
+getErrorString();
+
+val(x,0.0);
+val(y,0.0);
+val(v,0.0);
+val(z,0.0);
+
+val(x,1.0);
+val(y,1.0);
+val(v,1.0);
+val(z,1.0);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "testDAE.p5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.0
+// 1.0
+// -1.0
+// -3.0
+// 1.161768100209105
+// 4.210978094791844
+// -0.6277059834270277
+// 0.5829242830266623
+// endResult

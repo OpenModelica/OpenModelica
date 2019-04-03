@@ -1,0 +1,57 @@
+// name:     testFMU2MatrixIO
+// keywords: array storage order
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *MatrixIOTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model MatrixIOTest
+  parameter Real[:,:] A = [11, 12; 21, 22];
+  input Real[2,2] B(start = A);
+  output Real[:,:] C = A;
+  output Real a12 = A[1,2];
+  output Real b12 = B[1,2];
+  output Real c12 = C[1,2];
+  Real nc12 = -c12; // no output as local alias is treated differently
+  output Real ync12 = nc12;
+  annotation(experiment(StopTime = 0));
+end MatrixIOTest;
+"); getErrorString();
+
+translateModelFMU(MatrixIOTest, version = "2.0"); getErrorString();
+loadModel(Modelica); getErrorString();
+importFMU("MatrixIOTest.fmu"); getErrorString();
+loadFile("MatrixIOTest_me_FMU.mo"); getErrorString();
+
+simulate(MatrixIOTest_me_FMU, stopTime=0.0); getErrorString();
+val(a12, 0);
+//val(b12, 0); // does give 0!?
+val(c12, 0);
+val(nc12, 0);
+val(ync12, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "MatrixIOTest.fmu"
+// ""
+// true
+// ""
+// "MatrixIOTest_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MatrixIOTest_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MatrixIOTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 12.0
+// 12.0
+// -12.0
+// -12.0
+// endResult

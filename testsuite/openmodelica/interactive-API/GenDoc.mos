@@ -1,0 +1,46 @@
+// name: GenDoc.mos
+// keywords: tests that GenerateDoc.mos script works fine!
+// status: correct
+// teardown_command: rm -rf *.html old-html-tmp "./-p" ModelicaDocumentation.* GenerateDoc.mos loadModel.mos tmp FilterTidy.sh FindFiles.sh Tidy.py fix-case-sensitive.py generate_icons.py log.txt style.css tidy.err tidy.filtered
+//
+
+system("rm -f *.html log.txt"); getErrorString();
+echo(false);
+gendoc := getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
+echo(true);
+setEnvironmentVar("GenerateDocTest", "YES"); getErrorString();
+echo(true);
+runScript(gendoc);
+echo(true);
+getErrorString();
+
+"GenerateDoc.mos wrote " + String(size(items,1)) + " files";
+"top level classes";
+classNames;
+"all classes recursive";
+allClassNames;
+system("ls *.html | wc -l", "log.txt"); getErrorString();
+"Check how many .html files are on disk:";
+readFile("log.txt"); getErrorString();
+
+// Result:
+// 0
+// ""
+// true
+// true
+// ""
+// true
+// true
+// ""
+// "GenerateDoc.mos wrote 1 files"
+// "top level classes"
+// {TestGenerateDoc}
+// "all classes recursive"
+// {TestGenerateDoc}
+// 0
+// ""
+// "Check how many .html files are on disk:"
+// "2
+// "
+// ""
+// endResult

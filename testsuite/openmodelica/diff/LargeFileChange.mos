@@ -1,0 +1,49 @@
+// status: correct
+
+loadModel(Modelica, {"trunk"});
+getErrorString();
+echo(false);
+fileName := getSourceFile(Modelica.Electrical.PowerConverters.Examples.DCAC.MultiPhaseTwoLevel.MultiPhaseTwoLevel_R);
+s1 := readFile(fileName);
+echo(true);
+updateComponent(fundamentalWaveCurrent,Modelica.Blocks.Math.Harmonic,Modelica.Electrical.PowerConverters.Examples.DCAC.MultiPhaseTwoLevel.MultiPhaseTwoLevel_R,annotate=Placement(visible=true, transformation=transformation(origin={90,-48}, extent={{-666,-10},{10,10}}, rotation=0)));
+getErrorString();
+echo(false);
+s2 := listFile(Modelica.Electrical.PowerConverters);
+print(getErrorString());
+writeFile("old.mo", readFile(fileName));
+s := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+echo(true);
+if s == "" then
+  print("Failed to merge strings!\n");
+  print(getErrorString());
+  exit(1);
+end if;
+writeFile("merged.mo", s);
+writeFile("new.mo", s2);
+getErrorString();
+system("diff -uZ old.mo merged.mo | egrep -v '^(@@|---|[+][+][+])'")
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// true
+//
+// true
+// true
+// ""
+//              each k=1,
+//              each x0Cos=0,
+//              each x0Sin=0,
+// -            each f=f1) annotation (Placement(transformation(
+// -                extent={{-10,-10},{10,10}},
+// -                origin={90,-50})));
+// +            each f=f1) annotation (Placement(visible = true, transformation(origin = {90, -48}, extent = {{-666, -10}, {10, 10}}, rotation = 0)));
+//            Modelica.Blocks.Math.Harmonic fundamentalWaveVoltage[m](
+//              each k=1,
+//              each x0Cos=0,
+// 0
+// endResult

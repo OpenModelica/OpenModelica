@@ -1,0 +1,57 @@
+encapsulated package %LexerCode% // Generated %time%
+  /* 
+   Template for Lexer Code
+   replace keywords:
+   %LexerCode
+   %time
+   %Token
+   %Lexer
+   %ParseTable
+   %constant
+   %nameSpan
+   %functions
+   %caseAction
+  */
+import Types;
+import %Token%;
+import %Lexer%;
+import %ParseTable%;
+import OMCCTypes;
+import Error;
+%prologue%
+
+function action
+  input Integer act;
+  input Integer startSt;
+  input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
+  input Integer buffer;
+  input Boolean debug;
+  input String fileNm;
+  input String fileContents;
+  output OMCCTypes.Token token;
+  output Integer mm_startSt;
+  output Integer bufferRet;
+protected
+  OMCCTypes.Info info;
+  String sToken;
+  Integer nameSpan,act2;
+algorithm
+  mm_startSt := startSt;
+  nameSpan := %nameSpan%;
+  act2 := act;
+  bufferRet := 0;
+  (token) := match (act)
+    local 
+      OMCCTypes.Token tok;
+%caseAction%
+    else
+      equation
+        tok = OMCCTypes.TOKEN("",act,fileContents,mm_pos,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        print(OMCCTypes.printToken(tok));
+      then (OMCCTypes.noToken);
+  end match;
+end action;  
+   
+%epilogue%
+
+end %LexerCode%;

@@ -1,0 +1,46 @@
+// name:     04 Assignment
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+// Note that the testcase needs to be run with the input:
+// a:=1+2
+// c:=1
+// b:=1+c
+// d:=a+b+c
+// ;
+// d+1
+// or something that generates the same output.
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Assignment.mo");
+loadFile("Parse.mo");
+getErrorString();
+print("[Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
+");
+if true then
+  syntree := Parse.parse();
+end if;
+// syntree; // Uncomment if you want to debug the AST
+getErrorString();
+Assignment.evalprogram(syntree);
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// ""
+// [Parse. Enter an expression, then press CTRL+z (Windows) or CTRL+d (Linux).]
+//
+//
+// ""
+//
+// The assignments: a = 1+2, c = 1, b = 1+c, d = a+b+c
+// The expression: d+1
+// The environment: d = 6, b = 2, c = 1, a = 3
+// 7
+// ""
+// endResult

@@ -1,0 +1,74 @@
+// name:     ArrayEquation
+// keywords: Simulate, readSimulationData, arrays
+// status: correct
+// teardown_command: rm -rf ArrayEqn.log ArrayEqn.cpp ArrayEqn.libs ArrayEqn.makefile ArrayEqn ArrayEqn.exe ArrayEqn_* output.log
+// 
+//  Simulate model with array equations
+//
+loadFile("ArrayEqn.mo");
+simulate(ArrayEqn, numberOfIntervals=50, tolerance=1e-5);
+val(x[1],0.0);
+val(x[1],0.2);
+val(x[1],0.4);
+val(x[1],0.6);
+val(x[1],0.8);
+val(x[1],1.0);
+val(x[2],0.0);
+val(x[2],0.2);
+val(x[2],0.4);
+val(x[2],0.6);
+val(x[2],0.8);
+val(x[2],1.0);
+val(x[3],0.0);
+val(x[3],0.2);
+val(x[3],0.4);
+val(x[3],0.6);
+val(x[3],0.8);
+val(x[3],1.0);
+val(y,0.0);
+val(y,0.2);
+val(y,0.4);
+val(y,0.6);
+val(y,0.8);
+val(y,1.0);
+/*
+simulate(ArrayEqn1,numberOfIntervals=10);
+val(x[1],0.0);
+val(x[1],1.0);
+val(y,1.0);
+val(y,1.0);
+*/
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArrayEqn_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ArrayEqn', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 2.0
+// 0.8986712618675596
+// 0.403803492405326
+// 0.1814520683187321
+// 0.08152949533872374
+// 0.03663319221705208
+// 4.0
+// 4.0
+// 4.0
+// 4.0
+// 4.0
+// 4.0
+// 2.0
+// 2.0
+// 2.0
+// 2.0
+// 2.0
+// 2.0
+// 1.0
+// 0.4493356309337798
+// 0.201901746202663
+// 0.09072603415936607
+// 0.04076474766936187
+// 0.01831659610852604
+// endResult

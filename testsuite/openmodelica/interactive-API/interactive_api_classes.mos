@@ -1,0 +1,271 @@
+// name:     API Classes
+// keywords: Graphical API
+// status:   correct
+// 
+//  Subset of the Graphical API.
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+// get the annotation version
+getAnnotationVersion();
+// set the annotation version
+setAnnotationVersion("3.x");
+
+createModel(A);
+createModel(A.test);
+createModel(test2);
+addComponent(x,Integer,A.test);
+addComponent(z,Real,A.test);
+addComponent(y,Integer,test2);
+updateComponent(x,Integer,A.test,binding=33);
+getErrorString();
+addClassAnnotation(A.test,annotate=Icon(extent={{0,0},{100,100}},graphics={Line(points={{0,0},{100,100}})})); // add an erroneous annotation!
+getErrorString(); // that works fine
+getIconAnnotation(A.test); // try to get the erroneous annotation!
+getErrorString(); // get the error about non-existing modifier
+addClassAnnotation(A.test, annotate= Icon(graphics={Line(color={127,127,127}, arrow= {Arrow.None, Arrow.Open}, points={{-50, -50}, {50,50}, {100, 0}, {0, 100}})}));  // replace with a good annotation!
+addClassAnnotation(A.test, annotate= Diagram(graphics={Line(color={127,127,127}, arrow= {Arrow.None, Arrow.Open}, points={{-50, -50}, {50,50}, {100, 0}, {0, 100}})}));
+addClassAnnotation(A.test, annotate=Documentation(info="<HTML>foo</HTML>",revisions="1.0"));
+list();
+getErrorString();
+getIconAnnotation(A.test);
+getErrorString();
+getDiagramAnnotation(A.test);
+getErrorString();
+getDocumentationAnnotation(A.test);
+getErrorString();
+getComponentCount(A.test);
+getComponentCount(test2);
+getComponents(A.test);
+addConnection(a.n,b.z,A.test);
+addConnection(a.n[1],b.z[2],A.test);
+getNthConnection(A.test,1);
+getClassNames(A);
+
+clear();
+
+// get the annotation version
+getAnnotationVersion();
+// set the annotation version
+setAnnotationVersion("2.x");
+
+createModel(A);
+createModel(A.test);
+createModel(test2);
+addComponent(x,Integer,A.test);
+addComponent(z,Real,A.test);
+addComponent(y,Integer,test2);
+updateComponent(x,Integer,A.test,binding=33);
+getErrorString();
+addClassAnnotation(A.test,annotate=Icon(extent={{0,0},{100,100}},graphics={Line(points={{0,0},{100,100}})})); // add an erroneous annotation!
+getErrorString(); // that works fine
+getIconAnnotation(A.test); // try to get the erroneous annotation!
+getErrorString(); // get the error about non-existing modifier
+addClassAnnotation(A.test, annotate= Icon(graphics={Line(color={127,127,127}, arrow= {Arrow.None, Arrow.Open}, points={{-50, -50}, {50,50}, {100, 0}, {0, 100}})}));  // replace with a good annotation!
+addClassAnnotation(A.test, annotate= Diagram(graphics={Line(color={127,127,127}, arrow= {Arrow.None, Arrow.Open}, points={{-50, -50}, {50,50}, {100, 0}, {0, 100}})}));
+addClassAnnotation(A.test, annotate=Documentation(info="<HTML>foo</HTML>",revisions="1.0"));
+list();
+getErrorString();
+getIconAnnotation(A.test);
+getErrorString();
+getDiagramAnnotation(A.test);
+getErrorString();
+getDocumentationAnnotation(A.test);
+getErrorString();
+getComponentCount(A.test);
+getComponentCount(test2);
+getComponents(A.test);
+addConnection(a.n,b.z,A.test);
+addConnection(a.n[1],b.z[2],A.test);
+getNthConnection(A.test,1);
+getClassNames(A);
+loadString("model M
+  annotation(Documentation(info=\"html info\", __OpenModelica_infoHeader=\"html header info\"));
+end M;");
+getDocumentationAnnotation(M);
+loadString("model B
+  constant Integer constant1=0;
+  constant Boolean constant2=true;
+  constant Real constant3,constant4;
+end B;");
+getClassNames(B, includeConstants=true);
+
+
+// Result:
+// {true}
+// Evaluating: getAnnotationVersion()
+// "3.x"
+// Evaluating: setAnnotationVersion("3.x")
+// true
+// Evaluating: createModel(A)
+// true
+// Evaluating: createModel(A.test)
+// true
+// Evaluating: createModel(test2)
+// true
+// Evaluating: addComponent(x, Integer, A.test)
+// true
+// Evaluating: addComponent(z, Real, A.test)
+// true
+// Evaluating: addComponent(y, Integer, test2)
+// true
+// Evaluating: updateComponent(x, Integer, A.test, binding = 33)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addClassAnnotation(A.test, annotate = Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})}))
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getIconAnnotation(A.test)
+// {annotation(
+//   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
+// Evaluating: getErrorString()
+// "Error: In modifier (extent = {{0, 0}, {100, 100}}), class or component extent not found in <Icon>.
+// "
+// Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
+// true
+// Evaluating: addClassAnnotation(A.test, annotate = Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
+// true
+// Evaluating: addClassAnnotation(A.test, annotate = Documentation(info = "<HTML>foo</HTML>", revisions = "1.0"))
+// true
+// Evaluating: list()
+// "model test2
+//   Integer y;
+// end test2;
+//
+// model A
+//   model test
+//     Integer x = 33;
+//     Real z;
+//     annotation(
+//       Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
+//   end test;
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getIconAnnotation(A.test)
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDiagramAnnotation(A.test)
+// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDocumentationAnnotation(A.test)
+// {"<HTML>foo</HTML>","1.0",""}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentCount(A.test)
+// 2
+// Evaluating: getComponentCount(test2)
+// 1
+// Evaluating: getComponents(A.test)
+// {{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// Evaluating: addConnection(a.n, b.z, A.test)
+// Ok
+// Evaluating: addConnection(a.n[1], b.z[2], A.test)
+// Ok
+// Evaluating: getNthConnection(A.test, 1)
+// {"a.n[1]","b.z[2]",""}
+// Evaluating: getClassNames(A)
+// {test}
+// Evaluating: clear()
+// true
+// Evaluating: getAnnotationVersion()
+// "3.x"
+// Evaluating: setAnnotationVersion("2.x")
+// true
+// Evaluating: createModel(A)
+// true
+// Evaluating: createModel(A.test)
+// true
+// Evaluating: createModel(test2)
+// true
+// Evaluating: addComponent(x, Integer, A.test)
+// true
+// Evaluating: addComponent(z, Real, A.test)
+// true
+// Evaluating: addComponent(y, Integer, test2)
+// true
+// Evaluating: updateComponent(x, Integer, A.test, binding = 33)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addClassAnnotation(A.test, annotate = Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})}))
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getIconAnnotation(A.test)
+// {annotation(
+//   Icon(extent = {{0, 0}, {100, 100}}, graphics = {Line(points = {{0, 0}, {100, 100}})})) }
+// Evaluating: getErrorString()
+// "Error: In modifier (extent = {{0, 0}, {100, 100}}), class or component extent not found in <Icon>.
+// "
+// Evaluating: addClassAnnotation(A.test, annotate = Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
+// true
+// Evaluating: addClassAnnotation(A.test, annotate = Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}))
+// true
+// Evaluating: addClassAnnotation(A.test, annotate = Documentation(info = "<HTML>foo</HTML>", revisions = "1.0"))
+// true
+// Evaluating: list()
+// "model test2
+//   Integer y;
+// end test2;
+//
+// model A
+//   model test
+//     Integer x = 33;
+//     Real z;
+//     annotation(
+//       Icon(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Diagram(graphics = {Line(color = {127, 127, 127}, arrow = {Arrow.None, Arrow.Open}, points = {{-50, -50}, {50, 50}, {100, 0}, {0, 100}})}),
+//       Documentation(info = \"<HTML>foo</HTML>\", revisions = \"1.0\"));
+//   end test;
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getIconAnnotation(A.test)
+// {-10.0,-10.0,10.0,10.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDiagramAnnotation(A.test)
+// {-100.0,-100.0,100.0,100.0,{Line(true, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3.0, false)}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDocumentationAnnotation(A.test)
+// {"<HTML>foo</HTML>","1.0",""}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentCount(A.test)
+// 2
+// Evaluating: getComponentCount(test2)
+// 1
+// Evaluating: getComponents(A.test)
+// {{Integer,x,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,z,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// Evaluating: addConnection(a.n, b.z, A.test)
+// Ok
+// Evaluating: addConnection(a.n[1], b.z[2], A.test)
+// Ok
+// Evaluating: getNthConnection(A.test, 1)
+// {"a.n[1]","b.z[2]",""}
+// Evaluating: getClassNames(A)
+// {test}
+// Evaluating: loadString("model M
+//   annotation(Documentation(info=\"html info\", __OpenModelica_infoHeader=\"html header info\"));
+// end M;")
+// true
+// Evaluating: getDocumentationAnnotation(M)
+// {"html info","","html header info"}
+// Evaluating: loadString("model B
+//   constant Integer constant1=0;
+//   constant Boolean constant2=true;
+//   constant Real constant3,constant4;
+// end B;")
+// true
+// Evaluating: getClassNames(B, includeConstants = true)
+// {constant1,constant2,constant3,constant4}
+// endResult

@@ -1,0 +1,41 @@
+// name:     terminal
+// keywords: simulation, terminal, initial
+// status: correct
+// teardown_command: rm -rf testTerminal* output.log
+//
+//  Simulate model that contain terminal and initial
+//
+
+loadString("
+model testTerminal
+  Real a(start=0.1);
+algorithm
+ if terminal() then
+    a := 1.0;
+ end if;
+ if initial() then
+   a := 0.5;
+ end if;
+end testTerminal;
+"); getErrorString();
+
+simulate(testTerminal); getErrorString();
+val(a, 0.0);
+val(a, 0.9);
+val(a, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testTerminal_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testTerminal', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.1
+// 0.1
+// 1.0
+// endResult

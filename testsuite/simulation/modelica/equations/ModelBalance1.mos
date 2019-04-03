@@ -1,0 +1,23 @@
+// name: ModelBalance1
+// keywords: balance
+// status: correct
+// teardown_command: rm -rf ModelBalance1_* ModelBalance1 ModelBalance1.exe ModelBalance1.cpp ModelBalance1.makefile ModelBalance1.libs ModelBalance1.log output.log
+//
+// Tests a balanced model
+//
+
+loadFile("ModelBalance1.mo");
+simulate(ModelBalance1);
+val(y,0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ModelBalance1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelBalance1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 4.0
+// endResult

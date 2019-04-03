@@ -1,0 +1,44 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("
+package TestCref
+
+uniontype U
+  record R
+    Real r;
+  end R;
+end U;
+uniontype U2
+  record R2
+    array<U> u;
+  end R2;
+end U2;
+function f
+  output Real r1,r2,r3;
+protected
+  array<U> a;
+  array<U2> au2;
+  U u;
+  U2 u2;
+algorithm
+  a := arrayCreate(10, R(1.0));
+  au2 := arrayCreate(3, R2(a));
+  r1 := a[1].r;
+  u := au2[2].u[8];
+  r2 := au2[2].u[8].r;
+  u2 := R2(a);
+  r3 := u2.u[1].r;
+end f;
+
+end TestCref;
+");getErrorString();
+TestCref.f();getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// (1.0,1.0,1.0)
+// ""
+// endResult

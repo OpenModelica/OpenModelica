@@ -1,0 +1,79 @@
+//name:        ConnectorTest.mos [BUG: #2385]
+//keyword:     expandable
+//status:      correct
+//teardown_command: rm -rf ConnectorTest.Test*
+
+loadFile("ConnectorTest.mo"); getErrorString();
+instantiateModel(ConnectorTest.Test); getErrorString();
+checkModel(ConnectorTest.Test); getErrorString();
+simulate(ConnectorTest.Test); getErrorString();
+
+// Result:
+// true
+// ""
+// "class ConnectorTest.Test
+//   Real Bs.bout.bx[1];
+//   Real Bs.bout.bx[2];
+//   Real Bs.genx[1](start = 1.0);
+//   Real Bs.genx[2](start = 1.0);
+//   Real Bu.bin.bx[1];
+//   Real Bu.bin.bx[2];
+//   Real Bu.bx[1];
+//   Real Bu.bx[2];
+//   Real Bu.bx2[1];
+//   Real Bu.bx2[2];
+//   Real As.aout.ax;
+//   Real As.ax;
+//   Real Au.ain.ax;
+//   Real Au.ax;
+//   Real Au.ax2;
+//   Real Bcon.bx[1];
+//   Real Bcon.bx[2];
+//   Real Bcon.ax \"virtual variable in expandable connector\";
+//   Real As.aout.bx[1] \"virtual variable in expandable connector\";
+//   Real As.aout.bx[2] \"virtual variable in expandable connector\";
+//   Real Bu.bin.ax \"virtual variable in expandable connector\";
+//   Real Au.ain.bx[1] \"virtual variable in expandable connector\";
+//   Real Au.ain.bx[2] \"virtual variable in expandable connector\";
+//   Real Bs.bout.ax \"virtual variable in expandable connector\";
+// equation
+//   Bs.genx[1] = sin(time);
+//   Bs.genx[2] = Bs.genx[1] ^ 2.0;
+//   Bu.bx2[1] = 2.0 * Bu.bx[1];
+//   Bu.bx2[2] = 3.0 * Bu.bx[2];
+//   As.ax = cos(time);
+//   Au.ax2 = 2.0 * Au.ax;
+//   Bs.bout.bx[1] = Bs.genx[1];
+//   Bs.bout.bx[2] = Bs.genx[2];
+//   Bu.bin.bx[1] = Bu.bx[1];
+//   Bu.bin.bx[2] = Bu.bx[2];
+//   As.aout.ax = As.ax;
+//   Au.ain.ax = Au.ax;
+//   As.aout.bx[1] = Au.ain.bx[1];
+//   As.aout.bx[1] = Bcon.bx[1];
+//   As.aout.bx[1] = Bs.bout.bx[1];
+//   As.aout.bx[1] = Bu.bin.bx[1];
+//   As.aout.bx[2] = Au.ain.bx[2];
+//   As.aout.bx[2] = Bcon.bx[2];
+//   As.aout.bx[2] = Bs.bout.bx[2];
+//   As.aout.bx[2] = Bu.bin.bx[2];
+//   As.aout.ax = Au.ain.ax;
+//   As.aout.ax = Bcon.ax;
+//   As.aout.ax = Bs.bout.ax;
+//   As.aout.ax = Bu.bin.ax;
+// end ConnectorTest.Test;
+// "
+// ""
+// "Check of ConnectorTest.Test completed successfully.
+// Class ConnectorTest.Test has 24 equation(s) and 24 variable(s).
+// 20 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "ConnectorTest.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ConnectorTest.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

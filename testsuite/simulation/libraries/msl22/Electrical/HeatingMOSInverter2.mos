@@ -1,0 +1,56 @@
+//name:         HeatingMOSInverter
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.HeatingMOSInverter, stopTime=5, method="dassl");
+
+"Capacitor1.v:";
+val(Capacitor1.v,0.0);
+val(Capacitor1.v,2.5);
+val(Capacitor1.v,5.0);
+
+"Capacitor1.i:";
+val(Capacitor1.i,0.0);
+val(Capacitor1.i,2.5);
+val(Capacitor1.i,5.0);
+
+"TC1.dT:";
+val(TC1.dT,0.0);
+val(TC1.dT,2.5);
+val(TC1.dT,5.0);
+
+"HeatCapacitor1.T:";
+val(HeatCapacitor1.T,0.0);
+val(HeatCapacitor1.T,2.5);
+val(HeatCapacitor1.T,5.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.HeatingMOSInverter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingMOSInverter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Capacitor1.v:"
+// 0.0
+// 1.09026333278149
+// 4.997577735617213
+// "Capacitor1.i:"
+// 0.0
+// 0.0002661567393707434
+// -1.163605839394621e-07
+// "TC1.dT:"
+// 0.0
+// 0.1041029027398026
+// 9.286893568826017e-08
+// "HeatCapacitor1.T:"
+// 293.15
+// 299.4621486452547
+// 299.9749060571265
+// endResult

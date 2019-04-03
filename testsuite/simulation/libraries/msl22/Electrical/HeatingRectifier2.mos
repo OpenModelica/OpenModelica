@@ -1,0 +1,138 @@
+//name:         HeatingRectifier2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.HeatingRectifier, stopTime=5, method="dassl");
+
+"HeatingDiode1.v:";
+val(HeatingDiode1.v,0.0);
+val(HeatingDiode1.v,0.75);
+val(HeatingDiode1.v,1.25);
+val(HeatingDiode1.v,1.75);
+val(HeatingDiode1.v,3.0);
+val(HeatingDiode1.v,4.25);
+val(HeatingDiode1.v,5);
+
+"HeatingDiode1.i:";
+val(HeatingDiode1.i,0.0);
+val(HeatingDiode1.i,0.75);
+val(HeatingDiode1.i,1.25);
+val(HeatingDiode1.i,1.75);
+val(HeatingDiode1.i,3.0);
+val(HeatingDiode1.i,4.25);
+val(HeatingDiode1.i,5);
+
+"HeatingDiode1.heatPort.T:";
+val(HeatingDiode1.heatPort.T,0.0);
+val(HeatingDiode1.heatPort.T,0.75);
+val(HeatingDiode1.heatPort.T,1.25);
+val(HeatingDiode1.heatPort.T,1.75);
+val(HeatingDiode1.heatPort.T,3.0);
+val(HeatingDiode1.heatPort.T,4.25);
+val(HeatingDiode1.heatPort.T,5);
+
+"HeatingDiode1.id:";
+val(HeatingDiode1.id,0.0);
+val(HeatingDiode1.id,0.75);
+val(HeatingDiode1.id,1.25);
+val(HeatingDiode1.id,1.75);
+val(HeatingDiode1.id,3.0);
+val(HeatingDiode1.id,4.25);
+val(HeatingDiode1.id,5);
+
+"HeatCapacitor1.T:";
+val(HeatCapacitor1.T,0.0);
+val(HeatCapacitor1.T,0.75);
+val(HeatCapacitor1.T,1.25);
+val(HeatCapacitor1.T,1.75);
+val(HeatCapacitor1.T,3.0);
+val(HeatCapacitor1.T,4.25);
+val(HeatCapacitor1.T,5);
+
+"SineVoltage1.v:";
+val(SineVoltage1.v,0.0);
+val(SineVoltage1.v,0.75);
+val(SineVoltage1.v,1.25);
+val(SineVoltage1.v,1.75);
+val(SineVoltage1.v,3.0);
+val(SineVoltage1.v,4.25);
+val(SineVoltage1.v,5);
+
+"SineVoltage1.i:";
+val(SineVoltage1.i,0.0);
+val(SineVoltage1.i,0.75);
+val(SineVoltage1.i,1.25);
+val(SineVoltage1.i,1.75);
+val(SineVoltage1.i,3.0);
+val(SineVoltage1.i,4.25);
+val(SineVoltage1.i,5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.HeatingRectifier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingRectifier', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = "ERROR: Division by zero in partial equation: HeatingDiode1.v / (HeatingDiode1.vt_t * HeatingDiode1.N) because HeatingDiode1.vt_t * HeatingDiode1.N == 0.
+// "
+// end SimulationResult;
+// "HeatingDiode1.v:"
+// 0.0
+// -1.39559223625231
+// 0.383983998143719
+// -1.39602443521987
+// -0.308682187706999
+// 0.38116463413611
+// -0.309310464207878
+// "HeatingDiode1.i:"
+// 7.0584294854706e-45
+// -3.65457108265087e-07
+// 1.39619159360455
+// -3.75892265261389e-07
+// -3.75720844365161e-07
+// 1.34191060403086
+// -3.97995198071675e-07
+// "HeatingDiode1.heatPort.T:"
+// 293.15
+// 293.462611737711
+// 293.6861597012
+// 293.645730325222
+// 293.828456182575
+// 294.23138712039
+// 294.192998148703
+// "HeatingDiode1.id:"
+// -2.08484497331376e-51
+// -1.0
+// 3832799.4128694
+// -1.0
+// -0.999994924751688
+// 3377388.4106084
+// -0.9999949736237
+// "HeatCapacitor1.T:"
+// 293.15
+// 293.462611686708
+// 293.632548178172
+// 293.645730272747
+// 293.828456170978
+// 294.180238233947
+// 294.192998136393
+// "SineVoltage1.v:"
+// 0.0
+// -1.0
+// 1.0
+// -1.0
+// 1.10590391162055e-14
+// 0.999999999999991
+// 1.65389215948552e-14
+// "SineVoltage1.i:"
+// -7.0584294854706e-45
+// 3.65457108265087e-07
+// -1.39619159360455
+// 3.75892265261389e-07
+// 3.75720844365161e-07
+// -1.34191060403086
+// 3.97995198071675e-07
+// endResult

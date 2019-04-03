@@ -1,0 +1,39 @@
+// name:     Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir
+// teardown_command: rm -f Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+
+simulate(Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir.mat",
+  "Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_diff.csv",0.01,0.0001,
+  {"volume.U",
+   "volume.m",
+   "volume.mXi[1]"});
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

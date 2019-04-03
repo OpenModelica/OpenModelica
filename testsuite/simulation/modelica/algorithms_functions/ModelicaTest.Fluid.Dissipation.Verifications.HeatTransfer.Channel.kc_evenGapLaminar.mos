@@ -1,0 +1,389 @@
+// name:     ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos [BUG: #2403]
+// keywords: tuples, equation counting
+// status: correct
+// teardown_command: rm -rf ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_* ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.exe ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.cpp ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.makefile ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.libs ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.log
+//
+// Checks that tuple equations are counted correctly
+//
+
+loadFile("ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mo"); getErrorString();
+list(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar); getErrorString();
+instantiateModel(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar); getErrorString();
+checkModel(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar); getErrorString();
+simulate(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar); getErrorString();
+
+// Result:
+// true
+// ""
+// "model kc_evenGapLaminar
+//   extends Modelica.Icons.Example;
+//   parameter Integer n = size(cp, 1);
+//   parameter Modelica.SIunits.Diameter d_hyd = 2 * s;
+//   Real[n] abscissa = array((length / d_hyd / (max(Re[i], 0.001) * Pr[i])) ^ 0.5 for i in 1:n);
+//   Modelica.SIunits.Length length = L;
+//   Modelica.SIunits.Length dimlesslength(start = 0.01);
+//   Modelica.SIunits.PrandtlNumber[n] Pr = array(eta[i] * cp[i] / lambda[i] for i in 1:n);
+//   Modelica.SIunits.ReynoldsNumber[n] Re = array(rho[i] * velocity[i] * d_hyd / eta[i] for i in 1:n);
+//   Modelica.SIunits.Velocity[n] velocity = array(m_flow[i] / (rho[i] * h * s) for i in 1:n);
+//   parameter Modelica.SIunits.Length h = 0.1;
+//   parameter Modelica.SIunits.Length s = 0.05;
+//   parameter Modelica.SIunits.Length L = 1;
+//   parameter Modelica.SIunits.SpecificHeatCapacityAtConstantPressure[:] cp = {1007, 4189, 3384.55};
+//   parameter Modelica.SIunits.DynamicViscosity[:] eta = {0.00001824, 0.0010016, 0.114};
+//   parameter Modelica.SIunits.ThermalConductivity[:] lambda = {0.02569, 0.5985, 0.387};
+//   parameter Modelica.SIunits.Density[:] rho = {1.188, 998.21, 1037.799};
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con[n] m_flow_IN_con_1(each h = h, each s = s, each L = L, each final target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var[n] m_flow_IN_var_1(m_flow = m_flow, cp = cp, eta = eta, lambda = lambda, rho = rho);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con[n] m_flow_IN_con_2(each h = h, each s = s, each L = L, each final target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var[n] m_flow_IN_var_2(m_flow = m_flow, cp = cp, eta = eta, lambda = lambda, rho = rho);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con[n] m_flow_IN_con_3(each h = h, each s = s, each L = L, each final target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var[n] m_flow_IN_var_3(m_flow = m_flow, cp = cp, eta = eta, lambda = lambda, rho = rho);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con[n] m_flow_IN_con_4(each h = h, each s = s, each L = L, each final target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth);
+//   Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var[n] m_flow_IN_var_4(m_flow = m_flow, cp = cp, eta = eta, lambda = lambda, rho = rho);
+//   Modelica.SIunits.NusseltNumber[n] Nu_1;
+//   Modelica.SIunits.NusseltNumber[n] Nu_2;
+//   Modelica.SIunits.NusseltNumber[n] Nu_3;
+//   Modelica.SIunits.NusseltNumber[n] Nu_4;
+// protected
+//   Modelica.SIunits.MassFlowRate[n] m_flow = array(0.5 * h * lambda[i] * length / (cp[i] * d_hyd * dimlesslength ^ 2) for i in 1:n);
+// equation
+//   der(dimlesslength) = 1 - 0.01;
+//   for i in 1:n loop
+//     (, , , Nu_1[i], ) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(m_flow_IN_con_1[i], m_flow_IN_var_1[i]);
+//   end for;
+//   for i in 1:n loop
+//     (, , , Nu_2[i], ) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(m_flow_IN_con_2[i], m_flow_IN_var_2[i]);
+//   end for;
+//   for i in 1:n loop
+//     (, , , Nu_3[i], ) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(m_flow_IN_con_3[i], m_flow_IN_var_3[i]);
+//   end for;
+//   for i in 1:n loop
+//     (, , , Nu_4[i], ) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(m_flow_IN_con_4[i], m_flow_IN_var_4[i]);
+//   end for;
+// end kc_evenGapLaminar;"
+// ""
+// "function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar
+//   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con IN_con;
+//   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var IN_var;
+//   output Real kc(quantity = \"CoefficientOfHeatTransfer\", unit = \"W/(m2.K)\");
+//   output Real Pr(quantity = \"PrandtlNumber\", unit = \"1\");
+//   output Real Re(quantity = \"ReynoldsNumber\", unit = \"1\");
+//   output Real Nu(quantity = \"NusseltNumber\", unit = \"1\");
+//   output Real failureStatus;
+//   protected Real MIN = 1e-15;
+//   protected Real laminar = 2200.0;
+//   protected Real[2] fstatus;
+//   protected Real A_cross(quantity = \"Area\", unit = \"m2\") = IN_con.s * IN_con.h;
+//   protected Real d_hyd(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.0 * IN_con.s;
+//   protected Real prandtlMax = if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne then 10.0 else if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth then 1000.0 else 0.0;
+//   protected Real prandtlMin = if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne or IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth then 0.1 else 0.0;
+//   protected Real velocity(quantity = \"Velocity\", unit = \"m/s\") = abs(IN_var.m_flow) / max(MIN, IN_var.rho * A_cross);
+// algorithm
+//   Pr := abs(IN_var.eta * IN_var.cp / max(MIN, IN_var.lambda));
+//   Re := max(1.0, abs(IN_var.rho * velocity * d_hyd / max(MIN, IN_var.eta)));
+//   kc := Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_KC(IN_con, IN_var);
+//   Nu := kc * d_hyd / max(MIN, IN_var.lambda);
+//   fstatus[1] := if Re > laminar then 1.0 else 0.0;
+//   fstatus[2] := if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne or IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth then if Pr > prandtlMax or Pr < prandtlMin then 1.0 else 0.0 else 0.0;
+//   failureStatus := 0.0;
+//   for i in 1:2 loop
+//     if fstatus[i] == 1.0 then
+//       failureStatus := 1.0;
+//     end if;
+//   end for;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con\"
+//   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   input Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   output kc_evenGapLaminar_IN_con res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1\"
+//   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   input Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   output kc_evenGapLaminar_IN_con$m_flow_IN_con_1 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_1;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2\"
+//   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   input Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   output kc_evenGapLaminar_IN_con$m_flow_IN_con_2 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_2;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3\"
+//   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   input Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   output kc_evenGapLaminar_IN_con$m_flow_IN_con_3 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_3;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4\"
+//   input enumeration(DevOne, DevBoth, UndevOne, UndevBoth) target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   input Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   input Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   input Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   output kc_evenGapLaminar_IN_con$m_flow_IN_con_4 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con$m_flow_IN_con_4;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var\"
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
+//   input Real lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0);
+//   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   output kc_evenGapLaminar_IN_var res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1\"
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
+//   input Real lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0);
+//   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   output kc_evenGapLaminar_IN_var$m_flow_IN_var_1 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_1;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2\"
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
+//   input Real lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0);
+//   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   output kc_evenGapLaminar_IN_var$m_flow_IN_var_2 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_2;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3\"
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
+//   input Real lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0);
+//   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   output kc_evenGapLaminar_IN_var$m_flow_IN_var_3 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_3;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4 \"Automatically generated record constructor for Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4\"
+//   input Real cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\");
+//   input Real eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0);
+//   input Real lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\");
+//   input Real rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0);
+//   input Real m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   output kc_evenGapLaminar_IN_var$m_flow_IN_var_4 res;
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var$m_flow_IN_var_4;
+//
+// function Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_KC
+//   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con IN_con;
+//   input Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var IN_var;
+//   output Real kc(quantity = \"CoefficientOfHeatTransfer\", unit = \"W/(m2.K)\");
+//   protected Real MIN = 1e-15;
+//   protected Real d_hyd(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.0 * IN_con.s;
+//   protected Real A_cross(quantity = \"Area\", unit = \"m2\") = max(MIN, IN_con.s * IN_con.h);
+//   protected Real Pr(quantity = \"PrandtlNumber\", unit = \"1\") = abs(IN_var.eta * IN_var.cp / max(MIN, IN_var.lambda));
+//   protected Real Nu_1(quantity = \"NusseltNumber\", unit = \"1\") = if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne or IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne then 4.861 else if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth or IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth then 7.541 else 0.0;
+//   protected Real velocity(quantity = \"Velocity\", unit = \"m/s\") = abs(IN_var.m_flow) / max(MIN, IN_var.rho * A_cross);
+//   protected Real Re(quantity = \"ReynoldsNumber\", unit = \"1\") = max(1.0, IN_var.rho * velocity * d_hyd / max(MIN, IN_var.eta));
+//   protected Real Nu_2(quantity = \"NusseltNumber\", unit = \"1\") = 1.841 * (Re * Pr * d_hyd / max(IN_con.L, MIN)) ^ 0.3333333333333333;
+//   protected Real Nu_3(quantity = \"NusseltNumber\", unit = \"1\") = if IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne or IN_con.target == Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth then (2.0 / (1.0 + 22.0 * Pr)) ^ 0.1666666666666667 * (Re * Pr * d_hyd / max(IN_con.L, MIN)) ^ 0.5 else 0.0;
+//   protected Real Nu(quantity = \"NusseltNumber\", unit = \"1\") = (Nu_1 ^ 3.0 + Nu_2 ^ 3.0 + Nu_3 ^ 3.0) ^ 0.3333333333333333;
+// algorithm
+//   kc := Nu * IN_var.lambda / max(MIN, d_hyd);
+// end Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_KC;
+//
+// class ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar
+//   parameter Integer n = 3;
+//   parameter Real d_hyd(quantity = \"Length\", unit = \"m\", min = 0.0) = 2.0 * s;
+//   Real abscissa[1];
+//   Real abscissa[2];
+//   Real abscissa[3];
+//   Real length(quantity = \"Length\", unit = \"m\") = L;
+//   Real dimlesslength(quantity = \"Length\", unit = \"m\", start = 0.01);
+//   Real Pr[1](quantity = \"PrandtlNumber\", unit = \"1\");
+//   Real Pr[2](quantity = \"PrandtlNumber\", unit = \"1\");
+//   Real Pr[3](quantity = \"PrandtlNumber\", unit = \"1\");
+//   Real Re[1](quantity = \"ReynoldsNumber\", unit = \"1\");
+//   Real Re[2](quantity = \"ReynoldsNumber\", unit = \"1\");
+//   Real Re[3](quantity = \"ReynoldsNumber\", unit = \"1\");
+//   Real velocity[1](quantity = \"Velocity\", unit = \"m/s\");
+//   Real velocity[2](quantity = \"Velocity\", unit = \"m/s\");
+//   Real velocity[3](quantity = \"Velocity\", unit = \"m/s\");
+//   parameter Real h(quantity = \"Length\", unit = \"m\") = 0.1;
+//   parameter Real s(quantity = \"Length\", unit = \"m\") = 0.05;
+//   parameter Real L(quantity = \"Length\", unit = \"m\") = 1.0;
+//   parameter Real cp[1](quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = 1007.0;
+//   parameter Real cp[2](quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = 4189.0;
+//   parameter Real cp[3](quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = 3384.55;
+//   parameter Real eta[1](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 1.824e-05;
+//   parameter Real eta[2](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 0.0010016;
+//   parameter Real eta[3](quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = 0.114;
+//   parameter Real lambda[1](quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = 0.02569;
+//   parameter Real lambda[2](quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = 0.5985;
+//   parameter Real lambda[3](quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = 0.387;
+//   parameter Real rho[1](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = 1.188;
+//   parameter Real rho[2](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = 998.21;
+//   parameter Real rho[3](quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = 1037.799;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_1[1].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne;
+//   Real m_flow_IN_con_1[1].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_1[1].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_1[1].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_1[2].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne;
+//   Real m_flow_IN_con_1[2].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_1[2].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_1[2].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_1[3].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevOne;
+//   Real m_flow_IN_con_1[3].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_1[3].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_1[3].L(quantity = \"Length\", unit = \"m\") = L;
+//   Real m_flow_IN_var_1[1].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[1];
+//   Real m_flow_IN_var_1[1].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[1];
+//   Real m_flow_IN_var_1[1].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[1];
+//   Real m_flow_IN_var_1[1].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[1];
+//   Real m_flow_IN_var_1[1].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[1];
+//   Real m_flow_IN_var_1[2].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[2];
+//   Real m_flow_IN_var_1[2].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[2];
+//   Real m_flow_IN_var_1[2].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[2];
+//   Real m_flow_IN_var_1[2].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[2];
+//   Real m_flow_IN_var_1[2].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[2];
+//   Real m_flow_IN_var_1[3].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[3];
+//   Real m_flow_IN_var_1[3].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[3];
+//   Real m_flow_IN_var_1[3].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[3];
+//   Real m_flow_IN_var_1[3].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[3];
+//   Real m_flow_IN_var_1[3].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[3];
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_2[1].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   Real m_flow_IN_con_2[1].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_2[1].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_2[1].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_2[2].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   Real m_flow_IN_con_2[2].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_2[2].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_2[2].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_2[3].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.DevBoth;
+//   Real m_flow_IN_con_2[3].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_2[3].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_2[3].L(quantity = \"Length\", unit = \"m\") = L;
+//   Real m_flow_IN_var_2[1].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[1];
+//   Real m_flow_IN_var_2[1].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[1];
+//   Real m_flow_IN_var_2[1].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[1];
+//   Real m_flow_IN_var_2[1].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[1];
+//   Real m_flow_IN_var_2[1].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[1];
+//   Real m_flow_IN_var_2[2].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[2];
+//   Real m_flow_IN_var_2[2].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[2];
+//   Real m_flow_IN_var_2[2].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[2];
+//   Real m_flow_IN_var_2[2].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[2];
+//   Real m_flow_IN_var_2[2].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[2];
+//   Real m_flow_IN_var_2[3].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[3];
+//   Real m_flow_IN_var_2[3].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[3];
+//   Real m_flow_IN_var_2[3].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[3];
+//   Real m_flow_IN_var_2[3].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[3];
+//   Real m_flow_IN_var_2[3].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[3];
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_3[1].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne;
+//   Real m_flow_IN_con_3[1].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_3[1].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_3[1].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_3[2].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne;
+//   Real m_flow_IN_con_3[2].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_3[2].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_3[2].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_3[3].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevOne;
+//   Real m_flow_IN_con_3[3].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_3[3].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_3[3].L(quantity = \"Length\", unit = \"m\") = L;
+//   Real m_flow_IN_var_3[1].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[1];
+//   Real m_flow_IN_var_3[1].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[1];
+//   Real m_flow_IN_var_3[1].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[1];
+//   Real m_flow_IN_var_3[1].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[1];
+//   Real m_flow_IN_var_3[1].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[1];
+//   Real m_flow_IN_var_3[2].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[2];
+//   Real m_flow_IN_var_3[2].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[2];
+//   Real m_flow_IN_var_3[2].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[2];
+//   Real m_flow_IN_var_3[2].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[2];
+//   Real m_flow_IN_var_3[2].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[2];
+//   Real m_flow_IN_var_3[3].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[3];
+//   Real m_flow_IN_var_3[3].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[3];
+//   Real m_flow_IN_var_3[3].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[3];
+//   Real m_flow_IN_var_3[3].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[3];
+//   Real m_flow_IN_var_3[3].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[3];
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_4[1].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth;
+//   Real m_flow_IN_con_4[1].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_4[1].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_4[1].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_4[2].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth;
+//   Real m_flow_IN_con_4[2].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_4[2].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_4[2].L(quantity = \"Length\", unit = \"m\") = L;
+//   enumeration(DevOne, DevBoth, UndevOne, UndevBoth) m_flow_IN_con_4[3].target = Modelica.Fluid.Dissipation.Utilities.Types.kc_evenGap.UndevBoth;
+//   Real m_flow_IN_con_4[3].h(quantity = \"Length\", unit = \"m\") = h;
+//   Real m_flow_IN_con_4[3].s(quantity = \"Length\", unit = \"m\") = s;
+//   Real m_flow_IN_con_4[3].L(quantity = \"Length\", unit = \"m\") = L;
+//   Real m_flow_IN_var_4[1].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[1];
+//   Real m_flow_IN_var_4[1].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[1];
+//   Real m_flow_IN_var_4[1].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[1];
+//   Real m_flow_IN_var_4[1].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[1];
+//   Real m_flow_IN_var_4[1].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[1];
+//   Real m_flow_IN_var_4[2].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[2];
+//   Real m_flow_IN_var_4[2].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[2];
+//   Real m_flow_IN_var_4[2].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[2];
+//   Real m_flow_IN_var_4[2].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[2];
+//   Real m_flow_IN_var_4[2].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[2];
+//   Real m_flow_IN_var_4[3].cp(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") = cp[3];
+//   Real m_flow_IN_var_4[3].eta(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) = eta[3];
+//   Real m_flow_IN_var_4[3].lambda(quantity = \"ThermalConductivity\", unit = \"W/(m.K)\") = lambda[3];
+//   Real m_flow_IN_var_4[3].rho(quantity = \"Density\", unit = \"kg/m3\", displayUnit = \"g/cm3\", min = 0.0) = rho[3];
+//   Real m_flow_IN_var_4[3].m_flow(quantity = \"MassFlowRate\", unit = \"kg/s\") = m_flow[3];
+//   Real Nu_1[1](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_1[2](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_1[3](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_2[1](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_2[2](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_2[3](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_3[1](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_3[2](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_3[3](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_4[1](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_4[2](quantity = \"NusseltNumber\", unit = \"1\");
+//   Real Nu_4[3](quantity = \"NusseltNumber\", unit = \"1\");
+//   protected Real m_flow[1](quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   protected Real m_flow[2](quantity = \"MassFlowRate\", unit = \"kg/s\");
+//   protected Real m_flow[3](quantity = \"MassFlowRate\", unit = \"kg/s\");
+// equation
+//   abscissa = {(length / (d_hyd * max(Re[1], 0.001) * Pr[1])) ^ 0.5, (length / (d_hyd * max(Re[2], 0.001) * Pr[2])) ^ 0.5, (length / (d_hyd * max(Re[3], 0.001) * Pr[3])) ^ 0.5};
+//   Pr = {eta[1] * cp[1] / lambda[1], eta[2] * cp[2] / lambda[2], eta[3] * cp[3] / lambda[3]};
+//   Re = {rho[1] * velocity[1] * d_hyd / eta[1], rho[2] * velocity[2] * d_hyd / eta[2], rho[3] * velocity[3] * d_hyd / eta[3]};
+//   velocity = {m_flow[1] / (s * h * rho[1]), m_flow[2] / (s * h * rho[2]), m_flow[3] / (s * h * rho[3])};
+//   m_flow = {0.5 * h * lambda[1] * length / (dimlesslength ^ 2.0 * d_hyd * cp[1]), 0.5 * h * lambda[2] * length / (dimlesslength ^ 2.0 * d_hyd * cp[2]), 0.5 * h * lambda[3] * length / (dimlesslength ^ 2.0 * d_hyd * cp[3])};
+//   der(dimlesslength) = 0.99;
+//   (_, _, _, Nu_1[1], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_1[1]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_1[1]));
+//   (_, _, _, Nu_1[2], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_1[2]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_1[2]));
+//   (_, _, _, Nu_1[3], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_1[3]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_1[3]));
+//   (_, _, _, Nu_2[1], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_2[1]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_2[1]));
+//   (_, _, _, Nu_2[2], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_2[2]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_2[2]));
+//   (_, _, _, Nu_2[3], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_2[3]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_2[3]));
+//   (_, _, _, Nu_3[1], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_3[1]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_3[1]));
+//   (_, _, _, Nu_3[2], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_3[2]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_3[2]));
+//   (_, _, _, Nu_3[3], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_3[3]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_3[3]));
+//   (_, _, _, Nu_4[1], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_4[1]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_4[1]));
+//   (_, _, _, Nu_4[2], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_4[2]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_4[2]));
+//   (_, _, _, Nu_4[3], _) = Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar(/*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_con*/(m_flow_IN_con_4[3]), /*.Modelica.Fluid.Dissipation.HeatTransfer.Channel.kc_evenGapLaminar_IN_var*/(m_flow_IN_var_4[3]));
+// end ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar;
+// "
+// ""
+// "Check of ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar completed successfully.
+// Class ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar has 137 equation(s) and 137 variable(s).
+// 110 of these are trivial equation(s)."
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

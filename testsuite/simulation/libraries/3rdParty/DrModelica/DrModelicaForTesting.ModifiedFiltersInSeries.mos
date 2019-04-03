@@ -1,0 +1,36 @@
+// name:     DrModelicaForTesting.ModifiedFiltersInSeries.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.ModifiedFiltersInSeries
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.ModifiedFiltersInSeries.* DrModelicaForTesting.ModifiedFiltersInSeries_* DrModelicaForTesting.ModifiedFiltersInSeries DrModelicaForTesting.ModifiedFiltersInSeries.exe DrModelicaForTesting.ModifiedFiltersInSeries.cpp DrModelicaForTesting.ModifiedFiltersInSeries.makefile DrModelicaForTesting.ModifiedFiltersInSeries.libs DrModelicaForTesting.ModifiedFiltersInSeries.log DrModelicaForTesting.ModifiedFiltersInSeries.c DrModelicaForTesting.ModifiedFiltersInSeries.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.ModifiedFiltersInSeries, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.ModifiedFiltersInSeries_res.mat",
+  "ReferenceFiles/ModifiedFiltersInSeries_ref.mat","DrModelicaForTesting.ModifiedFiltersInSeries_diff.csv",0.01,0.013,
+  {"F12.F1.T", "F12.F1.u", "F12.F2.T", "F12.F2.u"});
+  
+    
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.ModifiedFiltersInSeries_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.ModifiedFiltersInSeries', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

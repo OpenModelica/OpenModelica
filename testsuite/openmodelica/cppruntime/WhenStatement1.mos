@@ -1,0 +1,25 @@
+// name:     WhenStatement1
+// keywords: when
+// status: correct
+// teardown_command: rm -rf  WhenStat.cpp WhenStat.h WhenStat.makefile WhenStat.libs libModelica.dll WhenStat.log output.log Functions.cpp Functions.h
+// cflags: 	 +simCodeTarget=Cpp
+// 
+//  
+// Drmodelica: 9.1 When-Statements (p. 293)
+//  
+
+loadFile("WhenStatement1.mo");
+
+simulate(WhenStat, method="dassl",tolerance=1e-3, numberOfIntervals=400,outputFormat="csv");
+echo(false); // turns of output
+
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "WhenStat_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 400, tolerance = 0.001, method = 'dassl', fileNamePrefix = 'WhenStat', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// endResult

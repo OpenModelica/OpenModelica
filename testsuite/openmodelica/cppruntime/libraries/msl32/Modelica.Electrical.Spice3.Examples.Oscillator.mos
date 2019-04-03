@@ -1,0 +1,54 @@
+// name:     Modelica.Electrical.Spice3.Examples.Oscillator
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.Oscillator_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Oscillator);
+compareVars :=
+{
+   "c.p.v",
+   "c.n.v",
+   "c1.p.v",
+   "c1.n.v",
+   "T1.vbe",
+   "T1.vbc",
+   "T1.vbx",
+   "T1.vcs",
+   "T2.vbe",
+   "T2.vbc",
+   "T2.vbx",
+   "T2.vcs"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// true
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Electrical.Spice3.Examples.Oscillator
+// {"c.p.v","c.n.v","c1.p.v","c1.n.v","T1.vbe","T1.vbc","T1.vbx","T1.vcs","T2.vbe","T2.vbc","T2.vbx","T2.vcs"}
+// Simulation options: startTime = 0.0, stopTime = 0.025, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Oscillator_res.mat
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Spice3.mo:11425:17-11425:45:writable] Warning: temp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

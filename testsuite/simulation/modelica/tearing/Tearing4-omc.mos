@@ -1,0 +1,99 @@
+// name:      Tearing4-omc
+// keywords:  tearing
+// status:    correct
+// cflags: 	 +d=backenddaeinfo
+
+
+
+loadFile("Tearing4.mo"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("omcTearing"); getErrorString();
+simulate(Tearing4); getErrorString();
+
+val(x,0.0); getErrorString();
+val(y,0.0); getErrorString();
+val(vX,0.0); getErrorString();
+val(vY,0.0); getErrorString();
+val(F,0.0); getErrorString();
+val(k,0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Tearing4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 6
+//  * Number of variables: 6
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (14):
+//  * Single equations (assignments): 12
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 1
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 0
+//  * Non-linear Jacobian: 1 {1}
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(1,100.0%) 2}
+//  * Non-linear torn systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 2 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (7):
+//  * Single equations (assignments): 4
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 2
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 1 {(2,100.0%)}
+//  * Non-linear Jacobian: 1 {2}
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 1 {(1,100.0%) 2}
+//  * Non-linear torn systems: 0
+// "
+// 1.0
+// ""
+// 1.732050807568877
+// ""
+// 3.0
+// ""
+// -1.732050807568877
+// ""
+// 14.49570921112534
+// ""
+// 4.0
+// ""
+// endResult

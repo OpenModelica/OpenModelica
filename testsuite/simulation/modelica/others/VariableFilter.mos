@@ -1,0 +1,26 @@
+// name: VariableFilter
+// status: correct
+// teardown_command: rm -f VariableFilter_* VariableFilter VariableFilter.exe VariableFilter.cpp VariableFilter.libs VariableFilter.makefile VariableFilter.conv.cpp VariableFilter.log output.log
+
+loadFile("VariableFilter.mo");
+simulate(VariableFilter,numberOfIntervals=1,outputFormat="csv",
+  // Output indexes of variable r that only contain the numbers 1,2 or is only a single digit
+  variableFilter="r\\[[1-2]*\\]|r\\[.\\]");
+readFile("VariableFilter_res.csv");
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "VariableFilter_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VariableFilter', options = '', outputFormat = 'csv', variableFilter = 'r\\\\[[1-2]*\\\\]|r\\\\[.\\\\]', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "\"time\",\"r[1]\",\"r[2]\",\"r[3]\",\"r[4]\",\"r[5]\",\"r[6]\",\"r[7]\",\"r[8]\",\"r[9]\",\"r[11]\",\"r[12]\",\"r[21]\",\"r[22]\",\"r[111]\",\"r[112]\",\"r[121]\",\"r[122]\"
+// 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+// 1,1,2,3,4,5,6,7,8,9,11,12,21,22,111,112,121,122
+// 1,1,2,3,4,5,6,7,8,9,11,12,21,22,111,112,121,122
+// "
+// endResult

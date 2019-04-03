@@ -1,0 +1,20 @@
+Solution of the exercise 03_assignment:
+
+
+AssignTwoType.mo file changes:
+==============================
+
+Exp type additions:
+-------------------
+  record STRING
+    String str;
+  end STRING;
+
+  
+function eval additions:
+------------------------
+    case (env,STRING(str = sval)) 
+      equation 
+        z = stringInt(sval);
+      then (env,INTval(z)); 
+      

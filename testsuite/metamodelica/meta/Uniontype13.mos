@@ -1,0 +1,34 @@
+// name:     Uniontype13
+// keywords: Uniontype
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Uniontype Testing
+//
+loadFile("Uniontype13.mo");
+a:=Uniontype13.REC1(3);
+f:=Uniontype13.test(Uniontype13.REC1(3));
+f:=Uniontype13.foo(a);
+g:=Uniontype13.fooIdent(f);
+
+// Result:
+// true
+// record Uniontype13.UT.REC1
+//     x = 3
+// end Uniontype13.UT.REC1;
+// record Uniontype13.foo
+//     ut = record Uniontype13.UT.REC1
+//     x = 3
+// end Uniontype13.UT.REC1;
+// end Uniontype13.foo;
+// record Uniontype13.foo
+//     ut = record Uniontype13.UT.REC1
+//     x = 3
+// end Uniontype13.UT.REC1;
+// end Uniontype13.foo;
+// record Uniontype13.foo
+//     ut = record Uniontype13.UT.REC1
+//     x = 3
+// end Uniontype13.UT.REC1;
+// end Uniontype13.foo;
+// endResult

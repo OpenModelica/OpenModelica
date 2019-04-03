@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.PolyEvaluate1.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.PolyEvaluate1
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.PolyEvaluate1.* DrModelicaForTesting.PolyEvaluate1_* DrModelicaForTesting.PolyEvaluate1 DrModelicaForTesting.PolyEvaluate1.exe DrModelicaForTesting.PolyEvaluate1.cpp DrModelicaForTesting.PolyEvaluate1.makefile DrModelicaForTesting.PolyEvaluate1.libs DrModelicaForTesting.PolyEvaluate1.log DrModelicaForTesting.PolyEvaluate1.c DrModelicaForTesting.PolyEvaluate1.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.PolyEvaluate1, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.PolyEvaluate1_res.mat",
+  "ReferenceFiles/PolyEvaluate1_ref.mat","DrModelicaForTesting.PolyEvaluate1_diff.csv",0.01,0.013,
+  {"p","polyeval.y", "polyeval.x", "polyeval.c[1]"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.PolyEvaluate1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.PolyEvaluate1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,57 @@
+// name:     IfEquation
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf TestMe_* TestMe TestMe.exe TestMe.cpp TestMe.makefile TestMe.libs TestMe.log output.log
+// 
+// Drmodelica: 8.2 Conditional Equations with if-Equations (p. 245)
+// 
+
+loadFile("IfEquationUnbalanced.mo"); getErrorString();
+simulate(IfEquationUnbalanced); getErrorString();
+simulate(IfEquationUnbalancedMissingElse); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IfEquationUnbalanced', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: IfEquationUnbalanced"
+// end SimulationResult;
+// "Error: Too few equations, under-determined system. The model has 1 equation(s) and 2 variable(s).
+// [simulation/modelica/equations/IfEquationUnbalanced.mo:13:3-13:12:writable] Warning: Variable x does not have any remaining equation to be solved in.
+//   The original equations were:
+//   Equation 1: if x < 1.0 then
+//   x = time
+// elseif x >= 1.0 then
+//   y = 2.0
+//   x = 1.0
+// else
+//   x = 2.0 * time
+// end if, which needs to solve for y
+// "
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IfEquationUnbalancedMissingElse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: IfEquationUnbalancedMissingElse"
+// end SimulationResult;
+// "Error: Too few equations, under-determined system. The model has 0 equation(s) and 2 variable(s).
+// [simulation/modelica/equations/IfEquationUnbalanced.mo:4:3-9:9:writable] Warning: Equation 1 (size: 0) if x < 1.0 then
+//   x = time
+// elseif x >= 1.0 then
+//   y = 2.0
+//   x = 1.0
+// end if is not big enough to solve for enough variables.
+//   Remaining unsolved variables are: y
+//   Already solved: x
+//   Equations used to solve those variables:
+// [simulation/modelica/equations/IfEquationUnbalanced.mo:2:3-2:12:writable] Warning: Variable x does not have any remaining equation to be solved in.
+//   The original equations were:
+//   Equation 1: if x < 1.0 then
+//   x = time
+// elseif x >= 1.0 then
+//   y = 2.0
+//   x = 1.0
+// end if, which needs to solve for y,
+// "
+// endResult

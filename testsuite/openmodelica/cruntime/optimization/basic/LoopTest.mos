@@ -1,0 +1,54 @@
+// name: LoopTest
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString("
+optimization foo(objectiveIntegrand = (x - 1)^2)
+    input Real u(min = 1, max = 2, start = 1);
+    Real x(min = 0, max = 2, start = 0, fixed =true);
+  equation
+    sin((der(x) - 1)) = sin(u^3*x)*cos(u*x);
+end foo;
+");
+getErrorString();
+
+optimize(foo, numberOfIntervals=200, tolerance = 1e-6, stopTime = 1, simflags="-optimizerNP 1");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("foo_res.mat","ReferenceFiles/foo_ref.mat","diff_foo.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foo_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'optimization', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x(start = 0, nominal = 2, min = 0, max = 2, init = 0)
+// Input[1]:u(start = 1, nominal = 2, min = 1, max = 2)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

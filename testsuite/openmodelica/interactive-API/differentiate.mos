@@ -1,0 +1,27 @@
+// name:     Differentiate
+// keywords: Differentiate, Expression
+// status:   correct
+//
+//  testing differentiate in exp
+//
+// Disabled 2014-10-21 since it is a non-standard built-in function. Use the bootstrapping tests to test differentiation, or create a ModelicaBuiltin/CevalScript function to replicate the old one.
+
+differentiate(x*x+x+x+x+x+x+x*x+x*x*x+x+x+x,x);
+differentiate(sin(x),x);
+differentiate(cos(x),x);
+differentiate(tan(x),x);
+differentiate(log10(x^2),x);
+differentiate(log(x^2),x);
+differentiate(exp(x^2),x);
+differentiate(sqrt(x),x);
+
+// Result:
+// "8.0 + 4.0 * x + 3.0 * x ^ 2.0"
+// "cos(x)"
+// "-sin(x)"
+// "2.0 / (1.0 + cos(2.0 * x))"
+// "2.0 / (x * 2.302585092994046)"
+// "2.0 / x"
+// "2.0 * exp(x ^ 2.0) * x"
+// "0.5 / sqrt(x)"
+// endResult

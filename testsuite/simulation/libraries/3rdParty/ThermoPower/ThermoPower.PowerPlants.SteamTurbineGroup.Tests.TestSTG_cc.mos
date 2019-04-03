@@ -1,0 +1,20 @@
+// name: ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc
+// keywords: over-determined initialization
+// status: correct
+
+// Test4
+loadModel(ThermoPower); getErrorString();
+translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "[ThermoPower 3.1/PowerPlants.mo:3950:70-3951:22:writable] Error: Variable q_nom not found in scope ThermoPower.PowerPlants.HRSG.Components.
+// [ThermoPower 3.1/PowerPlants.mo:3960:21-3960:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom} (ignore with -d=ignoreCycles).
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Notification: The given system is mixed-determined.   [index = 1]
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

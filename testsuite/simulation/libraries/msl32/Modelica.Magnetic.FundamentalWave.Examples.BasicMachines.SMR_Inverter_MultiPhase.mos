@@ -1,0 +1,50 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+setCommandLineOptions("--postOptModules-=wrapFunctionCalls");
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase);
+compareVars :=
+{
+   "loadInertia3.phi",
+   "loadInertia3.w",
+   "loadInertiaM.phi",
+   "loadInertiaM.w",
+   "smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smr3.stator.strayReluctance.port_p.Phi.im",
+   "smr3.stator.strayReluctance.port_p.Phi.re",
+   "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re",
+   "smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smrM.stator.strayReluctance.port_p.Phi.im",
+   "smrM.stator.strayReluctance.port_p.Phi.re",
+   "vfController3.x",
+   "vfControllerM.x"
+};
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase
+// {"loadInertia3.phi","loadInertia3.w","loadInertiaM.phi","loadInertiaM.w","smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smr3.stator.strayReluctance.port_p.Phi.im","smr3.stator.strayReluctance.port_p.Phi.re","smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smrM.stator.strayReluctance.port_p.Phi.im","smrM.stator.strayReluctance.port_p.Phi.re","vfController3.x","vfControllerM.x"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase', options = '', outputFormat = 'mat', variableFilter = 'time|loadInertia3.phi|loadInertia3.w|loadInertiaM.phi|loadInertiaM.w|smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smr3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smr3.stator.strayReluctance.port_p.Phi.im|smr3.stator.strayReluctance.port_p.Phi.re|smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smrM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smrM.stator.strayReluctance.port_p.Phi.im|smrM.stator.strayReluctance.port_p.Phi.re|vfController3.x|vfControllerM.x', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

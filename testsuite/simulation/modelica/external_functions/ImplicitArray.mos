@@ -1,0 +1,39 @@
+// status: correct
+// From ticket:4009
+
+loadString("
+model Ticket4009
+  type T = Real [3];
+  function f
+    input Real x;
+    input T t_in;
+    output Real y;
+    external \"C\";
+  annotation(Include =
+  \"
+  #include <stddef.h>
+  double f(double x, const double *t_in, size_t t_in_size)
+  {
+  return x + t_in[0] + t_in[1] + t_in[2];
+  }
+  \");
+  end f;
+  Real x;
+equation
+  x = f(time,{1, 2, 3});
+end Ticket4009;
+");getErrorString();
+simulate(Ticket4009);getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Ticket4009_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Ticket4009', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

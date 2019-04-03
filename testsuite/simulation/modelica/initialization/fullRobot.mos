@@ -1,0 +1,100 @@
+// name:     fullRobot
+// keywords: initialization MSL Example
+// status: correct
+// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* _Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot* output.log
+//
+// initialization results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot, startTime=0.0, stopTime=0.0); getErrorString();
+val(axis1.controller.PI.x, 0);
+val(axis1.gear.spring.phi_rel, 0);
+val(axis1.gear.spring.w_rel, 0);
+val(axis1.motor.C.v, 0);
+val(axis1.motor.La.i, 0);
+val(axis2.controller.PI.x, 0);
+val(axis2.gear.spring.phi_rel, 0);
+val(axis2.gear.spring.w_rel, 0);
+val(axis2.motor.C.v, 0);
+val(axis2.motor.La.i, 0);
+val(axis3.controller.PI.x, 0);
+val(axis3.gear.spring.phi_rel, 0);
+val(axis3.gear.spring.w_rel, 0);
+val(axis3.motor.C.v, 0);
+val(axis3.motor.La.i, 0);
+val(axis4.controller.PI.x, 0);
+val(axis4.motor.C.v, 0);
+val(axis4.motor.La.i, 0);
+val(axis5.controller.PI.x, 0);
+val(axis5.motor.C.v, 0);
+val(axis5.motor.La.i, 0);
+val(axis6.controller.PI.x, 0);
+val(axis6.motor.C.v, 0);
+val(axis6.motor.La.i, 0);
+val(mechanics.b2.body.w_a[1], 0);
+val(mechanics.r1.phi, 0);
+val(mechanics.r1.w, 0);
+val(mechanics.r2.phi, 0);
+val(mechanics.r3.phi, 0);
+val(mechanics.r3.w, 0);
+val(mechanics.r4.phi, 0);
+val(mechanics.r4.w, 0);
+val(mechanics.r5.phi, 0);
+val(mechanics.r5.w, 0);
+val(mechanics.r6.phi, 0);
+val(mechanics.r6.w, 0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[2] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [Modelica 3.1/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// -5.146936976669323
+// 0.2741508617066707
+// 0.0
+// 94.404566703399
+// -1.88809133406798
+// -7.726060447507481
+// 0.07367818054499482
+// 0.0
+// 183.9417386195635
+// -3.678834772391271
+// -1.200848786393524
+// 30.0212196598381
+// -0.6004243931967619
+// -1.448558630786392
+// 36.21396576965979
+// -0.7242793153931959
+// 0.0
+// 0.0
+// -0.0
+// 0.0
+// -1.047197551196598
+// -0.0
+// 0.349065850398866
+// 1.570796326794897
+// 0.0
+// 0.0
+// 0.0
+// -1.919862177193763
+// 0.0
+// 0.0
+// 0.0
+// endResult

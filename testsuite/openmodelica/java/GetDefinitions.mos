@@ -1,0 +1,60 @@
+// name:     GetDefinitions
+// keywords: algorithm
+// status:   correct
+// 
+// Test if getDefinitions works properly
+//
+loadFile("JavaExt.mo");
+getDefinitions(true);
+
+// Result:
+// true
+// "(
+// (package JavaTest
+// (record myEmptyRecord )
+// (record myRecord (Integer a) (Real b) (Boolean c) (String d) )
+// (record nestedRecord (myRecord rec) (String desc) )
+// (function NestedRecordExtIdent (input nestedRecord rec) (output nestedRecord out) )
+// (function RecordToRecord (input myRecord inRecord) (output myRecord out) )
+// (function RecordToString (input myRecord inRecord) (output String out) )
+// (function EmptyRecordToString (input myEmptyRecord inRecord) (output String out) )
+// (function SumArray (input Integer x) (output Integer y) )
+// (function arrayTestInteger (input Integer x) (output Integer y) )
+// (function arrayTestReal (input Real x) (output Real y) )
+// (function arrayTestBoolean (input Boolean x) (output Boolean y) )
+// (function arrayTestString (input String xstr) (output String ystr) )
+// (function JavaIntegerToInteger (input Integer o) (output Integer out) )
+// (function JavaRealToReal (input Real o) (output Real out) )
+// (function JavaStringToString (input String o) (output String out) )
+// (function JavaBooleanToBoolean (input Boolean o) (output Boolean out) )
+// (function JavaMultipleInOut (input Real i0) (input Real i1) (input Real i2) (input Real i3) (output Real o0) (output Real o1) (output Real o2) (output Real o3) )
+// (function GetOMCInternalValues (input Integer in_i) (input Real in_r) (output Integer out_i) (output Real out_r) (output String out_s) )
+// (function GetJavaInternalValues (input Integer in_i) (input Real in_r) (output Integer out_i) (output Real out_r) (output String out_s) )
+// (function RunInteractiveTestsuite (output String out) )
+// (function listIntegerIdent (input list<Integer> lst) (output list<Integer> out) )
+// (function someToNone (input Option<Integer> opt) (output Option<Integer> out) )
+// (function tupleIdent (input tuple<Integer,Integer> tup) (output tuple<Integer,Integer> out) )
+// (function ApplyIntOp (input FuncIntToInt inFunc) (input Integer i) (output Integer outInt) (partial function FuncIntToInt ) )
+// (function anyToString (input Type_a inTypeA) (output String out) (replaceable type Type_a) )
+// (uniontype fruit )
+// (metarecord APPLE 0 fruit )
+// (metarecord PEAR 1 fruit )
+// (function uniontypeIdent (input fruit in1) (output fruit out) )
+// (uniontype Expression )
+// (metarecord ADD 0 Expression (Expression lhs) (Expression rhs) )
+// (metarecord SUB 1 Expression (Expression lhs) (Expression rhs) )
+// (metarecord ICONST 2 Expression (Integer value) )
+// (metarecord RCONST 3 Expression (Real value) )
+// (metarecord IFEXP 4 Expression (Boolean cond) (Expression trueExp) (Expression falseExp) )
+// (metarecord STRLEN 5 Expression (String str) )
+// (function calcExpressionDummy (input Expression exp) (output Integer out) )
+// (function calcExpressionMatchcontinue (input Expression exp) (output Integer out) )
+// (function calcExpressionExtJava (input Expression exp) (output Real out) )
+// (function expIdentExtJava (input Expression in1) (output Expression out) )
+// (function expIdentExtJava2 (input Expression in1) (output Expression out) )
+// (function extJavaTestAllMMCTypes (output Expression out) )
+// (function extJavaParseProgramFromFile (input String filename) (output Boolean out) )
+// )
+// 
+// )"
+// endResult

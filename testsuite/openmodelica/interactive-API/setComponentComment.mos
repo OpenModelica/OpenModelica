@@ -1,0 +1,59 @@
+// name: Test Interactive API for Components 
+// keywords: Graphical API, component attributes
+// status: correct
+// Subset of the Graphical API for components
+//
+
+loadFile("setComponentComment.mo"); getErrorString();
+list(model1); getErrorString();
+getComponents(model1); getErrorString();
+setComponentComment(model1, emf1, "An EMF Component"); getErrorString();
+list(model1); getErrorString();
+getComponents(model1); getErrorString();
+updateComponent(emf1, Modelica.Electrical.Analog.Basic.EMF, model1, annotate=Placement(visible=true, transformation=transformation(origin={-25,-6.5}, extent={{-15,-15},{15,15}}, rotation=0))); getErrorString();
+list(model1); getErrorString();
+getComponents(model1); getErrorString();
+updateComponent(emf1, Modelica.Electrical.Analog.Basic.EMF, model1, comment="New Comment"); getErrorString();
+list(model1); getErrorString();
+getComponents(model1); getErrorString();
+// wrong update (should return false)
+updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="New Comment"); getErrorString();
+
+// Result:
+// true
+// ""
+// "model model1
+//   Modelica.Electrical.Analog.Basic.EMF emf1;
+// end model1;"
+// ""
+// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// Ok
+// ""
+// "model model1
+//   Modelica.Electrical.Analog.Basic.EMF emf1 \"An EMF Component\";
+// end model1;"
+// ""
+// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// true
+// ""
+// "model model1
+//   Modelica.Electrical.Analog.Basic.EMF emf1 \"An EMF Component\" annotation(
+//     Placement(visible = true, transformation(origin = {-25, -6.5}, extent = {{-15, -15}, {15, 15}}, rotation = 0)));
+// end model1;"
+// ""
+// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// true
+// ""
+// "model model1
+//   Modelica.Electrical.Analog.Basic.EMF emf1 \"New Comment\" annotation(
+//     Placement(visible = true, transformation(origin = {-25, -6.5}, extent = {{-15, -15}, {15, 15}}, rotation = 0)));
+// end model1;"
+// ""
+// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"New Comment", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// false
+// ""
+// endResult

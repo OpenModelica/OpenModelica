@@ -1,0 +1,17 @@
+// status: correct
+// teardown_command: rm -rf ConstantConnect.Model* output.log
+
+loadFile("ConstantConnect.mo");getErrorString();
+simulate(ConstantConnect.Model3);getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ConstantConnect.Model3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ConstantConnect.Model3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

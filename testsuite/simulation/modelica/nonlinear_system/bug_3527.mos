@@ -1,0 +1,102 @@
+// name: bug_3527
+// keywords: nonlinear system solver inline function
+// status: correct
+// cflags:
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+
+loadString("
+  model inlineFunctionLoop
+    function f2
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+    algorithm
+      y1 := cos(x1 + x2);
+      y2 := sin(x1);
+      annotation(Inline = true);
+    end f2;
+
+    Real x(start=0), z, y(start =-1);
+  equation
+    (x, z) = f2(x+time, y+cos(time));
+    z = sin(cos(time+1) * x);
+  end inlineFunctionLoop;
+"); getErrorString();
+
+simulate(inlineFunctionLoop, stopTime=1.0); getErrorString();
+
+val(x,{0,1});
+val(y,{0,1});
+val(z,{0,1});
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "inlineFunctionLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'inlineFunctionLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 3
+//  * Number of variables: 3
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (2):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 1
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 0
+//  * Non-linear Jacobian: 1 {1}
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 1}
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (5):
+//  * Single equations (assignments): 3
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 1
+//  * Torn equation systems: 1
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Equation system details:
+//  * Constant Jacobian: 0
+//  * Linear Jacobian (size,density): 0
+//  * Non-linear Jacobian: 1 {1}
+//  * Without analytic Jacobian: 0
+// Notification: Torn system details for strict tearing set:
+//  * Linear torn systems: 0
+//  * Non-linear torn systems: 1 {1 2}
+// "
+// {0.0,-0.7061414637186959}
+// {0.5707963267948966,1.520669413132999}
+// {0.0,0.2896475060211959}
+// endResult

@@ -1,0 +1,23 @@
+// name:     SemiLinear
+// keywords: events
+// status: correct
+// teardown_command: rm -rf SemiLinearTest_* SemiLinearTest SemiLinearTest.exe SemiLinearTest.cpp SemiLinearTest.makefile SemiLinearTest.libs SemiLinearTest.log output.log
+//
+loadFile("SemiLinear.mo");
+simulate(SemiLinearTest, startTime=0.0, stopTime=1.0, tolerance=1e-5);
+val(c, 0.0);
+val(c, 1.0);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "SemiLinearTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'SemiLinearTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 5.0
+// 4.0
+// endResult

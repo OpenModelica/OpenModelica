@@ -1,0 +1,37 @@
+// name: bug_3536
+// keywords: initialization
+// status: correct
+
+
+loadString("
+within ;
+package initializationTests
+  model bug_3536
+    Real x(fixed=true);
+  equation
+    der(x) = 0;
+  end bug_3536;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.bug_3536, stopTime=0.0, simflags="-override=x=1 -lv=LOG_SOTI"); getErrorString();
+val(x, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_3536_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_3536', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=x=1 -lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=1, nominal=1) = 1 (pre: 1)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [2] Real der(x) = 0 (pre: 0)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

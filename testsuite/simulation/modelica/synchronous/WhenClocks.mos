@@ -1,0 +1,108 @@
+// name: WhenClocks
+// keywords: synchronous features
+// status: correct
+//
+
+loadModel(Modelica, languageStandard="3.3"); getErrorString();
+
+setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
+
+loadString("
+model WhenClocks
+equation
+  when Clock(0.1) then
+    Modelica.Utilities.Streams.print(\"Clocked at \" + String(time));
+  end when;
+end WhenClocks;
+"); getErrorString();
+
+instantiateModel(WhenClocks); getErrorString();
+translateModel(WhenClocks); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
+//   input String string = \"\" \"String to be printed\";
+//   input String fileName = \"\" \"File where to print (empty string is the terminal)\";
+//
+//   external \"C\" ModelicaInternal_print(string, fileName);
+// end Modelica.Utilities.Streams.print;
+//
+// class WhenClocks
+// equation
+//   when Clock(0.1) then
+//     Modelica.Utilities.Streams.print(\"Clocked at \" + String(time, 6, 0, true), \"\");
+//   end when;
+// end WhenClocks;
+// "
+// ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (1 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Simple Equations (1, 0)
+// ========================================
+// 1/1 (0): algorithm
+//   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
+//    [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub clocks (1)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (1 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Simple Equations (1, 0)
+// ========================================
+// 1/1 (0): algorithm
+//   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
+//    [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub clocks (1)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+//
+// true
+// ""
+// endResult

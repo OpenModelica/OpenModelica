@@ -1,0 +1,35 @@
+// name: Bug3323.mos
+// keywords: alias
+// status: correct
+//
+// test for #3323
+//
+
+loadString("
+model Bug3323
+  Real x1;
+  Real x2;
+equation
+  x1 + x2 = 0;
+  x1 - x2 = 1;
+end Bug3323;
+"); getErrorString();
+
+simulate(Bug3323); getErrorString();
+val(x1, 0.0);
+val(x2, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Bug3323_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Bug3323', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// -0.5
+// endResult

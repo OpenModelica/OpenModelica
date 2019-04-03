@@ -1,0 +1,31 @@
+// name:     09  Pam Decl
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("Absyn.mo");
+loadFile("Env.mo");
+loadFile("Eval.mo");
+loadFile("Main.mo");
+loadFile("ScanParse.mo");
+getErrorString();
+Main.main();
+getErrorString();
+
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// ""
+// [Parse. Enter a program, then press CTRL+z (Windows) or CTRL+d (Linux).]
+// 42.0
+//
+// ""
+// endResult

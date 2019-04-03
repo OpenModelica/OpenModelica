@@ -1,0 +1,38 @@
+// name:     Modelica.Media.Examples.TestOnly.IdealGasN2Mix
+// teardown_command: rm -f Modelica.Media.Examples.TestOnly.IdealGasN2Mix_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Media.Examples.TestOnly.IdealGasN2Mix, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.TestOnly.IdealGasN2Mix_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.TestOnly.IdealGasN2Mix.mat",
+  "Modelica.Media.Examples.TestOnly.IdealGasN2Mix_diff.csv",0.01,0.0001,
+  {"U",
+   "m"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.TestOnly.IdealGasN2Mix_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.IdealGasN2Mix', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "[lib/omlibrary/Modelica 3.2.1/Media/IdealGases/Common/package.mo:875:5-875:69:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Media/package.mo:4741:7-4741:66:writable] Warning: Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:
+// 	first element is:  input ThermodynamicState state	second element is: input .Modelica.Media.Examples.TestOnly.IdealGasN2Mix.Medium.ThermodynamicState state	Modelica specification requires that elements are exactly identical.
+// [lib/omlibrary/Modelica 3.2.1/Media/IdealGases/Common/package.mo:875:5-875:69:writable] Notification: From here:
+// [lib/omlibrary/Modelica 3.2.1/Media/package.mo:4741:7-4741:66:writable] Warning: Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:
+// 	first element is:  input ThermodynamicState state	second element is: input .Modelica.Media.Examples.TestOnly.IdealGasN2Mix.Medium.ThermodynamicState state	Modelica specification requires that elements are exactly identical.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

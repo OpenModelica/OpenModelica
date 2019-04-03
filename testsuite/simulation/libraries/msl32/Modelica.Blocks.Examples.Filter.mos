@@ -1,0 +1,47 @@
+// name:     Modelica.Blocks.Examples.Filter
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Blocks.Examples.Filter);
+compareVars :=
+{
+   "CriticalDamping.x[1]",
+   "CriticalDamping.x[2]",
+   "CriticalDamping.x[3]",
+   "Bessel.x[1]",
+   "Bessel.x[2]",
+   "Bessel.x[3]",
+   "Butterworth.x[1]",
+   "Butterworth.x[2]",
+   "Butterworth.x[3]",
+   "ChebyshevI.x[1]",
+   "ChebyshevI.x[2]",
+   "ChebyshevI.x[3]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Blocks.Examples.Filter
+// {"CriticalDamping.x[1]","CriticalDamping.x[2]","CriticalDamping.x[3]","Bessel.x[1]","Bessel.x[2]","Bessel.x[3]","Butterworth.x[1]","Butterworth.x[2]","Butterworth.x[3]","ChebyshevI.x[1]","ChebyshevI.x[2]","ChebyshevI.x[3]"}
+// Simulation options: startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.Filter', options = '', outputFormat = 'mat', variableFilter = 'time|CriticalDamping.x.1.|CriticalDamping.x.2.|CriticalDamping.x.3.|Bessel.x.1.|Bessel.x.2.|Bessel.x.3.|Butterworth.x.1.|Butterworth.x.2.|Butterworth.x.3.|ChebyshevI.x.1.|ChebyshevI.x.2.|ChebyshevI.x.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Blocks.Examples.Filter_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

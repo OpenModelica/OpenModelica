@@ -1,0 +1,53 @@
+// name: clockedSolverTest
+// keywords: synchronous clocked equations, continuous equations
+// status: correct
+// teardown_command: rm -f *SolverMethod*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model SolverMethod \"Continuous PI controller in a clocked partition;
+  see Modelica 3.3 spec, section 16.8.3 Associating a Solver to a Partition\"
+  parameter Real Ti = 200/1000, k = 2;
+  parameter Real ref = 1;
+  Real x(start = 0, fixed = true);
+  Real xd(start = 0);
+  Real vd, e, u;
+equation
+  // controller
+  vd = sample(x, Clock(Clock(50,1000), solverMethod = \"ImplicitEuler\"));
+  e = ref-vd;
+  der(xd) = e/Ti;
+  u = k*(e + xd);
+  // physical model
+  0.2*der(x) = hold(u);
+end SolverMethod;
+");
+getErrorString();
+
+simulate(SolverMethod);
+val(x, 0.0);
+val(x, 0.3);
+val(x, 1.0);
+val(xd, 0.0);
+val(xd, 0.3);
+val(xd, 1.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SolverMethod_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'SolverMethod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.0
+// 1.120803833007813
+// 0.9988845212685719
+// 0.0
+// 0.09336471557617204
+// -0.0007381858367627922
+// ""
+// endResult

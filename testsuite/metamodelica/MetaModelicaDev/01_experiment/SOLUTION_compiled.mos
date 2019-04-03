@@ -1,0 +1,34 @@
+// name:     01  Experiment
+// keywords: MetaModelica
+// status:   correct
+//
+// OpenModelica Development Course at PELAB
+// Uses packages, aliases, etc
+//
+setCommandLineOptions({"-d=rml,noevalfunc,gen","-g=MetaModelica"});setEnvironmentVar("MODELICAUSERCFLAGS","-g");reopenStandardStream(OpenModelica.Scripting.StandardStream.stdin,"program.txt");
+loadFile("SOLUTION.mo");
+loadFile("Types.mo");
+getErrorString();
+i:=Main.main({"10"});
+getErrorString();
+// Result:
+// {true,true}
+// true
+// true
+// true
+// true
+// ""
+// Factorial of 10 is: 3628800
+// Calling Functions.test("one"):   1
+// Calling Functions.test("two"):   2
+// Calling Functions.test("three"): 3
+// Calling Functions.test("other"): 0
+// Types.aliasConstant: 1.0
+// Types.optionAliasConstant: 1.0
+// Types.optionAliasConstantNone: NONE()
+// Types.tupleConstant: ("a tuple element", 1.0, 1.0)
+// Types.listConstant: {("a tuple element", 1.0, 1.0), ("another element", 2.0, NONE())}
+// Types.oneRecord: OneRecord("first element", 3.0)
+// Types.select: ThirdAlternative(SecondAlternative(FirstAlternative("one", "First"), FirstAlternative("two", "Second")))
+// ""
+// endResult

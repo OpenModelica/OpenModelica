@@ -1,0 +1,18 @@
+// name:     Integer Division Overflow
+// keywords: 
+// status:   correct
+// 
+//  Making sure that division is correct
+//
+13/3;
+13/3.0;
+a := {121,11};
+b := 7;
+a / b;
+// Result:
+// 4.33333333333333
+// 4.33333333333333
+// {121,11}
+// 7
+// {17.2857142857143,1.57142857142857}
+// endResult

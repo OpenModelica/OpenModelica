@@ -1,0 +1,29 @@
+// name:     Modelica.StateGraph.Examples.FirstExample_Variant3
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.StateGraph.Examples.FirstExample_Variant3,stopTime=5.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.StateGraph.Examples.FirstExample_Variant3_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.StateGraph.Examples.FirstExample_Variant3.mat","Modelica.StateGraph.Examples.FirstExample_Variant3_diff.csv",0.01,0.0001,
+  {"stateGraphRoot.subgraphStatePort.activeSteps",
+  "transition1.t",
+  "timer.y",
+  "transition2.t"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.StateGraph.Examples.FirstExample_Variant3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.FirstExample_Variant3', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult
+rm -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv

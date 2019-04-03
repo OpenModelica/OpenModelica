@@ -1,0 +1,27 @@
+// status: correct
+
+loadString("package P1
+end P1;", "P1", "UTF-8");
+getErrorString();
+listFile(P1);
+getErrorString();
+loadString("within P1; model M1
+end M1;", "P1", "UTF-8");
+getErrorString();
+listFile(P1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "package P1
+// end P1;"
+// ""
+// true
+// ""
+// "package P1
+//   model M1
+//   end M1;
+// end P1;"
+// ""
+// endResult

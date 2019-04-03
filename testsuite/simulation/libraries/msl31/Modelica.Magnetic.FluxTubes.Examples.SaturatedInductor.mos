@@ -1,0 +1,25 @@
+// name:     Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor,stopTime=0.10000000149);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor.mat","Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_diff.csv",0.01,0.00001,
+  {"coil.Phi","der(coil.Phi)","r.v","r_mLeak.port_p.V_m","r_mAirPar.H","r_mAirPar.R_m"});
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.10000000149, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,58 @@
+// name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String
+// keywords: simulation Modelica_DeviceDrivers examples
+// status: correct
+//
+// Simulation Results
+// Modelica_DeviceDrivers
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String);
+compareVars :=
+{"findString.y"};
+
+runScript("common.mos");getErrorString();
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String
+// {"findString.y"}
+// "Modelica_DeviceDrivers
+// \"\"
+// true
+// \"Modelica_DeviceDrivers\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String', options = '', outputFormat = 'mat', variableFilter = 'time|findString.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_String_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: Alias equations of external objects are not Modelica compliant as in:
+//     addInteger.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     getInteger.pkgIn.pkg = getString.pkgOut[1].pkg
+//     getString.pkgIn.pkg = unpackInt.pkgOut[1].pkg
+//     addString.pkgIn.pkg = packInt.pkgOut[1].pkg
+//     addInteger.pkgIn.pkg = addString.pkgOut[1].pkg
+//     resetPointer.pkgOut[1].pkg = unpackInt.pkgIn.pkg
+//     packInt.pkgIn.pkg = packager.pkgOut.pkg
+//     getString.pkgOut[1].pkg = getString.pkgIn.pkg
+//     addString.pkgOut[1].pkg = addString.pkgIn.pkg
+//     unpackInt.pkgOut[1].pkg = unpackInt.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
+// Warning: Assuming fixed start value for the following 1 variables:
+//          getString.data:DISCRETE()  "Output string (read from package)" type: String
+//
+// "true
+// "
+// ""
+// endResult

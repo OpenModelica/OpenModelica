@@ -1,0 +1,98 @@
+// name:     Blocks Sources
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f *ConstantTest_* ExpSineTest_* *ExponentialsTest_* *SineTest_* *PulseTest_*
+//  Simulate blocks sources and simulate.
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// ConstantTest
+simulate(TestModels.BlockModels.SourceTests.ConstantTest, tolerance=1e-5, numberOfIntervals=100);
+{val(constant1.y,0.0),val(constant1.y,0.5)};
+{val(derivative1.y,0.0),val(derivative1.y,0.5)};
+system("rm -rf *ConstantTest.* output.log");
+
+//ExpSineTest
+simulate(TestModels.BlockModels.SourceTests.ExpSineTest, tolerance=1e-7, numberOfIntervals=200);
+{val(expSine1.y,0.0),val(expSine1.y,0.2),val(expSine1.y,0.4),val(expSine1.y,0.6),
+val(expSine1.y,0.8),val(expSine1.y,1.0)};
+
+{val(transferFunction1.y,0.0),val(transferFunction1.y,0.2),val(transferFunction1.y,0.4),
+val(transferFunction1.y,0.6),val(transferFunction1.y,0.8),val(transferFunction1.y,1.0)};
+
+// ExponentialsTest
+simulate(TestModels.BlockModels.SourceTests.ExponentialsTest, tolerance=1e-8, numberOfIntervals=400);
+{val(exponentials1.y,0.0),val(exponentials1.y,0.2),val(exponentials1.y,0.4),
+val(exponentials1.y,0.6),val(exponentials1.y,0.8),val(exponentials1.y,1.0)};
+{val(derivative1.y,0.0),val(derivative1.y,0.2),val(derivative1.y,0.4)
+,val(derivative1.y,0.6),val(derivative1.y,0.8),val(derivative1.y,1.0)};
+system("rm -rf *ExponentialsTest.* output.log");
+
+// SineTest
+simulate(TestModels.BlockModels.SourceTests.SineTest, tolerance=1e-5, numberOfIntervals=100);
+{val(sine1.y,0.0),val(sine1.y,0.2),val(sine1.y,0.4),
+val(sine1.y,0.6),val(sine1.y,0.8),val(sine1.y,1.0)};
+{val(transferFunction1.y,0.0),val(transferFunction1.y,0.2),val(transferFunction1.y,0.4)
+,val(transferFunction1.y,0.6),val(transferFunction1.y,0.8),val(transferFunction1.y,1.0)};
+system("rm -rf *SineTest.* output.log");
+
+// PulseTest
+simulate(TestModels.BlockModels.SourceTests.PulseTest, tolerance=1e-5, numberOfIntervals=100);
+{val(p.y,0.0),val(p.y,0.1),val(p.y,0.3),val(p.y,0.5),val(p.y,0.7)};
+system("rm -rf *PulseTest.* output.log");
+
+
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SourceTests.ConstantTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ConstantTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {1.0,1.0}
+// {99999.99999999999,0.0}
+// 0
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SourceTests.ExpSineTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExpSineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.4812378622575482,-0.6375122477854621,0.5219508827258282,-0.2641089385359565,-1.802089520410896e-16}
+// {0.0,0.1178616228058271,0.03685797605485362,0.03017720686980623,0.06468360251156398,-2.080054874013951e-07}
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SourceTests.ExponentialsTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 400, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.ExponentialsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.8646647167633873,0.9816843611112658,0.365400688994776,0.04945160573996141,0.006692547069322982}
+// {0.0,1.503726300805242,0.2035072277517869,-4.059502750936461,-0.5494623608556209,-0.07436183798941289}
+// 0
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SourceTests.SineTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.SineTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,0.1986693307950612,0.3894183423086504,0.5646424733950351,0.7173560908995227,0.8414709848078963}
+// {0.0,0.01865663715435228,0.06933492747737127,0.1440582714892951,0.2349917424833482,0.3345288741570214}
+// 0
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SourceTests.PulseTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SourceTests.PulseTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {1.0,1.0,0.0,1.0,0.0}
+// 0
+// endResult

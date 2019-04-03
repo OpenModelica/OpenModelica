@@ -1,0 +1,664 @@
+// name:     CantileverBeam
+// keywords: uncertainty, OpenTURNS, example
+// teardown_command: rm -f *.bat *.log *.dtd *.xml *.c *.h *.exe *.a *.o *.mat OpenTURNSTests.CantileverBeam *.dll *.makefile *.libs *.pdf *.fig *.eps *.png
+// status:   correct
+// The CantileverBeam example for OpenTURNS connectivity.
+// http://doc.openturns.org/openturns-latest/html/ExamplesGuide/cid1.xhtml#cid1
+// 
+
+loadModel(Modelica, {"3.1"}); getErrorString();
+loadFile("TestModels/ThermoSysPro/package.mo");
+loadFile("TestModels/OpenTURNSTests.mo");
+
+pyscript := buildOpenTURNSInterface(OpenTURNSTests.CantileverBeam,"CantileverBeam_MC-template.py"); getErrorString();
+
+//"read Python file";
+//readFile("CantileverBeam_MC_dummy-OpenTURNSTests.CantileverBeam.py");
+//"read XML file";
+//readFile("CantileverBeam_wrapper.xml");
+//"read Model_wrapper.c";
+//readFile("CantileverBeam_wrapper.c");
+//"read Model_wrapper.makefile";
+//readFile("CantileverBeam_wrapper.makefile");
+//"read Model_wrapper.log";
+//readFile("CantileverBeam_wrapper.log"); getErrorString();
+"run python script";
+otlog := runOpenTURNSPythonScript(pyscript); getErrorString();
+"read OpenTurns output log";
+readFile(otlog); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// true
+// running: C:\msys\1.0\bin\sh.exe --login -c "cd \"c:/bin/cygwin/home/adrpo/dev/OpenModelica/testsuite/uncertainties\"; pwd; make -f CantileverBeam_wrapper.makefile" > CantileverBeam_wrapper.log 2>&1
+// "CantileverBeam_MC-OpenTURNSTests.CantileverBeam.py"
+// ""
+// "run python script"
+// running: CantileverBeam_MC-OpenTURNSTests.CantileverBeam.py.bat > CantileverBeam_MC-OpenTURNSTests.CantileverBeam.py.log 2>&1
+// "CantileverBeam_MC-OpenTURNSTests.CantileverBeam.py.log"
+// ""
+// "read OpenTurns output log"
+// "set OPENTURNS_WRAPPER_PATH = c:\\bin\\cygwin\\home\\adrpo\\dev\\OpenModelica\\testsuite\\uncertainties so OpenTRUNS finds our wrapper.
+// copy the wrapper.dtd to the current directory.
+// C:\\OpenTURNS\\lib\\openturns\\wrappers\\wrapper-v2.dtd
+// C:\\OpenTURNS\\lib\\openturns\\wrappers\\wrapper.dtd
+//         2 file(s) copied.
+// remove the pause from pyot.bat.
+// call pyot from openturns with script: CantileverBeam_MC-OpenTURNSTests.CantileverBeam.py
+// ###################################################
+//  Min/Max study with deterministic design of experiments 
+// ###################################################
+// From a composite  design of experiments of size =  73
+// Levels =  0.5 ,  1.0 ,  3.0
+// Min Value =  0.649717975365
+// Max Value =  55.3605185131
+// 
+// #################################
+//  Min/Max study by random sampling
+// #################################
+// From random sampling =  10000
+// Min Value =  5.38682360207
+// Max Value =  52.7553885642
+// 
+// WRN - You are using a default implementation for the hessian. Be careful, your computation can be severely wrong!
+// WRN - You are using a default implementation for the gradient. Be careful, your computation can be severely wrong!
+// 
+// ###########################################
+// Random Study : central tendance of
+// the output variable of interest
+// ###########################################
+// 
+// ##############################
+// Taylor variance decomposition
+// ##############################
+// 
+// First order mean= 12.3369023123
+// Evaluation calls number =  1
+// Second order mean= 12.4198207535
+// Evaluation calls number =  33
+// Standard deviation= 4.18702829512
+// Evaluation calls number =  8
+// Importance factors=
+// E  =  0.149096213084
+// F  =  0.781345238101
+// L  =  0.0145457279754
+// I  =  0.0550128208397
+// 
+// #######################
+// Random sampling
+// #######################
+// Sample size =  10000
+// Mean from sample =  12.609042535
+// Standard deviation from sample =  4.35926575012
+// 
+// ##########################
+// # Kernel Smoothing Fitting
+// ##########################
+// Sample size =  10000
+// Kernel bandwidth= 0.688228112155
+// Mean from kernel smoothing =  12.619538853
+// 
+// 
+// ############################################################
+// Probabilistic Study : threshold exceedance: deviation <-1cm
+// ############################################################
+// 
+// #####
+// FORM
+// #####
+// FORM event probability= 0.00670980421088
+// Number of evaluations of the limit state function =  176
+// Generalized reliability index= 2.47243508163
+// Standard space design point=
+// E  =  -0.60238644264
+// F  =  2.31055513718
+// L  =  0.355793740975
+// I  =  -0.533677410542
+// Physical space design point=
+// E  =  30327158.4264
+// F  =  61318.4689929
+// L  =  256.390024816
+// I  =  378.634729773
+// Importance factors=
+// E  =  0.0586820105187
+// F  =  0.863350778866
+// L  =  0.0204715732437
+// I  =  0.057495637372
+// Hasofer reliability index= 2.47243508163
+// 
+// ############
+// Monte Carlo
+// ############
+// 
+// Number of evaluations of the limit state function =  18300
+// Monte Carlo probability estimation =  0.00551912568306
+// Variance of the Monte Carlo probability estimator =  3.02926673715e-07
+// 0.95 Confidence Interval = [ 0.00444038551844 ,  0.00659786584768 ]
+// 
+// #######################
+// Directional Sampling
+// #######################
+//  
+// Number of evaluations of the limit state function =  14383
+// Directional Sampling probability estimation =  0.00489016824054
+// Variance of the Directional Sampling probability estimator =  2.39111789097e-07
+// 0.95 Confidence Interval = [ 0.00393176431142 ,  0.00584857216967 ]
+// 
+// ###########################
+// Latin HyperCube Sampling
+// ###########################
+// 
+// Number of evaluations of the limit state function =  20600
+// LHS probability estimation =  0.00490291262136
+// Variance of the LHS probability estimator =  2.39206700255e-07
+// 0.95 Confidence Interval = [ 0.00394431850044 ,  0.00586150674228 ]
+// 
+// ####################
+// Importance Sampling
+// ####################
+// 
+// Number of evaluations of the limit state function =  306
+// Importance Sampling probability estimation =  0.00658159424706
+// Variance of the Importance Sampling probability estimator =  4.29506450597e-07
+// 0.95 Confidence Interval = [ 0.0052970977141 ,  0.00786609078003 ]
+// ##########################
+// Polynomial expansion chaos
+// ##########################
+//  
+// Polynomial number  0  in truncated basis <-> polynomial number  0  =  [0,0,0,0]  in complete basis
+// Polynomial number  1  in truncated basis <-> polynomial number  1  =  [1,0,0,0]  in complete basis
+// Polynomial number  2  in truncated basis <-> polynomial number  2  =  [0,1,0,0]  in complete basis
+// Polynomial number  3  in truncated basis <-> polynomial number  3  =  [0,0,1,0]  in complete basis
+// Polynomial number  4  in truncated basis <-> polynomial number  4  =  [0,0,0,1]  in complete basis
+// Polynomial number  5  in truncated basis <-> polynomial number  5  =  [2,0,0,0]  in complete basis
+// Polynomial number  6  in truncated basis <-> polynomial number  6  =  [1,1,0,0]  in complete basis
+// Polynomial number  7  in truncated basis <-> polynomial number  7  =  [1,0,1,0]  in complete basis
+// Polynomial number  8  in truncated basis <-> polynomial number  8  =  [1,0,0,1]  in complete basis
+// Polynomial number  9  in truncated basis <-> polynomial number  9  =  [0,2,0,0]  in complete basis
+// Polynomial number  10  in truncated basis <-> polynomial number  10  =  [0,1,1,0]  in complete basis
+// Polynomial number  11  in truncated basis <-> polynomial number  11  =  [0,1,0,1]  in complete basis
+// Polynomial number  12  in truncated basis <-> polynomial number  12  =  [0,0,2,0]  in complete basis
+// Polynomial number  13  in truncated basis <-> polynomial number  13  =  [0,0,1,1]  in complete basis
+// Polynomial number  14  in truncated basis <-> polynomial number  14  =  [0,0,0,2]  in complete basis
+// Polynomial number  15  in truncated basis <-> polynomial number  15  =  [3,0,0,0]  in complete basis
+// Polynomial number  16  in truncated basis <-> polynomial number  16  =  [2,1,0,0]  in complete basis
+// Polynomial number  17  in truncated basis <-> polynomial number  17  =  [2,0,1,0]  in complete basis
+// Polynomial number  18  in truncated basis <-> polynomial number  18  =  [2,0,0,1]  in complete basis
+// Polynomial number  19  in truncated basis <-> polynomial number  19  =  [1,2,0,0]  in complete basis
+// Polynomial number  20  in truncated basis <-> polynomial number  20  =  [1,1,1,0]  in complete basis
+// Polynomial number  21  in truncated basis <-> polynomial number  21  =  [1,1,0,1]  in complete basis
+// Polynomial number  22  in truncated basis <-> polynomial number  22  =  [1,0,2,0]  in complete basis
+// Polynomial number  23  in truncated basis <-> polynomial number  23  =  [1,0,1,1]  in complete basis
+// Polynomial number  24  in truncated basis <-> polynomial number  24  =  [1,0,0,2]  in complete basis
+// Polynomial number  25  in truncated basis <-> polynomial number  25  =  [0,3,0,0]  in complete basis
+// Polynomial number  26  in truncated basis <-> polynomial number  26  =  [0,2,1,0]  in complete basis
+// Polynomial number  27  in truncated basis <-> polynomial number  27  =  [0,2,0,1]  in complete basis
+// Polynomial number  28  in truncated basis <-> polynomial number  28  =  [0,1,2,0]  in complete basis
+// Polynomial number  29  in truncated basis <-> polynomial number  29  =  [0,1,1,1]  in complete basis
+// Polynomial number  30  in truncated basis <-> polynomial number  30  =  [0,1,0,2]  in complete basis
+// Polynomial number  31  in truncated basis <-> polynomial number  31  =  [0,0,3,0]  in complete basis
+// Polynomial number  32  in truncated basis <-> polynomial number  32  =  [0,0,2,1]  in complete basis
+// Polynomial number  33  in truncated basis <-> polynomial number  33  =  [0,0,1,2]  in complete basis
+// Polynomial number  34  in truncated basis <-> polynomial number  34  =  [0,0,0,3]  in complete basis
+// Polynomial number  35  in truncated basis <-> polynomial number  35  =  [4,0,0,0]  in complete basis
+// Polynomial number  36  in truncated basis <-> polynomial number  36  =  [3,1,0,0]  in complete basis
+// Polynomial number  37  in truncated basis <-> polynomial number  37  =  [3,0,1,0]  in complete basis
+// Polynomial number  38  in truncated basis <-> polynomial number  38  =  [3,0,0,1]  in complete basis
+// Polynomial number  39  in truncated basis <-> polynomial number  39  =  [2,2,0,0]  in complete basis
+// Polynomial number  40  in truncated basis <-> polynomial number  40  =  [2,1,1,0]  in complete basis
+// Polynomial number  41  in truncated basis <-> polynomial number  41  =  [2,1,0,1]  in complete basis
+// Polynomial number  42  in truncated basis <-> polynomial number  42  =  [2,0,2,0]  in complete basis
+// Polynomial number  43  in truncated basis <-> polynomial number  43  =  [2,0,1,1]  in complete basis
+// Polynomial number  44  in truncated basis <-> polynomial number  44  =  [2,0,0,2]  in complete basis
+// Polynomial number  45  in truncated basis <-> polynomial number  45  =  [1,3,0,0]  in complete basis
+// Polynomial number  46  in truncated basis <-> polynomial number  46  =  [1,2,1,0]  in complete basis
+// Polynomial number  47  in truncated basis <-> polynomial number  47  =  [1,2,0,1]  in complete basis
+// Polynomial number  48  in truncated basis <-> polynomial number  48  =  [1,1,2,0]  in complete basis
+// Polynomial number  49  in truncated basis <-> polynomial number  49  =  [1,1,1,1]  in complete basis
+// Polynomial number  50  in truncated basis <-> polynomial number  50  =  [1,1,0,2]  in complete basis
+// Polynomial number  51  in truncated basis <-> polynomial number  51  =  [1,0,3,0]  in complete basis
+// Polynomial number  52  in truncated basis <-> polynomial number  52  =  [1,0,2,1]  in complete basis
+// Polynomial number  53  in truncated basis <-> polynomial number  53  =  [1,0,1,2]  in complete basis
+// Polynomial number  54  in truncated basis <-> polynomial number  54  =  [1,0,0,3]  in complete basis
+// Polynomial number  55  in truncated basis <-> polynomial number  55  =  [0,4,0,0]  in complete basis
+// Polynomial number  56  in truncated basis <-> polynomial number  56  =  [0,3,1,0]  in complete basis
+// Polynomial number  57  in truncated basis <-> polynomial number  57  =  [0,3,0,1]  in complete basis
+// Polynomial number  58  in truncated basis <-> polynomial number  58  =  [0,2,2,0]  in complete basis
+// Polynomial number  59  in truncated basis <-> polynomial number  59  =  [0,2,1,1]  in complete basis
+// Polynomial number  60  in truncated basis <-> polynomial number  60  =  [0,2,0,2]  in complete basis
+// Polynomial number  61  in truncated basis <-> polynomial number  61  =  [0,1,3,0]  in complete basis
+// Polynomial number  62  in truncated basis <-> polynomial number  62  =  [0,1,2,1]  in complete basis
+// Polynomial number  63  in truncated basis <-> polynomial number  63  =  [0,1,1,2]  in complete basis
+// Polynomial number  64  in truncated basis <-> polynomial number  64  =  [0,1,0,3]  in complete basis
+// Polynomial number  65  in truncated basis <-> polynomial number  65  =  [0,0,4,0]  in complete basis
+// Polynomial number  66  in truncated basis <-> polynomial number  66  =  [0,0,3,1]  in complete basis
+// Polynomial number  67  in truncated basis <-> polynomial number  67  =  [0,0,2,2]  in complete basis
+// Polynomial number  68  in truncated basis <-> polynomial number  68  =  [0,0,1,3]  in complete basis
+// Polynomial number  69  in truncated basis <-> polynomial number  69  =  [0,0,0,4]  in complete basis
+// Polynomial number  70  in truncated basis <-> polynomial number  70  =  [5,0,0,0]  in complete basis
+// Polynomial number  71  in truncated basis <-> polynomial number  71  =  [4,1,0,0]  in complete basis
+// Polynomial number  72  in truncated basis <-> polynomial number  72  =  [4,0,1,0]  in complete basis
+// Polynomial number  73  in truncated basis <-> polynomial number  73  =  [4,0,0,1]  in complete basis
+// Polynomial number  74  in truncated basis <-> polynomial number  74  =  [3,2,0,0]  in complete basis
+// Polynomial number  75  in truncated basis <-> polynomial number  75  =  [3,1,1,0]  in complete basis
+// Polynomial number  76  in truncated basis <-> polynomial number  76  =  [3,1,0,1]  in complete basis
+// Polynomial number  77  in truncated basis <-> polynomial number  77  =  [3,0,2,0]  in complete basis
+// Polynomial number  78  in truncated basis <-> polynomial number  78  =  [3,0,1,1]  in complete basis
+// Polynomial number  79  in truncated basis <-> polynomial number  79  =  [3,0,0,2]  in complete basis
+// Polynomial number  80  in truncated basis <-> polynomial number  80  =  [2,3,0,0]  in complete basis
+// Polynomial number  81  in truncated basis <-> polynomial number  81  =  [2,2,1,0]  in complete basis
+// Polynomial number  82  in truncated basis <-> polynomial number  82  =  [2,2,0,1]  in complete basis
+// Polynomial number  83  in truncated basis <-> polynomial number  83  =  [2,1,2,0]  in complete basis
+// Polynomial number  84  in truncated basis <-> polynomial number  84  =  [2,1,1,1]  in complete basis
+// Polynomial number  85  in truncated basis <-> polynomial number  85  =  [2,1,0,2]  in complete basis
+// Polynomial number  86  in truncated basis <-> polynomial number  86  =  [2,0,3,0]  in complete basis
+// Polynomial number  87  in truncated basis <-> polynomial number  87  =  [2,0,2,1]  in complete basis
+// Polynomial number  88  in truncated basis <-> polynomial number  88  =  [2,0,1,2]  in complete basis
+// Polynomial number  89  in truncated basis <-> polynomial number  89  =  [2,0,0,3]  in complete basis
+// Polynomial number  90  in truncated basis <-> polynomial number  90  =  [1,4,0,0]  in complete basis
+// Polynomial number  91  in truncated basis <-> polynomial number  91  =  [1,3,1,0]  in complete basis
+// Polynomial number  92  in truncated basis <-> polynomial number  92  =  [1,3,0,1]  in complete basis
+// Polynomial number  93  in truncated basis <-> polynomial number  93  =  [1,2,2,0]  in complete basis
+// Polynomial number  94  in truncated basis <-> polynomial number  94  =  [1,2,1,1]  in complete basis
+// Polynomial number  95  in truncated basis <-> polynomial number  95  =  [1,2,0,2]  in complete basis
+// Polynomial number  96  in truncated basis <-> polynomial number  96  =  [1,1,3,0]  in complete basis
+// Polynomial number  97  in truncated basis <-> polynomial number  97  =  [1,1,2,1]  in complete basis
+// Polynomial number  98  in truncated basis <-> polynomial number  98  =  [1,1,1,2]  in complete basis
+// Polynomial number  99  in truncated basis <-> polynomial number  99  =  [1,1,0,3]  in complete basis
+// Polynomial number  100  in truncated basis <-> polynomial number  100  =  [1,0,4,0]  in complete basis
+// Polynomial number  101  in truncated basis <-> polynomial number  101  =  [1,0,3,1]  in complete basis
+// Polynomial number  102  in truncated basis <-> polynomial number  102  =  [1,0,2,2]  in complete basis
+// Polynomial number  103  in truncated basis <-> polynomial number  103  =  [1,0,1,3]  in complete basis
+// Polynomial number  104  in truncated basis <-> polynomial number  104  =  [1,0,0,4]  in complete basis
+// Polynomial number  105  in truncated basis <-> polynomial number  105  =  [0,5,0,0]  in complete basis
+// Polynomial number  106  in truncated basis <-> polynomial number  106  =  [0,4,1,0]  in complete basis
+// Polynomial number  107  in truncated basis <-> polynomial number  107  =  [0,4,0,1]  in complete basis
+// Polynomial number  108  in truncated basis <-> polynomial number  108  =  [0,3,2,0]  in complete basis
+// Polynomial number  109  in truncated basis <-> polynomial number  109  =  [0,3,1,1]  in complete basis
+// Polynomial number  110  in truncated basis <-> polynomial number  110  =  [0,3,0,2]  in complete basis
+// Polynomial number  111  in truncated basis <-> polynomial number  111  =  [0,2,3,0]  in complete basis
+// Polynomial number  112  in truncated basis <-> polynomial number  112  =  [0,2,2,1]  in complete basis
+// Polynomial number  113  in truncated basis <-> polynomial number  113  =  [0,2,1,2]  in complete basis
+// Polynomial number  114  in truncated basis <-> polynomial number  114  =  [0,2,0,3]  in complete basis
+// Polynomial number  115  in truncated basis <-> polynomial number  115  =  [0,1,4,0]  in complete basis
+// Polynomial number  116  in truncated basis <-> polynomial number  116  =  [0,1,3,1]  in complete basis
+// Polynomial number  117  in truncated basis <-> polynomial number  117  =  [0,1,2,2]  in complete basis
+// Polynomial number  118  in truncated basis <-> polynomial number  118  =  [0,1,1,3]  in complete basis
+// Polynomial number  119  in truncated basis <-> polynomial number  119  =  [0,1,0,4]  in complete basis
+// Polynomial number  120  in truncated basis <-> polynomial number  120  =  [0,0,5,0]  in complete basis
+// Polynomial number  121  in truncated basis <-> polynomial number  121  =  [0,0,4,1]  in complete basis
+// Polynomial number  122  in truncated basis <-> polynomial number  122  =  [0,0,3,2]  in complete basis
+// Polynomial number  123  in truncated basis <-> polynomial number  123  =  [0,0,2,3]  in complete basis
+// Polynomial number  124  in truncated basis <-> polynomial number  124  =  [0,0,1,4]  in complete basis
+// Polynomial number  125  in truncated basis <-> polynomial number  125  =  [0,0,0,5]  in complete basis
+// Polynomial number  126  in truncated basis <-> polynomial number  126  =  [6,0,0,0]  in complete basis
+// Polynomial number  127  in truncated basis <-> polynomial number  127  =  [5,1,0,0]  in complete basis
+// Polynomial number  128  in truncated basis <-> polynomial number  128  =  [5,0,1,0]  in complete basis
+// Polynomial number  129  in truncated basis <-> polynomial number  129  =  [5,0,0,1]  in complete basis
+// Polynomial number  130  in truncated basis <-> polynomial number  130  =  [4,2,0,0]  in complete basis
+// Polynomial number  131  in truncated basis <-> polynomial number  131  =  [4,1,1,0]  in complete basis
+// Polynomial number  132  in truncated basis <-> polynomial number  132  =  [4,1,0,1]  in complete basis
+// Polynomial number  133  in truncated basis <-> polynomial number  133  =  [4,0,2,0]  in complete basis
+// Polynomial number  134  in truncated basis <-> polynomial number  134  =  [4,0,1,1]  in complete basis
+// Polynomial number  135  in truncated basis <-> polynomial number  135  =  [4,0,0,2]  in complete basis
+// Polynomial number  136  in truncated basis <-> polynomial number  136  =  [3,3,0,0]  in complete basis
+// Polynomial number  137  in truncated basis <-> polynomial number  137  =  [3,2,1,0]  in complete basis
+// Polynomial number  138  in truncated basis <-> polynomial number  138  =  [3,2,0,1]  in complete basis
+// Polynomial number  139  in truncated basis <-> polynomial number  139  =  [3,1,2,0]  in complete basis
+// Polynomial number  140  in truncated basis <-> polynomial number  140  =  [3,1,1,1]  in complete basis
+// Polynomial number  141  in truncated basis <-> polynomial number  141  =  [3,1,0,2]  in complete basis
+// Polynomial number  142  in truncated basis <-> polynomial number  142  =  [3,0,3,0]  in complete basis
+// Polynomial number  143  in truncated basis <-> polynomial number  143  =  [3,0,2,1]  in complete basis
+// Polynomial number  144  in truncated basis <-> polynomial number  144  =  [3,0,1,2]  in complete basis
+// Polynomial number  145  in truncated basis <-> polynomial number  145  =  [3,0,0,3]  in complete basis
+// Polynomial number  146  in truncated basis <-> polynomial number  146  =  [2,4,0,0]  in complete basis
+// Polynomial number  147  in truncated basis <-> polynomial number  147  =  [2,3,1,0]  in complete basis
+// Polynomial number  148  in truncated basis <-> polynomial number  148  =  [2,3,0,1]  in complete basis
+// Polynomial number  149  in truncated basis <-> polynomial number  149  =  [2,2,2,0]  in complete basis
+// Polynomial number  150  in truncated basis <-> polynomial number  150  =  [2,2,1,1]  in complete basis
+// Polynomial number  151  in truncated basis <-> polynomial number  151  =  [2,2,0,2]  in complete basis
+// Polynomial number  152  in truncated basis <-> polynomial number  152  =  [2,1,3,0]  in complete basis
+// Polynomial number  153  in truncated basis <-> polynomial number  153  =  [2,1,2,1]  in complete basis
+// Polynomial number  154  in truncated basis <-> polynomial number  154  =  [2,1,1,2]  in complete basis
+// Polynomial number  155  in truncated basis <-> polynomial number  155  =  [2,1,0,3]  in complete basis
+// Polynomial number  156  in truncated basis <-> polynomial number  156  =  [2,0,4,0]  in complete basis
+// Polynomial number  157  in truncated basis <-> polynomial number  157  =  [2,0,3,1]  in complete basis
+// Polynomial number  158  in truncated basis <-> polynomial number  158  =  [2,0,2,2]  in complete basis
+// Polynomial number  159  in truncated basis <-> polynomial number  159  =  [2,0,1,3]  in complete basis
+// Polynomial number  160  in truncated basis <-> polynomial number  160  =  [2,0,0,4]  in complete basis
+// Polynomial number  161  in truncated basis <-> polynomial number  161  =  [1,5,0,0]  in complete basis
+// Polynomial number  162  in truncated basis <-> polynomial number  162  =  [1,4,1,0]  in complete basis
+// Polynomial number  163  in truncated basis <-> polynomial number  163  =  [1,4,0,1]  in complete basis
+// Polynomial number  164  in truncated basis <-> polynomial number  164  =  [1,3,2,0]  in complete basis
+// Polynomial number  165  in truncated basis <-> polynomial number  165  =  [1,3,1,1]  in complete basis
+// Polynomial number  166  in truncated basis <-> polynomial number  166  =  [1,3,0,2]  in complete basis
+// Polynomial number  167  in truncated basis <-> polynomial number  167  =  [1,2,3,0]  in complete basis
+// Polynomial number  168  in truncated basis <-> polynomial number  168  =  [1,2,2,1]  in complete basis
+// Polynomial number  169  in truncated basis <-> polynomial number  169  =  [1,2,1,2]  in complete basis
+// Polynomial number  170  in truncated basis <-> polynomial number  170  =  [1,2,0,3]  in complete basis
+// Polynomial number  171  in truncated basis <-> polynomial number  171  =  [1,1,4,0]  in complete basis
+// Polynomial number  172  in truncated basis <-> polynomial number  172  =  [1,1,3,1]  in complete basis
+// Polynomial number  173  in truncated basis <-> polynomial number  173  =  [1,1,2,2]  in complete basis
+// Polynomial number  174  in truncated basis <-> polynomial number  174  =  [1,1,1,3]  in complete basis
+// Polynomial number  175  in truncated basis <-> polynomial number  175  =  [1,1,0,4]  in complete basis
+// Polynomial number  176  in truncated basis <-> polynomial number  176  =  [1,0,5,0]  in complete basis
+// Polynomial number  177  in truncated basis <-> polynomial number  177  =  [1,0,4,1]  in complete basis
+// Polynomial number  178  in truncated basis <-> polynomial number  178  =  [1,0,3,2]  in complete basis
+// Polynomial number  179  in truncated basis <-> polynomial number  179  =  [1,0,2,3]  in complete basis
+// Polynomial number  180  in truncated basis <-> polynomial number  180  =  [1,0,1,4]  in complete basis
+// Polynomial number  181  in truncated basis <-> polynomial number  181  =  [1,0,0,5]  in complete basis
+// Polynomial number  182  in truncated basis <-> polynomial number  182  =  [0,6,0,0]  in complete basis
+// Polynomial number  183  in truncated basis <-> polynomial number  183  =  [0,5,1,0]  in complete basis
+// Polynomial number  184  in truncated basis <-> polynomial number  184  =  [0,5,0,1]  in complete basis
+// Polynomial number  185  in truncated basis <-> polynomial number  185  =  [0,4,2,0]  in complete basis
+// Polynomial number  186  in truncated basis <-> polynomial number  186  =  [0,4,1,1]  in complete basis
+// Polynomial number  187  in truncated basis <-> polynomial number  187  =  [0,4,0,2]  in complete basis
+// Polynomial number  188  in truncated basis <-> polynomial number  188  =  [0,3,3,0]  in complete basis
+// Polynomial number  189  in truncated basis <-> polynomial number  189  =  [0,3,2,1]  in complete basis
+// Polynomial number  190  in truncated basis <-> polynomial number  190  =  [0,3,1,2]  in complete basis
+// Polynomial number  191  in truncated basis <-> polynomial number  191  =  [0,3,0,3]  in complete basis
+// Polynomial number  192  in truncated basis <-> polynomial number  192  =  [0,2,4,0]  in complete basis
+// Polynomial number  193  in truncated basis <-> polynomial number  193  =  [0,2,3,1]  in complete basis
+// Polynomial number  194  in truncated basis <-> polynomial number  194  =  [0,2,2,2]  in complete basis
+// Polynomial number  195  in truncated basis <-> polynomial number  195  =  [0,2,1,3]  in complete basis
+// Polynomial number  196  in truncated basis <-> polynomial number  196  =  [0,2,0,4]  in complete basis
+// Polynomial number  197  in truncated basis <-> polynomial number  197  =  [0,1,5,0]  in complete basis
+// Polynomial number  198  in truncated basis <-> polynomial number  198  =  [0,1,4,1]  in complete basis
+// Polynomial number  199  in truncated basis <-> polynomial number  199  =  [0,1,3,2]  in complete basis
+// Polynomial number  200  in truncated basis <-> polynomial number  200  =  [0,1,2,3]  in complete basis
+// Polynomial number  201  in truncated basis <-> polynomial number  201  =  [0,1,1,4]  in complete basis
+// Polynomial number  202  in truncated basis <-> polynomial number  202  =  [0,1,0,5]  in complete basis
+// Polynomial number  203  in truncated basis <-> polynomial number  203  =  [0,0,6,0]  in complete basis
+// Polynomial number  204  in truncated basis <-> polynomial number  204  =  [0,0,5,1]  in complete basis
+// Polynomial number  205  in truncated basis <-> polynomial number  205  =  [0,0,4,2]  in complete basis
+// Polynomial number  206  in truncated basis <-> polynomial number  206  =  [0,0,3,3]  in complete basis
+// Polynomial number  207  in truncated basis <-> polynomial number  207  =  [0,0,2,4]  in complete basis
+// Polynomial number  208  in truncated basis <-> polynomial number  208  =  [0,0,1,5]  in complete basis
+// Polynomial number  209  in truncated basis <-> polynomial number  209  =  [0,0,0,6]  in complete basis
+// Polynomial number  210  in truncated basis <-> polynomial number  210  =  [7,0,0,0]  in complete basis
+// Polynomial number  211  in truncated basis <-> polynomial number  211  =  [6,1,0,0]  in complete basis
+// Polynomial number  212  in truncated basis <-> polynomial number  212  =  [6,0,1,0]  in complete basis
+// Polynomial number  213  in truncated basis <-> polynomial number  213  =  [6,0,0,1]  in complete basis
+// Polynomial number  214  in truncated basis <-> polynomial number  214  =  [5,2,0,0]  in complete basis
+// Polynomial number  215  in truncated basis <-> polynomial number  215  =  [5,1,1,0]  in complete basis
+// Polynomial number  216  in truncated basis <-> polynomial number  216  =  [5,1,0,1]  in complete basis
+// Polynomial number  217  in truncated basis <-> polynomial number  217  =  [5,0,2,0]  in complete basis
+// Polynomial number  218  in truncated basis <-> polynomial number  218  =  [5,0,1,1]  in complete basis
+// Polynomial number  219  in truncated basis <-> polynomial number  219  =  [5,0,0,2]  in complete basis
+// Polynomial number  220  in truncated basis <-> polynomial number  220  =  [4,3,0,0]  in complete basis
+// Polynomial number  221  in truncated basis <-> polynomial number  221  =  [4,2,1,0]  in complete basis
+// Polynomial number  222  in truncated basis <-> polynomial number  222  =  [4,2,0,1]  in complete basis
+// Polynomial number  223  in truncated basis <-> polynomial number  223  =  [4,1,2,0]  in complete basis
+// Polynomial number  224  in truncated basis <-> polynomial number  224  =  [4,1,1,1]  in complete basis
+// Polynomial number  225  in truncated basis <-> polynomial number  225  =  [4,1,0,2]  in complete basis
+// Polynomial number  226  in truncated basis <-> polynomial number  226  =  [4,0,3,0]  in complete basis
+// Polynomial number  227  in truncated basis <-> polynomial number  227  =  [4,0,2,1]  in complete basis
+// Polynomial number  228  in truncated basis <-> polynomial number  228  =  [4,0,1,2]  in complete basis
+// Polynomial number  229  in truncated basis <-> polynomial number  229  =  [4,0,0,3]  in complete basis
+// Polynomial number  230  in truncated basis <-> polynomial number  230  =  [3,4,0,0]  in complete basis
+// Polynomial number  231  in truncated basis <-> polynomial number  231  =  [3,3,1,0]  in complete basis
+// Polynomial number  232  in truncated basis <-> polynomial number  232  =  [3,3,0,1]  in complete basis
+// Polynomial number  233  in truncated basis <-> polynomial number  233  =  [3,2,2,0]  in complete basis
+// Polynomial number  234  in truncated basis <-> polynomial number  234  =  [3,2,1,1]  in complete basis
+// Polynomial number  235  in truncated basis <-> polynomial number  235  =  [3,2,0,2]  in complete basis
+// Polynomial number  236  in truncated basis <-> polynomial number  236  =  [3,1,3,0]  in complete basis
+// Polynomial number  237  in truncated basis <-> polynomial number  237  =  [3,1,2,1]  in complete basis
+// Polynomial number  238  in truncated basis <-> polynomial number  238  =  [3,1,1,2]  in complete basis
+// Polynomial number  239  in truncated basis <-> polynomial number  239  =  [3,1,0,3]  in complete basis
+// Polynomial number  240  in truncated basis <-> polynomial number  240  =  [3,0,4,0]  in complete basis
+// Polynomial number  241  in truncated basis <-> polynomial number  241  =  [3,0,3,1]  in complete basis
+// Polynomial number  242  in truncated basis <-> polynomial number  242  =  [3,0,2,2]  in complete basis
+// Polynomial number  243  in truncated basis <-> polynomial number  243  =  [3,0,1,3]  in complete basis
+// Polynomial number  244  in truncated basis <-> polynomial number  244  =  [3,0,0,4]  in complete basis
+// Polynomial number  245  in truncated basis <-> polynomial number  245  =  [2,5,0,0]  in complete basis
+// Polynomial number  246  in truncated basis <-> polynomial number  246  =  [2,4,1,0]  in complete basis
+// Polynomial number  247  in truncated basis <-> polynomial number  247  =  [2,4,0,1]  in complete basis
+// Polynomial number  248  in truncated basis <-> polynomial number  248  =  [2,3,2,0]  in complete basis
+// Polynomial number  249  in truncated basis <-> polynomial number  249  =  [2,3,1,1]  in complete basis
+// Polynomial number  250  in truncated basis <-> polynomial number  250  =  [2,3,0,2]  in complete basis
+// Polynomial number  251  in truncated basis <-> polynomial number  251  =  [2,2,3,0]  in complete basis
+// Polynomial number  252  in truncated basis <-> polynomial number  252  =  [2,2,2,1]  in complete basis
+// Polynomial number  253  in truncated basis <-> polynomial number  253  =  [2,2,1,2]  in complete basis
+// Polynomial number  254  in truncated basis <-> polynomial number  254  =  [2,2,0,3]  in complete basis
+// Polynomial number  255  in truncated basis <-> polynomial number  255  =  [2,1,4,0]  in complete basis
+// Polynomial number  256  in truncated basis <-> polynomial number  256  =  [2,1,3,1]  in complete basis
+// Polynomial number  257  in truncated basis <-> polynomial number  257  =  [2,1,2,2]  in complete basis
+// Polynomial number  258  in truncated basis <-> polynomial number  258  =  [2,1,1,3]  in complete basis
+// Polynomial number  259  in truncated basis <-> polynomial number  259  =  [2,1,0,4]  in complete basis
+// Polynomial number  260  in truncated basis <-> polynomial number  260  =  [2,0,5,0]  in complete basis
+// Polynomial number  261  in truncated basis <-> polynomial number  261  =  [2,0,4,1]  in complete basis
+// Polynomial number  262  in truncated basis <-> polynomial number  262  =  [2,0,3,2]  in complete basis
+// Polynomial number  263  in truncated basis <-> polynomial number  263  =  [2,0,2,3]  in complete basis
+// Polynomial number  264  in truncated basis <-> polynomial number  264  =  [2,0,1,4]  in complete basis
+// Polynomial number  265  in truncated basis <-> polynomial number  265  =  [2,0,0,5]  in complete basis
+// Polynomial number  266  in truncated basis <-> polynomial number  266  =  [1,6,0,0]  in complete basis
+// Polynomial number  267  in truncated basis <-> polynomial number  267  =  [1,5,1,0]  in complete basis
+// Polynomial number  268  in truncated basis <-> polynomial number  268  =  [1,5,0,1]  in complete basis
+// Polynomial number  269  in truncated basis <-> polynomial number  269  =  [1,4,2,0]  in complete basis
+// Polynomial number  270  in truncated basis <-> polynomial number  270  =  [1,4,1,1]  in complete basis
+// Polynomial number  271  in truncated basis <-> polynomial number  271  =  [1,4,0,2]  in complete basis
+// Polynomial number  272  in truncated basis <-> polynomial number  272  =  [1,3,3,0]  in complete basis
+// Polynomial number  273  in truncated basis <-> polynomial number  273  =  [1,3,2,1]  in complete basis
+// Polynomial number  274  in truncated basis <-> polynomial number  274  =  [1,3,1,2]  in complete basis
+// Polynomial number  275  in truncated basis <-> polynomial number  275  =  [1,3,0,3]  in complete basis
+// Polynomial number  276  in truncated basis <-> polynomial number  276  =  [1,2,4,0]  in complete basis
+// Polynomial number  277  in truncated basis <-> polynomial number  277  =  [1,2,3,1]  in complete basis
+// Polynomial number  278  in truncated basis <-> polynomial number  278  =  [1,2,2,2]  in complete basis
+// Polynomial number  279  in truncated basis <-> polynomial number  279  =  [1,2,1,3]  in complete basis
+// Polynomial number  280  in truncated basis <-> polynomial number  280  =  [1,2,0,4]  in complete basis
+// Polynomial number  281  in truncated basis <-> polynomial number  281  =  [1,1,5,0]  in complete basis
+// Polynomial number  282  in truncated basis <-> polynomial number  282  =  [1,1,4,1]  in complete basis
+// Polynomial number  283  in truncated basis <-> polynomial number  283  =  [1,1,3,2]  in complete basis
+// Polynomial number  284  in truncated basis <-> polynomial number  284  =  [1,1,2,3]  in complete basis
+// Polynomial number  285  in truncated basis <-> polynomial number  285  =  [1,1,1,4]  in complete basis
+// Polynomial number  286  in truncated basis <-> polynomial number  286  =  [1,1,0,5]  in complete basis
+// Polynomial number  287  in truncated basis <-> polynomial number  287  =  [1,0,6,0]  in complete basis
+// Polynomial number  288  in truncated basis <-> polynomial number  288  =  [1,0,5,1]  in complete basis
+// Polynomial number  289  in truncated basis <-> polynomial number  289  =  [1,0,4,2]  in complete basis
+// Polynomial number  290  in truncated basis <-> polynomial number  290  =  [1,0,3,3]  in complete basis
+// Polynomial number  291  in truncated basis <-> polynomial number  291  =  [1,0,2,4]  in complete basis
+// Polynomial number  292  in truncated basis <-> polynomial number  292  =  [1,0,1,5]  in complete basis
+// Polynomial number  293  in truncated basis <-> polynomial number  293  =  [1,0,0,6]  in complete basis
+// Polynomial number  294  in truncated basis <-> polynomial number  294  =  [0,7,0,0]  in complete basis
+// Polynomial number  295  in truncated basis <-> polynomial number  295  =  [0,6,1,0]  in complete basis
+// Polynomial number  296  in truncated basis <-> polynomial number  296  =  [0,6,0,1]  in complete basis
+// Polynomial number  297  in truncated basis <-> polynomial number  297  =  [0,5,2,0]  in complete basis
+// Polynomial number  298  in truncated basis <-> polynomial number  298  =  [0,5,1,1]  in complete basis
+// Polynomial number  299  in truncated basis <-> polynomial number  299  =  [0,5,0,2]  in complete basis
+// Polynomial number  300  in truncated basis <-> polynomial number  300  =  [0,4,3,0]  in complete basis
+// Polynomial number  301  in truncated basis <-> polynomial number  301  =  [0,4,2,1]  in complete basis
+// Polynomial number  302  in truncated basis <-> polynomial number  302  =  [0,4,1,2]  in complete basis
+// Polynomial number  303  in truncated basis <-> polynomial number  303  =  [0,4,0,3]  in complete basis
+// Polynomial number  304  in truncated basis <-> polynomial number  304  =  [0,3,4,0]  in complete basis
+// Polynomial number  305  in truncated basis <-> polynomial number  305  =  [0,3,3,1]  in complete basis
+// Polynomial number  306  in truncated basis <-> polynomial number  306  =  [0,3,2,2]  in complete basis
+// Polynomial number  307  in truncated basis <-> polynomial number  307  =  [0,3,1,3]  in complete basis
+// Polynomial number  308  in truncated basis <-> polynomial number  308  =  [0,3,0,4]  in complete basis
+// Polynomial number  309  in truncated basis <-> polynomial number  309  =  [0,2,5,0]  in complete basis
+// Polynomial number  310  in truncated basis <-> polynomial number  310  =  [0,2,4,1]  in complete basis
+// Polynomial number  311  in truncated basis <-> polynomial number  311  =  [0,2,3,2]  in complete basis
+// Polynomial number  312  in truncated basis <-> polynomial number  312  =  [0,2,2,3]  in complete basis
+// Polynomial number  313  in truncated basis <-> polynomial number  313  =  [0,2,1,4]  in complete basis
+// Polynomial number  314  in truncated basis <-> polynomial number  314  =  [0,2,0,5]  in complete basis
+// Polynomial number  315  in truncated basis <-> polynomial number  315  =  [0,1,6,0]  in complete basis
+// Polynomial number  316  in truncated basis <-> polynomial number  316  =  [0,1,5,1]  in complete basis
+// Polynomial number  317  in truncated basis <-> polynomial number  317  =  [0,1,4,2]  in complete basis
+// Polynomial number  318  in truncated basis <-> polynomial number  318  =  [0,1,3,3]  in complete basis
+// Polynomial number  319  in truncated basis <-> polynomial number  319  =  [0,1,2,4]  in complete basis
+// Polynomial number  320  in truncated basis <-> polynomial number  320  =  [0,1,1,5]  in complete basis
+// Polynomial number  321  in truncated basis <-> polynomial number  321  =  [0,1,0,6]  in complete basis
+// Polynomial number  322  in truncated basis <-> polynomial number  322  =  [0,0,7,0]  in complete basis
+// Polynomial number  323  in truncated basis <-> polynomial number  323  =  [0,0,6,1]  in complete basis
+// Polynomial number  324  in truncated basis <-> polynomial number  324  =  [0,0,5,2]  in complete basis
+// Polynomial number  325  in truncated basis <-> polynomial number  325  =  [0,0,4,3]  in complete basis
+// Polynomial number  326  in truncated basis <-> polynomial number  326  =  [0,0,3,4]  in complete basis
+// Polynomial number  327  in truncated basis <-> polynomial number  327  =  [0,0,2,5]  in complete basis
+// Polynomial number  328  in truncated basis <-> polynomial number  328  =  [0,0,1,6]  in complete basis
+// Polynomial number  329  in truncated basis <-> polynomial number  329  =  [0,0,0,7]  in complete basis
+// Polynomial number  330  in truncated basis <-> polynomial number  330  =  [8,0,0,0]  in complete basis
+// Polynomial number  331  in truncated basis <-> polynomial number  331  =  [7,1,0,0]  in complete basis
+// Polynomial number  332  in truncated basis <-> polynomial number  332  =  [7,0,1,0]  in complete basis
+// Polynomial number  333  in truncated basis <-> polynomial number  333  =  [7,0,0,1]  in complete basis
+// Polynomial number  334  in truncated basis <-> polynomial number  334  =  [6,2,0,0]  in complete basis
+// Polynomial number  335  in truncated basis <-> polynomial number  335  =  [6,1,1,0]  in complete basis
+// Polynomial number  336  in truncated basis <-> polynomial number  336  =  [6,1,0,1]  in complete basis
+// Polynomial number  337  in truncated basis <-> polynomial number  337  =  [6,0,2,0]  in complete basis
+// Polynomial number  338  in truncated basis <-> polynomial number  338  =  [6,0,1,1]  in complete basis
+// Polynomial number  339  in truncated basis <-> polynomial number  339  =  [6,0,0,2]  in complete basis
+// Polynomial number  340  in truncated basis <-> polynomial number  340  =  [5,3,0,0]  in complete basis
+// Polynomial number  341  in truncated basis <-> polynomial number  341  =  [5,2,1,0]  in complete basis
+// Polynomial number  342  in truncated basis <-> polynomial number  342  =  [5,2,0,1]  in complete basis
+// Polynomial number  343  in truncated basis <-> polynomial number  343  =  [5,1,2,0]  in complete basis
+// Polynomial number  344  in truncated basis <-> polynomial number  344  =  [5,1,1,1]  in complete basis
+// Polynomial number  345  in truncated basis <-> polynomial number  345  =  [5,1,0,2]  in complete basis
+// Polynomial number  346  in truncated basis <-> polynomial number  346  =  [5,0,3,0]  in complete basis
+// Polynomial number  347  in truncated basis <-> polynomial number  347  =  [5,0,2,1]  in complete basis
+// Polynomial number  348  in truncated basis <-> polynomial number  348  =  [5,0,1,2]  in complete basis
+// Polynomial number  349  in truncated basis <-> polynomial number  349  =  [5,0,0,3]  in complete basis
+// Polynomial number  350  in truncated basis <-> polynomial number  350  =  [4,4,0,0]  in complete basis
+// Polynomial number  351  in truncated basis <-> polynomial number  351  =  [4,3,1,0]  in complete basis
+// Polynomial number  352  in truncated basis <-> polynomial number  352  =  [4,3,0,1]  in complete basis
+// Polynomial number  353  in truncated basis <-> polynomial number  353  =  [4,2,2,0]  in complete basis
+// Polynomial number  354  in truncated basis <-> polynomial number  354  =  [4,2,1,1]  in complete basis
+// Polynomial number  355  in truncated basis <-> polynomial number  355  =  [4,2,0,2]  in complete basis
+// Polynomial number  356  in truncated basis <-> polynomial number  356  =  [4,1,3,0]  in complete basis
+// Polynomial number  357  in truncated basis <-> polynomial number  357  =  [4,1,2,1]  in complete basis
+// Polynomial number  358  in truncated basis <-> polynomial number  358  =  [4,1,1,2]  in complete basis
+// Polynomial number  359  in truncated basis <-> polynomial number  359  =  [4,1,0,3]  in complete basis
+// Polynomial number  360  in truncated basis <-> polynomial number  360  =  [4,0,4,0]  in complete basis
+// Polynomial number  361  in truncated basis <-> polynomial number  361  =  [4,0,3,1]  in complete basis
+// Polynomial number  362  in truncated basis <-> polynomial number  362  =  [4,0,2,2]  in complete basis
+// Polynomial number  363  in truncated basis <-> polynomial number  363  =  [4,0,1,3]  in complete basis
+// Polynomial number  364  in truncated basis <-> polynomial number  364  =  [4,0,0,4]  in complete basis
+// Polynomial number  365  in truncated basis <-> polynomial number  365  =  [3,5,0,0]  in complete basis
+// Polynomial number  366  in truncated basis <-> polynomial number  366  =  [3,4,1,0]  in complete basis
+// Polynomial number  367  in truncated basis <-> polynomial number  367  =  [3,4,0,1]  in complete basis
+// Polynomial number  368  in truncated basis <-> polynomial number  368  =  [3,3,2,0]  in complete basis
+// Polynomial number  369  in truncated basis <-> polynomial number  369  =  [3,3,1,1]  in complete basis
+// Polynomial number  370  in truncated basis <-> polynomial number  370  =  [3,3,0,2]  in complete basis
+// Polynomial number  371  in truncated basis <-> polynomial number  371  =  [3,2,3,0]  in complete basis
+// Polynomial number  372  in truncated basis <-> polynomial number  372  =  [3,2,2,1]  in complete basis
+// Polynomial number  373  in truncated basis <-> polynomial number  373  =  [3,2,1,2]  in complete basis
+// Polynomial number  374  in truncated basis <-> polynomial number  374  =  [3,2,0,3]  in complete basis
+// Polynomial number  375  in truncated basis <-> polynomial number  375  =  [3,1,4,0]  in complete basis
+// Polynomial number  376  in truncated basis <-> polynomial number  376  =  [3,1,3,1]  in complete basis
+// Polynomial number  377  in truncated basis <-> polynomial number  377  =  [3,1,2,2]  in complete basis
+// Polynomial number  378  in truncated basis <-> polynomial number  378  =  [3,1,1,3]  in complete basis
+// Polynomial number  379  in truncated basis <-> polynomial number  379  =  [3,1,0,4]  in complete basis
+// Polynomial number  380  in truncated basis <-> polynomial number  380  =  [3,0,5,0]  in complete basis
+// Polynomial number  381  in truncated basis <-> polynomial number  381  =  [3,0,4,1]  in complete basis
+// Polynomial number  382  in truncated basis <-> polynomial number  382  =  [3,0,3,2]  in complete basis
+// Polynomial number  383  in truncated basis <-> polynomial number  383  =  [3,0,2,3]  in complete basis
+// Polynomial number  384  in truncated basis <-> polynomial number  384  =  [3,0,1,4]  in complete basis
+// Polynomial number  385  in truncated basis <-> polynomial number  385  =  [3,0,0,5]  in complete basis
+// Polynomial number  386  in truncated basis <-> polynomial number  386  =  [2,6,0,0]  in complete basis
+// Polynomial number  387  in truncated basis <-> polynomial number  387  =  [2,5,1,0]  in complete basis
+// Polynomial number  388  in truncated basis <-> polynomial number  388  =  [2,5,0,1]  in complete basis
+// Polynomial number  389  in truncated basis <-> polynomial number  389  =  [2,4,2,0]  in complete basis
+// Polynomial number  390  in truncated basis <-> polynomial number  390  =  [2,4,1,1]  in complete basis
+// Polynomial number  391  in truncated basis <-> polynomial number  391  =  [2,4,0,2]  in complete basis
+// Polynomial number  392  in truncated basis <-> polynomial number  392  =  [2,3,3,0]  in complete basis
+// Polynomial number  393  in truncated basis <-> polynomial number  393  =  [2,3,2,1]  in complete basis
+// Polynomial number  394  in truncated basis <-> polynomial number  394  =  [2,3,1,2]  in complete basis
+// Polynomial number  395  in truncated basis <-> polynomial number  395  =  [2,3,0,3]  in complete basis
+// Polynomial number  396  in truncated basis <-> polynomial number  396  =  [2,2,4,0]  in complete basis
+// Polynomial number  397  in truncated basis <-> polynomial number  397  =  [2,2,3,1]  in complete basis
+// Polynomial number  398  in truncated basis <-> polynomial number  398  =  [2,2,2,2]  in complete basis
+// Polynomial number  399  in truncated basis <-> polynomial number  399  =  [2,2,1,3]  in complete basis
+// Polynomial number  400  in truncated basis <-> polynomial number  400  =  [2,2,0,4]  in complete basis
+// Polynomial number  401  in truncated basis <-> polynomial number  401  =  [2,1,5,0]  in complete basis
+// Polynomial number  402  in truncated basis <-> polynomial number  402  =  [2,1,4,1]  in complete basis
+// Polynomial number  403  in truncated basis <-> polynomial number  403  =  [2,1,3,2]  in complete basis
+// Polynomial number  404  in truncated basis <-> polynomial number  404  =  [2,1,2,3]  in complete basis
+// Polynomial number  405  in truncated basis <-> polynomial number  405  =  [2,1,1,4]  in complete basis
+// Polynomial number  406  in truncated basis <-> polynomial number  406  =  [2,1,0,5]  in complete basis
+// Polynomial number  407  in truncated basis <-> polynomial number  407  =  [2,0,6,0]  in complete basis
+// Polynomial number  408  in truncated basis <-> polynomial number  408  =  [2,0,5,1]  in complete basis
+// Polynomial number  409  in truncated basis <-> polynomial number  409  =  [2,0,4,2]  in complete basis
+// Polynomial number  410  in truncated basis <-> polynomial number  410  =  [2,0,3,3]  in complete basis
+// Polynomial number  411  in truncated basis <-> polynomial number  411  =  [2,0,2,4]  in complete basis
+// Polynomial number  412  in truncated basis <-> polynomial number  412  =  [2,0,1,5]  in complete basis
+// Polynomial number  413  in truncated basis <-> polynomial number  413  =  [2,0,0,6]  in complete basis
+// Polynomial number  414  in truncated basis <-> polynomial number  414  =  [1,7,0,0]  in complete basis
+// Polynomial number  415  in truncated basis <-> polynomial number  415  =  [1,6,1,0]  in complete basis
+// Polynomial number  416  in truncated basis <-> polynomial number  416  =  [1,6,0,1]  in complete basis
+// Polynomial number  417  in truncated basis <-> polynomial number  417  =  [1,5,2,0]  in complete basis
+// Polynomial number  418  in truncated basis <-> polynomial number  418  =  [1,5,1,1]  in complete basis
+// Polynomial number  419  in truncated basis <-> polynomial number  419  =  [1,5,0,2]  in complete basis
+// Polynomial number  420  in truncated basis <-> polynomial number  420  =  [1,4,3,0]  in complete basis
+// Polynomial number  421  in truncated basis <-> polynomial number  421  =  [1,4,2,1]  in complete basis
+// Polynomial number  422  in truncated basis <-> polynomial number  422  =  [1,4,1,2]  in complete basis
+// Polynomial number  423  in truncated basis <-> polynomial number  423  =  [1,4,0,3]  in complete basis
+// Polynomial number  424  in truncated basis <-> polynomial number  424  =  [1,3,4,0]  in complete basis
+// Polynomial number  425  in truncated basis <-> polynomial number  425  =  [1,3,3,1]  in complete basis
+// Polynomial number  426  in truncated basis <-> polynomial number  426  =  [1,3,2,2]  in complete basis
+// Polynomial number  427  in truncated basis <-> polynomial number  427  =  [1,3,1,3]  in complete basis
+// Polynomial number  428  in truncated basis <-> polynomial number  428  =  [1,3,0,4]  in complete basis
+// Polynomial number  429  in truncated basis <-> polynomial number  429  =  [1,2,5,0]  in complete basis
+// Polynomial number  430  in truncated basis <-> polynomial number  430  =  [1,2,4,1]  in complete basis
+// Polynomial number  431  in truncated basis <-> polynomial number  431  =  [1,2,3,2]  in complete basis
+// Polynomial number  432  in truncated basis <-> polynomial number  432  =  [1,2,2,3]  in complete basis
+// Polynomial number  433  in truncated basis <-> polynomial number  433  =  [1,2,1,4]  in complete basis
+// Polynomial number  434  in truncated basis <-> polynomial number  434  =  [1,2,0,5]  in complete basis
+// Polynomial number  435  in truncated basis <-> polynomial number  435  =  [1,1,6,0]  in complete basis
+// Polynomial number  436  in truncated basis <-> polynomial number  436  =  [1,1,5,1]  in complete basis
+// Polynomial number  437  in truncated basis <-> polynomial number  437  =  [1,1,4,2]  in complete basis
+// Polynomial number  438  in truncated basis <-> polynomial number  438  =  [1,1,3,3]  in complete basis
+// Polynomial number  439  in truncated basis <-> polynomial number  439  =  [1,1,2,4]  in complete basis
+// Polynomial number  440  in truncated basis <-> polynomial number  440  =  [1,1,1,5]  in complete basis
+// Polynomial number  441  in truncated basis <-> polynomial number  441  =  [1,1,0,6]  in complete basis
+// Polynomial number  442  in truncated basis <-> polynomial number  442  =  [1,0,7,0]  in complete basis
+// Polynomial number  443  in truncated basis <-> polynomial number  443  =  [1,0,6,1]  in complete basis
+// Polynomial number  444  in truncated basis <-> polynomial number  444  =  [1,0,5,2]  in complete basis
+// Polynomial number  445  in truncated basis <-> polynomial number  445  =  [1,0,4,3]  in complete basis
+// Polynomial number  446  in truncated basis <-> polynomial number  446  =  [1,0,3,4]  in complete basis
+// Polynomial number  447  in truncated basis <-> polynomial number  447  =  [1,0,2,5]  in complete basis
+// Polynomial number  448  in truncated basis <-> polynomial number  448  =  [1,0,1,6]  in complete basis
+// Polynomial number  449  in truncated basis <-> polynomial number  449  =  [1,0,0,7]  in complete basis
+// Polynomial number  450  in truncated basis <-> polynomial number  450  =  [0,8,0,0]  in complete basis
+// Polynomial number  451  in truncated basis <-> polynomial number  451  =  [0,7,1,0]  in complete basis
+// Polynomial number  452  in truncated basis <-> polynomial number  452  =  [0,7,0,1]  in complete basis
+// Polynomial number  453  in truncated basis <-> polynomial number  453  =  [0,6,2,0]  in complete basis
+// Polynomial number  454  in truncated basis <-> polynomial number  454  =  [0,6,1,1]  in complete basis
+// Polynomial number  455  in truncated basis <-> polynomial number  455  =  [0,6,0,2]  in complete basis
+// Polynomial number  456  in truncated basis <-> polynomial number  456  =  [0,5,3,0]  in complete basis
+// Polynomial number  457  in truncated basis <-> polynomial number  457  =  [0,5,2,1]  in complete basis
+// Polynomial number  458  in truncated basis <-> polynomial number  458  =  [0,5,1,2]  in complete basis
+// Polynomial number  459  in truncated basis <-> polynomial number  459  =  [0,5,0,3]  in complete basis
+// Polynomial number  460  in truncated basis <-> polynomial number  460  =  [0,4,4,0]  in complete basis
+// Polynomial number  461  in truncated basis <-> polynomial number  461  =  [0,4,3,1]  in complete basis
+// Polynomial number  462  in truncated basis <-> polynomial number  462  =  [0,4,2,2]  in complete basis
+// Polynomial number  463  in truncated basis <-> polynomial number  463  =  [0,4,1,3]  in complete basis
+// Polynomial number  464  in truncated basis <-> polynomial number  464  =  [0,4,0,4]  in complete basis
+// Polynomial number  465  in truncated basis <-> polynomial number  465  =  [0,3,5,0]  in complete basis
+// Polynomial number  466  in truncated basis <-> polynomial number  466  =  [0,3,4,1]  in complete basis
+// Polynomial number  467  in truncated basis <-> polynomial number  467  =  [0,3,3,2]  in complete basis
+// Polynomial number  468  in truncated basis <-> polynomial number  468  =  [0,3,2,3]  in complete basis
+// Polynomial number  469  in truncated basis <-> polynomial number  469  =  [0,3,1,4]  in complete basis
+// Polynomial number  470  in truncated basis <-> polynomial number  470  =  [0,3,0,5]  in complete basis
+// Polynomial number  471  in truncated basis <-> polynomial number  471  =  [0,2,6,0]  in complete basis
+// Polynomial number  472  in truncated basis <-> polynomial number  472  =  [0,2,5,1]  in complete basis
+// Polynomial number  473  in truncated basis <-> polynomial number  473  =  [0,2,4,2]  in complete basis
+// Polynomial number  474  in truncated basis <-> polynomial number  474  =  [0,2,3,3]  in complete basis
+// Polynomial number  475  in truncated basis <-> polynomial number  475  =  [0,2,2,4]  in complete basis
+// Polynomial number  476  in truncated basis <-> polynomial number  476  =  [0,2,1,5]  in complete basis
+// Polynomial number  477  in truncated basis <-> polynomial number  477  =  [0,2,0,6]  in complete basis
+// Polynomial number  478  in truncated basis <-> polynomial number  478  =  [0,1,7,0]  in complete basis
+// Polynomial number  479  in truncated basis <-> polynomial number  479  =  [0,1,6,1]  in complete basis
+// Polynomial number  480  in truncated basis <-> polynomial number  480  =  [0,1,5,2]  in complete basis
+// 
+// Distribution in the tansformed variables =  ComposedDistribution(Beta(r = 0.93, t = 3.2, a = 2.8e+07, b = 4.8e+07), LogNormal(muLog = 9.46206, sigmaLog = 0.554513, gamma = 15000), Uniform(a = 250, b = 260), Beta(r = 2.5, t = 4, a = 310, b = 450), NormalCopula(R = [[  1         0         0         0        ]
+//  [  0         1         0         0        ]
+//  [  0         0         1        -0.209057 ]
+//  [  0         0        -0.209057  1        ]]))
+// 
+// Mean = [12.6205]
+// Standard deviation = 5.26263902055
+// 
+// Welcome to OpenTURNS version 1.0
+// "
+// ""
+// endResult

@@ -1,0 +1,1529 @@
+// name: optdaedump.mos
+// keywords: omc debug dump
+// status: correct
+//
+// omc debug dump: +d=optdaedump
+//
+
+loadString("
+model testOptdaedump
+  function f
+    input Real x;
+    output Real y;
+  protected
+    Real tmp;
+  algorithm
+    tmp := x^3;
+    y := tmp + exp(tmp);
+    annotation(LateInline=true);
+  end f;
+  Real x = f(time);
+  Real y = exp(time^3) + x;
+end testOptdaedump;
+"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls");
+setDebugFlags("optdaedump"); getErrorString();
+buildModel(testOptdaedump); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+//
+// ########################################
+// pre-optimization module normalInlineFunction (simulation)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module evaluateParameters (simulation)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module simplifyIfEquations (simulation)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module expandDerOperator (simulation)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module removeEqualFunctionCalls (simulation)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 2
+// 1: 2
+// 2: 2 1
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module clockPartitioning (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module findStateOrder (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module replaceEdgeChange (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module inlineArrayEqn (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module removeSimpleEquations (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module comSubExp (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module resolveLoops (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module evalFunc (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// pre-optimization module encapsulateWhenConditions (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// pre-optimization done.
+//
+// ########################################
+// synchronousFeatures
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// created initial system
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// partitioned initial system
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 2
+// 1: 2 1
+// 2: 2
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 2
+// 1: 1
+// 2: 2 1
+//
+// no matching
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module simplifyComplexFunction (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module tearingSystem (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module solveSimpleEquations (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module simplifyAllExpressions (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (initialization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+// 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: initialization
+//
+//
+// post-optimization done.
+//
+// ########################################
+// post-optimization module lateInlineFunction (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
+// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module wrapFunctionCalls (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module inlineArrayEqn (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module constantLinearSystem (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module simplifysemiLinear (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module removeSimpleEquations (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module simplifyComplexFunction (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module solveSimpleEquations (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module tearingSystem (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module inputDerivativesUsed (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module calculateStrongComponentJacobians (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module calculateStateSetsJacobians (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module symbolicJacobian (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module removeConstants (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module simplifyTimeIndepFuncCalls (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module simplifyAllExpressions (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module findZeroCrossings (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
+// post-optimization module collapseArrayExpressions (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+// 2: x:VARIABLE()  type: Real 
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = time ^ 3.0 + $cse1   [binding |0|0|0|0|]
+// 2/2 (1): y = $cse1 + x   [binding |0|0|0|0|]
+// 3/3 (1): $cse1 = exp(time ^ 3.0)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// {3:3}
+// {1:2}
+// {2:1}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// post-optimization done.
+// {"testOptdaedump","testOptdaedump_init.xml"}
+// ""
+// endResult

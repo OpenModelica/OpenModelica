@@ -1,0 +1,22 @@
+// name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitial_init.xml"}
+// "Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          p1 = 100000.0.
+// "
+// endResult

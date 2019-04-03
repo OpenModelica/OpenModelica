@@ -1,0 +1,56 @@
+// name: VectorTest
+// cflags: -g=MetaModelica -d=rml,gen
+// status: correct
+// teardown_command: rm -f VectorTest_*
+
+loadFile("../../../OMCompiler/Compiler/Util/BaseVector.mo");
+getErrorString();
+loadFile("VectorTest.mo");
+getErrorString();
+test1(); getErrorString();
+test2(); getErrorString();
+test3(); getErrorString();
+test4(); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// isEmpty = true
+// [test1, _, _, _]
+// isEmpty = false
+// [test1, test2, _, _]
+// [test1, test2, test3, _]
+// [test1, test2, test3, test4]
+// [test1, test2, test3, test4, test5, _, _, _]
+// [test1, test2, test3, test4, test5, test6, _, _]
+// [test1, test2, test3, test4, test5, test6, test7, _]
+// [test1, test2, test3, test4, test5, test6, test7, test8]
+// [test1, test2, test3, test4, test5, test6, test7, test8, test9, _, _, _, _, _, _, _]
+// [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, _, _, _, _, _, _]
+// [test1, test2, test3, test4, test5b, test6, test7, test8, test9, test10, _, _, _, _, _, _]
+// [test1b, test2, test3, test4, test5b, test6, test7, test8, test9, test10, _, _, _, _, _, _]
+// [test1b, test2, test3, test4, test5b, test6, test7, test8, test9, test10b, _, _, _, _, _, _]
+//
+// ""
+// [_]
+// [_, _, _, _, _]
+// [test, test, test, test, test, test]
+// [test, test, test, _, _, _]
+// [test, test, test]
+// [test, test, test, test2, test2, test2, test2, test2, test2, test2]
+// [test, test, test, test2, test2, test2, test2, test2, test2, _]
+// [test, test, test, test2, test2, test2, test2, test2, test2, _]
+// [test, test, test, test2, test2, test2, test2, test2, _, _]
+//
+// ""
+// [123, 123, 123, 123, 123, 123, 123, 123]
+// [abc, abc, abc, abc, abc, abc, abc, abc]
+// [abc, abc, xyz, xyz, xyz, xyz, xyz, xyz]
+// [abc, abc, xyz, xyz, 123, 123, 123, xyz]
+//
+// ""
+// fail()
+// ""
+// endResult

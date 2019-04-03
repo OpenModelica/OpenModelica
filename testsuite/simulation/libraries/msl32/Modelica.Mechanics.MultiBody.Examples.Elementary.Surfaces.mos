@@ -1,0 +1,40 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces);
+compareVars :=
+{
+   "prismatic.v",
+   "position.s"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces
+// {"prismatic.v","position.s"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces', options = '', outputFormat = 'mat', variableFilter = 'time|prismatic.v|position.s', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.Surfaces_res.mat
+// Messages: assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | wheel.ri >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= wheel.ri, has value: -0.05
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

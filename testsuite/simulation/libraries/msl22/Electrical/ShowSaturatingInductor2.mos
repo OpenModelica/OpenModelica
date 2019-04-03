@@ -1,0 +1,25 @@
+//name:         ShowSaturatingInductor2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.ShowSaturatingInductor , stopTime=6.2832, numberOfIntervals=0, outputInterval=0.01, method="dassl");
+
+
+"SaturatingInductance1.v:";
+val(SaturatingInductance1.v,0);
+val(SaturatingInductance1.v,1);
+val(SaturatingInductance1.v,3);
+val(SaturatingInductance1.v,5);
+val(SaturatingInductance1.v,6);
+
+"SaturatingInductance1.i:";
+val(SaturatingInductance1.i,0);
+val(SaturatingInductance1.i,1);
+val(SaturatingInductance1.i,3);
+val(SaturatingInductance1.i,5);
+val(SaturatingInductance1.i,6);
+

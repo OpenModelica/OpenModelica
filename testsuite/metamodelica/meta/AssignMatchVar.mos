@@ -1,0 +1,42 @@
+// name: AssignMatchVar
+// cflags: -g=MetaModelica -d=gen
+// status: correct
+//
+// Checks that it's allowed to assign to a non-input variable that's used in a
+// match expression.
+//
+
+loadString("
+  uniontype U
+    record INT
+      Integer i;
+    end INT;
+  end U;
+
+  function assignMatchVar
+    input Integer i;
+    output Integer o;
+  protected
+    U u; 
+  algorithm
+    u := INT(i);
+    o := match u
+      case INT(1)
+        algorithm
+          u := INT(1);
+        then
+          u.i;
+
+      else 0;
+    end match;
+  end assignMatchVar;
+"); getErrorString();
+
+assignMatchVar(1); getErrorString();
+
+// Result:
+// true
+// ""
+// 1
+// ""
+// endResult

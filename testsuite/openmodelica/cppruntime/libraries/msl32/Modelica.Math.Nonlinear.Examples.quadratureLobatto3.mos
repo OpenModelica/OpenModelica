@@ -1,0 +1,31 @@
+// name:     Modelica.Math.Nonlinear.Examples.quadratureLobatto3
+// teardown_command: rm -f Modelica.Math.Nonlinear.Examples.quadratureLobatto3_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Math.Nonlinear.Examples.quadratureLobatto3);
+// compareVars := {"q","qd"};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Math.Nonlinear.Examples.quadratureLobatto3
+// Translation succeeded
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,59 @@
+// name:     Modelica.Fluid.Examples.Tanks.ThreeTanks
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.Tanks.ThreeTanks);
+compareVars :=
+{
+   "tank1.level",
+   "tank1.medium.T",
+   "tank2.level",
+   "tank2.medium.T",
+   "tank3.level",
+   "tank3.medium.T",
+   "tank3.ports_H_flow[1]",
+   "tank3.ports[1].m_flow",
+   "tank3.portVelocities[1]",
+   "tank2.ports_H_flow[1]",
+   "tank2.ports[1].m_flow",
+   "tank2.portVelocities[1]",
+   "tank1.ports_H_flow[1]",
+   "tank1.ports[1].m_flow",
+   "tank1.portVelocities[1]",
+   "pipe3.flowModel.vs[2]",
+   "pipe3.flowModel.vs[1]",
+   "pipe3.flowModel.Is[1]",
+   "pipe2.flowModel.vs[2]",
+   "pipe2.flowModel.vs[1]",
+   "pipe2.flowModel.Is[1]",
+   "pipe1.flowModel.vs[2]",
+   "pipe1.flowModel.vs[1]",
+   "pipe1.flowModel.Is[1]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.Tanks.ThreeTanks
+// {"tank1.level","tank1.medium.T","tank2.level","tank2.medium.T","tank3.level","tank3.medium.T","tank3.ports_H_flow[1]","tank3.ports[1].m_flow","tank3.portVelocities[1]","tank2.ports_H_flow[1]","tank2.ports[1].m_flow","tank2.portVelocities[1]","tank1.ports_H_flow[1]","tank1.ports[1].m_flow","tank1.portVelocities[1]","pipe3.flowModel.vs[2]","pipe3.flowModel.vs[1]","pipe3.flowModel.Is[1]","pipe2.flowModel.vs[2]","pipe2.flowModel.vs[1]","pipe2.flowModel.Is[1]","pipe1.flowModel.vs[2]","pipe1.flowModel.vs[1]","pipe1.flowModel.Is[1]"}
+// Simulation options: startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.ThreeTanks', options = '', outputFormat = 'mat', variableFilter = 'time|tank1.level|tank1.medium.T|tank2.level|tank2.medium.T|tank3.level|tank3.medium.T|tank3.ports_H_flow.1.|tank3.ports.1..m_flow|tank3.portVelocities.1.|tank2.ports_H_flow.1.|tank2.ports.1..m_flow|tank2.portVelocities.1.|tank1.ports_H_flow.1.|tank1.ports.1..m_flow|tank1.portVelocities.1.|pipe3.flowModel.vs.2.|pipe3.flowModel.vs.1.|pipe3.flowModel.Is.1.|pipe2.flowModel.vs.2.|pipe2.flowModel.vs.1.|pipe2.flowModel.Is.1.|pipe1.flowModel.vs.2.|pipe1.flowModel.vs.1.|pipe1.flowModel.Is.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.Tanks.ThreeTanks_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

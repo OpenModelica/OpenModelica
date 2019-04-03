@@ -1,0 +1,38 @@
+// name:    Simulation simple ModelicaML model 
+// keywords:  ModelicaML, algorithm, discrete
+// status: correct
+// teardown_command: rm -f ModelicaMLModel.Design.SystemModel1*
+// 
+// ModelicaML: Examples from 22.Jun 2011
+
+loadFile("./ModelicaMLModel/package.mo"); getErrorString();
+simulate(ModelicaMLModel.Design.SystemModel1,stopTime=150); getErrorString();
+
+val(realVar,0);
+val(realVar,20);
+val(realVar,40);
+val(realVar,70);
+val(realVar,80);
+val(realVar,120);
+val(realVar,140);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaMLModel.Design.SystemModel1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 150.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaMLModel.Design.SystemModel1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// 0.0
+// endResult

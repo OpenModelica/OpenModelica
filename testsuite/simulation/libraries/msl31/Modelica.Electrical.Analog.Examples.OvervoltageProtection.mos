@@ -1,0 +1,48 @@
+// name:     Modelica.Electrical.Analog.Examples.OvervoltageProtection
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+// wbraun: results need to check by some one else
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Analog.Examples.OvervoltageProtection,stopTime=0.40000000596);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.OvervoltageProtection.mat","Modelica.Electrical.Analog.Examples.OvervoltageProtection_diff.csv",0.01,0.00001,
+  {"CL.v",
+  "der(CL.v)",
+  "sineVoltage.p.v",
+  "Rv.v",
+  "Rv.n.i",
+  "Rv.LossPower",
+  "RL.n.i",
+  "RL.LossPower",
+  "zDiode_1.LossPower",
+  "zDiode_2.v",
+  "zDiode_2.n.v",
+  "zDiode_2.n.i",
+  "zDiode_2.LossPower",
+  "ground.p.i",
+  "CL.p.i",
+  "sineVoltage.n.v",
+  "RL.n.v",
+  "zDiode_1.p.v",
+  "ground.p.v",
+  "CL.n.v",
+  "RL.R_actual",
+  "Rv.R_actual"});
+  
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.OvervoltageProtection_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.40000000596, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.OvervoltageProtection', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

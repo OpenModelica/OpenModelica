@@ -1,0 +1,31 @@
+// name:     LapackInverse
+// keywords: lapack, external, fortran, bug2056
+// status:   correct
+// teardown_command: rm -f output.log LapackInverse_*.* LapackInverse LapackInverse.o LapackInverse.log LapackInverse.libs LapackInverse.makefile LapackInverse.exe
+//
+// Checks that simulation of models using external fortran functions works
+// correctly.
+//
+
+loadFile("LapackInverse.mo");
+simulate(LapackInverse, numberOfIntervals = 1);
+getErrorString();
+
+{val(A[1, 1], 0.0), val(A[1, 2], 0.0), val(A[1, 3], 0.0)};
+{val(A[2, 1], 0.0), val(A[2, 2], 0.0), val(A[2, 3], 0.0)};
+{val(A[3, 1], 0.0), val(A[3, 2], 0.0), val(A[3, 3], 0.0)};
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "LapackInverse_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'LapackInverse', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,0.0,0.0}
+// {0.0,1.0,0.0}
+// {0.0,0.0,1.0}
+// endResult

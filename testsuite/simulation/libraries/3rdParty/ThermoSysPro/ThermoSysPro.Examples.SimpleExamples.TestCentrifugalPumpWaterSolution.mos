@@ -1,0 +1,56 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.exe ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.cpp ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.makefile ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.libs ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.log ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.c ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution, stopTime=1000);  getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_diff.csv",
+0.01, 0.0001,
+{"pump.Q",
+ "pump.deltaH",
+ "pump.deltaP"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:3:3-43:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSolution/Connectors.mo:45:3-85:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "
+// {"Files Equal!"}
+// endResult

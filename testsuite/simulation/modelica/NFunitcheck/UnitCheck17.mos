@@ -1,0 +1,54 @@
+// name: UnitCheck17
+// keywords: initialization
+// status: correct
+
+
+loadString("
+package unitCheckTests
+ model UnitCheck17
+    Real S(unit = \"m\");
+    Real V(unit = \"m/s\");
+    Real A(unit = \"m/s2\");
+    Real C(unit = \"m/s\")=7;
+  equation
+    V=sin(S+C);
+    der(V)=A;
+    S=5.0;
+ end UnitCheck17; 
+ 
+  end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); 
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck17);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {S,{1.0 * m^(1)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-2)}}
+// {C,{1.0 * m^(1) * s^(-1)}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck17
+//   Real S(unit = \"m\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s2\");
+//   Real C(unit = \"m/s\") = 7.0;
+// equation
+//   V = sin(S + C);
+//   der(V) = A;
+//   S = 5.0;
+// end unitCheckTests.UnitCheck17;
+// "
+// "[<interactive>:9:5-9:15:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  V = sin(S + C);
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "S" has unit "m"
+// - sub-expression "C" has unit "m/s"
+// "
+// endResult

@@ -1,0 +1,149 @@
+// name:     whenDiscreteForLoop
+// keywords: when for loop discrete
+// status: correct
+// teardown_command: rm -rf testWhenLoop* output.log
+//
+//
+
+loadString("
+model testWhenLoopA
+  Real x;
+  Real d;
+  Integer n = 1;
+equation
+  der(x) = x+1;
+algorithm
+  when sample(0,0.1) then
+    for i in 1:n loop
+      d := d+1;
+    end for;
+  end when;
+end testWhenLoopA;
+");
+simulate(testWhenLoopA);
+
+val(d,0);
+val(d,0.11);
+val(d,0.21);
+val(d,0.31);
+val(d,0.41);
+
+loadString("
+model testWhenLoopA1
+  Real x;
+  discrete Real d[2];
+  Integer n = 2;
+equation
+  der(x) = x+1;
+algorithm
+  when sample(0,0.1) then
+    for i in 1:n loop
+      d[i] := d[i]+1;
+    end for;
+  end when;
+end testWhenLoopA1;
+");
+simulate(testWhenLoopA1);
+
+val(d[1],0);
+val(d[1],0.11);
+val(d[1],0.21);
+val(d[1],0.31);
+val(d[1],0.41);
+val(d[2],0);
+val(d[2],0.11);
+val(d[2],0.21);
+val(d[2],0.31);
+val(d[2],0.41);
+
+
+loadString("
+model testWhenLoopA2
+  Real x;
+  discrete Real d[3];
+  Integer n = 2;
+equation
+  der(x) = x+1;
+algorithm
+  when sample(0,0.1) then
+    for i in 1:n loop
+      d[i] := d[i]+1;
+    end for;
+  end when;
+  d[3] := d[2]+d[1];
+end testWhenLoopA2;
+");
+simulate(testWhenLoopA2);
+
+val(d[1],0);
+val(d[1],0.11);
+val(d[1],0.21);
+val(d[1],0.31);
+val(d[1],0.41);
+val(d[2],0);
+val(d[2],0.11);
+val(d[2],0.21);
+val(d[2],0.31);
+val(d[2],0.41);
+val(d[3],0);
+val(d[3],0.11);
+val(d[3],0.21);
+val(d[3],0.31);
+val(d[3],0.41);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "testWhenLoopA_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testWhenLoopA', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// true
+// record SimulationResult
+//     resultFile = "testWhenLoopA1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testWhenLoopA1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// true
+// record SimulationResult
+//     resultFile = "testWhenLoopA2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testWhenLoopA2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0
+// 2.0
+// 4.0
+// 6.0
+// 8.0
+// 10.0
+// endResult

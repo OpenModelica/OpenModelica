@@ -1,0 +1,41 @@
+// name: diesel_model
+// status: correct
+
+setCommandLineOptions("+g=Optimica"); getErrorString();
+loadFile("DM.mo"); getErrorString();
+
+echo(false);
+res := optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT -optimizerNP 1 -emit_protected");
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "EXIT: Optimal Solution Found.") then
+  if regexBool(messages, "Number of Iterations....: 46") then
+    print("Number of Iterations....: 46\nEXIT: Optimal Solution Found.");
+  else
+    print("Number of Iterations changed.\tUpdate test\n");
+    exit(1);
+  end if;
+else
+  print("No optimal solution found");
+  exit(1);
+end if;
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "diesel_model_res.mat"
+// Number of Iterations....: 46
+// EXIT: Optimal Solution Found.
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

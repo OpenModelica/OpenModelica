@@ -1,0 +1,218 @@
+//name:         SignConvention2
+//keyword:      simulating msl221
+//status:       correct
+//
+// instantiate example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.SignConvention,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+val(SlidingMass1.s,0.0);
+val(SlidingMass1.s,0.25);
+val(SlidingMass1.s,0.5);
+val(SlidingMass1.s,0.75);
+val(SlidingMass1.s,1.0);
+
+val(SlidingMass1.flange_a.s,0.0);
+val(SlidingMass1.flange_a.s,0.25);
+val(SlidingMass1.flange_a.s,0.5);
+val(SlidingMass1.flange_a.s,0.75);
+val(SlidingMass1.flange_a.s,1.0);
+
+val(SlidingMass1.flange_b.s,0.0);
+val(SlidingMass1.flange_b.s,0.25);
+val(SlidingMass1.flange_b.s,0.5);
+val(SlidingMass1.flange_b.s,0.75);
+val(SlidingMass1.flange_b.s,1.0);
+
+val(SlidingMass1.v,0.0);
+val(SlidingMass1.v,0.25);
+val(SlidingMass1.v,0.5);
+val(SlidingMass1.v,0.75);
+val(SlidingMass1.v,1.0);
+
+val(SlidingMass1.a,0.0);
+val(SlidingMass1.a,0.25);
+val(SlidingMass1.a,0.5);
+val(SlidingMass1.a,0.75);
+val(SlidingMass1.a,1.0);
+
+val(Force1.flange_b.s,0.0);
+val(Force1.flange_b.s,0.25);
+val(Force1.flange_b.s,0.5);
+val(Force1.flange_b.s,0.75);
+val(Force1.flange_b.s,1.0);
+
+val(SlidingMass2.s,0.0);
+val(SlidingMass2.s,0.25);
+val(SlidingMass2.s,0.5);
+val(SlidingMass2.s,0.75);
+val(SlidingMass2.s,1.0);
+
+val(SlidingMass2.flange_a.s,0.0);
+val(SlidingMass2.flange_a.s,0.25);
+val(SlidingMass2.flange_a.s,0.5);
+val(SlidingMass2.flange_a.s,0.75);
+val(SlidingMass2.flange_a.s,1.0);
+
+val(SlidingMass2.flange_b.s,0.0);
+val(SlidingMass2.flange_b.s,0.25);
+val(SlidingMass2.flange_b.s,0.5);
+val(SlidingMass2.flange_b.s,0.75);
+val(SlidingMass2.flange_b.s,1.0);
+
+val(SlidingMass2.v,0.0);
+val(SlidingMass2.v,0.25);
+val(SlidingMass2.v,0.5);
+val(SlidingMass2.v,0.75);
+val(SlidingMass2.v,1.0);
+
+val(SlidingMass2.a,0.0);
+val(SlidingMass2.a,0.25);
+val(SlidingMass2.a,0.5);
+val(SlidingMass2.a,0.75);
+val(SlidingMass2.a,1.0);
+
+val(Force2.flange_b.s,0.0);
+val(Force2.flange_b.s,0.25);
+val(Force2.flange_b.s,0.5);
+val(Force2.flange_b.s,0.75);
+val(Force2.flange_b.s,1.0);
+
+val(SlidingMass3.s,0.0);
+val(SlidingMass3.s,0.25);
+val(SlidingMass3.s,0.5);
+val(SlidingMass3.s,0.75);
+val(SlidingMass3.s,1.0);
+
+val(SlidingMass3.flange_a.s,0.0);
+val(SlidingMass3.flange_a.s,0.25);
+val(SlidingMass3.flange_a.s,0.5);
+val(SlidingMass3.flange_a.s,0.75);
+val(SlidingMass3.flange_a.s,1.0);
+
+val(SlidingMass3.flange_b.s,0.0);
+val(SlidingMass3.flange_b.s,0.25);
+val(SlidingMass3.flange_b.s,0.5);
+val(SlidingMass3.flange_b.s,0.75);
+val(SlidingMass3.flange_b.s,1.0);
+
+val(SlidingMass3.v,0.0);
+val(SlidingMass3.v,0.25);
+val(SlidingMass3.v,0.5);
+val(SlidingMass3.v,0.75);
+val(SlidingMass3.v,1.0);
+
+val(SlidingMass3.a,0.0);
+val(SlidingMass3.a,0.25);
+val(SlidingMass3.a,0.5);
+val(SlidingMass3.a,0.75);
+val(SlidingMass3.a,1.0);
+
+val(Force3.flange_b.s,0.0);
+val(Force3.flange_b.s,0.25);
+val(Force3.flange_b.s,0.5);
+val(Force3.flange_b.s,0.75);
+val(Force3.flange_b.s,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.SignConvention_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.SignConvention', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// -0.5
+// -0.4687499999216854
+// -0.3749999999140601
+// -0.2187499999090779
+// 9.408163137436532e-11
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// 0.0
+// 0.25
+// 0.5
+// 0.75
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// -0.5
+// -0.4687499999216854
+// -0.3749999999140601
+// -0.2187499999090779
+// 9.408163137436532e-11
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// -0.5
+// -0.4687499999216854
+// -0.3749999999140601
+// -0.2187499999090779
+// 9.408163137436532e-11
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// 0.0
+// 0.25
+// 0.5
+// 0.75
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// 0.0
+// 0.03125000007831457
+// 0.1250000000859399
+// 0.2812500000909221
+// 0.5000000000940816
+// -0.5
+// -0.4687499999216854
+// -0.3749999999140601
+// -0.2187499999090779
+// 9.408163137436532e-11
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// 0.0
+// 0.25
+// 0.5
+// 0.75
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 1.0
+// 0.5
+// 0.5312500000783146
+// 0.6250000000859399
+// 0.7812500000909222
+// 1.000000000094082
+// endResult

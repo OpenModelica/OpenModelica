@@ -1,0 +1,38 @@
+// name:     Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen
+// teardown_command: rm -f Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"}); getErrorString();
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+simulate(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen.mat",
+  "Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_diff.csv",0.01,0.0001,
+  {"volume.U",
+   "volume.m"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

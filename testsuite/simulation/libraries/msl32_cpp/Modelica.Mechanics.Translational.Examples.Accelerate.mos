@@ -1,0 +1,42 @@
+// name:     Modelica.Mechanics.Translational.Examples.Accelerate
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Accelerate);
+compareVars :=
+{
+   "accelerate.s",
+   "accelerate.v",
+   "accelerate.a",
+   "mass.s",
+   "mass.flange_b.s",
+   "mass.flange_a.f",
+   "mass.flange_b.f"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Translational.Examples.Accelerate
+// {"accelerate.s","accelerate.v","accelerate.a","mass.s","mass.flange_b.s","mass.flange_a.f","mass.flange_b.f"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Accelerate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.Translational.Examples.Accelerate_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

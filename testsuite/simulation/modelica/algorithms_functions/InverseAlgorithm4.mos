@@ -1,0 +1,49 @@
+// name: InverseAlgorithm4
+// keywords: inverse algorithm
+// status: correct
+
+loadString("
+model InverseAlgorithm4
+  Real x;
+  Real w;
+  Integer y,z;
+equation
+  der(x) = y;
+  when sample(0,0.1) then
+    w = x+sin(time);
+    y = integer(sin(x)*w+10);
+    z = integer(y);
+  end when;
+initial algorithm
+  y := integer(sin(2*w)+10);
+  z := integer(y);
+end InverseAlgorithm4;
+"); getErrorString();
+
+simulate(InverseAlgorithm4, simflags="-lv=LOG_SOTI"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InverseAlgorithm4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'InverseAlgorithm4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [2] Real der(x) = 10 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [3] Real w(start=0, nominal=1) = 0 (pre: 0)
+// |                 | |       | | integer variables
+// |                 | |       | | | [1] Integer y(start=0) = 10 (pre: 10)
+// |                 | |       | | | [2] Integer z(start=0) = 0 (pre: 0)
+// |                 | |       | | boolean variables
+// |                 | |       | | | [1] Boolean $whenCondition1(start=true) = false (pre: true)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

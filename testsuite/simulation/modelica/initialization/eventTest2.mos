@@ -1,0 +1,43 @@
+// name: eventTest2
+// keywords: initialization, event-iteration
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.eventTest2* _initializationTests.eventTest2* output.log
+//
+//  case for events during initialization
+//
+
+// {a = -2, der(a) = 3, d = 2}
+
+loadString("
+within ;
+package initializationTests
+  model eventTest2
+    Real a(start=2);
+    Real d;
+  initial equation 
+    a + d = 0;
+  equation 
+    (der(a)-1-d) * (der(a)-3) = 0;
+    d = if a > 1 then 1 else 2;
+  end eventTest2;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.eventTest2, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.eventTest2_res.mat", {time, a, der(a), d}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.eventTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.eventTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{-2.0,-2.0},{3.000000002869813,3.000000002344806},{2.0,2.0}}
+// ""
+// endResult

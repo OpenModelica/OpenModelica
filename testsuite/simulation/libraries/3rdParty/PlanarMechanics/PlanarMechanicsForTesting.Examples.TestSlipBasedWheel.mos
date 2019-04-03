@@ -1,0 +1,35 @@
+// name:     PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_i* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_d* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_r* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_f* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.exe PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.cpp PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.makefile PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.libs PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.log PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.c PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.TestSlipBasedWheel, tolerance=0.0001); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//TestSlipBasedWheel.mat","PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_diff.csv",0.01,0.34,
+  {"revolute.w", "prismatic.s", "slipBasedWheelJoint.f_lat", "slipBasedWheelJoint.f_long"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.TestSlipBasedWheel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

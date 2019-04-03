@@ -1,0 +1,29 @@
+// name:     Bug3916.mos
+// keywords: array ranges
+// status: correct
+// teardown_command: rm -rf ConPNlib*
+
+loadFile("Bug3916_ConPNlib.Examples.Test1b.mo"); getErrorString();
+buildModel(ConPNlib.Examples.Test1b); getErrorString();
+
+loadFile("Bug3916_ConPNlib.Examples.Test2.mo"); getErrorString();
+buildModel(ConPNlib.Examples.Test2); getErrorString();
+
+loadFile("Bug3916_ConPNlib.Examples.Test4.mo"); getErrorString();
+buildModel(ConPNlib.Examples.Test4); getErrorString();
+
+// Result:
+// true
+// ""
+// {"ConPNlib.Examples.Test1b","ConPNlib.Examples.Test1b_init.xml"}
+// ""
+// true
+// ""
+// {"ConPNlib.Examples.Test2","ConPNlib.Examples.Test2_init.xml"}
+// ""
+// true
+// ""
+// {"ConPNlib.Examples.Test4","ConPNlib.Examples.Test4_init.xml"}
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

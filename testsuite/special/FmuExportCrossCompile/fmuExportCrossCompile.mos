@@ -1,0 +1,91 @@
+// status: correct
+// Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
+
+if not loadModel(Modelica) then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadFile("RoomHeating_OM.mo") then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadFile("WaterTank.mo") then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+if not loadString("model FmuExportCrossCompile
+  parameter Real e=0.7;
+  parameter Real g=9.81;
+  Real h(start=1, fixed=true);
+  Real v(start=0, fixed=true);
+  Real v_new(start=0, fixed=true);
+equation
+  der(v) = -g;
+  der(h) = v;
+
+  when h <= 0.0 then
+    v_new = -e*pre(v);
+    reinit(v, v_new);
+  end when;
+  annotation(experiment(StopTime=0.45, Interval=0.001)); // Why StopTime=0.5 before fun things happen? fmuChecker can't deal with bouncingball events as it always does the event one time step after
+end FmuExportCrossCompile;") then
+  print(getErrorString());
+  exit(1);
+end if;
+getErrorString();
+
+platforms := if false then {
+  "x86_64-apple-darwin15 docker run -e CROSS_TRIPLE=x86_64-apple-darwin multiarch/crossbuild",
+  "arm-linux-gnueabihf docker run -e CROSS_TRIPLE=arm-linux-gnueabihf multiarch/crossbuild",
+  "x86_64-linux-gnu docker run multiarch/crossbuild",
+  "i686-linux-gnu docker run multiarch/crossbuild",
+  "x86_64-w64-mingw32 docker run -e CROSS_TRIPLE=x86_64-w64-mingw32 multiarch/crossbuild",
+  "i686-w64-mingw32 docker run -e CROSS_TRIPLE=i686-w64-mingw32 multiarch/crossbuild"
+} else if true then {
+  "x86_64-apple-darwin15 docker run docker.openmodelica.org/osxcross-omsimulator:v2.0",
+  "arm-linux-gnueabihf docker run docker.openmodelica.org/armcross-omsimulator:v2.0",
+  "x86_64-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13",
+  "i686-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13-i386",
+  "x86_64-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0",
+  "i686-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0"
+} else {
+  "arm-linux-gnueabihf",
+  "x86_64-linux-gnu",
+  "i686-linux-gnu",
+  "x86_64-w64-mingw32",
+  "i686-w64-mingw32"
+};
+
+for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank"} loop
+  c2 := stringReplace(c, ".", "_");
+  print(c2+"
+");
+  writeFile("test.mos", "
+  (start,stop,tolerance,numberOfIntervals,interval) := getSimulationOptions("+c+");
+  res := simulate("+c+", method=\"euler\", numberOfIntervals=2000, outputFormat=\"csv\", fileNamePrefix=c2); getErrorString();
+  print(getErrorString()+\"
+\");
+  b := buildModelFMU("+c+", fileNamePrefix=c2, version=\"2.0\", fmuType=\"me_cs\", platforms=platforms);
+  print(getErrorString()+\"
+\");
+  if b==\"\" then
+    print(\"buildModelFMU failed
+\");
+    exit(1);
+  end if;
+  ");
+  r := runScript("test.mos");
+  if r=="Failed" then
+    exit(1);
+  end if;
+  writeFile(c2+"_ref.opt", "StartTime, "+String(start)+"
+StopTime, "+String(stop)+"
+StepSize, "+String((stop-start)/2000)+"
+RelTol, "+String(tolerance)+"
+SolverType, euler
+");
+  print(r);
+end for;

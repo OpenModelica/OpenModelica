@@ -1,0 +1,36 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator
+// teardown_command: rm -f Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator.mat",
+  "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_diff.csv",0.01,0.0001,
+  {"constantSpeed.phi",
+   "smee.idq_dr[1]",
+   "smee.idq_rr[2]",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "[lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:2228:14-2228:24:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

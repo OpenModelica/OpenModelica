@@ -1,0 +1,32 @@
+// name:     Modelica.Electrical.Analog.Examples.Rectifier.mos [simulation checking]
+// keywords: simulation Modelica.Electrical.Analog.Examples.Rectifier
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("RectifierOM.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(Rectifier, tolerance=0.0001); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Rectifier_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Rectifier.mat","Rectifier_diff.csv",0.01,0.0001,
+  {"uDC", "Inductor1.i"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.04, numberOfIntervals = 1000, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Rectifier', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: Rectifier
+// "
+// end SimulationResult;
+// ""
+// "Error Open File!"
+// endResult

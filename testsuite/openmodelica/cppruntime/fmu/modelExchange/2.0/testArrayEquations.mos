@@ -1,0 +1,1184 @@
+// name:     testArrayEquations
+// keywords: array equations, for loops
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *ArrayEquationsTest*
+
+setCommandLineOptions("--std=3.3"); getErrorString();
+setCommandLineOptions("-d=newInst,-nfScalarize,disableFMIDependency"); getErrorString();
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model ArrayEquationsTest
+  function myfor
+    input Real[:] u;
+    input Real[size(u, 1)] previous_x;
+    input Boolean isFirstTick;
+    output Real[size(u, 1)] x;
+  algorithm
+    for i in 1:size(u,1) loop
+      x[i] := if isFirstTick then previous_x[i] else previous_x[i] + u[i];
+    end for;
+  end myfor;
+
+  parameter Integer n = 10;
+  input Real[n] u(start = 1:n);
+  Real[n] x1(each start = 1);
+  Real[n] x2(each start = 2);
+  Real[n] x3(each start = 3);
+  Real[n] x4(each start = 4);
+  output Real y1, y2, y3, y4;
+equation
+  when Clock(0.1) then
+    // for eqation
+    for i in 1:n loop
+      x1[i] = if firstTick(x1[i]) then previous(x1[i]) else previous(x1[i]) + u[i];
+    end for;
+    // function with for loop
+    x2 = myfor(u, previous(x2), firstTick());
+    // array equation
+    x3 = if firstTick(x3) then previous(x3) else previous(x3) + u;
+  end when;
+  // for equation requiring inline integration
+  for i in 1:n loop
+    der(x4[i]) = x3[i];
+  end for;
+  y1 = sum(x1);
+  y2 = sum(x2);
+  y3 = sum(x3);
+  y4 = sum(x4);
+end ArrayEquationsTest;
+"); getErrorString();
+
+translateModelFMU(ArrayEquationsTest, version = "2.0"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq ArrayEquationsTest.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "ArrayEquationsTest.fmu"
+// ""
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"ArrayEquationsTest\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"ArrayEquationsTest\">
+//   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               interval=\"0.1\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[1])\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[2])\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[3])\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[4])\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[5])\"
+//     valueReference=\"4\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[6])\"
+//     valueReference=\"5\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[7])\"
+//     valueReference=\"6\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[8])\"
+//     valueReference=\"7\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[9])\"
+//     valueReference=\"8\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"previous(x1[10])\"
+//     valueReference=\"9\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[1])\"
+//     valueReference=\"10\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[2])\"
+//     valueReference=\"11\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[3])\"
+//     valueReference=\"12\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[4])\"
+//     valueReference=\"13\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[5])\"
+//     valueReference=\"14\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[6])\"
+//     valueReference=\"15\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[7])\"
+//     valueReference=\"16\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[8])\"
+//     valueReference=\"17\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"19\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[9])\"
+//     valueReference=\"18\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"20\" -->
+//   <ScalarVariable
+//     name=\"previous(x2[10])\"
+//     valueReference=\"19\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"21\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[1])\"
+//     valueReference=\"20\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"22\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[2])\"
+//     valueReference=\"21\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"23\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[3])\"
+//     valueReference=\"22\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"24\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[4])\"
+//     valueReference=\"23\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"25\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[5])\"
+//     valueReference=\"24\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"26\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[6])\"
+//     valueReference=\"25\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"27\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[7])\"
+//     valueReference=\"26\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"28\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[8])\"
+//     valueReference=\"27\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"29\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[9])\"
+//     valueReference=\"28\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"30\" -->
+//   <ScalarVariable
+//     name=\"previous(x3[10])\"
+//     valueReference=\"29\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"31\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[1])\"
+//     valueReference=\"30\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"32\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[2])\"
+//     valueReference=\"31\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"33\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[3])\"
+//     valueReference=\"32\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"34\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[4])\"
+//     valueReference=\"33\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"35\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[5])\"
+//     valueReference=\"34\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"36\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[6])\"
+//     valueReference=\"35\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"37\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[7])\"
+//     valueReference=\"36\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"38\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[8])\"
+//     valueReference=\"37\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"39\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[9])\"
+//     valueReference=\"38\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"40\" -->
+//   <ScalarVariable
+//     name=\"previous(x4[10])\"
+//     valueReference=\"39\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"41\" -->
+//   <ScalarVariable
+//     name=\"der(x4[1])\"
+//     valueReference=\"40\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"42\" -->
+//   <ScalarVariable
+//     name=\"der(x4[2])\"
+//     valueReference=\"41\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"43\" -->
+//   <ScalarVariable
+//     name=\"der(x4[3])\"
+//     valueReference=\"42\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"44\" -->
+//   <ScalarVariable
+//     name=\"der(x4[4])\"
+//     valueReference=\"43\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"45\" -->
+//   <ScalarVariable
+//     name=\"der(x4[5])\"
+//     valueReference=\"44\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"46\" -->
+//   <ScalarVariable
+//     name=\"der(x4[6])\"
+//     valueReference=\"45\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"47\" -->
+//   <ScalarVariable
+//     name=\"der(x4[7])\"
+//     valueReference=\"46\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"48\" -->
+//   <ScalarVariable
+//     name=\"der(x4[8])\"
+//     valueReference=\"47\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"49\" -->
+//   <ScalarVariable
+//     name=\"der(x4[9])\"
+//     valueReference=\"48\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"50\" -->
+//   <ScalarVariable
+//     name=\"der(x4[10])\"
+//     valueReference=\"49\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"51\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y1\"
+//     valueReference=\"50\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"52\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y2\"
+//     valueReference=\"51\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"53\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y3\"
+//     valueReference=\"52\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"54\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y4\"
+//     valueReference=\"53\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"55\" -->
+//   <ScalarVariable
+//     name=\"u[1]\"
+//     valueReference=\"54\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"56\" -->
+//   <ScalarVariable
+//     name=\"u[2]\"
+//     valueReference=\"55\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"57\" -->
+//   <ScalarVariable
+//     name=\"u[3]\"
+//     valueReference=\"56\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"58\" -->
+//   <ScalarVariable
+//     name=\"u[4]\"
+//     valueReference=\"57\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"59\" -->
+//   <ScalarVariable
+//     name=\"u[5]\"
+//     valueReference=\"58\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"60\" -->
+//   <ScalarVariable
+//     name=\"u[6]\"
+//     valueReference=\"59\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"61\" -->
+//   <ScalarVariable
+//     name=\"u[7]\"
+//     valueReference=\"60\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"62\" -->
+//   <ScalarVariable
+//     name=\"u[8]\"
+//     valueReference=\"61\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"63\" -->
+//   <ScalarVariable
+//     name=\"u[9]\"
+//     valueReference=\"62\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"64\" -->
+//   <ScalarVariable
+//     name=\"u[10]\"
+//     valueReference=\"63\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"65\" -->
+//   <ScalarVariable
+//     name=\"x1[1]\"
+//     valueReference=\"64\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"66\" -->
+//   <ScalarVariable
+//     name=\"x1[2]\"
+//     valueReference=\"65\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"2\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"67\" -->
+//   <ScalarVariable
+//     name=\"x1[3]\"
+//     valueReference=\"66\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"3\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"68\" -->
+//   <ScalarVariable
+//     name=\"x1[4]\"
+//     valueReference=\"67\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"4\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"69\" -->
+//   <ScalarVariable
+//     name=\"x1[5]\"
+//     valueReference=\"68\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"5\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"70\" -->
+//   <ScalarVariable
+//     name=\"x1[6]\"
+//     valueReference=\"69\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"6\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"71\" -->
+//   <ScalarVariable
+//     name=\"x1[7]\"
+//     valueReference=\"70\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"7\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"72\" -->
+//   <ScalarVariable
+//     name=\"x1[8]\"
+//     valueReference=\"71\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"8\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"73\" -->
+//   <ScalarVariable
+//     name=\"x1[9]\"
+//     valueReference=\"72\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"9\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"74\" -->
+//   <ScalarVariable
+//     name=\"x1[10]\"
+//     valueReference=\"73\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"10\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"75\" -->
+//   <ScalarVariable
+//     name=\"x2[1]\"
+//     valueReference=\"74\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"11\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"76\" -->
+//   <ScalarVariable
+//     name=\"x2[2]\"
+//     valueReference=\"75\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"12\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"77\" -->
+//   <ScalarVariable
+//     name=\"x2[3]\"
+//     valueReference=\"76\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"13\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"78\" -->
+//   <ScalarVariable
+//     name=\"x2[4]\"
+//     valueReference=\"77\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"14\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"79\" -->
+//   <ScalarVariable
+//     name=\"x2[5]\"
+//     valueReference=\"78\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"15\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"80\" -->
+//   <ScalarVariable
+//     name=\"x2[6]\"
+//     valueReference=\"79\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"16\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"81\" -->
+//   <ScalarVariable
+//     name=\"x2[7]\"
+//     valueReference=\"80\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"17\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"82\" -->
+//   <ScalarVariable
+//     name=\"x2[8]\"
+//     valueReference=\"81\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"18\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"83\" -->
+//   <ScalarVariable
+//     name=\"x2[9]\"
+//     valueReference=\"82\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"19\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"84\" -->
+//   <ScalarVariable
+//     name=\"x2[10]\"
+//     valueReference=\"83\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"20\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"85\" -->
+//   <ScalarVariable
+//     name=\"x3[1]\"
+//     valueReference=\"84\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"21\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"86\" -->
+//   <ScalarVariable
+//     name=\"x3[2]\"
+//     valueReference=\"85\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"22\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"87\" -->
+//   <ScalarVariable
+//     name=\"x3[3]\"
+//     valueReference=\"86\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"23\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"88\" -->
+//   <ScalarVariable
+//     name=\"x3[4]\"
+//     valueReference=\"87\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"24\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"89\" -->
+//   <ScalarVariable
+//     name=\"x3[5]\"
+//     valueReference=\"88\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"25\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"90\" -->
+//   <ScalarVariable
+//     name=\"x3[6]\"
+//     valueReference=\"89\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"26\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"91\" -->
+//   <ScalarVariable
+//     name=\"x3[7]\"
+//     valueReference=\"90\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"27\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"92\" -->
+//   <ScalarVariable
+//     name=\"x3[8]\"
+//     valueReference=\"91\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"28\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"93\" -->
+//   <ScalarVariable
+//     name=\"x3[9]\"
+//     valueReference=\"92\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"29\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"94\" -->
+//   <ScalarVariable
+//     name=\"x3[10]\"
+//     valueReference=\"93\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"30\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"95\" -->
+//   <ScalarVariable
+//     name=\"x4[1]\"
+//     valueReference=\"94\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"31\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"96\" -->
+//   <ScalarVariable
+//     name=\"x4[2]\"
+//     valueReference=\"95\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"32\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"97\" -->
+//   <ScalarVariable
+//     name=\"x4[3]\"
+//     valueReference=\"96\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"33\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"98\" -->
+//   <ScalarVariable
+//     name=\"x4[4]\"
+//     valueReference=\"97\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"34\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"99\" -->
+//   <ScalarVariable
+//     name=\"x4[5]\"
+//     valueReference=\"98\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"35\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"100\" -->
+//   <ScalarVariable
+//     name=\"x4[6]\"
+//     valueReference=\"99\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"36\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"101\" -->
+//   <ScalarVariable
+//     name=\"x4[7]\"
+//     valueReference=\"100\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"37\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"102\" -->
+//   <ScalarVariable
+//     name=\"x4[8]\"
+//     valueReference=\"101\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"38\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"103\" -->
+//   <ScalarVariable
+//     name=\"x4[9]\"
+//     valueReference=\"102\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"39\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"104\" -->
+//   <ScalarVariable
+//     name=\"x4[10]\"
+//     valueReference=\"103\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     previous=\"40\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"105\" -->
+//   <ScalarVariable
+//     name=\"y1\"
+//     valueReference=\"104\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"106\" -->
+//   <ScalarVariable
+//     name=\"y2\"
+//     valueReference=\"105\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"107\" -->
+//   <ScalarVariable
+//     name=\"y3\"
+//     valueReference=\"106\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"108\" -->
+//   <ScalarVariable
+//     name=\"y4\"
+//     valueReference=\"107\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"109\" -->
+//   <ScalarVariable
+//     name=\"n\"
+//     valueReference=\"0\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Integer start=\"10\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"105\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"106\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"107\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"108\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <DiscreteStates>
+//       <Unknown index=\"65\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"66\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"67\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"68\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"69\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"70\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"71\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"72\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"73\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"74\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"75\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"76\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"77\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"78\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"79\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"80\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"81\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"82\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"83\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"84\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"85\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"86\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"87\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"88\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"89\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"90\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"91\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"92\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"93\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"94\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"95\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"96\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"97\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"98\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"99\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"100\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"101\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"102\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"103\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"104\" dependencies=\"\" dependenciesKind=\"\" />
+//     </DiscreteStates>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

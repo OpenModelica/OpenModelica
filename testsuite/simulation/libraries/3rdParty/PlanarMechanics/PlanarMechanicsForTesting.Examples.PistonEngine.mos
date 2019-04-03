@@ -1,0 +1,41 @@
+// name:     PlanarMechanicsForTesting.Examples.PistonEngine.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.PistonEngine.* PlanarMechanicsForTesting.Examples.PistonEngine_i* PlanarMechanicsForTesting.Examples.PistonEngine_d* PlanarMechanicsForTesting.Examples.PistonEngine_r* PlanarMechanicsForTesting.Examples.PistonEngine_f* PlanarMechanicsForTesting.Examples.PistonEngine PlanarMechanicsForTesting.Examples.PistonEngine.exe PlanarMechanicsForTesting.Examples.PistonEngine.cpp PlanarMechanicsForTesting.Examples.PistonEngine.makefile PlanarMechanicsForTesting.Examples.PistonEngine.libs PlanarMechanicsForTesting.Examples.PistonEngine.log PlanarMechanicsForTesting.Examples.PistonEngine.c PlanarMechanicsForTesting.Examples.PistonEngine.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.PistonEngine); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.PistonEngine_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_diff.csv",0.01,0.001,
+  {"prismatic.s", "prismatic.v", "revoluteDrive.w"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.PistonEngine_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 15.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.PistonEngine', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Resultfile and Reference have different end time points!
+// Reffile[510]=20.000000
+// File[502]=15.000000
+// "
+// endResult

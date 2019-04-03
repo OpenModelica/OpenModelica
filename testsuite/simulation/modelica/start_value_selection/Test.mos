@@ -1,0 +1,42 @@
+// name:     start value selection [frontend]
+// keywords: start value selection
+// status:   correct
+// teardown_command: rm -rf Package* _Package* output.log
+
+setCommandLineOptions({"+d=showStartOrigin"}); getErrorString();
+
+loadFile("Test.mo"); getErrorString();
+
+instantiateModel(Package.Test); getErrorString();
+instantiateModel(Package.TestMore); getErrorString();
+
+// Result;
+// endResult
+// Result:
+// {true}
+// ""
+// true
+// ""
+// "class Package.Test
+//   Real x(start = 20.0, startOrigin = \"binding\");
+//   Real y(start = 15.0, startOrigin = \"binding\");
+//   Real z(start = 10.0, startOrigin = \"type\");
+// equation
+//   x = y + z;
+// end Package.Test;
+// "
+// ""
+// "class Package.TestMore
+//   Real t.x(start = 20.0, startOrigin = \"binding\");
+//   Real t.y(start = 15.0, startOrigin = \"binding\");
+//   Real t.z(start = 10.0, startOrigin = \"type\");
+//   Real tredeclared.x(start = 20.0, startOrigin = \"binding\");
+//   Real tredeclared.y(start = 15.0, startOrigin = \"binding\");
+//   Real tredeclared.z(start = 10000.0, startOrigin = \"binding\");
+// equation
+//   t.x = t.y + t.z;
+//   tredeclared.x = tredeclared.y + tredeclared.z;
+// end Package.TestMore;
+// "
+// ""
+// endResult

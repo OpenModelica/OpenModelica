@@ -1,0 +1,147 @@
+//name:         CauerLowPassOPV2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.CauerLowPassOPV, stopTime=60, numberOfIntervals=600, method="dassl");
+
+
+"R1.v:";
+val(R1.v,0.0);
+val(R1.v,1.01);
+val(R1.v,60.0);
+
+"R1.i:";
+val(R1.i,0.0);
+val(R1.i,1.01);
+val(R1.i,60.0);
+
+"R2.v:";
+val(R2.v,0.0);
+val(R2.v,1.01);
+val(R2.v,60.0);
+
+"R2.i:";
+val(R2.i,0.0);
+val(R2.i,1.01);
+val(R2.i,60.0);
+
+"R3.v:";
+val(R3.v,0.0);
+val(R3.v,1.01);
+val(R3.v,60.0);
+
+"R3.i:";
+val(R3.i,0.0);
+val(R3.i,1.01);
+val(R3.i,60.0);
+
+"R11.v:";
+val(R11.v,0.0);
+val(R11.v,1.01);
+val(R11.v,60.0);
+
+"R11.i:";
+val(R11.i,0.0);
+val(R11.i,1.01);
+val(R11.i,60.0);
+
+"Op1.out.v:";
+val(Op1.out.v,0.0);
+val(Op1.out.v,1.01);
+val(Op1.out.v,60.0);
+
+"Op1.out.i:";
+val(Op1.out.i,0.0);
+val(Op1.out.i,1.01);
+val(Op1.out.i,60.0);
+
+"Op5.out.v:";
+val(Op5.out.v,0.0);
+val(Op5.out.v,1.01);
+val(Op5.out.v,60.0);
+
+"Op5.out.v:";
+val(Op5.out.v,0.0);
+val(Op5.out.v,1.01);
+val(Op5.out.v,60.0);
+
+"C5.v:";
+val(C5.v,0.0);
+val(C5.v,1.01);
+val(C5.v,60.0);
+
+"C5.i:";
+val(C5.i,0.0);
+val(C5.i,1.01);
+val(C5.i,60.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassOPV_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 60.0, numberOfIntervals = 600, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassOPV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "R1.v:"
+// -0.0
+// -1.0
+// -1.0
+// "R1.i:"
+// -0.0
+// -1.0
+// -1.0
+// "R2.v:"
+// -0.0
+// 0.0002537404782735835
+// 0.4993665996062486
+// "R2.i:"
+// -0.0
+// 0.0002537404782735835
+// 0.4993665996062486
+// "R3.v:"
+// 0.0
+// -0.007364533509801463
+// -0.4997078631745762
+// "R3.i:"
+// 0.0
+// -0.007364533509801463
+// -0.4997078631745762
+// "R11.v:"
+// -0.0
+// -0.000431059983263338
+// -0.4997076551161084
+// "R11.i:"
+// -0.0
+// -0.000431059983263338
+// -0.4997076551161084
+// "Op1.out.v:"
+// -0.0
+// 0.007364533509801463
+// 0.4997078631745762
+// "Op1.out.i:"
+// 0.0
+// -1.215489199613541
+// -0.001005723078507992
+// "Op5.out.v:"
+// 0.0
+// 0.000431059983263338
+// 0.4997076551161084
+// "Op5.out.v:"
+// 0.0
+// 0.000431059983263338
+// 0.4997076551161084
+// "C5.v:"
+// -0.0
+// 0.007364533509801463
+// 0.4997078631745762
+// "C5.i:"
+// 0.0
+// 0.200454800416394
+// 0.0001658608065300561
+// endResult

@@ -1,0 +1,94 @@
+// name: BatchReactor
+// status: correct
+
+// optimal control example
+// tast: find temperature profile  0 <= u(t) <= 5, so x2(1) is maximized.
+// see: Biegler: Nonlinear Programming Concepts, Algorithms and
+//               Applications to Chemical Processes, MOS-SIAM 2010
+
+loadString("
+model BatchReactor
+  Real x2(start = 0, fixed = true);
+  Real x1(start = 1, fixed = true);
+  input Real u(min=0, max = 5, nominal = 1.0, start = 1.0);
+equation
+  der(x1) = -(u+u^2/2)*x1;
+  der(x2) = u*x1;
+end BatchReactor;
+");
+getErrorString();
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString(
+"
+optimization nmpcBatchReactor(objective = cost)
+  Real cost = -x2;
+  extends BatchReactor;
+end nmpcBatchReactor;
+"
+);
+getErrorString();
+
+optimize(nmpcBatchReactor, numberOfIntervals=20, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("nmpcBatchReactor_res.mat","ReferenceFiles/nmpcBatchReactor_ref.mat","nmpcBatchReactor_res.csv",0.01,0.0001);
+getErrorString();
+
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 0.00000001, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_jac=NUM'",
+//     messages = "
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+// 
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// ""
+// endResult
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:u(start = 1, nominal = 1, min = 0, max = 5)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

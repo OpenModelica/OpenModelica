@@ -1,0 +1,42 @@
+// status: correct
+// From ticket:4065
+
+echo(false);
+a1 := "model test_linebreaks2_orig
+  Modelica.Fluid.Sources.FixedBoundary boundary(use_p=false,
+                                                use_T=false,
+                                                p=1e5) annotation(Placement(visible = true, transformation(origin = {-54, 42}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Fluid.Sources.Boundary_pT boundary1 annotation(Placement(visible = true, transformation(origin = {-58, -28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+equation
+  connect(boundary.ports[1], boundary1.ports[1]) annotation(Line(points = {{-44, 42}, {-44, 7}, {-48, 7}, {-48, -28}}, color = {0, 127, 255}));
+  annotation(uses(Modelica(version = \"3.2.2\")), Icon(graphics = {Polygon(origin = {-13.1502, 17.2813}, points = {{-20.8498, 26.7187}, {75.1502, 6.71867}, {15.1502, 54.7187}, {-74.8498, 22.7187}, {-42.8498, -55.2813}, {-20.8498, 26.7187}})}));
+end test_linebreaks2_orig;";
+b := "model test_linebreaks2_orig
+  Modelica.Fluid.Sources.FixedBoundary boundary(use_p = false, use_T = false, p = 1e5) annotation(Placement(visible = true, transformation(origin = {0, 62}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Fluid.Sources.Boundary_pT boundary1 annotation(Placement(visible = true, transformation(origin = {-24, -32}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+equation
+  connect(boundary.ports[1], boundary1.ports[1]) annotation(Line(points = {{10, 62}, {10, 7}, {-14, 7}, {-14, -32}}, color = {0, 127, 255}));
+  annotation(uses(Modelica(version = \"3.2.2\")), Icon(graphics = {Polygon(origin = {-13.1502, 17.2813}, points = {{-20.8498, 26.7187}, {75.1502, 6.71867}, {15.1502, 54.7187}, {-74.8498, 22.7187}, {-42.8498, -55.2813}, {-20.8498, 26.7187}})}));
+end test_linebreaks2_orig;";
+
+
+echo(true);
+diffModelicaFileListings(
+  a1,
+  b,
+  OpenModelica.Scripting.DiffFormat.color);
+getErrorString();
+
+// Result:
+// true
+// "model test_linebreaks2_orig
+//   Modelica.Fluid.Sources.FixedBoundary boundary(use_p=false,
+//                                                 use_T=false,
+//                                                 p=1e5) annotation(Placement(visible = true, transformation(origin = {[4;32m0[0m,[4;32m 62[0m}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   Modelica.Fluid.Sources.Boundary_pT boundary1 annotation(Placement(visible = true, transformation(origin = {[4;32m-24[0m,[4;32m -32[0m}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+// equation
+//   connect(boundary.ports[1], boundary1.ports[1]) annotation(Line(points = {[4;32m{10, 62}[0m,[4;32m {10, 7}, {-14, 7}, {-14, -32}[0m}, color = {0, 127, 255}));
+//   annotation(uses(Modelica(version = \"3.2.2\")), Icon(graphics = {Polygon(origin = {-13.1502, 17.2813}, points = {{-20.8498, 26.7187}, {75.1502, 6.71867}, {15.1502, 54.7187}, {-74.8498, 22.7187}, {-42.8498, -55.2813}, {-20.8498, 26.7187}})}));
+// end test_linebreaks2_orig;"
+// ""
+// endResult

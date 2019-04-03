@@ -1,0 +1,67 @@
+// name: cseTestCall2
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall2
+    record foo
+       Real x;
+       Real y;
+    end foo;
+    foo f;
+    function func
+      input Real r;
+      output Real s;
+      output Real t;
+    algorithm 
+      s := r;
+      t := r+1;
+    end func;
+  equation 
+   (f.x,f.y) = func(time);
+  end TestCall2;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: f.y:VARIABLE()  type: Real 
+// 2: f.x:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (1, 2)
+// ========================================
+// 1/1 (2): (f.x, f.y) = CSE.TestCall2.func(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: (f.x, f.y) - CSE.TestCall2.func(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

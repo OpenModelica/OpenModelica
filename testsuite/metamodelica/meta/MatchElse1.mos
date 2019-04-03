@@ -1,0 +1,25 @@
+// name:     MatchElse1
+// keywords: Match Cases
+// status:   correct
+// cflags: -g=MetaModelica -d=gen
+// teardown_command: rm -f MatchElse1_*
+//
+// Match Testing
+//
+loadFile("MatchElse1.mo");
+getErrorString();
+MatchElse1.func(1);
+getErrorString();
+MatchElse1.func(2);
+getErrorString();
+
+// Result:
+// true
+// ""
+// Sad thing
+// fail()
+// ""
+// Great success
+// 42
+// ""
+// endResult

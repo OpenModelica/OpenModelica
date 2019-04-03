@@ -1,0 +1,35 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2,stopTime=5.0); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2_diff.csv",0.01,0.00001,
+  {"j1.phi","j1.w"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 3.1/Mechanics/MultiBody/Joints.mo:2345:5-2348:81:writable] Warning: The parameter universalSpherical.rodLength has fixed = false and a binding equation universalSpherical.rodLength = 1.048808848170152, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1.
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// [Modelica 3.1/Mechanics/MultiBody/Joints.mo:269:5-279:3:writable] Warning: Variable j1.phi has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

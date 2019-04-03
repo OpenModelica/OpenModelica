@@ -1,0 +1,94 @@
+// name: cseFunctionCall3
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  package functions
+    function f2
+      input Real x1;
+      input Real x2;
+      output Real y1;
+      output Real y2;
+   protected
+      Integer z;
+    algorithm
+      y1 := if x1>x2 then sin(x1) else cos(x2);
+      z := integer(ceil(y1));
+      for i in 1:z loop
+        y2 := y1+x1*x2;
+      end for;
+    end f2;
+  end functions;
+  
+  model FunctionCallTest3
+    import CSE.functions.*;
+    Real x,y,z;
+    Real a,b,c,d;
+  equation
+    x = sin(time*cos(time));
+    der(y) = f2(time, x)+2;
+    der(z) = f2(time, x)+2;
+
+    (a,b) = f2(time, x);
+    (c,d) = f2(time, x);
+  end FunctionCallTest3;
+
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.FunctionCallTest3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (8)
+// ========================================
+// 1: d:VARIABLE()  type: Real 
+// 2: c:VARIABLE()  type: Real 
+// 3: b:VARIABLE()  type: Real 
+// 4: a:VARIABLE()  type: Real 
+// 5: z:STATE(1)()  type: Real 
+// 6: y:STATE(1)()  type: Real 
+// 7: x:VARIABLE()  type: Real 
+// 8: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (6, 8)
+// ========================================
+// 1/1 (1): der(y) = 2.0 + a   [dynamic |0|0|0|0|]
+// 2/2 (1): der(z) = 2.0 + a   [dynamic |0|0|0|0|]
+// 3/3 (2): (c, d) = (a, b)   [dynamic |0|0|0|0|]
+// 4/5 (2): (a, b) = CSE.functions.f2(time, x)   [unknown |0|0|0|0|]
+// 5/7 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 6/8 (1): x = sin(time * $cse1)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (3/49)
+// ========================================
+// 1: x - sin(time * $cse1) - {}
+// 2: $cse1 - cos(time) - {}
+// 3: (a, b) - CSE.functions.f2(time, x) - {}
+// record SimulationResult
+//     resultFile = "CSE.FunctionCallTest3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

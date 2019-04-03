@@ -1,0 +1,38 @@
+// name:     DrModelicaForTesting.Circuit.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Circuit
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Circuit.* DrModelicaForTesting.Circuit_* DrModelicaForTesting.Circuit DrModelicaForTesting.Circuit.exe DrModelicaForTesting.Circuit.cpp DrModelicaForTesting.Circuit.makefile DrModelicaForTesting.Circuit.libs DrModelicaForTesting.Circuit.log DrModelicaForTesting.Circuit.c DrModelicaForTesting.Circuit.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Circuit, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Circuit_res.mat",
+  "ReferenceFiles/Circuit_ref.mat","DrModelicaForTesting.Circuit_diff.csv",0.01,0.013,
+  {"d.p.v","d.p.i","G.p.v","G.p.i"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Circuit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Circuit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[Modelica 3.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter src.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter src.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1/Electrical/Analog/Basic.mo:68:3-69:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

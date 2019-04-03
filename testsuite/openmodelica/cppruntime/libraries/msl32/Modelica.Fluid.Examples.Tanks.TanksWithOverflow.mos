@@ -1,0 +1,39 @@
+// name:     Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// teardown_command: rm -f Modelica.Fluid.Examples.Tanks.TanksWithOverflow_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.Tanks.TanksWithOverflow);
+compareVars :=
+{
+   "upperTank.level",
+   "upperTank.medium.h",
+   "lowerTank.level",
+   "lowerTank.medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.Tanks.TanksWithOverflow
+// {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
+// Compilation succeeded
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "true
+// "
+// ""
+// endResult

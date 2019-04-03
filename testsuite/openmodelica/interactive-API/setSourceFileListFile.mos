@@ -1,0 +1,29 @@
+// status: correct
+
+loadString("package P1 model M1 end M1; end P1;", "P1");
+getErrorString();
+listFile(P1);
+getErrorString();
+setSourceFile(P1, "P2");
+setSourceFile(P1.M1, "P2");
+getClassInformation(P1);
+getClassInformation(P1.M1);
+listFile(P1);
+
+// Result:
+// true
+// ""
+// "package P1
+//   model M1
+//   end M1;
+// end P1;"
+// ""
+// true
+// true
+// ("package","",false,false,false,"P2",false,1,1,1,34,{},false,false,"","",false,"")
+// ("model","",false,false,false,"P2",false,1,12,1,26,{},false,false,"","",false,"")
+// "package P1
+//   model M1
+//   end M1;
+// end P1;"
+// endResult

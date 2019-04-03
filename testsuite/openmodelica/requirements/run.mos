@@ -1,0 +1,57 @@
+// name:     TwoTanksExample.UserDefinedVerificationModels.UDVModel1
+// keywords: requirements, bindings, inference
+// status:   correct
+//
+// Testing requirements bindings inference
+//
+
+// script to test updating of bindings for a specific scenario
+
+loadFile("TwoTanksExample/package.mo");
+getErrorString();
+inferBindings(TwoTanksExample.UserDefinedVerificationModels.UDVModel1);
+getErrorString();
+list(test.TestModel);
+getErrorString();
+
+// Result:
+// true
+// ""
+// ... found client : TwoTanksExample.Requirements.LiquidLevel
+// ... found client : TwoTanksExample.Requirements.Volume_of_a_tank
+// ... found client : TwoTanksExample.Design.Components.Source
+// ... infer binding TwoTanksExample.Design.Components.Source     TwoTanksExample.Design.TwoTanksDesign
+// ... found provider TwoTanksExample.Scenarios.Overflow
+// ... found instance provider TwoTanksExample.Design.TwoTanksDesign
+// **** Applying modifier twoTanksDesign1
+// ... infer binding TwoTanksExample.Requirements.Volume_of_a_tank     TwoTanksExample.Requirements.Volume_of_a_tank
+// ... found provider TwoTanksExample.Design.Components.Tank
+// ... found provider TwoTanksExample.Design.Components.Tank
+// ... found instance provider TwoTanksExample.Requirements.Volume_of_a_tank
+// **** Applying modifier volume_of_a_tank1_autogen_bind_0
+// **** Applying modifier volume_of_a_tank1_autogen_bind_1
+// ... infer binding TwoTanksExample.Requirements.LiquidLevel     TwoTanksExample.Requirements.LiquidLevel
+// ... found provider TwoTanksExample.Design.Components.Tank
+// ... found provider TwoTanksExample.Design.Components.Tank
+// ... found instance provider TwoTanksExample.Requirements.LiquidLevel
+// **** Applying modifier liquidLevel1_autogen_bind_0
+// **** Applying modifier liquidLevel1_autogen_bind_1
+// model UDVModel1
+//   TwoTanksExample.Design.TwoTanksDesign twoTanksDesign1(source.flowLevel = overflow1.flowLevel) annotation(
+//     Placement(visible = true, transformation(origin = {42, -28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   TwoTanksExample.Requirements.Volume_of_a_tank volume_of_a_tank1_autogen_bind_0(tankVolume = twoTanksDesign1.tank1.volume) annotation(
+//     Placement(visible = true, transformation(origin = {-60, 34}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   TwoTanksExample.Requirements.Volume_of_a_tank volume_of_a_tank1_autogen_bind_1(tankVolume = twoTanksDesign1.tank2.volume) annotation(
+//     Placement(visible = true, transformation(origin = {-60, 34}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   TwoTanksExample.Requirements.LiquidLevel liquidLevel1_autogen_bind_0(waterLevel = twoTanksDesign1.tank1.levelOfLiquid) annotation(
+//     Placement(visible = true, transformation(origin = {-60, -26}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   TwoTanksExample.Requirements.LiquidLevel liquidLevel1_autogen_bind_1(waterLevel = twoTanksDesign1.tank2.levelOfLiquid) annotation(
+//     Placement(visible = true, transformation(origin = {-60, -26}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//   TwoTanksExample.Scenarios.Overflow overflow1 annotation(
+//     Placement(visible = true, transformation(origin = {42, 28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+// end UDVModel1
+// true
+// ""
+// ""
+// ""
+// endResult

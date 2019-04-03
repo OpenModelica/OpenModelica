@@ -1,0 +1,32 @@
+// name:     EngineV6_output
+// keywords: simulation evalOutputOnly
+// status: correct
+//
+loadModel(Modelica,{"3.2.1"});
+loadFile("EngineV6_output.mo");getErrorString();
+setDebugFlags("evalOutputOnly"); getErrorString();
+setCommandLineOptions("--maxSizeLineartearing=4000"); getErrorString();
+simulate(EngineV6_output); getErrorString();
+  
+val(crankshaftSpeed,1.0); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// There have been 1314 SCCs and now there are 686 SCCs.
+// record SimulationResult
+//     resultFile = "EngineV6_output_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EngineV6_output', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 561.4775584669995
+// ""
+// endResult

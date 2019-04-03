@@ -1,0 +1,76 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot);
+compareVars :=
+{
+   "axis1.controller.PI.x",
+   "axis1.gear.spring.phi_rel",
+   "axis1.gear.spring.w_rel",
+   "axis1.motor.C.v",
+   "axis1.motor.La.i",
+   "axis2.controller.PI.x",
+   "axis2.gear.spring.phi_rel",
+   "axis2.gear.spring.w_rel",
+   "axis2.motor.C.v",
+   "axis2.motor.La.i",
+   "axis3.controller.PI.x",
+   "axis3.gear.spring.phi_rel",
+   "axis3.gear.spring.w_rel",
+   "axis3.motor.C.v",
+   "axis3.motor.La.i",
+   "axis4.controller.PI.x",
+   "axis4.motor.C.v",
+   "axis4.motor.La.i",
+   "axis5.controller.PI.x",
+   "axis5.motor.C.v",
+   "axis5.motor.La.i",
+   "axis6.controller.PI.x",
+   "axis6.motor.C.v",
+   "axis6.motor.La.i",
+   "mechanics.r1.phi",
+   "mechanics.r1.w",
+   "mechanics.r2.phi",
+   "mechanics.r2.w",
+   "mechanics.r3.phi",
+   "mechanics.r3.w",
+   "mechanics.r4.phi",
+   "mechanics.r4.w",
+   "mechanics.r5.phi",
+   "mechanics.r5.w",
+   "mechanics.r6.phi",
+   "mechanics.r6.w",
+   "mechanics.b2.body.w_a[1]"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot
+// {"axis1.controller.PI.x","axis1.gear.spring.phi_rel","axis1.gear.spring.w_rel","axis1.motor.C.v","axis1.motor.La.i","axis2.controller.PI.x","axis2.gear.spring.phi_rel","axis2.gear.spring.w_rel","axis2.motor.C.v","axis2.motor.La.i","axis3.controller.PI.x","axis3.gear.spring.phi_rel","axis3.gear.spring.w_rel","axis3.motor.C.v","axis3.motor.La.i","axis4.controller.PI.x","axis4.motor.C.v","axis4.motor.La.i","axis5.controller.PI.x","axis5.motor.C.v","axis5.motor.La.i","axis6.controller.PI.x","axis6.motor.C.v","axis6.motor.La.i","mechanics.r1.phi","mechanics.r1.w","mechanics.r2.phi","mechanics.r2.w","mechanics.r3.phi","mechanics.r3.w","mechanics.r4.phi","mechanics.r4.w","mechanics.r5.phi","mechanics.r5.w","mechanics.r6.phi","mechanics.r6.w","mechanics.b2.body.w_a[1]"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat
+// Messages: Model terminate() at 1.85605
+// Message: ... End condition reached
+//
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

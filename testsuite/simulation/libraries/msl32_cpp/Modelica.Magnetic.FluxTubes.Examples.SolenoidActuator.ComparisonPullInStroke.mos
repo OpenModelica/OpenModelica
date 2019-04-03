@@ -1,0 +1,43 @@
+// name:     Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke);
+compareVars :=
+{
+   "advancedSolenoid.armature.stopper_xMax.v_rel",
+   "advancedSolenoid.c_par1.v",
+   "advancedSolenoid.c_par2.v",
+   "advancedSolenoid.coil1.Phi",
+   "advancedSolenoid.coil2.Phi",
+   "advancedSolenoid.x",
+   "simpleSolenoid.armature.stopper_xMax.v_rel",
+   "simpleSolenoid.coil.Phi",
+   "simpleSolenoid.x"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke
+// {"advancedSolenoid.armature.stopper_xMax.v_rel","advancedSolenoid.c_par1.v","advancedSolenoid.c_par2.v","advancedSolenoid.coil1.Phi","advancedSolenoid.coil2.Phi","advancedSolenoid.x","simpleSolenoid.armature.stopper_xMax.v_rel","simpleSolenoid.coil.Phi","simpleSolenoid.x"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 0.05, numberOfIntervals = 500, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_res.mat
+// "true
+// "
+// ""
+// endResult

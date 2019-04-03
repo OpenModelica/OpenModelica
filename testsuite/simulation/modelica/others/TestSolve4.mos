@@ -1,0 +1,63 @@
+// name: TestSolve
+// status: correct
+//
+// Checks that the backend knows how to solve certain expressions
+// test: cosh, sinh, tanh
+
+loadString("
+model ModelTestSolve4
+  constant Real s[:] = {-1,1};
+  Real[2] x(start=s);
+  Real[2] y(start=s);
+  Real[2] z(start=s);
+  Real err[6];
+  Real Err (start = 0, fixed = true);
+equation
+  for i in 1:2 loop
+    cosh(x[i]) = 1.1 + 0.5*time;
+    sinh(y[i]) = 1.1 + 0.5*time;
+    tanh(z[i]) = 0.5*time;
+    err[(i-1)*3 +1] = abs(-cosh(x[i]) + 1.1 + 0.5*time);
+    err[(i-1)*3 +2] = abs(-sinh(y[i]) + 1.1 + 0.5*time);
+    err[(i-1)*3 +3] = abs(-tanh(z[i]) +  0.5*time);
+  end for;
+
+  der(Err) = sum(err);
+end ModelTestSolve4;
+"); getErrorString();
+
+simulate(ModelTestSolve4, simflags="-lv LOG_NLS_V"); getErrorString();
+val(x[1],0.5);
+val(y[1],0.5);
+val(z[1],0.5);
+val(x[2],0.5);
+val(y[2],0.5);
+val(z[2],0.5);
+val(Err,1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelTestSolve4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelTestSolve4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_NLS_V'",
+//     messages = "LOG_NLS           | info    | initialize mixed system solvers
+// |                 | |       | | 0 mixed systems
+// LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 0 non-linear systems
+// LOG_NLS           | info    | update static data of non-linear system solvers
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | info    | free mixed system solvers
+// LOG_NLS           | info    | free non-linear system solvers
+// "
+// end SimulationResult;
+// ""
+// -0.8140001025611593
+// 1.108572441796849
+// 0.2554128118829954
+// 0.8140001025611594
+// 1.108572441796849
+// 0.2554128118829954
+// 0.0
+// endResult

@@ -1,0 +1,43 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Translation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND);
+compareVars :=
+{
+   "Q1.vbc",
+   "Q1.vbe",
+   "Q2.vbc",
+   "Q2.vbe",
+   "Q3.vbc",
+   "Q3.vbe",
+   "Q4.vbc",
+   "Q4.vbe",
+   "Q5.vbc",
+   "Q5.vbe"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Translation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND
+// {"Q1.vbc","Q1.vbe","Q2.vbc","Q2.vbe","Q3.vbc","Q3.vbe","Q4.vbc","Q4.vbe","Q5.vbc","Q5.vbe"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Translation succeeded
+// Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// The model now compiles. Please update the test.
+// endResult

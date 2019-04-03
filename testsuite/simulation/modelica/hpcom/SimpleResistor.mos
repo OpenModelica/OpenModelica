@@ -1,0 +1,60 @@
+// name:      SimpleResistor
+// keywords:  hpcom
+// status:    correct
+// depends: SimpleResistor_eqs_prof.json
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadFile("SimpleResistor.mo"); getErrorString();
+setDebugFlags("hpcom");getErrorString();
+setCommandLineOptions("+n=4 +hpcomScheduler=list");getErrorString();
+simulate(SimpleResistor);getErrorString();
+
+res := OpenModelica.Scripting.checkTaskGraph("taskGraphSimpleResistorODE.graphml","ReferenceGraphs/SimpleResistor_TaskGraphODE.graphml");
+res := OpenModelica.Scripting.compareSimulationResults("SimpleResistor_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/hpcom/SimpleResistor.mat",
+  "SimpleResistor_diff.csv",0.01,0.0001,
+  {"sineVoltage.v",
+   "sineVoltage.i",
+   "sineVoltage.p.i",
+   "sineVoltage.p.v",
+   "sineVoltage.n.i",
+   "sineVoltage.n.v",
+   "sineVoltage.signalSource.y",
+   "resistor.v",
+   "resistor.i",
+   "resistor.p.i",
+   "resistor.p.v",
+   "resistor.n.i",
+   "resistor.n.v",
+   "resistor.LossPower"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe SimpleResistor_eqs_prof-file is missing.
+// Using list Scheduler for the DAE system
+// Using list Scheduler for the ODE system
+// Using list Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
+// The ODE system model is not big enough to perform an effective parallel simulation!
+// HpcOm is still under construction.
+// record SimulationResult
+//     resultFile = "SimpleResistor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SimpleResistor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Taskgraph correct"}
+// {"Files Equal!"}
+// endResult

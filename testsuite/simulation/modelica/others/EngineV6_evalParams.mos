@@ -1,0 +1,30 @@
+// name:     EngineV6_evalParams
+// keywords: simulation evalAllParams
+// status: correct
+//
+loadModel(Modelica,{"3.2.1"});
+loadFile("EngineV6_output.mo");getErrorString();
+setCommandLineOptions("-d=evaluateAllParameters --maxSizeLineartearing=4000"); getErrorString();
+simulate(EngineV6_output); getErrorString();
+
+val(crankshaftSpeed,1.0); getErrorString();
+
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EngineV6_output_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'EngineV6_output', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// 561.4775584670064
+// ""
+// endResult

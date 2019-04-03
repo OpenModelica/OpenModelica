@@ -1,0 +1,34 @@
+// name:     Circuit1
+// keywords: Simulate, readSimulationData
+// status:   correct
+// cflags:   +std=2.x
+// teardown_command: rm -f TestModels.BlockModels* output.log
+// 
+//  Simulate systems of blocks 
+//
+loadModel(Modelica,{"2.2.2"});
+loadFile("TestModels.mo");
+
+// Circuit1
+
+simulate(TestModels.BlockModels.SystemTests.Circuit1, tolerance=1e-5, numberOfIntervals=500);
+{val(add3.y,0.0),val(add3.y,0.2),val(add3.y,0.4),
+val(add3.y,0.6),val(add3.y,0.8),val(add3.y,1.0)};
+{val(integrator2.y,0.0),val(integrator2.y,0.2),val(integrator2.y,0.4),
+val(integrator2.y,0.6),val(integrator2.y,0.8),val(integrator2.y,1.0)};
+{val(sine1.y,0.0),val(sine1.y,0.2),val(sine1.y,0.4),
+val(sine1.y,0.6),val(sine1.y,0.8),val(sine1.y,1.0)};
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "TestModels.BlockModels.SystemTests.Circuit1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'TestModels.BlockModels.SystemTests.Circuit1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {0.0,-0.02415824134574351,0.05770445638878563,0.06878340392229909,0.07028273614939118,0.07048568788782161}
+// {0.0,-6.04899780270191,-6.86762553052018,-6.978414219326635,-6.993408452670834,-6.995437078418879}
+// {0.0,-5.388445916248355e-13,-1.077689183249671e-12,-4.742921812218947e-12,-2.155378366499342e-12,4.321650792202638e-13}
+// endResult

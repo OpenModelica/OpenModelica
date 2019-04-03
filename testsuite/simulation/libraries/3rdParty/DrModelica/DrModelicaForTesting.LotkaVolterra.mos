@@ -1,0 +1,35 @@
+// name:     DrModelicaForTesting.LotkaVolterra.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.LotkaVolterra
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.LotkaVolterra.* DrModelicaForTesting.LotkaVolterra_* DrModelicaForTesting.LotkaVolterra DrModelicaForTesting.LotkaVolterra.exe DrModelicaForTesting.LotkaVolterra.cpp DrModelicaForTesting.LotkaVolterra.makefile DrModelicaForTesting.LotkaVolterra.libs DrModelicaForTesting.LotkaVolterra.log DrModelicaForTesting.LotkaVolterra.c DrModelicaForTesting.LotkaVolterra.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.LotkaVolterra, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.LotkaVolterra_res.mat",
+  "ReferenceFiles/LotkaVolterra_ref.mat","DrModelicaForTesting.LotkaVolterra_diff.csv",0.01,0.013,
+  {"foxes", "g_r", "d_rf", "rabbits"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.LotkaVolterra_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,554 @@
+// name: MoveClass
+// keywords: moveClass
+// status: correct
+//
+// Tests the moveClass API.
+//
+
+echo(false);
+s1 := "
+  model A end A;
+  model B end B;
+  model C end C;
+  model D end D;
+  model E end E;
+";
+
+s2 := "package P1 " + s1 + " end P1;";
+
+s3 := "
+  package P2
+    type A = Real;
+    type B = Real;
+    type C = Real;
+  protected
+    type D = Real;
+  public
+    type E = Real;
+    type F = Real;
+  protected
+    type G = Real;
+    type H = Real;
+    type I = Real;
+    type J = Real;
+  end P2;
+";
+
+echo(true);
+
+// Test moving of top-level classes.
+loadString(s1);
+moveClass(A,       0); getClassNames(); // Move first nowhere.
+moveClass(A,       1); getClassNames(); // Move first one step.
+moveClass(B,      -1); getClassNames(); // Move first past start.
+moveClass(B,       4); getClassNames(); // Move first to end.
+moveClass(A,     100); getClassNames(); // Move first past end.
+moveClass(E,       1); getClassNames(); // Move center one step.
+moveClass(B,      -1); getClassNames(); // Move center one step back.
+moveClass(D,      -2); getClassNames(); // Move center to start.
+moveClass(B,       2); getClassNames(); // Move center to end.
+moveClass(E,      -3); getClassNames(); // Move center past start.
+moveClass(C,       3); getClassNames(); // Move center past end.
+moveClass(C,       1); getClassNames(); // Move last past end.
+moveClass(C,      -1); getClassNames(); // Move last one step back.
+moveClass(B,      -4); getClassNames(); // Move last to start.
+moveClass(C,    -100); getClassNames(); // Move last past start.
+
+// Test moving of classes in a package without sections.
+loadString(s2); getErrorString();
+moveClass(P1.A,    0); getClassNames(P1); // Move first nowhere.
+moveClass(P1.A,    1); getClassNames(P1); // Move first one step.
+moveClass(P1.B,   -1); getClassNames(P1); // Move first past start.
+moveClass(P1.B,    4); getClassNames(P1); // Move first to end.
+moveClass(P1.A,  100); getClassNames(P1); // Move first past end.
+moveClass(P1.E,    1); getClassNames(P1); // Move center one step.
+moveClass(P1.B,   -1); getClassNames(P1); // Move center one step back.
+moveClass(P1.D,   -2); getClassNames(P1); // Move center to start.
+moveClass(P1.B,    2); getClassNames(P1); // Move center to end.
+moveClass(P1.E,   -3); getClassNames(P1); // Move center past start.
+moveClass(P1.C,    3); getClassNames(P1); // Move center past end.
+moveClass(P1.C,    1); getClassNames(P1); // Move last past end.
+moveClass(P1.C,   -1); getClassNames(P1); // Move last one step back.
+moveClass(P1.B,   -4); getClassNames(P1); // Move last to start.
+moveClass(P1.C, -100); getClassNames(P1); // Move last past start.
+
+// Test moving of classes in a package with sections.
+loadString(s3); getErrorString();
+moveClass(P2.A,    0); list(P2); // Move A nowhere.
+moveClass(P2.A,    1); list(P2); // Move A one step.
+moveClass(P2.A,    1); list(P2); // Move A to end of section.
+moveClass(P2.A,    1); list(P2); // Move A into next section.
+moveClass(P2.A,   -1); list(P2); // Move A back into previous section.
+moveClass(P2.A,   -2); list(P2); // Move A back to start.
+moveClass(P2.A,   -1); list(P2); // Move A past start.
+moveClass(P2.A,    4); list(P2); // Move A into middle of next public section.
+moveClass(P2.A,    3); list(P2); // Move A into middle of next protected section.
+moveClass(P2.A,   -3); list(P2); // Move A into middle of previous public section.
+moveClass(P2.D,    2); list(P2); // Move D into next public section.
+moveClass(P2.D,   -2); list(P2); // Move D back.
+moveClass(P2.J,    1); list(P2); // Move J past end.
+moveClass(P2.J,   -9); list(P2); // Move J to start.
+moveClass(P2.J,   -1); list(P2); // Move J past start.
+
+clearProgram();
+loadString(s1);
+moveClassToTop(C);    getClassNames(); // Move middle to top.
+moveClassToTop(C);    getClassNames(); // Move first to top.
+moveClassToTop(E);    getClassNames(); // Move last to top.
+moveClassToBottom(A); getClassNames(); // Move middle to bottom.
+moveClassToBottom(A); getClassNames(); // Move last to bottom.
+moveClassToBottom(E); getClassNames(); // Move first to bottom.
+
+loadString(s2);
+moveClassToTop(P1.C);    getClassNames(P1); // Move middle to top.
+moveClassToTop(P1.C);    getClassNames(P1); // Move first to top.
+moveClassToTop(P1.E);    getClassNames(P1); // Move last to top.
+moveClassToBottom(P1.A); getClassNames(P1); // Move middle to bottom.
+moveClassToBottom(P1.A); getClassNames(P1); // Move last to bottom.
+moveClassToBottom(P1.E); getClassNames(P1); // Move first to bottom.
+
+loadString(s3);
+moveClassToTop(P2.B);    list(P2); // Move middle in first section to top.
+moveClassToTop(P2.F);    list(P2); // Move from non-top public section to top.
+moveClassToTop(P2.D);    list(P2); // Move from non-top protected section to top.
+moveClassToBottom(P2.D); list(P2); // Move from non-bottom protected section to bottom.
+moveClassToBottom(P2.A); list(P2); // Move middle in first section to bottom.
+moveClassToBottom(P2.E); list(P2); // Move from non-bottom public section to bottom.
+
+// Result:
+// true
+// true
+// true
+// {A,B,C,D,E}
+// true
+// {B,A,C,D,E}
+// true
+// {B,A,C,D,E}
+// true
+// {A,C,D,E,B}
+// true
+// {C,D,E,B,A}
+// true
+// {C,D,B,E,A}
+// true
+// {C,B,D,E,A}
+// true
+// {D,C,B,E,A}
+// true
+// {D,C,E,A,B}
+// true
+// {E,D,C,A,B}
+// true
+// {E,D,A,B,C}
+// true
+// {E,D,A,B,C}
+// true
+// {E,D,A,C,B}
+// true
+// {B,E,D,A,C}
+// true
+// {C,B,E,D,A}
+// true
+// ""
+// true
+// {A,B,C,D,E}
+// true
+// {B,A,C,D,E}
+// true
+// {B,A,C,D,E}
+// true
+// {A,C,D,E,B}
+// true
+// {C,D,E,B,A}
+// true
+// {C,D,B,E,A}
+// true
+// {C,B,D,E,A}
+// true
+// {D,C,B,E,A}
+// true
+// {D,C,E,A,B}
+// true
+// {E,D,C,A,B}
+// true
+// {E,D,A,B,C}
+// true
+// {E,D,A,B,C}
+// true
+// {E,D,A,C,B}
+// true
+// {B,E,D,A,C}
+// true
+// {C,B,E,D,A}
+// true
+// ""
+// true
+// "package P2
+//   type A = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type A = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+//   type A = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type A = Real;
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+//   type A = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type A = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type A = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+// public
+//   type A = Real;
+// protected
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+//   type E = Real;
+//   type A = Real;
+// protected
+//   type D = Real;
+// public
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+// protected
+//   type J = Real;
+// public
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+// end P2;"
+// true
+// "package P2
+// protected
+//   type J = Real;
+// public
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type A = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+// end P2;"
+// true
+// true
+// true
+// {C,A,B,D,E}
+// true
+// {C,A,B,D,E}
+// true
+// {E,C,A,B,D}
+// true
+// {E,C,B,D,A}
+// true
+// {E,C,B,D,A}
+// true
+// {C,B,D,A,E}
+// true
+// true
+// {C,A,B,D,E}
+// true
+// {C,A,B,D,E}
+// true
+// {E,C,A,B,D}
+// true
+// {E,C,B,D,A}
+// true
+// {E,C,B,D,A}
+// true
+// {C,B,D,A,E}
+// true
+// true
+// "package P2
+//   type B = Real;
+//   type A = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+//   type F = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type F = Real;
+//   type B = Real;
+//   type A = Real;
+//   type C = Real;
+// protected
+//   type D = Real;
+// public
+//   type E = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+// protected
+//   type D = Real;
+// public
+//   type F = Real;
+//   type B = Real;
+//   type A = Real;
+//   type C = Real;
+// public
+//   type E = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+// end P2;"
+// true
+// "package P2
+//   type F = Real;
+//   type B = Real;
+//   type A = Real;
+//   type C = Real;
+// public
+//   type E = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+//   type D = Real;
+// end P2;"
+// true
+// "package P2
+//   type F = Real;
+//   type B = Real;
+//   type C = Real;
+// public
+//   type E = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+//   type D = Real;
+// public
+//   type A = Real;
+// end P2;"
+// true
+// "package P2
+//   type F = Real;
+//   type B = Real;
+//   type C = Real;
+// protected
+//   type G = Real;
+//   type H = Real;
+//   type I = Real;
+//   type J = Real;
+//   type D = Real;
+// public
+//   type A = Real;
+//   type E = Real;
+// end P2;"
+// endResult

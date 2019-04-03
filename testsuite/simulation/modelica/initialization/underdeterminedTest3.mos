@@ -1,0 +1,44 @@
+// name: underdeterminedTest3
+// keywords: initialization, under-determined
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.underdeterminedTest3* _initializationTests.underdeterminedTest3* output.log
+//
+//  case for initialization of under-determined system
+//
+
+loadString("
+within ;
+package initializationTests
+  model underdeterminedTest3
+    Real x(start=1.0);
+  equation 
+    when {time > 0.5} then
+      x = 2.0;
+    end when;
+  end underdeterminedTest3;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("initialization"); getErrorString();
+simulate(initializationTests.underdeterminedTest3, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.underdeterminedTest3_res.mat", {time, x}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.underdeterminedTest3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.underdeterminedTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          x:DISCRETE(start = 1.0 fixed = false )  type: Real
+// "
+// {{0.0,0.0},{1.0,1.0}}
+// ""
+// endResult

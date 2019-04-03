@@ -1,0 +1,320 @@
+// name:  testDisableDependency
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml testDID* output.log
+//
+
+loadModel(Modelica);
+setCommandLineOptions("--std=3.3 -d=disableFMIDependency");
+loadString("
+model testDID
+  parameter Real p = 1;
+  parameter Real y1_start = 1;
+  parameter Real y2_start = 0;
+  input Real u(start = -2);
+  output Real y1(start = y1_start, fixed = true);
+  output Real y2(start = y2_start, fixed = true);
+  Real ud;
+  Real x1,x2;
+equation
+  ud = sample(u, Clock(Clock(/*inferred*/), solverMethod = \"ImplicitEuler\"));
+  der(y1) = p * ud;
+  der(y2) = previous(y1) + 0.5 * p * ud * interval(ud);
+  der(x1) = x1*x2;
+  der(x2) = x2;
+end testDID;
+");
+getErrorString();
+
+translateModelFMU(testDID, version="2.0");
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq testDID.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
+readFile("modelDescription.tmp.xml");
+
+// Result:
+// true
+// true
+// true
+// ""
+// "testDID.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiModelDescription
+//   fmiVersion=\"2.0\"
+//   modelName=\"testDID\"
+//   description=\"\"
+//   variableNamingConvention=\"structured\"
+//   numberOfEventIndicators=\"0\">
+//   <ModelExchange
+//     modelIdentifier=\"testDID\">
+//     <SourceFiles>
+//       <File name=\"testDID.c\" />
+//       <File name=\"testDID_functions.c\" />
+//       <File name=\"testDID_records.c\" />
+//       <File name=\"testDID_01exo.c\" />
+//       <File name=\"testDID_02nls.c\" />
+//       <File name=\"testDID_03lsy.c\" />
+//       <File name=\"testDID_04set.c\" />
+//       <File name=\"testDID_05evt.c\" />
+//       <File name=\"testDID_06inz.c\" />
+//       <File name=\"testDID_07dly.c\" />
+//       <File name=\"testDID_08bnd.c\" />
+//       <File name=\"testDID_09alg.c\" />
+//       <File name=\"testDID_10asr.c\" />
+//       <File name=\"testDID_11mix.c\" />
+//       <File name=\"testDID_12jac.c\" />
+//       <File name=\"testDID_13opt.c\" />
+//       <File name=\"testDID_14lnz.c\" />
+//       <File name=\"testDID_15syn.c\" />
+//       <File name=\"testDID_16dae.c\" />
+//       <File name=\"testDID_17inl.c\" />
+//       <File name=\"testDID_init_fmu.c\" />
+//       <File name=\"testDID_FMU.c\" />
+//       <File name=\"./util/read_matlab4.c\" />
+//       <File name=\"./util/read_csv.c\" />
+//       <File name=\"./util/libcsv.c\" />
+//       <File name=\"gc/memory_pool.c\" />
+//       <File name=\"gc/omc_gc.c\" />
+//       <File name=\"./util/base_array.c\" />
+//       <File name=\"./util/boolean_array.c\" />
+//       <File name=\"./util/omc_error.c\" />
+//       <File name=\"./util/division.c\" />
+//       <File name=\"./util/generic_array.c\" />
+//       <File name=\"./util/index_spec.c\" />
+//       <File name=\"./util/integer_array.c\" />
+//       <File name=\"./util/list.c\" />
+//       <File name=\"./util/modelica_string.c\" />
+//       <File name=\"./util/real_array.c\" />
+//       <File name=\"./util/ringbuffer.c\" />
+//       <File name=\"./util/string_array.c\" />
+//       <File name=\"./util/utility.c\" />
+//       <File name=\"./util/varinfo.c\" />
+//       <File name=\"./util/ModelicaUtilities.c\" />
+//       <File name=\"./util/omc_msvc.c\" />
+//       <File name=\"./util/simulation_options.c\" />
+//       <File name=\"./util/cJSON.c\" />
+//       <File name=\"./util/rational.c\" />
+//       <File name=\"./util/modelica_string_lit.c\" />
+//       <File name=\"./util/omc_init.c\" />
+//       <File name=\"./util/omc_mmap.c\" />
+//       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/simulation_info_json.c\" />
+//       <File name=\"./simulation/options.c\" />
+//       <File name=\"./simulation/simulation_omc_assert.c\" />
+//       <File name=\"./simulation/omc_simulation_util.c\" />
+//       <File name=\"./simulation/solver/delay.c\" />
+//       <File name=\"./simulation/solver/fmi_events.c\" />
+//       <File name=\"./simulation/solver/omc_math.c\" />
+//       <File name=\"./simulation/solver/model_help.c\" />
+//       <File name=\"./simulation/solver/stateset.c\" />
+//       <File name=\"./simulation/solver/synchronous.c\" />
+//       <File name=\"./simulation/solver/initialization/initialization.c\" />
+//       <File name=\"./meta/meta_modelica_catch.c\" />
+//     </SourceFiles>
+//   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred/></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
+//   <LogCategories>
+//     <Category name=\"logEvents\" />
+//     <Category name=\"logSingularLinearSystems\" />
+//     <Category name=\"logNonlinearSystems\" />
+//     <Category name=\"logDynamicStateSelection\" />
+//     <Category name=\"logStatusWarning\" />
+//     <Category name=\"logStatusDiscard\" />
+//     <Category name=\"logStatusError\" />
+//     <Category name=\"logStatusFatal\" />
+//     <Category name=\"logStatusPending\" />
+//     <Category name=\"logAll\" />
+//     <Category name=\"logFmi2Call\" />
+//   </LogCategories>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x1\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"x2\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"der(x1)\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"der(x2)\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"previous(_D_outputAlias_y1)\"
+//     valueReference=\"4\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"previous(_D_outputAlias_y2)\"
+//     valueReference=\"5\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_y1)\"
+//     valueReference=\"6\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"der(_D_outputAlias_y2)\"
+//     valueReference=\"7\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y1\"
+//     valueReference=\"8\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"5\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y2\"
+//     valueReference=\"9\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     previous=\"6\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"10\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"-2.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"ud\"
+//     valueReference=\"11\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"y1\"
+//     valueReference=\"12\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"y2\"
+//     valueReference=\"13\"
+//     variability=\"discrete\"
+//     causality=\"output\"
+//     clockIndex=\"1\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"p\"
+//     valueReference=\"14\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"y1_start\"
+//     valueReference=\"15\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"y2_start\"
+//     valueReference=\"16\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+//   <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"13\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"14\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <DiscreteStates>
+//       <Unknown index=\"9\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"10\" dependencies=\"\" dependenciesKind=\"\" />
+//     </DiscreteStates>
+//   </ModelStructure>
+// </fmiModelDescription>
+// "
+// endResult

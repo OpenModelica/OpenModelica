@@ -1,0 +1,19 @@
+*.o
+*.so
+*_info.json
+*.fail_log
+/failed.*
+difftool/lex.yy.c
+openmodelica/bootstrapping/CodegenC.*
+openmodelica/bootstrapping/CodegenUtil.tpl
+openmodelica/bootstrapping/SimCodeTV.mo
+openmodelica/bootstrapping/mine
+openmodelica/bootstrapping/theirs
+/runtest.db.*
+simulation/libraries/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.csv
+simulation/modelica/solver/externalInput.csv
+# Reference files are stored as .mat.xz
+ReferenceFiles/**/*.mat
+/invalid-files.log
+/invalid-files.sorted
+/.gitvalidfiles.sorted

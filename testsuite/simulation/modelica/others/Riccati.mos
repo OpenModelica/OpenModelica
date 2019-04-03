@@ -1,0 +1,26 @@
+// name:      Ricatti
+// keywords:  Nonlinear equation system
+// status:    correct
+// teardown_command: rm -rf Riccati Riccati.exe Riccati.cpp Riccati_functions.cpp Riccati_functions.h Riccati_init.xml Riccati.libs Riccati.log Riccati.makefile Riccati_records.c Riccati_res.mat output.log
+
+loadFile("Riccati.mo");
+simulate(Riccati, tolerance=1e-5, numberOfIntervals=100);
+val(X[1,1],0.0);
+val(X[1,2],0.0);
+val(X[2,1],0.0);
+val(X[2,2],0.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Riccati_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Riccati', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.5825317547305483
+// -0.7165063509461097
+// 0.649519052838329
+// 0.2165063509461097
+// endResult

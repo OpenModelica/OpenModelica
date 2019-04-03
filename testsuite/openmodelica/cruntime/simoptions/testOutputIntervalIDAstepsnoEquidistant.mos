@@ -1,0 +1,65 @@
+// name:     testOutputIntervalIDAstepsnoEquidistant
+// keywords: emit, results, ida
+// status: correct
+// teardown_command: rm -rf testModel* output.log
+//
+//
+loadString("
+model testModel
+  parameter Real g_r =0.04 \"Natural growth rate for rabbits\";
+  parameter Real d_rf=0.0005 \"Death rate of rabbits due to foxes\";
+  parameter Real d_f =0.09 \"Natural deathrate for foxes\";
+  parameter Real g_fr=0.1 \"Efficency in growing foxes from rabbits\";
+  Real rabbits(start=700) \"Rabbits,(R) with start population 700\";
+  Real foxes(start=10) \"Foxes,(F) with start population 10\";
+equation
+  der(rabbits) = g_r*rabbits - d_rf*rabbits*foxes;
+  der(foxes) = g_fr*d_rf*rabbits*foxes -d_f*foxes;
+end testModel;");
+simulate(testModel, stopTime=5.0, method="ida", simflags="-noEquidistantTimeGrid -maxIntegrationOrder=1");
+readSimulationResultSize("testModel_res.mat");
+simulate(testModel, stopTime=5.0, method="ida", simflags="-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputFrequency=2");
+readSimulationResultSize("testModel_res.mat");
+
+simulate(testModel, stopTime=5.0, method="ida", simflags="-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1");
+readSimulationResultSize("testModel_res.mat");
+simulate(testModel, stopTime=5.0, method="ida", simflags="-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1 -noEquidistantOutputFrequency=10");
+readSimulationResultSize("testModel_res.mat");
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 434
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputFrequency=2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 219
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 53
+// record SimulationResult
+//     resultFile = "testModel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1 -noEquidistantOutputTime=0.1 -noEquidistantOutputFrequency=10'",
+//     messages = "stdout            | warning | The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 47
+// endResult

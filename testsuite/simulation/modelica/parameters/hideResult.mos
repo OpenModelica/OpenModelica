@@ -1,0 +1,130 @@
+// name:      hideResult
+// keywords:  parameter evaluation, hide result
+// status:    correct
+
+loadString("
+model hideResult
+  parameter Real a = 1;
+  parameter Boolean hide_b = true annotation(Evaluate = true);
+  parameter Real b = 2 annotation(HideResult = hide_b);
+  parameter Real e = d;
+protected
+  parameter Real c = 3;
+  parameter Real d = 4 annotation(HideResult = false);
+end hideResult;
+"); getErrorString();
+
+simulate(hideResult); getErrorString();
+
+val(b, 0.0); getErrorString();
+
+
+loadString("
+model hideResult
+  parameter Real a = 1;
+  parameter Boolean hide_b = true;
+  parameter Real b = 2 annotation(HideResult = hide_b);
+  parameter Real e = d;
+protected
+  parameter Real c = 3;
+  parameter Real d = 4 annotation(HideResult = false);
+end hideResult;
+"); getErrorString();
+
+simulate(hideResult); getErrorString();
+
+val(b, 0.0); getErrorString();
+
+
+loadString("
+model hideResult
+  parameter Real a = 1 annotation(Evaluate = true);
+  parameter Boolean show_b = false annotation(Evaluate = true);
+  parameter Real b = 2 annotation(HideResult = not show_b);
+end hideResult;
+"); getErrorString();
+
+simulate(hideResult); getErrorString();
+
+val(b, 0.0); getErrorString();
+
+
+loadString("
+package HideResult
+  model hideResult1
+    parameter Real a = 2 annotation(HideResult = not hide_a and not hide_a2);
+    parameter Boolean hide_a = true annotation(Evaluate = true);
+    parameter Boolean hide_a2 = false annotation(Evaluate = true);
+  end hideResult1;
+
+  model hideResult2
+    hideResult1 b (hide_a=hide_b);
+    parameter Boolean hide_b = true;
+  end hideResult2;
+
+  model hideResult3
+    hideResult2 c (hide_b=hide_c);
+    parameter Boolean hide_c = false;
+  end hideResult3;
+end HideResult;
+"); getErrorString();
+
+simulate(HideResult.hideResult3); getErrorString();
+
+val(c.b.a, 0.0); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "hideResult_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'hideResult', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// NaN
+// "Error: b not found in hideResult_res.mat
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "hideResult_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'hideResult', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to 'isProtected' (=false) by default.
+// "
+// 2.0
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "hideResult_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'hideResult', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// NaN
+// "Error: b not found in hideResult_res.mat
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "HideResult.hideResult3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HideResult.hideResult3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// NaN
+// "Error: c.b.a not found in HideResult.hideResult3_res.mat
+// "
+// endResult

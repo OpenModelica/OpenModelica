@@ -1,0 +1,108 @@
+// name:     MatchCaseInteractive1
+// keywords: Match Cases
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Match Testing
+//
+loadFile("MatchCaseInteractive1.mo");
+getErrorString();
+MatchCaseInteractive1.func(1222,false);
+getErrorString();
+MatchCaseInteractive1.func(2,false);
+getErrorString();
+
+MatchCaseInteractive1.stringFunc("hej");
+getErrorString();
+MatchCaseInteractive1.stringFunc("socker");
+getErrorString();
+MatchCaseInteractive1.stringFunc("kaka");
+getErrorString();
+
+MatchCaseInteractive1.listFunc({});
+getErrorString();
+MatchCaseInteractive1.listFunc({1}); 
+getErrorString();
+MatchCaseInteractive1.listFunc({2});
+getErrorString();
+MatchCaseInteractive1.listFunc({1,2});
+getErrorString();
+MatchCaseInteractive1.listFunc({2,3});
+getErrorString();
+MatchCaseInteractive1.listFunc({1,2,3});
+getErrorString();
+MatchCaseInteractive1.listFunc({2,4,6});
+getErrorString();
+
+MatchCaseInteractive1.simpleTupleFunc((1,2));
+getErrorString();
+
+MatchCaseInteractive1.tupleFunc((2,1.0,true,"abc"));
+getErrorString();
+MatchCaseInteractive1.tupleFunc((1,2.0,true,"abc"));
+getErrorString();
+MatchCaseInteractive1.tupleFunc((1,1.0,false,"abc"));
+getErrorString();
+MatchCaseInteractive1.tupleFunc((1,1.0,true,"abcd"));
+getErrorString();
+MatchCaseInteractive1.tupleFunc((3,5.0,true,"abc"));
+getErrorString();
+
+MatchCaseInteractive1.listlistFunc({});
+getErrorString();
+MatchCaseInteractive1.listlistFunc({{1,2,3},{4,5,6}});
+getErrorString();
+MatchCaseInteractive1.listlistFunc({{1,2,3}});
+getErrorString();
+MatchCaseInteractive1.optionFunc(1);
+getErrorString();
+
+// Result:
+// true
+// "[metamodelica/meta/MatchCaseInteractive1.mo:90:7-91:7:writable] Warning: case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.
+// "
+// 2
+// ""
+// 4
+// ""
+// 1
+// ""
+// 2
+// ""
+// 4
+// ""
+// "Empty list"
+// ""
+// "{1}"
+// ""
+// "default"
+// ""
+// "{1,2}"
+// ""
+// "{i1,i2}"
+// ""
+// "1::2::rest"
+// ""
+// "2::4::6::{}"
+// ""
+// 3
+// ""
+// 1.0
+// ""
+// 2.0
+// ""
+// 3.0
+// ""
+// 4.0
+// ""
+// 5.0
+// ""
+// "Empty list"
+// ""
+// "{{1,2,3},{4,5,6}}"
+// ""
+// "{1,2,3}::rest"
+// ""
+// 2
+// ""
+// endResult

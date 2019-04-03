@@ -1,0 +1,28 @@
+// name:     ExternalObject
+// keywords: Simulate, ExternalObject
+// status:   correct
+// teardown_command: rm -rf testextobj_functions.h testextobj_records.c testextobj testextobj.cpp testextobj_functions.cpp testextobj.makefile testextobj.exe output.log testextobj.libs testextobj.log testextobj_init.xml testextobj_res.mat ExtObj.lib
+// depends:  testTables.txt
+//
+//  Simulate model with external object.
+//
+loadFile("ExtObj.mo");
+system("gcc -c -o ExtObj.lib ExtObj.c");
+simulate(testextobj, tolerance=1e-5, numberOfIntervals=100);
+getErrorString();
+{val(t.y,0.0),val(t.y,0.1),val(t.y,0.2),val(t.y,0.3),val(t.y,0.4),val(t.y,0.5),
+val(t.y,0.6),val(t.y,0.7),val(t.y,0.8),val(t.y,0.9),val(t.y,1.0)};
+
+// Result:
+// true
+// 0
+// record SimulationResult
+//     resultFile = "testextobj_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'testextobj', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.6,2.2,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.0}
+// endResult

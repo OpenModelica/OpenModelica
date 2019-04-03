@@ -1,0 +1,25 @@
+// name: Bug3417.mos [BUG: #3417]
+// status: correct
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+getClassNames(Modelica.Electrical); getErrorString();
+getClassInformation(Modelica.Electrical);
+loadString("within Modelica;
+package Electrical \"new Electrical package\"
+  package X \"some other package inside the new package\"
+  end X;
+end Electrical;", "NEW_DUMMY_FILE", "UTF-8", true);
+getClassNames(Modelica.Electrical); getErrorString();
+getClassInformation(Modelica.Electrical);
+
+// Result:
+// true
+// ""
+// {Analog,Digital,Machines,MultiPhase,QuasiStationary,Spice3}
+// ""
+// ("package","Library of electrical models (analog, digital, machines, multi-phase)",false,false,false,"Modelica 3.2.1/Electrical/package.mo",false,2,1,46,15,{},false,false,"","",false,"")
+// true
+// {X,Analog,Digital,Machines,MultiPhase,QuasiStationary,Spice3}
+// ""
+// ("package","new Electrical package",false,false,false,"NEW_DUMMY_FILE",false,2,1,5,15,{},false,false,"","",false,"")
+// endResult

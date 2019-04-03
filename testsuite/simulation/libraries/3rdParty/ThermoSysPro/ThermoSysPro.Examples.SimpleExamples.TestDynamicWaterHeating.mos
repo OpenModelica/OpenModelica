@@ -1,0 +1,294 @@
+// name:     ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mos [simulation checking]
+// keywords: simulation ThermoSysPro.Examples.SimpleExamples
+// status: correct
+// teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.log ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.c ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(ThermoSysPro); getErrorString();
+
+simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating, stopTime=1000); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults(
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_res.mat",
+getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.mat",
+"ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_diff.csv",
+0.01, 0.0001,
+{"WaterHeating.WaterHeating.P",
+ "WaterHeating.WaterHeating.hl",
+ "WaterHeating.WaterHeating.hv",
+ "WaterHeating.WaterHeating.Vv",
+ "WaterHeating.WaterHeating.Tp",
+ "WaterHeating.pipe_3.P[2]",
+ "WaterHeating.pipe_3.P[3]",
+ "WaterHeating.pipe_3.P[4]",
+ "WaterHeating.pipe_3.P[5]",
+ "WaterHeating.pipe_3.P[6]",
+ "WaterHeating.pipe_3.P[7]",
+ "WaterHeating.pipe_3.P[8]",
+ "WaterHeating.pipe_3.P[9]",
+ "WaterHeating.pipe_3.P[10]",
+ "WaterHeating.pipe_3.P[11]",
+ "WaterHeating.pipe_3.P[12]",
+ "WaterHeating.pipe_3.P[13]",
+ "WaterHeating.pipe_3.P[14]",
+ "WaterHeating.pipe_3.P[15]",
+ "WaterHeating.pipe_3.P[16]",
+ "WaterHeating.pipe_3.P[17]",
+ "WaterHeating.pipe_3.P[18]",
+ "WaterHeating.pipe_3.P[19]",
+ "WaterHeating.pipe_3.P[20]",
+ "WaterHeating.pipe_3.P[21]",
+ "WaterHeating.pipe_3.Q[1]",
+ "WaterHeating.pipe_3.Q[2]",
+ "WaterHeating.pipe_3.Q[3]",
+ "WaterHeating.pipe_3.Q[4]",
+ "WaterHeating.pipe_3.Q[5]",
+ "WaterHeating.pipe_3.Q[6]",
+ "WaterHeating.pipe_3.Q[7]",
+ "WaterHeating.pipe_3.Q[8]",
+ "WaterHeating.pipe_3.Q[9]",
+ "WaterHeating.pipe_3.Q[10]",
+ "WaterHeating.pipe_3.Q[11]",
+ "WaterHeating.pipe_3.Q[12]",
+ "WaterHeating.pipe_3.Q[13]",
+ "WaterHeating.pipe_3.Q[14]",
+ "WaterHeating.pipe_3.Q[15]",
+ "WaterHeating.pipe_3.Q[16]",
+ "WaterHeating.pipe_3.Q[17]",
+ "WaterHeating.pipe_3.Q[18]",
+ "WaterHeating.pipe_3.Q[19]",
+ "WaterHeating.pipe_3.Q[20]",
+ "WaterHeating.pipe_3.Q[21]",
+ "WaterHeating.pipe_3.h[2]",
+ "WaterHeating.pipe_3.h[3]",
+ "WaterHeating.pipe_3.h[4]",
+ "WaterHeating.pipe_3.h[5]",
+ "WaterHeating.pipe_3.h[6]",
+ "WaterHeating.pipe_3.h[7]",
+ "WaterHeating.pipe_3.h[8]",
+ "WaterHeating.pipe_3.h[9]",
+ "WaterHeating.pipe_3.h[10]",
+ "WaterHeating.pipe_3.h[11]",
+ "WaterHeating.pipe_3.h[12]",
+ "WaterHeating.pipe_3.h[13]",
+ "WaterHeating.pipe_3.h[14]",
+ "WaterHeating.pipe_3.h[15]",
+ "WaterHeating.pipe_3.h[16]",
+ "WaterHeating.pipe_3.h[17]",
+ "WaterHeating.pipe_3.h[18]",
+ "WaterHeating.pipe_3.h[19]",
+ "WaterHeating.pipe_3.h[20]",
+ "WaterHeating.pipe_3.h[21]",
+ "WaterHeating.Wall_3.Tp[1]",
+ "WaterHeating.Wall_3.Tp[2]",
+ "WaterHeating.Wall_3.Tp[3]",
+ "WaterHeating.Wall_3.Tp[4]",
+ "WaterHeating.Wall_3.Tp[5]",
+ "WaterHeating.Wall_3.Tp[6]",
+ "WaterHeating.Wall_3.Tp[7]",
+ "WaterHeating.Wall_3.Tp[8]",
+ "WaterHeating.Wall_3.Tp[9]",
+ "WaterHeating.Wall_3.Tp[10]",
+ "WaterHeating.Wall_3.Tp[11]",
+ "WaterHeating.Wall_3.Tp[12]",
+ "WaterHeating.Wall_3.Tp[13]",
+ "WaterHeating.Wall_3.Tp[14]",
+ "WaterHeating.Wall_3.Tp[15]",
+ "WaterHeating.Wall_3.Tp[16]",
+ "WaterHeating.Wall_3.Tp[17]",
+ "WaterHeating.Wall_3.Tp[18]",
+ "WaterHeating.Wall_3.Tp[19]",
+ "WaterHeating.Wall_3.Tp[20]",
+ "WaterHeating.pipe_1.P[2]",
+ "WaterHeating.pipe_1.P[3]",
+ "WaterHeating.pipe_1.P[4]",
+ "WaterHeating.pipe_1.P[5]",
+ "WaterHeating.pipe_1.P[6]",
+ "WaterHeating.pipe_1.P[7]",
+ "WaterHeating.pipe_1.P[8]",
+ "WaterHeating.pipe_1.P[9]",
+ "WaterHeating.pipe_1.P[10]",
+ "WaterHeating.pipe_1.P[11]",
+ "WaterHeating.pipe_1.Q[1]",
+ "WaterHeating.pipe_1.Q[2]",
+ "WaterHeating.pipe_1.Q[3]",
+ "WaterHeating.pipe_1.Q[4]",
+ "WaterHeating.pipe_1.Q[5]",
+ "WaterHeating.pipe_1.Q[6]",
+ "WaterHeating.pipe_1.Q[7]",
+ "WaterHeating.pipe_1.Q[8]",
+ "WaterHeating.pipe_1.Q[9]",
+ "WaterHeating.pipe_1.Q[10]",
+ "WaterHeating.pipe_1.Q[11]",
+ "WaterHeating.pipe_1.h[2]",
+ "WaterHeating.pipe_1.h[3]",
+ "WaterHeating.pipe_1.h[4]",
+ "WaterHeating.pipe_1.h[5]",
+ "WaterHeating.pipe_1.h[6]",
+ "WaterHeating.pipe_1.h[7]",
+ "WaterHeating.pipe_1.h[8]",
+ "WaterHeating.pipe_1.h[9]",
+ "WaterHeating.pipe_1.h[10]",
+ "WaterHeating.pipe_1.h[11]",
+ "WaterHeating.Wall_1.Tp[1]",
+ "WaterHeating.Wall_1.Tp[2]",
+ "WaterHeating.Wall_1.Tp[3]",
+ "WaterHeating.Wall_1.Tp[4]",
+ "WaterHeating.Wall_1.Tp[5]",
+ "WaterHeating.Wall_1.Tp[6]",
+ "WaterHeating.Wall_1.Tp[7]",
+ "WaterHeating.Wall_1.Tp[8]",
+ "WaterHeating.Wall_1.Tp[9]",
+ "WaterHeating.Wall_1.Tp[10]",
+ "WaterHeating.pipe_2.P[2]",
+ "WaterHeating.pipe_2.P[3]",
+ "WaterHeating.pipe_2.P[4]",
+ "WaterHeating.pipe_2.P[5]",
+ "WaterHeating.pipe_2.P[6]",
+ "WaterHeating.pipe_2.P[7]",
+ "WaterHeating.pipe_2.P[8]",
+ "WaterHeating.pipe_2.P[9]",
+ "WaterHeating.pipe_2.P[10]",
+ "WaterHeating.pipe_2.P[11]",
+ "WaterHeating.pipe_2.Q[1]",
+ "WaterHeating.pipe_2.Q[2]",
+ "WaterHeating.pipe_2.Q[3]",
+ "WaterHeating.pipe_2.Q[4]",
+ "WaterHeating.pipe_2.Q[5]",
+ "WaterHeating.pipe_2.Q[6]",
+ "WaterHeating.pipe_2.Q[7]",
+ "WaterHeating.pipe_2.Q[8]",
+ "WaterHeating.pipe_2.Q[9]",
+ "WaterHeating.pipe_2.Q[10]",
+ "WaterHeating.pipe_2.Q[11]",
+ "WaterHeating.pipe_2.h[2]",
+ "WaterHeating.pipe_2.h[3]",
+ "WaterHeating.pipe_2.h[4]",
+ "WaterHeating.pipe_2.h[5]",
+ "WaterHeating.pipe_2.h[6]",
+ "WaterHeating.pipe_2.h[7]",
+ "WaterHeating.pipe_2.h[8]",
+ "WaterHeating.pipe_2.h[9]",
+ "WaterHeating.pipe_2.h[10]",
+ "WaterHeating.pipe_2.h[11]",
+ "WaterHeating.Wall_2.Tp[1]",
+ "WaterHeating.Wall_2.Tp[2]",
+ "WaterHeating.Wall_2.Tp[3]",
+ "WaterHeating.Wall_2.Tp[4]",
+ "WaterHeating.Wall_2.Tp[5]",
+ "WaterHeating.Wall_2.Tp[6]",
+ "WaterHeating.Wall_2.Tp[7]",
+ "WaterHeating.Wall_2.Tp[8]",
+ "WaterHeating.Wall_2.Tp[9]",
+ "WaterHeating.Wall_2.Tp[10]",
+ "WaterHeating.volumeC.P",
+ "WaterHeating.volumeC.h",
+ "WaterHeating.volumeD.h",
+ "WaterHeating.volumeD1.P",
+ "WaterHeating.volumeD1.h"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | While solving non-linear system an assertion failed at time 524.286.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// stdout            | warning | While solving non-linear system an assertion failed at time 458.75.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// stdout            | warning | While solving non-linear system an assertion failed at time 425.982.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// stdout            | warning | While solving non-linear system an assertion failed at time 409.598.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// stdout            | warning | While solving non-linear system an assertion failed at time 681.741.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:47:3-89:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInletI is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:135:3-177:19:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutletI$WaterHeating$C2ex is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:47:3-89:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInletI is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:135:3-177:19:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutletI is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:47:3-89:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInletI is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$WaterHeating$WaterHeating$Cv is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet$singularPressureLossWaterOut$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$refQ$C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet$checkValve$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet$singularPressureLossPurge$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$ControlValve_eau$C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:3:3-45:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$PressureLoss_Steam$C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.1/WaterSteam/Connectors.mo:91:3-133:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// {"Files Equal!"}
+// endResult

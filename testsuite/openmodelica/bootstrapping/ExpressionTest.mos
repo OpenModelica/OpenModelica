@@ -1,0 +1,45 @@
+// name: SimplifyOperator
+// status: correct
+
+runScript("LoadCompilerSources.mos");getErrorString();
+loadFile("ExpressionTest.mo");getErrorString();
+setCommandLineOptions("-d=rml,noevalfunc,gen");
+
+ExpressionTest.test();
+getErrorString();
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+// 1.0 * x == x
+// x * 1.0 == x
+// 0.0 / x == 0.0
+// x * 1.0 == x
+// x + (-y) == x - y
+// (-y) + x == x - y
+// x - (-y) == x + y
+// x + (-y) * z == x - y * z
+// x + (-y) / z == x - y / z
+// (-y) * z + x == x - y * z
+// (-y) / z + x == x - y / z
+// 0.0 / 0.0 == 0.0 / 0.0
+// x / 1.0 == x
+// x - (-y) * z == x + y * z
+// x - (-y) / z == x + y / z
+// x ^ 1.0 == x
+// x ^ 0.0 == 1.0
+// 0.0 ^ 0.0 == 1.0
+// 0.0 ^ x == 0.0 ^ x
+// (-x) ^ 4.0 == x ^ 4.0
+// (x / y) ^ (-z) == (y / x) ^ z
+// (x / y) ^ (-7.0) == (y / x) ^ 7.0
+// (-1.0) * x + (-x) * 1.0 + 0.0 + x / 1.0 + (x / y) ^ (-7.0) == (-1.0) * x + (-x) * 1.0 + 0.0 / x + x / 1.0 + (x / y) ^ (-7.0)
+// (-1.0) * x + (-x) * 1.0 + 0.0 + x / 1.0 + (x / y) ^ (-7.0) == (-1.0) * x + (-x) * 1.0 + 0.0 / x + x / 1.0 + (x / y) ^ (-7.0)
+// (-1.0) * x * (-x) * 1.0 * 0.0 / x * x / 1.0 * (x / y) ^ (-7.0) == (-1.0) * x * (-x) * 1.0 * 0.0 / x * x / 1.0 * (x / y) ^ (-7.0)
+//
+// ""
+// endResult

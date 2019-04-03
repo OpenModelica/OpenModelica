@@ -1,0 +1,40 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator);
+compareVars :=
+{
+   "constantSpeed.phi",
+   "smee.idq_dr[1]",
+   "smee.idq_rr[2]",
+   "smee.idq_sr[1]",
+   "smee.idq_sr[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator
+// {"constantSpeed.phi","smee.idq_dr[1]","smee.idq_rr[2]","smee.idq_sr[1]","smee.idq_sr[2]"}
+// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = 'time|constantSpeed.phi|smee.idq_dr.1.|smee.idq_rr.2.|smee.idq_sr.1.|smee.idq_sr.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

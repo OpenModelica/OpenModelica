@@ -1,0 +1,35 @@
+// name:     PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_i* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_d* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_r* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_f* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.exe PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.cpp PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.makefile PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.libs PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.log PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.c PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.TestDryFrictionWheel, tolerance=0.0001); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//TestDryFrictionWheel.mat","PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_diff.csv",0.01,0.45,
+  {"revolute.w", "prismatic.s", "dryFrictionWheelJoint.f_lat", "dryFrictionWheelJoint.f_long"});
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.TestDryFrictionWheel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult

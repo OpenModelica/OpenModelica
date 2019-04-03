@@ -1,0 +1,56 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND
+// teardown_command: rm -f Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+setMatchingAlgorithm("PFPlusExt"); getErrorString();
+setIndexReductionMethod("dynamicStateSelection"); getErrorString();
+
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND);
+compareVars :=
+{
+   "Q1.vbc",
+   "Q1.vbe",
+   "Q2.vbc",
+   "Q2.vbe",
+   "Q3.vbc",
+   "Q3.vbe",
+   "Q4.vbc",
+   "Q4.vbe",
+   "Q5.vbc",
+   "Q5.vbe"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// ""
+// true
+// ""
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND
+// {"Q1.vbc","Q1.vbe","Q2.vbc","Q2.vbe","Q3.vbc","Q3.vbe","Q4.vbc","Q4.vbe","Q5.vbc","Q5.vbe"}
+// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.NAND_res.mat
+// Messages: stdout            | warning | Failed to solve linear system of equations (no. 311) at time 0.000000, system is singular for U[27, 27].
+// stdout            | warning | Failed to solve linear system of equations (no. 380) at time 0.000000, system is singular for U[19, 19].
+// stdout            | warning | Failed to solve linear system of equations (no. 380) at time 0.000000, system is singular for U[19, 19].
+// 
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

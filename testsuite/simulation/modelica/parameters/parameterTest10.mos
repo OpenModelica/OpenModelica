@@ -1,0 +1,488 @@
+// name:      parameterTest10
+// keywords:  parameter evaluation
+// status:    correct
+
+loadString("
+model parameterTest10
+  parameter Boolean state = true;
+  parameter Boolean state2 = true;
+  parameter Integer p1 = p2;
+  parameter Integer p2 = 3;
+  parameter Integer s = p1;
+  parameter Integer a[s] = {1,2,3};
+  parameter Integer s2 = 7;
+  parameter Integer a2[s2] = ones(s2);
+  parameter Integer s3 = 10;
+  parameter Integer a3[s3] = ones(s3);
+  parameter Boolean state3 = true;
+  Real v;
+  Real r;
+  Real v2;
+  Real r2;
+equation
+  if state and state2 then // code which is removed during symbolic
+    der(v) = 1; // processing, if state=false
+    der(r) = 2;
+  else
+    v = time;
+    r = 2*time;
+  end if;
+  
+  if state3 then // code which is removed during symbolic
+    der(v2) = 1; // processing, if state=false
+    der(r2) = 2;
+  else
+    v2 = time;
+    r2 = 2*time;
+  end if;
+end parameterTest10;
+"); getErrorString();
+
+setCommandLineOptions("-d=evalParameterDump");
+simulate(parameterTest10); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+//
+// BEGINNING of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+//
+// ########################################
+// DAE before evaluating parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: r2:VARIABLE()  type: Real 
+// 2: v2:VARIABLE()  type: Real 
+// 3: r:VARIABLE()  type: Real 
+// 4: v:VARIABLE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
+// 3/3 (1): der(v2) = 1.0   [dynamic |0|0|0|0|]
+// 4/4 (1): der(r2) = 2.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (28)
+// ========================================
+// 1: state3:PARAM(final = true )  = true  type: Boolean 
+// 2: a3[10]:PARAM()  = 1  type: Integer  [10]
+// 3: a3[9]:PARAM()  = 1  type: Integer  [10]
+// 4: a3[8]:PARAM()  = 1  type: Integer  [10]
+// 5: a3[7]:PARAM()  = 1  type: Integer  [10]
+// 6: a3[6]:PARAM()  = 1  type: Integer  [10]
+// 7: a3[5]:PARAM()  = 1  type: Integer  [10]
+// 8: a3[4]:PARAM()  = 1  type: Integer  [10]
+// 9: a3[3]:PARAM()  = 1  type: Integer  [10]
+// 10: a3[2]:PARAM()  = 1  type: Integer  [10]
+// 11: a3[1]:PARAM()  = 1  type: Integer  [10]
+// 12: s3:PARAM(final = true )  = 10  type: Integer 
+// 13: a2[7]:PARAM()  = 1  type: Integer  [7]
+// 14: a2[6]:PARAM()  = 1  type: Integer  [7]
+// 15: a2[5]:PARAM()  = 1  type: Integer  [7]
+// 16: a2[4]:PARAM()  = 1  type: Integer  [7]
+// 17: a2[3]:PARAM()  = 1  type: Integer  [7]
+// 18: a2[2]:PARAM()  = 1  type: Integer  [7]
+// 19: a2[1]:PARAM()  = 1  type: Integer  [7]
+// 20: s2:PARAM(final = true )  = 7  type: Integer 
+// 21: a[3]:PARAM()  = 3  type: Integer  [3]
+// 22: a[2]:PARAM()  = 2  type: Integer  [3]
+// 23: a[1]:PARAM()  = 1  type: Integer  [3]
+// 24: s:PARAM(final = true )  = p1  type: Integer 
+// 25: p2:PARAM()  = 3  type: Integer 
+// 26: p1:PARAM()  = p2  type: Integer 
+// 27: state2:PARAM(final = true )  = true  type: Boolean 
+// 28: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// Structural parameters and parameters with annotation(Evaluate=true) will be evaluated.
+//
+// START evaluating parameters:
+// ================================================================================
+// Number of parameters: 28
+// Number of parameters selected for evaluation: 6
+// Selected parameters for evaluation:
+// 28,27,24,20,12,1
+//
+// Incidence Matrix (row: equation)
+// ========================================
+// number of rows: 28
+// 1:
+// 2:
+// 3:
+// 4:
+// 5:
+// 6:
+// 7:
+// 8:
+// 9:
+// 10:
+// 11:
+// 12:
+// 13:
+// 14:
+// 15:
+// 16:
+// 17:
+// 18:
+// 19:
+// 20:
+// 21:
+// 22:
+// 23:
+// 24: 26
+// 25:
+// 26: 25
+// 27:
+// 28:
+//
+// Transposed Incidence Matrix (row: variable)
+// ========================================
+// number of rows: 28
+// 1: 1
+// 2: 2
+// 3: 3
+// 4: 4
+// 5: 5
+// 6: 6
+// 7: 7
+// 8: 8
+// 9: 9
+// 10: 10
+// 11: 11
+// 12: 12
+// 13: 13
+// 14: 14
+// 15: 15
+// 16: 16
+// 17: 17
+// 18: 18
+// 19: 19
+// 20: 20
+// 21: 21
+// 22: 22
+// 23: 23
+// 24: 24
+// 25: 26 25
+// 26: 26 24
+// 27: 27
+// 28: 28
+//
+//
+// After evaluating the selected parameters:
+// ================================================================================
+//
+// All replacements:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// globalKnownVars (28)
+// ========================================
+// 1: state3:PARAM(final = true )  = true  type: Boolean 
+// 2: a3[10]:PARAM()  = 1  type: Integer  [10]
+// 3: a3[9]:PARAM()  = 1  type: Integer  [10]
+// 4: a3[8]:PARAM()  = 1  type: Integer  [10]
+// 5: a3[7]:PARAM()  = 1  type: Integer  [10]
+// 6: a3[6]:PARAM()  = 1  type: Integer  [10]
+// 7: a3[5]:PARAM()  = 1  type: Integer  [10]
+// 8: a3[4]:PARAM()  = 1  type: Integer  [10]
+// 9: a3[3]:PARAM()  = 1  type: Integer  [10]
+// 10: a3[2]:PARAM()  = 1  type: Integer  [10]
+// 11: a3[1]:PARAM()  = 1  type: Integer  [10]
+// 12: s3:PARAM(final = true )  = 10  type: Integer 
+// 13: a2[7]:PARAM()  = 1  type: Integer  [7]
+// 14: a2[6]:PARAM()  = 1  type: Integer  [7]
+// 15: a2[5]:PARAM()  = 1  type: Integer  [7]
+// 16: a2[4]:PARAM()  = 1  type: Integer  [7]
+// 17: a2[3]:PARAM()  = 1  type: Integer  [7]
+// 18: a2[2]:PARAM()  = 1  type: Integer  [7]
+// 19: a2[1]:PARAM()  = 1  type: Integer  [7]
+// 20: s2:PARAM(final = true )  = 7  type: Integer 
+// 21: a[3]:PARAM()  = 3  type: Integer  [3]
+// 22: a[2]:PARAM()  = 2  type: Integer  [3]
+// 23: a[1]:PARAM()  = 1  type: Integer  [3]
+// 24: s:PARAM(final = true )  = 3  type: Integer 
+// 25: p2:PARAM(final = true )  = 3  type: Integer 
+// 26: p1:PARAM(final = true )  = p2  type: Integer 
+// 27: state2:PARAM(final = true )  = true  type: Boolean 
+// 28: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+//
+//
+// After sorting parameters:
+// ================================================================================
+// Order:
+// 28
+// 27
+// 25
+// 26
+// 24
+// 23
+// 22
+// 21
+// 20
+// 19
+// 18
+// 17
+// 16
+// 15
+// 14
+// 13
+// 12
+// 11
+// 10
+// 9
+// 8
+// 7
+// 6
+// 5
+// 4
+// 3
+// 2
+// 1
+//
+//
+// After replacing the evaluated parameters in parameter bindings:
+// ================================================================================
+// All replacements:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// globalKnownVars (28)
+// ========================================
+// 1: state3:PARAM(final = true )  = true  type: Boolean 
+// 2: a3[10]:PARAM()  = 1  type: Integer  [10]
+// 3: a3[9]:PARAM()  = 1  type: Integer  [10]
+// 4: a3[8]:PARAM()  = 1  type: Integer  [10]
+// 5: a3[7]:PARAM()  = 1  type: Integer  [10]
+// 6: a3[6]:PARAM()  = 1  type: Integer  [10]
+// 7: a3[5]:PARAM()  = 1  type: Integer  [10]
+// 8: a3[4]:PARAM()  = 1  type: Integer  [10]
+// 9: a3[3]:PARAM()  = 1  type: Integer  [10]
+// 10: a3[2]:PARAM()  = 1  type: Integer  [10]
+// 11: a3[1]:PARAM()  = 1  type: Integer  [10]
+// 12: s3:PARAM(final = true )  = 10  type: Integer 
+// 13: a2[7]:PARAM()  = 1  type: Integer  [7]
+// 14: a2[6]:PARAM()  = 1  type: Integer  [7]
+// 15: a2[5]:PARAM()  = 1  type: Integer  [7]
+// 16: a2[4]:PARAM()  = 1  type: Integer  [7]
+// 17: a2[3]:PARAM()  = 1  type: Integer  [7]
+// 18: a2[2]:PARAM()  = 1  type: Integer  [7]
+// 19: a2[1]:PARAM()  = 1  type: Integer  [7]
+// 20: s2:PARAM(final = true )  = 7  type: Integer 
+// 21: a[3]:PARAM()  = 3  type: Integer  [3]
+// 22: a[2]:PARAM()  = 2  type: Integer  [3]
+// 23: a[1]:PARAM()  = 1  type: Integer  [3]
+// 24: s:PARAM(final = true )  = 3  type: Integer 
+// 25: p2:PARAM(final = true )  = 3  type: Integer 
+// 26: p1:PARAM(final = true )  = 3  type: Integer 
+// 27: state2:PARAM(final = true )  = true  type: Boolean 
+// 28: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+//
+//
+// After replacing the evaluated parameters in variable bindings and start attributes:
+// ================================================================================
+// All replacements:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// Replacements that will be replaced in the DAE:
+// Replacements: (8)
+// ========================================
+// state -> true
+// state2 -> true
+// p2 -> 3
+// p1 -> 3
+// s -> 3
+// s2 -> 7
+// s3 -> 10
+// state3 -> true
+//
+// globalKnownVars (28)
+// ========================================
+// 1: state3:PARAM(final = true )  = true  type: Boolean 
+// 2: a3[10]:PARAM()  = 1  type: Integer  [10]
+// 3: a3[9]:PARAM()  = 1  type: Integer  [10]
+// 4: a3[8]:PARAM()  = 1  type: Integer  [10]
+// 5: a3[7]:PARAM()  = 1  type: Integer  [10]
+// 6: a3[6]:PARAM()  = 1  type: Integer  [10]
+// 7: a3[5]:PARAM()  = 1  type: Integer  [10]
+// 8: a3[4]:PARAM()  = 1  type: Integer  [10]
+// 9: a3[3]:PARAM()  = 1  type: Integer  [10]
+// 10: a3[2]:PARAM()  = 1  type: Integer  [10]
+// 11: a3[1]:PARAM()  = 1  type: Integer  [10]
+// 12: s3:PARAM(final = true )  = 10  type: Integer 
+// 13: a2[7]:PARAM()  = 1  type: Integer  [7]
+// 14: a2[6]:PARAM()  = 1  type: Integer  [7]
+// 15: a2[5]:PARAM()  = 1  type: Integer  [7]
+// 16: a2[4]:PARAM()  = 1  type: Integer  [7]
+// 17: a2[3]:PARAM()  = 1  type: Integer  [7]
+// 18: a2[2]:PARAM()  = 1  type: Integer  [7]
+// 19: a2[1]:PARAM()  = 1  type: Integer  [7]
+// 20: s2:PARAM(final = true )  = 7  type: Integer 
+// 21: a[3]:PARAM()  = 3  type: Integer  [3]
+// 22: a[2]:PARAM()  = 2  type: Integer  [3]
+// 23: a[1]:PARAM()  = 1  type: Integer  [3]
+// 24: s:PARAM(final = true )  = 3  type: Integer 
+// 25: p2:PARAM(final = true )  = 3  type: Integer 
+// 26: p1:PARAM(final = true )  = 3  type: Integer 
+// 27: state2:PARAM(final = true )  = true  type: Boolean 
+// 28: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+// mark: 1
+// markarr: 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,1,1,1,1
+//
+//
+// ########################################
+// DAE after replacing the evaluated parameters
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: r2:VARIABLE()  type: Real 
+// 2: v2:VARIABLE()  type: Real 
+// 3: r:VARIABLE()  type: Real 
+// 4: v:VARIABLE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
+// 3/3 (1): der(v2) = 1.0   [dynamic |0|0|0|0|]
+// 4/4 (1): der(r2) = 2.0   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (28)
+// ========================================
+// 1: state3:PARAM(final = true )  = true  type: Boolean 
+// 2: a3[10]:PARAM()  = 1  type: Integer  [10]
+// 3: a3[9]:PARAM()  = 1  type: Integer  [10]
+// 4: a3[8]:PARAM()  = 1  type: Integer  [10]
+// 5: a3[7]:PARAM()  = 1  type: Integer  [10]
+// 6: a3[6]:PARAM()  = 1  type: Integer  [10]
+// 7: a3[5]:PARAM()  = 1  type: Integer  [10]
+// 8: a3[4]:PARAM()  = 1  type: Integer  [10]
+// 9: a3[3]:PARAM()  = 1  type: Integer  [10]
+// 10: a3[2]:PARAM()  = 1  type: Integer  [10]
+// 11: a3[1]:PARAM()  = 1  type: Integer  [10]
+// 12: s3:PARAM(final = true )  = 10  type: Integer 
+// 13: a2[7]:PARAM()  = 1  type: Integer  [7]
+// 14: a2[6]:PARAM()  = 1  type: Integer  [7]
+// 15: a2[5]:PARAM()  = 1  type: Integer  [7]
+// 16: a2[4]:PARAM()  = 1  type: Integer  [7]
+// 17: a2[3]:PARAM()  = 1  type: Integer  [7]
+// 18: a2[2]:PARAM()  = 1  type: Integer  [7]
+// 19: a2[1]:PARAM()  = 1  type: Integer  [7]
+// 20: s2:PARAM(final = true )  = 7  type: Integer 
+// 21: a[3]:PARAM()  = 3  type: Integer  [3]
+// 22: a[2]:PARAM()  = 2  type: Integer  [3]
+// 23: a[1]:PARAM()  = 1  type: Integer  [3]
+// 24: s:PARAM(final = true )  = 3  type: Integer 
+// 25: p2:PARAM(final = true )  = 3  type: Integer 
+// 26: p1:PARAM(final = true )  = 3  type: Integer 
+// 27: state2:PARAM(final = true )  = true  type: Boolean 
+// 28: state:PARAM(final = true )  = true  type: Boolean 
+//
+//
+//
+// END of preOptModule 'evaluateParameters'
+// ********************************************************************************
+//
+// record SimulationResult
+//     resultFile = "parameterTest10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,150 @@
+// name: autoFixed
+// keywords: initialization, auto-fixed variables
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.autoFixed* _initializationTests.autoFixed* output.log
+//
+//  case for initialization of under-determined system
+//
+
+loadString("
+within ;
+package initializationTests
+  package autoFixed
+    model base
+      Real a(start=1) \"comment a\" ;
+      Real b(start=2) \"comment b\" ;
+
+    equation 
+      der(b) = 0;
+
+      when time > 0.5 then
+        a = 0;
+      end when;
+    end base;
+
+    model test1
+      extends base;
+    end test1;
+
+    model test2
+      extends base(a(fixed=true));
+    end test2;
+
+    model test3
+      extends base(b(fixed=true));
+    end test3;
+
+    model test4
+      extends base;
+    initial equation 
+      a=b;
+    end test4;
+
+    model test5
+      extends base(a(fixed=true));
+    initial equation 
+      a=b;
+    end test5;
+
+    model test6
+      extends base(b(fixed=true));
+    initial equation 
+      a=b;
+    end test6;
+  end autoFixed;
+end initializationTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("initialization"); getErrorString();
+simulate(initializationTests.autoFixed.test1, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.autoFixed.test1_res.mat", {time, a, b}, 2); getErrorString();
+
+simulate(initializationTests.autoFixed.test2, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.autoFixed.test2_res.mat", {time, a, b}, 2); getErrorString();
+
+simulate(initializationTests.autoFixed.test3, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.autoFixed.test3_res.mat", {time, a, b}, 2); getErrorString();
+
+simulate(initializationTests.autoFixed.test4, startTime=0.0, stopTime=0.0); getErrorString();
+
+simulate(initializationTests.autoFixed.test5, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.autoFixed.test5_res.mat", {time, a, b}, 2); getErrorString();
+
+simulate(initializationTests.autoFixed.test6, startTime=0.0, stopTime=0.0); getErrorString();
+res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time, a, b}, 2); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 2 variables:
+//          b:VARIABLE(start = 2.0 )  "comment b" type: Real 
+//          a:DISCRETE(start = 1.0 fixed = false )  "comment a" type: Real
+// "
+// {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          b:VARIABLE(start = 2.0 )  "comment b" type: Real
+// "
+// {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          a:DISCRETE(start = 1.0 fixed = false )  "comment a" type: Real
+// "
+// {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Assuming fixed start value for the following 1 variables:
+//          b:VARIABLE(start = 2.0 )  "comment b" type: Real
+// "
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{1.0,1.0},{1.0,1.0}}
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.autoFixed.test6_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.autoFixed.test6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0,0.0},{2.0,2.0},{2.0,2.0}}
+// ""
+// endResult

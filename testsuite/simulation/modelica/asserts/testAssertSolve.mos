@@ -1,0 +1,38 @@
+// name: testAssertSolve
+// status: correct
+
+loadString("
+model testAssertSolve
+ Real x(start = 5);
+ Real y(start = 1);
+equation
+ y = exp(x); // x = log(y) = log(time^(1/3)) 
+ y^3  = time; // y = time^(1/3)
+end testAssertSolve;
+");
+getErrorString();
+
+simulate(testAssertSolve, stopTime=1.0);
+getErrorString();
+val(x,0.0); 
+val(y,0.0); 
+val(y,1.0);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testAssertSolve', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: testAssertSolve
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// assert            | debug   | Model error: Argument of log(y) was 0 should be > 0
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+//
+//
+//
+// endResult

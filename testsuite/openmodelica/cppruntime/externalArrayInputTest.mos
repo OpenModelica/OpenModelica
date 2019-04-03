@@ -1,0 +1,63 @@
+// name: externalArrayInputTest
+// keywords: array input const slice
+// status: correct
+// teardown_command: rm -f *ExternalArrayInput.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+
+loadString("
+package ExternalArrayInput
+  function f1
+    input Real[:] x;
+    output Real[size(x,1)-1] y;
+  algorithm
+    // Case 1: pass array slice as input to external function
+    //  -- must use const getData (see Modelica.Blocks.Noise)
+    y := f2(x[1:size(y,1)]);
+  end f1;
+  function f2
+    input Real[2] x;
+    output Real[2] y;
+    external \"C\" f_ext(x, y);
+    annotation(Include=\"
+      void f_ext(const double *x, double *y) {
+        y[0] = x[0];
+        y[1] = x[1];
+      }\");
+  end f2;
+  model Test
+    // Case 2: pass array input to external function:
+    //  -- require const in external function signature
+    Modelica.Blocks.Sources.CombiTimeTable combiTable(
+      table=[0, 1, 2, 3; 1, 2, 3, 4]);
+    Real[:] a = combiTable.y;
+    Real[2] b;
+  equation
+    b = f1(a);
+  end Test;
+end ExternalArrayInput;
+"); getErrorString();
+
+simulate(ExternalArrayInput.Test); getErrorString();
+
+val(b[1], 0);
+val(b[2], 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+// resultFile = "ExternalArrayInput.Test_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalArrayInput.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// ""
+// 1.0
+// 3.0
+// endResult

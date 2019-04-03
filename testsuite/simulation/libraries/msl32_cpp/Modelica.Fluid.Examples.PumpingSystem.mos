@@ -1,0 +1,106 @@
+// name:     Modelica.Fluid.Examples.PumpingSystem
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.PumpingSystem);
+compareVars :=
+{
+   "PT1.y",
+   "pumps.medium.T",
+   "reservoir.level",
+   "reservoir.medium.T"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Fluid.Examples.PumpingSystem
+// {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
+// Warning: Alias set with several free start values
+//  * candidate: pumps.medium.p(start = pumps.p_start)
+//  * candidate: pumps.port_b.p(start = pumps.p_b_start)
+//  * candidate: pipe.port_a.p(start = 5000000.0)
+//  * candidate: pipe.flowModel.states[1].p(start = 5000000.0)
+//  * candidate: pumps.medium.state.p(start = 5000000.0)
+//  * candidate: pumps.monitoring.state.p(start = 5000000.0)
+//  * candidate: pumps.heatTransfer.states[1].p(start = 5000000.0)
+//  * candidate: pumps.medium.sat.psat(start = 5000000.0)
+// => select value from pumps.medium.p(start = pumps.p_start) for variable: pumps.medium.p
+// Warning: Alias set with different nominal values
+//  * candidate: pumps.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: pumps.heatTransfer.states[1].p(nominal = 1000000.0)
+//  * candidate: pumps.monitoring.state.p(nominal = 1000000.0)
+//  * candidate: pumps.medium.state.p(nominal = 1000000.0)
+//  * candidate: pipe.flowModel.states[1].p(nominal = 1000000.0)
+//  * candidate: pipe.port_a.p(nominal = 1000000.0)
+//  * candidate: pumps.port_b.p(nominal = 1000000.0)
+//  * candidate: pumps.medium.p(nominal = 100000.0)
+// => select value from pumps.medium.p(nominal = 100000.0) for variable: pumps.medium.p
+// Warning: Alias set with several free start values
+//  * candidate: reservoir.ports[2].h_outflow(start = 100000.0)
+//  * candidate: userValve.state_a.h(start = 100000.0)
+//  * candidate: userValve.port_b.h_outflow(start = 100000.0)
+//  * candidate: reservoir.medium.h(start = reservoir.h_start)
+//  * candidate: reservoir.ports[3].h_outflow(start = 100000.0)
+//  * candidate: reservoir.ports[1].h_outflow(start = 100000.0)
+//  * candidate: pipe.flowModel.states[2].h(start = 100000.0)
+//  * candidate: reservoir.medium.state.h(start = 100000.0)
+//  * candidate: reservoir.heatTransfer.states[1].h(start = 100000.0)
+// => select value from reservoir.ports[2].h_outflow(start = 100000.0) for variable: reservoir.ports[2].h_outflow
+// Warning: Alias set with several free start values
+//  * candidate: reservoir.medium.T(start = reservoir.T_start)
+//  * candidate: reservoir.medium.state.T(start = 500.0)
+//  * candidate: reservoir.heatTransfer.states[1].T(start = 500.0)
+// => select value from reservoir.medium.T(start = reservoir.T_start) for variable: reservoir.medium.T
+// Warning: Alias set with different nominal values
+//  * candidate: reservoir.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: reservoir.heatTransfer.Ts[1](nominal = 300.0)
+//  * candidate: reservoir.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: reservoir.medium.state.T(nominal = 500.0)
+//  * candidate: reservoir.medium.T(nominal = 500.0)
+// => select value from reservoir.medium.T(nominal = 500.0) for variable: reservoir.medium.T
+// Warning: Alias set with several free start values
+//  * candidate: pipe.flowModel.states[1].h(start = 100000.0)
+//  * candidate: pumps.port_b.h_outflow(start = 100000.0)
+//  * candidate: pumps.medium.h(start = pumps.h_start)
+//  * candidate: pumps.port_a.h_outflow(start = 100000.0)
+//  * candidate: pumps.medium.state.h(start = 100000.0)
+//  * candidate: pumps.monitoring.state.h(start = 100000.0)
+//  * candidate: pumps.heatTransfer.states[1].h(start = 100000.0)
+// => select value from pipe.flowModel.states[1].h(start = 100000.0) for variable: pipe.flowModel.states[1].h
+// Warning: Alias set with several free start values
+//  * candidate: pumps.medium.T(start = pumps.T_start)
+//  * candidate: pumps.medium.state.T(start = 500.0)
+//  * candidate: pumps.monitoring.state.T(start = 500.0)
+//  * candidate: pumps.heatTransfer.states[1].T(start = 500.0)
+// => select value from pumps.medium.T(start = pumps.T_start) for variable: pumps.medium.T
+// Warning: Alias set with different nominal values
+//  * candidate: pumps.heatTransfer.heatPorts[1].T(nominal = 300.0)
+//  * candidate: pumps.heatTransfer.Ts[1](nominal = 300.0)
+//  * candidate: pumps.heatTransfer.states[1].T(nominal = 500.0)
+//  * candidate: pumps.monitoring.state.T(nominal = 500.0)
+//  * candidate: pumps.medium.state.T(nominal = 500.0)
+//  * candidate: pumps.medium.T(nominal = 500.0)
+// => select value from pumps.medium.T(nominal = 500.0) for variable: pumps.medium.T
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

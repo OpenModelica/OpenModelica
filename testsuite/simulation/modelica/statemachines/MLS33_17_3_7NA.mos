@@ -1,0 +1,17 @@
+// name:     MLS33_17_3_7NA
+// keywords: state machines
+// status: correct
+//
+
+loadFile("MLS33_17_3_7NA.mo");
+echo(false);
+//setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+simulate(MLS33_17_3_7NA, startTime=0, stopTime=30, numberOfIntervals=0); getErrorString();
+echo(true);
+val(v,30.0);
+
+// Result:
+// true
+// true
+// 18.0
+// endResult

@@ -1,0 +1,80 @@
+// name:     ServerWithQueueT3
+// keywords: when
+// status: correct
+// teardown_command: rm -rf ServerWithQueueT3* output.log
+// 
+// Conditional Equations with when-Equations 
+// 
+
+loadString("
+model ServerWithQueueT3
+  // EventPortInput inCustomer;
+  parameter Real serveTime=0.4 \"Time needed to service a customer\";
+  discrete Integer nrOfArrivedCustomers;
+  discrete Integer nrOfServedCustomers;
+  discrete Integer nrOfCustomersInQueue(start=0);
+  discrete Boolean readyCustomer(start=false);
+  discrete Boolean serveCustomer(start=false);
+  
+  Real recentServeStart \"Most recent start servicing\";
+  //Boolean tmp(start=false);
+  Boolean inCustomer_signal(start=false);
+  
+equation
+  inCustomer_signal = sample(0,1);
+  
+  when inCustomer_signal then // Event: New customer arrives inCustomer.signal
+    nrOfArrivedCustomers = pre(nrOfArrivedCustomers)+1;
+  end when;
+  
+  when readyCustomer then // Event: Customer finished service
+    nrOfServedCustomers = pre(nrOfServedCustomers)+1;
+  end when;
+  
+  when (pre(nrOfCustomersInQueue)==0 and inCustomer_signal) or
+       (pre(nrOfCustomersInQueue)>=1 and pre(readyCustomer)) then
+    serveCustomer = true;
+    recentServeStart = time;
+end when;
+  //readyCustomer = if (serveCustomer and (serveTime < time-recentServeStart)) then true else false; // works equal
+  readyCustomer = serveCustomer and (serveTime < time-recentServeStart); // works equal
+  //tmp = serveTime < time-recentServeStart; // works equal 
+  //readyCustomer = serveCustomer and tmp;   //
+  nrOfCustomersInQueue = nrOfArrivedCustomers-nrOfServedCustomers;
+end ServerWithQueueT3;
+
+");
+simulate(ServerWithQueueT3,stopTime=2.0);
+
+
+val(readyCustomer, 0.39);
+val(readyCustomer, 0.4);
+val(readyCustomer, 0.41);
+val(readyCustomer, 0.99);
+val(readyCustomer, 1.0);
+val(readyCustomer, 1.39);
+val(readyCustomer, 1.4);
+val(readyCustomer, 1.41);
+val(readyCustomer, 1.99);
+val(readyCustomer, 2.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ServerWithQueueT3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ServerWithQueueT3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 0.0
+// endResult

@@ -1,0 +1,63 @@
+// name:     Modelica.Media.Examples.R134a.R134a1
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+setDebugFlags("scodeInstShortcut");
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.R134a.R134a1);
+compareVars :=
+{
+   "volume.medium.h",
+   "volume.medium.p",
+   "fixedMassFlowRate.port.p",
+   "ambient.port.m_flow"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// false
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.R134a.R134a1
+// {"volume.medium.h","volume.medium.p","fixedMassFlowRate.port.p","ambient.port.m_flow"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.R134a.R134a1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Media.Examples.R134a.R134a1_res.mat
+// Files Equal!
+// Warning: Alias set with several free start values
+//  * candidate: volume.port.p(start = 101325.0)
+//  * candidate: fixedMassFlowRate.port.p(start = 101325.0)
+//  * candidate: shortPipe.port_a.p(start = 101325.0)
+//  * candidate: fixedMassFlowRate.medium.state.p(start = 101325.0)
+//  * candidate: fixedMassFlowRate.medium.sat.psat(start = 300000.0)
+//  * candidate: volume.medium.state.p(start = 101325.0)
+//  * candidate: volume.medium.sat.psat(start = 300000.0)
+// => select value from volume.port.p(start = 101325.0) for variable: volume.medium.p
+// Warning: Alias set with different nominal values
+//  * candidate: volume.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: volume.medium.state.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.medium.sat.psat(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.medium.state.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.medium.p(nominal = 100000.0)
+//  * candidate: shortPipe.port_a.p(nominal = 1000000.0)
+//  * candidate: fixedMassFlowRate.port.p(nominal = 1000000.0)
+//  * candidate: volume.port.p(nominal = 1000000.0)
+//  * candidate: volume.medium.p(nominal = 100000.0)
+// => select value from volume.medium.p(nominal = 100000.0) for variable: volume.medium.p
+//
+// "true
+// "
+// ""
+// endResult

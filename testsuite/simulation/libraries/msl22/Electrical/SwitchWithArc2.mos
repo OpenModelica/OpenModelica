@@ -1,0 +1,10 @@
+//name:         SwitchWithArc
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Electrical.Analog.Examples.SwitchWithArc, stopTime=2, numberOfIntervals=0, outputInterval=0.00025, method="dassl", tolerance=1e-006);
+

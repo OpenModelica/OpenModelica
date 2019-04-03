@@ -1,0 +1,42 @@
+// name: ticket4271
+// keywords: state machines
+// status: correct
+
+loadString("
+model ticket4271
+  StateX state1(xfoox=1.0);
+  StateX state2(xfoox=0.1);
+equation
+  initialState(state1);
+  transition(state1, state2, true, immediate=false);
+  transition(state2, state1, true, immediate=false);
+end ticket4271;
+
+model StateX
+  input Real xfoox;
+  Real y;
+equation
+  y = xfoox * sample(1, Clock(1, 10));
+end StateX;
+"); getErrorString();
+simulate(ticket4271); getErrorString();
+
+val(state1.xfoox); getErrorString();
+val(state2.xfoox); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ticket4271_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ticket4271', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// ""
+// 0.1
+// ""
+// endResult

@@ -1,0 +1,56 @@
+// name:     Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.lib BouncingBall.so Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.makefile Modelica_from_nxy_*
+// Simulation Results
+// Modelica Standard Library
+//
+
+loadModel(Modelica);
+// Although it is not correct to do it by default, evaluate protected parameters,
+// otherwise building the _me_FMU.mo fails. It seems that it is necessary to evaluate string parameters.
+setCommandLineOptions("--evaluateProtectedParameters"); getErrorString();
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, version="1.0");
+getErrorString();
+importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu", loglevel=0);
+getErrorString();
+loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo");
+getErrorString();
+simulate(Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU,stopTime=3.0);
+
+val(revolute1_phi, 0);
+val(revolute1_phi, 1);
+val(revolute1_phi, 2);
+val(revolute1_phi, 3);
+
+val(revolute2_phi, 0);
+val(revolute2_phi, 1);
+val(revolute2_phi, 2);
+val(revolute2_phi, 3);
+
+// Result:
+// true
+// true
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu"
+// ""
+// "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.0
+// -2.915113487866567
+// -0.03693389885324572
+// -2.315869680474252
+// 0.0
+// -0.5164246972076183
+// -0.9041007100734307
+// -1.73637481224062
+// endResult

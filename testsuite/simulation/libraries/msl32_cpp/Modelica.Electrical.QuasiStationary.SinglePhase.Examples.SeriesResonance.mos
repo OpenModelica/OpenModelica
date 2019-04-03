@@ -1,0 +1,41 @@
+// name:     Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance);
+compareVars :=
+{
+   "capacitor.i.im",
+   "capacitor.pin_n.reference.gamma",
+   "inductor.pin_p.reference.gamma",
+   "resistor.pin_p.reference.gamma",
+   "capacitor.pin_n.reference.gamma",
+   "ground.pin.reference.gamma"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance
+// {"capacitor.i.im","capacitor.pin_n.reference.gamma","inductor.pin_p.reference.gamma","resistor.pin_p.reference.gamma","capacitor.pin_n.reference.gamma","ground.pin.reference.gamma"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

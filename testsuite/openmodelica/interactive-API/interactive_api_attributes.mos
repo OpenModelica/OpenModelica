@@ -1,0 +1,366 @@
+// name: API-attributes
+// keywords: Graphical API, component attributes
+// status: correct
+// 
+//  Subset of the Graphical API for setting component attributes
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+// get the annotation version
+getAnnotationVersion();
+// set the annotation version
+setAnnotationVersion("2.x");
+
+createModel(A);                                                                            getErrorString();
+addComponent(x,Real,A);                                                                    getErrorString();
+setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});              getErrorString();
+getComponents(A);                                                                          getErrorString();
+// test the setting of "stream"
+setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});       getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});    getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});  getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});      getErrorString();
+getComponents(A);                                                                          getErrorString();
+updateComponent(x,Integer,A);                                                              getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentComment(A,x,"comment for x");                                                  getErrorString();
+addConnection(a,b,A);                                                                      getErrorString();
+setConnectionComment(A,a,b,"connecting a and b");	                                         getErrorString();
+list();                                                                                    getErrorString();
+updateConnection(a, b, A, annotate=Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}})); getErrorString();
+list();                                                                                    getErrorString();
+getConnectionCount(A);                                                                     getErrorString();
+getNthConnection(A, 1);                                                                    getErrorString();
+getNthConnectionAnnotation(A, 1);                                                          getErrorString();
+setClassComment(A,"this is the class A");                                                  getErrorString();
+getClassInformation(A);                                                                    getErrorString();
+getComponents(A);                                                                          getErrorString();
+addComponent(y,Real,A);                                                                    getErrorString();
+setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});        getErrorString();
+list(A);                                                                                   getErrorString();
+
+// clear all
+clear();
+
+// get the annotation version
+getAnnotationVersion();
+// set the annotation version
+setAnnotationVersion("3.x");
+
+createModel(A);                                                                            getErrorString();
+addComponent(x,Real,A);                                                                    getErrorString();
+setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});              getErrorString();
+getComponents(A);                                                                          getErrorString();
+// test the setting of "stream"
+setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});       getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});    getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});  getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});      getErrorString();
+getComponents(A);                                                                          getErrorString();
+updateComponent(x,Integer,A);                                                              getErrorString();
+getComponents(A);                                                                          getErrorString();
+setComponentComment(A,x,"comment for x");                                                  getErrorString();
+addConnection(a,b,A);                                                                      getErrorString();
+setConnectionComment(A,a,b,"connecting a and b");	                                         getErrorString();
+list();                                                                                    getErrorString();
+updateConnection(a, b, A, annotate=Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}})); getErrorString();
+list();                                                                                    getErrorString();
+getConnectionCount(A);                                                                     getErrorString();
+getNthConnection(A, 1);                                                                    getErrorString();
+getNthConnectionAnnotation(A, 1);                                                          getErrorString();
+setClassComment(A,"this is the class A");                                                  getErrorString();
+getClassInformation(A);                                                                    getErrorString();
+getComponents(A);                                                                          getErrorString();
+addComponent(y,Real,A);                                                                    getErrorString();
+setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});        getErrorString();
+list(A);                                                                                   getErrorString();
+
+
+// Result:
+// {true}
+// Evaluating: getAnnotationVersion()
+// "3.x"
+// Evaluating: setAnnotationVersion("2.x")
+// true
+// Evaluating: createModel(A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addComponent(x, Real, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {false, false, false, false}, {""}, {true, true}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", false, false, false, false, "unspecified", "innerouter", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "protected", true, false, true, true, "unspecified", "innerouter", "input",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "protected", true, true, false, true, "parameter", "innerouter", "input",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", true, true, false, true, "constant", "outer", "output",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: updateComponent(x, Integer, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Integer,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentComment(A, x, "comment for x")
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addConnection(a, b, A)
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setConnectionComment(A, a, b, "connecting a and b")
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list()
+// "model A
+//   final inner discrete Integer x \"comment for x\";
+// protected
+// equation
+//   connect(a, b) \"connecting a and b\";
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: updateConnection(a, b, A, annotate = Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list()
+// "model A
+//   final inner discrete Integer x \"comment for x\";
+// protected
+// equation
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getConnectionCount(A)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthConnection(A, 1)
+// {"a","b",""}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthConnectionAnnotation(A, 1)
+// {Line(true, {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, false)}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setClassComment(A, "this is the class A")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassInformation(A)
+// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false,"")
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Integer,x,"comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addComponent(y, Real, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, y, {true, false, true, false, false}, {""}, {false, false}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(A)
+// "model A \"this is the class A\"
+//   final inner discrete Integer x \"comment for x\";
+//   final stream Real y;
+// protected
+// equation
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: clear()
+// true
+// Evaluating: getAnnotationVersion()
+// "2.x"
+// Evaluating: setAnnotationVersion("3.x")
+// true
+// Evaluating: createModel(A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addComponent(x, Real, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {false, false, false, false}, {""}, {true, true}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", false, false, false, false, "unspecified", "innerouter", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "protected", true, false, true, true, "unspecified", "innerouter", "input",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "protected", true, true, false, true, "parameter", "innerouter", "input",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", true, true, false, true, "constant", "outer", "output",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Real,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: updateComponent(x, Integer, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Integer,x,"", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentComment(A, x, "comment for x")
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addConnection(a, b, A)
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setConnectionComment(A, a, b, "connecting a and b")
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list()
+// "model A
+//   final inner discrete Integer x \"comment for x\";
+// protected
+// equation
+//   connect(a, b) \"connecting a and b\";
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: updateConnection(a, b, A, annotate = Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list()
+// "model A
+//   final inner discrete Integer x \"comment for x\";
+// protected
+// equation
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getConnectionCount(A)
+// 1
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthConnection(A, 1)
+// {"a","b",""}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getNthConnectionAnnotation(A, 1)
+// {Line(true, {0.0, 0.0}, 0, {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setClassComment(A, "this is the class A")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getClassInformation(A)
+// ("model","this is the class A",false,false,false,"",false,0,0,0,0,{},false,false,"","",false,"")
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(A)
+// {{Integer,x,"comment for x", "public", true, false, false, false, "discrete", "inner", "unspecified",{}}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: addComponent(y, Real, A)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setComponentProperties(A, y, {true, false, true, false, false}, {""}, {false, false}, {""})
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: list(A)
+// "model A \"this is the class A\"
+//   final inner discrete Integer x \"comment for x\";
+//   final stream Real y;
+// protected
+// equation
+//   connect(a, b) annotation(
+//     Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}));
+// end A;"
+// Evaluating: getErrorString()
+// ""
+// endResult

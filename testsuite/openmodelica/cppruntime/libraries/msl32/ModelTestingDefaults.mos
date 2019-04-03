@@ -1,0 +1,4 @@
+runScript(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTestingDefaults.mos");
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+// Cannot change to g++ -fopenmp=libiomp5 just like that
+// setCXXCompiler(if regexBool(getCXXCompiler(),"clang++") then "g++" else getCXXCompiler());

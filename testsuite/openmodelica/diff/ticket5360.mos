@@ -1,0 +1,13 @@
+// status: correct
+
+diffModelicaFileListings("model M
+
+end M;", "within A; model M end M;", OpenModelica.Scripting.DiffFormat.plain);
+
+// Result:
+// "within A;
+//
+// model M
+//
+// end M;"
+// endResult

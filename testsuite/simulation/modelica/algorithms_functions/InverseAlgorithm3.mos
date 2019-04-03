@@ -1,0 +1,43 @@
+// name: InverseAlgorithm3
+// keywords: inverse algorithm
+// status: correct
+
+loadString("
+model InverseAlgorithm
+  Real x(start=1);
+  Real y(start=1), z[2];
+initial equation
+  der(x) = 0;
+equation
+  der(x) = x*y;
+algorithm
+  y := sin(x)+y;
+  for i in 1:2 loop
+    z[i] := cos(y)+i;
+  end for;
+end InverseAlgorithm;
+"); getErrorString();
+
+simulate(InverseAlgorithm, simflags="-lv=LOG_SOTI"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InverseAlgorithm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'InverseAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SOTI'",
+//     messages = "LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | states variables
+// |                 | |       | | | [1] Real x(start=1, nominal=1) = 7.42794e-27 (pre: 1)
+// |                 | |       | | derivatives variables
+// |                 | |       | | | [2] Real der(x) = 0 (pre: 0)
+// |                 | |       | | other real variables
+// |                 | |       | | | [3] Real y(start=1, nominal=1) = 1 (pre: 1)
+// |                 | |       | | | [4] Real z[1](start=0, nominal=1) = 1.5403 (pre: 0)
+// |                 | |       | | | [5] Real z[2](start=0, nominal=1) = 2.5403 (pre: 0)
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,17 @@
+// status: correct
+
+loadModel(Modelica,{"3.2.2"});getErrorString();
+loadFile("ReaderTMY3_total.mo");getErrorString();
+buildModel(ReaderTMY3_total, stopTime=0);getErrorString();
+system("./ReaderTMY3_total", outputFile="ignored.txt");getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"ReaderTMY3_total","ReaderTMY3_total_init.xml"}
+// ""
+// 0
+// ""
+// endResult

@@ -1,0 +1,53 @@
+// name: ExternalLibraries
+// keyword: external functions, libraries
+// status: correct
+// teardown_command: rm -rf ExternalFunc1_ext.o ExternalFunc2.a libExternalFunc1_ext.o libExternalFunc2.a ExternalLibraries1* output.log
+//
+// External functions, Library and Include annotation.
+//
+//
+loadFile("ExternalLibraries.mo");
+system("gcc -c -o libExternalFunc1_ext.o ExternalFunc1.c");
+system("gcc -c -o libExternalFunc2.a ExternalFunc2.c");
+simulate(ExternalLibraries1, tolerance=1e-5, numberOfIntervals=100);
+val(x,0.0);
+val(x,0.2);
+val(x,0.4);
+val(x,0.6);
+val(x,0.8);
+val(x,1.0);
+
+val(y,0.0);
+val(y,0.2);
+val(y,0.4);
+val(y,0.6);
+val(y,0.8);
+val(y,1.0);
+getErrorString();
+
+// Result:
+// true
+// 0
+// 0
+// record SimulationResult
+//     resultFile = "ExternalLibraries1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ExternalLibraries1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 1.0
+// 0.6008562291038158
+// 0.4039503152778594
+// 0.2884870147088038
+// 0.2138310942959862
+// 0.16247702301574
+// 2.0
+// 1.47702862860366
+// 1.244278781041967
+// 1.129320608331046
+// 1.069620804607656
+// 1.037815974349684
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

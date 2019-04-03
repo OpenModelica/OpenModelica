@@ -1,0 +1,46 @@
+// name: #2535
+// keywords: function, array, initialization
+// status: correct
+
+loadString("
+within ;
+package functionTests
+  function myfun
+    input Real x;
+    output Real y;
+    protected Real  z[3]= {1,2,3} ;  // This Falis (why ??)
+    //protected  Real  z[3] ;           // Works
+  algorithm
+    z[1] := x ;
+    y := 2 * z[1] ;
+  end myfun;
+
+  model ticket2535
+    Real y;
+  equation
+    y = myfun(3.4) * y + 2 ; 
+  end ticket2535;
+end functionTests;
+"); getErrorString();
+
+OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
+
+simulate(functionTests.ticket2535); getErrorString();
+val(y, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "functionTests.ticket2535_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTests.ticket2535', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.3448275862068966
+// ""
+// endResult

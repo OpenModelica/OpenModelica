@@ -1,0 +1,66 @@
+// name: bug_2673b
+// keywords: initialization
+// status: correct
+
+loadString("
+package Test
+  model M
+    parameter Real p(fixed = false);
+  initial equation
+    20 = p*10 + 10;
+  end M;
+
+  model Q
+    M m;
+  end Q;
+end Test;
+"); getErrorString();
+
+simulate(Test.Q, fileNamePrefix="Test.Q_xxx"); getErrorString();
+val(m.p, {0.0, 0.5});
+
+simulate(Test.Q, simflags="-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT"); getErrorString();
+val(m.p, {0.0, 0.5});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Test.Q_xxx_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test.Q_xxx', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.0}
+// record SimulationResult
+//     resultFile = "Test.Q_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test.Q', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | import start values
+// |                 | |       | file: Test.Q_xxx_res.mat
+// |                 | |       | time: 1
+// LOG_INIT          | info    | import real variables
+// LOG_INIT          | info    | import real parameters
+// LOG_INIT          | info    | | m.p(start=1)
+// LOG_INIT          | info    | import real discrete
+// LOG_INIT          | info    | import integer parameters
+// LOG_INIT          | info    | import boolean parameters
+// LOG_INIT          | info    | initialization method: none            [sets all variables to their start values and skips the initialization process]
+// LOG_INIT          | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real m.p(start=1, fixed=false) = 1
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {1.0,1.0}
+// endResult

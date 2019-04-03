@@ -1,0 +1,41 @@
+// name:     ArrayAddEmpty
+// keywords: <insert keywords here>
+// status:   correct
+// 
+// MORE WORK HAS TO BE DONE ON THIS FILE!
+// Drmodelica: 7.9 Empty Arrays (p. 231)
+//
+//loadModel(Modelica);
+loadFile("ArrayAddEmpty.mo");
+simulate(AddEmpty, startTime=0.0, stopTime=1.0, numberOfIntervals=3, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output
+//size := readSimulationResultSize("AddEmpty_res.mat");
+//res:=readSimulationResult("AddEmpty_res.mat",{A,y},size);
+A:=val(A,0.5);
+B:=val(B,0.5);
+C:=val(C,0.5);
+//x:=10.0*x;
+//y:=10.0*y;
+//z:=10.0*z;
+//x:=floor(x);
+//y:=floor(y);
+//z:=floor(z);
+
+echo(true); // turns on output
+//x:=x/10.0; // rounded value to 1 digits
+A;
+B;
+C;
+system("rm -rf AddEmpty_* AddEmpty.exe AddEmpty.cpp AddEmpty.makefile AddEmpty.libs AddEmpty.log output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "ArrayEmpty_res.mat"
+// end SimulationResult;
+// true
+// {1.0,1.654,2.169,2.62,3.032,3.418}
+// {2.0,2.0,2.0,2.0,2.0,2.0}
+// {3.0,2.545,2.23,1.979,1.767,1.581}
+// ""
+// 0
+// endResult

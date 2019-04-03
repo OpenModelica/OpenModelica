@@ -1,0 +1,71 @@
+// name: cseTestCall7
+// keywords: cse
+// status: correct
+
+loadString("
+package CSE
+  model TestCall7
+    record foo
+      Real x;
+      Real y;
+    end foo;
+    
+    Real a, b;
+    
+    function func
+      input Real r;
+      output foo s;
+    algorithm 
+      s.x := r;
+      s.y := r+1;
+    end func;
+  equation 
+    foo(a, b) = func(time);
+  end TestCall7;
+end CSE;
+"); getErrorString();
+
+setDebugFlags("dumpCSE"); getErrorString();
+setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
+simulate(CSE.TestCall7); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (4)
+// ========================================
+// 1: b:VARIABLE()  type: Real 
+// 2: a:VARIABLE()  type: Real 
+// 3: $cse1.y:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse1.x:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (simulation) (2, 4)
+// ========================================
+// 1/1 (2): CSE.TestCall7.foo(a, b) = $cse1   [dynamic |0|0|0|0|]
+// 2/3 (2): $cse1 = CSE.TestCall7.func(time)   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: $cse1 - CSE.TestCall7.func(time) - {}
+// record SimulationResult
+//     resultFile = "CSE.TestCall7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.TestCall7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -1,0 +1,34 @@
+// name: extObj_ticket3446
+// keywords: initialization, external object
+// status: correct
+
+loadFile("extObj_ticket3446.mo"); getErrorString();
+simulate(TestMyExternalObj.Test); getErrorString();
+val(p1, 0.0); getErrorString();
+val(p2, 0.0); getErrorString();
+val(p3, 0.0); getErrorString();
+val(p4, 0.0); getErrorString();
+val(p5, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestMyExternalObj.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMyExternalObj.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// ""
+// 1.0
+// ""
+// 2.0
+// ""
+// 3.0
+// ""
+// 5.0
+// ""
+// endResult

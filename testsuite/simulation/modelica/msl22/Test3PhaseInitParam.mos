@@ -1,0 +1,102 @@
+// name:     Test3PhaseInitParam
+// keywords: initialization, overdetermined, additial equations.
+// cflags:   +std=2.x
+// status:   correct
+// teardown_command: rm -f Test3Phase.Test3Phase* output.log
+//  Simulate models and read in data.
+//
+
+loadFile("InitTest3Phase.mo");
+
+simulate(Test3Phase.Test3PhaseInitParam,stopTime=10, tolerance=1e-5, numberOfIntervals=1000, simflags="-emit_protected");
+
+"i_abc[:] at 0.0";
+val(i_abc[1],0.0);
+val(i_abc[2],0.0);
+val(i_abc[3],0.0);
+
+"i_dq0[:] at 0.0";
+val(i_dq0[1],0.0);
+val(i_dq0[2],0.0);
+val(i_dq0[3],0.0);
+
+"i_abc[:] at 10.0";
+val(i_abc[1],10.0);
+val(i_abc[2],10.0);
+val(i_abc[3],10.0);
+
+"i_dq0[:] at 10.0:";
+val(i_dq0[1],10.0);
+val(i_dq0[2],10.0);
+val(i_dq0[3],10.0);
+
+"u_abc[:] at 0.0";
+val(u_abc[1],0.0);
+val(u_abc[2],0.0);
+val(u_abc[3],0.0);
+
+"u_dq0[:] at 0.0";
+val(u_dq0[1],0.0);
+val(u_dq0[2],0.0);
+val(u_dq0[3],0.0);
+
+"u_abc[:] at 10.0";
+val(u_abc[1],10.0);
+val(u_abc[2],10.0);
+val(u_abc[3],10.0);
+
+"u_dq0[:] at 10.0:";
+val(u_dq0[1],10.0);
+val(u_dq0[2],10.0);
+val(u_dq0[3],10.0);
+
+"power :";
+val(power,0);
+val(power,10);
+
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Test3Phase.Test3PhaseInitParam_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Test3Phase.Test3PhaseInitParam', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "i_abc[:] at 0.0"
+// 0.2989206397856279
+// -0.2237364320240597
+// -0.07518420776156917
+// "i_dq0[:] at 0.0"
+// -0.1050422851363519
+// 0.3661015205305407
+// -5.608641168618729e-16
+// "i_abc[:] at 10.0"
+// 0.2989202694836625
+// -0.2237383600305504
+// -0.07518190945312331
+// "i_dq0[:] at 10.0:"
+// -0.1050452735923042
+// 0.3661010670051116
+// -6.489999066544529e-15
+// "u_abc[:] at 0.0"
+// 0.0
+// 0.8660254037844389
+// -0.8660254037844388
+// "u_dq0[:] at 0.0"
+// 1.22474487139159
+// 1.110223024625157e-16
+// 6.409875621278547e-17
+// "u_abc[:] at 10.0"
+// -2.449293598294707e-15
+// 0.8660254037844412
+// -0.8660254037844349
+// "u_dq0[:] at 10.0:"
+// 1.224744871391588
+// 2.942091015256665e-15
+// 2.179357711234706e-15
+// "power :"
+// -0.12865
+// -0.1286536600960997
+// endResult

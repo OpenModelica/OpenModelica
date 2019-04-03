@@ -1,0 +1,302 @@
+// name: SynchronousFeatures.ControlledMass
+// keywords: synchronous features
+// status: correct
+
+setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
+
+loadFile("SynchronousFeatures.mo"); getErrorString();
+
+instantiateModel(SynchronousFeatures.ControlledMass); getErrorString();
+translateModel(SynchronousFeatures.ControlledMass); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class SynchronousFeatures.ControlledMass \"Phase of Clock\"
+//   parameter Real m(quantity = \"Mass\", unit = \"kg\", min = 0.0) = 1.0;
+//   parameter Real k(unit = \"N/m\") = 1.0;
+//   parameter Real d(unit = \"N.s/m\") = 0.1;
+//   Real x(quantity = \"Length\", unit = \"m\", start = 1.0, fixed = true) \"Position\";
+//   Real v(quantity = \"Velocity\", unit = \"m/s\", start = 0.0, fixed = true) \"Velocity\";
+//   Real f(quantity = \"Force\", unit = \"N\") \"Force\";
+//   parameter Real KOuter = 10.0 \"Gain of position PI controller\";
+//   parameter Real KInner = 20.0 \"Gain of speed P controller\";
+//   parameter Real Ti = 10.0 \"Integral time for pos. PI controller\";
+//   parameter Real xref = 10.0 \"Position reference\";
+//   discrete Real xd;
+//   discrete Real eOuter;
+//   discrete Real intE(start = 0.0);
+//   discrete Real uOuter(start = 0.0);
+//   discrete Real xdFast;
+//   discrete Real vd;
+//   discrete Real vref;
+//   discrete Real uInner(start = 0.0);
+//   Clock cControl = Clock(0.01);
+//   Clock cOuter = subSample(shiftSample(cControl, 2, 3), 5);
+//   Clock cFast = superSample(cControl, 2);
+// equation
+//   xd = sample(x, cOuter);
+//   eOuter = xref - xd;
+//   intE = previous(intE) + eOuter;
+//   uOuter = KOuter * (eOuter + intE / Ti);
+//   xdFast = sample(x, cFast);
+//   vd = subSample((xdFast - previous(xdFast)) / interval(), 2);
+//   vref = backSample(superSample(uOuter, 5), 2, 3);
+//   uInner = KInner * (vref - vd);
+//   f = hold(uInner);
+//   der(x) = v;
+//   m * der(v) = f + (-k) * x - d * v;
+// end SynchronousFeatures.ControlledMass;
+// "
+// ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (5 partitions)
+// ########################################
+//
+//
+// continuous time partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
+// 3: x:STATE(1)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): f = $getPart(uInner)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: xdFast:DISCRETE()  type: Real 
+// 2: $var2:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): xdFast = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
+// 2: vref:DISCRETE()  type: Real 
+// 3: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
+// 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
+// 2: intE:DISCRETE(start = 0.0 )  type: Real 
+// 3: eOuter:DISCRETE()  type: Real 
+// 4: xd:DISCRETE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): xd = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): eOuter = xref - xd   [dynamic |0|0|0|0|]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic |0|0|0|0|]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $var3:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)[4]
+//
+//
+// Sub clocks (4)
+// ========================================
+// 1: factor(1/2) shift(0/1)  event(false)
+// 2: factor(1/1) shift(0/1)  event(true)
+// 3: factor(5/1) shift(2/15)  event(false)
+// 4: factor(1/1) shift(2/3)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (5 partitions)
+// ########################################
+//
+//
+// continuous time partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
+// 3: x:STATE(1,v)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): f = $getPart(uInner)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 3 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:3}
+// {1:1}
+// {3:2}
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: xdFast:CLOCKED_STATE(fixed = true )  type: Real 
+// 2: $var2:VARIABLE()  type: Real 
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): xdFast = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
+// 2: vref:DISCRETE()  type: Real 
+// 3: vd:DISCRETE()  type: Real 
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
+// 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
+// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real 
+// 3: eOuter:DISCRETE()  type: Real 
+// 4: xd:DISCRETE()  type: Real 
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): xd = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): eOuter = xref - xd   [dynamic |0|0|0|0|]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic |0|0|0|0|]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(4)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $var3:VARIABLE()  type: Real 
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.01)[4]
+//
+//
+// Sub clocks (4)
+// ========================================
+// 1: factor(1/2) shift(0/1)  event(false)
+// 2: factor(1/1) shift(0/1)  event(true)
+// 3: factor(5/1) shift(2/15)  event(false)
+// 4: factor(1/1) shift(2/3)  event(false)
+//
+// true
+// ""
+// endResult

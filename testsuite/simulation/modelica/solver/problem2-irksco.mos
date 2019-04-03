@@ -1,0 +1,65 @@
+// name: problem2-irksco
+// status: correct
+// teardown_command: rm -f testSolver.problem2* output.log
+
+stopTime := 321.8122;
+loadFile("testSolverPackage.mo"); getErrorString();
+simulate(testSolver.problem2, stopTime=stopTime, numberOfIntervals=12000, method="irksco"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem2.mat",
+  "testSolver.problem2_diff.csv",0.1,0.1,
+{
+"y[1]",
+"y[2]",
+"y[3]",
+"y[4]",
+"y[5]",
+"y[6]",
+"y[7]",
+"y[8]",
+"der(y[1])",
+"der(y[2])",
+"der(y[3])",
+"der(y[4])",
+"der(y[5])",
+"der(y[6])",
+"der(y[7])",
+"der(y[8])"
+});
+getErrorString();
+
+val(y[1], stopTime);
+val(y[2], stopTime);
+val(y[3], stopTime);
+val(y[4], stopTime);
+val(y[5], stopTime);
+val(y[6], stopTime);
+val(y[7], stopTime);
+val(y[8], stopTime);
+
+// Result:
+// 321.8122
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'irksco', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// 0.0007366178626765966
+// 0.0001441704812983621
+// 5.881808635647067e-05
+// 0.001174685232618241
+// 0.002372321728263835
+// 0.006195567228064969
+// 0.002839857562499992
+// 0.002860142433740553
+// endResult

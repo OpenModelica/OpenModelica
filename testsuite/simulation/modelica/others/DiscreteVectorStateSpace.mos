@@ -1,0 +1,35 @@
+// name:     DiscreteVectorStateSpace
+// keywords: <insert keywords here>
+// status: correct
+// teardown_command: rm -rf DVSSTest_* DVSSTest DVSSTest.exe DVSSTest.cpp DVSSTest.makefile DVSSTest.libs DVSSTest.log output.log
+// 
+// Drmodelica: 13.2  Sampled Systems (p. 429)
+// 
+loadFile("DiscreteVectorStateSpace.mo");
+simulate(DVSSTest,startTime=0.0, stopTime=10.0,numberOfIntervals=100, tolerance=1e-5, simflags="-emit_protected"); // 2 intervals == 3 values
+echo(false); // turns of output 
+size:=readSimulationResultSize("DVSSTest_res.mat");
+res:=readSimulationResult("DVSSTest_res.mat",{dvss.x[1],dvss.y[1]},size); 
+x:=val(dvss.x[1],2.5);
+y:=val(dvss.y[1],2.5);
+x:=1000*x;
+y:=1000*y;
+x:=floor(x);
+y:=floor(y);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "DVSSTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'DVSSTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 56.0
+// 152.0
+// endResult

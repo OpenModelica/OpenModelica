@@ -1,0 +1,25 @@
+// name:     Equality
+// keywords: Equality
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Equality Testing
+//
+loadFile("Equality.mo");getErrorString();
+Equality.myEquality(1);getErrorString();
+Equality.myEquality(2);getErrorString();
+Equality.myEquality(3);getErrorString();
+Equality.myEquality(4);getErrorString();
+
+// Result:
+// true
+// ""
+// 1
+// ""
+// 2
+// ""
+// 3
+// ""
+// 4
+// ""
+// endResult

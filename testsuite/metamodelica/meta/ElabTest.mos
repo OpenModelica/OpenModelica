@@ -1,0 +1,8 @@
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
+
+runScript("LoadCompilerSources.mos");
+getErrorString();
+setOption(envCache,false);
+
+Static.elabExp(Env.emptyCache(),Env.newEnvironment(),Absyn.INTEGER(42),false,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
+getErrorString();

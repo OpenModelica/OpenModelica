@@ -1,0 +1,23 @@
+// name:     Function bubblesort
+// keywords: function for statement array
+// status:   correct, however ut does not work together with the test suite
+// 
+//  Testing:
+//    - Calling a function with a Real array
+//    - Using for statement in a function
+//    - Using while statement in a function
+//    - Using protected variables in a function
+//
+//  Note tested:
+//    - BubbleSort({});   //Since empty arrays are not allowed to be declared using {}
+//
+loadFile("func_bubble.mo");
+BubbleSort({222,5,7,455,9,10,11,10,2134,11,223,643,123,123,53,1});	
+BubbleSort({23});	
+BubbleSort({23.2,12.7,1.1});	
+// Result:
+// true
+// {1.0,5.0,7.0,9.0,10.0,10.0,11.0,11.0,53.0,123.0,123.0,222.0,223.0,455.0,643.0,2134.0}
+// {23.0}
+// {1.10000002384186,12.6999998092651,23.2000007629395}
+// endResult

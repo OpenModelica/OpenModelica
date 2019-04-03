@@ -1,0 +1,47 @@
+// name:     Modelica.Electrical.Spice3.Examples.FourInverters
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.FourInverters);
+compareVars :=
+{
+   "c1.v",
+   "c1.i",
+   "c2.v",
+   "c2.i",
+   "c3.v",
+   "c3.i",
+   "c4.v",
+   "c4.i",
+   "vin.v",
+   "vin.i",
+   "v.v",
+   "v.i"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.FourInverters
+// {"c1.v","c1.i","c2.v","c2.i","c3.v","c3.i","c4.v","c4.i","vin.v","vin.i","v.v","v.i"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.FourInverters', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Spice3.Examples.FourInverters_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,60 @@
+// name: problem1-irksco
+// status: correct
+// teardown_command: rm -f testSolver.problem1* output.log
+
+loadFile("testSolverPackage.mo"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, method="irksco"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
+  "testSolver.problem1_diff.csv",0.01,0.0001,
+{
+"u[1]",
+"u[5]",
+"u[15]",
+"u[20]",
+"u[25]",
+"u[30]",
+"u[35]",
+"u[40]",
+"u[45]",
+"u[50]",
+"u[55]",
+"u[60]",
+"u[65]",
+"u[70]",
+"u[75]",
+"u[80]",
+"u[85]",
+"u[90]",
+"u[95]",
+"u[100]",
+"u[105]",
+"u[115]",
+"u[120]",
+"u[125]",
+"u[130]",
+"u[135]",
+"u[140]",
+"u[145]",
+"u[150]"
+});
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testSolver.problem1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 500, tolerance = 1e-06, method = 'irksco', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

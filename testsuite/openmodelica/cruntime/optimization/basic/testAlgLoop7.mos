@@ -1,0 +1,76 @@
+// name: testAlgLoop7
+// status: correct
+
+setCommandLineOptions("+gDynOpt +loop2con=all");
+//setCommandLineOptions("+gDynOpt");
+getErrorString();
+
+loadString("
+model testAlgLoop7
+  Real x1(fixed=true,start=1,min=-2,max=2),x2(min=-2,max=2,start = -1, fixed=true);
+  input Real u(min=-1,max=1,start=1);
+  Real con(min=0,max=3) = (der(x2)+der(x1)+x1) annotation(isConstraint=true);
+  Real cost = (x1^2+x2^2) annotation(isMayer=true);
+equation
+  log(der(x1) + der(x2)+x1) = u*x1;
+  sin(der(x1))/(2+cos(der(x2))) = x2;
+end testAlgLoop7;
+");
+getErrorString();
+
+optimize(testAlgLoop7, numberOfIntervals=100, tolerance = 1e-12, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif ReferenceFiles/testAlgLoop7_ref.mat -iim none -ipopt_init FILE",stopTime=0.5);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testAlgLoop7_res.mat","ReferenceFiles/testAlgLoop7_ref.mat","testFinalCon_diff.csv",0.01,0.0001,{"x1","u","con"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testAlgLoop7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 100, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif ReferenceFiles/testAlgLoop7_ref.mat -iim none -ipopt_init FILE'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$x2 >= 0.0 and $EqCon$x2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x2 <= 0.0, has value: 3
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$x1 >= 0.0 and $EqCon$x1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$x1 <= 0.0, has value: 0.864672
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 1, nominal = 2, min = -2, max = 2, init = 1)
+// State[1]:x2(start = -1, nominal = 2, min = -2, max = 2, init = -1)
+// Input[2]:$x1(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[3]:$x2(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// Input[4]:u(start = 0.864672, nominal = 1, min = -1, max = 1)
+// --------------------------------------------------------
+// number of nonlinear constraints: 3
+// ========================================================
+// stdout            | info    | Using values from file as initial guess.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00630401 for the constraint $EqCon$x1(time = 0.17)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.64944e-05 for the constraint $EqCon$x2(time = 0.17)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.05608e-07 for the constraint $EqCon$x1(time = 0.17)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.86591e-05 for the constraint $EqCon$x2(time = 0.17)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.33147e-06 for the constraint $EqCon$x1(time = 0.435)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.28799e-08 for the constraint $EqCon$x1(time = 0.435)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.87085e-11 for the constraint $EqCon$x1(time = 0.445)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.44089e-16 for the constraint $EqCon$x1(time = 0.28)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

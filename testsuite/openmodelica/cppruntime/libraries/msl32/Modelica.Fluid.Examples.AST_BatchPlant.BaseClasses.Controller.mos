@@ -1,0 +1,91 @@
+// name:     Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller
+// teardown_command: rm -f Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller.mat",
+  "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_diff.csv",0.01,0.0001,
+  {"QI_302","QIS_502","Transition8.enableFire","Transition5.enableFire",
+"Transition10.enableFire",
+"Transition12.enableFire",
+"Transition11.enableFire",
+"Transition13.enableFire",
+"Transition9.enableFire",
+"Transition6.enableFire",
+"Transition4.enableFire",
+"Transition2.enableFire",
+"Transition1.t_dummy",
+"Transition1.t_start",
+"Transition1.enableFire",
+"Transition1.t",
+"TransitionWithSignal1.enableFire",
+"T7_idle",
+"T5_idle",
+"TIS_702",
+"TIS_602",
+"LIS_701",
+"LIS_601",
+"LIS_501",
+"LIS_301",
+"InitialStep1.active",
+"Step1.active",
+"Step2.active",
+"Step3.active",
+"Step4.active",
+"Step5.active",
+"Step6.active",
+"Step7.active",
+"Step8.active",
+"Step9.active",
+"Step10.active",
+"Step11.active",
+"Step12.active",
+"Step13.active",
+"Step14.active",
+"Transition7.enableFire",
+"Transition7.t",
+"Transition3.t_dummy",
+"Transition3.t_start",
+"Transition3.enableFire",
+"Transition3.t",
+"actuators.V25",
+"actuators.V24",
+"actuators.V23",
+"actuators.V22",
+"actuators.V20",
+"actuators.V18",
+"actuators.V15",
+"actuators.V12",
+"actuators.V11",
+"actuators.V9",
+"actuators.V8",
+"actuators.V6",
+"actuators.V5",
+"actuators.V3",
+"actuators.V1",
+"actuators.T6_Cooling",
+"actuators.T7_Cooling",
+"actuators.T5_Heater",
+"actuators.P2",
+"actuators.P1"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.AST_BatchPlant.BaseClasses.Controller', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

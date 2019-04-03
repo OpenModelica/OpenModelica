@@ -1,0 +1,97 @@
+// name:     BuiltinList
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Builtin function testing
+//
+loadFile("BuiltinList.mo");
+
+listAppend({1,2,3},{4.0,5,6});
+getErrorString();
+listAppend({1,2.0,3},{4.0,5,6});
+getErrorString();
+
+BuiltinList.func({1,2,3},2);
+BuiltinList.func({5,6,7},2);
+
+echo(false);
+ut1 := BuiltinList.UT1({(3,SOME(2)),(2,NONE())});
+ut2 := BuiltinList.UT1({(1,NONE())});
+ut3 := BuiltinList.UT1({});
+echo(true);
+// Can't assign tuples in OpenModelica yet
+BuiltinList.funcTuple({(1,1.5,false,"tup1",ut1),(1,1.5,false,"tup2",ut2),(1,1.5,false,"tup3",ut3)},(1,1.5,false,"tup3",ut3),1);
+getErrorString();
+BuiltinList.funcTuple({(1,1.5,false,"tup1",ut1),(1,1.5,false,"tup2",ut2)},(1,1.5,false,"tup3",ut3),1);
+getErrorString();
+
+// Result:
+// true
+//
+// "[metamodelica/meta/BuiltinList.mos:10:1-10:30:writable] Error: Could not solve the polymorphism in the function call to .listAppend
+//   Input bindings:
+//     $A:
+//       #Real
+//       #Integer
+//   Solved bindings:
+//
+//   Unsolved bindings:
+//     $A:
+//       #Real
+//       #Integer
+// "
+// {1.0,2.0,3.0,4.0,5.0,6.0}
+// ""
+// ({3,2,1},{1,2,3,1,2,3},3,true,2,{1,2})
+// ({7,6,5},{5,6,7,5,6,7},3,false,6,{5,6})
+// true
+// ({(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;)},{(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;)},3,true,true,(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),{(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;)},{(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;)})
+// ""
+// ({(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;)},{(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),(1,1.5,0,"tup2",record BuiltinList.UT.UT1
+//     lst = {(1,NONE())}
+// end BuiltinList.UT.UT1;)},2,false,false,(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;),{(1,1.5,0,"tup1",record BuiltinList.UT.UT1
+//     lst = {(3,SOME(2)),(2,NONE())}
+// end BuiltinList.UT.UT1;)},{(1,1.5,0,"tup3",record BuiltinList.UT.UT1
+//     lst = {}
+// end BuiltinList.UT.UT1;)})
+// ""
+// endResult

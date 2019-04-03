@@ -1,0 +1,115 @@
+// name: pendel
+// status: correct
+
+setCommandLineOptions("+gDynopt +indexReductionMethod=dummyDerivatives --tearingStrictness=casual +loop2con=all");
+getErrorString();
+
+loadString("
+model pendel
+  final parameter Real m = 1;
+  final parameter Real L = 1;
+  final parameter Real g = 9.81;
+  final parameter Real x0 = 0.5;
+  final parameter Real y0 = sqrt(L^2 - x0^2);
+  Real F(min=-10,max=15);
+  input Real Fy(min=-5,max=10);
+  input Real Fx(min=-5,max=0.5);
+
+  Real x(start=x0,min=0,max=1);
+  Real y(start=y0, fixed=true, min=0,max=1);
+  
+  Real vx(start=0);
+  Real vy(start=0,min=-1,max=0.0);
+  Real cost(nominal=100) =( cos(Fx)-sin(Fy))*sin(time^2) annotation(isLagrange = true);
+  Real posX(min=0,max=0) = x-0.7 annotation(isFinalConstraint = true);
+  Real conVx(min=0,max=0) = vx-1 annotation(isFinalConstraint = true);
+  Real conFx(min=0,max=0) = Fx-0.5 annotation(isFinalConstraint = true);
+  Real conDerVX(min=0,max=0) = der(vx)*vy+0.5 annotation(isFinalConstraint = true);
+  Real costDerVy = (der(vy))^2 annotation(isLangrange = true);
+  Real posDerVX(min=-5,max=5) = der(vx) annotation(isConstraint = true);
+  Real posDerVY(min=-5,max=5) = der(vy) annotation(isConstraint = true);
+
+equation
+  m*der(vx) = -x/L*F + Fx*x;
+  m*der(vy) = -y/L*F - m*g + Fy*y;
+  x^2 + y^2 = (L)^2;
+  der(x) = vx;
+  der(y) = vy;
+end pendel;
+");
+getErrorString();
+
+echo(false);
+res:=optimize(pendel, numberOfIntervals=250, tolerance = 1e-08, stopTime = 10, simflags="-optimizerNP 1 -lv LOG_IPOPT -ipopt_max_iter 5000 -ipopt_hesse NUM");
+getErrorString();
+messages:=res.messages;
+echo(true);
+res.resultFile;
+if regexBool(messages, "EXIT: Optimal Solution Found.\n") then
+  print("Optimal Solution Found!\n");
+  if regexBool(messages,"Number of Iterations....: 64") then
+    print("Number of Iterations....: 64\n");
+  else
+    print("wrong Number of Iterations! Update test\n");
+  end if;
+else
+  print("No optimal solution found");
+  exit(1);
+end if;
+
+getErrorString();
+
+getErrorString();
+val(cost,0.0);
+val(cost,1.0);
+val(cost,2.0);
+val(cost,3.0);
+val(cost,4.0);
+val(cost,5.0);
+
+val(x,0.0);
+val(x,1.0);
+val(x,2.0);
+val(x,3.0);
+val(x,4.0);
+val(x,5.0);
+
+val(Fx,0.0);
+val(Fx,1.0);
+val(Fx,2.0);
+val(Fx,3.0);
+val(Fx,4.0);
+val(Fx,5.0);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "pendel_res.mat"
+// Optimal Solution Found!
+// Number of Iterations....: 64
+//
+// ""
+// ""
+// -0.0
+// -1.659802327078357
+// -0.1810650803865342
+// -0.8129041257192998
+// -0.06888096353801151
+// -0.03166509723098989
+// 0.4999999993334863
+// 0.4999999833331176
+// 0.4999999666607621
+// 0.4999999501537176
+// 0.4999999336917155
+// 0.4999999180081858
+// -3.30761299558503
+// -3.307611589086046
+// -5.0
+// -3.307611465132354
+// -5.0
+// -4.999999953525733
+// endResult

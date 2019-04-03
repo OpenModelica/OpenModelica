@@ -1,0 +1,102 @@
+// name: dumpEncapsulateConditions.mos
+// keywords: omc debug dump
+// status: correct
+//
+// omc debug dump: +d=dumpEncapsulateConditions
+//
+
+// TODO: change this model to test the dump +d=dumpEncapsulateConditions
+loadString("
+model test_dumpEncapsulateConditions
+end test_dumpEncapsulateConditions;
+"); getErrorString();
+
+setDebugFlags("dumpEncapsulateConditions"); getErrorString();
+buildModel(test_dumpEncapsulateConditions); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// DAE after PreOptModule >>encapsulateWhenConditions<<
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (0)
+// ========================================
+//
+//
+// Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 0 variables and equations
+//
+//
+// StrongComponents
+// ========================================
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known Variables (constants) (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// When Clauses (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// {"test_dumpEncapsulateConditions","test_dumpEncapsulateConditions_init.xml"}
+// ""
+// endResult

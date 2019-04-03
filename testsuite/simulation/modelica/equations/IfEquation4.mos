@@ -1,0 +1,53 @@
+// name:     IfEquation4
+// keywords: equation
+// status: correct
+// teardown_command: rm -rf testIfEqn4* _testIfEqn4.h output.log
+// 
+// 
+
+loadString("
+function f
+  input Real u;
+  output Real x[2];
+algorithm
+  x[1] :=  sin(u);
+  x[2] :=  cos(u);
+end f;
+
+model testIfEqn4
+  Real x[2];
+equation
+  if (time > 0.5 and time <=0.75) then 
+    x[1] = cos(time);
+    x[2] = sin(time);
+  elseif time > 0.75 then
+    x[1] = -cos(time);
+    x[2] = -sin(time);
+  else 
+    x = f(time);
+  end if;
+end testIfEqn4;
+");
+getErrorString();
+
+simulate(testIfEqn4); 
+getErrorString();
+
+val(x[1],{0,1.0});
+val(x[2],{0,1.0});
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testIfEqn4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testIfEqn4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,-0.5403023058681398}
+// {1.0,-0.8414709848078965}
+// endResult

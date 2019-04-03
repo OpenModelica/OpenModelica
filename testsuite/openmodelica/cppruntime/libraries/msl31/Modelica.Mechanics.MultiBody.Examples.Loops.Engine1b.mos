@@ -1,0 +1,32 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b,stopTime=0.5, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b.mat","Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_diff.csv",0.01,0.00001,
+  {"Inertia.phi",
+  "Inertia.w",
+  "der(Inertia.phi)",
+  "der(Inertia.w)"});
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

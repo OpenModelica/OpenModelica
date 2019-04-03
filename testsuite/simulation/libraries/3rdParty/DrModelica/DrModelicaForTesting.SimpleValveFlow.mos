@@ -1,0 +1,33 @@
+// name:     DrModelicaForTesting.SimpleValveFlow.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.SimpleValveFlow
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.SimpleValveFlow.* DrModelicaForTesting.SimpleValveFlow_* DrModelicaForTesting.SimpleValveFlow DrModelicaForTesting.SimpleValveFlow.exe DrModelicaForTesting.SimpleValveFlow.cpp DrModelicaForTesting.SimpleValveFlow.makefile DrModelicaForTesting.SimpleValveFlow.libs DrModelicaForTesting.SimpleValveFlow.log DrModelicaForTesting.SimpleValveFlow.c DrModelicaForTesting.SimpleValveFlow.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.SimpleValveFlow, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.SimpleValveFlow_res.mat",
+  "ReferenceFiles/SimpleValveFlow_ref.mat","DrModelicaForTesting.SimpleValveFlow_diff.csv",0.01,0.013,
+  {"A", "beta","p_in", "p_out"});
+  
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.SimpleValveFlow_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.SimpleValveFlow', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

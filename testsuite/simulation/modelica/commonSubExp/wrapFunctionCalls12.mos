@@ -1,0 +1,52 @@
+// name: wrapFunctionCalls12
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls12
+    Real x (unit=\"s\");
+    Real y (unit=\"m\");
+    parameter Real p1 = 5;
+  equation
+    x = sin(p1);
+    y = cos(x);
+  end wrapFunctionCalls12;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls12); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated globalKnownVars (simulation) (3)
+// ========================================
+// 1: x:VARIABLE(unit = "s" fixed = true )  = sin(p1)  type: Real 
+// 2: p1:PARAM()  = 5.0  type: Real 
+// 3: y:VARIABLE(unit = "m" fixed = true )  = cos(x)  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: y - cos(x) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

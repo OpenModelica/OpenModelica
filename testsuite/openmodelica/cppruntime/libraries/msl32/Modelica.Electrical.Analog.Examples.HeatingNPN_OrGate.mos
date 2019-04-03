@@ -1,0 +1,40 @@
+// name:     Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate
+// teardown_command: rm -f Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate);
+compareVars :=
+{
+   "HeatCapacitor1.T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// true
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate
+// {"HeatCapacitor1.T"}
+// Simulation options: startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

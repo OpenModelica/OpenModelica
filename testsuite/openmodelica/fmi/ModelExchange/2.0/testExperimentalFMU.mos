@@ -1,0 +1,38 @@
+// name:     TestExperimentalFMU
+// keywords: fmu export QSS multirate
+// status: correct
+// teardown_command: rm -rf log.txt
+
+loadString("
+model advection
+  parameter Real alpha = 0.5, mu = 100;
+  constant Integer N = 100;
+  Real u[N];
+initial equation
+  for i in 1:33 loop
+    u[i] = 1;
+  end for;
+equation
+  der(u[1]) = ((-u[1]) + 1) * N - mu * u[1] * (u[1] - alpha) * (u[1] - 1);
+  for j in 2:N loop
+    der(u[j]) = ((-u[j]) + u[j - 1]) * N - mu * u[j] * (u[j] - alpha) * (u[j] - 1);
+  end for;
+end advection; ");
+setDebugFlags("fmuExperimental");
+translateModelFMU(advection ,"2","me","<default>");
+getErrorString();
+system("rm -f log.txt");
+system("unzip -cqq advection.fmu sources/advection.c | grep \"void advection_functionODE_Partial(\"", "log.txt");
+readFile("log.txt");
+
+// Result:
+// true
+// true
+// "advection.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// 0
+// "void advection_functionODE_Partial(DATA *data, threadData_t *threadData, int i)
+// "
+// endResult

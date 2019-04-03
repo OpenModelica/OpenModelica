@@ -1,0 +1,5 @@
+echo(false);
+runScript(getEnvironmentVar("OMLIBRARYCOMMON")+"/ModelTestingDefaults.mos");
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+outputFormat :="mat";
+echo(true);

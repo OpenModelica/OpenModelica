@@ -1,0 +1,44 @@
+// status: correct
+
+loadModel(ModelicaTest);getErrorString();
+runScript("../common/ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(ModelicaTest.Fluid.TestComponents.Machines.TestWaterPumpDCMotorHeatTransfer);
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// true
+// ""
+// "true
+// "
+// ""
+// true
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// ModelicaTest.Fluid.TestComponents.Machines.TestWaterPumpDCMotorHeatTransfer
+// Simulation options: startTime = 0.0, stopTime = 8.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.TestComponents.Machines.TestWaterPumpDCMotorHeatTransfer', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: ModelicaTest.Fluid.TestComponents.Machines.TestWaterPumpDCMotorHeatTransfer_res.mat
+// Note: Reference file ReferenceFiles/ModelicaTest.Fluid.TestComponents.Machines.TestWaterPumpDCMotorHeatTransfer.mat does not exist. Cannot determine if the result improved!
+// Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter m has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.core.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.core.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13712:7-13713:32:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: motor.psi_eNominal, modification: final  = 1.0.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13711:7-13711:77:writable] Warning: Modification or redeclaration of protected elements is not allowed.
+//  Element: motor.ViNominal, modification: final  = motor.VaNominal + (-Modelica.Electrical.Machines.Thermal.convertResistance(motor.Ra, motor.TaRef, motor.alpha20a, motor.TaNominal)) * motor.IaNominal - Modelica.Electrical.Machines.Losses.DCMachines.brushVoltageDrop(motor.brushParameters, motor.IaNominal).
+// Warning: Parameter motor.friction.frictionParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.strayLoad.strayLoadParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.core.coreParameters.VRef has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter motor.core.coreParameters.wRef has neither value nor start value, and is fixed during initialization (fixed=true)
+//
+// "true
+// "
+// ""
+// endResult

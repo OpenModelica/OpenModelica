@@ -1,0 +1,80 @@
+// name: testFinalCon_7
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadString("
+model testFinalCon7
+  Real x1;
+  Real x2;
+  Real y1;
+  Real y2;
+  Real y3(start = -1);
+  input Real u;
+  
+  Real final_con1(min = -5, max = 5) annotation(isFinalConstraint = true);
+  Real final_con2(min = -5, max = 5) annotation(isFinalConstraint = true);
+  Real cost annotation(isLagrange = true);
+
+equation
+  der(x1) = x2*u - x1;
+  der(x2) = x1 + y1;
+  final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
+  final_con2 = x2 - 3;
+   0 = exp(y1 + y2) - exp(1 + u);
+   0 = exp(y1 - y2) - exp(1 + time);
+   y3^2 = 1 + time;
+  cost = u^2;
+end testFinalCon7;
+");
+getErrorString();
+
+optimize(testFinalCon7, numberOfIntervals=50, tolerance = 1e-08, simflags="-optimizerTimeGrid ReferenceFiles/TFC7time.csv -lv LOG_IPOPT_ERROR -optimizerNP 3");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon7_res.mat","ReferenceFiles/testFinalCon7_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "testFinalCon7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerTimeGrid ReferenceFiles/TFC7time.csv -lv LOG_IPOPT_ERROR -optimizerNP 3'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_IPOPT_ERROR   | info    | max violation is 3.25 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.136064 for the approximation of the state x1(time = 3.7)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00651596 for the approximation of the state x1(time = 4.5)
+// LOG_IPOPT_ERROR   | info    | max error is 0.00103252 for the approximation of the state x1(time = 4.5)
+// LOG_IPOPT_ERROR   | info    | max error is 2.32683e-05 for the approximation of the state x1(time = 4.5)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.81421e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.99294e-08 for the final constraint $finalCon$final_con2(time = 5)
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

@@ -1,0 +1,26 @@
+// name:     $modelname$
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate($modelname$);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("$modelname$_res.mat",
+  "ReferenceFiles/$modelname$.mat",
+  "$modelname$_diff.csv",0.01,0.0001,
+  {"$states$"});
+
+
+// Result:
+// $simulation_output$
+// endResult

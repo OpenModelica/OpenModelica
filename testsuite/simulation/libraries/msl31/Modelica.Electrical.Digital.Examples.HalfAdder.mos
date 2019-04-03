@@ -1,0 +1,25 @@
+// name:     Modelica.Electrical.Digital.Examples.HalfAdder
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Electrical.Digital.Examples.HalfAdder,stopTime=5.0);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.HalfAdder_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.HalfAdder.mat","Modelica.Electrical.Digital.Examples.HalfAdder_diff.csv",0.01,0.00001,
+  {"s.y[1]",
+  "c.y[1])"});
+  
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Digital.Examples.HalfAdder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.HalfAdder', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

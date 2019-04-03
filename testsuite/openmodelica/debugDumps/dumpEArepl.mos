@@ -1,0 +1,28 @@
+// name: dumpEArepl.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpEArepl
+// 
+
+// TODO: change this model to test the dump +d=dumpEArepl
+loadString("
+model test_dumpEArepl
+end test_dumpEArepl;
+"); getErrorString();
+
+setDebugFlags("dumpEArepl"); getErrorString();
+buildModel(test_dumpEArepl); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// Replacements: (0)
+// ========================================
+//
+// {"test_dumpEArepl","test_dumpEArepl_init.xml"}
+// ""
+// endResult

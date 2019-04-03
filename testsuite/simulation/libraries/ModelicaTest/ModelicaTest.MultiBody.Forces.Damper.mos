@@ -1,0 +1,40 @@
+// name:     ModelicaTest.MultiBody.Forces.Damper
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+loadModel(ModelicaTest);
+
+setMatchingAlgorithm("PFPlusExt");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(ModelicaTest.MultiBody.Forces.Damper);
+
+
+res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.Forces.Damper_res.mat",
+  "ReferenceFiles/ModelicaTest.MultiBody.Forces.Damper.mat",
+  "ModelicaTest.MultiBody.Forces.Damper_diff.csv",0.01,0.0001,
+  {"body.frame_a.r_0[1]",
+"body.v_0[1]",
+"prismatic1.s",
+"prismatic1.v",
+"heatCapacitor.T",
+"prismatic2.s",
+"prismatic2.v"});
+
+
+// Result:
+// true,
+// true,
+// true,
+// true,
+// record SimulationResult,
+//     resultFile = "ModelicaTest.MultiBody.Forces.Damper_res.mat",,
+//     simulationOptions = "startTime = 0.0, stopTime = 7.0, numberOfIntervals = 500, tolerance = 1e-06, method = \'dassl\', fileNamePrefix = \'ModelicaTest.MultiBody.Forces.Damper\', storeInTemp = false, noClean = false, options = \'\', outputFormat = \'mat\', variableFilter = \'.*\', cflags = \'\', simflags = \'\'",,
+//     messages = "",,
+// end SimulationResult;,
+// "Files Equal!"
+// endResult

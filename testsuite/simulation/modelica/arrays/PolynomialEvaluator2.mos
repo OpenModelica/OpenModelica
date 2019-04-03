@@ -1,0 +1,29 @@
+// Name:     PolynomialEvaluator2
+// keywords: equations when
+// status: correct
+// teardown_command: rm -rf PolynomialEvaluator2.makefile PolynomialEvaluator2.plt PolynomialEvaluator2.libs PolynomialEvaluator2.log PolynomialEvaluator2.cpp PolynomialEvaluator2 PolynomialEvaluator2.exe PolynomialEvaluator2_* output.log
+// 
+//  Tests when, elsewhen
+//
+// Drmodelica: 9.2 called (p. 300)
+//
+loadFile("PolynomialEvaluator2.mo");
+simulate(PolynomialEvaluator2,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+//size := readSimulationResultSize("PolynomialEvaluator2_res.mat");
+//res:=readSimulationResult("PolynomialEvaluator2_res.mat",{result},size); 
+echo(true); // turns on output
+val(result,0.5);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "PolynomialEvaluator2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'PolynomialEvaluator2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 16.0
+// endResult

@@ -1,0 +1,32 @@
+// name:     Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates
+// teardown_command: rm -f Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates.mat",
+  "Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_diff.csv",0.01,0.0001,
+  {"medium.p",
+   "medium.h"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 22.0, numberOfIntervals = 2200, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Warning: Variable medium.x out of [min, max] interval: medium.x >= 0.0 and medium.x <= 1.0 has value: 1
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,40 @@
+// name:     PlanarMechanicsForTesting.Examples.DoublePendulum.mos [simulation checking]
+// keywords: simulation PlanarMechanicsForTesting.Examples
+// status: correct
+// teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.DoublePendulum.* PlanarMechanicsForTesting.Examples.DoublePendulum_* PlanarMechanicsForTesting.Examples.DoublePendulum PlanarMechanicsForTesting.Examples.DoublePendulum.exe PlanarMechanicsForTesting.Examples.DoublePendulum.cpp PlanarMechanicsForTesting.Examples.DoublePendulum.makefile PlanarMechanicsForTesting.Examples.DoublePendulum.libs PlanarMechanicsForTesting.Examples.DoublePendulum.log PlanarMechanicsForTesting.Examples.DoublePendulum.c PlanarMechanicsForTesting.Examples.DoublePendulum.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
+
+// adrpo: stopTime=3 is got from the experiment annotation in the model
+simulate(PlanarMechanicsForTesting.Examples.DoublePendulum, tolerance=0.0001, stopTime=9.5); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.DoublePendulum_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//DoublePendulum.mat","PlanarMechanicsForTesting.Examples.DoublePendulum_diff.csv",0.01,0.4,
+  {"revolute1.phi", "revolute.phi", "revolute.w", "revolute1.w"});
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PlanarMechanicsForTesting.Examples.DoublePendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// Warning: Resultfile and Reference have different end time points!
+// Reffile[502]=10.000000
+// File[502]=9.500000
+// "
+// endResult

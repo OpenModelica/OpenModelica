@@ -1,0 +1,68 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2.lua input.csv temp-initialization2/
+
+loadString("
+model initialization2
+  input Real u;
+  output Real y = u;
+  Real x(fixed=false);
+initial equation
+  x - u = 0.0;
+equation
+  der(x) = -x;
+end initialization2;"); getErrorString();
+
+buildModelFMU(initialization2, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("input.csv", "time,y
+0.0,2.3
+1.0,2.3
+"); getErrorString();
+
+writeFile("initialization2.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-initialization2/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"input.csv\")
+oms_addSubModel(\"test.root.B\", \"initialization2.fmu\")
+oms_addConnection(\"test.root.A.y\", \"test.root.B.u\")
+oms_setResultFile(\"test\", \"\")
+
+oms_instantiate(\"test\")
+oms_initialize(\"test\")
+print(\"info:    Initialization\")
+print(\"info:      A.y: \" .. oms_getReal(\"test.root.A.y\"))
+print(\"info:      B.x: \" .. oms_getReal(\"test.root.B.x\"))
+print(\"info:      B.y: \" .. oms_getReal(\"test.root.B.y\"))
+print(\"info:      B.u: \" .. oms_getReal(\"test.root.B.u\"))
+
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization2.lua");
+
+// Result:
+// true
+// ""
+// "initialization2.fmu"
+// ""
+// true
+// ""
+// true
+// ""
+// info:    maximum step size for 'test.root': 0.100000
+// info:    No result file will be created
+// info:    Initialization
+// info:      A.y: 2.3
+// info:      B.x: 2.3
+// info:      B.y: 2.3
+// info:      B.u: 2.3
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// 0
+// endResult

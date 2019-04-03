@@ -1,0 +1,20 @@
+// name: Bug4209.mos
+// keywords:
+// status: correct
+//
+
+loadModel(Modelica); getErrorString();
+loadModel(ModelicaServices); getErrorString();
+getInheritedClasses(Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape); getErrorString();
+getInheritedClasses(ModelicaServices.Animation.Shape); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {ModelicaServices.Animation.Shape,Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
+// ""
+// {Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
+// ""
+// endResult

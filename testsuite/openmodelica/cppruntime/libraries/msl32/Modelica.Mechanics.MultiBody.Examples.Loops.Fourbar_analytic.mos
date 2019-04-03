@@ -1,0 +1,38 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic);
+compareVars := {"j1.phi","j1.w"};
+runScript(modelTesting);
+getErrorString();
+
+
+// Result:
+// true
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic
+// "../../../../simulation/libraries/msl32/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic.mat"
+// 0.0
+// 0.01
+// 0.0001
+// "mat"
+// {"j1.phi","j1.w"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic_res.mat
+// Files Equal!
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

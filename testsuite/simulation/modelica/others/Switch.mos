@@ -1,0 +1,51 @@
+// name:     Switch
+// keywords: <insert keywords here>
+// status: correct
+// teardown_command: rm -rf Switch_* Switch Switch.exe Switch.cpp Switch.makefile Switch.libs Switch.log output.log
+// 
+//  <insert description here>
+//
+// Drmodelica: 
+// 
+loadFile("Switch.mo");
+simulate(Switch, numberOfIntervals=10, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+//size:=readSimulationResultSize("Switch_res.mat");
+//res:=readSimulationResult("Switch_res.mat",{v,i,i1,itot,open},size); 
+v1:=val(v,0.3);
+v2:=val(v,0.8);
+i1:=val(i,0.3);
+i2:=val(i,0.8);
+itot1:=val(itot,0.3);
+itot2:=val(itot,0.8);
+open1:=val(open,0.3);
+open2:=val(open,0.8);
+echo(true); // turns on output
+v1;
+v2;
+i1;
+i2;
+itot1;
+itot2;
+open1;
+open2;
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Switch_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Switch', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 2.0
+// 0.0
+// 1.0
+// endResult

@@ -1,0 +1,69 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
+loadString("package Try
+function f
+  output Real o;
+algorithm
+  try
+    o := 1.5;
+  else
+    fail();
+  end try;
+end f;
+
+model M
+  Real r = f();
+end M;
+
+end Try;");getErrorString();
+list();getErrorString();
+instantiateModel(Try.M);getErrorString();
+Try.f();getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "package Try
+//   function f
+//     output Real o;
+//   algorithm
+//     try
+//       o := 1.5;
+//     else
+//       fail();
+//     end try;;
+//   end f;
+//
+//   model M
+//     Real r = f();
+//   end M;
+// end Try;"
+// ""
+// "function Try.f
+//   output Real o;
+// algorithm
+//   matchcontinue ()
+//       case ()
+//         algorithm
+//           o := 1.5;
+//         then
+//           ();
+//       case ()
+//         algorithm
+//           fail();
+//         then
+//           ();
+//     end matchcontinue;
+// end Try.f;
+//
+// class Try.M
+//   Real r = 1.5;
+// end Try.M;
+// "
+// ""
+// 1.5
+// ""
+// endResult

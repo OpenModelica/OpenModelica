@@ -1,0 +1,32 @@
+// name:     Modelica.Media.Examples.TestOnly.IdealGasN2
+// teardown_command: rm -f Modelica.Media.Examples.TestOnly.IdealGasN2_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Media.Examples.TestOnly.IdealGasN2, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.TestOnly.IdealGasN2_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.TestOnly.IdealGasN2.mat",
+  "Modelica.Media.Examples.TestOnly.IdealGasN2_diff.csv",0.01,0.0001,
+  {"U",
+   "m"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.TestOnly.IdealGasN2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.IdealGasN2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// {"Files Equal!"}
+// endResult

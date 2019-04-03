@@ -1,0 +1,130 @@
+// name: wrapFunctionCalls11
+// keywords: cse, wrapFunctionCalls
+// status: correct
+
+loadString("
+package CSE
+  model wrapFunctionCalls11
+    Real x, y, z, a, b, c;
+    parameter Real p1 = 5;
+  equation
+    x = sin(y);
+    x = cos(z);
+    z = 2 * p1;
+    a = sin(b);
+    b = cos(c);
+    c = 2 * p1;
+  end wrapFunctionCalls11;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("--preOptModules-=clockPartitioning -d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls11); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (2)
+// ========================================
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
+// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (2, 2)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * y.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse1 = cos(y)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (3)
+// ========================================
+// 1: input y.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
+// 2: input x:VARIABLE()  type: Real 
+// 3: input $res1:VARIABLE()  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse1 - cos(y) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real 
+//
+//
+// ########### Updated Equation List (simulation) (1, 1)
+// ========================================
+// 1/1 (1): x = sin(y)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (simulation) (6)
+// ========================================
+// 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
+// 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
+// 3: p1:PARAM()  = 5.0  type: Real 
+// 4: b:VARIABLE(fixed = true )  = cos(c)  type: Real 
+// 5: a:VARIABLE(fixed = true )  = sin(b)  type: Real 
+// 6: x:VARIABLE(fixed = true )  = cos(z)  type: Real 
+//
+//
+// ########### CSE Replacements (4/46)
+// ========================================
+// 1: x - sin(y) - {}
+// 2: x - cos(z) - {}
+// 3: a - sin(b) - {}
+// 4: b - cos(c) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (2)
+// ========================================
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
+// 2: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (2, 2)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * y.SeedNLSJac1   [unknown |0|0|0|0|]
+// 2/2 (1): $cse2 = cos(y)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (3)
+// ========================================
+// 1: input y.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real 
+// 3: input $res1:VARIABLE()  type: Real 
+//
+//
+// ########### CSE Replacements (1/43)
+// ========================================
+// 1: $cse2 - cos(y) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls11_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls11', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

@@ -1,0 +1,52 @@
+// name:     SampleEvent
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml SampleEvent.fmu SampleEvent_* SampleEvent_me_FMU.mo SampleEvent.libs SampleEvent.lib SampleEvent.so SampleEvent.dll SampleEvent.c SampleEvent.makefile
+// Event handling
+//
+
+loadString("
+model SampleEvent
+  Real x(start=1);
+  Integer i;
+equation
+  der(x) = 1*x;
+  when sample(0,0.1) then
+    i = pre(i)+1;
+  end when;
+end SampleEvent;
+");
+translateModelFMU(SampleEvent, version="1.0");
+getErrorString();
+importFMU("SampleEvent.fmu");
+loadFile("SampleEvent_me_FMU.mo");
+getErrorString();
+simulate(SampleEvent_me_FMU,stopTime=1);getErrorString();
+val(x,0);
+val(x,1);
+val(i,0);
+val(i,1);
+
+
+
+// Result:
+// true
+// "SampleEvent.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// "SampleEvent_me_FMU.mo"
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SampleEvent_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SampleEvent_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.718363715251574
+// 1.0
+// 11.0
+// endResult

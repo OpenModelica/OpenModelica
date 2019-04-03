@@ -1,0 +1,39 @@
+// name: ListAnnotation
+// keywords: list annotation #2570
+// status: correct
+// 
+// Tests dumping of annotations with list.
+//
+
+loadString("
+  model M
+    annotation();
+  end M;
+");
+getErrorString();
+
+loadString("
+  model M2
+    annotation(test = true);
+  end M2;
+");
+getErrorString();
+
+list(M); getErrorString();
+list(M2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "model M
+//   annotation();
+// end M;"
+// ""
+// "model M2
+//   annotation(
+//     test = true);
+// end M2;"
+// ""
+// endResult

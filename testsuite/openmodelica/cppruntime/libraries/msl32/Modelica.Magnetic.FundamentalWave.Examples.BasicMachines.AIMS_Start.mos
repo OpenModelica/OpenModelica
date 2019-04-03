@@ -1,0 +1,91 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start
+// teardown_command: rm -f Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start);
+
+// adrpo: hack to get it to work
+relTol := 1.5;
+absTol := 0.0007;
+
+compareVars :=
+{
+   "aimsE.i_0_r", 
+   "aimsE.i_0_s", 
+   "aimsE.idq_rr[1]", 
+   "aimsE.idq_rr[2]", 
+   "aimsE.idq_sr[1]", 
+   "aimsE.idq_sr[2]", 
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", 
+   "aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", 
+   "aimsM.rotor.zeroInductor.i0", 
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re", 
+   "aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", 
+   "aimsM.stator.zeroInductor.i0", 
+   "loadInertiaE.phi", 
+   "loadInertiaE.w", 
+   "loadInertiaM.phi", 
+   "loadInertiaM.w"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start
+// 1.5
+// 0.0007
+// {"aimsE.i_0_r","aimsE.i_0_s","aimsE.idq_rr[1]","aimsE.idq_rr[2]","aimsE.idq_sr[1]","aimsE.idq_sr[2]","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.rotor.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.rotor.zeroInductor.i0","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","aimsM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","aimsM.stator.zeroInductor.i0","loadInertiaE.phi","loadInertiaE.w","loadInertiaM.phi","loadInertiaM.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 0.00001, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.AIMS_Start_res.mat
+// Files Equal!
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4674:9-4681:44:writable] Error: Variable aimsM.rotorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4674:9-4681:44:writable] Error: Variable aimsM.rotorCoreParameters: Duplicate modification of element  = (typed)0 DAE.PROP(Integer, C_CONST), value: 0 and  = (typed)0.0 DAE.PROP(Real(min=0.0, quantity="Power", unit="W"), C_CONST), value: 0.0 on component PRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4674:9-4681:44:writable] Error: Variable aimsM.rotorCoreParameters: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 1.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4674:9-4681:44:writable] Error: Variable aimsM.rotorCoreParameters: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 1.0 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:4674:9-4681:44:writable] Error: Variable aimsM.rotorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  = (typed)0 DAE.PROP(Integer, C_CONST), value: 0 and  = (typed)0.0 DAE.PROP(Real(min=0.0, quantity="Power", unit="W"), C_CONST), value: 0.0 on component PRef.
+// Error: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 1.0 on component VRef.
+// Error: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 1.0 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6704:7-6710:42:writable] Error: Variable aimsM.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6704:7-6710:42:writable] Error: Variable aimsM.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6704:7-6710:42:writable] Error: Variable aimsM.statorCoreParameters: Duplicate modification of element  = (typed)6.283185307179586 * aimsM.fsNominal / /*Real*/(aimsM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966 and  = (typed)314.1592653589793 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 314.1592653589793 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6704:7-6710:42:writable] Error: Variable aimsM.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// Error: Duplicate modification of element  = (typed)6.283185307179586 * aimsM.fsNominal / /*Real*/(aimsM.p) DAE.PROP(Real, C_PARAM), value: 157.07963267948966 and  = (typed)314.1592653589793 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 314.1592653589793 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Magnetic/FundamentalWave.mo:6711:7-6713:62:writable] Error: Variable aimsM.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5088:9-5094:43:writable] Error: Variable aimsE.rotorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5088:9-5094:43:writable] Error: Variable aimsE.rotorCoreParameters: Duplicate modification of element  = (typed)0 DAE.PROP(Integer, C_CONST), value: 0 and  = (typed)0.0 DAE.PROP(Real(min=0.0, quantity="Power", unit="W"), C_CONST), value: 0.0 on component PRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5088:9-5094:43:writable] Error: Variable aimsE.rotorCoreParameters: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 1.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5088:9-5094:43:writable] Error: Variable aimsE.rotorCoreParameters: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 1.0 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:5088:9-5094:43:writable] Error: Variable aimsE.rotorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  = (typed)0 DAE.PROP(Integer, C_CONST), value: 0 and  = (typed)0.0 DAE.PROP(Real(min=0.0, quantity="Power", unit="W"), C_CONST), value: 0.0 on component PRef.
+// Error: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 1.0 on component VRef.
+// Error: Duplicate modification of element  {start  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1}  = (typed)1 DAE.PROP(Integer, C_CONST), value: 1 and  = (typed)1.0 DAE.PROP(Real(min=1e-60, quantity="AngularVelocity", unit="rad/s"), C_CONST), value: 1.0 on component wRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13423:7-13428:41:writable] Error: Variable aimsE.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13423:7-13428:41:writable] Error: Variable aimsE.statorCoreParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13423:7-13428:41:writable] Error: Variable aimsE.statorCoreParameters: Duplicate modification of element final  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 and  = (typed)3 DAE.PROP(Integer, C_CONST), value: 3 on component m.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricPotential", unit="V"), C_CONST), value: 100.0 on component VRef.
+// [lib/omlibrary/Modelica 3.2.1/Electrical/Machines.mo:13429:7-13431:41:writable] Error: Variable aimsE.strayLoadParameters: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Error: Duplicate modification of element  {start  = (typed)100 DAE.PROP(Integer, C_CONST), value: 100}  and  = (typed)100.0 DAE.PROP(Real(min=1e-60, quantity="ElectricCurrent", unit="A"), C_CONST), value: 100.0 on component IRef.
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// 
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,53 @@
+// name: libraryCoverageFlags.mos
+// keywords: omc debug dump
+// status: correct
+// teardown_command: rm -rf Modelica.Utilities.Examples.readRealParameterModel*
+// 
+
+loadModel(Modelica, {"3.2.1"}); getErrorString();
+setCommandLineOptions("+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection"); getErrorString();
+buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"Modelica.Utilities.Examples.readRealParameterModel","Modelica.Utilities.Examples.readRealParameterModel_init.xml"}
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 0
+//  * Number of variables: 0
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ()
+//  * Number of discrete states: 0 ()
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (0):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 0 ()
+//  * Number of discrete states: 0 ()
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (0):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// "
+// endResult

@@ -1,0 +1,79 @@
+// name: bug2752
+// keywords: event, not
+// status: correct
+// cflags:
+// teardown_command: rm -rf eventTests.bug2752*  output.log
+//
+//
+
+loadString("
+package eventTests
+model bug2752
+  Real x, y[3], z[3];
+  Real a[3],b[3];
+  parameter Integer N = 3;
+algorithm 
+  for j in 1:N loop
+    if not a[j] > x then
+      z[j] :=  a[j];
+    elseif not a[j] > x or not a[j] >= b[j] then
+      z[j] :=  2*a[j];
+    else
+    end if;
+  end for;
+equation 
+  der(x) = 1;
+  a = { 2*der(x), 3*der(x), 4*der(x)};
+  b = { 5*der(x), 6*der(x), 7*der(x)};
+algorithm 
+  for j in 1:N loop
+    if not a[j] > x then
+      y[j] :=  a[j];
+    elseif not a[j] > x or not a[j] >= b[j] then
+      y[j] :=  2*a[j];
+    else
+    end if;
+  end for;
+end bug2752;
+end eventTests;
+"); getErrorString();
+
+simulate(eventTests.bug2752, stopTime=10); getErrorString();
+val(z[1], 1.9);
+val(z[1], 2.0);
+val(z[2], 2.9);
+val(z[2], 3.0);
+val(z[3], 3.9);
+val(z[3], 4.0);
+val(y[1], 1.9);
+val(y[1], 2.0);
+val(y[2], 2.9);
+val(y[2], 3.0);
+val(y[3], 3.9);
+val(y[3], 4.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "eventTests.bug2752_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventTests.bug2752', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 4.0
+// 4.0
+// 6.0
+// 6.0
+// 8.0
+// 8.0
+// 4.0
+// 4.0
+// 6.0
+// 6.0
+// 8.0
+// 8.0
+// endResult

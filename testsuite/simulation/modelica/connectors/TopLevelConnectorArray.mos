@@ -1,0 +1,33 @@
+// name:     TopLevelConnectorArray
+// keywords: connectors arrays
+// status: correct
+//
+//  Tests that input / output qualifiers are kept for connector arrays (#3794)
+//
+
+loadString("
+package TopLevelConnectorArray
+  connector IO
+    input Real u;
+    output Real y;
+  end IO;
+
+  model Test
+    IO[1] io;
+  equation
+    io.y = 2*io.u;
+  end Test;
+end TopLevelConnectorArray;
+");
+instantiateModel(TopLevelConnectorArray.Test);
+
+// Result:
+// true
+// "class TopLevelConnectorArray.Test
+//   input Real io[1].u;
+//   output Real io[1].y;
+// equation
+//   io[1].y = io[1].u * 2.0;
+// end TopLevelConnectorArray.Test;
+// "
+// endResult

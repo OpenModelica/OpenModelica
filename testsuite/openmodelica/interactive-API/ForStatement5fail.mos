@@ -1,0 +1,22 @@
+// name:     For-statement fail 5
+// keywords: for
+// status:   incorrect
+// 
+//  Test the interactive for-statement
+//
+a := 5;
+for i in 2 loop
+  a := 10;
+end for;
+a
+
+// Result:
+// 5
+// Error processing file: ForStatement5fail.mos
+// [openmodelica/interactive-API/ForStatement5fail.mos:8:1-10:8:writable] Error: Expression 2 in for-statement must be an array type.
+// 
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+// 
+// Execution failed!
+// endResult

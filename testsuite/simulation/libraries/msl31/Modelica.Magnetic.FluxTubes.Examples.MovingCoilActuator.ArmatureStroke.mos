@@ -1,0 +1,37 @@
+// name:     Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke,stopTime=0.0500000007451);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke.mat","Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_diff.csv",0.01,0.00001,
+  {"pmActuator.armature.stopper_xMax.s_rel",
+  "pmActuator.armature.stopper_xMax.v_rel",
+  "pmActuator.coil.i",
+  "cActuator.armature.stopper_xMax.s_rel",
+  "cActuator.armature.stopper_xMax.v_rel",
+  "cActuator.l.i",
+  "der(pmActuator.armature.stopper_xMax.s_rel)",
+  "der(pmActuator.armature.stopper_xMax.v_rel)",
+  "der(pmActuator.coil.i)",
+  "der(cActuator.armature.stopper_xMax.s_rel)",
+  "der(cActuator.armature.stopper_xMax.v_rel)",
+  "der(cActuator.l.i)"});
+  
+  
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0500000007451, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FluxTubes.Examples.MovingCoilActuator.ArmatureStroke', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
+//     messages = ""
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

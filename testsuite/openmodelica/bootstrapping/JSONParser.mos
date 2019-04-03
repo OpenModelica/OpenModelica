@@ -1,0 +1,81 @@
+// name: JSONParser
+// depends: test.json
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen,rml,noevalfunc");
+echo(false);
+pathPrefix := "../../../OMCompiler/Compiler/";
+
+echo(true);
+loadFile(pathPrefix + "Global/Global.mo");
+getErrorString();
+loadFile(pathPrefix + "Lexers/LexerJSON.mo");
+getErrorString();
+loadFile(pathPrefix + "Parsers/JSON.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Autoconf.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/BaseAvlSet.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/BaseAvlTree.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Config.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Error.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/ErrorExt.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Flags.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/List.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/System.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Util.mo");
+getErrorString();
+
+loadString("function testJSON
+  input String fileName;
+  output String str;
+algorithm
+  str:=JSON.toString(JSON.parseFile(fileName));
+  print(str+\"
+\");
+  str:=JSON.toString(JSON.parse(str));
+end testJSON;");
+testJSON("test.json");
+getErrorString();
+// Result:
+// true
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// {"a":[true, false, null], "b":[], "c":"", "int":13, "dbl":[14.1, 1e+06, 100000]}
+// "{\"a\":[true, false, null], \"b\":[], \"c\":\"\", \"int\":13, \"dbl\":[14.1, 1e+06, 100000]}"
+// ""
+// endResult

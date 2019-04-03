@@ -1,0 +1,38 @@
+// name: Bug3282.mos [BUG: #3282]
+// status: correct
+
+loadString("model M Real a; end M;"); getErrorString();
+list(M); getErrorString();
+setComponentDimensions(M,a,{}); getErrorString();
+list(M); getErrorString();
+setComponentDimensions(M,a,{10,12}); getErrorString();
+list(M); getErrorString();
+setComponentDimensions(M,a,{}); getErrorString();
+list(M); getErrorString();
+
+// Result:
+// true
+// ""
+// "model M
+//   Real a;
+// end M;"
+// ""
+// Ok
+// ""
+// "model M
+//   Real a;
+// end M;"
+// ""
+// Ok
+// ""
+// "model M
+//   Real a[10, 12];
+// end M;"
+// ""
+// Ok
+// ""
+// "model M
+//   Real a;
+// end M;"
+// ""
+// endResult

@@ -1,0 +1,59 @@
+// name: backenddaeinfo.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=backenddaeinfo
+// 
+
+// TODO: change this model to test the dump +d=backenddaeinfo
+loadString("
+model test_backenddaeinfo
+end test_backenddaeinfo;
+"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+buildModel(test_backenddaeinfo); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"test_backenddaeinfo","test_backenddaeinfo_init.xml"}
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 0
+//  * Number of variables: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (0):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 0
+//  * Number of states: 0 ('+d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (0):
+//  * Single equations (assignments): 0
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (linear and non-linear blocks): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// "
+// endResult

@@ -1,0 +1,16 @@
+// name:     TicksInState
+// keywords: state machines
+// status: correct
+//
+
+loadFile("TicksInState.mo");
+echo(false);
+simulate(TicksInState, startTime=0, stopTime=30, numberOfIntervals=0); getErrorString();
+echo(true);
+val(i,30.0);
+
+// Result:
+// true
+// true
+// 14.0
+// endResult

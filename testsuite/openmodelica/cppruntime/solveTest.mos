@@ -1,0 +1,40 @@
+// name: solveTest
+// keywords: external F77 LAPACK
+// status: correct
+// teardown_command: rm -f *SolveTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica);
+loadString("
+model SolveTest
+  Real[:, :] A = [0, 1; 2, 3];
+  Real[:] b = {4, 5};
+  input Real u = 0; // prevent presolving during translation
+  output Real[2] x;
+equation
+  x = Modelica.Math.Matrices.solve(A, (u + 1) * b);
+  annotation(experiment(StopTime = 0));
+end SolveTest;
+");
+getErrorString();
+
+simulate(SolveTest);
+val(x[1], 0);
+val(x[2], 0);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// ""
+// record SimulationResult
+// resultFile = "SolveTest_res.mat",
+// simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SolveTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+// messages = ""
+// end SimulationResult;
+// -3.5
+// 4.0
+// ""
+// endResult

@@ -1,0 +1,103 @@
+// name:     Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation-addDerAlias
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+// This test tests and demontrates the debug flag +d=addDerAliases
+// which fail in some other cases. This test can removed as far as
+// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation 
+// works out of the box.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+setCommandLineOptions("--preOptModules+=introduceDerAlias");
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation);
+compareVars :=
+{
+   "HEX.pipe_1.mediums[1].T",
+   "HEX.pipe_1.mediums[2].T",
+   "HEX.pipe_1.mediums[3].T",
+   "HEX.pipe_1.mediums[4].T",
+   "HEX.pipe_1.mediums[5].T",
+   "HEX.pipe_1.mediums[6].T",
+   "HEX.pipe_1.mediums[7].T",
+   "HEX.pipe_1.mediums[8].T",
+   "HEX.pipe_1.mediums[9].T",
+   "HEX.pipe_1.mediums[10].T",
+   "HEX.pipe_1.mediums[11].T",
+   "HEX.pipe_1.mediums[12].T",
+   "HEX.pipe_1.mediums[13].T",
+   "HEX.pipe_1.mediums[14].T",
+   "HEX.pipe_1.mediums[15].T",
+   "HEX.pipe_1.mediums[16].T",
+   "HEX.pipe_1.mediums[17].T",
+   "HEX.pipe_1.mediums[18].T",
+   "HEX.pipe_1.mediums[19].T",
+   "HEX.pipe_1.mediums[20].T",
+   "HEX.pipe_2.mediums[1].T",
+   "HEX.pipe_2.mediums[2].T",
+   "HEX.pipe_2.mediums[3].T",
+   "HEX.pipe_2.mediums[4].T",
+   "HEX.pipe_2.mediums[5].T",
+   "HEX.pipe_2.mediums[6].T",
+   "HEX.pipe_2.mediums[7].T",
+   "HEX.pipe_2.mediums[8].T",
+   "HEX.pipe_2.mediums[9].T",
+   "HEX.pipe_2.mediums[10].T",
+   "HEX.pipe_2.mediums[11].T",
+   "HEX.pipe_2.mediums[12].T",
+   "HEX.pipe_2.mediums[13].T",
+   "HEX.pipe_2.mediums[14].T",
+   "HEX.pipe_2.mediums[15].T",
+   "HEX.pipe_2.mediums[16].T",
+   "HEX.pipe_2.mediums[17].T",
+   "HEX.pipe_2.mediums[18].T",
+   "HEX.pipe_2.mediums[19].T",
+   "HEX.pipe_2.mediums[20].T",
+   "HEX.wall.T[1]",
+   "HEX.wall.T[2]",
+   "HEX.wall.T[3]",
+   "HEX.wall.T[4]",
+   "HEX.wall.T[5]",
+   "HEX.wall.T[6]",
+   "HEX.wall.T[7]",
+   "HEX.wall.T[8]",
+   "HEX.wall.T[9]",
+   "HEX.wall.T[10]",
+   "HEX.wall.T[11]",
+   "HEX.wall.T[12]",
+   "HEX.wall.T[13]",
+   "HEX.wall.T[14]",
+   "HEX.wall.T[15]",
+   "HEX.wall.T[16]",
+   "HEX.wall.T[17]",
+   "HEX.wall.T[18]",
+   "HEX.wall.T[19]",
+   "HEX.wall.T[20]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// true
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
+// {"HEX.pipe_1.mediums[1].T","HEX.pipe_1.mediums[2].T","HEX.pipe_1.mediums[3].T","HEX.pipe_1.mediums[4].T","HEX.pipe_1.mediums[5].T","HEX.pipe_1.mediums[6].T","HEX.pipe_1.mediums[7].T","HEX.pipe_1.mediums[8].T","HEX.pipe_1.mediums[9].T","HEX.pipe_1.mediums[10].T","HEX.pipe_1.mediums[11].T","HEX.pipe_1.mediums[12].T","HEX.pipe_1.mediums[13].T","HEX.pipe_1.mediums[14].T","HEX.pipe_1.mediums[15].T","HEX.pipe_1.mediums[16].T","HEX.pipe_1.mediums[17].T","HEX.pipe_1.mediums[18].T","HEX.pipe_1.mediums[19].T","HEX.pipe_1.mediums[20].T","HEX.pipe_2.mediums[1].T","HEX.pipe_2.mediums[2].T","HEX.pipe_2.mediums[3].T","HEX.pipe_2.mediums[4].T","HEX.pipe_2.mediums[5].T","HEX.pipe_2.mediums[6].T","HEX.pipe_2.mediums[7].T","HEX.pipe_2.mediums[8].T","HEX.pipe_2.mediums[9].T","HEX.pipe_2.mediums[10].T","HEX.pipe_2.mediums[11].T","HEX.pipe_2.mediums[12].T","HEX.pipe_2.mediums[13].T","HEX.pipe_2.mediums[14].T","HEX.pipe_2.mediums[15].T","HEX.pipe_2.mediums[16].T","HEX.pipe_2.mediums[17].T","HEX.pipe_2.mediums[18].T","HEX.pipe_2.mediums[19].T","HEX.pipe_2.mediums[20].T","HEX.wall.T[1]","HEX.wall.T[2]","HEX.wall.T[3]","HEX.wall.T[4]","HEX.wall.T[5]","HEX.wall.T[6]","HEX.wall.T[7]","HEX.wall.T[8]","HEX.wall.T[9]","HEX.wall.T[10]","HEX.wall.T[11]","HEX.wall.T[12]","HEX.wall.T[13]","HEX.wall.T[14]","HEX.wall.T[15]","HEX.wall.T[16]","HEX.wall.T[17]","HEX.wall.T[18]","HEX.wall.T[19]","HEX.wall.T[20]"}
+// Simulation options: startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation', options = '', outputFormat = 'mat', variableFilter = 'time|HEX.pipe_1.mediums.1..T|HEX.pipe_1.mediums.2..T|HEX.pipe_1.mediums.3..T|HEX.pipe_1.mediums.4..T|HEX.pipe_1.mediums.5..T|HEX.pipe_1.mediums.6..T|HEX.pipe_1.mediums.7..T|HEX.pipe_1.mediums.8..T|HEX.pipe_1.mediums.9..T|HEX.pipe_1.mediums.10..T|HEX.pipe_1.mediums.11..T|HEX.pipe_1.mediums.12..T|HEX.pipe_1.mediums.13..T|HEX.pipe_1.mediums.14..T|HEX.pipe_1.mediums.15..T|HEX.pipe_1.mediums.16..T|HEX.pipe_1.mediums.17..T|HEX.pipe_1.mediums.18..T|HEX.pipe_1.mediums.19..T|HEX.pipe_1.mediums.20..T|HEX.pipe_2.mediums.1..T|HEX.pipe_2.mediums.2..T|HEX.pipe_2.mediums.3..T|HEX.pipe_2.mediums.4..T|HEX.pipe_2.mediums.5..T|HEX.pipe_2.mediums.6..T|HEX.pipe_2.mediums.7..T|HEX.pipe_2.mediums.8..T|HEX.pipe_2.mediums.9..T|HEX.pipe_2.mediums.10..T|HEX.pipe_2.mediums.11..T|HEX.pipe_2.mediums.12..T|HEX.pipe_2.mediums.13..T|HEX.pipe_2.mediums.14..T|HEX.pipe_2.mediums.15..T|HEX.pipe_2.mediums.16..T|HEX.pipe_2.mediums.17..T|HEX.pipe_2.mediums.18..T|HEX.pipe_2.mediums.19..T|HEX.pipe_2.mediums.20..T|HEX.wall.T.1.|HEX.wall.T.2.|HEX.wall.T.3.|HEX.wall.T.4.|HEX.wall.T.5.|HEX.wall.T.6.|HEX.wall.T.7.|HEX.wall.T.8.|HEX.wall.T.9.|HEX.wall.T.10.|HEX.wall.T.11.|HEX.wall.T.12.|HEX.wall.T.13.|HEX.wall.T.14.|HEX.wall.T.15.|HEX.wall.T.16.|HEX.wall.T.17.|HEX.wall.T.18.|HEX.wall.T.19.|HEX.wall.T.20.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

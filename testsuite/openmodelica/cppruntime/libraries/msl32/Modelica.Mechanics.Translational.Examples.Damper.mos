@@ -1,0 +1,36 @@
+// name:     Modelica.Mechanics.Translational.Examples.Damper
+// teardown_command: rm -f Modelica.Mechanics.Translational.Examples.Damper_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Damper, outputFormat="mat"); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Damper_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Damper.mat","Modelica.Mechanics.Translational.Examples.Damper_diff.csv",0.01,0.00001,
+  {"damper1.s_rel",
+  "damper1.v_rel",
+  "damper2.s_rel",
+  "damper2.v_rel",
+  "springDamper3.s_rel",
+  "springDamper3.v_rel",
+  "der(damper1.s_rel)",
+  "der(damper2.s_rel)",
+  "der(springDamper3.s_rel)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Damper_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Damper', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

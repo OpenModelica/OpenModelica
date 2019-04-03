@@ -1,0 +1,345 @@
+//name:         Sensors2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate(Modelica.Mechanics.Translational.Examples.Sensors,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=1);
+
+"ForceSensor1.flange_a.s:";
+val(ForceSensor1.flange_a.s,0.0);
+val(ForceSensor1.flange_a.s,0.25);
+val(ForceSensor1.flange_a.s,0.5);
+val(ForceSensor1.flange_a.s,0.75);
+val(ForceSensor1.flange_a.s,1.0);
+
+"ForceSensor1.flange_a.f:";
+val(ForceSensor1.flange_a.f,0.0);
+val(ForceSensor1.flange_a.f,0.25);
+val(ForceSensor1.flange_a.f,0.5);
+val(ForceSensor1.flange_a.f,0.75);
+val(ForceSensor1.flange_a.f,1.0);
+
+"ForceSensor1.flange_b.s:";
+val(ForceSensor1.flange_b.s,0.0);
+val(ForceSensor1.flange_b.s,0.25);
+val(ForceSensor1.flange_b.s,0.5);
+val(ForceSensor1.flange_b.s,0.75);
+val(ForceSensor1.flange_b.s,1.0);
+
+"ForceSensor1.flange_b.f:";
+val(ForceSensor1.flange_b.f,0.0);
+val(ForceSensor1.flange_b.f,0.25);
+val(ForceSensor1.flange_b.f,0.5);
+val(ForceSensor1.flange_b.f,0.75);
+val(ForceSensor1.flange_b.f,1.0);
+
+"ForceSensor1.f:";
+val(ForceSensor1.f,0.0);
+val(ForceSensor1.f,0.25);
+val(ForceSensor1.f,0.5);
+val(ForceSensor1.f,0.75);
+val(ForceSensor1.f,1.0);
+
+"SpeedSensor1.flange_a.s:";
+val(SpeedSensor1.flange_a.s,0.0);
+val(SpeedSensor1.flange_a.s,0.25);
+val(SpeedSensor1.flange_a.s,0.5);
+val(SpeedSensor1.flange_a.s,0.75);
+val(SpeedSensor1.flange_a.s,1.0);
+
+"SpeedSensor1.s:";
+val(SpeedSensor1.s,0.0);
+val(SpeedSensor1.s,0.25);
+val(SpeedSensor1.s,0.5);
+val(SpeedSensor1.s,0.75);
+val(SpeedSensor1.s,1.0);
+
+"SpeedSensor1.v:";
+val(SpeedSensor1.v,0.0);
+val(SpeedSensor1.v,0.25);
+val(SpeedSensor1.v,0.5);
+val(SpeedSensor1.v,0.75);
+val(SpeedSensor1.v,1.0);
+
+"PositionSensor1.flange_a.s:";
+val(PositionSensor1.flange_a.s,0.0);
+val(PositionSensor1.flange_a.s,0.25);
+val(PositionSensor1.flange_a.s,0.5);
+val(PositionSensor1.flange_a.s,0.75);
+val(PositionSensor1.flange_a.s,1.0);
+
+"PositionSensor1.s:";
+val(PositionSensor1.s,0.0);
+val(PositionSensor1.s,0.25);
+val(PositionSensor1.s,0.5);
+val(PositionSensor1.s,0.75);
+val(PositionSensor1.s,1.0);
+
+"AccSensor1.flange_a.s:";
+val(AccSensor1.flange_a.s,0.0);
+val(AccSensor1.flange_a.s,0.25);
+val(AccSensor1.flange_a.s,0.5);
+val(AccSensor1.flange_a.s,0.75);
+val(AccSensor1.flange_a.s,1.0);
+
+"AccSensor1.v:";
+val(AccSensor1.v,0.0);
+val(AccSensor1.v,0.25);
+val(AccSensor1.v,0.5);
+val(AccSensor1.v,0.75);
+val(AccSensor1.v,1.0);
+
+"AccSensor1.a:";
+val(AccSensor1.a,0.0);
+val(AccSensor1.a,0.25);
+val(AccSensor1.a,0.5);
+val(AccSensor1.a,0.75);
+val(AccSensor1.a,1.0);
+
+"SlidingMass1.s:";
+val(SlidingMass1.s,0.0);
+val(SlidingMass1.s,0.25);
+val(SlidingMass1.s,0.5);
+val(SlidingMass1.s,0.75);
+val(SlidingMass1.s,1.0);
+
+"SlidingMass1.flange_a.s:";
+val(SlidingMass1.flange_a.s,0.0);
+val(SlidingMass1.flange_a.s,0.25);
+val(SlidingMass1.flange_a.s,0.5);
+val(SlidingMass1.flange_a.s,0.75);
+val(SlidingMass1.flange_a.s,1.0);
+
+"SlidingMass1.flange_a.f:";
+val(SlidingMass1.flange_a.f,0.0);
+val(SlidingMass1.flange_a.f,0.25);
+val(SlidingMass1.flange_a.f,0.5);
+val(SlidingMass1.flange_a.f,0.75);
+val(SlidingMass1.flange_a.f,1.0);
+
+"SlidingMass1.flange_b.s:";
+val(SlidingMass1.flange_b.s,0.0);
+val(SlidingMass1.flange_b.s,0.25);
+val(SlidingMass1.flange_b.s,0.5);
+val(SlidingMass1.flange_b.s,0.75);
+val(SlidingMass1.flange_b.s,1.0);
+
+"SlidingMass1.v:";
+val(SlidingMass1.v,0.0);
+val(SlidingMass1.v,0.25);
+val(SlidingMass1.v,0.5);
+val(SlidingMass1.v,0.75);
+val(SlidingMass1.v,1.0);
+
+"SlidingMass1.a:";
+val(SlidingMass1.a,0.0);
+val(SlidingMass1.a,0.25);
+val(SlidingMass1.a,0.5);
+val(SlidingMass1.a,0.75);
+val(SlidingMass1.a,1.0);
+
+"Force1.flange_b.s:";
+val(Force1.flange_b.s,0.0);
+val(Force1.flange_b.s,0.25);
+val(Force1.flange_b.s,0.5);
+val(Force1.flange_b.s,0.75);
+val(Force1.flange_b.s,1.0);
+
+"Force1.flange_b.f:";
+val(Force1.flange_b.f,0.0);
+val(Force1.flange_b.f,0.25);
+val(Force1.flange_b.f,0.5);
+val(Force1.flange_b.f,0.75);
+val(Force1.flange_b.f,1.0);
+
+"Force1.f:";
+val(Force1.f,0.0);
+val(Force1.f,0.25);
+val(Force1.f,0.5);
+val(Force1.f,0.75);
+val(Force1.f,1.0);
+
+"Sine1.y:";
+val(Sine1.y,0.0);
+val(Sine1.y,0.25);
+val(Sine1.y,0.5);
+val(Sine1.y,0.75);
+val(Sine1.y,1.0);
+
+"PositionSensor2.flange_a.s:";
+val(PositionSensor2.flange_a.s,0.0);
+val(PositionSensor2.flange_a.s,0.25);
+val(PositionSensor2.flange_a.s,0.5);
+val(PositionSensor2.flange_a.s,0.75);
+val(PositionSensor2.flange_a.s,1.0);
+
+"PositionSensor2.s:";
+val(PositionSensor2.s,0.0);
+val(PositionSensor2.s,0.25);
+val(PositionSensor2.s,0.5);
+val(PositionSensor2.s,0.75);
+val(PositionSensor2.s,1.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Sensors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "ForceSensor1.flange_a.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "ForceSensor1.flange_a.f:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "ForceSensor1.flange_b.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "ForceSensor1.flange_b.f:"
+// -0.0
+// 2.449293598294707e-15
+// 4.898587196589413e-15
+// 7.347880794884118e-15
+// 9.797174393178826e-15
+// "ForceSensor1.f:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "SpeedSensor1.flange_a.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "SpeedSensor1.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "SpeedSensor1.v:"
+// 0.0
+// 0.0001856705285417536
+// 0.0001368328408131347
+// 0.0001376262512848165
+// 0.0001336479549796174
+// "PositionSensor1.flange_a.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "PositionSensor1.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "AccSensor1.flange_a.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "AccSensor1.v:"
+// 0.0
+// 0.0001856705285417536
+// 0.0001368328408131347
+// 0.0001376262512848165
+// 0.0001336479549796174
+// "AccSensor1.a:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "SlidingMass1.s:"
+// 0.0
+// 0.09947716241163068
+// 0.1989951852238727
+// 0.298509598860581
+// 0.3980241516085142
+// "SlidingMass1.flange_a.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "SlidingMass1.flange_a.f:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "SlidingMass1.flange_b.s:"
+// 0.5
+// 0.5994771624116306
+// 0.6989951852238727
+// 0.798509598860581
+// 0.8980241516085142
+// "SlidingMass1.v:"
+// 0.0
+// 0.0001856705285417536
+// 0.0001368328408131347
+// 0.0001376262512848165
+// 0.0001336479549796174
+// "SlidingMass1.a:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "Force1.flange_b.s:"
+// -0.5
+// -0.4005228375883693
+// -0.3010048147761273
+// -0.201490401139419
+// -0.1019758483914858
+// "Force1.flange_b.f:"
+// -0.0
+// 2.449293598294707e-15
+// 4.898587196589413e-15
+// 7.347880794884118e-15
+// 9.797174393178826e-15
+// "Force1.f:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "Sine1.y:"
+// 0.0
+// -2.449293598294707e-15
+// -4.898587196589413e-15
+// -7.347880794884118e-15
+// -9.797174393178826e-15
+// "PositionSensor2.flange_a.s:"
+// 0.5
+// 0.5994771624116306
+// 0.6989951852238727
+// 0.798509598860581
+// 0.8980241516085142
+// "PositionSensor2.s:"
+// 0.5
+// 0.5994771624116306
+// 0.6989951852238727
+// 0.798509598860581
+// 0.8980241516085142
+// endResult

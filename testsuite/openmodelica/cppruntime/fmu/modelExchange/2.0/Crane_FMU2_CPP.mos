@@ -1,0 +1,48 @@
+// name:     Crane_FMU2_CPP
+// keywords: Crane FMI export import
+// status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *cranes.crane* *cranes_crane*
+// Real variables, Real input variable, continuous-time states, state events, event iteration
+
+loadModel(Modelica); getErrorString();
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+// disable directional derivatives as long as it fails
+// for this model
+setCommandLineOptions("+d=disableDirectionalDerivatives"); getErrorString();
+
+loadFile("../1.0/cranes.mo"); getErrorString();
+translateModelFMU(cranes.crane, version="2.0"); getErrorString();
+
+//importFMU("cranes.crane.fmu", "<default>", 6, false, true); getErrorString();
+importFMU("cranes.crane.fmu", "<default>"); getErrorString();
+loadFile("cranes_crane_me_FMU.mo"); getErrorString();
+simulate(cranes_crane_me_FMU, numberOfIntervals=150); getErrorString();
+
+val(position_s, 1);
+val(prismatic_v, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "cranes.crane.fmu"
+// ""
+// "cranes_crane_me_FMU.mo"
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "cranes_crane_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'cranes_crane_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 0.9493545671702082
+// 0.394824265705273
+// endResult

@@ -1,0 +1,141 @@
+// name: ExpandableArray Unit Testing
+// status: correct
+
+runScript("LoadCompilerSources.mos"); getErrorString();
+
+loadString("
+package ExpandableArrayTest
+  function Test
+  protected
+    ExpandableArray<Integer> exarray;
+  algorithm
+    exarray := ExpandableArray.new(2, 1);
+    ExpandableArray.dump(exarray, \"new(2)\", intString);
+
+    exarray := ExpandableArray.set(2, 2, exarray);
+    ExpandableArray.dump(exarray, \"set(2, 2)\", intString);
+
+    exarray := ExpandableArray.add(1, exarray);
+    ExpandableArray.dump(exarray, \"add(1)\", intString);
+
+    exarray := ExpandableArray.add(3, exarray);
+    ExpandableArray.dump(exarray, \"add(3)\", intString);
+
+    exarray := ExpandableArray.set(5, 6, exarray);
+    ExpandableArray.dump(exarray, \"set(5, 6)\", intString);
+
+    exarray := ExpandableArray.update(5, 5, exarray);
+    ExpandableArray.dump(exarray, \"update(5, 5)\", intString);
+
+    exarray := ExpandableArray.shrink(exarray);
+    ExpandableArray.dump(exarray, \"shrink()\", intString);
+
+    exarray := matchcontinue(exarray)
+      local
+        ExpandableArray<Integer> ea;
+
+      case ea equation
+        ea = ExpandableArray.set(6, 6, ea);
+        ea = ExpandableArray.set(4, 4, ea);
+        fail();
+      then ea;
+
+      else equation
+        ExpandableArray.dump(exarray, \"set(6, 6)\", intString);
+      then exarray;
+    end matchcontinue;
+
+    exarray := ExpandableArray.clear(exarray);
+    ExpandableArray.dump(exarray, \"clear()\", intString);
+
+    exarray := ExpandableArray.shrink(exarray);
+    ExpandableArray.dump(exarray, \"shrink()\", intString);
+
+    exarray := ExpandableArray.shrink(exarray);
+    ExpandableArray.dump(exarray, \"shrink()\", intString);
+
+    exarray := ExpandableArray.set(7, 1, exarray);
+    ExpandableArray.dump(exarray, \"set(7, 1)\", intString);
+
+    exarray := ExpandableArray.delete(7, exarray);
+    ExpandableArray.dump(exarray, \"delete(7)\", intString);
+
+    exarray := ExpandableArray.shrink(exarray);
+    ExpandableArray.dump(exarray, \"shrink()\", intString);
+  end Test;
+end ExpandableArrayTest;
+"); getErrorString();
+
+setCommandLineOptions("-d=rml,noevalfunc,gen"); getErrorString();
+
+ExpandableArrayTest.Test(); getErrorString();
+
+// Result:
+// "
+// "
+// ""
+// true
+// ""
+// true
+// ""
+// new(2) (0/2)
+// ========================================
+// <empty>
+// set(2, 2) (1/2)
+// ========================================
+// 2: 2
+// add(1) (2/3)
+// ========================================
+// 2: 2
+// 3: 1
+// add(3) (3/4)
+// ========================================
+// 2: 2
+// 3: 1
+// 4: 3
+// set(5, 6) (4/5)
+// ========================================
+// 2: 2
+// 3: 1
+// 4: 3
+// 5: 6
+// update(5, 5) (4/5)
+// ========================================
+// 2: 2
+// 3: 1
+// 4: 3
+// 5: 5
+// shrink() (4/4)
+// ========================================
+// 1: 5
+// 2: 2
+// 3: 1
+// 4: 3
+// set(6, 6) (5/6)
+// ========================================
+// 1: 5
+// 2: 2
+// 3: 1
+// 4: 3
+// 6: 6
+// clear() (0/6)
+// ========================================
+// <empty>
+// shrink() (0/0)
+// ========================================
+// <empty>
+// shrink() (0/0)
+// ========================================
+// <empty>
+// set(7, 1) (1/7)
+// ========================================
+// 7: 1
+// delete(7) (0/7)
+// ========================================
+// <empty>
+// shrink() (0/0)
+// ========================================
+// <empty>
+//
+// ""
+// endResult

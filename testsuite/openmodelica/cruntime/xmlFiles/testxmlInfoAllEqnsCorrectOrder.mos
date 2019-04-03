@@ -1,0 +1,50 @@
+// name:     testxmlInfoAllEqnsCorrectOrder.mos
+// keywords: xml-file
+// status: correct
+// teardown_command: rm -rf testModel* output.log testModel_info.json.filtered
+//
+//
+// checks for correct order of equations in *_info.json file,
+// otherwise pasing of *_info.json files fails.
+
+loadString("
+model testModel
+  parameter Real a=0.7;
+  parameter Real b=2*a;
+  parameter Real m=0.5;
+  parameter Real g=9.82;
+  parameter Real L=1;
+  Real s(start=a+b),t;
+  Real u(start=a+b),v;
+  Real x(start=1),y(start=0),xd,yd;
+  Real Fo;
+initial equation
+  der(yd) = -9;
+equation
+  a*s+b*t=0;
+  s^2=time;
+  s*u+t*v=time;
+  a*u-b*v=0;
+  der(y)=yd;
+  der(x)=xd;
+  0.5*der(xd) = -x*Fo/L;
+  0.5*der(yd) = -0.5*9.82-Fo*y/L;
+  x*x+y*y=1;
+end testModel;");
+
+getErrorString();
+
+translateModel(testModel);getErrorString();
+system("grep -o '\"eqIndex\":[0-9]*' testModel_info.json | grep -o '[0-9]*' > testModel_info.json.filtered");
+if 0<>system("sort -h testModel_info.json.filtered | diff - testModel_info.json.filtered") then "Error: Not sorted" else "OK";
+
+// Result:
+// true
+// ""
+// true
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// "OK"
+// endResult

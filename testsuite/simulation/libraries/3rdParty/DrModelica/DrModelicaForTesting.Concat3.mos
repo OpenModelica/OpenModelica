@@ -1,0 +1,34 @@
+// name:     DrModelicaForTesting.Concat3.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.Concat3
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.Concat3.* DrModelicaForTesting.Concat3_* DrModelicaForTesting.Concat3 DrModelicaForTesting.Concat3.exe DrModelicaForTesting.Concat3.cpp DrModelicaForTesting.Concat3.makefile DrModelicaForTesting.Concat3.libs DrModelicaForTesting.Concat3.log DrModelicaForTesting.Concat3.c DrModelicaForTesting.Concat3.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.Concat3, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Concat3_res.mat",
+  "ReferenceFiles/Concat3_ref.mat","DrModelicaForTesting.Concat3_diff.csv",0.01,0.013,
+  {"r5[1]","r5[2]", "r1[1,1]","r2[1,1]","r3[1,1]","r4[1,1]"});
+ 
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.Concat3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.Concat3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,29 @@
+// name:     paralleFlowEVA_test
+// keywords: fluid media siemens
+// status:   correct
+//
+//  Siemens fluid test.
+//
+
+loadModel(SiemensPower, {"OMCtest"});
+getErrorString();
+checkModel(SiemensPowerOMCtest.Components.HeatExchanger.Tests.paralleFlowEVA_test);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// ""
+// "Warning: Parameter EVA1.geoPipe has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter EVA1.geoFins has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter EVA1.geoFGZ has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter EVA1.propertiesMetal has neither value nor start value, and is fixed during initialization (fixed=true)
+// [FlueGasZoneSingleTube.mo:72:3-74:94:writable] Error: Type mismatch in modifier of component EVA1.flueGasZone[1]TWall_start, declared type H2OMedium.Temperature[numberOfTubeNodes], got modifier EVA1.flueGasZone[1].T_start of type #T_UNKNOWN#
+// Error: Error occurred while flattening model SiemensPowerOMCtest.Components.HeatExchanger.Tests.paralleFlowEVA_test
+// "
+// "[FlueGasZoneSingleTube.mo:72:3-74:94:writable] Error: Type mismatch in modifier of component EVA1.flueGasZone[1]TWall_start, declared type H2OMedium.Temperature[numberOfTubeNodes], got modifier EVA1.flueGasZone[1].T_start of type #T_UNKNOWN#
+// Error: Error occurred while flattening model SiemensPowerOMCtest.Components.HeatExchanger.Tests.paralleFlowEVA_test
+// "
+// ""
+// endResult

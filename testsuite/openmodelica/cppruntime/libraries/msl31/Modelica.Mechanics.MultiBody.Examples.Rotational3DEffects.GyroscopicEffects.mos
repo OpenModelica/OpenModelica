@@ -1,0 +1,54 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects
+// keywords: simulation MSL Examples
+// status: correct
+// teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+setMatchingAlgorithm("PFPlus");
+setIndexReductionMethod("dynamicStateSelection");
+simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects,stopTime=5.0, outputFormat="csv");
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.csv",
+  "../../../../simulation/libraries/msl31/ReferenceFiles/Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects.mat","Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_diff.csv",0.01,0.00001,
+  {"revolute.phi",
+  "revolute.w",
+  "bodyCylinder2.body.frame_a.r_0[1]",
+  "bodyCylinder2.body.frame_a.r_0[2]",
+  "bodyCylinder2.body.frame_a.r_0[3]",
+  "bodyCylinder2.body.v_0[1]",
+  "bodyCylinder2.body.v_0[2]",
+  "bodyCylinder2.body.v_0[3]",
+  "bodyCylinder4.body.frame_a.r_0[1]",
+  "bodyCylinder4.body.frame_a.r_0[2]",
+  "bodyCylinder4.body.frame_a.r_0[3]",
+  "rotor1D.phi",
+  "rotor1D.w",
+  "der(revolute.phi)",
+  "der(revolute.w)",
+  "der(bodyCylinder2.body.frame_a.r_0[1])",
+  "der(bodyCylinder2.body.frame_a.r_0[2])",
+  "der(bodyCylinder2.body.frame_a.r_0[3])",
+  "der(bodyCylinder2.body.v_0[1])",
+  "der(bodyCylinder2.body.v_0[2])",
+  "der(bodyCylinder2.body.v_0[3])",
+  "der(bodyCylinder4.body.frame_a.r_0[1])",
+  "der(bodyCylinder4.body.frame_a.r_0[2])",
+  "der(bodyCylinder4.body.frame_a.r_0[3])"});
+
+
+
+// Result:
+// true
+// true
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Files Equal!"
+// endResult

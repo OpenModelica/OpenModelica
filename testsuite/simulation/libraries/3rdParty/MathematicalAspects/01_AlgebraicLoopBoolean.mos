@@ -1,0 +1,59 @@
+// name: 01_AlgebraicLoopBoolean
+// status: correct
+//
+//  Simulation Results
+//  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
+//
+
+loadFile("AlgebraicLoopBoolean1.mo"); getErrorString();
+loadFile("AlgebraicLoopBoolean2.mo"); getErrorString();
+
+simulate(AlgebraicLoopBoolean2, stopTime=5); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("AlgebraicLoopBoolean2_res.mat",
+  "ReferenceFiles/AlgebraicLoopBoolean2.mat",
+  "AlgebraicLoopBoolean2_diff.csv", 0.01, 0.0001,
+  {
+    "a",
+    "b",
+    "u",
+    "v"
+  }); getErrorString();
+
+simulate(AlgebraicLoopBoolean1, stopTime=5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AlgebraicLoopBoolean2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AlgebraicLoopBoolean2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "
+// {"Files Equal!"}
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AlgebraicLoopBoolean1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: AlgebraicLoopBoolean1"
+// end SimulationResult;
+// "[BackEnd/BackendDAETransform.mo:446:7-446:48:writable] Error: Internal error BackendDAETransform.analyseStrongComponentBlock failed (Sorry - Support for Discrete Equation Systems is not yet implemented)
+// a
+// b
+// b = not a and abs(u) > 0.5
+// a = not b and abs(v) > 0.5
+// [BackEnd/BackendDAETransform.mo:457:7-457:48:writable] Error: Internal error BackendDAETransform.analyseStrongComponentBlock failed
+// variables:
+//   a
+//   b
+// equations:
+//   b = not a and abs(u) > 0.5
+//   a = not b and abs(v) > 0.5
+// [BackEnd/BackendDAETransform.mo:461:7-461:90:writable] Error: Internal error function analyseStrongComponentBlock failed
+// [BackEnd/BackendDAETransform.mo:106:5-106:111:writable] Error: Internal error function strongComponentsScalar failed (sorting strong components)
+// [BackEnd/BackendDAEUtil.mo:7150:5-7150:89:writable] Error: Internal error Transformation module sort components failed
+// "
+// endResult

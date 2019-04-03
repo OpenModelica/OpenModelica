@@ -1,0 +1,81 @@
+// name:      Rename
+// keywords:  rename Component
+// status:    correct
+// setup_command: chmod a-w RenameRO.mo
+//
+loadFile("Rename.mo"); getErrorString();
+
+list(Pck.TestRename); getErrorString();
+renameComponent(Pck.TestRename,x,RENAMED_X); getErrorString();
+list(Pck.TestRename); getErrorString();
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(ModelicaServices,{"1.0"}); getErrorString();
+deleteClass(Modelica.Fluid);
+deleteClass(Modelica.Media);
+deleteClass(Modelica.Mechanics.MultiBody);
+// get rid of no such file errors!
+deleteClass(Modelica.Utilities.Examples);
+
+list(m1); getErrorString();
+renameComponentInClass(m1, emf1, emf2); getErrorString();
+list(m1); getErrorString();
+renameComponent(m1, emf2, emf3); getErrorString();
+list(m1); getErrorString();
+
+loadFile("RenameRO.mo"); getErrorString();
+list(m1RO); getErrorString();
+renameComponent(m1RO, emf1, emf2); getErrorString();
+
+// Result:
+// true
+// ""
+// "model TestRename
+//   flow Real x;
+//   Real y;
+// equation
+//   x = 0.2;
+// end TestRename;"
+// ""
+// {.TestRenameComp2,.Pck2.TestRenameComp,.TestRenameExt3,.Pck.TestRenameExt,.Pck.TestRenameExt2,Pck.TestRename}
+// ""
+// "model TestRename
+//   flow Real RENAMED_X;
+//   Real y;
+// equation
+//   RENAMED_X = 0.2;
+// end TestRename;"
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// "model m1
+//   Modelica.Electrical.Analog.Basic.EMF emf1;
+// end m1;"
+// ""
+// {m1}
+// ""
+// "model m1
+//   Modelica.Electrical.Analog.Basic.EMF emf2;
+// end m1;"
+// ""
+// {m1}
+// ""
+// "model m1
+//   Modelica.Electrical.Analog.Basic.EMF emf3;
+// end m1;"
+// ""
+// true
+// ""
+// "model m1RO
+//   Modelica.Electrical.Analog.Basic.EMF emf1;
+// end m1RO;"
+// ""
+// Error: class: m1RO is in a read only file!
+// ""
+// endResult

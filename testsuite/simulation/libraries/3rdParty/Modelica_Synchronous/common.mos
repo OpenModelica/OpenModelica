@@ -1,0 +1,8 @@
+//
+// These commands are common to all Modelica_Synchronous examples
+//
+
+packageName := $TypeName(Modelica_Synchronous);
+packageVersion := "";
+setCommandLineOptions("+d=nogen +std=3.3 +d=initialization");
+referenceFileDir := "Modelica_Synchronous"; // Default directory of reference files

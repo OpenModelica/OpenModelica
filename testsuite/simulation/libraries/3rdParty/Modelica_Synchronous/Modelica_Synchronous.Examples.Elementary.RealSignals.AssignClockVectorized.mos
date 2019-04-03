@@ -1,0 +1,39 @@
+// name: Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockVectorized
+// keywords: simulation Modelica_Synchronous examples
+// status: correct
+//
+// Simulation Results
+// Modelica_Synchronous
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockVectorized);
+compareVars :=
+{"assignClock1.y[1]","assignClock1.y[2]","unitDelay1.y","unitDelay2.y"};
+
+runScript("common.mos");getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockVectorized
+// {"assignClock1.y[1]","assignClock1.y[2]","unitDelay1.y","unitDelay2.y"}
+// "Modelica_Synchronous
+// \"\"
+// true
+// \"Modelica_Synchronous\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockVectorized', options = '', outputFormat = 'mat', variableFilter = 'time|step.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica_Synchronous.Examples.Elementary.RealSignals.AssignClockVectorized_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,27 @@
+// name:     StepAdvanced
+// keywords: 
+// status: correct
+// teardown_command: rm -rf Step_* Step Step.exe Step.cpp Step.makefile Step.libs Step.log output.log
+// 
+// Drmodelica: 8.2 Step (p. 244)
+// 
+loadFile("StepAdvanced.mo");
+simulate(Step,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
+echo(false); // turns of output 
+size := readSimulationResultSize("Step_res.mat");
+res:=readSimulationResult("Step_res.mat",{outPort.signal[1]},size); 
+signal:=res[1,1];
+echo(true); // turns on output
+signal;
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Step_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Step', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 1.0
+// endResult

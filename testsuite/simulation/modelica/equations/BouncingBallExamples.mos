@@ -1,0 +1,45 @@
+// name:     BouncingBall from Examples
+// keywords: events
+// status:   correct
+//teardown_command: rm -rf BouncingBall_* BouncingBall.log BouncingBall.libs BouncingBall BouncingBall.exe BouncingBall.cpp BouncingBall.makefile BouncingBallExamples_* BouncingBallExamples.log BouncingBallExamples.libs BouncingBallExamples BouncingBallExamples.exe BouncingBallExamples.cpp BouncingBallExamples.makefile output.log
+//
+// Event handling
+//
+loadFile("BouncingBallExamples.mo");
+simulate(BouncingBallExamples, stopTime=3, tolerance=1e-7, numberOfIntervals=500);
+echo(false);
+s:=readSimulationResultSize("BouncingBallExamples_res.mat");
+echo(true);
+val(flying,3.0);
+val(h,1.25);
+val(v_new,3.0);
+
+simulate(BouncingBall,stopTime=8, numberOfIntervals=1500);
+val(x,0.5);
+val(x,5.0);
+val(x,8.0);
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "BouncingBallExamples_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'BouncingBallExamples', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// true
+// 0.0
+// 0.2252752515166946
+// 0.0
+// record SimulationResult
+//     resultFile = "BouncingBall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 8.0, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 0.3457590350554374
+// 0.2340338150806124
+// 0.1001180467641977
+// endResult

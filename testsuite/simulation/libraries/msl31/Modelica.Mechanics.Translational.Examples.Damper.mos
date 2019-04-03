@@ -1,0 +1,34 @@
+// name:     Modelica.Mechanics.Translational.Examples.Damper
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"});
+
+simulate(Modelica.Mechanics.Translational.Examples.Damper);
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.Damper_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.Translational.Examples.Damper.mat","Modelica.Mechanics.Translational.Examples.Damper_diff.csv",0.01,0.00001,
+  {"damper1.s_rel",
+  "damper1.v_rel",
+  "damper2.s_rel",
+  "damper2.v_rel",
+  "springDamper3.s_rel",
+  "springDamper3.v_rel",
+  "der(damper1.s_rel)",
+  "der(damper2.s_rel)",
+  "der(springDamper3.s_rel)"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Mechanics.Translational.Examples.Damper_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Damper', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// {"Files Equal!"}
+// endResult

@@ -1,0 +1,58 @@
+// name:     MatchCaseInteractive2
+// keywords: Match Cases
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Match Testing
+//
+loadFile("MatchCaseInteractive2.mo");
+getErrorString();
+MatchCaseInteractive2.matchInMatch(2);
+getErrorString();
+MatchCaseInteractive2.matchRecord(MatchCaseInteractive2.REC(1,true,"abc"));
+getErrorString();
+MatchCaseInteractive2.matchRecord(MatchCaseInteractive2.REC(1,true,"abcd"));
+getErrorString();
+MatchCaseInteractive2.matchRecord(MatchCaseInteractive2.REC(1,false,"abc"));
+getErrorString();
+MatchCaseInteractive2.matchRecord(MatchCaseInteractive2.REC(3,false,"abc"));
+getErrorString();
+MatchCaseInteractive2.matchRecord(MatchCaseInteractive2.REC(2,false,"abcd"));
+getErrorString();
+MatchCaseInteractive2.matchUniontype(1);
+getErrorString();
+MatchCaseInteractive2.matchUniontype(2);
+getErrorString();
+MatchCaseInteractive2.matchUniontype(3);
+getErrorString();
+MatchCaseInteractive2.matchUniontype(4);
+getErrorString();
+MatchCaseInteractive2.matchUniontype(5);
+getErrorString();
+
+// Result:
+// true
+// ""
+// 3
+// ""
+// "REC(1,true,\"abc\")"
+// ""
+// "REC(1,true,\"abcd\")"
+// ""
+// "REC(i=1)"
+// ""
+// "REC(_,false,\"abc\")"
+// ""
+// "REC(_,_,_)"
+// ""
+// "UT1()"
+// ""
+// "UT2(1,2,_)"
+// ""
+// "abc"
+// ""
+// "UT2(1,3,c=_)"
+// ""
+// "UT2(1,2,_)"
+// ""
+// endResult

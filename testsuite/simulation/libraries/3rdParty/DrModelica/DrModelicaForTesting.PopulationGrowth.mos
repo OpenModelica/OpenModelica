@@ -1,0 +1,32 @@
+// name:     DrModelicaForTesting.PopulationGrowth.mos [simulation checking]
+// keywords: simulation DrModelicaForTesting.PopulationGrowth
+// status: correct
+// teardown_command: rm -rf _DrModelicaForTesting.PopulationGrowth.* DrModelicaForTesting.PopulationGrowth_* DrModelicaForTesting.PopulationGrowth DrModelicaForTesting.PopulationGrowth.exe DrModelicaForTesting.PopulationGrowth.cpp DrModelicaForTesting.PopulationGrowth.makefile DrModelicaForTesting.PopulationGrowth.libs DrModelicaForTesting.PopulationGrowth.log DrModelicaForTesting.PopulationGrowth.c DrModelicaForTesting.PopulationGrowth.o output.log
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+loadFile("DrModelicaForTesting.mo"); getErrorString();
+
+
+simulate(DrModelicaForTesting.PopulationGrowth, numberOfIntervals=200, stopTime=1.0); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.PopulationGrowth_res.mat",
+  "ReferenceFiles/PopulationGrowth_ref.mat","DrModelicaForTesting.PopulationGrowth_diff.csv",0.01,0.013,
+  {"g", "d","p"});
+  
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "DrModelicaForTesting.PopulationGrowth_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.PopulationGrowth', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

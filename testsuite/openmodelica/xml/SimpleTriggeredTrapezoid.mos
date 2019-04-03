@@ -1,0 +1,660 @@
+// name: SimpleTriggeredTrapezoid.mos
+// keywords: xml, dump
+// status: correct
+// teardown_command: rm -f SimpleTriggeredTrapezoid.xml
+// 
+// Tests that < is escaped in Xml dumps
+//
+
+loadModel(Modelica); getErrorString();
+loadFile("SimpleTriggeredTrapezoid.mo"); getErrorString();
+instantiateModel(SimpleTriggeredTrapezoid); getErrorString();
+dumpXMLDAE(SimpleTriggeredTrapezoid, addMathMLCode = true); getErrorString();
+readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class SimpleTriggeredTrapezoid \"C2M2L_OM Range Pack Internals includes a triggered trapezoid.  This requires when equations and initial equations\"
+//   parameter Real tt.amplitude = 1.0 \"Amplitude of trapezoid\";
+//   parameter Real tt.rising(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.5 \"Rising duration of trapezoid\";
+//   parameter Real tt.falling(quantity = \"Time\", unit = \"s\", min = 0.0) = 0.5 \"Falling duration of trapezoid\";
+//   parameter Real tt.offset = 1.0 \"Offset of output signal\";
+//   Boolean tt.u \"Connector of Boolean input signal\";
+//   Real tt.y \"Connector of Real output signal\";
+//   protected discrete Real tt.endValue \"Value of y at time of recent edge\";
+//   protected discrete Real tt.rate \"Current rising/falling rate\";
+//   protected discrete Real tt.T(quantity = \"Time\", unit = \"s\") \"Predicted time of output reaching endValue\";
+//   Boolean b;
+// equation
+//   tt.y = if time < tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue;
+//   when {initial(), tt.u, not tt.u} then
+//     tt.endValue = if tt.u then tt.offset + tt.amplitude else tt.offset;
+//     tt.rate = if tt.u and tt.rising > 0.0 then tt.amplitude / tt.rising else if not tt.u and tt.falling > 0.0 then (-tt.amplitude) / tt.falling else 0.0;
+//     tt.T = if tt.u and not tt.rising > 0.0 or not tt.u and not tt.falling > 0.0 or not abs(tt.amplitude) > 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate;
+//   end when;
+//   b = if time > 5.0 then time < 9.0 else false;
+//   b = tt.u;
+// end SimpleTriggeredTrapezoid;
+// "
+// ""
+// (true,"SimpleTriggeredTrapezoid.xml")
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
+//                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
+//                                                 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+//                                                 xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\">
+// <variables dimension=\"12\">
+// <orderedVariables dimension=\"7\">
+// <variablesList>
+// <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// </variable>
+// <variable id=\"2\" name=\"tt.T\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Predicted time of output reaching endValue\">
+// <attributesValues>
+// <quantity string=\"&quot;Time&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> Time 
+// </cn>
+// </math>
+// </MathML>
+// </quantity>
+// <unit string=\"&quot;s&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> s 
+// </cn>
+// </math>
+// </MathML>
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"tt.rate\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Current rising/falling rate\">
+// </variable>
+// <variable id=\"4\" name=\"tt.endValue\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Value of y at time of recent edge\">
+// </variable>
+// <variable id=\"5\" name=\"tt.y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Real output signal\">
+// </variable>
+// <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"b\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"7\" name=\"$whenCondition2\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"not b\">
+// <attributesValues>
+// <fixed string=\"true\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <true/>
+// </apply>
+// </math>
+// </MathML>
+// </fixed>
+// </attributesValues>
+// </variable>
+// </variablesList>
+// </orderedVariables>
+// <knownVariables dimension=\"4\">
+// <variablesList>
+// <variable id=\"1\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
+// <bindExpression string=\"1.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 1.0 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// </variable>
+// <variable id=\"2\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
+// <bindExpression string=\"0.5\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.5 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Time&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> Time 
+// </cn>
+// </math>
+// </MathML>
+// </quantity>
+// <unit string=\"&quot;s&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> s 
+// </cn>
+// </math>
+// </MathML>
+// </unit>
+// <minValue string=\"0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </math>
+// </MathML>
+// </minValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
+// <bindExpression string=\"0.5\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.5 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Time&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> Time 
+// </cn>
+// </math>
+// </MathML>
+// </quantity>
+// <unit string=\"&quot;s&quot;\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"constant\"> s 
+// </cn>
+// </math>
+// </MathML>
+// </unit>
+// <minValue string=\"0.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </math>
+// </MathML>
+// </minValue>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
+// <bindExpression string=\"1.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\"> 1.0 
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
+// </variable>
+// </variablesList>
+// </knownVariables>
+// <aliasVariables dimension=\"1\">
+// <variablesList>
+// <variable id=\"1\" name=\"tt.u\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Boolean input signal\">
+// <bindExpression string=\"b\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <ci> b 
+// </ci>
+// </math>
+// </MathML>
+// </bindExpression>
+// </variable>
+// </variablesList>
+// </aliasVariables>
+// </variables>
+// <equations dimension=\"7\">
+// <whenEquation id=\"1\">
+// <WhenOperator>
+// tt.T := if b and not tt.rising &gt; 0.0 or not b and not tt.falling &gt; 0.0 or not abs(tt.amplitude) &gt; 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate
+// </WhenOperator>
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> tt.T 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <ci> time 
+// </ci>
+// <apply>
+// <or/>
+// <apply>
+// <or/>
+// <apply>
+// <or/>
+// <apply>
+// <and/>
+// <ci> b 
+// </ci>
+// <apply>
+// <not/>
+// <apply>
+// <gt/>
+// <ci> tt.rising 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </apply>
+// <apply>
+// <and/>
+// <apply>
+// <not/>
+// <ci> b 
+// </ci>
+// </apply>
+// <apply>
+// <not/>
+// <apply>
+// <gt/>
+// <ci> tt.falling 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </apply>
+// </apply>
+// <apply>
+// <not/>
+// <apply>
+// <gt/>
+// <apply>
+// <abs/>
+// <ci> tt.amplitude 
+// </ci>
+// </apply>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </apply>
+// <apply>
+// <initial/>
+// </apply>
+// </apply>
+// </piece>
+// <otherwise>
+// <apply>
+// <plus/>
+// <ci> time 
+// </ci>
+// <apply>
+// <divide/>
+// <apply>
+// <minus/>
+// <ci> tt.endValue 
+// </ci>
+// <apply>
+// <pre/>
+// <ci> tt.y 
+// </ci>
+// </apply>
+// </apply>
+// <ci> tt.rate 
+// </ci>
+// </apply>
+// </apply>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// <whenEquationCondition>
+// {initial(), $whenCondition1, $whenCondition2}
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <transpose/>
+// <vector>
+// <apply>
+// <initial/>
+// </apply>
+// <ci> $whenCondition1 
+// </ci>
+// <ci> $whenCondition2 
+// </ci>
+// </vector>
+// </apply>
+// </math>
+// </MathML>
+// </whenEquationCondition>
+// </whenEquation>
+// <whenEquation id=\"2\">
+// <WhenOperator>
+// tt.rate := if b and tt.rising &gt; 0.0 then tt.amplitude / tt.rising else if not b and tt.falling &gt; 0.0 then (-tt.amplitude) / tt.falling else 0.0
+// </WhenOperator>
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> tt.rate 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <divide/>
+// <ci> tt.amplitude 
+// </ci>
+// <ci> tt.rising 
+// </ci>
+// </apply>
+// <apply>
+// <and/>
+// <ci> b 
+// </ci>
+// <apply>
+// <gt/>
+// <ci> tt.rising 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </piece>
+// <otherwise>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <divide/>
+// <apply>
+// <minus/>
+// <ci> tt.amplitude 
+// </ci>
+// </apply>
+// <ci> tt.falling 
+// </ci>
+// </apply>
+// <apply>
+// <and/>
+// <apply>
+// <not/>
+// <ci> b 
+// </ci>
+// </apply>
+// <apply>
+// <gt/>
+// <ci> tt.falling 
+// </ci>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </apply>
+// </apply>
+// </piece>
+// <otherwise>
+// <cn type=\"real\"> 0.0 
+// </cn>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// <whenEquationCondition>
+// {initial(), $whenCondition1, $whenCondition2}
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <transpose/>
+// <vector>
+// <apply>
+// <initial/>
+// </apply>
+// <ci> $whenCondition1 
+// </ci>
+// <ci> $whenCondition2 
+// </ci>
+// </vector>
+// </apply>
+// </math>
+// </MathML>
+// </whenEquationCondition>
+// </whenEquation>
+// <whenEquation id=\"3\">
+// <WhenOperator>
+// tt.endValue := if b then tt.offset + tt.amplitude else tt.offset
+// </WhenOperator>
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> tt.endValue 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <plus/>
+// <ci> tt.offset 
+// </ci>
+// <ci> tt.amplitude 
+// </ci>
+// </apply>
+// <ci> b 
+// </ci>
+// </piece>
+// <otherwise>
+// <ci> tt.offset 
+// </ci>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// <whenEquationCondition>
+// {initial(), $whenCondition1, $whenCondition2}
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <transpose/>
+// <vector>
+// <apply>
+// <initial/>
+// </apply>
+// <ci> $whenCondition1 
+// </ci>
+// <ci> $whenCondition2 
+// </ci>
+// </vector>
+// </apply>
+// </math>
+// </MathML>
+// </whenEquationCondition>
+// </whenEquation>
+// <equation id=\"4\">b = if time &gt; 5.0 then time &lt; 9.0 else false
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> b 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <lt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 9.0 
+// </cn>
+// </apply>
+// <apply>
+// <gt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 5.0 
+// </cn>
+// </apply>
+// </piece>
+// <otherwise>
+// <apply>
+// <false/>
+// </apply>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"5\">tt.y = if time &lt; tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> tt.y 
+// </ci>
+// <apply>
+// <piecewise>
+// <piece>
+// <apply>
+// <plus/>
+// <ci> tt.endValue 
+// </ci>
+// <apply>
+// <times/>
+// <apply>
+// <minus/>
+// <ci> time 
+// </ci>
+// <ci> tt.T 
+// </ci>
+// </apply>
+// <ci> tt.rate 
+// </ci>
+// </apply>
+// </apply>
+// <apply>
+// <lt/>
+// <ci> time 
+// </ci>
+// <ci> tt.T 
+// </ci>
+// </apply>
+// </piece>
+// <otherwise>
+// <ci> tt.endValue 
+// </ci>
+// </otherwise>
+// </piecewise>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"6\">$whenCondition1 = b
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition1 
+// </ci>
+// <ci> b 
+// </ci>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// <equation id=\"7\">$whenCondition2 = not b
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <equivalent/>
+// <ci> $whenCondition2 
+// </ci>
+// <apply>
+// <not/>
+// <ci> b 
+// </ci>
+// </apply>
+// </apply>
+// </math>
+// </MathML>
+// </equation>
+// </equations>
+// <zeroCrossingList dimension=\"3\">
+// <zeroCrossingElement string=\"time &gt; 5.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <gt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 5.0 
+// </cn>
+// </apply>
+// </math>
+// </MathML>
+// <involvedEquations>
+// <equationId>
+// 4
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// <zeroCrossingElement string=\"time &lt; 9.0\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <lt/>
+// <ci> time 
+// </ci>
+// <cn type=\"real\"> 9.0 
+// </cn>
+// </apply>
+// </math>
+// </MathML>
+// <involvedEquations>
+// <equationId>
+// 4
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// <zeroCrossingElement string=\"time &lt; tt.T\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <apply>
+// <lt/>
+// <ci> time 
+// </ci>
+// <ci> tt.T 
+// </ci>
+// </apply>
+// </math>
+// </MathML>
+// <involvedEquations>
+// <equationId>
+// 5
+// </equationId>
+// </involvedEquations>
+// </zeroCrossingElement>
+// </zeroCrossingList>
+// <functions>
+// </functions>
+// </dae>"
+// ""
+// endResult

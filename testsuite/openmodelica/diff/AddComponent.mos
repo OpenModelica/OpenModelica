@@ -1,0 +1,44 @@
+// status: correct
+
+/*
+The first one looks a bit odd since it does not have newlines from the
+beginning, but it seems such an uncommon case that it is OK to just insert
+the element on the same line as "model X" or the one after.
+*/
+
+echo(false);
+qs := {
+  "model X end X;",
+  "model X\nend X;",
+  "model X\n   Real x;\n   Real y;\nend X;",
+  "model X\n     Real x;\n     Real y;\nend X;"
+};
+as := {
+"model X
+  Real r1; end X;",
+"model X
+  Real r1;
+end X;",
+"model X
+   Real x;
+   Real y;
+   Real r1;
+end X;",
+"model X
+     Real x;
+     Real y;
+     Real r1;
+end X;"
+};
+for i in 1:4 loop
+  s1:=qs[i];
+  answer:=as[i];
+  print(runScript("AddComponent.loop.mos"));
+end for;
+
+// Result:
+// OK 1
+// OK 2
+// OK 3
+// OK 4
+// endResult

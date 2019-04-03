@@ -1,0 +1,70 @@
+// name:     Modelica.Fluid.Examples.HeatingSystem
+// teardown_command: rm -f Modelica.Fluid.Examples.HeatingSystem_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+
+stopTime := 0.5;
+
+setDebugFlags("nogen");
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.Fluid.Examples.HeatingSystem);
+compareVars :=
+{
+   "heater.mediums[1].h",
+   "heater.mediums[1].p",
+   "pipe.mediums[1].h",
+   "pipe.mediums[2].h",
+   "pipe.mediums[2].p",
+   "radiator.mediums[1].h",
+   "radiator.mediums[1].p",
+   "tank.level",
+   "tank.medium.h"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// true
+// true
+// "
+// ""
+// 0.5
+// true
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.Fluid.Examples.HeatingSystem
+// {"heater.mediums[1].h","heater.mediums[1].p","pipe.mediums[1].h","pipe.mediums[2].h","pipe.mediums[2].p","radiator.mediums[1].h","radiator.mediums[1].p","tank.level","tank.medium.h"}
+// Compilation succeeded
+// [lib/omlibrary/Modelica 3.2.1/Fluid/Machines.mo:144:13-144:57:writable] Error: Variable V_flow_op not found in scope Modelica.Fluid.Machines.ControlledPump.
+// Warning: Aliasset with several free start values
+//          Candidate pump.port_a.p(start = pump.p_a_start)
+//          Candidate tank.ports[2].p(start = 100000.0)
+//          Select value from pump.port_a.p(start = pump.p_a_start)
+// Warning: Aliasset with several free start values
+//          Candidate pump.port_b.m_flow(start = pump.m_flow_start)
+//          Candidate heater.m_flows[1](start = 0.0)
+//          Candidate heater.flowModel.m_flows[1](start = 0.0)
+//          Select value from heater.m_flows[1](start = 0.0)
+// Warning: Aliasset with several free start values
+//          Candidate pipe.m_flows[3](start = 0.0)
+//          Candidate radiator.m_flows[1](start = 0.0)
+//          Candidate radiator.flowModel.m_flows[1](start = 0.0)
+//          Candidate valve.m_flow(start = valve.m_flow_start)
+//          Select value from pipe.m_flows[3](start = 0.0)
+// Warning: Aliasset with several free start values
+//          Candidate m_flow(start = 0.0)
+//          Candidate pump.m_flow(start = pump.m_flow_start)
+//          Select value from m_flow(start = 0.0)
+// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "true
+// "
+// ""
+// endResult

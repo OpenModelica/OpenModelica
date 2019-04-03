@@ -1,0 +1,51 @@
+// name:      functionTest7
+// keywords:  evalConstFunc
+// status:    correct
+//
+
+
+loadFile("PartEvalFunc.mo"); getErrorString();
+setDebugFlags("dumpeqninorder");getErrorString();
+simulate(PartEvalFunc.functionTest7);getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("PartEvalFunc.functionTest7_res.mat",
+  "ReferenceFiles/functionTest7.mat",
+  "PartEvalFunc.functionTest7_diff.csv", 0.01, 0.0001,
+  {"a","b","c","d","r1.x","r1.y","r1.z","r2.x","r2.y","r2.z"});  
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+//
+// indxdae: eqns in order
+// ========================================
+// SingleEquation: 1
+// 1: a:VARIABLE()  type: Real 
+// 1/1 (1): a = time   [dynamic |0|0|0|0|]
+//
+// SingleEquation: 4
+// 1: r2.z:VARIABLE()  type: Real 
+// 1/1 (1): r2.z = PartEvalFunc.recfunc4_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [unknown |0|0|0|0|]
+//
+// SingleEquation: 2
+// 1: c:VARIABLE()  type: Real 
+// 1/1 (1): c = a + r2.z   [dynamic |0|0|0|0|]
+//
+// SingleEquation: 3
+// 1: d:STATE(1,c)(start = 0.0 fixed = true )  type: Real 
+// 1/1 (1): der(d) = c   [dynamic |0|0|0|0|]
+//
+//
+// record SimulationResult
+//     resultFile = "PartEvalFunc.functionTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PartEvalFunc.functionTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

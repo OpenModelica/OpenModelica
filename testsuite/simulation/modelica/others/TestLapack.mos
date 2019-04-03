@@ -1,0 +1,48 @@
+// name: TestLapack [#1370]
+// status: correct
+// teardown_command: rm -f TestLapack_* output.log TestLapack.makefile TestLapack.log TestLapack.libs TestLapack.exe TestLapack.c TestLapack.o
+//
+// Checks that the BUG https://trac.openmodelica.org/OpenModelica/ticket/1370 is now gone!
+//
+
+loadFile("TestLapack.mo"); getErrorString();
+simulate(TestLapack, stopTime=1, numberOfIntervals=1); getErrorString();
+"rvalsA";
+val(rvalsA[1], 0); val(rvalsA[2], 0); val(rvalsA[3], 0); val(rvalsA[4], 0);
+"ivalsA";
+val(ivalsA[1], 0); val(ivalsA[2], 0); val(ivalsA[3], 0); val(ivalsA[4], 0);
+"rvalsB";
+val(rvalsB[1], 0); val(rvalsB[2], 0); val(rvalsB[3], 0);
+"ivalsB";
+val(ivalsB[1], 0); val(ivalsB[2], 0); val(ivalsB[3], 0); 
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestLapack_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestLapack', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "rvalsA"
+// 3.0
+// 3.0
+// 2.0
+// 1.0
+// "ivalsA"
+// 1.5
+// -1.5
+// 0.0
+// 0.0
+// "rvalsB"
+// 7.999999999999998
+// -0.6180339887498953
+// 1.618033988749896
+// "ivalsB"
+// 0.0
+// 0.0
+// 0.0
+// endResult

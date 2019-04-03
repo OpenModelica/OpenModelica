@@ -1,0 +1,59 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses);
+compareVars :=
+{
+   "body1.r_0[1]",
+   "body1.r_0[2]",
+   "body1.r_0[3]",
+   "body1.v_0[1]",
+   "body1.v_0[2]",
+   "body1.v_0[3]",
+   "body2.r_0[1]",
+   "body2.r_0[2]",
+   "body2.r_0[3]",
+   "body2.v_0[1]",
+   "body2.v_0[2]",
+   "body2.v_0[3]",
+   "body3.r_0[1]",
+   "body3.r_0[2]",
+   "body3.r_0[3]",
+   "body3.v_0[1]",
+   "body3.v_0[2]",
+   "body3.v_0[3]",
+   "body4.r_0[1]",
+   "body4.r_0[2]",
+   "body4.r_0[3]",
+   "body4.v_0[1]",
+   "body4.v_0[2]",
+   "body4.v_0[3]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses
+// {"body1.r_0[1]","body1.r_0[2]","body1.r_0[3]","body1.v_0[1]","body1.v_0[2]","body1.v_0[3]","body2.r_0[1]","body2.r_0[2]","body2.r_0[3]","body2.v_0[1]","body2.v_0[2]","body2.v_0[3]","body3.r_0[1]","body3.r_0[2]","body3.r_0[3]","body3.v_0[1]","body3.v_0[2]","body3.v_0[3]","body4.r_0[1]","body4.r_0[2]","body4.r_0[3]","body4.v_0[1]","body4.v_0[2]","body4.v_0[3]"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses', options = '', outputFormat = 'mat', variableFilter = 'time|body1.r_0.1.|body1.r_0.2.|body1.r_0.3.|body1.v_0.1.|body1.v_0.2.|body1.v_0.3.|body2.r_0.1.|body2.r_0.2.|body2.r_0.3.|body2.v_0.1.|body2.v_0.2.|body2.v_0.3.|body3.r_0.1.|body3.r_0.2.|body3.r_0.3.|body3.v_0.1.|body3.v_0.2.|body3.v_0.3.|body4.r_0.1.|body4.r_0.2.|body4.r_0.3.|body4.v_0.1.|body4.v_0.2.|body4.v_0.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

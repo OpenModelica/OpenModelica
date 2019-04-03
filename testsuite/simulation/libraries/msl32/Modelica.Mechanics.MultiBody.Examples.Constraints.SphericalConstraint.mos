@@ -1,0 +1,50 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint);
+compareVars :=
+{
+   "bodyOfConstraint.body.w_a[1]",
+   "bodyOfConstraint.body.w_a[2]",
+   "bodyOfConstraint.body.w_a[3]",
+   "freeMotionScalarInit.angle_1",
+   "freeMotionScalarInit.angle_2",
+   "freeMotionScalarInit.angle_3",
+   "joint.w_rel[1]",
+   "joint.w_rel[2]",
+   "joint.w_rel[3]",
+   "joint.Q[1]",
+   "joint.Q[2]",
+   "joint.Q[3]",
+   "joint.Q[4]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint
+// {"bodyOfConstraint.body.w_a[1]","bodyOfConstraint.body.w_a[2]","bodyOfConstraint.body.w_a[3]","freeMotionScalarInit.angle_1","freeMotionScalarInit.angle_2","freeMotionScalarInit.angle_3","joint.w_rel[1]","joint.w_rel[2]","joint.w_rel[3]","joint.Q[1]","joint.Q[2]","joint.Q[3]","joint.Q[4]"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|bodyOfConstraint.body.w_a.1.|bodyOfConstraint.body.w_a.2.|bodyOfConstraint.body.w_a.3.|freeMotionScalarInit.angle_1|freeMotionScalarInit.angle_2|freeMotionScalarInit.angle_3|joint.w_rel.1.|joint.w_rel.2.|joint.w_rel.3.|joint.Q.1.|joint.Q.2.|joint.Q.3.|joint.Q.4.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

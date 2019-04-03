@@ -1,0 +1,33 @@
+// name: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving
+// teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags:
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving);
+compareVars := {"wheelSet.x","wheelSet.y","wheelSet.phi","wheelSet.theta1","wheelSet.theta2","wheelSet.der_theta1","wheelSet.der_theta2"};
+runScript(modelTesting);
+getErrorString();
+
+
+// Result:
+// "\"true
+// \"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// "
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving
+// {"wheelSet.x","wheelSet.y","wheelSet.phi","wheelSet.theta1","wheelSet.theta2","wheelSet.der_theta1","wheelSet.der_theta2"}
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

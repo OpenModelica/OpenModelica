@@ -1,0 +1,45 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");
+
+loadString("
+function f
+  input Real r;
+  output Boolean bs[3]={isPresent(b1),isPresent(b2),isPresent(b3)}, b1=true, b2=true, b3=true;
+algorithm
+  print(\"b1 \"+String(isPresent(b1))+\"\n\");
+  print(\"b2 \"+String(isPresent(b2))+\"\n\");
+  print(\"b3 \"+String(isPresent(b3))+\"\n\");
+end f;
+
+function g
+  input Real r;
+  output Boolean x[3];
+  output Boolean y[3];
+  output Boolean z[3];
+protected
+  Boolean b1,b2,b3;
+algorithm
+  x := not f(r);
+  (y,b1,b2) := f(r);
+  (z,,b2,b3) := f(r);
+end g;
+");
+
+g(1.5);getErrorString();
+
+// Result:
+// true
+// true
+// b1 false
+// b2 false
+// b3 false
+// b1 true
+// b2 true
+// b3 false
+// b1 false
+// b2 true
+// b3 true
+// ({true,true,true},{true,true,false},{false,true,true})
+// ""
+// endResult

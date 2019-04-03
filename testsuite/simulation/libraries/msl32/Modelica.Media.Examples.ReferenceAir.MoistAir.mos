@@ -1,0 +1,47 @@
+// name:     Modelica.Media.Examples.ReferenceAir.MoistAir
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Media.Examples.ReferenceAir.MoistAir);
+compareVars :=
+{
+   "medium.p",
+   "medium.T",
+   "der_p",
+   "der_T"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Media.Examples.ReferenceAir.MoistAir
+// {"medium.p","medium.T","der_p","der_T"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.ReferenceAir.MoistAir', options = '', outputFormat = 'mat', variableFilter = 'time|medium.p|medium.T|der_p|der_T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Media.Examples.ReferenceAir.MoistAir_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.448000
+// |                 | |       | medium.X_liquid >= 0.0 and medium.X_liquid <= 1.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= medium.X_liquid <= 1.0, has value: -0.00037869
+// assert            | warning | The following assertion has been violated at time 0.954000
+// |                 | |       | medium.x_sat >= 0.0 and medium.x_sat <= 1.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x_sat <= 1.0, has value: 1.0089
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

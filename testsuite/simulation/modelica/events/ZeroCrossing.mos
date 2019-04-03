@@ -1,0 +1,72 @@
+// name: ZeroCrossing
+// keywords: ZeroCrossing
+// status: correct
+// 
+//  test for #2528
+// 
+
+loadString("
+model test
+block activationCon
+  parameter input Integer nIn \"number of input places\";
+  parameter input Integer nOut \"number of output places\";
+  input Real tIn[:] \"marking of input places\";
+  input Real tOut[:] \"marking of output places\";
+  input Real arcWeightIn[:] \"arc weights of input places\";
+  input Real arcWeightOut[:] \"arc weights of output places\";
+  input Real minTokens[:] \"minimum capacities of input places\";
+  input Real maxTokens[:] \"maximum capacities of output places\";
+  input Boolean fed[:] \"input places are fed?\";
+  input Boolean emptied[:] \"output places are emptied?\";
+  output Boolean active \"activation of transition\";
+  output Boolean weaklyInputActiveVec[nIn] \"places that causes weakly input activation\";
+  output Boolean weaklyOutputActiveVec[nOut] \"places that causes weakly output activation\";
+algorithm
+  active:=true;
+  weaklyInputActiveVec:=fill(false, nIn);
+  weaklyOutputActiveVec:=fill(false, nOut);
+
+  for i in 1:nIn loop
+      if not (tIn[i] > minTokens[i] or tIn[i] <= minTokens[i] and fed[i]) then
+      active:=false;
+    elseif tIn[i] <= minTokens[i] and fed[i] then
+      weaklyInputActiveVec[i]:=true;
+    else
+
+    end if;
+  end for;
+
+  for i in 1:nOut loop
+      if not (tOut[i] < maxTokens[i] or tOut[i] >= maxTokens[i] and emptied[i]) then
+      active:=false;
+    elseif tOut[i] >= maxTokens[i] and emptied[i] then
+      weaklyOutputActiveVec[i]:=true;
+    else
+
+    end if;
+  end for;
+end activationCon;
+
+  activationCon activation(nIn=1, nOut=1, tIn={1-time}, tOut={time}, minTokens = {0.5}, maxTokens={10}, fed = {false}, emptied={false}, arcWeightIn={1.0}, arcWeightOut={1.0});
+end test;
+"); getErrorString();
+
+simulate(test); getErrorString();
+
+val(activation.active, 0.4);
+val(activation.active, 0.6);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// endResult

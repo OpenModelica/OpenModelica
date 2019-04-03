@@ -1,0 +1,43 @@
+// name:     Modelica.StateGraph.Examples.ExecutionPaths
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.StateGraph.Examples.ExecutionPaths);
+compareVars :=
+{
+   "step0.active",
+   "step1.active",
+   "step6.active",
+   "step2.active",
+   "step3.active",
+   "step4.active",
+   "step5.active",
+   "step4a.active"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.StateGraph.Examples.ExecutionPaths
+// {"step0.active","step1.active","step6.active","step2.active","step3.active","step4.active","step5.active","step4a.active"}
+// Simulation options: startTime = 0.0, stopTime = 15.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.StateGraph.Examples.ExecutionPaths', options = '', outputFormat = 'mat', variableFilter = 'time|step0.active|step1.active|step6.active|step2.active|step3.active|step4.active|step5.active|step4a.active', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.StateGraph.Examples.ExecutionPaths_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

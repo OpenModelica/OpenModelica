@@ -1,0 +1,59 @@
+//name:         HeatingNPN_OrGate2
+//keyword:      simulating msl221
+//status:       correct
+//
+// simulation example
+//
+
+loadModel(Modelica,{"2.2.2"});
+simulate("Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate", stopTime=200, method="dassl");
+
+"RI.v:";
+val(RI.v,0.0);
+val(RI.v,100.0);
+val(RI.v,200.0);
+
+"RI.i:";
+val(RI.i,0.0);
+val(RI.i,100.0);
+val(RI.i,200.0);
+
+"V.v:";
+val(V.v,0.0);
+val(V.v,100.0);
+val(V.v,200.0);
+
+"V.i:";
+val(V.i,0.0);
+val(V.i,100.0);
+val(V.i,200.0);
+
+"T2.vbe:";
+val(T2.vbe,0.0);
+val(T2.vbe,100.0);
+val(T2.vbe,200.0);
+
+"T2.vbc:";
+val(T2.vbc,0.0);
+val(T2.vbc,100.0);
+val(T2.vbc,200.0);
+
+"T2.C.v:";
+val(T2.C.v,0.0);
+val(T2.C.v,100.0);
+val(T2.C.v,200.0);
+
+"T2.C.i:";
+val(T2.C.i,0.0);
+val(T2.C.i,100.0);
+val(T2.C.i,200.0);
+
+"T2.E.i:";
+val(T2.E.i,0.0);
+val(T2.E.i,100.0);
+val(T2.E.i,200.0);
+
+"HeatCapacitor1.T:";
+val(HeatCapacitor1.T,0.0);
+val(HeatCapacitor1.T,100.0);
+val(HeatCapacitor1.T,200.0);

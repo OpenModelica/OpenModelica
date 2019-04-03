@@ -1,0 +1,49 @@
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("package ForIterList
+
+function splitOnTrue<T>
+  input list<T> inList;
+  input PredicateFunc inFunc;
+  output list<T> outTrueList = {};
+  output list<T> outFalseList = {};
+
+  partial function PredicateFunc
+    input T inElement;
+    output Boolean outResult;
+  end PredicateFunc;
+algorithm
+  for e in inList loop  // <- Iterate over list.
+    if inFunc(e) then
+      outTrueList := e :: outTrueList;
+    else
+      outFalseList := e :: outFalseList;
+    end if;
+  end for;
+
+  outTrueList := listReverse(outTrueList);
+  outFalseList := listReverse(outFalseList);
+end splitOnTrue;
+
+function main
+  input list<Integer> inList;
+  output list<Integer> outTrueList;
+  output list<Integer> outFalseList;
+algorithm
+  (outTrueList,outFalseList) := splitOnTrue(inList, function intGt(i2=0));
+end main;
+
+end ForIterList;");
+
+loadFile("a.mo");getErrorString();
+ForIterList.main({2,-1,0,1,-2});getErrorString();
+
+// Result:
+// true
+// true
+// false
+// ""
+// ({2,1},{-1,0,-2})
+// ""
+// endResult

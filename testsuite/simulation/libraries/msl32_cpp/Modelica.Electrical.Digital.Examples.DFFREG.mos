@@ -1,0 +1,41 @@
+// name:     Modelica.Electrical.Digital.Examples.DFFREG
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.DFFREG);
+compareVars :=
+{
+   "dFFREG.reset",
+   "dFFREG.clock",
+   "dFFREG.dataIn[1]",
+   "dFFREG.dataIn[2]",
+   "dFFREG.dataOut[1]",
+   "dFFREG.dataOut[2]"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Digital.Examples.DFFREG
+// {"dFFREG.reset","dFFREG.clock","dFFREG.dataIn[1]","dFFREG.dataIn[2]","dFFREG.dataOut[1]","dFFREG.dataOut[2]"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.DFFREG', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Electrical.Digital.Examples.DFFREG_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

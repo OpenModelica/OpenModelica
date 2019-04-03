@@ -1,0 +1,14 @@
+// status: correct
+// ticket: #3063
+
+setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");getErrorString();
+loadFile("SwitchString.mo");getErrorString();
+switchString();getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "bad"
+// ""
+// endResult

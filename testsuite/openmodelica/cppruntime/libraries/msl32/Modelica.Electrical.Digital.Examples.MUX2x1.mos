@@ -1,0 +1,30 @@
+// name:     Modelica.Electrical.Digital.Examples.MUX2x1
+// teardown_command: rm -f Modelica.Electrical.Digital.Examples.MUX2x1_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Electrical.Digital.Examples.MUX2x1, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Digital.Examples.MUX2x1_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Digital.Examples.MUX2x1.mat",
+  "Modelica.Electrical.Digital.Examples.MUX2x1_diff.csv",0.01,0.0001,
+  {"Mux2x1.out"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Digital.Examples.MUX2x1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 15.0, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.MUX2x1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

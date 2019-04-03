@@ -1,0 +1,96 @@
+// name:     Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads
+// teardown_command: rm -f Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+runScript("ModelTestingDefaults.mos");getErrorString();
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler);
+timeout := 120;
+
+compareVars :=
+{
+   "evaporator.p",
+   "evaporator.V_l",
+   "controller.x"
+};
+
+setDebugFlags("hpcom"); getErrorString();
+setCommandLineOptions("+n=2 +hpcomScheduler=mcp +hpcomCode=pthreads"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "\"true
+// \"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"mat\"
+// true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Fluid.Examples.DrumBoiler.DrumBoiler
+// 120
+// {"evaporator.p","evaporator.V_l","controller.x"}
+// true
+// ""
+// true
+// ""
+// readCalcTimesFromFile: No valid profiling-file found.
+// Warning: The costs have been estimated. Maybe Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_eqs_prof-file is missing.
+// Using Modified Critical Path Scheduler for the DAE system
+// Using Modified Critical Path Scheduler for the ODE system
+// Using Modified Critical Path Scheduler for the ZeroFunc system
+// There is no parallel potential in the ODE system model!
+// HpcOm is still under construction.
+// Simulation options: startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Result file: Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat
+// Files Equal!
+// Warning: Alias set with several free start values
+// * candidate: evaporator.p(start = evaporator.p_start)
+// * candidate: evaporator.port_b.p(start = 5000000.0)
+// * candidate: temperature.port.p(start = 5000000.0)
+// * candidate: pressure.port.p(start = 5000000.0)
+// * candidate: massFlowRate.port_a.p(start = 5000000.0)
+// * candidate: massFlowRate.port_b.p(start = 5000000.0)
+// * candidate: SteamValve.port_a.p(start = 5000000.0)
+// * candidate: SteamValve.state_a.p(start = 5000000.0)
+// * candidate: evaporator.port_a.p(start = 5000000.0)
+// * candidate: pump.ports[1].p(start = 5000000.0)
+// * candidate: pump.medium.state.p(start = 5000000.0)
+// * candidate: pump.medium.sat.psat(start = 5000000.0)
+// * candidate: evaporator.sat.psat(start = 5000000.0)
+// => select value from evaporator.p(start = evaporator.p_start) for variable: evaporator.p
+// Warning: Alias set with different nominal values
+// * candidate: evaporator.sat.psat(nominal = 1000000.0)
+// * candidate: pump.medium.sat.psat(nominal = 1000000.0)
+// * candidate: pump.medium.state.p(nominal = 1000000.0)
+// * candidate: pump.medium.p(nominal = 100000.0)
+// * candidate: pump.ports[1].p(nominal = 1000000.0)
+// * candidate: evaporator.port_a.p(nominal = 1000000.0)
+// * candidate: SteamValve.state_a.p(nominal = 1000000.0)
+// * candidate: SteamValve.port_a.p(nominal = 1000000.0)
+// * candidate: massFlowRate.port_b.p(nominal = 1000000.0)
+// * candidate: massFlowRate.port_a.p(nominal = 1000000.0)
+// * candidate: pressure.port.p(nominal = 1000000.0)
+// * candidate: temperature.port.p(nominal = 1000000.0)
+// * candidate: evaporator.port_b.p(nominal = 1000000.0)
+// * candidate: evaporator.p(nominal = 1000000.0)
+// => select value from evaporator.p(nominal = 1000000.0) for variable: evaporator.p
+// Warning: Alias set with different nominal values
+// * candidate: furnace.port.T(nominal = 300.0)
+// * candidate: evaporator.heatPort.T(nominal = 300.0)
+// * candidate: evaporator.sat.Tsat(nominal = 500.0)
+// * candidate: evaporator.T(nominal = 500.0)
+// * candidate: evaporator.T_D(nominal = 500.0)
+// => select value from evaporator.T_D(nominal = 500.0) for variable: evaporator.T_D
+// 
+// "true
+// "
+// ""
+// endResult

@@ -1,0 +1,84 @@
+// name:     mathEventsFunction1
+// keywords: events, math-functions
+// status: correct
+// teardown_command: rm -rf mathEvents1* output.log
+// 
+// Check for interger valued zerocrossings function
+// 
+
+
+loadString("
+model mathEvents1
+  Real u,y1,y2;
+equation
+  u = 10*sin(10*time);
+  y1 = if u > 0 then integer(u) else integer(u)-1;
+  y2 = if (u > 0) then integer(floor(u + 0.5)) else integer(ceil(u - 0.5));
+end mathEvents1;
+");
+getErrorString();
+
+simulate(mathEvents1,numberOfIntervals=500);
+getErrorString();
+
+print("\n-y1-");
+val(y1,0);
+val(y1,0.2);
+val(y1,0.4);
+val(y1,0.6);
+val(y1,0.8);
+val(y1,1);
+
+print("\n-y2-");
+val(y2,0);
+val(y2,0.2);
+val(y2,0.4);
+val(y2,0.6);
+val(y2,0.8);
+val(y2,1);
+
+
+print("\n-u-");
+val(u,0);
+val(u,0.2);
+val(u,0.4);
+val(u,0.6);
+val(u,0.8);
+val(u,1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "mathEvents1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mathEvents1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+//
+// -y1-
+// -1.0
+// 9.0
+// -9.0
+// -4.0
+// 9.0
+// -7.0
+//
+// -y2-
+// 0.0
+// 9.0
+// -8.0
+// -3.0
+// 10.0
+// -5.0
+//
+// -u-
+// 0.0
+// 9.092974268256818
+// -7.568024953079282
+// -2.794154981989259
+// 9.893582466233818
+// -5.440211108893697
+// endResult

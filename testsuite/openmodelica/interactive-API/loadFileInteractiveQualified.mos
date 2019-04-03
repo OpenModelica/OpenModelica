@@ -1,0 +1,90 @@
+// name:     API Class/Elements query
+// keywords: Graphical API interactive loading of files in a scope: loadFileInteractiveQualified, getCrefInfo, getElementsInfo, getClassInformation, getClassAttributes
+// status:   correct
+//
+//  Subset of the Graphical API, interactive loading of files in a scope
+//  testing of: loadFileInteractiveQualified, getCrefInfo, getElementsInfo, getClassInformation, getClassAttributes
+//
+
+setCommandLineOptions({"+d=showStatement"});
+
+loadFileInteractiveQualified("loadFileInteractiveQualifiedInit.mo");
+getClassNames(Something);
+loadFileInteractiveQualified("loadFileInteractiveQualified.mo");
+getClassInformation(Something.Somewhere.Stuff);
+getCrefInfo(Something);
+getElementsInfo(Something);
+getCrefInfo(Something.Somewhere);
+getElementsInfo(Something.Somewhere);
+getCrefInfo(Something.Somewhere.Stuff);
+getCrefInfo(Something.Somewhere.Stuff2);
+getCrefInfo(Something.Somewhere.BlaBla);
+getCrefInfo(Something.Somewhere.BlaBla.Z);
+getCrefInfo(Something.Somewhere.BlaBla.X);
+getElementsInfo(Something.Somewhere.Stuff);
+getElementsInfo(Something.Somewhere.Stuff2);
+getElementsInfo(Something.Somewhere.BlaBla);
+getElementsInfo(Something.Somewhere.BlaBla.Z);
+
+// Result:
+// {true}
+// Evaluating: loadFileInteractiveQualified("loadFileInteractiveQualifiedInit.mo")
+// {Something}
+// Evaluating: getClassNames(Something)
+// {Somewhere}
+// Evaluating: loadFileInteractiveQualified("loadFileInteractiveQualified.mo")
+// {Something.Somewhere.Stuff,Something.Somewhere.Stuff2,Something.Somewhere.BlaBla}
+// Evaluating: getClassInformation(Something.Somewhere.Stuff)
+// ("class","Stuff Comment",false,false,false,"openmodelica/interactive-API/loadFileInteractiveQualified.mo",false,10,1,15,10,{},false,false,"","",false,"")
+// Evaluating: getCrefInfo(Something)
+// {openmodelica/interactive-API/loadFileInteractiveQualifiedInit.mo,writable,8,1,14,14}
+// Evaluating: getElementsInfo(Something)
+// { { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualifiedInit.mo", elementreadonly="writable", elementStartLine=10, elementStartColumn=3, elementEndLine=12, elementEndColumn=16, final=false, replaceable=false, inout="none", elementtype=classdef, classname=Somewhere, classrestriction=PACKAGE) }
+//  }
+// Evaluating: getCrefInfo(Something.Somewhere)
+// {openmodelica/interactive-API/loadFileInteractiveQualifiedInit.mo,writable,10,3,12,16}
+// Evaluating: getElementsInfo(Something.Somewhere)
+// { { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=23, elementStartColumn=1, elementEndLine=30, elementEndColumn=11, final=false, replaceable=false, inout="none", elementtype=classdef, classname=BlaBla, classrestriction=CLASS) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=17, elementStartColumn=1, elementEndLine=20, elementEndColumn=11, final=false, replaceable=false, inout="none", elementtype=classdef, classname=Stuff2, classrestriction=CLASS) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=10, elementStartColumn=1, elementEndLine=15, elementEndColumn=10, final=false, replaceable=false, inout="none", elementtype=classdef, classname=Stuff, classrestriction=CLASS) }
+//  }
+// Evaluating: getCrefInfo(Something.Somewhere.Stuff)
+// {openmodelica/interactive-API/loadFileInteractiveQualified.mo,writable,10,1,15,10}
+// Evaluating: getCrefInfo(Something.Somewhere.Stuff2)
+// {openmodelica/interactive-API/loadFileInteractiveQualified.mo,writable,17,1,20,11}
+// Evaluating: getCrefInfo(Something.Somewhere.BlaBla)
+// {openmodelica/interactive-API/loadFileInteractiveQualified.mo,writable,23,1,30,11}
+// Evaluating: getCrefInfo(Something.Somewhere.BlaBla.Z)
+// {openmodelica/interactive-API/loadFileInteractiveQualified.mo,writable,26,3,29,8}
+// Evaluating: getCrefInfo(Something.Somewhere.BlaBla.X)
+// {openmodelica/interactive-API/loadFileInteractiveQualified.mo,writable,25,3,25,13}
+// Evaluating: getElementsInfo(Something.Somewhere.Stuff)
+// { { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementtype=comment) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=12, elementStartColumn=3, elementEndLine=12, elementEndColumn=9, final=false, replaceable=false, inout="none", elementtype=component, typename=Real, names={x,""}, flow=false, stream=false, variability="unspecified", direction="unspecified") },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=13, elementStartColumn=3, elementEndLine=13, elementEndColumn=9, final=false, replaceable=false, inout="none", elementtype=component, typename=Real, names={y,""}, flow=false, stream=false, variability="unspecified", direction="unspecified") }
+//  }
+// Evaluating: getElementsInfo(Something.Somewhere.Stuff2)
+// { { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=18, elementStartColumn=3, elementEndLine=18, elementEndColumn=16, final=false, replaceable=false, inout="none", elementtype=extends, path=Stuff) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=19, elementStartColumn=3, elementEndLine=19, elementEndColumn=9, final=false, replaceable=false, inout="none", elementtype=component, typename=Real, names={z,""}, flow=false, stream=false, variability="unspecified", direction="unspecified") }
+//  }
+// Evaluating: getElementsInfo(Something.Somewhere.BlaBla)
+// { { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=24, elementStartColumn=3, elementEndLine=24, elementEndColumn=22, final=false, replaceable=false, inout="none", elementtype=import, kind=unqualified, path=HelloWorld) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=25, elementStartColumn=3, elementEndLine=25, elementEndColumn=13, final=false, replaceable=false, inout="none", elementtype=classdef, classname=X, classrestriction=TYPE) },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=26, elementStartColumn=3, elementEndLine=29, elementEndColumn=8, final=false, replaceable=false, inout="none", elementtype=classdef, classname=Z, classrestriction=RECORD) }
+//  }
+// Evaluating: getElementsInfo(Something.Somewhere.BlaBla.Z)
+// { { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=27, elementStartColumn=4, elementEndLine=27, elementEndColumn=10, final=false, replaceable=false, inout="none", elementtype=component, typename=Real, names={x,""}, flow=false, stream=false, variability="unspecified", direction="unspecified") },
+// { rec(elementvisibility=public, elementfile="openmodelica/interactive-API/loadFileInteractiveQualified.mo", elementreadonly="writable", elementStartLine=28, elementStartColumn=4, elementEndLine=28, elementEndColumn=10, final=false, replaceable=false, inout="none", elementtype=component, typename=Real, names={y,""}, flow=false, stream=false, variability="unspecified", direction="unspecified") }
+//  }
+// endResult

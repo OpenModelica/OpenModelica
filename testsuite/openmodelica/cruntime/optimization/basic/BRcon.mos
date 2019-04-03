@@ -1,0 +1,48 @@
+// name: BatchReactorCon
+// status: correct
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("BatchReactor.mo");
+getErrorString();
+
+optimize(nmpcBatchReactorCon, numberOfIntervals=20, tolerance = 1e-8);
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("nmpcBatchReactorCon_res.mat","ReferenceFiles/nmpcBatchReactorCon_ref.mat","nmpcBatchReactorCon_res.csv",0.01,0.0001);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nmpcBatchReactorCon_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactorCon', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:y1(start = 1, nominal = 1, min = 0, max = 1, init = 1)
+// State[1]:y2(start = 0, nominal = 1, min = 0, max = 1, init = 0)
+// Input[2]:u(start = 1, nominal = 1, min = 0, max = 5)
+// --------------------------------------------------------
+// number of nonlinear constraints: 2
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit http://projects.coin-or.org/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
+// endResult

@@ -1,0 +1,29 @@
+// name: OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy
+// keywords: initialization, over-determined
+// status: correct
+
+loadModel(Modelica); getErrorString();
+loadFile("OverdeterminedInitialization.mo"); getErrorString();
+
+setCommandLineOptions("-d=initialization"); getErrorString();
+buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy_init.xml"}
+// "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
+//          $DER.M2 = 0.0.
+// Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
+//          T2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          $DER.T1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          $DER.p1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          $DER.T2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
+//          p1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real
+// "
+// endResult

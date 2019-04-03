@@ -1,0 +1,83 @@
+// name:     TestPackageInheritance.mos [BUG: https://trac.openmodelica.org/OpenModelica/ticket/132]
+// keywords: redeclare functions
+// status:   correct
+// 
+// Checks that the compiler correctly handles inheritance and redeclare of functions in packages
+// 
+
+loadFile("TestPackageInheritance.mo"); getErrorString();
+instantiateModel(TestPackageInheritance.Test.Test_f); getErrorString();
+instantiateModel(TestPackageInheritance.Test.Test_g); getErrorString();
+instantiateModel(TestPackageInheritance.Test.Test_h); getErrorString();
+instantiateModel(TestPackageInheritance.Test.Test_f_modified); getErrorString();
+instantiateModel(TestPackageInheritance.Test.Test_f_wrong); getErrorString();
+
+// Result:
+// true
+// ""
+// "function TestPackageInheritance.MyPackage.f
+//   input Real x;
+//   output Real y;
+// algorithm
+//   y := x;
+// end TestPackageInheritance.MyPackage.f;
+// 
+// class TestPackageInheritance.Test.Test_f
+//   Real x = 1.0;
+//   Real y = TestPackageInheritance.MyPackage.f(x);
+// end TestPackageInheritance.Test.Test_f;
+// "
+// ""
+// "function TestPackageInheritance.MyPackage.g
+//   input Real x;
+//   output Real y;
+// algorithm
+//   y := 2.0 * x;
+// end TestPackageInheritance.MyPackage.g;
+// 
+// class TestPackageInheritance.Test.Test_g
+//   Real x = 1.0;
+//   Real y = TestPackageInheritance.MyPackage.g(x);
+// end TestPackageInheritance.Test.Test_g;
+// "
+// ""
+// "function TestPackageInheritance.MyPackage.h
+//   input Real x;
+//   output Real y;
+// algorithm
+//   y := 10.0 * x;
+// end TestPackageInheritance.MyPackage.h;
+// 
+// class TestPackageInheritance.Test.Test_h
+//   Real x = 1.0;
+//   Real y = TestPackageInheritance.MyPackage.h(x);
+// end TestPackageInheritance.Test.Test_h;
+// "
+// ""
+// "function TestPackageInheritance.ModifiedPackage.f
+//   input Real x;
+//   output Real y;
+// algorithm
+//   y := -x;
+// end TestPackageInheritance.ModifiedPackage.f;
+// 
+// class TestPackageInheritance.Test.Test_f_modified
+//   Real x = 1.0;
+//   Real y = TestPackageInheritance.ModifiedPackage.f(x);
+// end TestPackageInheritance.Test.Test_f_modified;
+// "
+// ""
+// "function TestPackageInheritance.WrongPackage.f
+//   input Real a;
+//   output Real b;
+// algorithm
+//   b := 5.0 * a;
+// end TestPackageInheritance.WrongPackage.f;
+// 
+// class TestPackageInheritance.Test.Test_f_wrong
+//   Real x = 1.0;
+//   Real y = TestPackageInheritance.WrongPackage.f(x);
+// end TestPackageInheritance.Test.Test_f_wrong;
+// "
+// ""
+// endResult

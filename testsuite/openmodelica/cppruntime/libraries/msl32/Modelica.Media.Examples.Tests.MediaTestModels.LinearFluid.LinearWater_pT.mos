@@ -1,0 +1,31 @@
+// name:     Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT
+// teardown_command: rm -f Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT_*.mat
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: 	 +simCodeTarget=Cpp
+//
+// Simulation Results 
+// Modelica Standard Library
+//
+
+loadModel(Modelica,{"3.2.1"});
+
+simulate(Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT, outputFormat="mat");
+getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT_res.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT.mat",
+  "Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT_diff.csv",0.01,0.0001,
+  {"volume.U",
+   "volume.m"});
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 0.000001, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

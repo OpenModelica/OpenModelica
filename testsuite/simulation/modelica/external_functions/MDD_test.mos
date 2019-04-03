@@ -1,0 +1,32 @@
+// name:     MDD_test
+// keywords: MDD_test
+// status:   correct
+// teardown_command: rm -rf MDD_test_*
+//
+//  Checks that external object aliases are recognized properly. Otherwise the system has too many equations.
+//
+
+loadModel(Modelica, {"3.2.2"});getErrorString();
+loadModel(Modelica_Synchronous); getErrorString();
+loadModel(Modelica_DeviceDrivers); getErrorString();
+loadFile("MDD_test.mo"); getErrorString();
+buildModel(MDD_test); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// "
+// true
+// ""
+// {"MDD_test","MDD_test_init.xml"}
+// "Warning: Alias equations of external objects are not Modelica compliant as in:
+//     getInteger.pkgIn.pkg = resetPointer.pkgOut[1].pkg
+//     packInt.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     packInt.pkgIn.pkg = packager.pkgOut.pkg
+//     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+// "
+// endResult

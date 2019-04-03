@@ -1,0 +1,35 @@
+// name:     ArraySubscripting
+// keywords: builtin, array, subscript
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Checks that subscripting of arrays works correctly.
+//
+
+loadString("
+  function test
+    output Integer outN;
+  protected
+    array<array<Integer>> arr;
+    Integer idx = 1;
+    array<Integer> nums;
+  algorithm
+    arr := arrayCreate(1, listArray({4, 2, 5}));
+    nums := listArray({5, 3, 7, 1, 9});
+    outN := 0;
+
+    for i in arr[idx] loop
+      nums[i] := nums[i] + outN;
+      outN := nums[i];
+    end for;
+  end test;
+");
+
+test();
+getErrorString();
+
+// Result:
+// true
+// 13
+// ""
+// endResult
