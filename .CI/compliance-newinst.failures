@@ -15,7 +15,6 @@ ModelicaCompliance.Arrays.Declarations.ArrayWithNegativeDims
 ModelicaCompliance.Arrays.Declarations.BoolArray
 ModelicaCompliance.Arrays.Functions.Conversion.DimConversionMatrix
 ModelicaCompliance.Arrays.Functions.Reductions.Deduce
-ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize3
 ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize4
 ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayMatrixMatrixMul6
 ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayMatrixVectorMul5
@@ -56,15 +55,9 @@ ModelicaCompliance.Classes.Specialized.OperatorRecordProtected
 ModelicaCompliance.Classes.Specialized.PackageParameter
 ModelicaCompliance.Classes.Specialized.RecordAlgorithm
 ModelicaCompliance.Classes.Specialized.RecordEquation
-ModelicaCompliance.Classes.Specialized.RecordFlow
 ModelicaCompliance.Classes.Specialized.RecordInitialAlgorithm
 ModelicaCompliance.Classes.Specialized.RecordInitialEquation
-ModelicaCompliance.Classes.Specialized.RecordInner
-ModelicaCompliance.Classes.Specialized.RecordInput
-ModelicaCompliance.Classes.Specialized.RecordOuter
-ModelicaCompliance.Classes.Specialized.RecordOutput
 ModelicaCompliance.Classes.Specialized.RecordProtected
-ModelicaCompliance.Classes.Specialized.RecordStream
 ModelicaCompliance.Components.Conditional.InvalidUsageAlgorithm
 ModelicaCompliance.Components.Conditional.InvalidUsageEquation
 ModelicaCompliance.Components.Conditional.InvalidUsageFunCall
