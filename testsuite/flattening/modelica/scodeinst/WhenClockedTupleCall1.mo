@@ -23,7 +23,8 @@ end WhenClockedTupleCall1;
 //   Real y;
 // equation
 //   when Clock() then
-//     (x, y) = (1.0, 2.0);
+//     x = 1.0;
+//     y = 2.0;
 //   end when;
 // end WhenClockedTupleCall1;
 // endResult
