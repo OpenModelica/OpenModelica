@@ -512,7 +512,8 @@ void buildOMC(CC, CXX, extraFlags) {
   sh 'autoconf'
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
-  sh "make -j${numPhysicalCPU()} --output-sync omc omc-diff"
+  // OMSimulator requires HOME to be set and writeable
+  sh "HOME='${env.WORKSPACE}' make -j${numPhysicalCPU()} --output-sync omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
 }
 
@@ -522,9 +523,8 @@ void buildGUI(stash) {
   sh 'autoconf'
   patchConfigStatus()
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
-  sh 'touch omc omc-diff ReferenceFiles && make -q omc omc-diff ReferenceFiles' // Pretend we already built omc since we already did so
-  // OMSimulator requires HOME to be set and writeable
-  sh "HOME='${env.WORKSPACE}' make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
+  sh 'touch omc omc-diff ReferenceFiles omsimulator && make -q omc omc-diff ReferenceFiles omsimulator' // Pretend we already built omc since we already did so
+  sh "make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
 }
 
 void generateTemplates() {
