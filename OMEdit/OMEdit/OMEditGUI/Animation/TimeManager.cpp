@@ -45,7 +45,7 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
     _endTime(endTime),
     _pause(true),
     mSpeedUp(1.0),
-	mTimeDiscretization(1000)
+    mTimeDiscretization(1000)
 {
   mpUpdateSceneTimer = new QTimer;
   mpUpdateSceneTimer->setInterval(100);

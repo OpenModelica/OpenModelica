@@ -4,7 +4,7 @@ A Mathematica-style Notebook for OpenModelica.
 ## Dependencies
 
 - [OpenModelica](https://openmodelica.org)
-- [OMPlot](../../OMPlot)
+- [OMPlot](../OMPlot)
 
 ## Build instructions
 

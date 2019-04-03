@@ -53,6 +53,7 @@ build: omc_config.h $(NAME) Resources/nls/qm.stamp
 	mkdir -p $$DIRS) && \
 	cd ../../DrControl/ && \
 	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drcontrol/{} \;)
+	cp -puf ../../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
 
 Makefile: OMNotebookGUI.pro
 	$(QMAKE) "CONFIG+=release"

@@ -75,7 +75,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpRotateCameraLeftAction(nullptr),
     mpRotateCameraRightAction(nullptr),
     mCameraInitialized(false),
-	mSliderRange(1000)
+    mSliderRange(1000)
 {
   // to distinguish this widget as a subwindow among the plotwindows
   setObjectName(QString("animationWindow"));
