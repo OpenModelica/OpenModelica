@@ -4091,6 +4091,8 @@ void ModelWidget::reDrawModelWidget()
     mComponentsLoaded = false;
     // get the model components
     loadComponents();
+    // invalidate the simulation options
+    mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
     // update the icon
     mpLibraryTreeItem->handleIconUpdated();
     // Draw diagram view
