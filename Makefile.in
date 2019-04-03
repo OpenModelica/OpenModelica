@@ -3,7 +3,7 @@
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
-.PHONY: omsimulator
+.PHONY:
 
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
