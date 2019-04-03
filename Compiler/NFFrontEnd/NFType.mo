@@ -892,5 +892,18 @@ public
     end match;
   end isBoxed;
 
+  function sizeType
+    input Type arrayTy;
+    output Type sizeTy;
+  algorithm
+    if Type.isUnknown(arrayTy) then
+      // Return unknown type if the type is unknown, to avoid returning Array[0]
+      // for untyped expressions.
+      sizeTy := Type.UNKNOWN();
+    else
+      sizeTy := Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(dimensionCount(arrayTy))});
+    end if;
+  end sizeType;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

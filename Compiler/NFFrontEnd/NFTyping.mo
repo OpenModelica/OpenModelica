@@ -1892,7 +1892,7 @@ algorithm
           fail();
         end if;
 
-        sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(Type.dimensionCount(exp_ty))});
+        sizeType := Type.sizeType(exp_ty);
       then
         (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER);
 
