@@ -35,7 +35,12 @@
 extern "C" {
 #endif
 
+#include "../omc_simulation_settings.h"
 #include <stdio.h>
+
+#if !defined(HAVE_MMAP) && OMC_FMI_RUNTIME
+#define HAVE_MMAP 0
+#endif
 
 #if !defined(HAVE_MMAP)
 #if defined(unix) || defined(__APPLE__)
