@@ -1,3 +1,5 @@
+.. _encryption :
+
 OpenModelica Encryption
 =======================
 

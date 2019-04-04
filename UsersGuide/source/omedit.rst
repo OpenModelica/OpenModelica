@@ -87,6 +87,8 @@ areas. If you want OMEdit to remember the new docked position of the
 browsers then you must enable Preserve User's GUI Customizations option,
 see section :ref:`omedit-settings-general`.
 
+.. _omedit-filter-classes :
+
 Filter Classes
 ~~~~~~~~~~~~~~
 
@@ -230,6 +232,129 @@ The prespective shows the list of stack frames, breakpoints and variables.
   :name: omedit-debugging-perspective
 
   OMEdit Debugging Perspective.
+
+File Menu
+---------
+
+-  *New Modelica Class* - Creates a new Modelica class.
+-  *Open Model/Library File(s)* - Opens the Modelica file or a library.
+-  *Open/Convert Modelica File(s) With Encoding* - Opens the Modelica file or
+   a library with a specific encoding. It is also possible to convert to UTF-8.
+-  *Load Library* - Loads a Modelica library. Allows the user to select the
+   library path assuming that the path contains a package.mo file.
+-  *Load Encrypted Library* - Loads an encrypted library. see :ref:`encryption`
+-  *Open Result File(s)* - Opens a result file.
+-  *Open Transformations File* - Opens a transformational debugger file.
+-  *New Composite Model* - Creates a new composite model.
+-  *Open Composite Model(s)* - Loads an existing composite model.
+-  *Load External Model(s)* - Loads the external models that can be used within
+   composite model.
+-  *Open Directory* - Loads the files of a directory recursively. The files
+   are loaded as text files.
+-  *Save* - Saves the class.
+-  *Save As* - Save as the class.
+-  *Import*
+  -  *FMU* - Imports the FMU.
+  -  *FMU Model Description* - Imports the FMU model description.
+  -  *From OMNotbook* - Imports the Modelica models from OMNotebook.
+  -  *Ngspice netlist* - Imports the ngspice netlist to Modelica code.
+-  "Export"
+  -  *To Clipboard* - Exports the current model to clipboard.
+  -  *Image* - Exports the current model to image.
+  -  *FMU* - Exports the current model to FMU.
+  -  *Read-only Package* - Exports a zipped Modelica library with file extension .mol
+  -  *Encrypted Package* - Exports an encrypted package. see :ref:`encryption`
+  -  *XML* - Exports the current model to a xml file.
+  -  *Figaro* - Exports the current model to Figaro.
+  -  *To OMNotebook* - Exports the current model to a OMNotebook file.
+-  *System Libraries* - Contains a list of system libraries.
+-  *Recent Files* - Contains a list of recent files.
+-  *Clear Recent Files* - Clears the list of recent files.
+-  *Print* - Prints the current model.
+-  *Quit* - Quit the OpenModelica Connection Editor.
+
+Edit Menu
+---------
+
+-  *Undo* - Undoes the last change.
+-  *Redo* - Redoes the last undone change.
+-  *Filter Classes* - Filters the classes in Libraries Browser. see :ref:`omedit-filter-classes`
+
+View Menu
+---------
+
+-  *Toolbars* - Toggle visibility of toolbars.
+-  *Windows* - Toggle visibility of windows.
+  -  *Close Window* - Closes the current model window.
+  -  *Close All Windows* - Closes all the model windows.
+  -  *Close All Windows But This* - Closes all the model windows except the current.
+  -  *Cascade Windows* - Arranges all the child windows in a cascade pattern.
+  -  *Tile Windows Horizontally* - Arranges all child windows in a horizontally tiled pattern.
+  -  *Tile Windows Vertically* - Arranges all child windows in a vertically tiled pattern.
+-  *Toggle Tab/Sub-window View* - Switches between tab and subwindow view.
+-  *Grid Lines* - Toggle grid lines of the current model.
+-  *Reset Zoom* - Resets the zoom of the current model.
+-  *Zoom In* - Zoom in the current model.
+-  *Zoom Out* - Zoom out the current model.
+
+Simulation Menu
+---------------
+
+-  *Instantiate Model* - Instantiates the current model.
+-  *Check Model* - Checks the current model.
+-  *Check All Models* - Checks all the models of a library.
+-  *Simulate* - Simulates the current model.
+-  *Simulate with Transformational Debugger* - Simulates the current model and
+   opens the transformational debugger.
+-  *Simulate with Algorithmic Debugger* - Simulates the current model and
+   opens the algorithmic debugger.
+-  *Simulate with Animation* - Simulates the current model and open the animation.
+-  *Simulation Setup* - Opens the simulation setup window.
+
+Debugger Menu
+-------------
+
+-  *Debug Configurations* - Opens the debug configurations window.
+-  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
+
+OMSimulator Menu
+----------------
+
+-  *New OMSimulator Model* - Creates a new OMSimulator model.
+-  *Open OMSimulator Model(s)* - Opens the OMSimulator model(s).
+-  *Add System* - Adds the system to a model.
+-  *Add/Edit Icon* - Add/Edit the system/submodel icon.
+-  *Delete Icon* - Deletes the system/submodel icon.
+-  *Add Connector* - Adds a connector to a system/submodel.
+-  *Add Bus* - Adds a bus to a system/submodel.
+-  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
+-  *Add SubModel* - Adds a submodel to a system.
+-  *Instantiate Model* - Instantiates the model.
+-  *Simulate* - Simulates the model.
+-  *Archived Simulations* - Opens the archived simulations window.
+
+Tools Menu
+----------
+
+-  *OpenModelica Compiler CLI* - Opens the OpenModelica Compiler command line
+   interface window.
+-  *OpenModelica Command Prompt* - Opens the OpenModelica Command Prompt (Only
+   available on Windows).
+-  *Open Working Directory* - Opens the current working directory.
+-  *Open Terminal* - Runs the terminal command set in :ref:`omedit-settings-general`.
+-  *Options* - Opens the options window.
+
+Help Menu
+---------
+
+-  *OpenModelica Users Guide* - Opens the OpenModelica Users Guide.
+-  *OpenModelica Users Guide (PDF)* - Opens the OpenModelica Users Guide (PDF).
+-  *OpenModelica System Documentation* - Opens the OpenModelica System Documentation.
+-  *OpenModelica Scripting Documentation* - Opens the OpenModelica Scripting Documentation.
+-  *Modelica Documentation* - Opens the Modelica Documentation.
+-  *OMSimulator Users Guide* - Opens the OMSimulator Users Guide.
+-  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator Documentation.
+-  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
 Modeling a Model
 ----------------
