@@ -128,8 +128,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/list.h \
 ./util/rational.h \
 ./util/modelica_string_lit.h \
-./util/omc_init.h \
-./util/cJSON.h
+./util/omc_init.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
 ./simulation/solver/initialization/initialization.h

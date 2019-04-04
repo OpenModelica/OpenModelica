@@ -28,8 +28,8 @@ else
 UTIL_OBJS_NO_FMI=
 endif
 
-UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) modelica_string$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) cJSON$(OBJ_EXT) rational$(OBJ_EXT) modelica_string_lit$(OBJ_EXT) omc_init$(OBJ_EXT) omc_mmap$(OBJ_EXT) $(UTIL_OBJS_NO_FMI)
-UTIL_HFILES_MINIMAL=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h list.h modelica.h modelica_string.h read_write.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h omc_mmap.h cJSON.h modelica_string_lit.h omc_init.h
+UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) modelica_string$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) simulation_options$(OBJ_EXT) rational$(OBJ_EXT) modelica_string_lit$(OBJ_EXT) omc_init$(OBJ_EXT) omc_mmap$(OBJ_EXT) $(UTIL_OBJS_NO_FMI)
+UTIL_HFILES_MINIMAL=base_array.h boolean_array.h division.h generic_array.h omc_error.h index_spec.h integer_array.h list.h modelica.h modelica_string.h read_write.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h omc_mmap.h modelica_string_lit.h omc_init.h
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) tinymt64$(OBJ_EXT) write_csv$(OBJ_EXT) rtclock$(OBJ_EXT)

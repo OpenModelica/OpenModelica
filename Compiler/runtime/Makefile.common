@@ -62,7 +62,7 @@ libomcgraphstream.a: GraphStreamExt_omc$(OBJEXT) $(TOP_DIR)/3rdParty/graphstream
 	$(AR) -s -r "$@.tmp" GraphStreamExt_omc$(OBJEXT)
 	mv "$@.tmp" "$@"
 
-libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o
+libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o cJSON.o
 	rm -f $@
 	$(AR) -s -r "$@.tmp" $^
 	mv "$@.tmp" "$@"
