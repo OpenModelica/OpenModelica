@@ -1698,7 +1698,15 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   if (OptionsDialog::instance()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
-    printMessagesStringInternal();
+    /* ticket:5413 Don't show the error of diffModelicaFileListings
+     * Instead show the following warning. The developers can read the actual error message from the log file.
+     */
+    if ((getMessagesStringInternal() > 0) || (result.isEmpty())) {
+      QString msg = tr("Could not preserve the formatting of the original model when duplicating it. "
+                       "The duplicate model was created with internal pretty-printing algorithm.");
+      MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::warningLevel);
+      MessagesWidget::instance()->addGUIMessage(messageItem);
+    }
     if (result.isEmpty()) {
       result = after; // use omc pretty-printing since diffModelicaFileListings() failed.
     }
