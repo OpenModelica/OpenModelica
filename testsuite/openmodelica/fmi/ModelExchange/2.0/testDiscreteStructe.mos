@@ -93,7 +93,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/ModelicaUtilities.c\" />
 //       <File name=\"./util/omc_msvc.c\" />
 //       <File name=\"./util/simulation_options.c\" />
-//       <File name=\"./util/cJSON.c\" />
 //       <File name=\"./util/rational.c\" />
 //       <File name=\"./util/modelica_string_lit.c\" />
 //       <File name=\"./util/omc_init.c\" />
