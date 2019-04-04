@@ -417,6 +417,26 @@ pipeline {
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
         }
+        stage('upload-doc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.13'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          when {
+            not {
+              changeRequest()
+            }
+          }
+          steps {
+            unstash 'usersguide'
+            sh 'tar xJf OpenModelicaUsersGuide-${tagName()}.tar.xz'
+            sh 'mv OpenModelicaUsersGuide ${tagName()}'
+            sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: 'OpenModelicaUsersGuide-${tagName()},${tagName()}')])])
+          }
+        }
       }
     }
   }
