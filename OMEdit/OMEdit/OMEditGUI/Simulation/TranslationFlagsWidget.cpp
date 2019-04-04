@@ -78,6 +78,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpPedanticCheckBox = new QCheckBox(tr("Enable pedantic debug-mode, to get much more feedback"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpNewInstantiationCheckBox = new QCheckBox(tr("Enable experimental new instantiation phase"));
+  mpDataReconciliationCheckBox = new QCheckBox(tr("Enable data reconciliation"));
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
   mpAdditionalTranslationFlagsTextBox = new QLineEdit;
@@ -101,6 +102,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpPedanticCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpNewInstantiationCheckBox, row++, 0, 1, 3);
+  pMainLayout->addWidget(mpDataReconciliationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
   pMainLayout->addWidget(mpTranslationFlagsHelpButton, row++, 2);
@@ -128,6 +130,7 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpPedanticCheckBox->setChecked(simulationOptions.getPedantic());
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
   mpNewInstantiationCheckBox->setChecked(simulationOptions.getNewInstantiation());
+  mpDataReconciliationCheckBox->setChecked(simulationOptions.getDataReconciliation());
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
 
@@ -146,6 +149,7 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setPedantic(mpPedanticCheckBox->isChecked());
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
   pSimulationOptions->setNewInstantiation(mpNewInstantiationCheckBox->isChecked());
+  pSimulationOptions->setDataReconciliation(mpDataReconciliationCheckBox->isChecked());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
 
@@ -157,35 +161,40 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
 bool TranslationFlagsWidget::applyFlags()
 {
   // set matching algorithm
-  MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpMatchingAlgorithmComboBox->currentText());
-  // set index reduction
-  MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpIndexReductionMethodComboBox->currentText());
-  // set initialization
-  if (mpInitializationCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=initialization");
-  }
-  // set evaluate all parameters
-  if (mpEvaluateAllParametersCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=evaluateAllParameters");
-  }
-  // set NLS analytic jacobian
-  if (mpNLSanalyticJacobianCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=NLSanalyticJacobian");
-  }
-  // set pedantic mode
-  if (mpPedanticCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=pedantic");
-  }
-  // set parmodauto
-  if (mpParmodautoCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=parmodauto");
-  }
-  // set new instantiation
-  if (mpNewInstantiationCheckBox->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=newInst");
-  }
-  // set command line options set manually by user. This can override above options.
-  if (!MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpAdditionalTranslationFlagsTextBox->text())) {
+//  MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpMatchingAlgorithmComboBox->currentText());
+//  // set index reduction
+//  MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpIndexReductionMethodComboBox->currentText());
+//  // set initialization
+//  if (mpInitializationCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=initialization");
+//  }
+//  // set evaluate all parameters
+//  if (mpEvaluateAllParametersCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=evaluateAllParameters");
+//  }
+//  // set NLS analytic jacobian
+//  if (mpNLSanalyticJacobianCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=NLSanalyticJacobian");
+//  }
+//  // set pedantic mode
+//  if (mpPedanticCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=pedantic");
+//  }
+//  // set parmodauto
+//  if (mpParmodautoCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=parmodauto");
+//  }
+//  // set new instantiation
+//  if (mpNewInstantiationCheckBox->isChecked()) {
+//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=newInst");
+//  }
+//  // set command line options set manually by user. This can override above options.
+//  if (!MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpAdditionalTranslationFlagsTextBox->text())) {
+//    return false;
+//  }
+//  return true;
+
+  if (!MainWindow::instance()->getOMCProxy()->setCommandLineOptions(commandLineOptions())) {
     return false;
   }
   return true;
@@ -230,11 +239,21 @@ QString TranslationFlagsWidget::commandLineOptions()
     debugFlags.append("newInst");
   }
 
+  QStringList preOptModules;
+  // data reconciliation
+  if (mpDataReconciliationCheckBox->isChecked()) {
+    preOptModules.append("dataReconciliation");
+  }
+
   QStringList commandLineOptions;
   commandLineOptions.append(configFlags);
   if (!debugFlags.isEmpty()) {
     commandLineOptions.append(QString("-d=%1").arg(debugFlags.join(",")));
   }
+  if (!preOptModules.isEmpty()) {
+    commandLineOptions.append(QString("--preOptModules+=%1").arg(preOptModules.join(",")));
+  }
+  // set command line options set manually by user. This can override above options.
   if (!mpAdditionalTranslationFlagsTextBox->text().isEmpty()) {
     commandLineOptions.append(mpAdditionalTranslationFlagsTextBox->text());
   }

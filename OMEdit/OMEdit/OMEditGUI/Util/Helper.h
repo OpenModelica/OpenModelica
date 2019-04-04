@@ -65,6 +65,7 @@ public:
   static QString xmlFileTypes;
   static QString infoXmlFileTypes;
   static QString matFileTypes;
+  static QString csvFileTypes;
   static QString omResultFileTypes;
   static QString exeFileTypes;
   static QString txtFileTypes;

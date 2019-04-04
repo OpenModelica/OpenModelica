@@ -172,6 +172,12 @@ private:
   QComboBox *mpProfilingComboBox;
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
+  QGroupBox *mpReconcileGroupBox;
+  Label *mpDataReconciliationInputFileLabel;
+  QLineEdit *mpDataReconciliationInputFileTextBox;
+  QPushButton *mpDataReconciliationInputFileBrowseButton;
+  Label *mpDataReconciliationEpsilonLabel;
+  QLineEdit *mpDataReconciliationEpsilonTextBox;
   QGroupBox *mpLoggingGroupBox;
   QGridLayout *mpLoggingGroupLayout;
   Label *mpAdditionalSimulationFlagsLabel;
@@ -250,6 +256,7 @@ public slots:
   void interactiveSimulation(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
+  void browseDataReconciliationInputFile();
   void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
