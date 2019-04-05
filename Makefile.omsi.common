@@ -76,12 +76,10 @@ OMSIBaseMSVC: getMSVCversion
 OMSIBaseInstall: OMSIBase
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install; \
-	  test ! `uname` = Darwin || install_name_tool -id @rpath/OMSI/Build_dynamic/base/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib; \
-	  test ! `uname` = Darwin || install_name_tool -id @rpath/OMSI/Build_dynamic/solver/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib; \
-	  test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/OMSI/Build_dynamic/solver/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib; \
-	  test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/OMSI/Build_dynamic/solver/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib); \
-	  )
+	  (cd Build_$(PLATFORM); $(MAKE) install);) \
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \

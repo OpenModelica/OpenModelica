@@ -35,6 +35,9 @@ ELSE(WIN32)
     target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${expat_lib})
 ENDIF(WIN32)
 
+set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${LIBINSTALLEXT}")
+
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
 install(FILES
