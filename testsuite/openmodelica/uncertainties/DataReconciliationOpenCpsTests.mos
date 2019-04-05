@@ -53,10 +53,7 @@ getErrorString();
 translateModel(DataReconciliationTests.RedundancyTestCase3);
 getErrorString();
 
-buildModel(DataReconciliationTests.Splitter1);
-getErrorString();
-
-system("./DataReconciliationTests.Splitter1 -reconcile -sx=./Splitter1_Sx.csv -eps=0.0023 > Splitter1_log.txt");
+simulate(DataReconciliationTests.Splitter1, simflags="-reconcile -sx=./Splitter1_Sx.csv -eps=0.0023");
 getErrorString();
 
 
@@ -1220,9 +1217,9 @@ getErrorString();
 // 20: P03:VARIABLE()  type: Real 
 // 21: P02:VARIABLE()  type: Real 
 // 22: P01:VARIABLE()  type: Real 
-// 23: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
-// 24: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
-// 25: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
+// 23: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 24: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 25: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
 //
 // Matching
 // ========================================
@@ -1291,9 +1288,9 @@ getErrorString();
 //
 // knownVariables:{25, 24, 23} (3)
 // ========================================
-// 1: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
-// 2: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
-// 3: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
+// 1: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
 //
 //
 // ConstantVariables:{20, 21, 22} (3)
@@ -1315,13 +1312,13 @@ getErrorString();
 //
 // -SET_C has known variables:{25} (1)
 // ========================================
-// 1: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real 
+// 1: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
 //
 //
 // -SET_S has known variables:{23, 24} (2)
 // ========================================
-// 1: Q3:VARIABLE(start = 0.97 uncertain=Uncertainty.refine)  type: Real 
-// 2: Q2:VARIABLE(start = 1.05 uncertain=Uncertainty.refine)  type: Real 
+// 1: Q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
 //
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
 // ==========================================================================
@@ -1369,8 +1366,15 @@ getErrorString();
 // 5/5 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
 // 6/6 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
 //
-// {"DataReconciliationTests.Splitter1","DataReconciliationTests.Splitter1_init.xml"}
-// ""
-// 0
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'DataReconciliationTests.Splitter1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./Splitter1_Sx.csv -eps=0.0023'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | DataReconciliation Starting!
+// stdout            | info    | DataReconciliationTests.Splitter1
+// stdout            | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
 // ""
 // endResult

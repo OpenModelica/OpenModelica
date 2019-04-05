@@ -1,4 +1,4 @@
-Sxij,Q1,Q2,Q3
-Q1,1,0,0
-Q2,0,0.95,0
-Q3,0,0,0.95
+Variable name,Measured value x,Half-width confidence interval
+Q1,2.1,1.96
+Q2,1.05,1.91
+Q3,0.97,1.91
