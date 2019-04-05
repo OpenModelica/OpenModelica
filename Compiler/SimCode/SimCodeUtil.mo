@@ -13988,10 +13988,15 @@ function findResources
   input Mutable<Boolean> unknownUri;
 protected
   String f;
+  DAE.Exp e1;
 algorithm
   tree := match e
     case DAE.CALL(path=Absyn.IDENT("OpenModelica_fmuLoadResource"), expLst={DAE.SCONST(f)}) then AvlSetString.add(tree, f);
-    case DAE.CALL(path=Absyn.IDENT("OpenModelica_uriToFilename")) algorithm Mutable.update(unknownUri, true); then tree;
+    case DAE.CALL(path=Absyn.IDENT("OpenModelica_uriToFilename"), expLst=e1::_)
+      algorithm
+        Error.addMessage(Error.FMI_URI_RESOLVE, {ExpressionDump.printExpStr(e1)});
+        Mutable.update(unknownUri, true);
+      then tree;
     else tree;
   end match;
 end findResources;

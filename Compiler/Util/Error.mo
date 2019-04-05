@@ -1014,6 +1014,8 @@ public constant Message OCG_MISSING_BRANCH = MESSAGE(594, TRANSLATION(), WARNING
   Util.gettext("Connections.rooted(%s) needs exactly one statement Connections.branch(%s, B.R) involving %s but we found none in the graph. Run with -d=cgraphGraphVizFile to debug"));
 public constant Message UNBOUND_PARAMETER_EVALUATE_TRUE = MESSAGE(594, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has annotation(Evaluate=true) and no binding."));
+public constant Message FMI_URI_RESOLVE = MESSAGE(595, TRANSLATION(), WARNING(),
+  Util.gettext("Could not resolve URI (%s) at compile-time; copying all loaded packages into the FMU"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
