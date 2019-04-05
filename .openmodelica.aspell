@@ -1,4 +1,4 @@
-personal_ws-1.1 en 67 UTF-8
+personal_ws-1.1 en 74 UTF-8
 subscripted
 UTF
 RML
@@ -71,3 +71,4 @@ evalLoopLimit
 evalRecursionLimit
 cgraphGraphVizFile
 cardinality
+URI
