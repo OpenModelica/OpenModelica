@@ -243,7 +243,7 @@ protected
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
-  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS, SymbolicJacsFMI={};
+  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS, SymbolicJacsFMI={},SymbolicJacsdatarecon={};
   list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
   list<SimCode.SimEqSystem> localKnownVars;
   list<SimCode.SimEqSystem> allEquations;
@@ -524,15 +524,13 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // Generate jacobian code for DataReconciliation
-    //if Flags.isSet(Flags.UNCERTAINTIES) then
-      if Util.isSome(shared.dataReconciliationData) then
-        BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
-        (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
-        ({dataReconSimJac}, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
-        SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-       SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
-      end if;
-    //end if;
+    if Util.isSome(shared.dataReconciliationData) then
+      BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+      (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
+      (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
+      SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+      //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
+    end if;
 
     // collect symbolic jacobians from state selection
     (stateSets, modelInfo, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
@@ -549,6 +547,8 @@ algorithm
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
     SymbolicJacs := listAppend(SymbolicJacsFMI, SymbolicJacs);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
+    // append datareconciliation jacobians equation to SymbolicJacs for correct generation of equations in model_info.json
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsdatarecon);
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
     if debug then execStat("simCode: create Jacobian linear code"); end if;

@@ -45,13 +45,7 @@
 #include <math.h>
 #include <ctime>
 #include "omc_config.h"
-
-/* adrpo: MacOS has issues with this, remove it! */
-#if !defined(__APPLE__)
-#include <boost/math/distributions/chi_squared.hpp>
-using boost::math::chi_squared;
-#endif
-
+#include <cmath>
 #include "dataReconciliation.h"
 
 extern "C"
@@ -70,13 +64,17 @@ using namespace std;
 
 extern "C" {
 
+// only 200 values of chisquared x^2 values are added with degree of freedom
+static double chisquaredvalue[200] = {3.84146,5.99146,7.81473,9.48773,11.0705,12.5916,14.0671,15.5073,16.919,18.307,19.6751,21.0261,22.362,23.6848,24.9958,26.2962,27.5871,28.8693,30.1435,31.4104,32.6706,33.9244,35.1725,36.415,37.6525,38.8851,40.1133,41.3371,42.557,43.773,44.9853,46.1943,47.3999,48.6024,49.8018,50.9985,52.1923,53.3835,54.5722,55.7585,56.9424,58.124,59.3035,60.4809,61.6562,62.8296,64.0011,65.1708,66.3386,67.5048,68.6693,69.8322,70.9935,72.1532,73.3115,74.4683,75.6237,76.7778,77.9305,79.0819,80.2321,81.381,82.5287,83.6753,84.8206,85.9649,87.1081,88.2502,89.3912,90.5312,91.6702,92.8083,93.9453,95.0815,96.2167,97.351,98.4844,99.6169,100.749,101.879,103.01,104.139,105.267,106.395,107.522,108.648,109.773,110.898,112.022,113.145,114.268,115.39,116.511,117.632,118.752,119.871,120.99,122.108,123.225,124.342,125.458,126.574,127.689,128.804,129.918,131.031,132.144,133.257,134.369,135.48,136.591,137.701,138.811,139.921,141.03,142.138,143.246,144.354,145.461,146.567,147.674,148.779,149.885,150.989,152.094,153.198,154.302,155.405,156.508,157.61,158.712,159.814,160.915,162.016,163.116,164.216,165.316,166.415,167.514,168.613,169.711,170.809,171.907,173.004,174.101,175.198,176.294,177.39,178.485,179.581,180.676,181.77,182.865,183.959,185.052,186.146,187.239,188.332,189.424,190.516,191.608,192.7,193.791,194.883,195.973,197.064,198.154,199.244,200.334,201.423,202.513,203.602,204.69,205.779,206.867,207.955,209.042,210.13,211.217,212.304,213.391,214.477,215.563,216.649,217.735,218.82,219.906,220.991,222.076,223.16,224.245,225.329,226.413,227.496,228.58,229.663,230.746,231.829,232.912};
 
 struct csvData {
 	int linecount;
 	int rowcount;
 	int columncount;
-	vector<double> rowdata;
+	vector<double> xdata;
+	vector<double> sxdata;
 	vector<string> headers;
+	vector< vector<string> > rx;
 };
 
 struct matrixData {
@@ -100,8 +98,10 @@ csvData readcsvfiles(const char * filename, ofstream & logfile)
 {
 	ifstream ip(filename);
 	string line;
+	vector<double> xdata;
 	vector<double> vals;
 	vector<string> names;
+	vector< vector<string> > rx;
 	int Sxrowcount=0;
 	int linecount=1;
 	int Sxcolscount=0;
@@ -147,7 +147,119 @@ csvData readcsvfiles(const char * filename, ofstream & logfile)
 	}
 	//cout << "csvdata header:" << names[0] << names[1] << names[2] << "";
 	//cout << "linecount:" << linecount << " " << "rowcount :" << Sxrowcount << " " << "colscount:" << Sxcolscount << "\n";
-	csvData  data={linecount,Sxrowcount,Sxcolscount,vals,names};
+	csvData  data={linecount,Sxrowcount,Sxcolscount,xdata,vals,names,rx};
+	return data;
+}
+/*
+ * function which returns the index pos
+ * of input variables
+ */
+int getVariableIndex(vector<string> headers, string name, ofstream & logfile)
+{
+	int pos=-1;
+	for(unsigned int i=0; i<headers.size(); i++)
+	{
+		//logfile << "founded headers " << headers[i] << i << "\n";
+		if(strcmp(headers[i].c_str(),name.c_str())==0)
+		{
+			pos = i;
+			break;
+		}
+	}
+	//logfile << "founded pos " << name << ": " << pos << "\n";
+	if(pos==-1)
+	{
+		//logfile << "Variable Name not Matched :" << name;
+		logfile << "|  error   |   " << "CoRelation-Coefficient Variable Name not Matched:  " << name << " ,getVariableIndex() failed!"<< "\n";
+		logfile.close();
+		exit(1);
+	}
+	return pos;
+}
+
+/*
+ * Function which reads the csv file
+ * and stores the initial measured value X and HalfWidth confidence
+ * interval Wx and also the input variable names
+ */
+csvData readcsvInputs(const char * filename, ofstream & logfile)
+{
+	ifstream ip(filename);
+	string line;
+	vector<double> xdata;
+	vector<double> sxdata;
+	vector<string> names;
+	//vector<double> rx_ik;
+	vector< vector<string> > rx;
+	int Sxrowcount=0;
+	int linecount=1;
+	int Sxcolscount=0;
+	bool flag=false,rx_ik=false;
+	int myarraycount=0;
+	if(!ip.good())
+	{
+		//errorStreamPrint(LOG_STDOUT, 0, "file name not found %s.",filename);
+		logfile << "|  error   |   " << "file name not found " << filename << "\n";
+		logfile.close();
+		exit(1);
+	}
+	while(ip.good())
+	{
+		getline(ip,line);
+		vector<string> t1;
+		if(linecount>1 && !line.empty())
+		{
+			//logfile << "array info:" << line << "\n";
+			std::replace(line.begin(), line.end(), ';', ' ');
+			std::replace(line.begin(), line.end(), ',', ' ');
+			stringstream ss(line);
+			string temp;
+			int skip=0;
+			while(ss >> temp){
+				if(skip==0)
+				{
+					names.push_back(temp.c_str());
+					Sxrowcount++;
+					if(flag==false){
+						Sxcolscount++;
+					}
+				}
+				if(skip==1)
+				{
+					//logfile << "xdata" << temp << " double" << atof(temp.c_str()) <<"\n";
+					xdata.push_back(atof(temp.c_str()));
+					if(flag==false){
+						Sxcolscount++;
+					}
+				}
+				if(skip==2){
+					//logfile << "sxdata" << temp << " double" << atof(temp.c_str()) <<"\n";
+					sxdata.push_back(atof(temp.c_str()));
+					if(flag==false){
+						Sxcolscount++;
+					}
+				}
+
+				if(skip>2)
+				{
+					//logfile << "found xi " << line << "\n";
+					t1.push_back(temp.c_str());
+					rx_ik=true;
+				}
+				skip++;
+			}
+			flag=true;
+			//Sxrowcount++;
+		}
+		if(rx_ik==true)
+		{
+			rx.push_back(t1);
+		}
+		linecount++;
+	}
+	//logfile << "csvdata header:" << "header length: " << names.size() << "   " << names[0] << names[1] << names[2] << "" << "\n";
+	//logfile << "linecount:" << linecount << " " << "rowcount :" << Sxrowcount << " " << "colscount:" << Sxcolscount << "\n";
+	csvData  data={linecount,Sxrowcount,Sxcolscount,xdata,sxdata,names,rx};
 	return data;
 }
 
@@ -203,6 +315,28 @@ void printMatrix(double* matrix, int rows, int cols, string name, ofstream& logf
  Function to Print the matrix in row based format with headers
  */
 void printMatrixWithHeaders(double* matrix, int rows, int cols, vector<string> headers, string name, ofstream& logfile)
+{
+	logfile << "\n" << "************ "<< name << " **********" <<"\n";
+	for (int i=0;i<rows; i++)
+	{
+		logfile << std::right << setw(10) << headers[i];
+		for (int j=0;j<cols;j++)
+		{
+			//cout << setprecision(5);
+			logfile << std::right << setw(15) << matrix[i+j*rows];
+			logfile.flush();
+			//printf("% .5e ", matrix[i+j*rows]);
+		}
+		logfile << "\n";
+	}
+	logfile << "\n";
+}
+
+/*
+ *Function to Print the vecomatrix in row based format with headers
+ *based on vector arrays
+ */
+void printVectorMatrixWithHeaders(vector<double> matrix, int rows, int cols, vector<string> headers, string name, ofstream& logfile)
 {
 	logfile << "\n" << "************ "<< name << " **********" <<"\n";
 	for (int i=0;i<rows; i++)
@@ -523,7 +657,8 @@ csvData readCovarianceMatrixSx(DATA* data, threadData_t *threadData, ofstream & 
 		logfile.close();
 		exit(1);
 	}
-	csvData Sx_result=readcsvfiles(Sxfile,logfile);
+	//csvData Sx_result=readcsvfiles(Sxfile,logfile);
+	csvData Sx_result=readcsvInputs(Sxfile,logfile);
 	return Sx_result;
 }
 
@@ -534,8 +669,84 @@ csvData readCovarianceMatrixSx(DATA* data, threadData_t *threadData, ofstream & 
 matrixData getCovarianceMatrixSx(csvData Sx_result, DATA* data, threadData_t *threadData)
 {
 	double* tempSx = (double*)calloc(Sx_result.rowcount*Sx_result.columncount,sizeof(double));
-	initColumnMatrix(Sx_result.rowdata , Sx_result.rowcount, Sx_result.columncount, tempSx);
+	initColumnMatrix(Sx_result.sxdata , Sx_result.rowcount, Sx_result.columncount, tempSx);
 	matrixData Sx_data = {Sx_result.rowcount,Sx_result.columncount,tempSx};
+	return Sx_data;
+}
+
+/*
+ * Function which Computes
+ * covariance matrix Sx based on
+ * Half width confidence interval provided by user
+ * Sx=(Wxi/1.96)^2
+ */
+
+matrixData computeCovarianceMatrixSx(csvData Sx_result, DATA* data, threadData_t *threadData, ofstream & logfile)
+{
+	double* tempSx = (double*)calloc(Sx_result.sxdata.size()*Sx_result.sxdata.size(),sizeof(double));
+	vector<double> tmpdata;
+	int k=0;
+	for (unsigned int i=0;i<Sx_result.sxdata.size(); i++)
+	{
+		double data = pow(Sx_result.sxdata[k]/1.96,2);
+		for (unsigned int j=0;j<Sx_result.sxdata.size();j++)
+		{
+			if(i==j)
+			{
+				//tmpdata.push_back(pow(Sx_result.sxdata[k]/1.96,2));
+				//k++;
+				tmpdata.push_back(data);
+			}
+			else
+			{
+				tmpdata.push_back(0);
+			}
+			// logfile << " data " << count << "=="<< tmpdata[count++] << "\n";
+		}
+		k++;
+	}
+	//logfile << "tmpdatasize" << tmpdata.size() << "\n";
+	//logfile << "Size of vector :" << Sx_result.rx.size() << "\n";
+
+	/* check for corelation coefficient matrix and insert the elements in correct position*/
+	for (unsigned int l=0; l < Sx_result.rx.size();l++)
+	{
+		int pos1;
+		int pos2;
+		double xi;
+		double xk ;
+		for(unsigned int m=0; m<Sx_result.rx[l].size();m++)
+		{
+			if(m==0)
+			{
+				pos1 = getVariableIndex(Sx_result.headers,Sx_result.rx[l][m],logfile);
+				xi   =  tmpdata[(Sx_result.rowcount*pos1)+pos1];
+				//logfile << "xi =>"<< pos1 << "= "<< xi << "\n";
+			}
+
+			if(m==1)
+			{
+				pos2 = getVariableIndex(Sx_result.headers,Sx_result.rx[l][m],logfile);
+				xk   = tmpdata[(Sx_result.rowcount*pos2)+pos2];
+				//logfile << "xk =>"<< pos2 << "= "<< xk << "\n";
+			}
+			if(m==2)
+			{
+				//logfile << "position:" << pos1 << ": " << pos2 << "\n";
+				//logfile << "rx_ik" << Sx_result.rx[l][m] << "*" << xi << "*" << xk << "\n";
+				//logfile << atof((Sx_result.rx[l][m]).c_str())*sqrt(xi)*sqrt(xk) << "\n";
+				double tmprx = atof((Sx_result.rx[l][m]).c_str())*sqrt(xi)*sqrt(xk);
+				// find the symmetric position and insert the elements
+				//logfile << "final position :" << (Sx_result.rowcount*pos1)+pos2 << "value is: "<< tmprx << "\n";
+				//logfile << "final position :" << (Sx_result.rowcount*pos2)+pos1 << "value is: "<< tmprx << "\n";
+				tmpdata[(Sx_result.rowcount*pos1)+pos2]=tmprx;
+				tmpdata[(Sx_result.rowcount*pos2)+pos1]=tmprx;
+			}
+		}
+		//logfile << "\n";
+	}
+	initColumnMatrix(tmpdata , Sx_result.rowcount, Sx_result.rowcount, tempSx);
+	matrixData Sx_data = {Sx_result.rowcount,Sx_result.rowcount,tempSx};
 	return Sx_data;
 }
 
@@ -544,7 +755,7 @@ matrixData getCovarianceMatrixSx(csvData Sx_result, DATA* data, threadData_t *th
  * and also stores the index of input variables which are the
  * variables to be reconciled for Data Reconciliation
  */
-inputData getInputDataFromStartAttribute(csvData Sx_result, matrixData Sx, DATA* data, threadData_t *threadData)
+inputData getInputDataFromStartAttribute(csvData Sx_result , DATA* data, threadData_t *threadData, ofstream & logfile)
 {
 	double *tempx = (double*)calloc(Sx_result.rowcount,sizeof(double));
 	char ** knowns = (char**)malloc(data->modelData->nInputVars * sizeof(char*));
@@ -554,15 +765,24 @@ inputData getInputDataFromStartAttribute(csvData Sx_result, matrixData Sx, DATA*
 	/* Read data from input vars which has start attribute value set as input */
 	for (int h=0; h < headercount; h++)
 	{
+		tempx[h]=Sx_result.xdata[h];
+		bool flag=false;
 		for (int in=0; in < data->modelData->nInputVars; in++)
 		{
 			if(strcmp(knowns[in], Sx_result.headers[h].c_str()) == 0)
 			{
-				tempx[h] = data->simulationInfo->inputVars[in];
+				//tempx[h] = data->simulationInfo->inputVars[in];
 				index.push_back(in);
-				//cout << knowns[in] << "  start value :" << data->simulationInfo->inputVars[in] << "\n";
-				//cout << "fetch index :" << in << "\n";
+				flag=true;
+				//logfile << knowns[in] << "  start value :" << data->simulationInfo->inputVars[in] << "\n";
+				//logfile << "fetch index :" << in << "\n";
 			}
+		}
+		if(flag==false)
+		{
+			logfile << "|  error   |   " << "Input Variable Not matched or not generated: "<< Sx_result.headers[h] << " , getInputDataFromStartAttribute failed()! \n";
+			logfile.close();
+			exit(1);
 		}
 	}
 	inputData x_data ={Sx_result.rowcount,1,tempx,index};
@@ -764,17 +984,16 @@ void checkInExpensiveMatrixInverse(ofstream & logfile)
 	//printMatrix(checksx,3,1,"InExpensive_Matrix_Inverse");
 }
 
-int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, vector<string> headers, matrixData xdiag, matrixData sxdiag, ofstream& logfile)
+int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream& logfile)
 {
 	// set the inputs first
 	for (int i=0; i< x.rows*x.column; i++)
 	{
 		data->simulationInfo->inputVars[x.index[i]]=x.data[i];
-		//cout << "input data:" << x.data[i]<<"\n";
+		//logfile << "input data:" << x.data[i]<<"\n";
 	}
-	data->callback->input_function_updateStartValues(data, threadData);
+	//data->callback->input_function_updateStartValues(data, threadData);
 	data->callback->input_function(data, threadData);
-
 	data->callback->functionDAE(data,threadData);
 	//data->callback->functionODE(data,threadData);
 	data->callback->setc_function(data, threadData);
@@ -890,14 +1109,14 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 		//printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft");
 		//printMatrix(setc,jacF.rows,1,"f*");
 		//printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
-		printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,headers,"reconciled_X ===> (x - (Sx*Ft*fstar))",logfile);
-		printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",logfile);
+		printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,csvinputs.headers,"reconciled_X ===> (x - (Sx*Ft*fstar))",logfile);
+		printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,csvinputs.headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",logfile);
 		//free(x.data);
 		//free(Sx.data);
 		x.data=reconciled_X.data;
 		//Sx.data=reconciled_Sx.data;
 		iterationcount++;
-		return RunReconciliation(data, threadData, x, Sx, jacF, jacFt,eps,iterationcount,headers,xdiag,sxdiag,logfile);
+		return RunReconciliation(data, threadData, x, Sx, jacF, jacFt,eps,iterationcount,csvinputs,xdiag,sxdiag,logfile);
 	}
 	if(value < eps && iterationcount==1)
 	{
@@ -912,8 +1131,8 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	logfile << "Total Iteration to Converge : " << iterationcount << "\n";
 	logfile << "Final Converged Value(J*/r) : " << value << "\n";
 	logfile << "Epsilon                     : " << eps << "\n";
-	printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,headers,"reconciled_X ===> (x - (Sx*Ft*fstar))",logfile);
-	printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",logfile);
+	printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,csvinputs.headers,"reconciled_X ===> (x - (Sx*Ft*fstar))",logfile);
+	printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,csvinputs.headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",logfile);
 
 	/*
 	 * Calculate half width Confidence interval
@@ -939,7 +1158,7 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 		logfile << "*****Completed***********\n";
 	}
 	scaleVector(reconciled_Sx.rows,1,1.96,copyreconSx_diag.data);
-	printMatrixWithHeaders(copyreconSx_diag.data,reconciled_Sx.rows,1,headers,"Wx-HalfWidth-Interval-(1.96)*sqrt(Sx_diagonal)",logfile);
+	printMatrixWithHeaders(copyreconSx_diag.data,reconciled_Sx.rows,1,csvinputs.headers,"Wx-HalfWidth-Interval-(1.96)*sqrt(Sx_diagonal)",logfile);
 
 
 	/*
@@ -975,10 +1194,10 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 
 	for (int val=0; val < xdiag.rows; val++)
 	{
-		newX[val]=newX[val]/newSx_diag[val];
+		newX[val]=newX[val]/max(newSx_diag[val],sqrt(sxdiag.data[val]/10));
 	}
 
-	printMatrixWithHeaders(newX,xdiag.rows,xdiag.column,headers,"IndividualTests_Value- (recon_x-x)/sqrt(Sx_diag)",logfile);
+	printMatrixWithHeaders(newX,xdiag.rows,xdiag.column,csvinputs.headers,"IndividualTests_Value- (recon_x-x)/sqrt(Sx_diag)",logfile);
 
 	/*
 	 * create HTML Report
@@ -986,9 +1205,30 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	ofstream myfile;
 	time_t now = time(0);
 	std::stringstream htmlfile;
-	htmlfile << data->modelData->modelName << ".html";
+	if (omc_flag[FLAG_OUTPUT_PATH])
+	{
+		htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+	}
+	else
+	{
+		htmlfile << data->modelData->modelName << ".html";
+	}
 	string html= htmlfile.str();
 	myfile.open(html.c_str());
+
+	/* create a csv file */
+	ofstream csvfile;
+	std::stringstream csv_file;
+	if (omc_flag[FLAG_OUTPUT_PATH])
+	{
+		csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Outputs.csv";
+	}
+	else
+	{
+		csv_file << data->modelData->modelName <<"_Outputs.csv";
+	}
+	string tmpcsv= csv_file.str();
+	csvfile.open(tmpcsv.c_str());
 
 	/* Add Overview Data */
 	myfile << "<!DOCTYPE html><html>\n <head> <h1> DataReconciliation Report</h1></head> \n <body> \n ";
@@ -1005,47 +1245,66 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	myfile << "<h2> Analysis: </h2>\n";
 	myfile << "<table> \n";
 	myfile << "<tr> \n" << "<th align=right> Number of Extracted equations: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
-	myfile << "<tr> \n" << "<th align=right> Number of Variables to be Reconciled: </th> \n" << "<td>" << headers.size() << "</td> </tr>\n";
+	myfile << "<tr> \n" << "<th align=right> Number of Variables to be Reconciled: </th> \n" << "<td>" << csvinputs.headers.size() << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Number of Iteration to Converge: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Final Converged Value(J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Final Value of the objective Function (J*) : </th> \n" << "<td>" << (value*data->modelData->nSetcVars) << "</td> </tr>\n";
-    /* adrpo: MacOS has issues with this, remove it! */
-#if !defined(__APPLE__)
-	myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
-#else
-    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td> not avaliable on MacOS </td> </tr>\n";
-#endif
+	//myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
+	if(data->modelData->nSetcVars > 200){
+		myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << "NOT Available for equations > 200 in setC" << "</td> </tr>\n";
+	}
+	else
+	{
+		myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << chisquaredvalue[data->modelData->nSetcVars-1] << "</td> </tr>\n";
+	}
 	myfile << "<tr> \n" << "<th align=right> Result of Global Test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
 	myfile << "</table>\n";
 
 	/* Add Results data */
 	myfile << "<h2> Results: </h2>\n";
 	myfile << "<table border=2>\n";
-	myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" <<"<th> Reconciled Uncertainty Values </th>\n";
+	myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" << "<th> Initial Uncertainty Values </th>\n" <<"<th> Reconciled Uncertainty Values </th>\n";
+	csvfile << "Variables to be Reconciled ," << "Initial Measured Values ," << "Reconciled Values ," << "Initial Uncertainty Values ," << "Reconciled Uncertainty Values,";
 	myfile << "<th> Results of Local Tests </th>\n" << "<th> Values of Local Tests </th>\n" << "<th> Margin to Correctness(distance from 1.96) </th>\n" << "</tr>\n";
+	csvfile << "Results of Local Tests ," << "Values of Local Tests ," << "Margin to Correctness(distance from 1.96) ," << "\n";
 
-	for (unsigned int r=0; r < headers.size(); r++)
+	for (unsigned int r=0; r < csvinputs.headers.size(); r++)
 	{
 		myfile << "<tr>\n";
-		myfile << "<td>" << headers[r] << "</td>\n";
+		myfile << "<td>" << csvinputs.headers[r] << "</td>\n";
+		csvfile << csvinputs.headers[r] << ",";
 		myfile << "<td>" << xdiag.data[r] << "</td>\n";
+		csvfile << xdiag.data[r] << ",";
 		myfile << "<td>" << reconciled_X.data[r] << "</td>\n";
+		csvfile << reconciled_X.data[r] << ",";
+
+		myfile << "<td>" << csvinputs.sxdata[r] << "</td>\n";
+		csvfile << csvinputs.sxdata[r] << ",";
+
 		myfile << "<td>" << copyreconSx_diag.data[r] << "</td>\n";
+		csvfile << copyreconSx_diag.data[r] << ",";
+
 		if(newX[r] < 1.96)
 		{
 			myfile << "<td>" << "TRUE" << "</td>\n";
+			csvfile << "TRUE" << ",";
 		}
 		else
 		{
 			myfile << "<td>" << "FALSE" << "</td>\n";
+			csvfile << "FALSE" << ",";
 		}
 		myfile << "<td>" << newX[r] << "</td>\n";
+		csvfile << newX[r] << ",";
+
 		myfile << "<td>" << (1.96-newX[r]) << "</td>\n";
+		csvfile << (1.96-newX[r]) << ",\n";
+		csvfile.flush();
 		myfile << "</tr>\n";
 		myfile.flush();
 	}
-
+	csvfile.close();
 	myfile << "</table>\n";
 	myfile << "</body>\n</html>";
 	myfile.close();
@@ -1080,7 +1339,14 @@ int dataReconciliation(DATA* data, threadData_t *threadData)
 	 */
 	ofstream  logfile;
 	std::stringstream logfilename;
-	logfilename << data->modelData->modelName << "_debug.log";
+	if (omc_flag[FLAG_OUTPUT_PATH])
+	{
+		logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.log";
+	}
+	else
+	{
+		logfilename << data->modelData->modelName << "_debug.log";
+	}
 	string tmplogfilename= logfilename.str();
 	logfile.open(tmplogfilename.c_str());
 	logfile << "|  info    |   " << "DataReconciliation Starting!\n";
@@ -1093,10 +1359,10 @@ int dataReconciliation(DATA* data, threadData_t *threadData)
 		logfile.close();
 		exit(1);
 	}
-
-	csvData Sx_data = readCovarianceMatrixSx(data, threadData, logfile);  // read the covariance matrix from csv files
-	matrixData Sx = getCovarianceMatrixSx(Sx_data, data, threadData); // Prepare the data from csv file
-	inputData x = getInputDataFromStartAttribute(Sx_data, Sx, data, threadData);  // Read the inputs from the start attribute of the modelica model
+	csvData Sx_data = readCovarianceMatrixSx(data, threadData,logfile);
+	//matrixData Sx = getCovarianceMatrixSx(Sx_data, data, threadData); // Prepare the data from csv file *
+	matrixData Sx = computeCovarianceMatrixSx(Sx_data,data,threadData,logfile); // Compute the covariance matrix from csv inputs
+	inputData x = getInputDataFromStartAttribute(Sx_data, data, threadData, logfile);  // Read the inputs from the start attribute of the modelica model
 	matrixData jacF = getJacobianMatrixF(data, threadData, logfile); // Compute the Jacobian Matrix F
 	matrixData jacFt = getTransposeMatrix(jacF); // Compute the Transpose of jacobian Matrix F
 
@@ -1110,13 +1376,14 @@ int dataReconciliation(DATA* data, threadData_t *threadData)
 	// Print the initial information
 	logfile << "\n\nInitial Data \n" << "=============\n";
 	printMatrixWithHeaders(x.data,x.rows,x.column,Sx_data.headers,"X",logfile);
+	printVectorMatrixWithHeaders(Sx_data.sxdata,Sx_data.rowcount,1,Sx_data.headers,"Half-WidthConfidenceInterval",logfile);
 	printMatrixWithHeaders(Sx.data,Sx.rows,Sx.column,Sx_data.headers,"Sx",logfile);
 	//printMatrix(Sx_diag,Sx.rows,1,"Sx-Diagonal elements",logfile);
 
 	//printMatrix(jacF.data,jacF.rows,jacF.column,"F",logfile);
 	//printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft",logfile);
 	// Start the Algorithm
-	RunReconciliation(data,threadData,x,Sx,jacF,jacFt,atof(epselon),1,Sx_data.headers,x_diag,tmpSx_diag,logfile);
+	RunReconciliation(data,threadData,x,Sx,jacF,jacFt,atof(epselon),1,Sx_data,x_diag,tmpSx_diag,logfile);
 	logfile << "|  info    |   " << "DataReconciliation Completed! \n";
 	logfile.close();
 	free(Sx.data);

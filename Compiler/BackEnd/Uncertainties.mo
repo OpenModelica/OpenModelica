@@ -349,10 +349,10 @@ algorithm
       SimCode.JacobianMatrix jacmatrix;
       list<SimCodeVar.SimVar> simcodevars;
       list<tuple<Integer,list<Integer>>> var_dependencytree,eq_dependencytree;
-      BackendDAE.Variables outDiffVars,outResidualVars,outOtherVars;
+      BackendDAE.Variables outDiffVars,outResidualVars,outOtherVars,tmpdatavars;
       BackendDAE.EquationArray outResidualEqns,outOtherEqns;
       list<BackendDAE.InnerEquation> sets_inner_equations;
-
+      String str;
     case(dae)
        equation
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dae;
@@ -430,15 +430,14 @@ algorithm
 
         BackendDump.dumpEquationList(setC_eq,"SET_C");
         BackendDump.dumpEquationList(setS_eq,"SET_S");
-
-        VerifyDataReconciliation(tempsetC,tempsetS,knowns,unknowns,mExt,var,constantvars,approximatedEquations,allVars,allEqs);
-
+        VerifyDataReconciliation(tempsetC,tempsetS,knowns,unknowns,mExt,var,constantvars,approximatedEquations,allVars,allEqs,mapIncRowEqn);
         //outDae = BackendDAE.DAE({currentSystem}, shared);
 
         /* Prepare Torn systems for Jacobians */
         //create the Set-S equation to BackendDae innerequation structure
-        sets_inner_equations=createInnerEquations(tempsetS,var);
-        (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),tempsetC,sets_inner_equations,shared.functionTree);
+        sets_inner_equations=createInnerEquations(tempsetS,var,setS);
+        //sets_inner_equations={BackendDAE.INNEREQUATION(eqn = 56, vars = {48}), BackendDAE.INNEREQUATION(eqn = 3, vars = {70}), BackendDAE.INNEREQUATION(eqn = 6, vars = {77}),BackendDAE.INNEREQUATION(eqn = 23, vars = {55}), BackendDAE.INNEREQUATION(eqn = 20, vars = {42}), BackendDAE.INNEREQUATION(eqn = 50, vars = {20})};
+        (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
         // Dump the torn systems
         /*
         BackendDump.dumpVariables(outDiffVars,"Jacobian_knownVariables");
@@ -452,15 +451,22 @@ algorithm
         setcVars=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
         shared.dataReconciliationData = SOME(BackendDAE.DATA_RECON(symbolicJacobian=simcodejacobian,setcVars=outResidualVars));
         //BackendDump.dumpVariables(setcVars,"SET_C_SOLVEDVARS");
+
         // Prepare the final DAE System with Set-c equations as residual equations
         currentSystem=BackendDAEUtil.setEqSystVars(currentSystem,BackendVariable.mergeVariables(outResidualVars, outOtherVars));
         currentSystem=BackendDAEUtil.setEqSystEqs(currentSystem,BackendEquation.merge(outResidualEqns,outOtherEqns));
+
         // set the variables of interest as INPUTS
         tempvar=BackendVariable.varList(outDiffVars);
         tempvar1= List.map1r(inputvarlist,BackendVariable.getVarAt,allVars);
         tmpglobalKnownVars=BackendVariable.listVar(List.map1(listAppend(tempvar,tempvar1),BackendVariable.setVarDirection,DAE.INPUT()));
         shared = BackendDAEUtil.setSharedGlobalKnownVars(shared,BackendVariable.mergeVariables(globalKnownVars, tmpglobalKnownVars));
-        //BackendDump.dumpVariables(tmpglobalKnownVars,"input_vars");
+        //BackendDump.dumpVariables(tmpglobalKnownVars,"inputvars");
+
+        // write the variables to the csv file
+        str = "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+        str = dumpToCsv(str,tempvar);
+        System.writeFile(modelname+"_Inputs.csv", str);
         outDae=BackendDAE.DAE({currentSystem}, shared);
       then
        outDae;
@@ -468,17 +474,36 @@ algorithm
   end match;
 end dataReconciliation;
 
+/* function which dumps the variable names to csv file */
+public function dumpToCsv
+  input String instring;
+  input list<BackendDAE.Var> invar;
+  output String outstring="";
+protected
+  DAE.ComponentRef cr;
+algorithm
+  for i in invar loop
+    cr:= BackendVariable.varCref(i);
+    outstring:= outstring + ComponentReference.crefStr(cr) +"\n";
+  end for;
+  outstring:=instring+outstring;
+end dumpToCsv;
+
 /* creates list of equations from SET-S needed for jacobian calculation */
 public function createInnerEquations
-   input list<Integer> sets;
+   input list<Integer> tempsets;
    input list<tuple<Integer,Integer>> solvedeqvar;
+   input list<Integer> sets;
    output BackendDAE.InnerEquations outequations={};
 protected
    Integer eqnumber,varnumber;
+   Integer count=1;
 algorithm
-   for i in sets loop
+   for i in tempsets loop
       (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedeqvar);
-      outequations:=BackendDAE.INNEREQUATION(eqnumber,{varnumber})::outequations;
+      // map the tempsets with setS, to get the correct equation index for example (26/37) in ordered equation list
+      outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{varnumber})::outequations;
+      count:=count+1;
    end for;
    outequations:=listReverse(outequations);
 end createInnerEquations;
@@ -491,6 +516,7 @@ public function dumpDependencyTree
    input list<Integer> constantvars;
    input BackendDAE.Variables allVars;
    input BackendDAE.EquationArray allEqs;
+   input array<Integer> mapIncRowEqn;
 protected
    Integer varnumber,count=1;
    list<Integer> eqs,varlist;
@@ -503,7 +529,7 @@ algorithm
        (varnumber,varlist):=i;
        (_,eqs):=listGet(ineqtree,count);
        var:=List.map1r({varnumber},BackendVariable.getVarAt,allVars);
-       depeqs:=List.map1r(eqs, BackendEquation.get, allEqs);
+       depeqs:=List.map1r(List.map1r(eqs, listGet, arrayList(mapIncRowEqn)), BackendEquation.get, allEqs);
        (kn1,kn2,kn3):=List.intersection1OnTrue(varlist,listAppend(knowns,constantvars),intEq);
        //(c1,c2,c3):=List.intersection1OnTrue(varlist,constantvars,intEq);
 
@@ -599,6 +625,7 @@ public function VerifyDataReconciliation
    input list<Integer> approximatedEquations;
    input BackendDAE.Variables allVars;
    input BackendDAE.EquationArray allEqs;
+   input array<Integer> mapIncRowEqn;
 protected
    list<Integer> matchedeq,matchedknownssetc,matchedunknownssetc,matchedknownssets,matchedunknownssets;
    list<Integer> tmpunknowns,tmpknowns,tmplist1,tmplist2,tmplist3,tmplist1sets,setstmp;
@@ -698,14 +725,14 @@ algorithm
        (tmplist1,tmplist2,tmplist3):=List.intersection1OnTrue(sets_eqs,sets,intEq);
        if(listEmpty(tmplist2)) then
           BackendDump.dumpVarList(List.map1r(matchedunknownssetc,BackendVariable.getVarAt,allVars),"-SET_C has intermediate variables:" +dumplistInteger(matchedunknownssetc));
-          BackendDump.dumpEquationList(List.map1r(sets_eqs, BackendEquation.get, allEqs),"-SET_S has equations which can compute above intermediate variable");
+          BackendDump.dumpEquationList(List.map1r(List.map1r(sets_eqs, listGet, arrayList(mapIncRowEqn)), BackendEquation.get, allEqs),"-SET_S has equations which can compute above intermediate variable");
        else
           BackendDump.dumpVarList(List.map1r(tmplistvar2,BackendVariable.getVarAt,allVars),"SET_S cannot compute intermediate variables :" +dumplistInteger(tmplistvar2));
           Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed : The system is ill-posed."});
           return;
        end if;
        (_,extractedeqs,var_dependencytree,eq_dependencytree):= BuildSquareSubSet(sets_eqs,sets_vars,knowns,mExt,solvedvar,constantvars,approximatedEquations);
-       dumpDependencyTree(var_dependencytree,eq_dependencytree,knowns,constantvars,allVars,allEqs);
+       dumpDependencyTree(var_dependencytree,eq_dependencytree,knowns,constantvars,allVars,allEqs,mapIncRowEqn);
    end if;
 end VerifyDataReconciliation;
 
