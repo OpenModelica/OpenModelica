@@ -7642,9 +7642,9 @@ AAAAAAAAAAAAAAB4KaX50xp77gAAAABJRU5ErkJggg==
   
   
   model Splitter1
-	  Real Q1(uncertain=Uncertainty.refine,start=2.10); 
-      Real Q2(uncertain=Uncertainty.refine,start=1.05); 
-      Real Q3(uncertain=Uncertainty.refine,start=0.97);
+	  Real Q1(uncertain=Uncertainty.refine); 
+      Real Q2(uncertain=Uncertainty.refine); 
+      Real Q3(uncertain=Uncertainty.refine);
 	  Real P01,P02,P03,T1_P1,T2_P2,T3_P2,T1_P2,T2_P1;
 	  Real T3_P1,V_Q1,V_Q2,V_Q3,T1_Q2,T1_Q2,T2_Q1,T3_Q1,V_P1,P,V_P2,V_P3,T1_Q1,T2_Q2,T3_Q2;
   equation
