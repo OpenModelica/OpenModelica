@@ -2468,6 +2468,7 @@ function checkConnector
   input SourceInfo info;
 protected
   ComponentRef cr;
+  list<Subscript> subs;
 algorithm
   () := match connExp
     case Expression.CREF(cref = cr as ComponentRef.CREF(origin = Origin.CREF))
@@ -2480,6 +2481,17 @@ algorithm
         if not checkConnectorForm(cr) then
           Error.addSourceMessageAndFail(Error.INVALID_CONNECTOR_FORM,
             {ComponentRef.toString(cr)}, info);
+        end if;
+
+        if ComponentRef.subscriptsVariability(cr) > Variability.PARAMETER then
+          subs := ComponentRef.subscriptsAllFlat(cr);
+          for sub in subs loop
+            if Subscript.variability(sub) > Variability.PARAMETER then
+              Error.addSourceMessage(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
+                {Expression.toString(connExp), Subscript.toString(sub)}, info);
+              fail();
+            end if;
+          end for;
         end if;
       then
         ();

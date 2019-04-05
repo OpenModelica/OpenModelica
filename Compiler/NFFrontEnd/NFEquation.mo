@@ -159,6 +159,17 @@ public
     DAE.ElementSource source;
   end NORETCALL;
 
+  function makeEquality
+    input Expression lhs;
+    input Expression rhs;
+    input Type ty;
+    input DAE.ElementSource src;
+    output Equation eq;
+  algorithm
+    eq := EQUALITY(lhs, rhs, ty, src);
+    annotation(__OpenModelica_EarlyInline=true);
+  end makeEquality;
+
   function makeBranch
     input Expression condition;
     input list<Equation> body;

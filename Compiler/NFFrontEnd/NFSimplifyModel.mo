@@ -143,17 +143,7 @@ algorithm
       Expression e, lhs, rhs;
       Type ty;
 
-    case Equation.EQUALITY()
-      algorithm
-        ty := Type.mapDims(eq.ty, simplifyDimension);
-
-        if not Type.isEmptyArray(ty) then
-          lhs := removeEmptyTupleElements(SimplifyExp.simplify(eq.lhs));
-          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
-          equations := Equation.EQUALITY(lhs, rhs, ty, eq.source) :: equations;
-        end if;
-      then
-        equations;
+    case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
     case Equation.ARRAY_EQUALITY()
       algorithm
@@ -210,6 +200,34 @@ algorithm
     else eq :: equations;
   end match;
 end simplifyEquation;
+
+function simplifyEqualityEquation
+  input Equation eq;
+  input output list<Equation> equations;
+protected
+  Expression lhs, rhs;
+  Type ty;
+  DAE.ElementSource src;
+algorithm
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) := eq;
+  ty := Type.mapDims(ty, simplifyDimension);
+
+  if Type.isEmptyArray(ty) then
+    return;
+  end if;
+
+  lhs := SimplifyExp.simplify(lhs);
+  lhs := removeEmptyTupleElements(lhs);
+  rhs := SimplifyExp.simplify(rhs);
+  rhs := removeEmptyFunctionArguments(rhs);
+
+  equations := match (lhs, rhs)
+    case (Expression.TUPLE(), Expression.TUPLE())
+      then simplifyTupleElement(lhs.elements, rhs.elements, ty, src, Equation.makeEquality, equations);
+
+    else Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
+  end match;
+end simplifyEqualityEquation;
 
 function simplifyAlgorithms
   input list<Algorithm> algs;
@@ -325,21 +343,30 @@ algorithm
 
   statements := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
-      then simplifyTupleAssignment(lhs.elements, rhs.elements, ty, src, statements);
+      then simplifyTupleElement(lhs.elements, rhs.elements, ty, src, Statement.makeAssignment, statements);
 
     else Statement.ASSIGNMENT(lhs, rhs, ty, src) :: statements;
   end match;
 end simplifyAssignment;
 
-function simplifyTupleAssignment
-  "Helper function to simplifyAssignment.
+function simplifyTupleElement<ElementT>
+  "Helper function to simplifyEqualityEquation/simplifyAssignment.
    Handles Expression.TUPLE() := Expression.TUPLE() assignments by splitting
    them into a separate assignment statement for each pair of tuple elements."
   input list<Expression> lhsTuple;
   input list<Expression> rhsTuple;
   input Type ty;
   input DAE.ElementSource src;
-  input output list<Statement> statements;
+  input MakeElement makeFn;
+  input output list<ElementT> statements;
+
+  partial function MakeElement
+    input Expression lhs;
+    input Expression rhs;
+    input Type ty;
+    input DAE.ElementSource src;
+    output ElementT element;
+  end MakeElement;
 protected
   Expression rhs;
   list<Expression> rest_rhs = rhsTuple;
@@ -353,10 +380,10 @@ algorithm
     ety :: rest_ty := rest_ty;
 
     if not Expression.isWildCref(lhs) then
-      statements := Statement.ASSIGNMENT(lhs, rhs, ety, src) :: statements;
+      statements := makeFn(lhs, rhs, ety, src) :: statements;
     end if;
   end for;
-end simplifyTupleAssignment;
+end simplifyTupleElement;
 
 function removeEmptyTupleElements
   "Replaces tuple elements that has one or more zero dimension with _."

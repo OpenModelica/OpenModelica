@@ -111,6 +111,17 @@ public
     DAE.ElementSource source;
   end FAILURE;
 
+  function makeAssignment
+    input Expression lhs;
+    input Expression rhs;
+    input Type ty;
+    input DAE.ElementSource src;
+    output Statement stmt;
+  algorithm
+    stmt := ASSIGNMENT(lhs, rhs, ty, src);
+    annotation(__OpenModelica_EarlyInline=true);
+  end makeAssignment;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;

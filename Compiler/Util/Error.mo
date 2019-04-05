@@ -348,9 +348,8 @@ public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(
   Util.gettext("The iteration range %s is not a constant or parameter expression."));
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
-
-// UNUSED ID 111
-
+public constant Message CONNECTOR_NON_PARAMETER_SUBSCRIPT = MESSAGE(111, TRANSLATION(), ERROR(),
+  Util.gettext("Connector ‘%s‘ has non-parameter subscript ‘%s‘."));
 public constant Message LOOKUP_CLASS_VIA_COMP_COMP = MESSAGE(112, TRANSLATION(), ERROR(),
   Util.gettext("Illegal access of class '%s' via a component when looking for '%s'."));
 public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(),
