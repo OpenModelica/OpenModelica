@@ -672,8 +672,9 @@ LibraryTreeItem *LibraryTreeItem::getDirectComponentsClass(const QString &name)
 {
   QList<LibraryTreeItem*> children = childrenItems();
   for (int i = 0; i < children.size(); ++i) {
-    if (children[i]->getName() == name)
+    if (children[i]->getName() == name) {
       return children[i];
+    }
   }
   const QList<ComponentInfo*> &components = getComponentsList();
   for (int i = 0; i < components.size(); ++i) {
