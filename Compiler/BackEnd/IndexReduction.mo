@@ -72,6 +72,7 @@ import List;
 import Matching;
 import SCode;
 import Sorting;
+import SymbolicJacobian;
 import System;
 import Util;
 
@@ -1311,7 +1312,7 @@ protected function dynamicStateSelectionWork
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output HashTableCrIntToExp.HashTable oHt;
-  output Integer oSetIndex;
+  output Integer oSetIndex=iSetIndex;
 protected
   BackendDAE.StateOrder so;
   BackendDAE.ConstraintEquations orgEqnsLst;
@@ -1544,7 +1545,7 @@ protected function addStateSets
   input StateSets iTplLst;
   input Integer iSetIndex;
   input BackendDAE.EqSystem inSystem;
-  output Integer oSetIndex;
+  output Integer oSetIndex=iSetIndex;
   output BackendDAE.EqSystem oSystem;
 algorithm
   (oSetIndex,oSystem) := match(iTplLst,inSystem)
@@ -1644,8 +1645,8 @@ algorithm
     stateCandidates := List.map1(stateCandidates,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
     otherVars := List.map1(otherVars,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
 
+    oStateSets := BackendDAE.STATESET(oSetIndex,rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ,BackendDAE.EMPTY_JACOBIAN())::oStateSets;
     oSetIndex := oSetIndex + 1;
-    oStateSets := BackendDAE.STATESET(rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ,BackendDAE.EMPTY_JACOBIAN())::oStateSets;
   end for;
 end generateStateSets;
 
@@ -1663,7 +1664,7 @@ protected function setStartExp
   input Integer size;
   input Integer iIndex;
   output BackendDAE.Var outVar;
-  output Integer oIndex;
+  output Integer oIndex=iIndex;
 protected
   DAE.Exp e;
 algorithm
@@ -1690,7 +1691,7 @@ protected function selectStates
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output HashTableCrIntToExp.HashTable oHt;
-  output Integer oSetIndex;
+  output Integer oSetIndex=iSetIndex;
 algorithm
   (osyst,oshared,oHt,oSetIndex) := matchcontinue inSystem
     local
@@ -1777,7 +1778,7 @@ protected function selectStatesWork
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output HashTableCrIntToExp.HashTable oHt;
-  output Integer oSetIndex;
+  output Integer oSetIndex=iSetIndex;
 algorithm
   (osyst,oshared,oHt,oSetIndex) :=
   matchcontinue (inSystem, iOrgEqnsLst)

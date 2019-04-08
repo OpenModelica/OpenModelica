@@ -3840,7 +3840,7 @@ algorithm
   (oStateSets, outB, oStatesetrepl) := match(iStateSets, iStatesetrepl, vars, aliasVars, iAcc, inB)
     local
       BackendDAE.StateSets stateSets;
-      Integer rang;
+      Integer index, rang;
       list< DAE.ComponentRef> states;
       DAE.ComponentRef crA, crJ;
       list< BackendDAE.Var> varA, statescandidates, ovars, varJ;
@@ -3850,7 +3850,7 @@ algorithm
       Boolean b, b1;
       BackendDAE.Jacobian jac;
     case ({}, _, _, _, _, _) then (listReverse(iAcc), inB, iStatesetrepl);
-    case (BackendDAE.STATESET(rang, states, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jac)::stateSets, _, _, _, _, _)
+    case (BackendDAE.STATESET(index, rang, states, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jac)::stateSets, _, _, _, _, _)
       equation
         repl = getAliasReplacements(iStatesetrepl, aliasVars);
         // do not replace the set variables
@@ -3861,7 +3861,7 @@ algorithm
         (oeqns, b1) = BackendVarTransform.replaceEquations(oeqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         oeqns = List.fold(oeqns, removeEqualLshRshEqns, {});
         oeqns = listReverse(oeqns);
-        (stateSets, b, oStatesetrepl) = removeAliasVarsStateSets(stateSets, SOME(repl), vars, aliasVars, BackendDAE.STATESET(rang, states, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jac)::iAcc, b or b1);
+        (stateSets, b, oStatesetrepl) = removeAliasVarsStateSets(stateSets, SOME(repl), vars, aliasVars, BackendDAE.STATESET(index, rang, states, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jac)::iAcc, b or b1);
       then
         (stateSets, b, oStatesetrepl);
   end match;

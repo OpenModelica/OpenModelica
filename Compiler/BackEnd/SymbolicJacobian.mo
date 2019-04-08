@@ -2945,7 +2945,7 @@ algorithm
       BackendDAE.StateSet stateSet;
       BackendDAE.Shared shared;
 
-      Integer rang;
+      Integer index, rang;
       list<DAE.ComponentRef> state;
       DAE.ComponentRef crA, crJ;
       list<BackendDAE.Var> varA, varJ, statescandidates, ovars;
@@ -2963,7 +2963,7 @@ algorithm
 
       String name;
 
-    case (BackendDAE.STATESET(rang=rang, state=state, crA=crA, varA=varA, statescandidates=statescandidates,
+    case (BackendDAE.STATESET(index=index, rang=rang, state=state, crA=crA, varA=varA, statescandidates=statescandidates,
       ovars=ovars, eqns=eqns, oeqns=oeqns, crJ=crJ, varJ=varJ), _, _, _, _)
       equation
         // get state names
@@ -3002,11 +3002,10 @@ algorithm
 
         //generate Jacobian name
         name = "StateSetJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-
         // generate generic Jacobian back end dae
         (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name, false);
 
-      then (BackendDAE.STATESET(rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
+      then (BackendDAE.STATESET(index, rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
   end match;
 end calculateStateSetJacobian;
 

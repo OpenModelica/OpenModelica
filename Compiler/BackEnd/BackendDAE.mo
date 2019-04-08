@@ -609,6 +609,7 @@ type StateSets = list<StateSet> "List of StateSets";
 public
 uniontype StateSet
   record STATESET
+    Integer index;
     Integer rang; // how many states are needed?
     list< .DAE.ComponentRef> state;
     .DAE.ComponentRef crA "set.x=A*states";
