@@ -543,7 +543,7 @@ void buildGUI(stash) {
   sh 'autoconf'
   patchConfigStatus()
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
-  sh 'touch omc omc-diff ReferenceFiles omsimulator && make -q omc omc-diff ReferenceFiles omsimulator' // Pretend we already built omc since we already did so
+  sh 'touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && make -q omc omc-diff ReferenceFiles omsimulator' // Pretend we already built omc since we already did so
   sh "make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
 }
 
