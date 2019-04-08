@@ -1,6 +1,4 @@
 ModelicaCompliance.Algorithms.For.ArrayRangeExp
-ModelicaCompliance.Algorithms.For.BoolTypeRange
-ModelicaCompliance.Algorithms.For.EnumTypeRange
 ModelicaCompliance.Algorithms.For.ImplicitBoolIterator
 ModelicaCompliance.Algorithms.For.ImplicitEnumIterator
 ModelicaCompliance.Algorithms.For.ImplicitIntegerIterator
@@ -11,14 +9,9 @@ ModelicaCompliance.Algorithms.For.MixedImplExplIterator
 ModelicaCompliance.Algorithms.For.RealRange
 ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
-ModelicaCompliance.Arrays.Declarations.ArrayWithNegativeDims
 ModelicaCompliance.Arrays.Declarations.BoolArray
 ModelicaCompliance.Arrays.Functions.Conversion.DimConversionMatrix
 ModelicaCompliance.Arrays.Functions.Reductions.Deduce
-ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize4
-ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayMatrixMatrixMul6
-ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayMatrixVectorMul5
-ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayVectorMatrixMul5
 ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayVectorVectorMul3
 ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
 ModelicaCompliance.Classes.Declarations.PartialSimulationModel
@@ -80,7 +73,6 @@ ModelicaCompliance.Components.Variability.DiscreteNotWhenAssignment
 ModelicaCompliance.Components.Variability.DiscreteSubCompBlock
 ModelicaCompliance.Components.Variability.DiscreteSubCompModel
 ModelicaCompliance.Components.Variability.NonDiscreteFunction
-ModelicaCompliance.Connections.Declarations.ConnectNonParamSubscript
 ModelicaCompliance.Connections.Declarations.OperatorRecordMissingAddition
 ModelicaCompliance.Connections.Declarations.OperatorRecordMissingNegation
 ModelicaCompliance.Connections.Declarations.OperatorRecordMissingZero
@@ -104,7 +96,6 @@ ModelicaCompliance.Connections.Restrictions.SizeScalarInvalid
 ModelicaCompliance.Connections.Stream.StreamConnectorMissingFlow
 ModelicaCompliance.Connections.Stream.StreamConnectorMultiFlow
 ModelicaCompliance.Connections.Stream.StreamOutsideConnector
-ModelicaCompliance.Equations.Equality.MultiOutputEqualityLess
 ModelicaCompliance.Equations.For.BoolRange
 ModelicaCompliance.Equations.For.BoolTypeRange
 ModelicaCompliance.Equations.For.ImplicitBoolIterator
