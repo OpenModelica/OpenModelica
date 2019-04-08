@@ -350,9 +350,12 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
  *  function to select the actual states for an individual stateSet
  *
  *  \param [ref] [data]
+ *  \param [ref] [threadData]
  *  \param [in]  [reportError]
  *  \param [in]  [switchStates] flag for switch states, function does switch only if this switchStates = 1
- *  \return      [globalres] flag for discontinuous timestep in the case of a state switch
+ *  \param [in]  [setIndex] unique index of the stateSet
+ *  \param [in]  [globalres] flag for discontinuous timestep in the case of a state switch for all sets before
+ *  \return      [globalres] flag for discontinuous timestep in the case of a state switch for at least one set
  *
  *  \author Abdelhak / Frenkel TUD
  */
@@ -424,9 +427,10 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
  *  function to select the actual states
  *
  *  \param [ref] [data]
+ *  \param [ref] [threadData]
  *  \param [in]  [reportError]
  *  \param [in]  [switchStates] flag for switch states, function does switch only if this switchStates = 1
- *  \return ???
+ *  \return      [globalres] flag for discontinuous timestep in the case of a state switch for at least one set
  *
  *  \author Frenkel TUD
  */
