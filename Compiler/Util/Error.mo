@@ -827,6 +827,8 @@ public constant Message INST_RECURSION_LIMIT_REACHED = MESSAGE(349, TRANSLATION(
   Util.gettext("Recursion limit reached while instantiating ‘%s‘."));
 public constant Message WHEN_IF_VARIABLE_MISMATCH = MESSAGE(350, TRANSLATION(), ERROR(),
   Util.gettext("The branches of an if-equation inside a when-equation must have the same set of component references on the left-hand side."));
+public constant Message DIMENSION_DEDUCTION_FROM_BINDING_FAILURE = MESSAGE(351, TRANSLATION(), ERROR(),
+  Util.gettext("Dimension %s of ‘%s‘ could not be deduced from the component's binding equation ‘%s‘."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

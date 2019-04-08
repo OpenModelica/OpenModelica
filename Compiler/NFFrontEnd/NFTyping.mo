@@ -522,6 +522,7 @@ algorithm
       Dimension dim;
       Binding b;
       Type ty;
+      TypingError ty_err;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -608,7 +609,7 @@ algorithm
           end if;
         end if;
 
-        dim := match b
+        (dim, ty_err) := match b
           // Print an error if there's no binding.
           case Binding.UNBOUND()
             algorithm
@@ -621,18 +622,25 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              dim := typeExpDim(b.bindingExp, index + Binding.countPropagatedDims(b),
-                ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
+              (dim, _, ty_err) := typeExpDim(b.bindingExp, index + Binding.countPropagatedDims(b),
+                                             ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
             then
-              dim;
+              (dim, ty_err);
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
-            algorithm
-              dim := nthDimensionBoundsChecked(b.bindingType, index + Binding.countPropagatedDims(b));
-            then
-              dim;
+            then nthDimensionBoundsChecked(b.bindingType, index + Binding.countPropagatedDims(b));
+        end match;
 
+        () := match ty_err
+          case TypingError.OUT_OF_BOUNDS()
+            algorithm
+              Error.addSourceMessage(Error.DIMENSION_DEDUCTION_FROM_BINDING_FAILURE,
+                {String(index), InstNode.name(component), Binding.toString(b)}, info);
+            then
+              fail();
+
+          else ();
         end match;
 
         // Make sure the dimension is constant evaluted, and also mark it as structural.
@@ -644,6 +652,12 @@ algorithm
             then
               Dimension.fromExp(exp, dim.var);
 
+          case Dimension.UNKNOWN()
+            algorithm
+              Error.addInternalError(getInstanceName() + " returned unknown dimension in a non-function context", info);
+            then
+              fail();
+
           else dim;
         end match;
 
@@ -654,7 +668,30 @@ algorithm
     // Other kinds of dimensions are already typed.
     else dimension;
   end match;
+
+  verifyDimension(dimension, component, info);
 end typeDimension;
+
+function verifyDimension
+  input Dimension dimension;
+  input InstNode component;
+  input SourceInfo info;
+algorithm
+  () := match dimension
+    case Dimension.INTEGER()
+      algorithm
+        // Check that integer dimensions are not negative.
+        if dimension.size < 0 then
+          Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX,
+            {String(dimension.size), InstNode.name(component)}, info);
+          fail();
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end verifyDimension;
 
 function getRecordElementBinding
   "Tries to fetch the binding for a given record field by using the binding of
@@ -1885,13 +1922,6 @@ algorithm
     case Expression.SIZE()
       algorithm
         (exp, exp_ty, _) := typeExp(sizeExp.exp, next_origin, info);
-
-        // The first argument must be an array of any type.
-        if not Type.isArray(exp_ty) then
-          Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
-          fail();
-        end if;
-
         sizeType := Type.sizeType(exp_ty);
       then
         (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER);

@@ -778,6 +778,7 @@ public
       case ENUM_LITERAL()    then exp.ty;
       case CLKCONST()        then Type.CLOCK();
       case CREF()            then exp.ty;
+      case TYPENAME()        then exp.ty;
       case ARRAY()           then exp.ty;
       case RANGE()           then exp.ty;
       case TUPLE()           then exp.ty;

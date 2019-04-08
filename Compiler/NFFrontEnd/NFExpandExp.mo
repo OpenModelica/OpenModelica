@@ -121,7 +121,7 @@ public
       case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
           if Type.hasZeroDimension(crefExp.ty) then
-            arrayExp := Expression.makeEmptyArray(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.fromInteger(0)}));
+            arrayExp := Expression.makeEmptyArray(crefExp.ty);
             expanded := true;
           elseif Type.hasKnownSize(crefExp.ty) then
             subs := expandCref2(crefExp.cref);
