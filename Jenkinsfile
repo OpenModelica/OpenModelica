@@ -432,9 +432,9 @@ pipeline {
           }
           steps {
             unstash 'usersguide'
-            sh "tar xJf OpenModelicaUsersGuide-${tagName()}.tar.xz"
+            sh "tar xJf OpenModelicaUsersGuide-${tagName()}.html.tar.xz"
             sh "mv OpenModelicaUsersGuide ${tagName()}"
-            sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${tagName()},${tagName()}")])])
+            sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${tagName()}*,${tagName()}")])])
           }
         }
       }
