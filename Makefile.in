@@ -3,31 +3,40 @@
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
-.PHONY:
+.PHONY: omc omlibrary-all omlibrary-core omplot omedit omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles testsuite-depends
 
-omc:
+omc: omc.skip
+omc.skip:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" core
 omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" all
-omplot: omc
+omplot: omplot.skip
+omplot.skip: omc
 	$(MAKE) -C OMPlot
-omedit: omc omplot omsimulator
+omedit: omedit.skip
+omedit.skip: omc omplot omsimulator
 	$(MAKE) -C OMEdit
-omsimulator:
+omsimulator: omsimulator.skip
+omsimulator.skip:
 	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
 	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
 	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
-omnotebook: omc omplot
+omnotebook: omnotebook.skip
+omnotebook.skip: omc omplot
 	$(MAKE) -C OMNotebook
-omoptim: omc omplot
+omoptim: omoptim.skip
+omoptim.skip: omc omplot
 	$(MAKE) -C OMOptim
-omshell: omc
+omshell: omshell.skip
+omshell.skip: omc
 	$(MAKE) -C OMShell
-omc-diff:
+omc-diff: omc-diff.skip
+omc-diff.skip:
 	$(MAKE) -C testsuite/difftool "OMBUILDDIR=@OMBUILDDIR@" CC="@CC@" CFLAGS="@CFLAGS@"
-ReferenceFiles:
+ReferenceFiles: ReferenceFiles.skip
+ReferenceFiles.skip:
 	$(MAKE) -C testsuite/ReferenceFiles
 testsuite-depends: omc-diff ReferenceFiles
 
