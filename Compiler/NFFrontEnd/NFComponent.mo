@@ -697,6 +697,17 @@ uniontype Component
     output Boolean isConnector = ConnectorType.isExpandable(connectorType(component));
   end isExpandableConnector;
 
+  function isExternalObject
+    input Component component;
+    output Boolean isEO;
+  algorithm
+    isEO := match component
+      case UNTYPED_COMPONENT() then Class.isExternalObject(InstNode.getClass(component.classInst));
+      case TYPED_COMPONENT() then Type.isExternalObject(component.ty);
+      else false;
+    end match;
+  end isExternalObject;
+
   function isIdentical
     input Component comp1;
     input Component comp2;

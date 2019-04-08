@@ -352,6 +352,16 @@ public
     end match;
   end isExpandableConnector;
 
+  function isExternalObject
+    input Type ty;
+    output Boolean isEO;
+  algorithm
+    isEO := match ty
+      case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then true;
+      else false;
+    end match;
+  end isExternalObject;
+
   function isRecord
     input Type ty;
     output Boolean isRecord;

@@ -3270,6 +3270,9 @@ algorithm
     if not Component.getFixedAttribute(component) then
       // Except non-fixed parameters.
       isStructural := false;
+    elseif Component.isExternalObject(component) then
+      // Except external objects.
+      isStructural := false;
     elseif Binding.isUnbound(compBinding) then
       // Except parameters with no bindings.
       if not evalAllParams then
@@ -3344,6 +3347,7 @@ algorithm
             isNotFixed := false;
           elseif var == Variability.PARAMETER and
                  (not requireFinal or Component.isFinal(c)) and
+                 not Component.isExternalObject(c) and
                  Component.getFixedAttribute(c) then
             isNotFixed := isBindingNotFixed(Component.getBinding(c), requireFinal, depth + 1);
           else
