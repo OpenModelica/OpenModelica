@@ -1286,7 +1286,7 @@ function typeCrefDim
   input ExpOrigin.Type origin;
   input SourceInfo info;
   output Dimension dim;
-  output TypingError error;
+  output TypingError error = TypingError.NO_ERROR();
 protected
   list<ComponentRef> crl;
   list<Subscript> subs;
@@ -1319,13 +1319,20 @@ algorithm
           node := InstNode.resolveOuter(cr.node);
           c := InstNode.component(node);
 
+          // If the component is untyped it might have an array type whose dimensions
+          // we need to take into consideration. To avoid making this more complicated
+          // than it already is we make sure that the component is typed in that case.
+          if Class.hasDimensions(InstNode.getClass(Component.classInstance(c))) then
+            typeComponent(node, origin);
+            c := InstNode.component(node);
+          end if;
+
           dim_count := match c
             case Component.UNTYPED_COMPONENT()
               algorithm
                 dim_count := arrayLength(c.dimensions);
 
                 if index <= dim_count and index > 0 then
-                  error := TypingError.NO_ERROR();
                   dim := typeDimension(c.dimensions, index, node, c.binding, origin, c.info);
                   return;
                 end if;
@@ -1337,7 +1344,6 @@ algorithm
                 dim_count := Type.dimensionCount(c.ty);
 
                 if index <= dim_count and index > 0 then
-                  error := TypingError.NO_ERROR();
                   dim := Type.nthDimension(c.ty, index);
                   return;
                 end if;

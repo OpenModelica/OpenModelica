@@ -407,6 +407,18 @@ uniontype Class
     end if;
   end isIdentical;
 
+  function hasDimensions
+    input Class cls;
+    output Boolean hasDims;
+  algorithm
+    hasDims := match cls
+      case EXPANDED_DERIVED()
+        then arrayLength(cls.dims) > 0 or hasDimensions(InstNode.getClass(cls.baseClass));
+      case TYPED_DERIVED() then Type.isArray(cls.ty);
+      else false;
+    end match;
+  end hasDimensions;
+
   function getDimensions
     input Class cls;
     output list<Dimension> dims;
