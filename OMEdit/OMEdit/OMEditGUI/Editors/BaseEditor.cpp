@@ -693,7 +693,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   pSortFilterProxyModel->sort(0,Qt::AscendingOrder);
   mpCompleter = new QCompleter(this);
   mpCompleter->setModel(pSortFilterProxyModel);
-  mpCompleter->setCaseSensitivity(Qt::CaseSensitive);
+  mpCompleter->setCaseSensitivity(Qt::CaseInsensitive);
   mpCompleter->setWrapAround(false);
   mpCompleter->setWidget(this);
   mpCompleter->setCompletionMode(QCompleter::PopupCompletion);
