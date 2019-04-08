@@ -19,8 +19,7 @@ end DimUnknown4;
 
 // Result:
 // Error processing file: DimUnknown4.mo
-// [flattening/modelica/scodeinst/DimUnknown4.mo:17:22-17:29:writable] Notification: From here:
-// [flattening/modelica/scodeinst/DimUnknown4.mo:9:3-9:15:writable] Error: Non-array modification ‘3.0‘ for array component ‘x‘, possibly due to missing ‘each‘.
+// [flattening/modelica/scodeinst/DimUnknown4.mo:9:3-9:15:writable] Error: Dimension 1 of ‘x‘ could not be deduced from the component's binding equation ‘3.0‘.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

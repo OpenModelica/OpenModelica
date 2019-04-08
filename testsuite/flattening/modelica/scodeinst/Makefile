@@ -260,6 +260,7 @@ DimInvalidExp2.mo \
 DimInvalidExp3.mo \
 DimInvalidType1.mo \
 DimInvalidType2.mo \
+DimNegative1.mo \
 DimRagged1.mo \
 DimRagged2.mo \
 DimSize1.mo \
@@ -636,6 +637,8 @@ OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
 OperationLogicalUnary1.mo \
 OperationMatrixProduct1.mo \
+OperationMatrixProduct2.mo \
+OperationMatrixProduct3.mo \
 OperationMatrixVectorProduct1.mo \
 OperationMul1.mo \
 OperationMulEW1.mo \
