@@ -1463,7 +1463,7 @@ algorithm
         DAE.FunctionTree usedfuncs;
         BackendDAE.Shared shared;
 
-      case (SOME((bdae, _, _, _, _)), _, _)
+      case (SOME((bdae, _, _, _, _, _)), _, _)
         equation
           bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           shared = bdae.shared;
@@ -1930,7 +1930,7 @@ algorithm
       /* TODO: implement/check for GENERIC_JACOBIAN */
       case BackendDAE.GENERIC_JACOBIAN(jacobian=NONE())
         then -1;
-      case BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_,_,vars1,vars2,_)))
+      case BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_,_,vars1,vars2,_,_)))
         guard
           listLength(vars1) == listLength(vars2)
         then listLength(vars1);

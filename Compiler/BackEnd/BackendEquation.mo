@@ -609,6 +609,28 @@ algorithm
   (_, (_,cr_lst)) := traverseExpsOfEquation(e, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, cr_lst));
 end traversingEquationCrefFinder;
 
+public function getCrefsFromEquations
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inKnVars;
+  output list<DAE.ComponentRef> cr_lst;
+protected
+  HashTable.HashTable ht;
+  BackendDAE.Variables vars;
+  BackendDAE.Variables knownVars;
+algorithm
+  ht := HashTable.emptyHashTable();
+  (_, _, ht) := traverseEquationArray(inEqns, findUnknownCrefs, (inVars, inKnVars, ht));
+  cr_lst := BaseHashTable.hashTableKeyList(ht);
+end getCrefsFromEquations;
+
+protected function findUnknownCrefs
+  input output BackendDAE.Equation inEq;
+  input output tuple<BackendDAE.Variables, BackendDAE.Variables, HashTable.HashTable> extraArgs;
+algorithm
+  (_, ( _, extraArgs)) := traverseExpsOfEquation(inEq, Expression.traverseSubexpressionsHelper, (checkEquationsUnknownCrefsExp, extraArgs));
+end findUnknownCrefs;
+
 public function equationUnknownCrefs "author: Frenkel TUD 2012-05
   From the equation and a variable array return all
   variables in the equation an not in the variable array."
@@ -3181,7 +3203,6 @@ algorithm
 
   end match;
 end scalarComplexEquations;
-
 
 annotation(__OpenModelica_Interface="backend");
 end BackendEquation;

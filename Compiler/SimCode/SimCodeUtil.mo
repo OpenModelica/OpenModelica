@@ -4543,7 +4543,7 @@ algorithm
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
-                                    independentVarsLst, residualVarsLst, dependentVarsLst)),
+                                    independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
                                       sparseColoring), _, _)
       equation
@@ -4686,7 +4686,7 @@ algorithm
   result := match(inBDAE)
     case (NONE())
       then true;
-    case (SOME((_,_,{},{},{})))
+    case (SOME((_,_,{},{},{},_)))
       equation
       then true;
     else
@@ -4825,7 +4825,7 @@ algorithm
 
     case (((SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
-                                    _, diffedVars, alldiffedVars)), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest,
+                                    _, diffedVars, alldiffedVars, _)), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors))::rest,
                                     _, _, _::restnames)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
@@ -5286,8 +5286,8 @@ algorithm
 
   // translate only sparcity pattern
   case (BackendDAE.GENERIC_JACOBIAN(NONE(),pattern as (sparsepatternComRefs, sparsepatternComRefsT,
-                                           (independentComRefs, dependentVarsComRefs), _),
-                                           sparseColoring), _)
+                                             (independentComRefs, dependentVarsComRefs), _),
+                                             sparseColoring), _)
     equation
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("create sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
@@ -5322,11 +5322,11 @@ algorithm
     then (SOME(SimCode.DERIVATIVE_MATRIX({}, "", sparseInts, sparseIntsT, coloring, maxColor)), iuniqueEqIndex);
 
   // translate omsi_function and sparsity pattern
-  case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
-                                  shared=shared), name,
-                                  independentVarsLst, residualVarsLst, dependentVarsLst)),
-                                    (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
-                                    sparseColoring), _)
+    case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
+                                    shared=shared), name,
+                                    independentVarsLst, residualVarsLst, dependentVarsLst, _)),
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
+                                      sparseColoring), _)
     equation
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
@@ -6367,6 +6367,20 @@ algorithm
       list<DAE.ComponentRef> crefstmp;
       DAE.Type ty,basety;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
+
+// A special case for built-in function stateSelectionSet
+    case (_, (BackendDAE.ARRAY_EQUATION(right=rhse as DAE.CALL(path=Absyn.IDENT(name="$stateSelectionSet")), source=source, attr=eqAttr)), _)
+    equation
+      equation_ = SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_NORETCALL(rhse, source)}, eqAttr);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
+
+    // A special case for built-in function initialStateSelect
+    case (_, (BackendDAE.ARRAY_EQUATION(right=rhse as DAE.CALL(path=Absyn.IDENT(name="$initialStateSelect")), source=source, attr=eqAttr)), _)
+    equation
+      equation_ = SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_NORETCALL(rhse, source)}, eqAttr);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     // An array equation
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}

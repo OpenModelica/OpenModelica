@@ -892,10 +892,11 @@ protected
   BackendDAE.BackendDAE jacBDAE;
   String name;
   list<BackendDAE.Var> seedVars, tmpVars, resultVars;
+  list<DAE.ComponentRef> depCrefs;
 algorithm
-  (jacBDAE, name, seedVars, tmpVars, resultVars) := symJac;
+  (jacBDAE, name, seedVars, tmpVars, resultVars, depCrefs) := symJac;
   jacBDAE := replaceZeroCrossingsJacBackend(jacBDAE, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
-  outSymJac := (jacBDAE, name, seedVars, tmpVars, resultVars);
+  outSymJac := (jacBDAE, name, seedVars, tmpVars, resultVars, depCrefs);
 end replaceZCExpinSymJacobian;
 
 protected function replaceZeroCrossingsJacBackend
