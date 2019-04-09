@@ -136,6 +136,8 @@ public:
   void updateOMSConnection();
   void updateToolTip();
   void showOMSConnection();
+
+  static QColor findLineColorForConnection(Component *pComponent);
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 
