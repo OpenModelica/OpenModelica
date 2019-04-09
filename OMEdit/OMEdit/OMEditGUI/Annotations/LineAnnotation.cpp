@@ -129,27 +129,16 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
-    /* Use the linecolor of the first shape from icon layer of start component for the connection line.
-     * Or use black color if there is no shape in the icon layer
+    /* Use the linecolor of the first shape of the start component for the connection line.
+     * If there is no shape then look in the inherited shapes.
+     * Or use black color if no shape is found even in inheritance.
      * Dymola is doing it the way explained above. The Modelica specification doesn't say anything about it.
-     * We are also doing it the same way except that we will use the diagram layer shape if there is no shape in the icon layer.
-     * If there is no shape even in diagram layer then use the default black color.
      */
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       if (pStartComponent->getShapesList().size() > 0) {
-        ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
-        mLineColor = pShapeAnnotation->getLineColor();
-      }
-      if (pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-        if (!pStartComponent->getLibraryTreeItem()->getModelWidget()) {
-          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pStartComponent->getLibraryTreeItem(), false);
-        }
-        ShapeAnnotation *pShapeAnnotation;
-        if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
-            && pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
-          pShapeAnnotation = pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
-          mLineColor = pShapeAnnotation->getLineColor();
-        }
+        mLineColor = pStartComponent->getShapesList().at(0)->getLineColor();
+      } else {
+        mLineColor = findLineColorForConnection(pStartComponent);
       }
     }
     mpTextAnnotation = 0;
@@ -1102,19 +1091,6 @@ void LineAnnotation::updateOMSConnection()
   OMSProxy::instance()->setConnectionGeometry(getStartComponentName(), getEndComponentName(), &connectionGeometry);
 }
 
-void LineAnnotation::showOMSConnection()
-{
-  if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSBusConnector())
-      && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
-    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
-    pBusConnectionDialog->exec();
-  } else if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector())
-             && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
-    TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
-    pTLMBusConnectionDialog->exec();
-  }
-}
-
 void LineAnnotation::updateToolTip()
 {
   if (mLineType == LineAnnotation::ConnectionType) {
@@ -1129,6 +1105,38 @@ void LineAnnotation::updateToolTip()
                .arg(getSynchronize() ? "true" : "false")
                .arg(getPriority()));
   }
+}
+
+void LineAnnotation::showOMSConnection()
+{
+  if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSBusConnector())
+      && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
+    pBusConnectionDialog->exec();
+  } else if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector())
+             && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+    TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
+    pTLMBusConnectionDialog->exec();
+  }
+}
+
+/*!
+ * \brief LineAnnotation::findLineColorForConnection
+ * Finds the line color for the connection from the shapes of the start component.
+ * \param pComponent
+ * \return
+ */
+QColor LineAnnotation::findLineColorForConnection(Component *pComponent)
+{
+  QColor lineColor(0, 0, 0);
+  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+    if (pInheritedComponent->getShapesList().size() > 0) {
+      return pInheritedComponent->getShapesList().at(0)->getLineColor();
+    } else {
+      lineColor = findLineColorForConnection(pInheritedComponent);
+    }
+  }
+  return lineColor;
 }
 
 QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -1709,13 +1717,8 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeProxyModel->setSourceModel(mpStartExpandableConnectorTreeModel);
     mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
-    if (mpConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getStartComponent()->getParentComponent(),
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getStartComponent(),
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getStartComponent()->getRootParentComponent(),
+                                                                           mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     mpStartExpandableConnectorTreeView->expandAll();
     mpStartExpandableConnectorTreeView->setSortingEnabled(true);
     mpStartExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -1732,13 +1735,8 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeProxyModel->setSourceModel(mpEndExpandableConnectorTreeModel);
     mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
-    if (mpConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getEndComponent()->getParentComponent(),
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getEndComponent(),
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpConnectionLineAnnotation->getEndComponent()->getRootParentComponent(),
+                                                                         mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     mpEndExpandableConnectorTreeView->expandAll();
     mpEndExpandableConnectorTreeView->setSortingEnabled(true);
     mpEndExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
