@@ -11221,25 +11221,29 @@ algorithm
   end matchcontinue;
 end getNamedAnnotation;
 
+constant Absyn.Path USES_PATH = Absyn.Path.IDENT("uses");
+
 public function getUsesAnnotation
-"This function takes a Path and a Program and returns a comma separated
-  string of values for the Documentation annotation for the class named by the
-  first argument."
-  input Absyn.Program p;
-  output list<tuple<Absyn.Path,list<String>,Boolean>> usesStr;
+  "Returns the uses-annotations of the top-level classes in the given program."
+  input Absyn.Program program;
+  output list<Annotation> outUses = {};
+
+  type Annotation = tuple<Absyn.Path, list<String>, Boolean>;
+protected
+  Option<list<Annotation>> opt_uses;
+  list<Annotation> uses;
+  list<Absyn.Class> classes;
 algorithm
-  usesStr := matchcontinue (p)
-    local
-      Absyn.Class cdef;
+  Absyn.PROGRAM(classes = classes) := program;
 
-    case (Absyn.PROGRAM(classes={cdef}))
-      equation
-        SOME(usesStr) = Absyn.getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
-      then
-        usesStr;
+  for cls in classes loop
+    opt_uses := Absyn.getNamedAnnotationInClass(cls, USES_PATH, getUsesAnnotationString);
 
-    else {};
-  end matchcontinue;
+    if isSome(opt_uses) then
+      SOME(uses) := opt_uses;
+      outUses := listAppend(uses, outUses);
+    end if;
+  end for;
 end getUsesAnnotation;
 
 public function getUsesAnnotationOrDefault

@@ -3074,13 +3074,8 @@ algorithm
     // print(stringDelimitList(list(Absyn.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
     SymbolTable.setAbsyn(p);
   end try;
-  try
-    absynClass := Interactive.getPathedClassInProgram(className, p);
-  else
-    success := true; /* Let derived classes possibly be handled by runFrontEndWork */
-    return;
-  end try;
-  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
+
+  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(p, false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
   SymbolTable.setAbsyn(p);
   // Always update the SCode structure; otherwise the cache plays tricks on us
   SymbolTable.clearSCode();
@@ -3150,7 +3145,6 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
 
         //System.stopTimer();
         //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
