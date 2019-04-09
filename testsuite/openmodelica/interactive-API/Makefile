@@ -75,6 +75,7 @@ variables.mos \
 getDefinitions.mos \
 StateMachine.mos \
 Ticket4674.mos \
+UsesAnnotation1.mos \
 
 
 # test that currently fail. Move up when fixed.

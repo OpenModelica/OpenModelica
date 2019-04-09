@@ -3,15 +3,14 @@
 // provided by Martin Otter
 //
 
-loadModel(Modelica, {"3.2"}); getErrorString();
 loadFile("4/ServoSystem3/package.mo"); getErrorString();
 simulate(ServoSystem3.Aufgabe4_2);  getErrorString();
 
 // Result:
 // true
-// ""
-// true
-// "Warning: Requested package Modelica of version 3.2.2, but this package was already loaded with version 3.2.3. You might experience problems if these versions are incompatible.
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
 // "
 // record SimulationResult
 //     resultFile = "ServoSystem3.Aufgabe4_2_res.mat",

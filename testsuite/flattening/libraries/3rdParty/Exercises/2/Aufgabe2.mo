@@ -170,5 +170,5 @@ gearbox characteristic is approximated by a polynomial of degree 3.
       experiment(StopTime=0.1),
       __Dymola_Commands(file="Plot speeds.mos" "Plot speeds"));
   end Test2;
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.1")));
 end Aufgabe2;

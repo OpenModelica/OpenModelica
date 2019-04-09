@@ -87,7 +87,7 @@ equation
                                                  color={0,0,127}));
   connect(fixed.flange,idealGear.support)
     annotation (Line(points={{84,-16},{84,0}}, color={0,0,0}));
-  annotation (uses(Modelica(version="3.2")),   Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="3.2.1")),   Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-180,-100},{180,100}}), graphics),
     experiment(StopTime=0.2),
     __Dymola_Commands(file="Plot feedback.u1 und u2.mos"

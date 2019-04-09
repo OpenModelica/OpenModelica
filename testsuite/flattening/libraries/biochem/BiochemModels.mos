@@ -594,7 +594,8 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "
 // true
 // true
-// ""
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// "
 // "class BioChem_Examples_centralMetabolism_extra_cellular
 //   Real V(quantity = \"Volume\", unit = \"l\", start = 2.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
 //   Real cytosol.V(quantity = \"Volume\", unit = \"l\", start = 2.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
@@ -1316,14 +1317,17 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.node_LAC.c = vef.s1.c;
 // end BioChem_Examples_centralMetabolism_extra_cellular;
 // "
-// ""
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// "
 // "Check of BioChem_Examples_centralMetabolism_extra_cellular completed successfully.
 // Class BioChem_Examples_centralMetabolism_extra_cellular has 353 equation(s) and 353 variable(s).
 // 249 of these are trivial equation(s)."
-// ""
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// "
 // true
 // true
-// ""
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// "
 // "class BioChem_Examples_CircadianOscillator_Container
 //   Real V(quantity = \"Volume\", unit = \"l\", start = 1.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
 //   Real nucleus.V(quantity = \"Volume\", unit = \"l\", start = 1.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
@@ -1845,7 +1849,8 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytoplasm.y3_node.c = nucleus.y3_node.c;
 // end BioChem_Examples_CircadianOscillator_Container;
 // "
-// "[flattening/libraries/biochem/ContainerTotal.mo:867:9-867:145:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// [flattening/libraries/biochem/ContainerTotal.mo:867:9-867:145:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:868:9-868:144:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:869:9-869:144:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:870:9-870:145:writable] Warning: Connecting two signal sources while connecting nucleus.y3_node.V to cytoplasm.y3_node.V.
@@ -1853,14 +1858,16 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem_Examples_CircadianOscillator_Container completed successfully.
 // Class BioChem_Examples_CircadianOscillator_Container has 252 equation(s) and 252 variable(s).
 // 180 of these are trivial equation(s)."
-// "[flattening/libraries/biochem/ContainerTotal.mo:867:9-867:145:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// [flattening/libraries/biochem/ContainerTotal.mo:867:9-867:145:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:868:9-868:144:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:869:9-869:144:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
 // [flattening/libraries/biochem/ContainerTotal.mo:870:9-870:145:writable] Warning: Connecting two signal sources while connecting nucleus.y3_node.V to cytoplasm.y3_node.V.
 // "
 // true
 // true
-// ""
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// "
 // "class BioChem_Examples_CaOscillations_Cytosol
 //   Real V(quantity = \"Volume\", unit = \"l\", start = 1.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
 //   Real Endoplasmic_Reticulum.V(quantity = \"Volume\", unit = \"l\", start = 1.0, stateSelect = StateSelect.prefer) \"Compartment volume\";
@@ -1983,12 +1990,14 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   Endoplasmic_Reticulum.CaER_node.c = Jpump.p1.c;
 // end BioChem_Examples_CaOscillations_Cytosol;
 // "
-// "[flattening/libraries/biochem/CytosolTotal.mo:862:9-862:228:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to Endoplasmic_Reticulum.Ca_Cyt_node.V.
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// [flattening/libraries/biochem/CytosolTotal.mo:862:9-862:228:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to Endoplasmic_Reticulum.Ca_Cyt_node.V.
 // "
 // "Check of BioChem_Examples_CaOscillations_Cytosol completed successfully.
 // Class BioChem_Examples_CaOscillations_Cytosol has 60 equation(s) and 60 variable(s).
 // 44 of these are trivial equation(s)."
-// "[flattening/libraries/biochem/CytosolTotal.mo:862:9-862:228:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to Endoplasmic_Reticulum.Ca_Cyt_node.V.
+// "Warning: Requested package Modelica of version 2.2.1, but this package was already loaded with version 3.1. You might experience problems if these versions are incompatible.
+// [flattening/libraries/biochem/CytosolTotal.mo:862:9-862:228:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to Endoplasmic_Reticulum.Ca_Cyt_node.V.
 // "
 // true
 // true

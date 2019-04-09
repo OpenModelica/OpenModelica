@@ -22,7 +22,8 @@ buildModel(MDD_test); getErrorString();
 // true
 // ""
 // {"MDD_test","MDD_test_init.xml"}
-// "Warning: Alias equations of external objects are not Modelica compliant as in:
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// Warning: Alias equations of external objects are not Modelica compliant as in:
 //     getInteger.pkgIn.pkg = resetPointer.pkgOut[1].pkg
 //     packInt.pkgOut[1].pkg = resetPointer.pkgIn.pkg
 //     packInt.pkgIn.pkg = packager.pkgOut.pkg

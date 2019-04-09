@@ -1,0 +1,50 @@
+// name: UsesAnnotation1
+// status: correct
+//
+// Checks that only uses-annotations on top-level classes are takes into
+// consideration when loading models.
+//
+
+loadString("
+package A
+  model B
+    Real x;
+    function f
+      input Real x;
+      output Real y;
+    algorithm
+      y:= 2*x;
+      annotation(uses(Modelica(version=\"3.1\")));
+    end f;
+  equation
+    x = f(time);
+    annotation(uses(Modelica(version=\"3.2.1\")));
+  end B;
+  annotation(uses(Modelica(version=\"3.2.2\")));
+end A;
+");
+getErrorString();
+
+instantiateModel(A.B); getErrorString();
+
+// Result:
+// true
+// ""
+// "function A.B.f
+//   input Real x;
+//   output Real y;
+// algorithm
+//   y := 2.0 * x;
+// end A.B.f;
+//
+// class A.B
+//   Real x;
+// equation
+//   x = A.B.f(time);
+// end A.B;
+// "
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "
+// endResult

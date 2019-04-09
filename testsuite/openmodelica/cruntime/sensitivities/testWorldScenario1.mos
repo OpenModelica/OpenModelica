@@ -21,6 +21,5 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package SystemDynamics of version 2.1, but this package was already loaded with version unknown. You might experience problems if these versions are incompatible.
-// "
+// ""
 // endResult

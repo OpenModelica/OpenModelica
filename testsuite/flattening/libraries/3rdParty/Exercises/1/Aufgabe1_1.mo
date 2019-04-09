@@ -43,7 +43,7 @@ equation
           {-40,-20},{-40,0}}, color={0,0,255}));
   connect(currentSensor.p, ground.p)
     annotation (Line(points={{8,-20},{40,-20}}, color={0,0,255}));
-  annotation (uses(Modelica(version="3.2")),   Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="3.2.1")),   Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}),
                                                        graphics),
     experiment(StopTime=0.2),

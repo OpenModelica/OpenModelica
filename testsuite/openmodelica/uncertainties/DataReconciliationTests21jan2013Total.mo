@@ -1054,7 +1054,7 @@ versionBuild=7,
 versionDate="2010-10-25",
 dateModified = "2010-11-08 14:38:50Z",
 revisionId="$Id:: package.mo 4362 2010-11-08 14:40:58Z #$",
-uses(Complex(version="1.0"), ModelicaServices(version="1.1")),
+uses(Complex(version="3.2.3"), ModelicaServices(version="3.2.3")),
 conversion(
  noneFromVersion="3.1",
  noneFromVersion="3.0.1",
