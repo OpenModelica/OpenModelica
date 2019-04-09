@@ -58,9 +58,10 @@ end pendulum;
 
 model pendulum40
   pendulum pendel(N=40);
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
-          preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
+  annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
     experiment(StopTime=1));
 end pendulum40;
+
+annotation(uses(Modelica(version="3.2.1")));
 end NPendulum;
 

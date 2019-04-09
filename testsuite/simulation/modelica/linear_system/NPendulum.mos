@@ -78,14 +78,14 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 
 // Result:
 // true
-// ""
-// true
-// ""
-// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
 // "
+// true
+// ""
+// {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
+// ""
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0

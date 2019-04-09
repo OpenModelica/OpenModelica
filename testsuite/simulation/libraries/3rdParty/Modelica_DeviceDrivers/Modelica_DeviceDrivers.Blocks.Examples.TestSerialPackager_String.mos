@@ -35,6 +35,7 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
 // Warning: Alias equations of external objects are not Modelica compliant as in:
 //     addInteger.pkgOut[1].pkg = resetPointer.pkgIn.pkg
 //     getInteger.pkgIn.pkg = getString.pkgOut[1].pkg

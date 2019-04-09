@@ -41,7 +41,7 @@ equation
       points={{-46,10},{72,10},{72,70},{52,70}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end test2;
 
@@ -88,7 +88,7 @@ equation
       points={{-50,38},{12,38},{12,70},{8,70}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end electricalCircuit2;
 

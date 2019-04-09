@@ -2975,6 +2975,7 @@ This package contains a set of different <b>Rates</b> (state derivative variable
       end Utilities;
     end World3;
   end WorldDynamics;
+  annotation(version="2.1");
 end SystemDynamics;
 model SystemDynamics_WorldDynamics_World3_Scenario_1
  extends SystemDynamics.WorldDynamics.World3.Scenario_1;
