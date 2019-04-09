@@ -21,6 +21,7 @@ public:
   void save(double& var,double value);
   void save(int& var,double value);
   void save(bool& var,double value);
+  void save(std::string& var,const std::string& value);
   //void savePreVars(double vars [], unsigned int n);
 
 
@@ -28,6 +29,7 @@ public:
   double& pre(const double& var);
   int& pre(const int& var);
   bool& pre(const bool& var);
+  std::string& pre(const std::string& var);
   //Implementation of the Modelica edge  operator
   bool edge(double& var);
   bool edge(int& var);
@@ -41,6 +43,7 @@ public:
   bool changeDiscreteVar(double& var);
   bool changeDiscreteVar(int& var);
   bool changeDiscreteVar(bool& var);
+  bool changeDiscreteVar(std::string& var);
   //getCondition_type getCondition;
 
 private:

@@ -93,6 +93,7 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual const double& getRealVar(size_t i);
     virtual const int& getIntVar(size_t i);
     virtual const bool& getBoolVar(size_t i);
+    virtual const std::string& getStringVar(size_t i);
     virtual double* initRealArrayVar(size_t size, size_t start_index);
     virtual int* initIntArrayVar(size_t size, size_t start_index);
     virtual bool* initBoolArrayVar(size_t size, size_t start_index);
@@ -110,6 +111,7 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual double& getPreVar(const double& var);
     virtual int& getPreVar(const int& var);
     virtual bool& getPreVar(const bool& var);
+    virtual std::string& getPreVar(const std::string& var);
 
     virtual size_t getDimString() const;
     virtual size_t getDimBool() const;
@@ -145,6 +147,7 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     double* _pre_real_vars;
     int* _pre_int_vars;
     bool* _pre_bool_vars;
+    std::string* _pre_string_vars;
 };
 
 /** @} */ // end of coreSystem

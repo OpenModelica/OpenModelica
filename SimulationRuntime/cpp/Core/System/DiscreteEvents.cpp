@@ -62,6 +62,15 @@ void DiscreteEvents::save(bool& var,double value)
 }
 
 /**
+Saves a variable in _sim_vars->_pre_string_vars vector
+*/
+void DiscreteEvents::save(std::string& var,const std::string& value)
+{
+  _sim_vars->getPreVar(var) = value;
+}
+
+
+/**
 Implementation of the Modelica pre  operator
 */
 double& DiscreteEvents::pre(const double& var)
@@ -81,6 +90,14 @@ int& DiscreteEvents::pre(const int& var)
 Implementation of the Modelica pre  operator
 */
 bool& DiscreteEvents::pre(const bool& var)
+{
+  return _sim_vars->getPreVar(var);
+}
+
+/**
+Implementation of the Modelica pre  operator
+*/
+std::string& DiscreteEvents::pre(const std::string& var)
 {
   return _sim_vars->getPreVar(var);
 }
@@ -154,6 +171,12 @@ bool DiscreteEvents::changeDiscreteVar(int& var)
 bool DiscreteEvents::changeDiscreteVar(bool& var)
 {
   bool& pre_var = _sim_vars->getPreVar(var);
+  return var != pre_var;
+}
+
+bool DiscreteEvents::changeDiscreteVar(std::string& var)
+{
+  std::string& pre_var = _sim_vars->getPreVar(var);
   return var != pre_var;
 }
 
