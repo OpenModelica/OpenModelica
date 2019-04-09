@@ -46,11 +46,10 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // 2/2 (1): $cse1 = cos(y)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (jacobian) (3)
+// ########### Updated globalKnownVars (jacobian) (2)
 // ========================================
 // 1: input y.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input x:VARIABLE()  type: Real 
-// 3: input $res1:VARIABLE()  type: Real 
+// 2: input $res1:VARIABLE()  type: Real
 //
 //
 // ########### CSE Replacements (1/43)

@@ -92,14 +92,13 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 5/5 (1): $cse1 = CSE.FunctionCallTest8.f(time, $cse2)   [unknown |0|0|0|0|]
 //
 //
-// ########### Updated globalKnownVars (jacobian) (6)
+// ########### Updated globalKnownVars (jacobian) (5)
 // ========================================
 // 1: input $DER.u1.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input u1:VARIABLE()  type: Real 
-// 3: input C:PARAM()  = 1.0  type: Real 
-// 4: input $res1:VARIABLE()  type: Real 
-// 5: input $DER.u2:DUMMY_DER(fixed = false )  type: Real 
-// 6: input i:VARIABLE()  type: Real 
+// 2: input C:PARAM()  = 1.0  type: Real
+// 3: input $res1:VARIABLE()  type: Real
+// 4: input $DER.u2:DUMMY_DER(fixed = false )  type: Real
+// 5: input i:VARIABLE()  type: Real
 //
 //
 // ########### CSE Replacements (2/45)

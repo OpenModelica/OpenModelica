@@ -1473,7 +1473,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1:VARIABLE()  type: Real 
 // 2: input u1:VARIABLE()  type: Real 
@@ -1481,9 +1481,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: input $res1:VARIABLE()  type: Real 
 // 5: input R2:PARAM()  = 2.0  type: Real 
 // 6: input R1:PARAM()  = 1.0  type: Real 
-// 7: input uC:DUMMY_STATE()  type: Real 
-// 8: input iL:VARIABLE()  type: Real 
-// 9: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 7: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 //
@@ -1516,17 +1514,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1564,17 +1560,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1625,17 +1619,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1685,17 +1677,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1745,17 +1735,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1805,17 +1793,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1865,17 +1851,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1925,17 +1909,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -1985,17 +1967,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -2045,17 +2025,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:VARIABLE()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R1:PARAM()  = 1.0  type: Real 
-// 5: input R2:PARAM()  = 2.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R1:PARAM()  = 1.0  type: Real
+// 3: input R2:PARAM()  = 2.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3254,7 +3232,7 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input i1:VARIABLE()  type: Real 
 // 2: input u1:VARIABLE()  type: Real 
@@ -3262,9 +3240,7 @@ buildModel(testOptdaedump); getErrorString();
 // 4: input $res1:VARIABLE()  type: Real 
 // 5: input R1:PARAM()  = 1.0  type: Real 
 // 6: input R2:PARAM()  = 2.0  type: Real 
-// 7: input uC:DUMMY_STATE()  type: Real 
-// 8: input iL:STATE(1)()  type: Real 
-// 9: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 7: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 //
@@ -3297,17 +3273,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3345,17 +3319,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3406,17 +3378,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3466,17 +3436,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3526,17 +3494,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3586,17 +3552,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3646,17 +3610,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3706,17 +3668,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3766,17 +3726,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
@@ -3826,17 +3784,15 @@ buildModel(testOptdaedump); getErrorString();
 // BackendDAEType: jacobian
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (9)
+// Known variables only depending on parameters and constants - globalKnownVars (7)
 // ========================================
 // 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input iL:STATE(1)()  type: Real 
-// 3: input uC:DUMMY_STATE()  type: Real 
-// 4: input R2:PARAM()  = 2.0  type: Real 
-// 5: input R1:PARAM()  = 1.0  type: Real 
-// 6: input $res1:VARIABLE()  type: Real 
-// 7: input i2:VARIABLE()  type: Real 
-// 8: input u1:VARIABLE()  type: Real 
-// 9: input i1:VARIABLE()  type: Real 
+// 2: input R2:PARAM()  = 2.0  type: Real
+// 3: input R1:PARAM()  = 1.0  type: Real
+// 4: input $res1:VARIABLE()  type: Real
+// 5: input i2:VARIABLE()  type: Real
+// 6: input u1:VARIABLE()  type: Real
+// 7: input i1:VARIABLE()  type: Real
 //
 //
 // Alias Variables (1)
