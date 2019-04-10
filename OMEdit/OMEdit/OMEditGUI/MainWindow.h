@@ -51,6 +51,7 @@ extern "C" {
 #include <QMainWindow>
 #include <QDialog>
 #include <QProgressBar>
+#include <QMimeData>
 #include <QDomDocument>
 #include <QStackedWidget>
 #include <QActionGroup>
@@ -207,7 +208,7 @@ public:
   void closeEvent(QCloseEvent *event);
   int askForExit();
   void beforeClosingMainWindow();
-  void openDroppedFile(QDropEvent *event);
+  void openDroppedFile(const QMimeData *pMimeData);
   void openResultFiles(QStringList fileNames);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);

@@ -307,6 +307,8 @@ protected:
   virtual void resizeEvent(QResizeEvent *pEvent);
   virtual void keyPressEvent(QKeyEvent *pEvent);
   virtual QMimeData* createMimeDataFromSelection() const;
+  virtual bool canInsertFromMimeData(const QMimeData *source) const;
+  virtual void insertFromMimeData(const QMimeData *source);
   virtual void focusInEvent(QFocusEvent *event);
   virtual void focusOutEvent(QFocusEvent *event);
   void paintEvent(QPaintEvent *e);
