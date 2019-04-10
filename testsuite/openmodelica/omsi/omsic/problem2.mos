@@ -1,0 +1,70 @@
+// name: problem2
+// keywords: omsi omsic fmu fmi
+// status: correct
+// teardown_command: rm -rf problem2.fmutmp problem2.fmu problem2_systemCall.log problem2_result_diff.log problem2*res.mat problem2-tmp
+//
+// Tests simulating OMSIC OMSU/FMU with OMSimulator and check results
+//
+//
+
+
+loadString("
+model problem2
+  Real u1(start=1), u2(start=1), u3(start=1);
+  Real v1(start=-0.1, fixed=true);
+  Real w1(start=0.1, fixed=true);
+  Real p1 = 0.5;
+  parameter Integer p2 = 7;
+equation
+   u1 + 5*u2 + u3 = 0.5;
+  -u1 +   u2 - u3 = 10*v1;
+   u1 + 3*u2 - u3 = -0.1;
+
+  der(v1) = v1*p1*p2;
+  der(w1) = sin(w1*p1);
+end problem2;
+"); getErrorString();
+
+// Simulate model for reference results
+simulate(problem2); getErrorString();
+
+// Build omsic FMU
+setCommandLineOptions("--simCodeTarget=omsic --removeSimpleEquations=none"); getErrorString();
+buildModelFMU(problem2); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator problem2.fmu --intervals=500 --resultFile=\"problem2_OMS_res.mat\" --suppressPath=true --tempDir=\"problem2-tmp\"", "problem2_systemCall.log"); getErrorString();
+readFile("problem2_systemCall.log");
+
+// Compare results
+compareSimulationResults("problem2_OMS_res.mat",
+                         "problem2_res.mat",
+                         "problem2_result_diff.log",
+                         vars = {"der(w1)", "der(v1)","u1","u2","u3","v1","w1","p1","p2"}
+);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "problem2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// "problem2.fmu"
+// ""
+// 0
+// ""
+// "info:    maximum step size for 'model.root': 0.100000
+// info:    Result file: problem2_OMS_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 30 NumRhsEvals  = 37 NumLinSolvSetups = 8
+//          NumNonlinSolvIters = 36 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// "
+// {"Files Equal!"}
+// endResult
