@@ -524,7 +524,7 @@ class ModelWidgetContainer : public QMdiArea
   Q_OBJECT
 public:
   ModelWidgetContainer(QWidget *pParent = 0);
-  void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true, StringHandler::ViewType viewType = StringHandler::NoView);
+  void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true);
   ModelWidget* getCurrentModelWidget();
   ModelWidget* getModelWidget(const QString &className);
   QMdiSubWindow* getCurrentMdiSubWindow();
@@ -543,6 +543,7 @@ private:
   bool mShowGridLines;
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
+  QMdiSubWindow *mpLastActiveSubWindow;
   void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);

@@ -1768,40 +1768,37 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
  * \brief LibraryTreeModel::showModelWidget
  * Shows the ModelWidget
  * \param pLibraryTreeItem
- * \param text
  * \param show
  */
-void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show, StringHandler::ViewType viewType)
+void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (show && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-      && ((viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
-          (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
-           pLibraryTreeItem->isDocumentationClass()) ||
-          (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
+      && ((pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
+          (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() && pLibraryTreeItem->isDocumentationClass()) ||
+          (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
            OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
     bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
     MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
-  } else {
-    // only switch to modeling perspective if show is true and we are not in a debugging perspective.
-    if (show && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
-      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
-    }
-    if (!pLibraryTreeItem->getModelWidget()) {
-      ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
-      pLibraryTreeItem->setModelWidget(pModelWidget);
-    }
-    /* Ticket #3797
+  }
+  // only switch to modeling perspective if show is true and we are not in a debugging perspective.
+  if (show && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
+    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
+  }
+  if (!pLibraryTreeItem->getModelWidget()) {
+    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
+    pLibraryTreeItem->setModelWidget(pModelWidget);
+  }
+  /* Ticket #3797
      * Only show the class Name as window title instead of full path
      */
-    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
-    if (show) {
-      MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true, viewType);
-    } else {
-      pLibraryTreeItem->getModelWidget()->hide();
-    }
+  pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
+  if (show) {
+    MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
+  } else {
+    pLibraryTreeItem->getModelWidget()->hide();
   }
   QApplication::restoreOverrideCursor();
 }
@@ -2976,22 +2973,6 @@ void LibraryTreeView::createActions()
   mpOpenClassAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::openClass, this);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
   connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
-  // view icon Action
-  mpViewIconAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::viewIcon, this);
-  mpViewIconAction->setStatusTip(Helper::viewIconTip);
-  connect(mpViewIconAction, SIGNAL(triggered()), SLOT(viewIcon()));
-  // view diagram Action
-  mpViewDiagramAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::viewDiagram, this);
-  mpViewDiagramAction->setStatusTip(Helper::viewDiagramTip);
-  connect(mpViewDiagramAction, SIGNAL(triggered()), SLOT(viewDiagram()));
-  // view text Action
-  mpViewTextAction = new QAction(QIcon(":/Resources/icons/modeltext.svg"), Helper::viewText, this);
-  mpViewTextAction->setStatusTip(Helper::viewTextTip);
-  connect(mpViewTextAction, SIGNAL(triggered()), SLOT(viewText()));
-  // view documentation Action
-  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, this);
-  mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
-  connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
   // information Action
   mpInformationAction = new QAction(Helper::information, this);
   mpInformationAction->setStatusTip(tr("Opens the class information dialog"));
@@ -3253,10 +3234,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
         case LibraryTreeItem::Modelica:
         default:
           menu.addAction(mpOpenClassAction);
-          menu.addAction(mpViewIconAction);
-          menu.addAction(mpViewDiagramAction);
-          menu.addAction(mpViewTextAction);
-          menu.addAction(mpViewDocumentationAction);
           menu.addAction(mpInformationAction);
           if (!pLibraryTreeItem->isSystemLibrary()) {
             menu.addSeparator();
@@ -3364,9 +3341,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpUnloadCompositeModelFileAction);
           break;
         case LibraryTreeItem::OMS:
-          menu.addAction(mpViewDiagramAction);
           if (pLibraryTreeItem->isTopLevel() || (!pLibraryTreeItem->getOMSConnector())) {
-            menu.addSeparator();
             menu.addAction(mpOMSRenameAction);
           }
           if (pLibraryTreeItem->isTopLevel()) {
@@ -3400,57 +3375,6 @@ void LibraryTreeView::openClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::viewIcon
- * Shows the icon view of the selected LibraryTreeItem.
- */
-void LibraryTreeView::viewIcon()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::Icon);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::viewDiagram
- * Shows the diagram view of the selected LibraryTreeItem.
- */
-void LibraryTreeView::viewDiagram()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::Diagram);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::viewText
- * Shows the text view of the selected LibraryTreeItem.
- */
-void LibraryTreeView::viewText()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::ModelicaText);
-  }
-}
-
-/*!
- * \brief LibraryTreeView::viewDocumentation
- * Shows the documentation view of the selected LibraryTreeItem.
- */
-void LibraryTreeView::viewDocumentation()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
-    bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
-    MainWindow::instance()->getDocumentationDockWidget()->show();
-    MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
   }
 }
 

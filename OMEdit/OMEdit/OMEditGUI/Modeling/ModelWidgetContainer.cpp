@@ -6493,6 +6493,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   pModelSwitcherLayout->setContentsMargins(0, 0, 0, 0);
   pModelSwitcherLayout->addWidget(mpRecentModelsList, 0, 0);
   mpModelSwitcherDialog->setLayout(pModelSwitcherLayout);
+  mpLastActiveSubWindow = 0;
   // install QApplication event filter to handle the ctrl+tab and ctrl+shift+tab
   QApplication::instance()->installEventFilter(this);
   connect(this, SIGNAL(subWindowActivated(QMdiSubWindow*)), SLOT(currentModelWidgetChanged(QMdiSubWindow*)));
@@ -6514,7 +6515,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
 }
 
-void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
+void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
 {
   if (pModelWidget->isVisible() || pModelWidget->isMinimized()) {
     QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
@@ -6567,33 +6568,24 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
     return;
   }
-  // show the view user wants
-  if (viewType == StringHandler::Icon) {
-    pModelWidget->getIconViewToolButton()->setChecked(true);
-  } else if (viewType == StringHandler::Diagram) {
-    pModelWidget->getDiagramViewToolButton()->setChecked(true);
-  } else if (viewType == StringHandler::ModelicaText) {
-    pModelWidget->getTextViewToolButton()->setChecked(true);
-  } else {
-    // get the preferred view to display
-    QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
-    if (!preferredView.isEmpty()) {
-      if (preferredView.compare("text") == 0) {
-        pModelWidget->getTextViewToolButton()->setChecked(true);
-      } else {
-        pModelWidget->getDiagramViewToolButton()->setChecked(true);
-      }
-    } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
-      loadPreviousViewType(pModelWidget);
+  // get the preferred view to display
+  QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
+  if (!preferredView.isEmpty()) {
+    if (preferredView.compare("text") == 0) {
+      pModelWidget->getTextViewToolButton()->setChecked(true);
     } else {
-      QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
-      if (defaultView.compare(Helper::iconView) == 0) {
-        pModelWidget->getIconViewToolButton()->setChecked(true);
-      } else if (defaultView.compare(Helper::textView) == 0) {
-        pModelWidget->getTextViewToolButton()->setChecked(true);
-      } else {
-        pModelWidget->getDiagramViewToolButton()->setChecked(true);
-      }
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    }
+  } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
+    loadPreviousViewType(pModelWidget);
+  } else {
+    QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
+    if (defaultView.compare(Helper::iconView) == 0) {
+      pModelWidget->getIconViewToolButton()->setChecked(true);
+    } else if (defaultView.compare(Helper::textView) == 0) {
+      pModelWidget->getTextViewToolButton()->setChecked(true);
+    } else {
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
   }
   pModelWidget->updateViewButtonsBasedOnAccess();
@@ -7048,6 +7040,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.
    */
+  if (mpLastActiveSubWindow == pSubWindow) {
+    return;
+  }
+  mpLastActiveSubWindow = pSubWindow;
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
   }

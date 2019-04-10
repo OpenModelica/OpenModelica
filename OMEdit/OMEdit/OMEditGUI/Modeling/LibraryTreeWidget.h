@@ -305,7 +305,7 @@ public:
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
-  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true, StringHandler::ViewType viewType = StringHandler::NoView);
+  void showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show = true);
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
@@ -368,10 +368,6 @@ public:
 private:
   LibraryWidget *mpLibraryWidget;
   QAction *mpOpenClassAction;
-  QAction *mpViewIconAction;
-  QAction *mpViewDiagramAction;
-  QAction *mpViewTextAction;
-  QAction *mpViewDocumentationAction;
   QAction *mpInformationAction;
   QAction *mpNewModelicaClassAction;
   QAction *mpNewModelicaClassEmptyAction;
@@ -422,10 +418,6 @@ public slots:
   void libraryTreeItemExpanded(QModelIndex index);
   void showContextMenu(QPoint point);
   void openClass();
-  void viewIcon();
-  void viewDiagram();
-  void viewText();
-  void viewDocumentation();
   void openInformationDialog();
   void createNewModelicaClass();
   void createNewModelicaClassEmpty();
