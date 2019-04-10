@@ -1812,6 +1812,45 @@ QMimeData* PlainTextEdit::createMimeDataFromSelection() const
 }
 
 /*!
+ * \brief PlainTextEdit::canInsertFromMimeData
+ * Reimplementation of QPlainTextEdit::canInsertFromMimeData.\n
+ * Checks the QMimeData format and return true if the format is allowed.
+ * \param source
+ * \return
+ */
+bool PlainTextEdit::canInsertFromMimeData(const QMimeData *source) const
+{
+  // check mimeData to see if we can insert from it
+  if (source->hasFormat(Helper::modelicaComponentFormat)) {
+    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+  } else {
+    return QPlainTextEdit::canInsertFromMimeData(source);
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::insertFromMimeData
+ * Checks the QMimeData format and performs a specific operation.
+ * \param source
+ */
+void PlainTextEdit::insertFromMimeData(const QMimeData *source)
+{
+  if (source->hasFormat(Helper::modelicaComponentFormat)) {
+    QByteArray itemData = source->data(Helper::modelicaComponentFormat);
+    QDataStream dataStream(&itemData, QIODevice::ReadOnly);
+    QString className;
+    dataStream >> className;
+    textCursor().insertFragment(QTextDocumentFragment::fromPlainText(className));
+    ensureCursorVisible();
+    setFocus(Qt::ActiveWindowFocusReason);
+  } else if (source->hasFormat(Helper::modelicaFileFormat)) {
+    MainWindow::instance()->openDroppedFile(source);
+  } else {
+    QPlainTextEdit::insertFromMimeData(source);
+  }
+}
+
+/*!
  * \brief PlainTextEdit::focusInEvent
  * Reimplementation of QPlainTextEdit::focusInEvent(). Stops the auto save timer.
  * \param event

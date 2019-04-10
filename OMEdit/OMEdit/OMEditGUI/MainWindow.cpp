@@ -604,15 +604,15 @@ void MainWindow::beforeClosingMainWindow()
 /*!
  * \brief MainWindow::openDroppedFile
  * Opens the dropped file.
- * \param event
+ * \param pMimeData
  */
-void MainWindow::openDroppedFile(QDropEvent *event)
+void MainWindow::openDroppedFile(const QMimeData *pMimeData)
 {
   int progressValue = 0;
-  mpProgressBar->setRange(0, event->mimeData()->urls().size());
+  mpProgressBar->setRange(0, pMimeData->urls().size());
   showProgressBar();
   //retrieves the filenames of all the dragged files in list and opens the valid files.
-  foreach (QUrl fileUrl, event->mimeData()->urls()) {
+  foreach (QUrl fileUrl, pMimeData->urls()) {
     QFileInfo fileInfo(fileUrl.toLocalFile());
     // show file loading message
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4373,7 +4373,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     event->ignore();
     return;
   }
-  openDroppedFile(event);
+  openDroppedFile(event->mimeData());
   event->accept();
 }
 

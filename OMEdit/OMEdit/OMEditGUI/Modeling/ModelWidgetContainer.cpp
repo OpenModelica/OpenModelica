@@ -2138,7 +2138,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
     event->ignore();
     return;
   } else if (event->mimeData()->hasFormat(Helper::modelicaFileFormat)) {
-    pMainWindow->openDroppedFile(event);
+    pMainWindow->openDroppedFile(event->mimeData());
     event->accept();
   } else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat)) {
     // check if the class is system library
@@ -6688,8 +6688,12 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   /* If focus is set to LibraryTreeView, DocumentationViewer, QMenuBar etc. then try to validate the text because user might have
    * updated the text manually.
    */
+  /* Don't check LibraryTreeView focus since now OMEdit supports drag and drop of classnames on text view See ticket:5128
+   * The user is expected to click on LibraryTreeView and drag items on the working text view which might be invalid.
+   * So we don't want to validate text in that case.
+   */
   if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
-      (event->type() == QEvent::FocusIn && (qobject_cast<LibraryTreeView*>(object) || qobject_cast<DocumentationViewer*>(object)))) {
+      (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
     ModelWidget *pModelWidget = getCurrentModelWidget();
     if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
       LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
