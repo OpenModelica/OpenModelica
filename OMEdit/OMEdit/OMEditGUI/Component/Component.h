@@ -204,7 +204,6 @@ public:
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
   QAction* getOpenClassAction() {return mpOpenClassAction;}
-  QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
@@ -276,7 +275,6 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
   QAction *mpOpenClassAction;
-  QAction *mpViewDocumentationAction;
   QAction *mpSubModelAttributesAction;
   QAction *mpElementPropertiesAction;
   ResizerItem *mpBottomLeftResizerItem;
@@ -373,7 +371,6 @@ public slots:
   void showAttributes();
   void fetchInterfaceData();
   void openClass();
-  void viewDocumentation();
   void showSubModelAttributes();
   void showElementPropertiesDialog();
   void updateDynamicSelect(double time);

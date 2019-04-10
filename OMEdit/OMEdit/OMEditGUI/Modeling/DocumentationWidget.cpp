@@ -606,7 +606,8 @@ void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTr
       updatePreviousNextButtons();
       if (mDocumentationHistoryPos > -1) {
         cancelDocumentation();
-        showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
       } else {
         mpEditInfoAction->setDisabled(true);
         mpEditRevisionsAction->setDisabled(true);
@@ -631,7 +632,8 @@ void DocumentationWidget::previousDocumentation()
 {
   if (mDocumentationHistoryPos > 0) {
     mDocumentationHistoryPos--;
-    showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
   }
 }
 
@@ -644,7 +646,8 @@ void DocumentationWidget::nextDocumentation()
 {
   if ((mDocumentationHistoryPos + 1) < mpDocumentationHistoryList->count()) {
     mDocumentationHistoryPos++;
-    showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
   }
 }
 
@@ -1201,7 +1204,7 @@ void DocumentationViewer::processLinkClick(QUrl url)
       LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(resourceLink);
       // send the new className to DocumentationWidget
       if (pLibraryTreeItem) {
-        mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     }
   } else { // if it is normal http request then check if its not redirected to https

@@ -1851,10 +1851,6 @@ void Component::createActions()
   mpOpenClassAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
   connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
-  // View Documentation Action
-  mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, mpGraphicsView);
-  mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
-  connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
   // SubModel attributes Action
   mpSubModelAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpSubModelAttributesAction->setStatusTip(tr("Shows the submodel attributes"));
@@ -2913,15 +2909,6 @@ void Component::openClass()
   MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(mpLibraryTreeItem->getNameStructure());
 }
 
-//! Slot that opens up the component Modelica class in a documentation view.
-void Component::viewDocumentation()
-{
-  MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpLibraryTreeItem);
-  bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
-  MainWindow::instance()->getDocumentationDockWidget()->show();
-  MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
-}
-
 /*!
  * \brief Component::showSubModelAttributes
  * Slot that opens up the CompositeModelSubModelAttributes Dialog.
@@ -3000,7 +2987,6 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getAttributesAction());
         menu.addSeparator();
         menu.addAction(pComponent->getOpenClassAction());
-        menu.addAction(pComponent->getViewDocumentationAction());
         menu.addSeparator();
         menu.addAction(mpGraphicsView->getDuplicateAction());
         if (pComponent->isInheritedComponent()) {
