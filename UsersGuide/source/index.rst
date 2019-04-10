@@ -42,6 +42,7 @@ Generated on |date| at |time|
   omchelptext
   simulationflags
   technical_details
+  dataReconciliation
   faq
 
 .. toctree::
