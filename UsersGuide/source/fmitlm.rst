@@ -25,7 +25,7 @@ The export FMU command is also integrated with OMEdit.
 Select FMI > Export FMU the FMU package is generated in the
 current directory of omc. You can use the cd() command to see the
 current location. You can set which version of FMI to export through
-OMEdit settings, see section :ref:`omedit-fmi-settings`.
+OMEdit settings, see section :ref:`omedit-options-fmi`.
 
 To export the bouncing ball example to an FMU, use the following commands:
 

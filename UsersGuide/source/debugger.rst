@@ -26,8 +26,8 @@ The compilation time overhead from having this tracing on is less than
 write the xml file containing the transformation tracing information.
 
 Enable -d=infoXmlOperations in Tools->Options->Simulation (see section
-:ref:`omedit-settings-simulation`) OR alternatively click on the checkbox *Generate operations in
-the info xml* in Tools->Options->Debugger (see section :ref:`omedit-settings-debugger`) which
+:ref:`omedit-options-simulation`) OR alternatively click on the checkbox *Generate operations in
+the info xml* in Tools->Options->Debugger (see section :ref:`omedit-options-debugger`) which
 performs the same thing.
 
 This adds all the transformations performed by OpenModelica on the
@@ -85,9 +85,8 @@ The Algorithmic Debugger
 ------------------------
 
 This section gives a short description how to get started using the
-algorithmic debugger in OMEdit. See section :ref:`omedit-settings-simulation` for further details
-of debugger options/settings. The Algorithmic Debugger window can be
-launched from Tools->Windows->Algorithmic Debugger.
+algorithmic debugger in OMEdit. See section :ref:`omedit-options-simulation` for further details
+of debugger options.
 
 Adding Breakpoints
 ~~~~~~~~~~~~~~~~~~
@@ -95,10 +94,10 @@ Adding Breakpoints
 There are two ways to add the breakpoints,
 
 -  Click directly on the line number in Text View, a red circle is
-       created indicating a breakpoint as shown in :numref:`omedit-add-breakpoint`.
+   created indicating a breakpoint as shown in :numref:`omedit-add-breakpoint`.
 
 -  Open the Algorithmic Debugger window and add a breakpoint using the
-       right click menu of Breakpoints Browser window.
+   right click menu of Breakpoints Browser window.
 
 .. figure :: media/omedit-add-breakpoint.png
   :name: omedit-add-breakpoint
@@ -115,16 +114,16 @@ to add the breakpoints.
 There are four ways to start the debugger,
 
 -  Open the Simulation Setup and click on Launch Algorithmic Debugger
-       before pressing Simulate.
+   before pressing Simulate.
 
 -  Right click the model in Libraries Browser and select Simulate with
-       Algorithmic Debugger.
+   Algorithmic Debugger.
 
 -  Open the Algorithmic Debugger window and from menu select
-       Debug-> :ref:`omedit-debug-configurations`.
+   Debug-> :ref:`omedit-debug-configurations`.
 
 -  Open the Algorithmic Debugger window and from menu select
-       Debug-> :ref:`omedit-debug-attach`.
+   Debug-> :ref:`omedit-debug-attach`.
 
 .. _omedit-debug-configurations :
 
@@ -167,21 +166,21 @@ Using the Algorithmic Debugger Window
 the following browsers,
 
 -  *Stack Frames Browser* – shows the list of frames. It contains the
-       program context buttons like resume, interrupt, exit, step over,
-       step in, step return. It also contains a threads drop down which
-       allows switching between different threads.
+   program context buttons like resume, interrupt, exit, step over,
+   step in, step return. It also contains a threads drop down which
+   allows switching between different threads.
 
 -  *BreakPoints Browser* – shows the list of breakpoints. Allows
-       adding/editing/removing breakpoints.
+   adding/editing/removing breakpoints.
 
 -  *Locals Browser* – Shows the list of local variables with values.
-       Select the variable and the value will be shown in the bottom
-       right window. This is just for convenience because some variables
-       might have long values.
+   Select the variable and the value will be shown in the bottom
+   right window. This is just for convenience because some variables
+   might have long values.
 
 -  *Debugger CLI* – shows the commands sent to gdb and their responses.
-       This is for advanced users who want to have more control of the
-       debugger. It allows sending commands to gdb.
+   This is for advanced users who want to have more control of the
+   debugger. It allows sending commands to gdb.
 
 -  *Output Browser* – shows the output of the debugged executable.
 

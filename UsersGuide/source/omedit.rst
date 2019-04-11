@@ -15,16 +15,16 @@ editing, and simulating models:
 -  *Modeling* – Easy model creation for Modelica models.
 
 -  *Pre-defined models* – Browsing the Modelica Standard library to
-       access the provided models.
+   access the provided models.
 
 -  *User defined models* – Users can create their own models for
-       immediate usage and later reuse.
+   immediate usage and later reuse.
 
 -  *Component interfaces* – Smart connection editing for drawing and
-       editing connections between model interfaces.
+   editing connections between model interfaces.
 
 -  *Simulation* – Subsystem for running simulations and specifying
-       simulation parameters start and stop time, etc.
+   simulation parameters start and stop time, etc.
 
 -  *Plotting* – Interface to plot variables from simulated models.
 
@@ -85,7 +85,7 @@ All browsers except for Message Browser can be docked into left or right
 column. The Messages Browser can be docked into top or bottom
 areas. If you want OMEdit to remember the new docked position of the
 browsers then you must enable Preserve User's GUI Customizations option,
-see section :ref:`omedit-settings-general`.
+see section :ref:`omedit-options-general`.
 
 .. _omedit-filter-classes :
 
@@ -105,7 +105,7 @@ Browser has right click menu for easy manipulation and usage of the
 class. The classes are shown in a tree structure with name and icon. The
 protected classes are not shown by default. If you want to see the
 protected classes then you must enable the Show Protected Classes
-option, see section :ref:`omedit-settings-general`.
+option, see section :ref:`omedit-options-general`.
 
 .. figure :: media/omedit-libraries-browser.png
 
@@ -162,7 +162,7 @@ Shows the list of errors. Following kinds of error can occur,
 
 -  Scripting
 
-See section :ref:`omedit-settings-messages` for Messages Browser options.
+See section :ref:`omedit-options-messages` for Messages Browser options.
 
 Perspectives
 ------------
@@ -189,7 +189,7 @@ The Welcome Perspective shows the list of recent files and the list of
 latest news from https://www.openmodelica.org/.
 See :numref:`omedit-welcome`. The orientation of recent files and latest news can be
 horizontal or vertical. User is allowed to show/hide the latest news.
-See section :ref:`omedit-settings-general`.
+See section :ref:`omedit-options-general`.
 
 Modeling Perspective
 ~~~~~~~~~~~~~~~~~~~~
@@ -203,7 +203,7 @@ design their models. See :numref:`omedit-modeling-perspective`.
   OMEdit Modeling Perspective.
 
 The Modeling Perspective interface can be viewed in two different modes,
-the tabbed view and subwindow view, see section :ref:`omedit-settings-general`.
+the tabbed view and subwindow view, see section :ref:`omedit-options-general`.
 
 Plotting Perspective
 ~~~~~~~~~~~~~~~~~~~~
@@ -214,7 +214,7 @@ simulation of the model is finished successfully. It will also become
 active when user opens any of the OpenModelica’s supported result file.
 Similar to Modeling Perspective this perspective can also be viewed in
 two different modes, the tabbed view and subwindow view, see section
-:ref:`omedit-settings-general`.
+:ref:`omedit-options-general`.
 
 .. figure :: media/omedit-plotting-perspective.png
   :name: omedit-plotting-perspective
@@ -341,7 +341,7 @@ Tools Menu
 -  *OpenModelica Command Prompt* - Opens the OpenModelica Command Prompt (Only
    available on Windows).
 -  *Open Working Directory* - Opens the current working directory.
--  *Open Terminal* - Runs the terminal command set in :ref:`omedit-settings-general`.
+-  *Open Terminal* - Runs the terminal command set in :ref:`omedit-options-general`.
 -  *Options* - Opens the options window.
 
 Help Menu
@@ -812,7 +812,7 @@ Interactive Simulation
   Interactive simulation is an experimental feature.
 
 Interactive simulation is enabled by selecting interactive
-simulation in the :ref:`General <omedit-general-tab>` tab of the simulation settings.
+simulation in the :ref:`General <omedit-general-tab>` tab of the simulation setup.
 
 There are two main modes of execution: asynchronous and synchronous
 (simulate with steps). The difference is that in synchronous (step mode),
@@ -838,31 +838,31 @@ Users can create shapes of their own by using the shape creation tools
 available in OMEdit.
 
 -  *Line Tool* – Draws a line. A line is created with a minimum of two
-       points. In order to create a line, the user first selects the
-       line tool from the toolbar and then click on the Icon/Diagram
-       View; this will start creating a line. If a user clicks again on
-       the Icon/Diagram View a new line point is created. In order to
-       finish the line creation, user has to double click on the
-       Icon/Diagram View.
+   points. In order to create a line, the user first selects the
+   line tool from the toolbar and then click on the Icon/Diagram
+   View; this will start creating a line. If a user clicks again on
+   the Icon/Diagram View a new line point is created. In order to
+   finish the line creation, user has to double click on the
+   Icon/Diagram View.
 
 -  *Polygon Tool* – Draws a polygon. A polygon is created in a similar
-       fashion as a line is created. The only difference between a line
-       and a polygon is that, if a polygon contains two points it will
-       look like a line and if a polygon contains more than two points
-       it will become a closed polygon shape.
+   fashion as a line is created. The only difference between a line
+   and a polygon is that, if a polygon contains two points it will
+   look like a line and if a polygon contains more than two points
+   it will become a closed polygon shape.
 
 -  *Rectangle Tool* – Draws a rectangle. The rectangle only contains two
-       points where first point indicates the starting point and the
-       second point indicates the ending the point. In order to create
-       rectangle, the user has to select the rectangle tool from the
-       toolbar and then click on the Icon/Diagram View, this click will
-       become the first point of rectangle. In order to finish the
-       rectangle creation, the user has to click again on the
-       Icon/Diagram View where he/she wants to finish the rectangle. The
-       second click will become the second point of rectangle.
+   points where first point indicates the starting point and the
+   second point indicates the ending the point. In order to create
+   rectangle, the user has to select the rectangle tool from the
+   toolbar and then click on the Icon/Diagram View, this click will
+   become the first point of rectangle. In order to finish the
+   rectangle creation, the user has to click again on the
+   Icon/Diagram View where he/she wants to finish the rectangle. The
+   second click will become the second point of rectangle.
 
 -  *Ellipse Tool* – Draws an ellipse. The ellipse is created in a
-       similar way as a rectangle is created.
+   similar way as a rectangle is created.
 
 -  *Text Tool* – Draws a text label.
 
@@ -950,14 +950,14 @@ Where the file ``Resources/hello.js`` then contains:
   }
 
 
-Settings
---------
+Options
+-------
 
-OMEdit allows users to save several settings which will be remembered
+OMEdit allows users to save several options which will be remembered
 across different sessions of OMEdit. The Options Dialog can be used for
-reading and writing the settings.
+reading and writing the options.
 
-.. _omedit-settings-general :
+.. _omedit-options-general :
 
 General
 ~~~~~~~
@@ -1149,7 +1149,7 @@ Graphical Views
   -  *Preserve aspect ratio* – If true then the component’s aspect ratio
      is preserved while scaling.
 
-.. _omedit-settings-simulation :
+.. _omedit-options-simulation :
 
 Simulation
 ~~~~~~~~~~
@@ -1220,7 +1220,7 @@ Simulation
     -  *Formatted Text –* Shows the simulation output in the form of
        formatted text.
 
-.. _omedit-settings-messages :
+.. _omedit-options-messages :
 
 Messages
 ~~~~~~~~
@@ -1337,7 +1337,7 @@ Figaro
 
   -  *Figaro Processor* – the Figaro processor location.
 
-.. _omedit-settings-debugger :
+.. _omedit-options-debugger :
 
 Debugger
 ~~~~~~~~
@@ -1370,7 +1370,7 @@ Debugger
   -  *Generate operations in the info xml* – if true then adds the
      operations information in the info xml file.
 
-.. _omedit-fmi-settings :
+.. _omedit-options-fmi :
 
 FMI
 ~~~
