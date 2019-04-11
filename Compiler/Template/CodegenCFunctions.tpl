@@ -6146,6 +6146,12 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
   case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, &auxFunction)
 
+  case CALL(path=IDENT(name="$stateSelectionSet"), expLst=ICONST(integer=setIndex)::_) then
+    'stateSelectionSet(data, threadData, 1, 1, <%setIndex%>, 0)'
+
+  case CALL(path=IDENT(name="$initialStateSelection"), expLst=ICONST(integer=setIndex)::_) then
+    'initialStateSelection(data, threadData, 1, 1, <%setIndex%>, 0)'
+
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), _, _}) then
     match Config.simCodeTarget()
       case "omsic" then

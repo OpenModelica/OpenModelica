@@ -1650,7 +1650,7 @@ algorithm
   end for;
 end generateStateSets;
 
-protected function makeStartExp
+public function makeStartExp
 "generate the expression: $START.inCref"
   input DAE.ComponentRef inCref;
   output DAE.Exp outExp;
