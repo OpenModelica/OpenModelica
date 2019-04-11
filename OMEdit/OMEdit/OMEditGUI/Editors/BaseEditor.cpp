@@ -1822,7 +1822,8 @@ bool PlainTextEdit::canInsertFromMimeData(const QMimeData *source) const
 {
   // check mimeData to see if we can insert from it
   if (source->hasFormat(Helper::modelicaComponentFormat)) {
-    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
+        && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica;
   } else {
     return QPlainTextEdit::canInsertFromMimeData(source);
   }
@@ -1840,6 +1841,9 @@ void PlainTextEdit::insertFromMimeData(const QMimeData *source)
     QDataStream dataStream(&itemData, QIODevice::ReadOnly);
     QString className;
     dataStream >> className;
+    if (mpBaseEditor->getModelWidget()) {
+      className = StringHandler::makeClassNameRelative(className, mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+    }
     textCursor().insertFragment(QTextDocumentFragment::fromPlainText(className));
     ensureCursorVisible();
     setFocus(Qt::ActiveWindowFocusReason);
