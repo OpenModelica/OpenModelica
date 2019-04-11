@@ -242,6 +242,8 @@ algorithm
   // create residual system
   retSystem := BackendDAEUtil.createEqSystem(travArgs.newDAEVars);
   retSystem := BackendDAEUtil.setEqSystEqs(retSystem, travArgs.newDAEEquations);
+  retSystem := BackendDAEUtil.setEqSystRemovedEqns(retSystem, syst.removedEqs);
+
   if exec then execStat("DAEmode: created system:  " + intString(BackendDAEUtil.systemSize(retSystem)) + ": " );  end if;
 
   syst := retSystem;
