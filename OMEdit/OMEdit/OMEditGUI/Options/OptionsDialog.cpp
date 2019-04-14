@@ -210,6 +210,11 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
   }
+  // read the max. text length to draw on a library icon
+  if (mpSettings->contains("libraryIconMaxTextLength")) {
+    ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = mpSettings->value("libraryIconMaxTextLength").toInt(); // set cached value
+  }
+  mpGeneralSettingsPage->getLibraryIconTextLengthSpinBox()->setValue(ShapeAnnotation::maxTextLengthToShowOnLibraryIcon);
   // read show protected classes
   if (mpSettings->contains("showProtectedClasses")) {
     mpGeneralSettingsPage->setShowProtectedClasses(mpSettings->value("showProtectedClasses").toBool());
@@ -958,6 +963,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->itemData(mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->currentIndex()).toInt());
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
+  // save the max. text length to show on a library icon
+  mpSettings->setValue("libraryIconMaxTextLength", mpGeneralSettingsPage->getLibraryIconTextLengthSpinBox()->value());
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // save show hidden classes
@@ -1797,6 +1804,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpLibraryIconSizeSpinBox = new QSpinBox;
   mpLibraryIconSizeSpinBox->setMinimum(16);
   mpLibraryIconSizeSpinBox->setValue(24);
+  // library icon max. text length, value is set later
+  mpLibraryIconTextLengthLabel = new Label(tr("Max. Library Icon Text Length to Show: *"));
+  mpLibraryIconTextLengthSpinBox = new QSpinBox;
+  mpLibraryIconTextLengthSpinBox->setMinimum(0);
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
@@ -1807,8 +1818,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->setColumnStretch(1, 1);
   pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeLabel, 0, 0);
   pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeSpinBox, 0, 1);
-  pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 1, 0, 1, 2);
-  pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 2, 0, 1, 2);
+  pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthLabel, 1, 0);
+  pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthSpinBox, 1, 1);
+  pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
+  pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Modeling View Mode
   mpModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
