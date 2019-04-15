@@ -1166,7 +1166,7 @@ Simulation
     -  *Show additional information from the initialization process* - prints the
        information from the initialization process
 
-    -  *Evaluate all parameters at compile time* - makes the simulation more
+    -  *Evaluate all parameters (faster simulation, cannot change them at runtime)* - makes the simulation more
        efficient but you have to recompile the model if you want to change the
        parameter instead of re-simulate.
 
