@@ -258,6 +258,8 @@ private:
   bool isAnyItemSelectedAndEditable(int key);
   Component* connectorComponentAtPosition(QPoint position);
   Component* stateComponentAtPosition(QPoint position);
+  bool isParameterConnectorSizing(Component *pComponent, QString parameter);
+  int numberOfComponentConnections(Component *pComponent);
 signals:
   void mouseManhattanize();
   void mouseDelete();

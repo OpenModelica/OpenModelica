@@ -858,12 +858,6 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
  */
 void AddConnectionCommand::redoInternal()
 {
-  if (mAddConnection) {
-    if (!mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation)) {
-      setFailed(true);
-      return;
-    }
-  }
   // Add the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
   if (pStartComponent->getRootParentComponent()) {
@@ -881,6 +875,12 @@ void AddConnectionCommand::redoInternal()
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
+  if (mAddConnection) {
+    if (!mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation)) {
+      setFailed(true);
+      return;
+    }
+  }
 }
 
 /*!

@@ -1238,8 +1238,8 @@ void LineAnnotation::updateConnectionAnnotation()
     QString annotationString = QString("annotate=").append(getShapeAnnotation());
     // update the connection
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
-                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), annotationString);
+    pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
+                                getStartComponentName(), getEndComponentName(), annotationString);
   }
 }
 
