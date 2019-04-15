@@ -73,7 +73,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   }
   connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
   mpInitializationCheckBox = new QCheckBox(tr("Show additional information from the initialization process"));
-  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters at compile time"));
+  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpPedanticCheckBox = new QCheckBox(tr("Enable pedantic debug-mode, to get much more feedback"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
@@ -160,40 +160,6 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
  */
 bool TranslationFlagsWidget::applyFlags()
 {
-  // set matching algorithm
-//  MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpMatchingAlgorithmComboBox->currentText());
-//  // set index reduction
-//  MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpIndexReductionMethodComboBox->currentText());
-//  // set initialization
-//  if (mpInitializationCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=initialization");
-//  }
-//  // set evaluate all parameters
-//  if (mpEvaluateAllParametersCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=evaluateAllParameters");
-//  }
-//  // set NLS analytic jacobian
-//  if (mpNLSanalyticJacobianCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=NLSanalyticJacobian");
-//  }
-//  // set pedantic mode
-//  if (mpPedanticCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=pedantic");
-//  }
-//  // set parmodauto
-//  if (mpParmodautoCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=parmodauto");
-//  }
-//  // set new instantiation
-//  if (mpNewInstantiationCheckBox->isChecked()) {
-//    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=newInst");
-//  }
-//  // set command line options set manually by user. This can override above options.
-//  if (!MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpAdditionalTranslationFlagsTextBox->text())) {
-//    return false;
-//  }
-//  return true;
-
   if (!MainWindow::instance()->getOMCProxy()->setCommandLineOptions(commandLineOptions())) {
     return false;
   }

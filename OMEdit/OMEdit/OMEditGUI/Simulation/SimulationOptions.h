@@ -73,7 +73,7 @@ public:
     setMatchingAlgorithm("PFPlusExt");
     setIndexReductionMethod("dynamicStateSelection");
     setInitialization(true);
-    setEvaluateAllParameters(true);
+    setEvaluateAllParameters(false);
     setNLSanalyticJacobian(true);
     setPedantic(false);
     setParmodauto(false);
