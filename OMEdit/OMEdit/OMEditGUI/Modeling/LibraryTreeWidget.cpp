@@ -3965,22 +3965,23 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
+    bool isSystemLibrary = pLibraryTreeItem->isSystemLibrary();
     bool isModelicaLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica ? true : false;
     bool isTopLevel = pLibraryTreeItem->isTopLevel() ? true : false;
-    if (controlModifier && event->key() == Qt::Key_Up && isModelicaLibraryType && !isTopLevel) {
+    if (controlModifier && event->key() == Qt::Key_Up && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassUp();
-    } else if (controlModifier && event->key() == Qt::Key_Down && isModelicaLibraryType && !isTopLevel) {
+    } else if (controlModifier && event->key() == Qt::Key_Down && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassDown();
-    } else if (controlModifier && event->key() == Qt::Key_PageUp && isModelicaLibraryType && !isTopLevel) {
+    } else if (controlModifier && event->key() == Qt::Key_PageUp && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassTop();
-    } else if (controlModifier && event->key() == Qt::Key_PageDown && isModelicaLibraryType && !isTopLevel) {
+    } else if (controlModifier && event->key() == Qt::Key_PageDown && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassBottom();
     } else if (controlModifier && event->key() == Qt::Key_C) {
       QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
-      if (isModelicaLibraryType) {
+      if (!isSystemLibrary && isModelicaLibraryType) {
         unloadClass();
-      } else  if (isTopLevel) {
+      } else if (!isSystemLibrary && isTopLevel) {
         unloadCompositeModelOrTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
