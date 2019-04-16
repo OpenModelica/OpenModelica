@@ -193,6 +193,7 @@ public:
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
   void emitPrepareGeometryChange() {prepareGeometryChange();}
+  static int maxTextLengthToShowOnLibraryIcon;
 signals:
   void updateReferenceShapes();
   void added();

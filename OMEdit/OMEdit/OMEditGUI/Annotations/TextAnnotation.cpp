@@ -160,7 +160,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Text.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11) {
+  if (list.size() < 12) {
     return;
   }
   // 9th item of the list contains the extent points
@@ -188,12 +188,24 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   initUpdateTextString();
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
+  // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
+  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(11)));
+  if (textColorList.size() >= 3)
+  {
+    int red, green, blue = 0;
+    red = textColorList.at(0).toInt();
+    green = textColorList.at(1).toInt();
+    blue = textColorList.at(2).toInt();
+    if (red >= 0 && green >= 0 && blue >= 0) {
+      mLineColor = QColor (red, green, blue);
+    }
+  }
   //Now comes the optional parameters; fontName and textStyle.
   annotation = annotation.replace("{", "");
   annotation = annotation.replace("}", "");
   // parse the shape to get the list of attributes of Text Annotation.
   list = StringHandler::getStrings(annotation);
-  int index = 19;
+  int index = 22;
   mTextStyles.clear();
   while(index < list.size()) {
     QString annotationValue = StringHandler::removeFirstLastQuotes(list.at(index));
@@ -257,12 +269,9 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  //! @note We don't show text annotation that contains % for Library Icons. Only static text for functions are shown.
+  //! @note We don't show text annotation that contains % for Library Icons or if it is too long.
   if (mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap()) {
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getRestriction() != StringHandler::Function) {
-      return;
-    }
-    if (mOriginalTextString.contains("%")) {
+    if (mOriginalTextString.contains("%") || mOriginalTextString.length() > maxTextLengthToShowOnLibraryIcon) {
       return;
     }
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
