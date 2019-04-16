@@ -335,6 +335,7 @@ record Text
   Real extent[2,2]/*(each final unit=\"mm\")*/;
   String textString;
   Real fontSize = 0 \"unit pt\";
+  Integer textColor[3] = {-1, -1, -1} \"defaults to fillColor\";
   String fontName;
   TextStyle textStyle[:];
   TextAlignment horizontalAlignment = TextAlignment.Center;
