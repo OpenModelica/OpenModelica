@@ -1,8 +1,11 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
-ActualStream.mo \
 ActualStreamMinMax.mo \
+ActualStream.mo \
+ActualStreamNonCref1.mo \
+ActualStreamNoStream1.mo \
+ActualStreamVariability1.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
@@ -588,10 +591,14 @@ InnerOuterNotInner1.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
+InStreamNonCref1.mo \
+InStreamNoStream1.mo \
 InStreamPipeline.mo \
+InStreamReduction1.mo \
 InStreamTwoInside.mo \
 InStreamTwoOutside.mo \
 InStreamUnconnected.mo \
+InStreamVariability1.mo \
 inst2.mo \
 inst3.mo \
 inst4.mo \
