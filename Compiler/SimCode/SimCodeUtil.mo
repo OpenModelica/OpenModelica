@@ -8370,7 +8370,6 @@ algorithm
         s = s +dumpWhenOps(whenStmtLst);
         if isSome(elseWhen) then
           s = s + " ELSEWHEN: ";
-          dumpSimEqSystem(Util.getOption(elseWhen));
           s = s + simEqSystemString(Util.getOption(elseWhen));
         end if;
       then s;
