@@ -63,6 +63,7 @@ protected
   import ExpandExp = NFExpandExp;
   import Operator = NFOperator;
   import NFComponent.Component;
+  import NFPrefixes.ConnectorType;
 
 public
   function needSpecialHandling
@@ -106,6 +107,7 @@ public
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
       case "String" then typeStringCall(call, next_origin, info);
+      case "actualStream" then typeActualInStreamCall("actualStream", call, next_origin, info);
       case "branch" then typeBranchCall(call, next_origin, info);
       case "cardinality" then typeCardinalityCall(call, next_origin, info);
       case "cat" then typeCatCall(call, next_origin, info);
@@ -116,6 +118,7 @@ public
       case "fill" then typeFillCall(call, next_origin, info);
       case "getInstanceName" then typeGetInstanceName(call);
       case "initial" then typeDiscreteCall(call, next_origin, info);
+      case "inStream" then typeActualInStreamCall("inStream", call, next_origin, info);
       case "isRoot" then typeIsRootCall(call, next_origin, info);
       case "matrix" then typeMatrixCall(call, next_origin, info);
       case "max" then typeMinMaxCall("max", call, next_origin, info);
@@ -1759,6 +1762,62 @@ protected
           fail();
     end match;
   end typeSampleCall;
+
+  function typeActualInStreamCall
+    input String name;
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability variability = Variability.DISCRETE;
+  protected
+    ComponentRef fn_ref, arg_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Variability var;
+    Function fn;
+    InstNode arg_node;
+  algorithm
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    assertNoNamedParams(name, named_args, info);
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call), ComponentRef.toString(fn_ref) + "(stream variable) => Real"}, info);
+    end if;
+
+    (arg, ty, var) := Typing.typeExp(listHead(args), origin, info);
+
+    // The argument of actualStream/inStream must be a component reference.
+    if not Expression.isCref(arg) then
+      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
+            {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
+      fail();
+    end if;
+
+    arg_ref := Expression.toCref(arg);
+    arg_node := ComponentRef.node(arg_ref);
+
+    // The argument of actualStream/inStream must be a stream variable.
+    if not InstNode.isComponent(arg_node) or
+       not ConnectorType.isStream(Component.connectorType(InstNode.component(arg_node))) then
+      Error.addSourceMessageAndFail(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
+        {ComponentRef.toString(arg_ref), name}, info);
+    end if;
+
+    // The argument of actualStream/inStream must have subscripts that can be evaluated.
+    for sub in ComponentRef.subscriptsAllFlat(arg_ref) loop
+      if Subscript.variability(sub) > Variability.PARAMETER then
+        Error.addSourceMessageAndFail(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
+          {ComponentRef.toString(arg_ref), Subscript.toString(sub)}, info);
+      end if;
+    end for;
+
+    {fn} := Function.typeRefCache(fn_ref);
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+  end typeActualInStreamCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

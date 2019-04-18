@@ -66,6 +66,9 @@ import BuiltinCall = NFBuiltinCall;
 import ComplexType = NFComplexType;
 import ExpandExp = NFExpandExp;
 import Prefixes = NFPrefixes;
+import NFComponent.Component;
+import Ceval = NFCeval;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -142,11 +145,11 @@ algorithm
         // constructors containing such calls needs to expanded to get rid of the iterators.
         case Call.TYPED_REDUCTION()
           guard Expression.contains(call.exp, isStreamCall)
-          then evaluateOperatorIteratorExp(exp, sets, setsArray, ctable);
+          then evaluateOperatorReductionExp(exp, sets, setsArray, ctable);
 
         case Call.TYPED_ARRAY_CONSTRUCTOR()
           guard Expression.contains(call.exp, isStreamCall)
-          then evaluateOperatorIteratorExp(exp, sets, setsArray, ctable);
+          then evaluateOperatorArrayConstructorExp(exp, sets, setsArray, ctable);
 
         else Expression.mapShallow(exp,
           function evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
@@ -611,7 +614,49 @@ algorithm
   end match;
 end isStreamCall;
 
-function evaluateOperatorIteratorExp
+function evaluateOperatorReductionExp
+  input Expression exp;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
+  output Expression evalExp;
+protected
+  Call call;
+  Function fn;
+  Type ty;
+  Expression arg, iter_exp;
+  list<tuple<InstNode, Expression>> iters = {};
+  InstNode iter_node;
+algorithm
+  evalExp := match exp
+    case Expression.CALL(call = call as Call.TYPED_REDUCTION())
+      algorithm
+        ty := Expression.typeOf(call.exp);
+
+        for iter in call.iters loop
+          (iter_node, iter_exp) := iter;
+
+          if Component.variability(InstNode.component(iter_node)) > Variability.PARAMETER then
+            print("Iteration range in reduction containing connector operator calls must be a parameter expression.");
+            fail();
+          end if;
+
+          iter_exp := Ceval.evalExp(iter_exp);
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(Expression.typeOf(iter_exp)));
+          iters := (iter_node, iter_exp) :: iters;
+        end for;
+
+        iters := listReverseInPlace(iters);
+        arg := ExpandExp.expandArrayConstructor(call.exp, ty, iters);
+      then
+        Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, call.ty));
+
+  end match;
+
+  evalExp := evaluateOperators(evalExp, sets, setsArray, ctable);
+end evaluateOperatorReductionExp;
+
+function evaluateOperatorArrayConstructorExp
   input Expression exp;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
@@ -629,7 +674,7 @@ algorithm
   end if;
 
   evalExp := evaluateOperators(evalExp, sets, setsArray, ctable);
-end evaluateOperatorIteratorExp;
+end evaluateOperatorArrayConstructorExp;
 
 function evaluateInStream
   "Evaluates the inStream operator with the given cref as argument."
