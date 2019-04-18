@@ -291,17 +291,38 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 }
 
 /*!
+ * \brief Make square be transformed to square (X and Y axes scaled equally)
+ */
+void TextAnnotation::equalizeScale(QPainter *painter, double &horizontalUnscaling)
+{
+  horizontalUnscaling = 1.0;
+  if (painter->worldTransform().isAffine()) {
+    const QMatrix matr = painter->worldMatrix();
+    const double qx = std::max(std::abs(matr.m11() + matr.m12()), 0.01);
+    const double qy = std::max(std::abs(matr.m21() + matr.m22()), 0.01);
+    if (qx < qy) {
+      painter->scale(1.0, qx / qy);
+    } else {
+      painter->scale(qy / qx, 1.0);
+      horizontalUnscaling = qy / qx;
+    }
+  }
+}
+
+/*!
  * \brief TextAnnotation::drawTextAnnotaion
  * Draws the Text annotation
  * \param painter
  */
 void TextAnnotation::drawTextAnnotaion(QPainter *painter)
 {
+  double horizontalUnscaling = 1.0;
+  equalizeScale(painter, horizontalUnscaling);
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
-  qreal dx = ((-boundingRect().left()) - boundingRect().right());
-  qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
+  const qreal dx = ((-boundingRect().left()) - boundingRect().right());
+  const qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
   // first we invert the painter since we have our coordinate system inverted.
   painter->scale(1.0, -1.0);
   painter->translate(0, dy);
@@ -330,15 +351,19 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
        * Text aspect when x1=x2 i.e, width is 0.
        * Use height.
        */
-    float factor = (boundingRect().width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
+    const float factor = (boundingRect().width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
     QFont f = painter->font();
-    qreal fontSizeFactor = f.pointSizeF()*factor;
-    if ((fontSizeFactor < 12) && mpComponent) {
-      f.setPointSizeF(12);
+    const qreal fontSizeFactor = f.pointSizeF()*factor;
+    double qHeight = painter->worldTransform().isAffine() ? abs(painter->worldMatrix().m21() + painter->worldMatrix().m22()) : 1.0;
+    // Ensuring qHeight < 1.0 prevents painter from visually hanging (some lazy init) when drawing a free-standing text
+    // Spotted on Ubuntu 18.10, Qt 5.11
+    qHeight = std::min(std::max(qHeight, 0.1), 1.0);
+    if ((fontSizeFactor * qHeight < 9) && mpComponent) {
+      f.setPointSizeF(9 / qHeight);
     } else if (fontSizeFactor <= 0) {
-      f.setPointSizeF(1);
+      f.setPointSizeF(1 / qHeight);
     } else {
-      f.setPointSizeF(fontSizeFactor);
+      f.setPointSizeF(std::max(fontSizeFactor, 1.0));
     }
     painter->setFont(f);
   }
@@ -387,9 +412,13 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     }
   }
   // draw the font
+  QString textToDraw = mTextString;
+  if (boundingRect().width() > 1) {
+    textToDraw = painter->fontMetrics().elidedText(mTextString, Qt::ElideMiddle, boundingRect().width() / horizontalUnscaling * 1.5);
+  }
   if (mpComponent || boundingRect().width() > 0 || boundingRect().height() > 0) {
-    painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
-    mExportBoundingRect = painter->boundingRect(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
+    painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
+    mExportBoundingRect = painter->boundingRect(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
     if (mpComponent) {
       mExportBoundingRect = sceneTransform().mapRect(mExportBoundingRect);
     }

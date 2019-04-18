@@ -59,6 +59,7 @@ public:
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  void equalizeScale(QPainter *painter, double &horizontalUnscaling);
   void drawTextAnnotaion(QPainter *painter);
   QString getOMCShapeAnnotation();
   QString getShapeAnnotation();
