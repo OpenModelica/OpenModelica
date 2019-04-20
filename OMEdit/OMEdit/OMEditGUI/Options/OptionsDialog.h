@@ -565,6 +565,10 @@ public:
   double getDiagramViewScaleFactor();
   void setDiagramViewPreserveAspectRation(bool preserveAspectRation);
   bool getDiagramViewPreserveAspectRation();
+  void setDiagramViewTextRelMinSize(double size);
+  double getDiagramViewTextRelMinSize();
+  void setDiagramViewTextOverdrawFactor(double factor);
+  double getDiagramViewTextOverdrawFactor();
 private:
   OptionsDialog *mpOptionsDialog;
   QTabWidget *mpGraphicalViewsTabWidget;
@@ -606,6 +610,11 @@ private:
   Label *mpDiagramViewScaleFactorLabel;
   DoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
   QCheckBox *mpDiagramViewPreserveAspectRatioCheckBox;
+  Label *mpDiagramViewTextRelMinSizeLabel;
+  DoubleSpinBox *mpDiagramViewTextRelMinSizeSpinBox;
+  QGroupBox *mpDiagramViewTextAnnotationGroupBox;
+  Label *mpDiagramViewTextOverdrawFactorLabel;
+  DoubleSpinBox *mpDiagramViewTextOverdrawFactorSpinBox;
 };
 
 class SimulationPage : public QWidget

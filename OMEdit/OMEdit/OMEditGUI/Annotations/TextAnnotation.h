@@ -65,6 +65,9 @@ public:
   QString getShapeAnnotation();
   void updateShape(ShapeAnnotation *pShapeAnnotation);
 
+  static double overdrawFactor;
+  static double minSize;
+
   QRectF mExportBoundingRect;
 private:
   Component *mpComponent;

@@ -540,6 +540,10 @@ void OptionsDialog::readGraphicalViewsSettings()
     mpGraphicalViewsPage->setDiagramViewScaleFactor(mpSettings->value("DiagramView/scaleFactor").toDouble());
   if (mpSettings->contains("DiagramView/preserveAspectRatio"))
     mpGraphicalViewsPage->setDiagramViewPreserveAspectRation(mpSettings->value("DiagramView/preserveAspectRatio").toBool());
+  if (mpSettings->contains("DiagramView/textRelMinSize"))
+    mpGraphicalViewsPage->setDiagramViewTextRelMinSize(mpSettings->value("DiagramView/textRelMinSize").toDouble());
+  if (mpSettings->contains("DiagramView/textOverdrawFactor"))
+    mpGraphicalViewsPage->setDiagramViewTextOverdrawFactor(mpSettings->value("DiagramView/textOverdrawFactor").toDouble());
 }
 
 //! Reads the Simulation section settings from omedit.ini
@@ -1202,6 +1206,8 @@ void OptionsDialog::saveGraphicalViewsSettings()
   mpSettings->setValue("DiagramView/gridVertical", mpGraphicalViewsPage->getDiagramViewGridVertical());
   mpSettings->setValue("DiagramView/scaleFactor", mpGraphicalViewsPage->getDiagramViewScaleFactor());
   mpSettings->setValue("DiagramView/preserveAspectRatio", mpGraphicalViewsPage->getDiagramViewPreserveAspectRation());
+  mpSettings->setValue("DiagramView/textRelMinSize", mpGraphicalViewsPage->getDiagramViewTextRelMinSize());
+  mpSettings->setValue("DiagramView/textOverdrawFactor", mpGraphicalViewsPage->getDiagramViewTextOverdrawFactor());
 }
 
 //! Saves the Simulation section settings to omedit.ini
@@ -3450,6 +3456,11 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   mpDiagramViewScaleFactorSpinBox->setSingleStep(0.1);
   mpDiagramViewPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
   mpDiagramViewPreserveAspectRatioCheckBox->setChecked(true);
+  mpDiagramViewTextRelMinSizeLabel = new Label(Helper::textRelMinSize);
+  mpDiagramViewTextRelMinSizeSpinBox = new DoubleSpinBox;
+  mpDiagramViewTextRelMinSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewTextRelMinSizeSpinBox->setSingleStep(0.1);
+  mpDiagramViewTextRelMinSizeSpinBox->setValue(0.6);
   // set the Diagram View component group box layout
   QGridLayout *pDiagramViewComponentLayout = new QGridLayout;
   pDiagramViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3457,13 +3468,30 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorLabel, 0, 0);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorSpinBox, 0, 1);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewPreserveAspectRatioCheckBox, 1, 0, 1, 2);
+  pDiagramViewComponentLayout->addWidget(mpDiagramViewTextRelMinSizeLabel, 2, 0);
+  pDiagramViewComponentLayout->addWidget(mpDiagramViewTextRelMinSizeSpinBox, 2, 1);
   mpDiagramViewComponentGroupBox->setLayout(pDiagramViewComponentLayout);
+  // create the Diagram View Text annotation group box layout
+  mpDiagramViewTextAnnotationGroupBox = new QGroupBox(Helper::textAnnotation);
+  mpDiagramViewTextOverdrawFactorLabel = new Label(Helper::textOverdrawFactor);
+  mpDiagramViewTextOverdrawFactorSpinBox = new DoubleSpinBox;
+  mpDiagramViewTextOverdrawFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewTextOverdrawFactorSpinBox->setSingleStep(0.1);
+  mpDiagramViewTextOverdrawFactorSpinBox->setValue(1.5);
+  // set the Diagram View Text annotation group box layout
+  QGridLayout *pDiagramViewTextAnnotationLayout = new QGridLayout;
+  pDiagramViewTextAnnotationLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDiagramViewTextAnnotationLayout->setColumnStretch(1, 1);
+  pDiagramViewTextAnnotationLayout->addWidget(mpDiagramViewTextOverdrawFactorLabel, 0, 0);
+  pDiagramViewTextAnnotationLayout->addWidget(mpDiagramViewTextOverdrawFactorSpinBox, 0, 1);
+  mpDiagramViewTextAnnotationGroupBox->setLayout(pDiagramViewTextAnnotationLayout);
   // Diagram View Widget Layout
   QVBoxLayout *pDiagramViewMainLayout = new QVBoxLayout;
   pDiagramViewMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pDiagramViewMainLayout->addWidget(mpDiagramViewExtentGroupBox);
   pDiagramViewMainLayout->addWidget(mpDiagramViewGridGroupBox);
   pDiagramViewMainLayout->addWidget(mpDiagramViewComponentGroupBox);
+  pDiagramViewMainLayout->addWidget(mpDiagramViewTextAnnotationGroupBox);
   mpDiagramViewWidget->setLayout(pDiagramViewMainLayout);
   // add Diagram View Widget as a tab
   mpGraphicalViewsTabWidget->addTab(mpDiagramViewWidget, tr("Diagram View"));
@@ -3632,6 +3660,26 @@ void GraphicalViewsPage::setDiagramViewPreserveAspectRation(bool preserveAspectR
 bool GraphicalViewsPage::getDiagramViewPreserveAspectRation()
 {
   return mpDiagramViewPreserveAspectRatioCheckBox->isChecked();
+}
+
+void GraphicalViewsPage::setDiagramViewTextRelMinSize(double size)
+{
+  mpDiagramViewTextRelMinSizeSpinBox->setValue(size);
+}
+
+double GraphicalViewsPage::getDiagramViewTextRelMinSize()
+{
+  return mpDiagramViewTextRelMinSizeSpinBox->value();
+}
+
+void GraphicalViewsPage::setDiagramViewTextOverdrawFactor(double factor)
+{
+  mpDiagramViewTextOverdrawFactorSpinBox->setValue(factor);
+}
+
+double GraphicalViewsPage::getDiagramViewTextOverdrawFactor()
+{
+  return mpDiagramViewTextOverdrawFactorSpinBox->value();
 }
 
 //! @class SimulationPage

@@ -2542,6 +2542,9 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mSkipBackground) {
     return;
   }
+  TextAnnotation::minSize = (Helper::systemFontInfo.pointSizeF()) *
+          ((mViewType == StringHandler::Icon) ? 1.0 : OptionsDialog::instance()->getGraphicalViewsPage()->getDiagramViewTextRelMinSize());
+  TextAnnotation::overdrawFactor = (mViewType == StringHandler::Icon) ? 1000.0 : OptionsDialog::instance()->getGraphicalViewsPage()->getDiagramViewTextOverdrawFactor();
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {

@@ -309,6 +309,9 @@ void TextAnnotation::equalizeScale(QPainter *painter, double &horizontalUnscalin
   }
 }
 
+double TextAnnotation::minSize;
+double TextAnnotation::overdrawFactor;
+
 /*!
  * \brief TextAnnotation::drawTextAnnotaion
  * Draws the Text annotation
@@ -358,8 +361,8 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     // Ensuring qHeight < 1.0 prevents painter from visually hanging (some lazy init) when drawing a free-standing text
     // Spotted on Ubuntu 18.10, Qt 5.11
     qHeight = std::min(std::max(qHeight, 0.1), 1.0);
-    if ((fontSizeFactor * qHeight < 9) && mpComponent) {
-      f.setPointSizeF(9 / qHeight);
+    if ((fontSizeFactor * qHeight < minSize) && mpComponent) {
+      f.setPointSizeF(minSize / qHeight);
     } else if (fontSizeFactor <= 0) {
       f.setPointSizeF(1 / qHeight);
     } else {
@@ -414,7 +417,7 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   // draw the font
   QString textToDraw = mTextString;
   if (boundingRect().width() > 1) {
-    textToDraw = painter->fontMetrics().elidedText(mTextString, Qt::ElideMiddle, boundingRect().width() / horizontalUnscaling * 1.5);
+    textToDraw = painter->fontMetrics().elidedText(mTextString, Qt::ElideMiddle, boundingRect().width() / horizontalUnscaling * overdrawFactor);
   }
   if (mpComponent || boundingRect().width() > 0 || boundingRect().height() > 0) {
     painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);

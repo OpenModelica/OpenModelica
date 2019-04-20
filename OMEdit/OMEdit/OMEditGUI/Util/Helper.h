@@ -242,6 +242,9 @@ public:
   static QString component;
   static QString scaleFactor;
   static QString preserveAspectRatio;
+  static QString textRelMinSize;
+  static QString textAnnotation;
+  static QString textOverdrawFactor;
   static QString originX;
   static QString originY;
   static QString rotation;
