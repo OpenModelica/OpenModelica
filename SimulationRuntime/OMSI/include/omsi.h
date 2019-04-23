@@ -33,9 +33,11 @@
 
 /** \defgroup OMSI OpenModelica Simulation Interface
  *
- * Long description of OMSI group.
+ * \brief OpenModelica Simulation Interface
+ *
+ * OpenModelica Simulation Interface generalizing simulation runtimes for C and C++ runtimes.
+ * Containing base library and solver library used by both runtimes.
  */
-
 
 
 /** \addtogroup OMSIBase OMSI Base Library
@@ -146,25 +148,29 @@ static const omsi_string log_categories_names[NUMBER_OF_CATEGORIES] = {
 };
 
 
-/* Model FMU/ OSU states */
+/**
+ *  Model FMU/ OSU states
+ */
 typedef enum {
-  modelInstantiated       = 1<<0, /* ME and CS */
-  modelInitializationMode = 1<<1, /* ME and CS */
-  modelContinuousTimeMode = 1<<2, /* ME only */
-  modelEventMode          = 1<<3, /* ME only */
-  modelSlaveInitialized   = 1<<4, /* CS only */
-  modelTerminated         = 1<<5, /* ME and CS */
-  modelError              = 1<<6  /* ME and CS */
+  modelInstantiated       = 1<<0, /**< Model is instantiated (ME and CS). */
+  modelInitializationMode = 1<<1, /**< Model is initialized (ME and CS). */
+  modelContinuousTimeMode = 1<<2, /**< Model is in continuous time mode (ME only). */
+  modelEventMode          = 1<<3, /**< Model is in event mode (ME only). */
+  modelSlaveInitialized   = 1<<4, /**< Co-Simulation slave is initialized (CS only). */
+  modelTerminated         = 1<<5, /**< Model is terminated (ME and CS). */
+  modelError              = 1<<6  /**< Model errored (ME and CS). */
 } ModelState;
 
-/* Event informations */
+/**
+ * Event informations
+ */
 typedef struct {
-   omsi_bool newDiscreteStatesNeeded;
-   omsi_bool terminateSimulation;
-   omsi_bool nominalsOfContinuousStatesChanged;
-   omsi_bool valuesOfContinuousStatesChanged;
-   omsi_bool nextEventTimeDefined;
-   omsi_real nextEventTime;
+   omsi_bool newDiscreteStatesNeeded;           /**< New discrete states needed. */
+   omsi_bool terminateSimulation;               /**< Terminate simulation. */
+   omsi_bool nominalsOfContinuousStatesChanged; /**< Nominals of continuous states changed and need to be updated. */
+   omsi_bool valuesOfContinuousStatesChanged;   /**< Values of continuous states changed and need to be updated. */
+   omsi_bool nextEventTimeDefined;              /**< `omsi_true` if next event time is defined. */
+   omsi_real nextEventTime;                     /**< Value of next defined event time. */
 } omsi_event_info;
 
 

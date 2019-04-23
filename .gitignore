@@ -101,6 +101,8 @@ SimulationRuntime/opc/ua/open62541.c
 SimulationRuntime/opc/ua/libomopcua.dll
 SimulationRuntime/OMSI/Build_dynamic/
 SimulationRuntime/OMSI/Build_static/
+SimulationRuntime/OMSIC/Build_dynamic/
+SimulationRuntime/OMSIC/Build_static/
 
 # OpenModelicaSetup
 Compiler/OpenModelicaSetup

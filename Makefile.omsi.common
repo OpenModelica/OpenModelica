@@ -8,20 +8,20 @@ CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE)
 
 CMAKE_CALL=cmake -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) ..
 
-.PHONY: OMSIBaseClean
+.PHONY: OMSIBaseClean OMSICClean
 
 
 #############################
 # Rules for OMSI
 #############################
 
-OMSI: OMSIBaseInstall
+OMSI: OMSIBaseInstall OMSICInstall
 
 
 
-OMSI-clean: OMSIBaseClean
-	cd $(OMBUILDDIR); \
-	rm -rf include/omc/omsi; \
+OMSI-clean: OMSIBaseClean OMSICClean
+	cd $(OMBUILDDIR);                             \
+	rm -rf include/omc/omsi include/omc/omsic;    \
 	rm -rf $(LIB_OMC)/omsi;
 
 
@@ -83,6 +83,31 @@ OMSIBaseInstall: OMSIBase
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
+	  rm -R -f Build_$(PLATFORM); \
+	)
+
+
+#############################
+# Rules for OMSIC libraries
+#############################
+
+OMSIC: OMSIBaseInstall
+	cd SimulationRuntime/OMSIC; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  mkdir -p Build_$(PLATFORM); \
+	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
+		 $(CMAKE_CALL); \
+		 $(MAKE) ); )
+
+OMSICInstall: OMSIC
+	cd SimulationRuntime/OMSIC; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);)
+
+OMSICClean:
+	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
 	  rm -R -f Build_$(PLATFORM); \
