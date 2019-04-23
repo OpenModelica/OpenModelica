@@ -169,19 +169,31 @@ author: vwaurich 2016-10"
   input BackendDAE.Variables vars;
   output DAE.Exp eOut;
 protected
+  String s;
   DAE.Exp e;
   BackendDAE.Var var;
 algorithm
   try
     ({var},_) := BackendVariable.getVar(cr,vars);
     e := BackendVariable.varBindExp(var);
-    if Expression.isConst(e) then
-      eOut := e;
-    elseif Expression.isCref(e) then
-      eOut := getConstCrefBinding(Expression.expCref(e),vars);
-    else
-      Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ExpressionDump.printExpStr(e)+"\n", sourceInfo());
-    end if;
+    eOut := matchcontinue(e)
+      case(_)
+        equation
+          true = Expression.isConst(e);
+        then e;
+      case(DAE.CREF(_))
+        equation
+        then  getConstCrefBinding(Expression.expCref(e),vars);
+          /*
+      case(DAE.CALL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Files",Absyn.IDENT("fullPathName"))))),{DAE.SCONST(s)},_))
+        equation
+        then System.realpath(s);
+        */
+      else
+        equation
+          Error.addCompilerWarning("The binding expression "+ExpressionDump.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
+        then e;
+    end matchcontinue;
   else
     Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ComponentReference.crefStr(cr)+"\n", sourceInfo());
   end try;
