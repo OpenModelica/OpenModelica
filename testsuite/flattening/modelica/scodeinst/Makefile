@@ -3,6 +3,9 @@ TEST=../../../rtest -v
 TESTFILES=\
 ActualStreamMinMax.mo \
 ActualStream.mo \
+ActualStreamNonCref1.mo \
+ActualStreamNoStream1.mo \
+ActualStreamVariability1.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
@@ -589,11 +592,14 @@ InnerOuterNotInner1.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
+InStreamNonCref1.mo \
+InStreamNoStream1.mo \
 InStreamPipeline.mo \
 InStreamReduction1.mo \
 InStreamTwoInside.mo \
 InStreamTwoOutside.mo \
 InStreamUnconnected.mo \
+InStreamVariability1.mo \
 inst2.mo \
 inst3.mo \
 inst4.mo \
@@ -854,20 +860,12 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-ActualStreamNonCref1.mo \
-ActualStreamNoStream1.mo \
-ActualStreamVariability1.mo \
-InStreamNonCref1.mo \
-InStreamNoStream1.mo \
-InStreamVariability1.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
 CevalRecordArray3.mo \
 IfExpression6.mo \
 RedeclareConstant1.mo \
-InStreamInvalidArgument1.mo \
-InStreamInvalidArgument2.mo \
 Connect3.mo \
 ProtectedMod1.mo \
 dim2.mo \

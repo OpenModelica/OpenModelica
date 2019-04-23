@@ -15,7 +15,7 @@ end InStreamInvalidArgument;
 
 // Result:
 // Error processing file: InStreamInvalidArgument.mo
-// [flattening/modelica/streams/InStreamInvalidArgument.mo:13:3-13:25:writable] Error: Operand r to operator inStream is not a stream variable.
+// [flattening/modelica/streams/InStreamInvalidArgument.mo:13:3-13:25:writable] Error: Operand ‘r‘ to operator ‘inStream‘ is not a stream variable.
 // Error: Error occurred while flattening model InStreamInvalidArgument
 //
 // # Error encountered! Exiting...
