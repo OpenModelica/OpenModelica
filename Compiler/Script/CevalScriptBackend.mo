@@ -2613,6 +2613,26 @@ algorithm
       then
         (cache,v);
 
+    case (cache,_,"updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},_)
+      equation
+        (b, p) = Interactive.updateConnectionAnnotation(classpath, str1, str2, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        (cache,Values.BOOL(b));
+
+    case (cache,_,"updateConnection",_,_) then (cache,Values.BOOL(false));
+
+    case (cache,_,"updateConnectionNames",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
+                                           Values.STRING(str3), Values.STRING(str4)},_)
+      equation
+        (b, p) = Interactive.updateConnectionNames(classpath, str1, str2, str3, str4, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        (cache,Values.BOOL(b));
+
+    case (cache,_,"updateConnectionNames",_,_) then (cache,Values.BOOL(false));
+
     case (cache,_,"getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());

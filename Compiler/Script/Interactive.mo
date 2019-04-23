@@ -1126,17 +1126,6 @@ algorithm
       then
         outResult;
 
-    case "updateConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        (_, p) := deleteConnection(cr, cr1, cr2, p);
-        (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
-      then
-        outResult;
-
     case "getNthConnectionAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
@@ -10048,6 +10037,241 @@ algorithm
   end matchcontinue;
 end addConnection;
 
+public function updateConnectionAnnotation
+  "Updates a connection annotation in a model."
+  input Absyn.Path inPath;
+  input String inFrom;
+  input String inTo;
+  input Absyn.Annotation inAnnotation;
+  input Absyn.Program inProgram;
+  output Boolean outResult;
+  output Absyn.Program outProgram;
+algorithm
+  (outResult, outProgram) := matchcontinue (inPath, inFrom , inTo, inAnnotation, inProgram)
+    local
+      Absyn.Path path, modelwithin;
+      String from, to;
+      Absyn.Annotation ann;
+      Absyn.Class cdef, newcdef;
+      Absyn.Program newp, p;
+
+    case (path, from, to, ann, (p as Absyn.PROGRAM()))
+      equation
+        modelwithin = Absyn.stripLast(path);
+        cdef = getPathedClassInProgram(path, p);
+        newcdef = updateConnectionAnnotationInClass(cdef, from, to, ann);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+      then
+        (true, newp);
+
+    case (path, from, to, ann, (p as Absyn.PROGRAM()))
+      equation
+        cdef = getPathedClassInProgram(path, p);
+        newcdef = updateConnectionAnnotationInClass(cdef, from, to, ann);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+      then
+        (true, newp);
+
+    case (_, _, _, _, (p as Absyn.PROGRAM())) then (false, p);
+  end matchcontinue;
+end updateConnectionAnnotation;
+
+protected function updateConnectionAnnotationInClass
+  "Helper function to updateConnectionAnnotation."
+  input Absyn.Class inClass1;
+  input String inFrom;
+  input String inTo;
+  input Absyn.Annotation inAnnotation;
+  output Absyn.Class outClass;
+algorithm
+  outClass:=
+  match (inClass1, inFrom, inTo, inAnnotation)
+    local
+      list<Absyn.EquationItem> eqlst,eqlst_1;
+      list<Absyn.ClassPart> parts2,parts;
+      String i, bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+      String from, to;
+      Absyn.Annotation annotation_;
+    /* a class with parts */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),from,to,annotation_)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = updateConnectionAnnotationInEqList(eqlst, from, to, annotation_);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+    /* an extended class with parts: model extends M end M;  */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),from,to,annotation_)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = updateConnectionAnnotationInEqList(eqlst, from, to, annotation_);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+  end match;
+end updateConnectionAnnotationInClass;
+
+protected function updateConnectionAnnotationInEqList
+  "Helper function to updateConnectionAnnotation."
+  input list<Absyn.EquationItem> equations;
+  input String from;
+  input String to;
+  input Absyn.Annotation ann;
+  output list<Absyn.EquationItem> outEquations = {};
+protected
+  Absyn.ComponentRef c1, c2;
+  String c1_str, c2_str;
+algorithm
+  for eq in equations loop
+    eq := match eq
+      case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+        algorithm
+          c1_str := Absyn.crefString(c1);
+          c2_str := Absyn.crefString(c2);
+
+          if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
+            eq.comment := SOME(Absyn.COMMENT(SOME(ann), NONE()));
+          end if;
+        then
+          eq;
+
+      else eq;
+    end match;
+
+    outEquations := eq :: outEquations;
+  end for;
+
+  outEquations := Dangerous.listReverseInPlace(outEquations);
+end updateConnectionAnnotationInEqList;
+
+public function updateConnectionNames
+  "Updates a connection connector names in a model."
+  input Absyn.Path inPath;
+  input String inFrom;
+  input String inTo;
+  input String inFromNew;
+  input String inToNew;
+  input Absyn.Program inProgram;
+  output Boolean outResult;
+  output Absyn.Program outProgram;
+algorithm
+  (outResult, outProgram) := matchcontinue (inPath, inFrom, inTo, inFromNew, inToNew, inProgram)
+    local
+      Absyn.Path path, modelwithin;
+      String from, to, fromNew, toNew;
+      Absyn.Class cdef, newcdef;
+      Absyn.Program newp, p;
+
+    case (path, from, to, fromNew, toNew, (p as Absyn.PROGRAM()))
+      equation
+        modelwithin = Absyn.stripLast(path);
+        cdef = getPathedClassInProgram(path, p);
+        newcdef = updateConnectionNamesInClass(cdef, from, to, fromNew, toNew);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+      then
+        (true, newp);
+
+    case (path, from, to, fromNew, toNew, (p as Absyn.PROGRAM()))
+      equation
+        cdef = getPathedClassInProgram(path, p);
+        newcdef = updateConnectionNamesInClass(cdef, from, to, fromNew, toNew);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+      then
+        (true, newp);
+
+    case (_, _, _, _, _, (p as Absyn.PROGRAM())) then (false, p);
+  end matchcontinue;
+end updateConnectionNames;
+
+protected function updateConnectionNamesInClass
+  "Helper function to updateConnectionNames."
+  input Absyn.Class inClass1;
+  input String inFrom;
+  input String inTo;
+  input String inFromNew;
+  input String inToNew;
+  output Absyn.Class outClass;
+algorithm
+  outClass:=
+  match (inClass1, inFrom, inTo, inFromNew, inToNew)
+    local
+      list<Absyn.EquationItem> eqlst,eqlst_1;
+      list<Absyn.ClassPart> parts2,parts;
+      String i, bcname;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Option<String> cmt;
+      SourceInfo file_info;
+      list<Absyn.ElementArg> modif;
+      list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
+      list<Absyn.Annotation> ann;
+      String from, to, fromNew, toNew;
+    /* a class with parts */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),from,to,fromNew,toNew)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = updateConnectionNamesInEqList(eqlst, from, to, fromNew, toNew);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
+    /* an extended class with parts: model extends M end M;  */
+    case (Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),from,to,fromNew,toNew)
+      equation
+        eqlst = getEquationList(parts);
+        eqlst_1 = updateConnectionNamesInEqList(eqlst, from, to, fromNew, toNew);
+        parts2 = replaceEquationList(parts, eqlst_1);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
+  end match;
+end updateConnectionNamesInClass;
+
+protected function updateConnectionNamesInEqList
+  "Helper function to updateConnectionNames."
+  input list<Absyn.EquationItem> equations;
+  input String from;
+  input String to;
+  input String fromNew;
+  input String toNew;
+  output list<Absyn.EquationItem> outEquations = {};
+protected
+  Absyn.ComponentRef c1, c2;
+  String c1_str, c2_str;
+algorithm
+  for eq in equations loop
+    eq := match eq
+      case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+        algorithm
+          c1_str := Absyn.crefString(c1);
+          c2_str := Absyn.crefString(c2);
+
+          if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
+            eq.equation_ := Absyn.EQ_CONNECT(Parser.stringCref(fromNew), Parser.stringCref(toNew));
+          end if;
+        then
+          eq;
+
+      else eq;
+    end match;
+
+    outEquations := eq :: outEquations;
+  end for;
+
+  outEquations := Dangerous.listReverseInPlace(outEquations);
+end updateConnectionNamesInEqList;
+
 protected function deleteConnection "
   Delete the connection connect(c1,c2) from a model.
 
@@ -14510,7 +14734,7 @@ algorithm
                       info = file_info),eitem)
       equation
         eqlst = getEquationList(parts);
-        eqlst2 = (eitem :: eqlst);
+        eqlst2 = listAppend(eqlst, {eitem});
         parts2 = replaceEquationList(parts, eqlst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt),file_info);
@@ -14533,7 +14757,7 @@ algorithm
                       info = file_info),eitem)
       equation
         eqlst = getEquationList(parts);
-        eqlst2 = (eitem :: eqlst);
+        eqlst2 = listAppend(eqlst, {eitem});
         parts2 = replaceEquationList(parts, eqlst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann),file_info);

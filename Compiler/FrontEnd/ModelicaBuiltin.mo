@@ -3120,6 +3120,31 @@ annotation(
   preferredView="text");
 end removeExtendsModifiers;
 
+function updateConnection
+  input TypeName className;
+  input String from;
+  input String to;
+  input ExpressionOrModification annotate;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
+</html>"));
+end updateConnection;
+
+function updateConnectionNames
+  input TypeName className;
+  input String from;
+  input String to;
+  input String fromNew;
+  input String toNew;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection connector names in the class. See also updateConnection().</p>
+</html>"));
+end updateConnectionNames;
+
 function getConnectionCount "Counts the number of connect equation in a class."
   input TypeName className;
   output Integer count;
