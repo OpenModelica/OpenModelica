@@ -3486,7 +3486,6 @@ algorithm
     local
       Expression exp;
       list<Equation> eql;
-      Boolean all_params;
 
     case Equation.EQUALITY()
       algorithm
@@ -3511,18 +3510,10 @@ algorithm
 
     case Equation.IF()
       algorithm
-        all_params := true;
-
         for branch in eq.branches loop
           () := match branch
             case Equation.Branch.BRANCH()
               algorithm
-                if all_params and Expression.variability(branch.condition) == Variability.PARAMETER then
-                  markStructuralParamsExp(branch.condition);
-                else
-                  all_params := false;
-                end if;
-
                 updateImplicitVariabilityEql(branch.body, inWhen);
               then
                 ();
