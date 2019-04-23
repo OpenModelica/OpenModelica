@@ -533,6 +533,7 @@ IfEquation7.mo \
 IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
+IfEquationImpure1.mo \
 IfExpression1.mo \
 IfExpression2.mo \
 IfExpression3.mo \
