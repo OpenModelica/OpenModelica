@@ -1857,21 +1857,42 @@ bool OMCProxy::renameComponentInClass(QString className, QString oldName, QStrin
 }
 
 /*!
-  Updates the connection annotation
-  \param from - the connection start component name
-  \param to - the connection end component name
-  \param className - the name of the class.
-  \param annotation - the updated conneciton annotation.
-  \return true on success.
-  */
-bool OMCProxy::updateConnection(QString from, QString to, QString className, QString annotation)
+ * \brief OMCProxy::updateConnection
+ * Updates the connection annotation.
+ * \param className - the name of the class.
+ * \param from - the connection start component name
+ * \param to - the connection end component name
+ * \param annotation - the updated conneciton annotation.
+ * \return true on success.
+ */
+bool OMCProxy::updateConnection(QString className, QString from, QString to, QString annotation)
 {
-  sendCommand("updateConnection(" + from + "," + to + "," + className + "," + annotation + ")");
-  if (getResult().toLower().compare("ok") == 0) {
+  sendCommand(QString("updateConnection(%1, \"%2\", \"%3\", %4)").arg(className, from, to, annotation));
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
+    printMessagesStringInternal();
     return false;
   }
+}
+
+/*!
+ * \brief OMCProxy::updateConnectionNames
+ * Updates the connection names.
+ * \param className - the name of the class.
+ * \param from - the connection start component name
+ * \param to - the connection end component name
+ * \param fromNew - the connection new start component name
+ * \param toNew - the connection new end component name
+ * \return true on success.
+ */
+bool OMCProxy::updateConnectionNames(QString className, QString from, QString to, QString fromNew, QString toNew)
+{
+  bool result = mpOMCInterface->updateConnectionNames(className, from, to, fromNew, toNew);
+  if (!result) {
+    printMessagesStringInternal();
+  }
+  return result;
 }
 
 /*!

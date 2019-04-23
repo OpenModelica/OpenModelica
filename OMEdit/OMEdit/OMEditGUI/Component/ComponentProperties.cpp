@@ -901,7 +901,8 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
     /* get the dialog annotation */
     QStringList dialogAnnotation = pComponent->getDialogAnnotation();
     QString groupImage = "";
-    if (dialogAnnotation.size() > 0) {
+    bool connectorSizing = false;
+    if (dialogAnnotation.size() > 10) {
       // get the tab value
       tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
       // get the group value
@@ -926,6 +927,12 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
       if (!groupImage.isEmpty()) {
         groupImage = MainWindow::instance()->getOMCProxy()->uriToFilename(groupImage);
       }
+      // get the connectorSizing
+      connectorSizing = (dialogAnnotation.at(10).compare("true") == 0);
+    }
+    // if connectorSizing is present then don't show the parameter
+    if (connectorSizing) {
+      continue;
     }
     // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
     if (showStartAttribute && groupBox.isEmpty()) {

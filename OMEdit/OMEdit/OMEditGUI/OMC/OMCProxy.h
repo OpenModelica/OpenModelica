@@ -178,7 +178,8 @@ public:
   bool renameComponent(QString className, QString oldName, QString newName);
   bool updateComponent(QString name, QString className, QString componentName, QString placementAnnotation);
   bool renameComponentInClass(QString className, QString oldName, QString newName);
-  bool updateConnection(QString from, QString to, QString className, QString annotation);
+  bool updateConnection(QString className, QString from, QString to, QString annotation);
+  bool updateConnectionNames(QString className, QString from, QString to, QString fromNew, QString toNew);
   bool setComponentProperties(QString className, QString componentName, QString isFinal, QString isFlow, QString isProtected,
                               QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
   bool setComponentComment(QString className, QString componentName, QString comment);
