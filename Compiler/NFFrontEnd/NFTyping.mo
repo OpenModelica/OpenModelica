@@ -415,6 +415,9 @@ algorithm
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
         InstNode.updateComponent(Component.setType(ty, c), node);
 
+        // Check that flow/stream variables are Real.
+        checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
+
         // Type the component's children.
         typeComponents(c.classInst, origin);
       then
@@ -434,6 +437,23 @@ algorithm
 
   end match;
 end typeComponent;
+
+function checkComponentStreamAttribute
+  input ConnectorType.Type cty;
+  input Type ty;
+  input InstNode component;
+protected
+  Type ety;
+algorithm
+  if ConnectorType.isFlowOrStream(cty) then
+    ety := Type.arrayElementType(ty);
+
+    if not (Type.isReal(ety) or Type.isComplex(ety)) then
+      Error.addSourceMessageAndFail(Error.NON_REAL_FLOW_OR_STREAM,
+        {ConnectorType.toString(cty), InstNode.name(component)}, InstNode.info(component));
+    end if;
+  end if;
+end checkComponentStreamAttribute;
 
 function checkConnectorType
   input InstNode node;

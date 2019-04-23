@@ -425,7 +425,7 @@ public constant Message TUPLE_ASSIGN_CREFS_ONLY = MESSAGE(147, TRANSLATION(), ER
 public constant Message LOOKUP_FUNCTION_GOT_CLASS = MESSAGE(148, TRANSLATION(), ERROR(),
   Util.gettext("Looking for a function %s but found a %s."));
 public constant Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = MESSAGE(149, TRANSLATION(), ERROR(),
-  Util.gettext("Operand %s to operator %s is not a stream variable."));
+  Util.gettext("Operand ‘%s‘ to operator ‘%s‘ is not a stream variable."));
 public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), WARNING(),
   Util.gettext("Connector %s is not balanced: %s"));
 public constant Message RESTRICTION_VIOLATION = MESSAGE(151, TRANSLATION(), ERROR(),
@@ -829,6 +829,8 @@ public constant Message WHEN_IF_VARIABLE_MISMATCH = MESSAGE(350, TRANSLATION(), 
   Util.gettext("The branches of an if-equation inside a when-equation must have the same set of component references on the left-hand side."));
 public constant Message DIMENSION_DEDUCTION_FROM_BINDING_FAILURE = MESSAGE(351, TRANSLATION(), ERROR(),
   Util.gettext("Dimension %s of ‘%s‘ could not be deduced from the component's binding equation ‘%s‘."));
+public constant Message NON_REAL_FLOW_OR_STREAM = MESSAGE(351, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid prefix ‘%s‘ on non-Real component ‘%s‘."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

@@ -1380,7 +1380,7 @@ uniontype Function
         special := match Absyn.pathFirstIdent(path)
           // Can have variable number of arguments.
           case "array" then true;
-          //case "actualStream" then true;
+          case "actualStream" then true;
           case "branch" then true;
           case "cardinality" then true;
           case "cat" then true;
@@ -1396,7 +1396,7 @@ uniontype Function
           case "getInstanceName" then true;
           // Always discrete.
           case "initial" then true;
-          //case "inStream" then true;
+          case "inStream" then true;
           case "isRoot" then true;
           // Arguments can be scalar, vector, matrix, 3d array .... basically anything
           // We need to make sure size(Arg,i) = 1 for 2 < i <= ndims(Arg).

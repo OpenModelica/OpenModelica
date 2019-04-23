@@ -1789,35 +1789,60 @@ protected
     end if;
 
     (arg, ty, var) := Typing.typeExp(listHead(args), origin, info);
-
-    // The argument of actualStream/inStream must be a component reference.
-    if not Expression.isCref(arg) then
-      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
-      fail();
-    end if;
-
-    arg_ref := Expression.toCref(arg);
-    arg_node := ComponentRef.node(arg_ref);
-
-    // The argument of actualStream/inStream must be a stream variable.
-    if not InstNode.isComponent(arg_node) or
-       not ConnectorType.isStream(Component.connectorType(InstNode.component(arg_node))) then
-      Error.addSourceMessageAndFail(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
-        {ComponentRef.toString(arg_ref), name}, info);
-    end if;
-
-    // The argument of actualStream/inStream must have subscripts that can be evaluated.
-    for sub in ComponentRef.subscriptsAllFlat(arg_ref) loop
-      if Subscript.variability(sub) > Variability.PARAMETER then
-        Error.addSourceMessageAndFail(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
-          {ComponentRef.toString(arg_ref), Subscript.toString(sub)}, info);
-      end if;
-    end for;
+    arg := ExpandExp.expand(arg);
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := typeActualInStreamCall2(name, fn, arg, var, info);
   end typeActualInStreamCall;
+
+  function typeActualInStreamCall2
+    input String name;
+    input Function fn;
+    input Expression arg;
+    input Variability var;
+    input SourceInfo info;
+    output Expression callExp;
+  algorithm
+    callExp := match arg
+      local
+        InstNode arg_node;
+
+      case Expression.CREF()
+        algorithm
+          arg_node := ComponentRef.node(arg.cref);
+
+          // The argument of actualStream/inStream must be a stream variable.
+          if not InstNode.isComponent(arg_node) or
+             not ConnectorType.isStream(Component.connectorType(InstNode.component(arg_node))) then
+            Error.addSourceMessageAndFail(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
+              {ComponentRef.toString(arg.cref), name}, info);
+          end if;
+
+          // The argument of actualStream/inStream must have subscripts that can be evaluated.
+          for sub in ComponentRef.subscriptsAllFlat(arg.cref) loop
+            if Subscript.variability(sub) > Variability.PARAMETER then
+              Error.addSourceMessageAndFail(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
+                {ComponentRef.toString(arg.cref), Subscript.toString(sub)}, info);
+            end if;
+          end for;
+        then
+          Expression.CALL(Call.makeTypedCall(fn, {arg}, var, arg.ty));
+
+      case Expression.ARRAY()
+        algorithm
+          arg.elements := list(typeActualInStreamCall2(name, fn, e, var, info) for e in arg.elements);
+        then
+          arg;
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
+            {Expression.toString(arg), name}, info);
+        then
+          fail();
+
+    end match;
+  end typeActualInStreamCall2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;
