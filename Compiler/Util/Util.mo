@@ -1403,6 +1403,13 @@ algorithm
   end match;
 end stringBool2;
 
+public function stringEqCaseInsensitive
+  input String str1, str2;
+  output Boolean eq;
+algorithm
+  eq := stringEq(System.tolower(str1), System.tolower(str2));
+end stringEqCaseInsensitive;
+
 public function optionList<T>
   "SOME(a) => {a}
    NONE()  => {}"
@@ -1565,6 +1572,14 @@ public function removeLast4Char
 algorithm
   outStr := substring(str,1,stringLength(str)-4);
 end removeLast4Char;
+
+public function removeLastNChar
+  input String str;
+  input Integer n;
+  output String outStr;
+algorithm
+  outStr := substring(str,1,stringLength(str)-n);
+end removeLastNChar;
 
 public function stringNotEqual
   input String str1;

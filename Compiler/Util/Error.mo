@@ -598,7 +598,7 @@ public constant Message LIBRARY_ONE_PACKAGE_PER_FILE = MESSAGE(234, GRAMMAR(), E
   Util.gettext("Modelica library files should contain exactly one package, but found the following classes: %s."));
 public constant Message LIBRARY_UNEXPECTED_WITHIN = MESSAGE(235, GRAMMAR(), ERROR(),
   Util.gettext("Expected the package to have %s but got %s."));
-public constant Message LIBRARY_UNEXPECTED_NAME = MESSAGE(236, GRAMMAR(), ERROR(),
+public constant Message LIBRARY_UNEXPECTED_NAME = MESSAGE(236, SCRIPTING(), ERROR(),
   Util.gettext("Expected the package to have name %s, but got %s."));
 public constant Message PACKAGE_MO_NOT_IN_ORDER = MESSAGE(237, GRAMMAR(), ERROR(),
   Util.gettext("Elements in the package.mo-file need to be in the same relative order as the package.order file. Got element named %s but it was already added because it was not the next element in the list at that time."));
@@ -829,8 +829,12 @@ public constant Message WHEN_IF_VARIABLE_MISMATCH = MESSAGE(350, TRANSLATION(), 
   Util.gettext("The branches of an if-equation inside a when-equation must have the same set of component references on the left-hand side."));
 public constant Message DIMENSION_DEDUCTION_FROM_BINDING_FAILURE = MESSAGE(351, TRANSLATION(), ERROR(),
   Util.gettext("Dimension %s of ‘%s‘ could not be deduced from the component's binding equation ‘%s‘."));
-public constant Message NON_REAL_FLOW_OR_STREAM = MESSAGE(351, TRANSLATION(), ERROR(),
+public constant Message NON_REAL_FLOW_OR_STREAM = MESSAGE(352, TRANSLATION(), ERROR(),
   Util.gettext("Invalid prefix ‘%s‘ on non-Real component ‘%s‘."));
+public constant Message LIBRARY_UNEXPECTED_NAME_CASE_SENSITIVE = MESSAGE(353, SCRIPTING(), WARNING(),
+  Util.gettext("Expected the package to have name %s, but got %s. Proceeding since only the case of the names are different."));
+public constant Message PACKAGE_ORDER_CASE_SENSITIVE = MESSAGE(354, SCRIPTING(), WARNING(),
+  Util.gettext("The package.order file contains a class %s, which is expected to be stored in file %s, but seems to be named %s. Proceeding since only the case of the names are different."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

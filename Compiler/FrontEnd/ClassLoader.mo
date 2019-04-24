@@ -403,8 +403,12 @@ algorithm
   end if;
   (cl as Absyn.CLASS(name=cname,body=body,info=info))::{} := cs;
   if not stringEqual(cname,pack) then
-    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
-    fail();
+    if stringEqual(System.tolower(cname), System.tolower(pack)) then
+      Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_NAME_CASE_SENSITIVE, {pack,cname}, info);
+    else
+      Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+      fail();
+    end if;
   end if;
   s1 := Absyn.withinString(w1);
   s2 := Absyn.withinString(w2);
@@ -437,7 +441,7 @@ algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
     local
       String contents, duplicatesStr, differencesStr, classFilename;
-      list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection;
+      list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection, caseInsensitiveFiles;
       list<Absyn.ClassPart> cp;
       SourceInfo info;
       list<PackageOrder> po1, po2;
@@ -469,11 +473,12 @@ algorithm
           mofiles = listAppend(subdirs,mofiles);
           // check if all are present in the package.order
           differences = List.setDifference(mofiles, namesToFind);
+          (po1) = getPackageContentNamesinParts(namesToFind,cp,{});
+          (po1,differences) = List.map3Fold(po1,checkPackageOrderFilesExist,mp,info,encrypted,differences);
+
           // issue a warning if not all are present
           differencesStr = stringDelimitList(differences, "\n\t");
           Error.assertionOrAddSourceMessage(listEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
-          po1 = getPackageContentNamesinParts(namesToFind,cp,{});
-          List.map3_0(po1,checkPackageOrderFilesExist,mp,info,encrypted);
 
           po2 = List.map(differences, makeClassLoad);
 
@@ -525,18 +530,32 @@ algorithm
 end makeClassLoad;
 
 protected function checkPackageOrderFilesExist
-  input PackageOrder po;
+  input output PackageOrder po;
   input String mp;
   input SourceInfo info;
   input Boolean encrypted = false;
+  input output list<String> differences;
 algorithm
   _ := match (po,mp,info)
     local
-      String pd,str;
+      String pd,str,str2,str3,str4;
+      list<String> strs;
     case (CLASSLOAD(str),_,_)
-      equation
-        pd = Autoconf.pathDelimiter;
-        Error.assertionOrAddSourceMessage(System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str + (if encrypted then ".moc" else ".mo")),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
+      algorithm
+        pd := Autoconf.pathDelimiter;
+        str2 := str + (if encrypted then ".moc" else ".mo");
+        if not (System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str2)) then
+          try
+            str3 := List.find(System.moFiles(mp), function Util.stringEqCaseInsensitive(str2=System.tolower(str2)));
+          else
+            Error.addSourceMessage(Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
+            fail();
+          end try;
+          Error.addSourceMessage(Error.PACKAGE_ORDER_CASE_SENSITIVE, {str, str2, str3}, info);
+          str4 := Util.removeLastNChar(str3,if encrypted then 4 else 3);
+          differences := List.removeOnTrue(str4, stringEq, differences);
+          po := CLASSLOAD(str4);
+        end if;
       then ();
     else ();
   end match;
