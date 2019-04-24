@@ -118,7 +118,8 @@ match externalDecl
     let ext_output_str =  '<%dumpExtArg(returnArg)%>'
     let output_str = if ext_output_str then ' <%ext_output_str%> ='
     let lang_str = language
-    '  external "<%lang_str%>"<%output_str%><%func_str%>;'
+    let ann_str = match ann case SOME(annotation) then ' <%dumpAnnotation(annotation)%>'
+    '  external "<%lang_str%>"<%output_str%><%func_str%><%ann_str%>;'
 end dumpExternalDecl;
 
 template dumpExtArgs(list<ExtArg> args)
@@ -1036,15 +1037,7 @@ template dumpCommentAnnotation(Option<SCode.Comment> comment)
 end dumpCommentAnnotation;
 
 template dumpCommentAnnotationNoOpt(SCode.Comment comment)
-::=
-  match comment
-    case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = ann_mod))) then
-      if Config.showAnnotations() then
-        'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
-      else if Config.showStructuralAnnotations() then
-        let ann_str = SCodeDumpTpl.dumpModifier(DAEDump.filterStructuralMods(ann_mod), SCodeDump.defaultOptions)
-        if ann_str then
-          'annotation<%ann_str%>'
+::= match comment case SCode.COMMENT(annotation_ = SOME(ann)) then dumpAnnotation(ann)
 end dumpCommentAnnotationNoOpt;
 
 template dumpCommentOpt(Option<SCode.Comment> comment)
@@ -1058,6 +1051,22 @@ end dumpComment;
 template dumpCommentStr(Option<String> comment)
 ::= match comment case SOME(cmt) then '<%\ %>"<%System.escapedString(cmt,false)%>"'
 end dumpCommentStr;
+
+template dumpAnnotationOpt(Option<SCode.Annotation> annotation)
+::= match annotation case SOME(ann) then dumpAnnotation(ann)
+end dumpAnnotationOpt;
+
+template dumpAnnotation(SCode.Annotation annotation)
+::=
+  match annotation
+    case SCode.ANNOTATION(modification = ann_mod) then
+      if Config.showAnnotations() then
+        'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
+      else if Config.showStructuralAnnotations() then
+        let ann_str = SCodeDumpTpl.dumpModifier(DAEDump.filterStructuralMods(ann_mod), SCodeDump.defaultOptions)
+        if ann_str then
+          'annotation<%ann_str%>'
+end dumpAnnotation;
 
 template dumpPathLastIndent(Absyn.Path path)
 ::=
