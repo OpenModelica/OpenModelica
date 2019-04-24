@@ -462,11 +462,12 @@ algorithm
         tmpglobalKnownVars=BackendVariable.listVar(List.map1(listAppend(tempvar,tempvar1),BackendVariable.setVarDirection,DAE.INPUT()));
         shared = BackendDAEUtil.setSharedGlobalKnownVars(shared,BackendVariable.mergeVariables(globalKnownVars, tmpglobalKnownVars));
         //BackendDump.dumpVariables(tmpglobalKnownVars,"inputvars");
-
         // write the variables to the csv file
-        str = "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
-        str = dumpToCsv(str,tempvar);
-        System.writeFile(modelname+"_Inputs.csv", str);
+        if not System.regularFileExists(modelname+"_Inputs.csv") then
+          str = "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+          str = dumpToCsv(str,tempvar);
+          System.writeFile(modelname+"_Inputs.csv", str);
+        end if;
         outDae=BackendDAE.DAE({currentSystem}, shared);
       then
        outDae;
