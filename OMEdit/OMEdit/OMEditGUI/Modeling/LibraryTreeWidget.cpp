@@ -2960,6 +2960,7 @@ LibraryTreeView::LibraryTreeView(LibraryWidget *pLibraryWidget)
   setUniformRowHeights(true);
   createActions();
   connect(this, SIGNAL(expanded(QModelIndex)), SLOT(libraryTreeItemExpanded(QModelIndex)));
+  connect(this, SIGNAL(doubleClicked(QModelIndex)), SLOT(libraryTreeItemDoubleClicked(QModelIndex)));
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
 }
 
@@ -3202,7 +3203,7 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
  * Calls the function that expands the LibraryTreeItem
  * \param index
  */
-void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
+void LibraryTreeView::libraryTreeItemExpanded(const QModelIndex &index)
 {
   // since expanded SIGNAL is triggered when tree has expanded the index so we must collapse it first and then load data and expand it back.
   collapse(index);
@@ -3214,6 +3215,37 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   bool state = blockSignals(true);
   expand(index);
   blockSignals(state);
+}
+
+/*!
+ * \brief LibraryTreeView::libraryTreeItemDoubleClicked
+ * Slot activated when LibraryTreeView doubleClicked SIGNAL is raised.\n
+ * Opens the ModelWidget of the selected LibraryTreeItem.
+ * \param index
+ */
+void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
+{
+  QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
+  LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
+  if (pLibraryTreeItem) {
+    if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      if (fileInfo.isDir()) {
+        if (isExpanded(index)) {
+          collapse(index);
+        } else {
+          expand(index);
+        }
+        return;
+      }
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+               && (pLibraryTreeItem->getOMSConnector()
+                   || pLibraryTreeItem->getOMSBusConnector()
+                   || pLibraryTreeItem->getOMSTLMBusConnector())) {
+      return;
+    }
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  }
 }
 
 /*!
@@ -3893,37 +3925,6 @@ void LibraryTreeView::unloadOMSModel()
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pLibraryTreeItem);
   }
-}
-
-/*!
- * \brief LibraryTreeView::mouseDoubleClickEvent
- * Reimplementation of QTreeView::mouseDoubleClickEvent(). Opens the ModelWidget of the selected LibraryTreeItem.
- * \param event
- */
-void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
-{
-  if (!indexAt(event->pos()).isValid()) {
-    return;
-  }
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
-      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-      if (fileInfo.isDir()) {
-        setExpandsOnDoubleClick(true);
-        QTreeView::mouseDoubleClickEvent(event);
-        setExpandsOnDoubleClick(false);
-        return;
-      }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
-               && (pLibraryTreeItem->getOMSConnector()
-                   || pLibraryTreeItem->getOMSBusConnector()
-                   || pLibraryTreeItem->getOMSTLMBusConnector())) {
-      return;
-    }
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-  }
-  QTreeView::mouseDoubleClickEvent(event);
 }
 
 /*!

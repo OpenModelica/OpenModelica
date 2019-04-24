@@ -415,7 +415,8 @@ private:
   LibraryTreeItem* getSelectedLibraryTreeItem();
   void libraryTreeItemExpanded(LibraryTreeItem* pLibraryTreeItem);
 public slots:
-  void libraryTreeItemExpanded(QModelIndex index);
+  void libraryTreeItemExpanded(const QModelIndex &index);
+  void libraryTreeItemDoubleClicked(const QModelIndex &index);
   void showContextMenu(QPoint point);
   void openClass();
   void openInformationDialog();
@@ -459,7 +460,6 @@ public slots:
   void OMSRename();
   void unloadOMSModel();
 protected:
-  virtual void mouseDoubleClickEvent(QMouseEvent *event);
   virtual void startDrag(Qt::DropActions supportedActions);
   virtual void keyPressEvent(QKeyEvent *event);
 };
