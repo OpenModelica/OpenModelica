@@ -513,6 +513,8 @@ omsi_real division_error_time(const char*   msg,
  */
 omsi_real homotopy(omsi_real actual, omsi_real siple) {
 
+  UNUSED(siple);
+
   /* call an assert after logging */
   return actual;
 }

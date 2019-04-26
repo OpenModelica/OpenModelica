@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef OMSU_INPUT_MODEL_VARIABLES_H
-#define OMSU_INPUT_MODEL_VARIABLES_H
+#ifndef OMSU_GETTERS_AND_SETTERS_H
+#define OMSU_GETTERS_AND_SETTERS_H
 
 #include <omsi.h>
 #include <omsi_callbacks.h>

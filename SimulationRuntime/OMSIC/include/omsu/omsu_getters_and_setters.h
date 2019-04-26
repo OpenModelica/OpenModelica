@@ -43,6 +43,7 @@
 
 #include <omsic.h>
 #include <omsi_input_model_variables.h>
+#include <omsi_getters_and_setters.h>
 
 #include <omsu_common.h>
 #include <omsu_helper.h>
