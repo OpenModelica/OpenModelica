@@ -22,6 +22,7 @@ To get everything running, you will need a few extras:
 - omniORB (optional; CORBA is used by OMOptim)
 - OpenSceneGraph
 - Qt5 or Qt4, Webkit, QtOpenGL
+- libqt5svg5
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 
 ## Compilation (Linux/OSX)
