@@ -461,23 +461,23 @@ package SimCode
   end ExtObjInfo;
 
   uniontype OMSIData
-  record OMSI_DATA
-    OMSIFunction initialization;
-    OMSIFunction simulation;
-  end OMSI_DATA;
-end OMSIData;
+    record OMSI_DATA
+      OMSIFunction initialization;
+      OMSIFunction simulation;
+    end OMSI_DATA;
+  end OMSIData;
 
-uniontype OMSIFunction
-  record OMSI_FUNCTION
-    list<SimEqSystem> equations;
-    list<SimCodeVar.SimVar> inputVars;
-    list<SimCodeVar.SimVar> outputVars;
-    list<SimCodeVar.SimVar> innerVars;
-    Integer nAllVars;
-    SimCodeFunction.Context context;
-    Integer nAlgebraicSystems;
-  end OMSI_FUNCTION;
-end OMSIFunction;
+  uniontype OMSIFunction
+    record OMSI_FUNCTION
+      list<SimEqSystem> equations;
+      list<SimCodeVar.SimVar> inputVars;
+      list<SimCodeVar.SimVar> outputVars;
+      list<SimCodeVar.SimVar> innerVars;
+      Integer nAllVars;
+      SimCodeFunction.Context context;
+      Integer nAlgebraicSystems;
+    end OMSI_FUNCTION;
+  end OMSIFunction;
 
   uniontype SimEqSystem
     record SES_RESIDUAL

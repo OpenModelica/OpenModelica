@@ -1422,12 +1422,28 @@ algorithm
       then
         (cache,Values.BOOL(b));
 
-    case (cache,env,"buildModel",vals,_)
-      equation
+    case (cache,env,"buildModel", vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
+      algorithm
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
-        executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
+        if not Config.simCodeTarget() == "omsic" then
+          (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) := buildModel(cache,env, vals, msg);
+        else
+          filenameprefix := Absyn.pathString(className);
+          try
+            (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
+            if stringEmpty(str) then
+              fail();
+            end if;
+            b := true;
+          else
+            b := false;
+          end try;
+          compileDir := System.pwd() + Autoconf.pathDelimiter;
+          executable := filenameprefix + "_me_FMU";
+          initfilename := filenameprefix + "_init_xml";
+        end if;
+        executable := if not Config.getRunningTestsuite() then compileDir + executable else executable;
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
 
@@ -1498,7 +1514,12 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
+        if not Config.simCodeTarget() == "omsic" then
+          (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
+        else
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
+          fail();
+        end if;
 
         if b then
           exeDir := compileDir;
@@ -3544,6 +3565,7 @@ protected
   list<String> libs;
   Boolean isWindows;
   String FMUType = inFMUType;
+  Real timeCompile;
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -3564,6 +3586,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix, ".", "_");
@@ -3572,7 +3595,7 @@ algorithm
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
   Flags.setConfigBool(Flags.BUILDING_FMU, true);
   try
-    (success, cache, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
@@ -3606,19 +3629,41 @@ algorithm
     return;
   end if;
 
-  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+  System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+  if not Config.simCodeTarget() == "omsic" then
+    CevalScript.compileModel(filenameprefix+"_FMU" , libs);
 
-  ExecStat.execStat("buildModelFMU: Generate the FMI files");
+    ExecStat.execStat("buildModelFMU: Generate the FMI files");
+
+    fmutmp := filenameprefix + ".fmutmp";
+    logfile := filenameprefix + ".log";
+    dir := fmutmp+"/sources/";
+  else
+    fmutmp := filenameprefix+".fmutmp" + Autoconf.pathDelimiter;
+    try
+      CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
+      timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+    else
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(fmutmp + filenameprefix+"_FMU.log")});
+    end try;
+    return;
+  end if;
 
   for platform in platforms loop
-    configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
-    ExecStat.execStat("buildModelFMU: Generate platform " + platform);
+    try
+      configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
+      ExecStat.execStat("buildModelFMU: Generate platform " + platform);
+    else
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Configure for platform:\"" + platform + "\" does not exist"});
+    end try;
   end for;
 
   cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
+  else
+    timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
   end if;
 
   if not System.regularFileExists(fmuTargetName + ".fmu") then
@@ -5123,10 +5168,10 @@ algorithm
         if success then
           try
             CevalScript.compileModel(filenameprefix, libs);
+            timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
           else
             success := false;
           end try;
-          timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         else
           timeCompile := 0.0;
         end if;

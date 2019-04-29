@@ -43,9 +43,20 @@ import CodegenOMSIC_Equations;
 import CodegenUtil;
 import CodegenUtilSimulation;
 import CodegenCFunctions;
+import CodegenFMU;
 
 
 /* public */
+template generateFMUModelDescriptionFile(SimCode simCode, String guid, String FMUVersion, String FMUType, list<String> sourceFiles, String fileName)
+"Generate modelDescription.xml.
+ ToDo: Workaround since runTplWriteFile from .mo file loses some spaces."
+::=
+  let content = CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)
+  let () = textFile(content, fileName)
+  <<>>
+end generateFMUModelDescriptionFile;
+
+
 template generateEquationsCode (SimCode simCode, String FileNamePrefix)
 "Entrypoint to generate all Code for linear systems.
  Code is generated directly into files"
@@ -148,44 +159,44 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
       #include <Core/System/IOMSI.h>
 
       >>
-  end match%>
+    end match%>
 
 
-  #if defined(__cplusplus)
-  extern "C" {
-  #endif
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
 
-  /* Instantiation of omsi_function_t */
-  <%initializationCode%>
+    /* Instantiation of omsi_function_t */
+    <%initializationCode%>
 
-  /* Evaluation functions for each equation */
-  <%evaluationCode%>
+    /* Evaluation functions for each equation */
+    <%evaluationCode%>
 
 
-  /* Equations evaluation */
-  <%match  Config.simCodeTarget()
-    case "omsic" then
-      'omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){'
-    case "omsicpp" then
-      'omsi_status <%FileNamePrefix%>::omsi_<%modelFunctionnamePrefixStr%>All(omsi_function_t* <%omsiName%>, const omsi_values* model_vars_and_params, void* data){'
-   end match%>
+    /* Equations evaluation */
+    <%match  Config.simCodeTarget()
+      case "omsic" then
+        'omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){'
+      case "omsicpp" then
+        'omsi_status <%FileNamePrefix%>::omsi_<%modelFunctionnamePrefixStr%>All(omsi_function_t* <%omsiName%>, const omsi_values* model_vars_and_params, void* data){'
+     end match%>
 
-    /* Variables */
-    omsi_status status, new_status;
+      /* Variables */
+      omsi_status status, new_status;
 
-    status = omsi_ok;
-    <%if not nAlgebraicSystems then "new_status = omsi_ok;"%>
+      status = omsi_ok;
+      <%if not nAlgebraicSystems then "new_status = omsi_ok;"%>
 
-    <%functionCall%>
+      <%functionCall%>
 
-    return status;
-  }
+      return status;
+    }
 
-  #if defined(__cplusplus)
-  }
-  #endif
-  <%\n%>
-  >>
+    #if defined(__cplusplus)
+    }
+    #endif
+    <%\n%>
+    >>
   /* leave a newline at the end of file to get rid of the warning */
 end generateOmsiFunctionCode;
 
