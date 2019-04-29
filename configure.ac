@@ -558,29 +558,51 @@ SUNDIALS_LDFLAGS="-lsundials_idas -lsundials_kinsol -lsundials_nvecserial $LD_LA
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
-AC_CHECK_HEADERS(locale.h libintl.h,[
-AC_MSG_CHECKING([gettext linking])
-AC_TRY_LINK([
-#include <libintl.h>
-], [
-  gettext("");
-], [AC_MSG_RESULT([in C-library])],
-  [
-  LIBS="-lintl";
+AC_CHECK_HEADERS(locale.h libintl.h,[],[HAVE_GETTEXT="#define NO_GETTEXT 1"])
+
+if test -z "$HAVE_GETTEXT"; then
+  AC_MSG_CHECKING([gettext linking])
+
   AC_TRY_LINK([
     #include <libintl.h>
   ], [
+  gettext("");
+  ], [AC_MSG_RESULT([in C-library])],
+  [
+    LIBS="-lintl";
+    AC_TRY_LINK([
+      #include <libintl.h>
+    ], [
       gettext("");
-  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL $LIBS"],
-      [
-        HAVE_GETTEXT="#define NO_GETTEXT 1"
-        AC_MSG_RESULT([no])
-      ])
-])
-],[
-  HAVE_GETTEXT="#define NO_GETTEXT 1"
-  AC_MSG_RESULT([gettext headers not found])
-])
+    ], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [HAVE_GETTEXT="#define NO_GETTEXT 1"])
+  ])
+
+  LIBS=""
+
+  if test -z "$HAVE_GETTEXT$GETTEXT_LIBS"; then
+
+  AC_MSG_CHECKING([setlocale linking])
+
+  AC_TRY_LINK([
+    #include <libintl.h>
+  ], [
+    setlocale(LC_ALL, "");
+  ], [AC_MSG_RESULT([in C-library])],
+  [
+    LIBS="-lintl";
+    AC_TRY_LINK([
+      #include <libintl.h>
+    ], [
+      setlocale(LC_ALL, "");
+    ], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [AC_MSG_RESULT([no]); HAVE_GETTEXT="#define NO_GETTEXT 1"])
+  ])
+
+  fi
+
+  if test -z "$HAVE_GETTEXT"; then
+    RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL $GETTEXT_LIBS"
+  fi
+fi
 
 AC_ARG_WITH(hwloc,  [  --without-hwloc        (default to looking for it)],[
   LIBS=""
@@ -678,7 +700,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_SHARED=
-  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lzmq $LIBUUID"
+  OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/$host_short/omc/'"
   RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/$host_short/omc',-rpath,'@loader_path/../../../../lib/',-rpath,'$PREFIX/lib/$host_short/omc',-rpath,'$PREFIX/lib/'"
