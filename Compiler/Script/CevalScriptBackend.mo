@@ -3565,7 +3565,6 @@ protected
   list<String> libs;
   Boolean isWindows;
   String FMUType = inFMUType;
-  Real timeCompile;
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -3624,46 +3623,29 @@ algorithm
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
     if 0 <> System.systemCall("make -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
-    // do nothing
-  end if;
+      // do nothing
+    end if;
     return;
   end if;
 
-  System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
   if not Config.simCodeTarget() == "omsic" then
     CevalScript.compileModel(filenameprefix+"_FMU" , libs);
-
     ExecStat.execStat("buildModelFMU: Generate the FMI files");
-
-    fmutmp := filenameprefix + ".fmutmp";
-    logfile := filenameprefix + ".log";
-    dir := fmutmp+"/sources/";
   else
     fmutmp := filenameprefix+".fmutmp" + Autoconf.pathDelimiter;
-    try
-      CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
-      timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-    else
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(fmutmp + filenameprefix+"_FMU.log")});
-    end try;
+    CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
     return;
   end if;
 
   for platform in platforms loop
-    try
-      configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
-      ExecStat.execStat("buildModelFMU: Generate platform " + platform);
-    else
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Configure for platform:\"" + platform + "\" does not exist"});
-    end try;
+    configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
+    ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
 
   cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
-  else
-    timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
   end if;
 
   if not System.regularFileExists(fmuTargetName + ".fmu") then
@@ -5168,10 +5150,10 @@ algorithm
         if success then
           try
             CevalScript.compileModel(filenameprefix, libs);
-            timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
           else
             success := false;
           end try;
+          timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         else
           timeCompile := 0.0;
         end if;
