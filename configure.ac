@@ -584,14 +584,18 @@ if test -z "$HAVE_GETTEXT"; then
   AC_MSG_CHECKING([setlocale linking])
 
   AC_TRY_LINK([
+    /* Also include libintl.h as MacOS then uses a different setlocale... */
     #include <libintl.h>
+    #include <locale.h>
   ], [
     setlocale(LC_ALL, "");
   ], [AC_MSG_RESULT([in C-library])],
   [
     LIBS="-lintl";
     AC_TRY_LINK([
+      /* Also include libintl.h as MacOS then uses a different setlocale... */
       #include <libintl.h>
+      #include <locale.h>
     ], [
       setlocale(LC_ALL, "");
     ], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [AC_MSG_RESULT([no]); HAVE_GETTEXT="#define NO_GETTEXT 1"])
