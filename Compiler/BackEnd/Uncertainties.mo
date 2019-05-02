@@ -435,7 +435,7 @@ algorithm
 
         /* Prepare Torn systems for Jacobians */
         //create the Set-S equation to BackendDae innerequation structure
-        sets_inner_equations=createInnerEquations(tempsetS,var,setS);
+        sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns);
         //sets_inner_equations={BackendDAE.INNEREQUATION(eqn = 56, vars = {48}), BackendDAE.INNEREQUATION(eqn = 3, vars = {70}), BackendDAE.INNEREQUATION(eqn = 6, vars = {77}),BackendDAE.INNEREQUATION(eqn = 23, vars = {55}), BackendDAE.INNEREQUATION(eqn = 20, vars = {42}), BackendDAE.INNEREQUATION(eqn = 50, vars = {20})};
         (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
         // Dump the torn systems
@@ -495,6 +495,7 @@ public function createInnerEquations
    input list<Integer> tempsets;
    input list<tuple<Integer,Integer>> solvedeqvar;
    input list<Integer> sets;
+   input list<Integer> knowns;
    output BackendDAE.InnerEquations outequations={};
 protected
    Integer eqnumber,varnumber;
@@ -503,7 +504,9 @@ algorithm
    for i in tempsets loop
       (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedeqvar);
       // map the tempsets with setS, to get the correct equation index for example (26/37) in ordered equation list
-      outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{varnumber})::outequations;
+      if not listMember(varnumber,knowns) then
+        outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{varnumber})::outequations;
+      end if;
       count:=count+1;
    end for;
    outequations:=listReverse(outequations);

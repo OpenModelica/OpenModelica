@@ -194,7 +194,7 @@ csvData readcsvInputs(const char * filename, ofstream & logfile)
 	int Sxrowcount=0;
 	int linecount=1;
 	int Sxcolscount=0;
-	bool flag=false,rx_ik=false;
+	bool flag=false,rx_ik=false,skip0=false,skip1=false,skip2=false;
 	int myarraycount=0;
 	if(!ip.good())
 	{
@@ -218,6 +218,7 @@ csvData readcsvInputs(const char * filename, ofstream & logfile)
 			while(ss >> temp){
 				if(skip==0)
 				{
+					skip0=true;
 					names.push_back(temp.c_str());
 					Sxrowcount++;
 					if(flag==false){
@@ -226,6 +227,7 @@ csvData readcsvInputs(const char * filename, ofstream & logfile)
 				}
 				if(skip==1)
 				{
+					skip1=true;
 					//logfile << "xdata" << temp << " double" << atof(temp.c_str()) <<"\n";
 					xdata.push_back(atof(temp.c_str()));
 					if(flag==false){
@@ -234,6 +236,7 @@ csvData readcsvInputs(const char * filename, ofstream & logfile)
 				}
 				if(skip==2){
 					//logfile << "sxdata" << temp << " double" << atof(temp.c_str()) <<"\n";
+					skip2=true;
 					sxdata.push_back(atof(temp.c_str()));
 					if(flag==false){
 						Sxcolscount++;
@@ -250,6 +253,12 @@ csvData readcsvInputs(const char * filename, ofstream & logfile)
 			}
 			flag=true;
 			//Sxrowcount++;
+			if(skip0==false || skip1==false || skip2==false)
+			{
+				logfile << "|  error   |   " << filename << "|  csvdata Empty, "  << "DataReconciliation cannot be computed ! \n";
+				logfile.close();
+				exit(1);
+			}
 		}
 		if(rx_ik==true)
 		{
