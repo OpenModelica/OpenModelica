@@ -719,11 +719,15 @@ RedeclareElementComp5.mo \
 RedeclareElementCondition1.mo \
 RedeclareElementCondition2.mo \
 RedeclareElementCondition3.mo \
-RedeclareInvalidConnectorType1.mo \
-RedeclareInvalidVariability1.mo \
 RedeclareElementMissing1.mo \
 RedeclareElementMissing2.mo \
+RedeclareEnum1.mo \
+RedeclareEnum2.mo \
+RedeclareEnum3.mo \
+RedeclareEnum4.mo \
 RedeclareFunction1.mo \
+RedeclareInvalidConnectorType1.mo \
+RedeclareInvalidVariability1.mo \
 RedeclareMod1.mo \
 RedeclareMod2.mo \
 RedeclareMod3.mo \
