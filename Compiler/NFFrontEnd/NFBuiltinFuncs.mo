@@ -201,7 +201,7 @@ constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   DUMMY_ELEMENT, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), ClassTree.EMPTY_TREE(),
-    Modifier.NOMOD(), Restriction.TYPE())),
+    Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   listArrayLiteral({
     NFInstNode.CachedData.FUNCTION({
         STRING_ENUM,
@@ -341,7 +341,7 @@ constant Function CLOCK_SOLVER = Function.FUNCTION(Path.IDENT("Clock"),
 constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   DUMMY_ELEMENT, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.CLOCK(), ClassTree.EMPTY_TREE(),
-    Modifier.NOMOD(), Restriction.TYPE())),
+    Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
   listArrayLiteral({
     NFInstNode.CachedData.FUNCTION({
         CLOCK_INFERED,

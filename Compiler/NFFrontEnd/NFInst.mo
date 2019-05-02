@@ -295,7 +295,7 @@ algorithm
       algorithm
         ty := makeEnumerationType(cdef.enumLst, scope);
       then
-        Class.fromEnumeration(cdef.enumLst, ty, scope);
+        Class.fromEnumeration(cdef.enumLst, ty, prefs, scope);
 
     else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD(), prefs);
   end match;
@@ -532,7 +532,7 @@ algorithm
   // ComplexType instead. Using an empty class tree makes sure it's not
   // possible to call the constructor or destructor explicitly.
   c := Class.PARTIAL_BUILTIN(Type.COMPLEX(node, eo_ty), NFClassTree.EMPTY_FLAT,
-    Modifier.NOMOD(), Restriction.EXTERNAL_OBJECT());
+    Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.EXTERNAL_OBJECT());
   node := InstNode.updateClass(c, node);
 end expandExternalObject;
 
@@ -1291,8 +1291,11 @@ algorithm
           fail();
     end match;
   else
-    new_cls := match rdcl_cls
-      case Class.PARTIAL_CLASS()
+    new_cls := match (orig_cls, rdcl_cls)
+      case (Class.PARTIAL_BUILTIN(), _)
+        then redeclareEnum(rdcl_cls, orig_cls, prefs, outerMod, redeclareNode, originalNode);
+
+      case (_, Class.PARTIAL_CLASS())
         algorithm
           rdcl_cls.prefixes := prefs;
           rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
@@ -1309,6 +1312,44 @@ algorithm
 
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
 end redeclareClass;
+
+function redeclareEnum
+  input Class redeclareClass;
+  input Class originalClass;
+  input Class.Prefixes prefixes;
+  input Modifier outerMod;
+  input InstNode redeclareNode;
+  input InstNode originalNode;
+  output Class redeclaredClass = redeclareClass;
+algorithm
+  redeclaredClass := match (redeclaredClass, originalClass)
+    local
+      list<String> lits1, lits2;
+
+    case (Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION(literals = lits1)),
+          Class.PARTIAL_BUILTIN(ty = Type.ENUMERATION(literals = lits2)))
+      algorithm
+        if not (listEmpty(lits2) or List.isEqualOnTrue(lits1, lits2, stringEq)) then
+          Error.addMultiSourceMessage(Error.REDECLARE_ENUM_NON_SUBTYPE,
+            {InstNode.name(originalNode)}, {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+          fail();
+        end if;
+
+        redeclaredClass.prefixes := prefixes;
+        redeclaredClass.modifier := Modifier.merge(outerMod, redeclaredClass.modifier);
+      then
+        redeclaredClass;
+
+    else
+      algorithm
+        Error.addMultiSourceMessage(Error.REDECLARE_CLASS_NON_SUBTYPE,
+          {Restriction.toString(Class.restriction(originalClass)), InstNode.name(originalNode)},
+          {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+      then
+        fail();
+
+  end match;
+end redeclareEnum;
 
 function instComponent
   input InstNode node   "The component node to instantiate";

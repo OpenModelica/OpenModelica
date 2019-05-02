@@ -87,6 +87,7 @@ uniontype Class
     Type ty;
     ClassTree elements;
     Modifier modifier;
+    Class.Prefixes prefixes;
     Restriction restriction;
   end PARTIAL_BUILTIN;
 
@@ -145,14 +146,14 @@ uniontype Class
   function fromEnumeration
     input list<SCode.Enum> literals;
     input Type enumType;
+    input Prefixes prefixes;
     input InstNode enumClass;
     output Class cls;
   protected
     ClassTree tree;
   algorithm
     tree := ClassTree.fromEnumeration(literals, enumType, enumClass);
-    cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD(),
-      Restriction.ENUMERATION());
+    cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD(), prefixes, Restriction.ENUMERATION());
   end fromEnumeration;
 
   function makeRecordConstructor
@@ -609,6 +610,7 @@ uniontype Class
   algorithm
     prefs := match cls
       case PARTIAL_CLASS() then cls.prefixes;
+      case PARTIAL_BUILTIN() then cls.prefixes;
       case EXPANDED_CLASS() then cls.prefixes;
       case EXPANDED_DERIVED() then cls.prefixes;
     end match;

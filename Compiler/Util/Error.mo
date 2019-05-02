@@ -835,6 +835,10 @@ public constant Message LIBRARY_UNEXPECTED_NAME_CASE_SENSITIVE = MESSAGE(353, SC
   Util.gettext("Expected the package to have name %s, but got %s. Proceeding since only the case of the names are different."));
 public constant Message PACKAGE_ORDER_CASE_SENSITIVE = MESSAGE(354, SCRIPTING(), WARNING(),
   Util.gettext("The package.order file contains a class %s, which is expected to be stored in file %s, but seems to be named %s. Proceeding since only the case of the names are different."));
+public constant Message REDECLARE_CLASS_NON_SUBTYPE = MESSAGE(355, TRANSLATION(), ERROR(),
+  Util.gettext("Redeclaration of %s ‘%s‘ is not a subtype of the redeclared element."));
+public constant Message REDECLARE_ENUM_NON_SUBTYPE = MESSAGE(356, TRANSLATION(), ERROR(),
+  Util.gettext("Redeclaration of enumeration ‘%s‘ is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration)."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
