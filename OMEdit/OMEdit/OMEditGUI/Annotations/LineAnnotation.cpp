@@ -72,7 +72,6 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent)
 {
   updateShape(pShapeAnnotation);
-  initUpdateVisible(); // DynamicSelect for visible attribute
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
@@ -470,6 +469,9 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       } else {
         painter->setOpacity(0.2);
       }
+    } else if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+                                         || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
+      return;
     }
     drawLineAnnotaion(painter);
   }

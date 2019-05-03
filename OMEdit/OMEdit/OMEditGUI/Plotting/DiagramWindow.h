@@ -40,13 +40,14 @@
 
 class GraphicsScene;
 class GraphicsView;
+class ModelWidget;
 class DiagramWindow : public QWidget
 {
   Q_OBJECT
 public:
   explicit DiagramWindow(QWidget *parent = 0);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
-  void drawDiagram();
+  void drawDiagram(ModelWidget *pModelWidget);
 private:
   GraphicsScene *mpGraphicsScene;
   GraphicsView *mpGraphicsView;

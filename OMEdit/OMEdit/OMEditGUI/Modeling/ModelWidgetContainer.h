@@ -413,7 +413,7 @@ public:
   void reDrawModelWidgetInheritedClasses();
   void drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
-  ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadComponents();
@@ -434,8 +434,6 @@ public:
   void updateModelText();
   void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
-  void updateDynamicResults(QString resultFileName);
-  QString getResultFileName() {return mResultFileName;}
   bool writeCoSimulationResultFile(QString fileName);
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
   void beginMacro(const QString &text);
@@ -475,7 +473,6 @@ private:
   QList<LibraryTreeItem*> mInheritedClassesList;
   QList<ComponentInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
-  QString mResultFileName;
 
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
@@ -513,7 +510,6 @@ public slots:
   bool compositeModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
-  void removeDynamicResults(QString resultFileName = "");
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };

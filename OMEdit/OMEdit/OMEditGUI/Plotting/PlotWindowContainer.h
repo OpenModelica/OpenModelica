@@ -45,6 +45,7 @@
 class AnimationWindow;
 class DiagramWindow;
 class VariablesTreeItem;
+class ModelWidget;
 
 class PlotWindowContainer : public QMdiArea
 {
@@ -74,7 +75,7 @@ public slots:
   void addArrayParametricPlotWindow();
   OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
   void addAnimationWindow(bool maximized = false);
-  void addDiagramWindow(bool maximized = false);
+  void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
   void exportVariables();

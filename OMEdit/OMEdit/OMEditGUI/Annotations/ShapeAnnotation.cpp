@@ -49,8 +49,14 @@
 void GraphicItem::setDefaults()
 {
   mVisible = true;
+  mDynamicVisible = "";
+  mDynamicVisibleValue = true;
   mOrigin = QPointF(0, 0);
+  mDynamicOrigin = "";
+  mDynamicOriginValue = QPointF(0, 0);
   mRotation = 0;
+  mDynamicRotation = "";
+  mDynamicRotationValue = 0;
 }
 
 /*!
@@ -61,9 +67,14 @@ void GraphicItem::setDefaults()
 void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
 {
   mVisible = pShapeAnnotation->mVisible;
-  mOrigin = pShapeAnnotation->mOrigin;
-  mRotation = pShapeAnnotation->mRotation;
   mDynamicVisible = pShapeAnnotation->mDynamicVisible;
+  mDynamicVisibleValue = pShapeAnnotation->mDynamicVisibleValue;
+  mOrigin = pShapeAnnotation->mOrigin;
+  mDynamicOrigin = pShapeAnnotation->mDynamicOrigin;
+  mDynamicOriginValue = pShapeAnnotation->mDynamicOriginValue;
+  mRotation = pShapeAnnotation->mRotation;
+  mDynamicRotation = pShapeAnnotation->mDynamicRotation;
+  mDynamicRotationValue = pShapeAnnotation->mDynamicRotationValue;
 }
 
 /*!
@@ -77,26 +88,35 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  if (list.at(0).startsWith("{")) {
-    // DynamicSelect
+  if (list.at(0).startsWith("{")) { // DynamicSelect
     QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(0)));
-    if (args.count() > 0)
+    if (args.count() > 0) {
       mVisible = args.at(0).contains("true");
-    if (args.count() > 1)
+    }
+    if (args.count() > 1) {
       mDynamicVisible = args.at(1);  // variable name
-  }
-  else {
+    }
+  } else {
     mVisible = list.at(0).contains("true");
   }
   // 2nd item is the origin
   QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
-  if (originList.size() >= 2)
-  {
+  if (originList.size() >= 2) {
     mOrigin.setX(originList.at(0).toFloat());
     mOrigin.setY(originList.at(1).toFloat());
   }
   // 3rd item is the rotation
-  mRotation = list.at(2).toFloat();
+  if (list.at(2).startsWith("{")) { // DynamicSelect
+    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(2)));
+    if (args.count() > 0) {
+      mRotation = args.at(0).toFloat();
+    }
+    if (args.count() > 1) {
+      mDynamicRotation = args.at(1);  // variable name
+    }
+  } else {
+    mRotation = list.at(2).toFloat();
+  }
 }
 
 /*!
@@ -355,6 +375,7 @@ void ShapeAnnotation::setDefaults()
   mFileName = "";
   mImageSource = "";
   mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+  mDynamicTextString.clear();
 }
 
 /*!
@@ -791,27 +812,6 @@ QImage ShapeAnnotation::getImage()
 }
 
 /*!
-  Returns a dynamic value or null if no dynamic value exists
-  */
-QVariant ShapeAnnotation::getDynamicValue(QString name)
-{
-  QVariant dynamicValue; // isNull() per default
-  if (mpParentComponent) {
-    ModelWidget *pModelWidget = mpParentComponent->getGraphicsView()->getModelWidget();
-    if (!pModelWidget->getResultFileName().isEmpty()) {
-      QString fullName = pModelWidget->getResultFileName() + "." + mpParentComponent->getComponentInfo()->getName() + "." + name;
-      MainWindow *pMainWindow = MainWindow::instance();
-      VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
-      VariablesTreeItem *pVariablesTreeItem = pVariablesTreeModel->findVariablesTreeItem(fullName, pVariablesTreeModel->getRootVariablesTreeItem());
-      if (pVariablesTreeItem != NULL) {
-        dynamicValue = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getUnit());
-      }
-    }
-  }
-  return dynamicValue;
-}
-
-/*!
  * \brief ShapeAnnotation::applyRotation
  * Applies the rotation on the shape and sets the shape transformation matrix accordingly.
  * \param angle - the rotation angle to apply.
@@ -998,33 +998,61 @@ void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 }
 
 /*!
- * \brief ShapeAnnotation::initUpdateVisible
- * Initialize optional DynamicSelect for the visible status
+ * \brief ShapeAnnotation::updateDynamicSelect
+ * Updates the shapes according to the DynamicSelect annotation.
+ * \param time
  */
-void ShapeAnnotation::initUpdateVisible()
+void ShapeAnnotation::updateDynamicSelect(double time)
 {
-  if (mpParentComponent) {
-    if (!mDynamicVisible.isEmpty()) {
-      updateVisible();
-      connect(mpParentComponent, SIGNAL(displayTextChanged()), SLOT(updateVisible()), Qt::UniqueConnection);
-    }
-  }
-}
-
-/*!
- * \brief ShapeAnnotation::updateVisible
- * DynamicSelect for the visible status
- */
-void ShapeAnnotation::updateVisible()
-{
-  bool visible = mVisible; // model provided default value
+  // visible
   if (!mDynamicVisible.isEmpty()) {
-    QVariant dynamicValue = getDynamicValue(mDynamicVisible);
-    if (!dynamicValue.isNull()) {
-      visible = dynamicValue.toBool();
+    if (mDynamicVisible.compare("true") == 0) {
+      mDynamicVisibleValue = true;
+    } else if (mDynamicVisible.compare("false") == 0) {
+      mDynamicVisibleValue = false;
+    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
+      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicVisible);
+      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
+    } else {
+      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicVisible, time);
     }
   }
-  setVisible(visible);
+  // rotation
+  if (!mDynamicRotation.isEmpty()) {
+    bool ok = false;
+    float rotation = mDynamicRotation.toFloat(&ok);
+    if (ok) {
+      mDynamicRotationValue = rotation;
+    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
+      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicRotation);
+      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
+    } else {
+      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicRotation, time);
+    }
+    setRotation(mDynamicRotationValue);
+    update();
+  }
+  // textString
+  QVariant dynamicTextValue; // isNull() per default
+  if (mDynamicTextString.count() > 0) {
+    if (mpParentComponent && mpParentComponent->getComponentInfo()) {
+      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicTextString.at(0).toString());
+      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
+    } else {
+      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicTextString.at(0).toString(), time);
+    }
+  }
+  if (!dynamicTextValue.isNull()) {
+    mTextString = dynamicTextValue.toString();
+    if (mTextString.isEmpty()) {
+      /* use variable name as default value if result not found */
+      mTextString = mDynamicTextString.at(0).toString();
+    } else if (mDynamicTextString.count() > 1) {
+      int digits = mDynamicTextString.at(1).toInt();
+      mTextString = QString::number(mTextString.toDouble(), 'g', digits);
+    }
+    update();
+  }
 }
 
 /*!
