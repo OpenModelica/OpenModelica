@@ -87,11 +87,11 @@ GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pMod
 /*!
  * \brief GraphicsView::GraphicsView
  * \param viewType
- * \param parent
- * \param animationView
+ * \param pModelWidget
+ * \param visualizationView
  */
-GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent, bool visualizationView)
-  : QGraphicsView(parent), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false)
+GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView)
+  : QGraphicsView(pModelWidget), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false)
 {
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
@@ -103,7 +103,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setAcceptDrops(true);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setMouseTracking(true);
-  mpModelWidget = parent;
+  mpModelWidget = pModelWidget;
   // set the coOrdinate System
   mCoOrdinateSystem = CoOrdinateSystem();
   GraphicalViewsPage *pGraphicalViewsPage;
@@ -1073,6 +1073,83 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
   }
   // update class annotation.
   addClassAnnotation();
+}
+
+/*!
+ * \brief GraphicsView::clearGraphicsView
+ * Clears everything from the GraphicsView.
+ */
+void GraphicsView::clearGraphicsView()
+{
+  removeAllShapes();
+  removeAllConnections();
+  removeAllTransitions();
+  removeAllInitialStates();
+  removeClassComponents();
+  removeInheritedClassShapes();
+  removeInheritedClassConnections();
+  removeInheritedClassComponents();
+  scene()->clear();
+}
+
+/*!
+ * \brief GraphicsView::removeClassComponents
+ * Removes all the class components.
+ */
+void GraphicsView::removeClassComponents()
+{
+  foreach (Component *pComponent, mComponentsList) {
+    pComponent->removeChildren();
+    deleteComponentFromList(pComponent);
+    removeItem(pComponent->getOriginItem());
+    delete pComponent->getOriginItem();
+    removeItem(pComponent);
+    pComponent->emitDeleted();
+    delete pComponent;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeInheritedClassShapes
+ * Removes all the inherited class shapes.
+ */
+void GraphicsView::removeInheritedClassShapes()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mInheritedShapesList) {
+    deleteInheritedShapeFromList(pShapeAnnotation);
+    removeItem(pShapeAnnotation);
+    delete pShapeAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeInheritedClassComponents
+ * Removes all the class inherited components.
+ */
+void GraphicsView::removeInheritedClassComponents()
+{
+  foreach (Component *pComponent, mInheritedComponentsList) {
+    pComponent->removeChildren();
+    deleteInheritedComponentFromList(pComponent);
+    removeItem(pComponent->getOriginItem());
+    delete pComponent->getOriginItem();
+    removeItem(pComponent);
+    pComponent->emitDeleted();
+    delete pComponent;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeInheritedClassConnections
+ * Removes all the class inherited class connections.
+ */
+void GraphicsView::removeInheritedClassConnections()
+{
+  foreach (LineAnnotation *pConnectionLineAnnotation, mInheritedConnectionsList) {
+    deleteInheritedConnectionFromList(pConnectionLineAnnotation);
+    removeItem(pConnectionLineAnnotation);
+    delete pConnectionLineAnnotation;
+  }
 }
 
 void GraphicsView::createLineShape(QPointF point)
@@ -3547,22 +3624,22 @@ void ModelWidget::fetchExtendsModifiers(QString extendsClass)
  */
 void ModelWidget::reDrawModelWidgetInheritedClasses()
 {
-  removeInheritedClassShapes(StringHandler::Icon);
+  mpIconGraphicsView->removeInheritedClassShapes();
   drawModelInheritedClassShapes(this, StringHandler::Icon);
   mpIconGraphicsView->reOrderShapes();
   if (mComponentsLoaded) {
-    removeInheritedClassComponents(StringHandler::Icon);
+    mpIconGraphicsView->removeInheritedClassComponents();
     drawModelInheritedClassComponents(this, StringHandler::Icon);
   }
   if (mDiagramViewLoaded) {
-    removeInheritedClassShapes(StringHandler::Diagram);
+    mpDiagramGraphicsView->removeInheritedClassShapes();
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     mpDiagramGraphicsView->reOrderShapes();
-    removeInheritedClassComponents(StringHandler::Diagram);
+    mpDiagramGraphicsView->removeInheritedClassComponents();
     drawModelInheritedClassComponents(this, StringHandler::Diagram);
   }
   if (mConnectionsLoaded) {
-    removeInheritedClassConnections();
+    mpDiagramGraphicsView->removeInheritedClassConnections();
     drawModelInheritedClassConnections(this);
   }
 }
@@ -4239,26 +4316,11 @@ void ModelWidget::clearGraphicsViews()
 {
   /* remove everything from the icon view */
   if (mpIconGraphicsView) {
-    removeClassComponents(StringHandler::Icon);
-    mpIconGraphicsView->removeAllShapes();
-    mpIconGraphicsView->removeAllConnections();
-    mpIconGraphicsView->removeAllTransitions();
-    mpIconGraphicsView->removeAllInitialStates();
-    removeInheritedClassShapes(StringHandler::Icon);
-    removeInheritedClassComponents(StringHandler::Icon);
-    mpIconGraphicsView->scene()->clear();
+    mpIconGraphicsView->clearGraphicsView();
   }
   /* remove everything from the diagram view */
   if (mpDiagramGraphicsView) {
-    removeClassComponents(StringHandler::Diagram);
-    mpDiagramGraphicsView->removeAllShapes();
-    mpDiagramGraphicsView->removeAllConnections();
-    mpDiagramGraphicsView->removeAllTransitions();
-    mpDiagramGraphicsView->removeAllInitialStates();
-    removeInheritedClassShapes(StringHandler::Diagram);
-    removeInheritedClassComponents(StringHandler::Diagram);
-    removeInheritedClassConnections();
-    mpDiagramGraphicsView->scene()->clear();
+    mpDiagramGraphicsView->clearGraphicsView();
   }
 }
 
@@ -5488,26 +5550,6 @@ void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, Strin
 }
 
 /*!
- * \brief ModelWidget::removeInheritedClassShapes
- * Removes all the inherited class shapes.
- * \param viewType
- */
-void ModelWidget::removeInheritedClassShapes(StringHandler::ViewType viewType)
-{
-  GraphicsView *pGraphicsView = 0;
-  if (viewType == StringHandler::Icon) {
-    pGraphicsView = mpIconGraphicsView;
-  } else {
-    pGraphicsView = mpDiagramGraphicsView;
-  }
-  foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getInheritedShapesList()) {
-    pGraphicsView->deleteInheritedShapeFromList(pShapeAnnotation);
-    pGraphicsView->removeItem(pShapeAnnotation);
-    delete pShapeAnnotation;
-  }
-}
-
-/*!
  * \brief ModelWidget::getModelIconDiagramShapes
  * Gets the Modelica model icon & diagram shapes.
  * Parses the Modelica icon/diagram annotation and creates shapes for it on appropriate GraphicsView.
@@ -5650,54 +5692,6 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
 }
 
 /*!
- * \brief ModelWidget::removeInheritedClassComponents
- * Removes all the class inherited components.
- * \param viewType
- */
-void ModelWidget::removeInheritedClassComponents(StringHandler::ViewType viewType)
-{
-  GraphicsView *pGraphicsView = 0;
-  if (viewType == StringHandler::Icon) {
-    pGraphicsView = mpIconGraphicsView;
-  } else {
-    pGraphicsView = mpDiagramGraphicsView;
-  }
-  foreach (Component *pComponent, pGraphicsView->getInheritedComponentsList()) {
-    pComponent->removeChildren();
-    pGraphicsView->deleteInheritedComponentFromList(pComponent);
-    pGraphicsView->removeItem(pComponent->getOriginItem());
-    delete pComponent->getOriginItem();
-    pGraphicsView->removeItem(pComponent);
-    pComponent->emitDeleted();
-    delete pComponent;
-  }
-}
-
-/*!
- * \brief ModelWidget::removeClassComponents
- * Removes all the class components.
- * \param viewType
- */
-void ModelWidget::removeClassComponents(StringHandler::ViewType viewType)
-{
-  GraphicsView *pGraphicsView = 0;
-  if (viewType == StringHandler::Icon) {
-    pGraphicsView = mpIconGraphicsView;
-  } else {
-    pGraphicsView = mpDiagramGraphicsView;
-  }
-  foreach (Component *pComponent, pGraphicsView->getComponentsList()) {
-    pComponent->removeChildren();
-    pGraphicsView->deleteComponentFromList(pComponent);
-    pGraphicsView->removeItem(pComponent->getOriginItem());
-    delete pComponent->getOriginItem();
-    pGraphicsView->removeItem(pComponent);
-    pComponent->emitDeleted();
-    delete pComponent;
-  }
-}
-
-/*!
  * \brief ModelWidget::getModelComponents
  * Gets the components of the model and their annotations.
  */
@@ -5807,19 +5801,6 @@ void ModelWidget::drawModelInheritedClassConnections(ModelWidget *pModelWidget)
         mpDiagramGraphicsView->addInheritedConnectionToList(createInheritedConnection(pConnectionLineAnnotation));
       }
     }
-  }
-}
-
-/*!
- * \brief ModelWidget::removeInheritedClassConnections
- * Removes all the class inherited class connections.
- */
-void ModelWidget::removeInheritedClassConnections()
-{
-  foreach (LineAnnotation *pConnectionLineAnnotation, mpDiagramGraphicsView->getInheritedConnectionsList()) {
-    mpDiagramGraphicsView->deleteInheritedConnectionFromList(pConnectionLineAnnotation);
-    mpDiagramGraphicsView->removeItem(pConnectionLineAnnotation);
-    delete pConnectionLineAnnotation;
   }
 }
 
