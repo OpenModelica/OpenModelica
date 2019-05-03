@@ -4048,7 +4048,7 @@ void MainWindow::switchToPlottingPerspective()
   }
   // if we have DiagramWindow then draw items on it based on the current ModelWidget
   if (pModelWidget && mpPlotWindowContainer->getDiagramSubWindowFromMdi()) {
-    mpPlotWindowContainer->getDiagramWindow()->drawDiagram();
+    mpPlotWindowContainer->getDiagramWindow()->drawDiagram(mpModelWidgetContainer->getCurrentModelWidget());
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars

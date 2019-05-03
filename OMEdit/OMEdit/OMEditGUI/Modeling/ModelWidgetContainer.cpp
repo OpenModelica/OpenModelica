@@ -43,7 +43,6 @@
 #include "Component/ComponentProperties.h"
 #include "Commands.h"
 #include "TLM/FetchInterfaceDataDialog.h"
-#include "Plotting/VariablesWidget.h"
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
 #include "TLM/TLMCoSimulationDialog.h"
@@ -57,6 +56,14 @@
 #include "OMS/SystemSimulationInformationDialog.h"
 
 #include <QNetworkReply>
+#include <QMessageBox>
+#include <QMenu>
+#include <QMenuBar>
+#include <QGraphicsDropShadowEffect>
+#include <QButtonGroup>
+#include <QDockWidget>
+#include <QPrinter>
+#include <QPrintDialog>
 
 /*!
  * \class GraphicsScene
@@ -277,7 +284,6 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   if (!pLibraryTreeItem) {
     return false;
   }
-  mpModelWidget->removeDynamicResults(); // show static values during editing
   // if we are dropping something on meta-model editor then we can skip Modelica stuff.
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (!pLibraryTreeItem->isSaved()) {
@@ -3499,9 +3505,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     }
     mpLibraryTreeItem->setClassText(contents);
   }
-  // Clean up model widget if results are removed from variables browser
-  connect(MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel(),
-          SIGNAL(variableTreeItemRemoved(QString)), this, SLOT(removeDynamicResults(QString)));
 }
 
 /*!
@@ -4374,7 +4377,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   QString modelicaText = pModelicaEditor->getPlainText();
   QString stringToLoad;
   LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
-  removeDynamicResults(); // show static values during editing
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
     stringToLoad = mpLibraryTreeItem->getClassTextBefore() + StringHandler::trimmedEnd(modelicaText) + "\n" + mpLibraryTreeItem->getClassTextAfter();
   } else {
@@ -4661,24 +4663,6 @@ void ModelWidget::updateUndoRedoActions()
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);
-  }
-}
-
-/*!
- * \brief ModelWidget::updateDynamicResults
- * Update the model widget with values from resultFile.
- * Skip update for empty resultFileName -- use removeDynamicResults.
- */
-void ModelWidget::updateDynamicResults(QString resultFileName)
-{
-  mResultFileName = resultFileName;
-  if (!resultFileName.isEmpty()) {
-    foreach (Component *component, mpDiagramGraphicsView->getInheritedComponentsList()) {
-      component->componentParameterHasChanged();
-    }
-    foreach (Component *component, mpDiagramGraphicsView->getComponentsList()) {
-      component->componentParameterHasChanged();
-    }
   }
 }
 
@@ -6566,29 +6550,6 @@ void ModelWidget::showTextView(bool checked)
   updateUndoRedoActions();
 }
 
-/*!
- * \brief ModelWidget::removeDynamicResults
- * Check if resultFileName is empty or equals mResultFileName.
- * Update the model widget with static values from the model
- * and empty mResultFileName.
- */
-void ModelWidget::removeDynamicResults(QString resultFileName)
-{
-  if (mResultFileName.isEmpty()) {
-    // nothing to do
-    return;
-  }
-  if (resultFileName.isEmpty() or resultFileName == mResultFileName) {
-    mResultFileName = "";
-    foreach (Component *component, mpDiagramGraphicsView->getInheritedComponentsList()) {
-      component->componentParameterHasChanged();
-    }
-    foreach (Component *component, mpDiagramGraphicsView->getComponentsList()) {
-      component->componentParameterHasChanged();
-    }
-  }
-}
-
 void ModelWidget::makeFileWritAble()
 {
   const QString &fileName = mpLibraryTreeItem->getFileName();
@@ -6735,22 +6696,23 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
 {
-  if (pModelWidget->isVisible() || pModelWidget->isMinimized()) {
-    QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-    for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-      ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-      if (pSubModelWidget == pModelWidget) {
-        if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-          pModelWidget->loadDiagramView();
-          pModelWidget->loadConnections();
-        }
-        pModelWidget->createModelWidgetComponents();
-        pModelWidget->show();
-        setActiveSubWindow(subWindowsList.at(i));
-        break;
+  bool hasModelWidget = false;
+  QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
+    if (pSubModelWidget == pModelWidget) {
+      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        pModelWidget->loadDiagramView();
+        pModelWidget->loadConnections();
       }
+      pModelWidget->createModelWidgetComponents();
+      pModelWidget->show();
+      setActiveSubWindow(subWindowsList.at(i));
+      hasModelWidget = true;
+      break;
     }
-  } else {
+  }
+  if (!hasModelWidget) {
     int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
@@ -6761,7 +6723,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->createModelWidgetComponents();
     pModelWidget->show();
-    if (subWindowsSize == 0) {
+    if (subWindowsSize == 0 || MainWindow::instance()->getPerspectiveTabBar()->currentIndex() == 2) {
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);

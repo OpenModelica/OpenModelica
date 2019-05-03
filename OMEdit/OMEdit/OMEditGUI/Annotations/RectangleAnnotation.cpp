@@ -52,7 +52,6 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Comp
   : ShapeAnnotation(pParent)
 {
   updateShape(pShapeAnnotation);
-  initUpdateVisible(); // DynamicSelect for visible attribute
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -167,6 +166,9 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
       } else {
         painter->setOpacity(0.2);
       }
+    } else if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+                                         || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
+      return;
     }
     drawRectangleAnnotaion(painter);
   }

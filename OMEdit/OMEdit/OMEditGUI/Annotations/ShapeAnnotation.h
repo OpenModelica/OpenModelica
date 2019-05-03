@@ -68,9 +68,14 @@ public:
   qreal getRotation() {return mRotation;}
 protected:
   bool mVisible;
+  QString mDynamicVisible; /* Dynamic variable for visible attribute */
+  bool mDynamicVisibleValue; /* Dynamic value for visible attribute */
   QPointF mOrigin;
+  QString mDynamicOrigin; /* Dynamic variable for origin attribute */
+  QPointF mDynamicOriginValue; /* Dynamic value for origin attribute */
   qreal mRotation;
-  QString mDynamicVisible; /* variable for visible attribute */
+  QString mDynamicRotation; /* Dynamic variable for origin attribute */
+  qreal mDynamicRotationValue; /* Dynamic value for origin attribute */
 };
 
 class FilledShape
@@ -177,7 +182,6 @@ public:
   QString getImageSource();
   void setImage(QImage image);
   QImage getImage();
-  QVariant getDynamicValue(QString name);
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
@@ -233,7 +237,7 @@ public slots:
   void referenceShapeAdded();
   void referenceShapeChanged();
   void referenceShapeDeleted();
-  void updateVisible();
+  void updateDynamicSelect(double time);
 protected:
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
@@ -260,7 +264,6 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   QList<QVariant> mDynamicTextString; /* list of String() arguments */
-  void initUpdateVisible();
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };

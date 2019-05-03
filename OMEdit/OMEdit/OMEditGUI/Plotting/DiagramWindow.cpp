@@ -59,15 +59,16 @@ DiagramWindow::DiagramWindow(QWidget *parent) : QWidget(parent)
 
 /*!
  * \brief DiagramWindow::drawDiagram
- * Draw the diagram based on the current ModelWidget.
+ * Draws the diagram based on the passed ModelWidget.
+ * \param pModelWidget
  */
-void DiagramWindow::drawDiagram()
+void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
 {
   // Stop any running visualization when we are going to draw a diagram.
   MainWindow::instance()->getVariablesWidget()->rewindVisualization();
 
-  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
     if (mpGraphicsView) {
       delete mpGraphicsScene;
       mpGraphicsScene = 0;
@@ -79,11 +80,21 @@ void DiagramWindow::drawDiagram()
     mpGraphicsView = new GraphicsView(StringHandler::Diagram, pModelWidget, true);
     mpGraphicsView->setScene(mpGraphicsScene);
     mpMainLayout->addWidget(mpGraphicsView);
+
+    foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getShapesList()) {
+      ShapeAnnotation *pShapeAnnotation = ModelWidget::createInheritedShape(pReferenceShapeAnnotation, mpGraphicsView);
+      mpGraphicsView->addShapeToList(pShapeAnnotation);
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
+              pShapeAnnotation, SLOT(updateDynamicSelect(double)));
+    }
+
     foreach (Component *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getComponentsList()) {
       Component *pComponent = new Component(pReferenceComponent, mpGraphicsView);
       mpGraphicsView->addComponentToList(pComponent);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pComponent, SLOT(updateDynamicSelect(double)));
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
+              pComponent, SLOT(updateDynamicSelect(double)));
     }
+
     foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
       LineAnnotation *pNewConntionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
       pNewConntionLineAnnotation->initializeTransformation();
@@ -91,6 +102,7 @@ void DiagramWindow::drawDiagram()
       pNewConntionLineAnnotation->setCornerItemsActiveOrPassive();
       mpGraphicsView->addConnectionToList(pNewConntionLineAnnotation);
     }
+
     foreach (LineAnnotation *pTransitionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getTransitionsList()) {
       LineAnnotation *pNewTransitionLineAnnotation = new LineAnnotation(pTransitionLineAnnotation, mpGraphicsView);
       pNewTransitionLineAnnotation->initializeTransformation();

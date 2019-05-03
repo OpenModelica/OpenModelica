@@ -2939,6 +2939,7 @@ void Component::showElementPropertiesDialog()
  */
 void Component::updateDynamicSelect(double time)
 {
+  // state machine debugging
   if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
     double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
     setActiveState(value);
@@ -2946,6 +2947,10 @@ void Component::updateDynamicSelect(double time)
       if (pTransitionLineAnnotation->getEndComponent()->getName().compare(getName()) == 0) {
         pTransitionLineAnnotation->setActiveState(value);
       }
+    }
+  } else { // DynamicSelect
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+      pShapeAnnotation->updateDynamicSelect(time);
     }
   }
 }

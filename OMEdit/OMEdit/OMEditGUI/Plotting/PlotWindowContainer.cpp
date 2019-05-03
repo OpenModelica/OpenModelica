@@ -441,13 +441,14 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
 /*!
  * \brief PlotWindowContainer::addDiagramWindow
  * Adds a diagram window as subwindow
+ * \param pModelWidget
  * \param maximized - sets the window state maximized
  */
-void PlotWindowContainer::addDiagramWindow(bool maximized)
+void PlotWindowContainer::addDiagramWindow(ModelWidget *pModelWidget, bool maximized)
 {
   if (!mpDiagramWindow) {
     mpDiagramWindow = new DiagramWindow(this);
-    mpDiagramWindow->drawDiagram();
+    mpDiagramWindow->drawDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
   }
   QMdiSubWindow *pSubWindow = getDiagramSubWindowFromMdi();
   if (!pSubWindow) {

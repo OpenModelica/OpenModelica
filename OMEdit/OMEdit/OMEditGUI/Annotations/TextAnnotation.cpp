@@ -63,8 +63,6 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
-  initUpdateVisible(); // DynamicSelect for visible attribute
-  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -97,7 +95,6 @@ TextAnnotation::TextAnnotation(Component *pParent)
   mExtents.replace(0, QPointF(-50, -50));
   mExtents.replace(1, QPointF(50, 50));
   setTextString("%name");
-  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
 }
@@ -143,7 +140,6 @@ TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   mExtents.replace(0, QPointF(-100, 20));
   mExtents.replace(1, QPointF(100, -20));
   setTextString("%name");
-  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
   setShapeFlags(true);
@@ -174,18 +170,19 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   if (list.at(9).startsWith("{")) {
     // DynamicSelect
     QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-    if (args.count() > 0)
+    if (args.count() > 0) {
       mOriginalTextString = StringHandler::removeFirstLastQuotes(args.at(0));
-    if (args.count() > 1)
+    }
+    if (args.count() > 1) {
       mDynamicTextString << args.at(1);  // variable name
-    if (args.count() > 2)
+    }
+    if (args.count() > 2) {
       mDynamicTextString << args.at(2);  // significantDigits
-  }
-  else {
+    }
+  } else {
     mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
   }
   mTextString = mOriginalTextString;
-  initUpdateTextString();
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
@@ -297,6 +294,10 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       } else {
         painter->setOpacity(0.2);
       }
+    }
+    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
+      return;
     }
     drawTextAnnotaion(painter);
   }
@@ -515,16 +516,6 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
-void TextAnnotation::initUpdateTextString()
-{
-  if (mpComponent) {
-    if (mOriginalTextString.contains("%") || mDynamicTextString.count() > 0) {
-      updateTextString();
-      connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
-    }
-  }
-}
-
 /*!
  * \brief TextAnnotation::updateTextStringHelper
  * Helper function for TextAnnotation::updateTextString()
@@ -566,24 +557,6 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
  */
 void TextAnnotation::updateTextString()
 {
-  /* optional DynamicSelect of textString attribute */
-  QVariant dynamicValue; // isNull() per default
-  if (mDynamicTextString.count() > 0) {
-    dynamicValue = getDynamicValue(mDynamicTextString.at(0).toString());
-  }
-  if (!dynamicValue.isNull()) {
-    mTextString = dynamicValue.toString();
-    if (mTextString.isEmpty()) {
-      /* use variable name as default value if result not found */
-      mTextString = mDynamicTextString.at(0).toString();
-    }
-    else if (mDynamicTextString.count() > 1) {
-      int digits = mDynamicTextString.at(1).toInt();
-      mTextString = QString::number(mTextString.toDouble(), 'g', digits);
-    }
-    return;
-  }
-  /* alternatively use model provided value */
   /* From Modelica Spec 32revision2,
    * There are a number of common macros that can be used in the text, and they should be replaced when displaying
    * the text as follows:

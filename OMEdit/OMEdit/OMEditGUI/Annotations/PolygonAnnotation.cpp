@@ -52,7 +52,6 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Componen
   : ShapeAnnotation(pParent)
 {
   updateShape(pShapeAnnotation);
-  initUpdateVisible(); // DynamicSelect for visible attribute
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -180,6 +179,10 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible || !mDynamicVisible.isEmpty()) {
+    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
+                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
+      return;
+    }
     drawPolygonAnnotaion(painter);
   }
 }

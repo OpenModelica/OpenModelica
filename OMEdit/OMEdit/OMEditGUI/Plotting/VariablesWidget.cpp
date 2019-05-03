@@ -455,11 +455,14 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 
 VariablesTreeItem* VariablesTreeModel::findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const
 {
-  if (root->getVariableName() == name)
+  if (root->getVariableName() == name) {
     return root;
-  for (int i = root->getChildren().size(); --i >= 0; )
-    if (VariablesTreeItem *item = findVariablesTreeItem(name, root->getChildren().at(i)))
+  }
+  for (int i = root->getChildren().size(); --i >= 0; ) {
+    if (VariablesTreeItem *item = findVariablesTreeItem(name, root->getChildren().at(i))) {
       return item;
+    }
+  }
   return 0;
 }
 
@@ -583,12 +586,12 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   variablesList.removeOne("time");
   QStringList variables;
   foreach (QString plotVariable, variablesList) {
-    QString parentVariable;
+    QString parentVariable = "";
     if (plotVariable.startsWith("der(")) {
       QString str = plotVariable;
       str.chop((str.lastIndexOf("der(")/4)+1);
       variables = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("der(") + 4));
-    } else if (plotVariable.startsWith("previous(")) { //TODO: edit in same way as for der(
+    } else if (plotVariable.startsWith("previous(")) {
       QString str = plotVariable;
       str.chop((str.lastIndexOf("previous(")/9)+1);
       variables = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("previous(") + 9));
@@ -602,20 +605,18 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         pParentVariablesTreeItem = pTopVariablesTreeItem;
       }
       QString findVariable;
-      /* if last item of non-array or second to last of array*/
-      if (((variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable)) ||
-              (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())))
-              && plotVariable.startsWith("der(")) {
+      /* if last item of derivative */
+      if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
         if (parentVariable.isEmpty()) {
-          findVariable = QString("%1.%2").arg(fileName , StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der("));
+          findVariable = QString("%1.%2").arg(fileName ,StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der("));
         } else {
-          findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der("));
+          findVariable = QString("%1.%2").arg(fileName ,StringHandler::joinDerivativeAndPreviousVariable(plotVariable, parentVariable, "der("));
         }
-      } else if (variables.size() == count && plotVariable.startsWith("previous(")) { //TODO: edit in same way as for der(
+      } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
         if (parentVariable.isEmpty()) {
-          findVariable = QString("%1.%2").arg(fileName , StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous("));
+          findVariable = QString("%1.%2").arg(fileName ,StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous("));
         } else {
-          findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous("));
+          findVariable = QString("%1.%2").arg(fileName ,StringHandler::joinDerivativeAndPreviousVariable(plotVariable, parentVariable, "previous("));
         }
       } else {
         if (parentVariable.isEmpty()) {
@@ -625,12 +626,15 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         }
       }
       if ((pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem)) != NULL) {
-        QString addVar;
-        //if second to last of array, add der(
-        if ((variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) && plotVariable.startsWith("der("))
+        QString addVar = "";
+        /* if last item of derivative */
+        if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
           addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
-        else
+        } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
+          addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
+        } else {
           addVar = variable;
+        }
         if (count == 1) {
           parentVariable = addVar;
         } else {
@@ -649,24 +653,12 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       }
       QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
       QVector<QVariant> variableData;
-      /*if last but one of array derivative*/
-      if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()) && plotVariable.startsWith("der(")) {
-        variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(") << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
-      }
-      /* if last item of non-array derivative*/
-      else if (variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable) && plotVariable.startsWith("der(")) {
+      /* if last item of derivative */
+      if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
         variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
-      }
-      /*if last but one of array previous*/
-      else if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()) && plotVariable.startsWith("previous(")) {
-        variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(") << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
-      }
-      /* if last item of non-array previous*/
-      else if (variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable) && plotVariable.startsWith("previous(")) {
+      } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
         variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
-      }
-      /* if last item of array derivative*/
-      else if (variables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(variable)) {
+      } else if (variables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(variable)) { /* if last item of array derivative*/
         variableData << filePath << fileName << fileName + "." + plotVariable << variable;
       } else {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + variable << variable;
@@ -728,12 +720,15 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       beginInsertRows(index, row, row);
       pParentVariablesTreeItem->insertChild(row, pVariablesTreeItem);
       endInsertRows();
-      QString addVar;
-      //if second to last of array, add der(
-      if ((variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) && plotVariable.startsWith("der("))
+      QString addVar = "";
+      /* if last item of derivative */
+      if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
         addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
-      else
+      } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
+        addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
+      } else {
         addVar = variable;
+      }
       if (count == 1) {
         parentVariable = addVar;
       } else {
@@ -1078,8 +1073,6 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(timeUnitChanged(QString)));
   // simulation time slider
   mpSimulationTimeSlider = new QSlider(Qt::Horizontal);
-  mpSimulationTimeSlider->setMinimum(0);
-  mpSimulationTimeSlider->setMaximum(100);
   connect(mpSimulationTimeSlider, SIGNAL(valueChanged(int)), SLOT(simulationTimeChanged(int)));
   // toolbar
   mpToolBar = new QToolBar;
@@ -1103,7 +1096,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpTimeLabel = new Label;
   mpTimeLabel->setText(tr("Time:"));
   mpTimeTextBox = new QLineEdit("0.0");
-  mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpTimeTextBox->setMaximumHeight(toolbarIconSize);
   mpTimeTextBox->setValidator(pDoubleValidator);
   connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visulizationTimeChanged()));
   // speed
@@ -1113,7 +1106,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSpeedComboBox->setEditable(true);
   mpSpeedComboBox->addItems(Helper::speedOptions.split(","));
   mpSpeedComboBox->setCurrentIndex(3);
-  mpSpeedComboBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedComboBox->setMaximumHeight(toolbarIconSize);
   mpSpeedComboBox->setValidator(pDoubleValidator);
   mpSpeedComboBox->setCompleter(0);
   connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)), SLOT(visualizationSpeedChanged()));
@@ -1187,24 +1180,6 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
 void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList,
                                                  SimulationOptions simulationOptions)
 {
-  /* Show results in model diagram if it is present in ModelWidgetContainer
-   * and if switch to plotting perspective is disabled
-   */
-  ModelWidget *pModelWidget = NULL;
-  if (!OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
-    pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getModelWidget(simulationOptions.getClassName());
-  }
-  if (pModelWidget != NULL) {
-    if (simulationOptions.isReSimulate() && pModelWidget->getResultFileName().isEmpty()) {
-      /* skip update of model view if the model has changed */
-      pModelWidget = NULL;
-    }
-    else {
-      /* prevent update during removeVariableTreeItem
-         because the model will be updated below anyway */
-      pModelWidget->updateDynamicResults("");
-    }
-  }
   /* Remove the simulation result if we already had it in tree */
   bool variableItemDeleted = false;
   variableItemDeleted = mpVariablesTreeModel->removeVariableTreeItem(fileName);
@@ -1224,10 +1199,6 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* update the plot variables tree */
   if (variableItemDeleted) {
     variablesUpdated();
-  }
-  /* update the model widget */
-  if (pModelWidget != NULL) {
-    pModelWidget->updateDynamicResults(fileName);
   }
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -1514,7 +1485,10 @@ void VariablesWidget::initializeVisualization(SimulationOptions simulationOption
   mpTimeManager->setPause(true);
   // reset the visualization controls
   mpTimeTextBox->setText("0.0");
+  mpSimulationTimeSlider->setRange(simulationOptions.getStartTime().toDouble(), simulationOptions.getNumberofIntervals());
+  bool state = mpSimulationTimeSlider->blockSignals(true);
   mpSimulationTimeSlider->setValue(0);
+  mpSimulationTimeSlider->blockSignals(state);
 }
 
 /*!
@@ -1649,7 +1623,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
             pPlotWindow->plot(pPlotCurve);
         else/* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY)*/{
-          double timePercent = (double) mpSimulationTimeSlider->value();
+          double timePercent = mpTimeTextBox->text().toDouble();
           pPlotWindow->plotArray(timePercent,pPlotCurve);
         }
         /* Ticket:4231
@@ -1749,7 +1723,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
                 pPlotWindow->plotParametric(pPlotCurve);
             else /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/{
-              double timePercent = mpSimulationTimeSlider->value();
+              double timePercent = mpTimeTextBox->text().toDouble();
               pPlotWindow->plotArrayParametric(timePercent,pPlotCurve);
             }
 
@@ -1983,6 +1957,10 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
  */
 void VariablesWidget::simulationTimeChanged(int timePercent)
 {
+  float time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * ((float)timePercent / (float)mpSimulationTimeSlider->maximum());
+  mpTimeManager->setVisTime(time);
+  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+
   PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
   if (pPlotWindow) {
     PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
@@ -2005,9 +1983,6 @@ void VariablesWidget::simulationTimeChanged(int timePercent)
       return;
     }
   } else { // if no plot window then try to update the DiagramWindow
-    float time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * (float) (timePercent / 100.0);
-    mpTimeManager->setVisTime(time);
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
     updateVisualization();
   }
 }
@@ -2324,7 +2299,7 @@ void VariablesWidget::visulizationTimeChanged()
     }
     mpTimeManager->setVisTime(value);
     bool state = mpSimulationTimeSlider->blockSignals(true);
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction(mpSimulationTimeSlider->maximum()));
     mpSimulationTimeSlider->blockSignals(state);
     updateVisualization();
   }
@@ -2353,7 +2328,7 @@ void VariablesWidget::incrementVisualization()
   if (!mpTimeManager->isPaused()) {
     mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
     // set time slider
-    int time = mpTimeManager->getTimeFraction();
+    int time = mpTimeManager->getTimeFraction(mpSimulationTimeSlider->maximum());
     bool state = mpSimulationTimeSlider->blockSignals(true);
     mpSimulationTimeSlider->setValue(time);
     mpSimulationTimeSlider->blockSignals(state);
