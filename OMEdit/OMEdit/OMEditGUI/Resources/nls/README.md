@@ -16,7 +16,7 @@ tsupdate.bat
 ```
 
 - Open your generated file with `Qt Linguist` for writing translations
-  - Mark finished translations (green checkbox)
+- Mark finished translations (green checkbox)
 - Do not try to edit the ts-files manually. You will forget things.
 
 ## Creating a .qm file
