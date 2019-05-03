@@ -136,7 +136,7 @@ private:
   QAction *mpSetInitialStateAction;
   QAction *mpCancelTransitionAction;
 public:
-  GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent, bool visualizationView = false);
+  GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView = false);
   CoOrdinateSystem mCoOrdinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   StringHandler::ViewType getViewType() {return mViewType;}
@@ -233,6 +233,11 @@ public:
   void bringForward(ShapeAnnotation *pShape);
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
+  void clearGraphicsView();
+  void removeClassComponents();
+  void removeInheritedClassShapes();
+  void removeInheritedClassComponents();
+  void removeInheritedClassConnections();
   void removeAllComponents() {mComponentsList.clear();}
   void removeAllShapes() {mShapesList.clear();}
   void removeAllConnections() {mConnectionsList.clear();}
@@ -476,16 +481,12 @@ private:
 
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-  void removeInheritedClassShapes(StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-  void removeInheritedClassComponents(StringHandler::ViewType viewType);
-  void removeClassComponents(StringHandler::ViewType viewType);
   void getModelComponents();
   void drawModelIconComponents();
   void drawModelDiagramComponents();
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
-  void removeInheritedClassConnections();
   void getModelTransitions();
   void getModelInitialStates();
   void getMetaModelSubModels();

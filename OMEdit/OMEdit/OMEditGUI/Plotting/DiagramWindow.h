@@ -48,6 +48,7 @@ public:
   explicit DiagramWindow(QWidget *parent = 0);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
   void drawDiagram(ModelWidget *pModelWidget);
+  void removeDiagram(ModelWidget *pModelWidget);
 private:
   GraphicsScene *mpGraphicsScene;
   GraphicsView *mpGraphicsView;
