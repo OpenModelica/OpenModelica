@@ -13,6 +13,11 @@ usersguide:
 	@killall omc >/dev/null 2>&1 || true
 BUILDDIR=openmodelica-doc_$(BUILDDIR_VER)
 
+omsiruntime-doc:
+	mkdir -p SimulationRuntime/omsi/Images
+	cp images/logo.svg SimulationRuntime/omsi/Images/OMLogo.svg
+	cd SimulationRuntime/omsi && cmake -G "Unix Makefiles" -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/OMSI && make Docs
+	
 cppruntime-doc:
 	mkdir -p SimulationRuntime/cpp/Images
 	cp images/logo.svg SimulationRuntime/cpp/Images/OMLogo.svg
