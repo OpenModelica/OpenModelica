@@ -4573,23 +4573,20 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> tplLst;
     case (BackendDAE.STATEORDER(ht,_))
       equation
-        print("State Order: (");
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
-        len = listLength(tplLst);
-        len_str = intString(len);
-        print(len_str);
-        print(")\n");
-        print("=============\n");
-        print(str);
-        print("\n");
+        if listLength(tplLst) > 0 then
+          print("State Order: (");
+          str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
+          len = listLength(tplLst);
+          len_str = intString(len);
+          print(len_str);
+          print(")\n");
+          print("=============\n");
+          print(str);
+          print("\n");
+        end if;
       then
         ();
-    case (BackendDAE.NOSTATEORDER())
-      equation
-        print("no stateorder\n");
-        print("=============\n");
-      then ();
   end match;
 end dumpStateOrder;
 

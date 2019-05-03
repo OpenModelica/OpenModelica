@@ -5596,7 +5596,7 @@ algorithm
         unmatched1 = getUnassigned(ne, ass1, {});
           //BackendDump.dumpEqSystem(isyst, "EQSYS");
         if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched1))); end if;
-        if Flags.isSet(Flags.BLT_DUMP) then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched1) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
 
         // remove some edges which do not have to be traversed when finding the MSSS
         m1 = arrayCopy(m);
@@ -5604,7 +5604,7 @@ algorithm
         (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
         (m1,m1t) = removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
-        if Flags.isSet(Flags.BLT_DUMP) then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0 then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
 
         //Debug information
           //if listLength(List.flatten(meqns1)) >= 5 then meqs_short = List.firstN(List.flatten(meqns1),5); else meqs_short = List.flatten(meqns1); end if;
