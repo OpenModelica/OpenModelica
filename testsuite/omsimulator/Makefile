@@ -1,6 +1,7 @@
 TEST = ../rtest -v
 
 TESTFILES = \
+DualMassOscillator_cs.mos \
 DualMassOscillator_me.mos \
 initialization.mos \
 initialization2.mos \
