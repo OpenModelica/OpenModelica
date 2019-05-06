@@ -926,15 +926,7 @@ UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLine
  */
 void UpdateConnectionCommand::redoInternal()
 {
-  mpConnectionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpConnectionLineAnnotation->initializeTransformation();
-  mpConnectionLineAnnotation->removeCornerItems();
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->adjustGeometries();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpConnectionLineAnnotation->update();
-  mpConnectionLineAnnotation->emitChanged();
-  mpConnectionLineAnnotation->updateConnectionAnnotation();
+  mpConnectionLineAnnotation->updateConnectionOrTransistionOrInitialState(mNewAnnotation);
 }
 
 /*!
@@ -943,15 +935,7 @@ void UpdateConnectionCommand::redoInternal()
  */
 void UpdateConnectionCommand::undo()
 {
-  mpConnectionLineAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpConnectionLineAnnotation->initializeTransformation();
-  mpConnectionLineAnnotation->removeCornerItems();
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->adjustGeometries();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpConnectionLineAnnotation->update();
-  mpConnectionLineAnnotation->emitChanged();
-  mpConnectionLineAnnotation->updateConnectionAnnotation();
+  mpConnectionLineAnnotation->updateConnectionOrTransistionOrInitialState(mOldAnnotation);
 }
 
 UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation,
@@ -1346,15 +1330,7 @@ UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialSta
  */
 void UpdateInitialStateCommand::redoInternal()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpInitialStateLineAnnotation->initializeTransformation();
-  mpInitialStateLineAnnotation->removeCornerItems();
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->adjustGeometries();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-  mpInitialStateLineAnnotation->update();
-  mpInitialStateLineAnnotation->emitChanged();
-  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+  mpInitialStateLineAnnotation->updateConnectionOrTransistionOrInitialState(mNewAnnotation);
 }
 
 /*!
@@ -1363,15 +1339,7 @@ void UpdateInitialStateCommand::redoInternal()
  */
 void UpdateInitialStateCommand::undo()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpInitialStateLineAnnotation->initializeTransformation();
-  mpInitialStateLineAnnotation->removeCornerItems();
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->adjustGeometries();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-  mpInitialStateLineAnnotation->update();
-  mpInitialStateLineAnnotation->emitChanged();
-  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+  mpInitialStateLineAnnotation->updateConnectionOrTransistionOrInitialState(mOldAnnotation);
 }
 
 DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, UndoCommand *pParent)

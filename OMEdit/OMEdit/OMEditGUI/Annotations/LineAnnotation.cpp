@@ -1315,6 +1315,19 @@ void LineAnnotation::duplicate()
   pLineAnnotation->setSelected(true);
 }
 
+void LineAnnotation::updateConnectionOrTransistionOrInitialState(QString const& annotation)
+{
+  parseShapeAnnotation(annotation);
+  initializeTransformation();
+  removeCornerItems();
+  drawCornerItems();
+  adjustGeometries();
+  setCornerItemsActiveOrPassive();
+  update();
+  emitChanged();
+  updateConnectionAnnotation();
+}
+
 /*!
  * \class ExpandableConnectorTreeItem
  * \brief Contains the information about the expandable connector item.

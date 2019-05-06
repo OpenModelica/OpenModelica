@@ -167,6 +167,7 @@ public slots:
   void updateConnectionAnnotation();
   void updateConnectionTransformation();
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
+  void updateConnectionOrTransistionOrInitialState(QString const& annotation);
   void updateInitialStateAnnotation();
   void duplicate();
 };
