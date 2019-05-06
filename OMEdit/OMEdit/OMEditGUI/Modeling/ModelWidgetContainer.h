@@ -148,22 +148,23 @@ public:
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
   bool isAddClassAnnotationNeeded() {return mAddClassAnnotationNeeded;}
-  void setIsCreatingConnection(bool enable);
+  void setIsCreatingConnection(const bool enable);
   bool isCreatingConnection() {return mIsCreatingConnection;}
-  void setIsCreatingTransition(bool enable);
+  void setIsCreatingTransition(const bool enable);
   bool isCreatingTransition() {return mIsCreatingTransition;}
-  void setIsCreatingLineShape(bool enable);
+  void setIsCreatingLineShape(const bool enable);
   bool isCreatingLineShape() {return mIsCreatingLineShape;}
-  void setIsCreatingPolygonShape(bool enable);
+  void setIsCreatingPolygonShape(const bool enable);
   bool isCreatingPolygonShape() {return mIsCreatingPolygonShape;}
-  void setIsCreatingRectangleShape(bool enable);
+  void setIsCreatingRectangleShape(const bool enable);
   bool isCreatingRectangleShape() {return mIsCreatingRectangleShape;}
-  void setIsCreatingEllipseShape(bool enable);
+  void setIsCreatingEllipseShape(const bool enable);
   bool isCreatingEllipseShape() {return mIsCreatingEllipseShape;}
-  void setIsCreatingTextShape(bool enable);
+  void setIsCreatingTextShape(const bool enable);
   bool isCreatingTextShape() {return mIsCreatingTextShape;}
-  void setIsCreatingBitmapShape(bool enable);
+  void setIsCreatingBitmapShape(const bool enable);
   bool isCreatingBitmapShape() {return mIsCreatingBitmapShape;}
+  void setIsCreatingPrologue(const bool enable);
   void setIsPanning(bool enable);
   bool isPanning() {return mIsPanning;}
   void setDragModeInternal(bool enable, bool updateCursor = false);
@@ -261,10 +262,24 @@ private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
+  bool isCreatingShape();
   Component* connectorComponentAtPosition(QPoint position);
   Component* stateComponentAtPosition(QPoint position);
   bool isParameterConnectorSizing(Component *pComponent, QString parameter);
   int numberOfComponentConnections(Component *pComponent);
+  bool handleDoubleClickOnComponent(QMouseEvent *event);
+  void uncheckAllShapeDrawingActions();
+  void setOriginAdjustAndInitialize(ShapeAnnotation* shapeAnnotation);
+  void setOriginAdjustAndInitialize(PolygonAnnotation* shapeAnnotation);
+  void adjustInitializeDraw(ShapeAnnotation* shapeAnnotation);
+  void finishDrawingGenericShape();
+  void finishDrawingLineShape(bool removeLastAddedPoint = false);
+  void finishDrawingPolygonShape(bool removeLastAddedPoint = false);
+  void finishDrawingRectangleShape();
+  void finishDrawingEllipseShape();
+  void finishDrawingTextShape();
+  void finishDrawingBitmapShape();
+  void checkEmitUpdateSelect(const bool showPropertiesAndSelect, ShapeAnnotation* shapeAnnotation);
 signals:
   void mouseManhattanize();
   void mouseDelete();
