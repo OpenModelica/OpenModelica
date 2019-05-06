@@ -14,10 +14,9 @@ When running a simulation for performance analysis, execution times of
 user-defined functions as well as linear, non-linear and mixed equation
 systems are recorded.
 
-To start a simulation in this mode, just use the measureTime flag of the
-simulate command.
-
->>> simulate(modelname, measureTime = true)
+To start a simulation in this mode, turn on profiling with the following
+command line flag
+>>> setCommandLineOptions("--profiling=all")
 
 The generated report is in HTML format (with images in the SVG format),
 stored in a file modelname\_prof.html, but the XML database and measured
@@ -46,7 +45,7 @@ Below we use the performance profiler on the simple model A:
     der(y) = time;
   end ProfilingTest;
 
-We simulate as usual, but set measureTime=true to activate the profiling:
+We simulate as usual, after setting the profiling flag:
 
 .. omc-mos ::
 
