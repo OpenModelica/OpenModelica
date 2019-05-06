@@ -62,8 +62,11 @@ void VisualizerMAT::initData()
 
 void VisualizerMAT::initializeVisAttributes(const double time)
 {
-  if (0.0 > time)
-    std::cout<<"Cannot load visualization attributes for time point < 0.0."<<std::endl;
+  if (0.0 > time) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QObject::tr("Cannot load visualization attributes for time point < 0.0."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
   updateVisAttributes(time);
 }
 
@@ -74,19 +77,20 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
   // Check if the MAT file exists.
   if (!fileExists(resFileName))
   {
-    std::string msg = "Could not find MAT file" + resFileName + ".";
-    std::cout<<msg<<std::endl;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString(QObject::tr("Could not find MAT file %1."))
+                                                          .arg(resFileName.c_str()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   else
   {
     // Read mat file.
     auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
     // Check return value.
-    if (0 != ret)
-    {
-      std::string msg(ret);
-      std::cout<<msg<<std::endl;
-    }
+//    if (0 != ret)
+//    {
+//      std::string msg(ret);
+//      std::cout<<msg<<std::endl;
+//    }
   }
 
   /*
@@ -199,14 +203,17 @@ void VisualizerMAT::updateObjectAttributeMAT(ShapeObjectAttribute* attr, double 
 
 double VisualizerMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, double time)
 {
-    double val = 0.0;
-    ModelicaMatVariable_t* var = nullptr;
-    var = omc_matlab4_find_var(reader, varName);
-    if (var == nullptr)
-        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
-    else
-        omc_matlab4_val(&val, reader, var, time);
+  double val = 0.0;
+  ModelicaMatVariable_t* var = nullptr;
+  var = omc_matlab4_find_var(reader, varName);
+  if (var == nullptr) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString(QObject::tr("Did not get variable from result file. Variable name is %1."))
+                                                          .arg(varName), Helper::scriptingKind, Helper::errorLevel));
+  } else {
+    omc_matlab4_val(&val, reader, var, time);
+  }
 
-    return val;
+  return val;
 }
 

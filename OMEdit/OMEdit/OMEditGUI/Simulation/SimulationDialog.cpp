@@ -1660,7 +1660,7 @@ void SimulationDialog::performSimulation()
     if ((targetBuild.compare("vxworks69") == 0) || (targetBuild.compare("debugrt") == 0)) {
       QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild)
                     .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       return;
     }
@@ -1671,7 +1671,7 @@ void SimulationDialog::performSimulation()
     } else {
       QString msg = tr("Generated code for the target language <b>%1</b> at %2.").arg(targetLanguage)
           .arg(simulationOptions.getWorkingDirectory());
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       return;
     }
@@ -1872,7 +1872,7 @@ void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
 
     MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, "Could not connect to the embedded server.",
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not connect to the embedded server.",
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -1936,7 +1936,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
             }
           } else {
             QString msg = tr("Animation is only supported with mat result files.");
-            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                   Helper::notificationLevel));
           }
         } else {
@@ -2058,8 +2058,7 @@ void SimulationDialog::showIntegrationHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2146,8 +2145,7 @@ void SimulationDialog::showSimulationFlagsHelp()
                                   .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage,
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

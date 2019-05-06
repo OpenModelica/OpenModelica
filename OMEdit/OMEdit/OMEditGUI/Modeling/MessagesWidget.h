@@ -59,8 +59,9 @@ public:
   StringHandler::OpenModelicaErrors mErrorType;
 public:
   MessageItem();
-  MessageItem(MessageItemType type ,QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
-              QString errorType);
+  MessageItem(MessageItemType type, QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd,
+              QString message, QString errorKind, QString errorType);
+  MessageItem(MessageItemType type, QString message, QString errorKind, QString errorType);
   MessageItemType getMessageItemType() {return mMessageItemType;}
   QString getTime() {return mTime;}
   QString getFileName() {return mFileName;}

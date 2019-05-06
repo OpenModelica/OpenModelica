@@ -564,7 +564,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       parseInitXml(initXmlReader);
       initFile.close();
     } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
@@ -576,7 +576,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   if (fileName.endsWith(".mat")) {
     //Read in mat file
     if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader))) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
                                                             .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
     }
@@ -1449,7 +1449,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             tr("Unable to set the content of QDomDocument from file %1")
                                                             .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
@@ -1461,7 +1461,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     textStream << initXmlDocument.toString();
     initFile.close();
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
@@ -2092,7 +2092,7 @@ void VariablesWidget::openResultFile()
     }
     // check file opening error
     if (errorOpeningFile) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE)
                                                             .arg(fileName, errorString), Helper::scriptingKind, Helper::errorLevel));
     }

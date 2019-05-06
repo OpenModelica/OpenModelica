@@ -312,8 +312,7 @@ TLMCoSimulationOptions TLMCoSimulationDialog::createTLMCoSimulationOptions()
     gethostname(myname, MAXHOSTNAME);
     hp = gethostbyname((const char*) myname);
     if (hp == NULL) {
-      MessageItem messageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
-                              tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
+      MessageItem messageItem(MessageItem::CompositeModel, tr("Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1")
                               .arg(QString(myname)), Helper::scriptingKind, Helper::errorLevel);
       MessagesWidget::instance()->addGUIMessage(messageItem);
       tlmCoSimulationOptions.setIsValid(false);

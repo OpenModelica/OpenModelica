@@ -94,6 +94,28 @@ MessageItem::MessageItem(MessageItemType type, QString filename, bool readOnly, 
 }
 
 /*!
+ * \brief MessageItem::MessageItem
+ * \param type
+ * \param message - the error message.
+ * \param errorKind - the error kind.
+ * \param errorType - the error type.
+ */
+MessageItem::MessageItem(MessageItemType type, QString message, QString errorKind, QString errorType)
+  : mMessageItemType(type)
+{
+  mTime = QTime::currentTime().toString();
+  mFileName = "";
+  mReadOnly = false;
+  mLineStart = 0;
+  mColumnStart = 0;
+  mLineEnd = 0;
+  mColumnEnd = 0;
+  mMessage = message;
+  mErrorKind = StringHandler::getErrorKind(errorKind);
+  mErrorType = StringHandler::getErrorType(errorType);
+}
+
+/*!
   Returns the location of the error message.
   */
 QString MessageItem::getLocation()

@@ -67,15 +67,15 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       level = Helper::notificationLevel;
       break;
   }
-  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica,
                                                            QString(message), Helper::scriptingKind, level));
 
-//  qDebug() << "loggingCallback" << type << message;
+  //  qDebug() << "loggingCallback" << type << message;
 }
 
 void simulateCallback(const char* ident, double time, oms_status_enu_t status)
 {
-//  qDebug() << "simulateCallback" << ident << time << status;
+  //  qDebug() << "simulateCallback" << ident << time << status;
   QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
   OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
@@ -419,7 +419,7 @@ bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QStr
   args << busCref << connectorCref << type;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addConnectorToTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str(),
-                                                      type.toStdString().c_str());
+                                                     type.toStdString().c_str());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -500,7 +500,7 @@ bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, doub
        << QString::number(linearimpedance) << QString::number(angularimpedance);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
-                                                  linearimpedance, angularimpedance);
+                                                 linearimpedance, angularimpedance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1550,13 +1550,13 @@ bool OMSProxy::terminate(QString cref)
  */
 bool OMSProxy::parseString(QString contents, QString *pModelName)
 {
-//  char* ident = NULL;
-//  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
-//  if (ident) {
-//    *pModelName = QString(ident);
-//    free(ident);
-//  }
-//  return statusToBool(status);
+  //  char* ident = NULL;
+  //  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
+  //  if (ident) {
+  //    *pModelName = QString(ident);
+  //    free(ident);
+  //  }
+  //  return statusToBool(status);
   return false;
 }
 
@@ -1569,9 +1569,9 @@ bool OMSProxy::parseString(QString contents, QString *pModelName)
  */
 bool OMSProxy::loadString(QString contents, QString* pModelName)
 {
-//  char* ident = NULL;
-//  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
-//  *pModelName = QString(ident);
-//  return statusToBool(status);
+  //  char* ident = NULL;
+  //  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
+  //  *pModelName = QString(ident);
+  //  return statusToBool(status);
   return false;
 }

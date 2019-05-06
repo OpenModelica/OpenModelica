@@ -516,7 +516,7 @@ bool CompositeModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation
   QString domain2 = getInterfaceDomain(endComp);
 
   if (dimensions1 != dimensions2) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel,
                                                           tr("Cannot connect interface points of different dimensions (%1 to %2)")
                                                           .arg(QString::number(dimensions1), QString::number(dimensions2)),
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -528,13 +528,13 @@ bool CompositeModelEditor::okToConnect(LineAnnotation *pConnectionLineAnnotation
         causality2  == StringHandler::getTLMCausality(StringHandler::TLMOutput)) &&
       !(causality1 == StringHandler::getTLMCausality(StringHandler::TLMOutput) &&
         causality2  == StringHandler::getTLMCausality(StringHandler::TLMInput))) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel,
                                                           tr("Cannot connect interface points of different causality (%1 to %2)")
                                                           .arg(causality1, causality2), Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
   if (domain1 != domain2) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel,
                                                           tr("Cannot connect interface points of different domains (%1 to %2)")
                                                           .arg(domain1, domain2), Helper::scriptingKind, Helper::errorLevel));
     return false;
@@ -697,7 +697,7 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
     //Now remove all elements in sub model that does not exist in fetched interfaces (i.e. has been externally removed)
     subModel = subModelList.at(i).toElement();
     if(subModel.attribute("Name") != singleModel && !singleModel.isEmpty()){
-        continue;   //Ignore other models if single model is specified
+      continue;   //Ignore other models if single model is specified
     }
     Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
     QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
@@ -755,7 +755,7 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
       parameterDataElement = parameters.firstChildElement();
       while (!parameterDataElement.isNull()) {
         if (subModelParameterDataElement.attribute("Name") == parameterDataElement.attribute("Name") &&
-          subModel.attribute("Name") == parameterDataElement.attribute("model")) {
+            subModel.attribute("Name") == parameterDataElement.attribute("model")) {
           parameterExists = true;
         }
         parameterDataElement = parameterDataElement.nextSiblingElement();
@@ -1056,8 +1056,8 @@ void CompositeModelEditor::updateAllOrientations()
  * \return
  */
 bool CompositeModelEditor::getPositionAndRotationVectors(QString interfacePoint, QGenericMatrix<3,1,double> &CG_X_PHI_CG,
-                                                    QGenericMatrix<3,1,double> &X_C_PHI_X, QGenericMatrix<3,1,double> &CG_X_R_CG,
-                                                    QGenericMatrix<3,1,double> &X_C_R_X)
+                                                         QGenericMatrix<3,1,double> &X_C_PHI_X, QGenericMatrix<3,1,double> &CG_X_R_CG,
+                                                         QGenericMatrix<3,1,double> &X_C_R_X)
 {
   //Extract submodel and interface names
   QString modelName = interfacePoint.split(".").at(0);
@@ -1081,7 +1081,7 @@ bool CompositeModelEditor::getPositionAndRotationVectors(QString interfacePoint,
   //Make sure that all vector strings are found in XML
   if (cg_x_phi_cg_str.isEmpty() || cg_x_r_cg_str.isEmpty() || x_c_r_x_str.isEmpty() || x_c_phi_x_str.isEmpty()) {
     QString msg = tr("Interface coordinates does not exist in xml");
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   }
@@ -1172,7 +1172,7 @@ void CompositeModelEditor::alignInterfaces(QString fromInterface, QString toInte
   // Give error message if alignment failed
   if (!interfacesAligned(fromInterface, toInterface)) {
     if (showError) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, tr("Alignment operation failed."),
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, tr("Alignment operation failed."),
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
   }
@@ -1363,11 +1363,11 @@ void CompositeModelHighlighter::initializeSettings()
   // CompositeModel Tags
   QStringList compositeModelTags;
   compositeModelTags << "<\\?"
-                << "<"
-                << "</"
-                << "\\?>"
-                << ">"
-                << "/>";
+                     << "<"
+                     << "</"
+                     << "\\?>"
+                     << ">"
+                     << "/>";
   foreach (const QString &compositeModelTag, compositeModelTags) {
     rule.mPattern = QRegExp(compositeModelTag);
     rule.mFormat = mTagFormat;

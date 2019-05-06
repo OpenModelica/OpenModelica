@@ -301,7 +301,7 @@ void ViewerWidget::applyCheckTexture()
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
       {
         QString msg = tr("Texture feature for CAD-Files is not applicable.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                     Helper::notificationLevel));
       }
       else
@@ -325,7 +325,7 @@ void ViewerWidget::removeTexture()
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
       {
         QString msg = tr("Texture feature for CAD-Files is not applicable.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                     Helper::notificationLevel));
       }
       else
@@ -350,7 +350,7 @@ void ViewerWidget::applyCustomTexture()
       if (shape->_type.compare("dxf") == 0 or shape->_type.compare("stl") == 0)
       {
         QString msg = tr("Texture feature for CAD-Files is not applicable.");
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                     Helper::notificationLevel));
       }
       else
@@ -377,7 +377,7 @@ void ViewerWidget::changeShapeTransparency()
   if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape))) {
     if (shape->_type.compare("dxf") == 0) {
       QString msg = tr("Transparency is not applicable for DXF-Files.");
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       mSelectedShape = "";
     } else {
@@ -402,7 +402,7 @@ void ViewerWidget::makeShapeInvisible()
   if ((shape = mpAnimationWidget->getVisualizer()->getBaseData()->getShapeObjectByID(mSelectedShape))) {
     if (shape->_type.compare("dxf") == 0) {
       QString msg = tr("Invisibility is not applicable for DXF-Files.");
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       mSelectedShape = "";
     } else {
@@ -424,7 +424,7 @@ void ViewerWidget::changeShapeColor()
     if (shape->_type.compare("dxf") == 0)
     {
       QString msg = tr("Changing the color is not applicable for DXF-Files.");
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       mSelectedShape = "";
     }
@@ -439,7 +439,7 @@ void ViewerWidget::changeShapeColor()
       else
       {
           QString msg = tr("The selected color is not valid.");
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                 Helper::notificationLevel));
       }
       mpAnimationWidget->getVisualizer()->modifyShape(mSelectedShape);

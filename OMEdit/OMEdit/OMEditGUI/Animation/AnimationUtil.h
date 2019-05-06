@@ -45,6 +45,8 @@
 #include <osg/Vec3>
 
 #include "Shapes.h"
+#include "Util/Helper.h"
+#include "Modeling/MessagesWidget.h"
 
 enum class VisType
 {
@@ -91,9 +93,9 @@ inline bool isCSV(const std::string& fileIn){
 inline std::string assembleXMLFileName(const std::string& modelFile, const std::string& path){
   QFileInfo fi(modelFile.c_str());
   QString suf = fi.suffix();
-  if(!(suf.compare("mat") || suf.compare("csv") || suf.compare("fmu")) )
-  {
-	  std::cout<<"This file extension is not supported."<<std::endl;
+  if (!(suf.compare("mat") || suf.compare("csv") || suf.compare("fmu"))) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("This file extension is not supported."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   QString base = fi.completeBaseName();
   if (base.endsWith("_res")){

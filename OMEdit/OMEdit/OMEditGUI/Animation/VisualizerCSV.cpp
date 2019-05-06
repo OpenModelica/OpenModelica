@@ -60,7 +60,9 @@ void VisualizerCSV::initData()
 void VisualizerCSV::initializeVisAttributes(const double time)
 {
   if (0.0 > time) {
-    std::cout<<"Cannot load visualization attributes for time point < 0.0."<<std::endl;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QObject::tr("Cannot load visualization attributes for time point < 0.0."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   updateVisAttributes(time);
 }
@@ -71,15 +73,15 @@ void VisualizerCSV::readCSV(const std::string& modelFile, const std::string& pat
 
   // Check if the file exists.
   if (!fileExists(resFileName)) {
-    std::string msg = "Could not find CSV file" + resFileName + ".";
-    std::cout<<msg<<std::endl;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString(QObject::tr("Could not find CSV file %1."))
+                                                          .arg(resFileName.c_str()), Helper::scriptingKind, Helper::errorLevel));
   } else {
     // Read mat file.
     mpCSVData = read_csv(resFileName.c_str());
     // Check return value.
     if (!mpCSVData) {
-      std::string msg = "Could not read CSV file" + resFileName + ".";
-      std::cout<<msg<<std::endl;
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString(QObject::tr("Could not read CSV file %1."))
+                                                            .arg(resFileName.c_str()), Helper::scriptingKind, Helper::errorLevel));
     }
   }
 }
@@ -184,14 +186,18 @@ double VisualizerCSV::omcGetVarValue(const char* varName, double time)
       if (varDataSet) {
         return varDataSet[i];
       } else {
-        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              QString(QObject::tr("Did not get variable from result file. Variable name is %1."))
+                                                              .arg(varName), Helper::scriptingKind, Helper::errorLevel));
       }
     } else if ((time > timeDataSet[i]) && (i + 1 < mpCSVData->numsteps) && (time < timeDataSet[i + 1])) { // interpolate
       double *varDataSet = read_csv_dataset(mpCSVData, varName);
       if (varDataSet) {
         return (varDataSet[i] + varDataSet[i + 1]) / 2;
       } else {
-        std::cout<<"Did not get variable from result file. Variable name is "<<std::string(varName)<<std::endl;
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                              QString(QObject::tr("Did not get variable from result file. Variable name is %1."))
+                                                              .arg(varName), Helper::scriptingKind, Helper::errorLevel));
       }
     }
   }

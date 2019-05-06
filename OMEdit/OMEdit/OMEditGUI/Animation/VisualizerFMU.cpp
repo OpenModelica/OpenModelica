@@ -67,21 +67,22 @@ void VisualizerFMU::loadFMU(const std::string& modelFile, const std::string& pat
   allocateContext(modelFile, path);
   if (mVersion == fmi_version_1_enu)
   {
-    std::cout<<"Loading FMU 1.0."<<std::endl;
+    //std::cout<<"Loading FMU 1.0."<<std::endl;
     mpFMU = new FMUWrapper_ME_1();
     mpFMU->load(modelFile, path, mpContext.get());
   }
   else if (mVersion == fmi_version_2_0_enu)
   {
-    std::cout<<"Loading FMU 2.0"<<std::endl;
+    //std::cout<<"Loading FMU 2.0"<<std::endl;
     mpFMU = new FMUWrapper_ME_2();
     mpFMU->load(modelFile, path, mpContext.get());
   }
   else
   {
-    std::cout<<"Unknown FMU version. Exciting."<<std::endl;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Unknown FMU version."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
-  std::cout<<"VisualizerFMU::loadFMU: FMU was successfully loaded."<<std::endl;
+  //std::cout<<"VisualizerFMU::loadFMU: FMU was successfully loaded."<<std::endl;
 }
 
 void VisualizerFMU::allocateContext(const std::string& modelFile, const std::string& path)
@@ -162,7 +163,10 @@ int VisualizerFMU::setVarReferencesInVisAttributes()
 
   catch (std::exception& e)
   {
-    std::cout<<"Something went wrong in OMVisualizer::setVarReferencesInVisAttributes"<<std::endl;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString(QObject::tr("Something went wrong in OMVisualizer::setVarReferencesInVisAttributes. %1."))
+                                                          .arg(e.what()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
     isOk = 1;
   }
   return isOk;
@@ -239,7 +243,7 @@ double VisualizerFMU::simulateStep(const double time)
 void VisualizerFMU::initializeVisAttributes(const double time)
 {
   mpFMU->initialize(mpSimSettings);
-  std::cout<<"VisualizerFMU::loadFMU: FMU was successfully initialized."<<std::endl;
+  //std::cout<<"VisualizerFMU::loadFMU: FMU was successfully initialized."<<std::endl;
 
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setSimTime(mpTimeManager->getStartTime());
@@ -310,10 +314,10 @@ void VisualizerFMU::updateVisAttributes(const double time)
   }  // end try
   catch (std::exception& ex)
   {
-    std::string msg = "Error in VisualizerFMU::updateVisAttributes at time point " + std::to_string(time)
-                                        + "\n" + std::string(ex.what());
-    std::cout<<msg<<std::endl;
-    throw(msg);
+    QString msg = QString(QObject::tr("Error in VisualizerFMU::updateVisAttributes at time point %1\n%2."))
+                  .arg(QString::number(time), ex.what());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    throw(msg.toStdString());
   }
 }
 

@@ -380,7 +380,7 @@ void OMCProxy::logResponse(QString command, QString response, QTime *responseTim
  */
 void OMCProxy::showException(QString exception)
 {
-  MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, exception, Helper::scriptingKind, Helper::errorLevel);
+  MessageItem messageItem(MessageItem::Modelica, exception, Helper::scriptingKind, Helper::errorLevel);
   MessagesWidget::instance()->addGUIMessage(messageItem);
   printMessagesStringInternal();
 }
@@ -975,7 +975,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
     return true;
   } else {
     QString msg = tr("Unable to set the component modifier value using command <b>%1</b>").arg(expression);
-    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
     MessagesWidget::instance()->addGUIMessage(messageItem);
     return false;
   }
@@ -1046,7 +1046,7 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
     return true;
   } else {
     QString msg = tr("Unable to set the extends modifier value using command <b>%1</b>").arg(expression);
-    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::errorLevel);
+    MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel);
     MessagesWidget::instance()->addGUIMessage(messageItem);
     return false;
   }
@@ -1704,7 +1704,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
     if ((getMessagesStringInternal() > 0) || (result.isEmpty())) {
       QString msg = tr("Could not preserve the formatting of the original model when duplicating it. "
                        "The duplicate model was created with internal pretty-printing algorithm.");
-      MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind, Helper::warningLevel);
+      MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::warningLevel);
       MessagesWidget::instance()->addGUIMessage(messageItem);
     }
     if (result.isEmpty()) {
@@ -1734,8 +1734,7 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
   if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, getResult(),
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, getResult(), Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
 }
@@ -2560,8 +2559,7 @@ QString OMCProxy::uriToFilename(QString uri)
   /* the second argument of uriToFilename result is error string. */
   if (results.size() > 1 && !results.at(1).isEmpty()) {
     QString errorString = results.at(1);
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString,
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
   if (results.size() > 0) {
     return results.first();

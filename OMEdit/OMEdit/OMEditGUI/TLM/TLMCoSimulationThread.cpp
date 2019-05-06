@@ -276,7 +276,7 @@ void TLMCoSimulationThread::progressFileChanged()
     }
     mProgressFile.close();
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(mProgressFile.fileName()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
