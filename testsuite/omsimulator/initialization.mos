@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log temp-initialization/
+// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization/
 
 loadString("
 model initialization
@@ -46,7 +46,8 @@ oms_terminate(\"test\")
 oms_delete(\"test\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua", "initialization_systemCall.log");
+readFile("initialization_systemCall.log");
 
 // Result:
 // true
@@ -55,7 +56,8 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua");
 // ""
 // true
 // ""
-// info:    maximum step size for 'test.root': 0.100000
+// 0
+// "info:    maximum step size for 'test.root': 0.100000
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.x_start: 1.5
@@ -68,5 +70,5 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua");
 // info:    Final Statistics for 'test.root':
 //          NumSteps = 37 NumRhsEvals  = 83 NumLinSolvSetups = 39
 //          NumNonlinSolvIters = 82 NumNonlinSolvConvFails = 0 NumErrTestFails = 18
-// 0
+// "
 // endResult
