@@ -284,7 +284,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     }
   }
   catch (PlotException &e) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -309,7 +309,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->show();
   }
   catch (PlotException &e) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -346,7 +346,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     }
   }
   catch (PlotException &e) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 /*!
@@ -379,7 +379,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     return pPlotWindow;
   }
   catch (PlotException &e) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     return 0;
   }
 }
@@ -412,7 +412,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     pPlotWindow->show();
   }
   catch (PlotException &e) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -549,7 +549,7 @@ void PlotWindowContainer::exportVariables()
   }
   // create a file
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileName, contents)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Exported variables in %1")
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported variables in %1")
                                                                  .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
   }
 }

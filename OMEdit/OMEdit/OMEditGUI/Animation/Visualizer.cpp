@@ -92,10 +92,11 @@ int OMVisualBase::getShapeObjectIndexByID(std::string shapeID)
 void OMVisualBase::initXMLDoc()
 {
   // Check if the XML file is available.
-  if (!fileExists(_xmlFileName))
-  {
-    std::string msg = "Could not find the visual XML file" + _xmlFileName + ".";
-    std::cout<<msg<<std::endl;
+  if (!fileExists(_xmlFileName)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString(QObject::tr("Could not find the visual XML file %1."))
+                                                          .arg(_xmlFileName.c_str()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   // read xml
   osgDB::ifstream t;
@@ -130,7 +131,10 @@ void OMVisualBase::initVisObjects()
 
     if (expNode == 0)
     {
-      std::cout<<"The type of  "<<shape._id<<" is not supported right in the visxml file."<<std::endl;
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString(QObject::tr("The type of %1 is not supported right in the visxml file."))
+                                                            .arg(shape._id.c_str()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
     }
     else
     {
@@ -150,7 +154,9 @@ void OMVisualBase::initVisObjects()
 
         if (!fileExists(shape._fileName))
         {
-          std::cout<<"Could not find the file "<<shape._fileName<<std::endl;
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                QString(QObject::tr("Could not find the file %1.")).arg(shape._fileName.c_str()),
+                                                                Helper::scriptingKind, Helper::errorLevel));
         }
       }
       //std::cout<<"type "<<shape._id<<std::endl;
@@ -372,12 +378,13 @@ std::string VisualizerAbstract::getModelFile() const
 
 void VisualizerAbstract::startVisualization()
 {
-  if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6)
-  {
+  if (mpTimeManager->getVisTime() < mpTimeManager->getEndTime() - 1.e-6) {
     mpTimeManager->setPause(false);
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QObject::tr("There is nothing left to visualize. Initialize the model first."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
-  else
-    std::cout<<"There is nothing left to visualize. Initialize the model first."<<std::endl;
 }
 
 void VisualizerAbstract::pauseVisualization()
@@ -538,7 +545,9 @@ void UpdateVisitor::apply(osg::Geode& node)
     }
     else
     {
-      std::cout<<"Unknown type "<<_shape._type<<", we make a capsule."<<std::endl;
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString(QObject::tr("Unknown type %1, we make a capsule.")).arg(_shape._type.c_str()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
       draw->setShape(new osg::Capsule(osg::Vec3f(0.0, 0.0, 0.0), 0.1, 0.5));
     }
     //std::cout<<"SHAPE "<<draw->getShape()->className()<<std::endl;

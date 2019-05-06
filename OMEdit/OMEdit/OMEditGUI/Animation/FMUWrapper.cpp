@@ -174,22 +174,22 @@ void FMUWrapper_ME_1::load(const std::string& modelFile, const std::string& path
   mCallBackFunctions.freeMemory = free;
 
   mpFMU = fmi1_import_parse_xml(context, path.c_str());
-  if (!mpFMU)
-  {
-    std::cout<<"Error parsing XML. Exiting."<<std::endl;
+  if (!mpFMU) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Error parsing XML."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   //chek if its a model excahnge FMU
-  if (fmi1_import_get_fmu_kind(mpFMU) != fmi1_fmu_kind_enu_me)
-  {
-    std::cout<<"Only Model-Exchange FMUs are supported right now."<<std::endl;
+  if (fmi1_import_get_fmu_kind(mpFMU) != fmi1_fmu_kind_enu_me) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Only Model-Exchange FMUs are supported right now."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 
   //loadFMU dll
   jm_status_enu_t status = fmi1_import_create_dllfmu(mpFMU, mCallBackFunctions, 1);
-  if (status == jm_status_error)
-  {
-    std::cout<<"Could not create the DLL loading mechanism(C-API test). Exiting."<<std::endl;
-
+  if (status == jm_status_error) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QObject::tr("Could not create the DLL loading mechanism(C-API test)."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -199,13 +199,13 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   mFMUdata._hcur = simSettings->getHdef();
   mFMUdata._tcur = simSettings->getTstart();
 
-  std::cout<<"Version returned from FMU: "<< std::string(fmi1_import_get_version(mpFMU))<<std::endl;
-  std::cout<<"Platform type returned: "<< std::string(fmi1_import_get_model_types_platform(mpFMU))<<std::endl;
+  //std::cout<<"Version returned from FMU: "<< std::string(fmi1_import_get_version(mpFMU))<<std::endl;
+  //std::cout<<"Platform type returned: "<< std::string(fmi1_import_get_model_types_platform(mpFMU))<<std::endl;
 
   // Calloc everything
   mFMUdata._nStates = fmi1_import_get_number_of_continuous_states(mpFMU);
   mFMUdata._nEventIndicators = fmi1_import_get_number_of_event_indicators(mpFMU);
-  std::cout<<"n_states: "<< std::to_string(mFMUdata._nStates) << " " << std::to_string(mFMUdata._nEventIndicators)<<std::endl;
+  //std::cout<<"n_states: "<< std::to_string(mFMUdata._nStates) << " " << std::to_string(mFMUdata._nEventIndicators)<<std::endl;
 
   mFMUdata._states = (fmi1_real_t*) calloc(mFMUdata._nStates, sizeof(double));
   mFMUdata._statesDer = (fmi1_real_t*) calloc(mFMUdata._nStates, sizeof(double));
@@ -215,36 +215,32 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
 
   // get states to manipulate them
   mFMUdata._fmiStatus = fmi1_import_get_state_value_references(mpFMU, mFMUdata._stateVRs, mFMUdata._nStates);
-  if (!mFMUdata._fmiStatus)
-  {
-  for (unsigned int i=0; i<mFMUdata._nStates; i++)
-  {
-    fmi1_import_variable_t * stateVar = fmi1_import_get_variable_by_vr(mpFMU, fmi1_base_type_enu_t::fmi1_base_type_real, mFMUdata._stateVRs[i]);
-    mFMUdata._stateNames.push_back(fmi1_import_get_variable_name(stateVar));
-  }
-  }
-  else
-  {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, QObject::tr("fmi1_import_get_state_value_references returned failure code"+mFMUdata._fmiStatus),
-                                                              Helper::scriptingKind, Helper::errorLevel));
+  if (!mFMUdata._fmiStatus){
+    for (unsigned int i=0; i<mFMUdata._nStates; i++) {
+      fmi1_import_variable_t * stateVar = fmi1_import_get_variable_by_vr(mpFMU, fmi1_base_type_enu_t::fmi1_base_type_real, mFMUdata._stateVRs[i]);
+      mFMUdata._stateNames.push_back(fmi1_import_get_variable_name(stateVar));
+    }
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("fmi1_import_get_state_value_references returned failure code"+mFMUdata._fmiStatus),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 
   // Instantiate model
   jm_status_enu_t jmstatus = fmi1_import_instantiate_model(mpFMU, "Test ME model instance");
-  if (jmstatus == jm_status_error)
-  {
-    std::cout<<"fmi1_import_instantiate_model failed. Exiting."<<std::endl;
+  if (jmstatus == jm_status_error) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("fmi1_import_instantiate_model failed."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 
   //initialize
   mFMUdata._fmiStatus = fmi1_import_set_time(mpFMU, simSettings->getTstart());
-  try
-  {
+  try {
     mFMUdata._fmiStatus = fmi1_import_initialize(mpFMU, simSettings->getToleranceControlled(), simSettings->getRelativeTolerance(), &mFMUdata._eventInfo);
-  }
-  catch (std::exception &ex)
-  {
-    std::cout << __FILE__ << " : " << __LINE__ << " Exception: " << ex.what() << std::endl;
+  } catch (std::exception &ex) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString("%1 : %2 Exception: %3").arg(QString(__FILE__), QString::number(__LINE__),
+                                                                                               QString(ex.what())),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   mFMUdata._fmiStatus = fmi1_import_get_continuous_states(mpFMU, mFMUdata._states, mFMUdata._nStates);
   mFMUdata._fmiStatus = fmi1_import_get_event_indicators(mpFMU, mFMUdata._eventIndicatorsPrev, mFMUdata._nEventIndicators);
@@ -252,7 +248,7 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
 
   // Turn on logging in FMI library.
   fmi1_import_set_debug_logging(mpFMU, fmi1_false);
-  std::cout<<"FMU::initialize(). Finished."<<std::endl;
+  //std::cout<<"FMU::initialize(). Finished."<<std::endl;
 }
 
 const FMUData* FMUWrapper_ME_1::getFMUData()
@@ -388,20 +384,20 @@ void FMUWrapper_ME_2::load(const std::string& modelFile, const std::string& path
   mCallBackFunctions.componentEnvironment = mpFMU;
   // parsing
   mpFMU = fmi2_import_parse_xml(context, path.c_str(), 0);
-  if (!mpFMU)
-  {
-    std::cout<<"Error parsing XML. Exiting."<<std::endl;
+  if (!mpFMU) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Error parsing XML."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   //chek if its a model excahnge FMU
-  if (fmi2_import_get_fmu_kind(mpFMU) != fmi2_fmu_kind_me)
-  {
-    std::cout<<"Only Model-Exchange FMUs are supported right now."<<std::endl;
+  if (fmi2_import_get_fmu_kind(mpFMU) != fmi2_fmu_kind_me) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Only Model-Exchange FMUs are supported right now."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   //loadFMU dll
   jm_status_enu_t status =  fmi2_import_create_dllfmu(mpFMU, fmi2_fmu_kind_me, &mCallBackFunctions);
-  if (status == jm_status_error)
-  {
-    std::cout<<"Could not create the DLL loading mechanism(C-API test). Exiting."<<std::endl;
+  if (status == jm_status_error) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("Could not create the DLL loading mechanism(C-API test)."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -411,13 +407,13 @@ void FMUWrapper_ME_2::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   mFMUdata._hcur = simSettings->getHdef();
   mFMUdata._tcur = simSettings->getTstart();
 
-  std::cout<<"Version returned from FMU: "<< std::string(fmi2_import_get_version(mpFMU))<<std::endl;
-  std::cout<<"Platform type returned: "<< std::string(fmi2_import_get_types_platform(mpFMU))<<std::endl;
+  //std::cout<<"Version returned from FMU: "<< std::string(fmi2_import_get_version(mpFMU))<<std::endl;
+  //std::cout<<"Platform type returned: "<< std::string(fmi2_import_get_types_platform(mpFMU))<<std::endl;
 
   // Calloc everything
   mFMUdata._nStates = fmi2_import_get_number_of_continuous_states(mpFMU);
   mFMUdata._nEventIndicators = fmi2_import_get_number_of_event_indicators(mpFMU);
-  std::cout<<"n_states: "<< std::to_string(mFMUdata._nStates) << " " << std::to_string(mFMUdata._nEventIndicators)<<std::endl;
+  //std::cout<<"n_states: "<< std::to_string(mFMUdata._nStates) << " " << std::to_string(mFMUdata._nEventIndicators)<<std::endl;
 
   mFMUdata._states = (double*)calloc(mFMUdata._nStates, sizeof(double));
   mFMUdata._statesDer = (double*)calloc(mFMUdata._nStates, sizeof(double));
@@ -447,22 +443,22 @@ void FMUWrapper_ME_2::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
 
   // Instantiate model
   jm_status_enu_t jmstatus = fmi2_import_instantiate(mpFMU, "Test ME model instance",fmi2_model_exchange,0,0);
-  if (jmstatus == jm_status_error)
-  {
-    std::cout<<"fmi2_import_instantiate_model failed. Exiting."<<std::endl;
+  if (jmstatus == jm_status_error) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("fmi2_import_instantiate_model failed."),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 
   //initialize
   mFMUdata.fmiStatus2 = fmi2_import_setup_experiment(mpFMU, simSettings->getToleranceControlled(), simSettings->getRelativeTolerance(), simSettings->getTstart(), fmi2_false, 0.0);
 
-  try
-  {
+  try {
     mFMUdata.fmiStatus2 = fmi2_import_enter_initialization_mode(mpFMU);
-  mFMUdata.fmiStatus2 = fmi2_import_exit_initialization_mode(mpFMU);
-  }
-  catch (std::exception &ex)
-  {
-    std::cout << __FILE__ << " : " << __LINE__ << " Exception: " << ex.what() << std::endl;
+    mFMUdata.fmiStatus2 = fmi2_import_exit_initialization_mode(mpFMU);
+  } catch (std::exception &ex) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString("%1 : %2 Exception: %3").arg(QString(__FILE__), QString::number(__LINE__),
+                                                                                               QString(ex.what())),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
   /*
   tcur = tstart;
@@ -489,7 +485,7 @@ void FMUWrapper_ME_2::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
   mFMUdata.fmiStatus2 = fmi2_import_get_continuous_states(mpFMU, mFMUdata._states, mFMUdata._nStates);
   mFMUdata.fmiStatus2 = fmi2_import_get_event_indicators(mpFMU, mFMUdata._eventIndicatorsPrev, mFMUdata._nEventIndicators);
 
-  std::cout<<"FMU::initialize(). Finished."<<std::endl;
+  //std::cout<<"FMU::initialize(). Finished."<<std::endl;
 }
 
 void FMUWrapper_ME_2::do_event_iteration(fmi2_import_t *fmu, fmi2_event_info_t *eventInfo)

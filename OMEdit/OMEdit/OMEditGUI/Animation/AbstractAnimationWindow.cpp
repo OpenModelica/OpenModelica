@@ -304,17 +304,15 @@ void AbstractAnimationWindow::initInteractiveControlPanel()
     QScrollArea *scrollArea = new QScrollArea(this);
     scrollArea->setWidget(widget);
     mpAnimationParameterDockerWidget->setWidget(scrollArea);
-    }
-    else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Information about states could not be determined."),
-                                                                Helper::scriptingKind, Helper::errorLevel));
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Information about states could not be determined."),
+                                                            Helper::scriptingKind, Helper::errorLevel));
         mpAnimationParameterDockerWidget->hide();
 
     }
-  }
-  else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Interactive Control needs an FMU ME 2.0"),
-                                                            Helper::scriptingKind, Helper::errorLevel));
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Interactive Control needs an FMU ME 2.0"),
+                                                          Helper::scriptingKind, Helper::errorLevel));
     mpAnimationParameterDockerWidget->hide();
   }
 }
@@ -378,7 +376,7 @@ bool AbstractAnimationWindow::loadVisualization()
   } else if (isCSV(mFileName)) {
     visType = VisType::CSV;
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, tr("Unknown visualization type."),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unknown visualization type."),
                                                           Helper::scriptingKind, Helper::errorLevel));
     return false;
   }
@@ -386,7 +384,7 @@ bool AbstractAnimationWindow::loadVisualization()
   bool xmlExists = checkForXMLFile(mFileName, mPathName);
   if (!xmlExists) {
     QString msg = tr("Could not find the visual XML file %1.").arg(QString(assembleXMLFileName(mFileName, mPathName).c_str()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   } else {
@@ -399,7 +397,7 @@ bool AbstractAnimationWindow::loadVisualization()
       mpVisualizer = new VisualizerFMU(mFileName, mPathName);
     } else {
       QString msg = tr("Could not init %1 %2.").arg(QString(mPathName.c_str())).arg(QString(mFileName.c_str()));
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                             Helper::errorLevel));
       return false;
     }

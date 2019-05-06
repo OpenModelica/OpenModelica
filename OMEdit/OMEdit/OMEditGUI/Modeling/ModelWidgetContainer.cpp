@@ -2222,7 +2222,7 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
       mpModelWidget->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
@@ -3896,7 +3896,7 @@ void ModelWidget::getModelConnections()
     }
     // show error message if start component is not found.
     if (!pStartConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(connectionList.at(0)).arg(connectionString),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -3933,7 +3933,7 @@ void ModelWidget::getModelConnections()
     }
     // show error message if end component is not found.
     if (!pEndConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                             .arg(connectionList.at(1)).arg(connectionString),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -4456,7 +4456,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
     }
     if (!errorString.isEmpty()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorString, Helper::syntaxKind,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::syntaxKind,
                                                             Helper::errorLevel));
     }
     return false;
@@ -4583,7 +4583,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
   if (OMSProxy::instance()->parseString(pOMSimulatorEditor->getPlainTextEdit()->toPlainText(), &modelName)) {
     if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0
         && MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(modelName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
                                                             .arg("Composite model").arg(modelName).arg("scope"),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -4742,7 +4742,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   // first remove the result file.
   if (QFile::exists(fileName)) {
     if (!QFile::remove(fileName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(fileName),
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
@@ -4852,7 +4852,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   } else {
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
                                                                            .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   }
@@ -4874,7 +4874,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   // first remove the visual xml file.
   if (QFile::exists(fileName)) {
     if (!QFile::remove(fileName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE).arg(fileName),
                                                             Helper::scriptingKind, Helper::errorLevel));
     }
@@ -5343,7 +5343,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   } else {
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
                                                                            .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   }
@@ -5817,7 +5817,7 @@ void ModelWidget::getModelTransitions()
     Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(transition.at(0));
     // show error message if start component is not found.
     if (!pStartComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
                                                             .arg(transition.at(0)).arg(transition.join(",")),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -5827,7 +5827,7 @@ void ModelWidget::getModelTransitions()
     Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(transition.at(1));
     // show error message if end component is not found.
     if (!pEndComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
                                                             .arg(transition.at(1)).arg(transition.join(",")),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -5868,7 +5868,7 @@ void ModelWidget::getModelInitialStates()
     Component *pInitialStateComponent = mpDiagramGraphicsView->getComponentObject(initialState.at(0));
     // show error message if initial state component is not found.
     if (!pInitialStateComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_INITIALSTATE)
                                                             .arg(initialState.at(0)).arg(initialState.join(",")),
                                                             Helper::scriptingKind, Helper::errorLevel));
@@ -5906,7 +5906,7 @@ void ModelWidget::detectMultipleDeclarations()
         continue;
       }
       if (mComponentsList[i]->getName().compare(mComponentsList[j]->getName()) == 0) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                               GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
                                                               .arg(mComponentsList[i]->getName()),
                                                               Helper::scriptingKind, Helper::errorLevel));
@@ -5974,7 +5974,7 @@ void ModelWidget::getCompositeModelSubModels()
       if (!QFile::exists(absoluteModelFilePath)) {
         QString msg = tr("Unable to find ModelFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
             .arg(subModel.attribute("ModelFile")).arg(subModel.attribute("Name")).arg(absoluteModelFilePath);
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                               Helper::errorLevel));
       }
       // Geometry File
@@ -5986,7 +5986,7 @@ void ModelWidget::getCompositeModelSubModels()
         if (!QFile::exists(absoluteGeometryFilePath)) {
           QString msg = tr("Unable to find GeometryFile <b>%1</b> for SubModel <b>%2</b>. The file location should be <b>%3</b>.")
               .arg(subModel.attribute("GeometryFile")).arg(subModel.attribute("Name")).arg(absoluteGeometryFilePath);
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                                 Helper::errorLevel));
         }
       }
@@ -6017,7 +6017,7 @@ void ModelWidget::getCompositeModelConnections()
     }
     Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
     if (!pStartSubModelComponent) {
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(0))
                                                  .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -6025,7 +6025,7 @@ void ModelWidget::getCompositeModelConnections()
     // get start interface point
     Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
     if (!pStartInterfacePointComponent) {
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(1))
                                                  .arg(connection.attribute("From")), Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -6037,7 +6037,7 @@ void ModelWidget::getCompositeModelConnections()
     }
     Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
     if (!pEndSubModelComponent) {
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(0))
                                                  .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -6045,7 +6045,7 @@ void ModelWidget::getCompositeModelConnections()
     // get end interface point
     Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
     if (!pEndInterfacePointComponent) {
-      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(1))
                                                  .arg(connection.attribute("To")), Helper::scriptingKind, Helper::errorLevel));
       continue;
@@ -6245,7 +6245,7 @@ void ModelWidget::drawOMSModelConnections()
         }
         Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
         if (!pStartComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                      GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                      .arg(startConnectionList.at(0)).arg(pConnections[i]->conA),
                                                      Helper::scriptingKind, Helper::errorLevel));
@@ -6257,7 +6257,7 @@ void ModelWidget::drawOMSModelConnections()
           QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
           pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectorName);
           if (!pStartConnectorComponent) {
-            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                        GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                        .arg(startConnectorName).arg(pConnections[i]->conA),
                                                        Helper::scriptingKind, Helper::errorLevel));
@@ -6284,7 +6284,7 @@ void ModelWidget::drawOMSModelConnections()
         }
         Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
         if (!pEndComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                      GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                      .arg(endConnectionList.at(0)).arg(pConnections[i]->conB),
                                                      Helper::scriptingKind, Helper::errorLevel));
@@ -6296,7 +6296,7 @@ void ModelWidget::drawOMSModelConnections()
           QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
           pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectorName);
           if (!pEndConnectorComponent) {
-            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                        GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                        .arg(endConnectorName).arg(pConnections[i]->conB),
                                                        Helper::scriptingKind, Helper::errorLevel));

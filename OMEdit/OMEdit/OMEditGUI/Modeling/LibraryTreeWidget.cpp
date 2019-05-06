@@ -2919,8 +2919,7 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
     fail = !QFile::remove(fileInfo.absoluteFilePath());
   }
   if (fail) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
                                                           .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
   }
   pLibraryTreeItem->deleteLater();
@@ -4555,7 +4554,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
     QString msg = GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
         .arg(GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE)
              .arg(fileName).arg(file.errorString()));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
                                                           Helper::errorLevel));
     return false;
   }

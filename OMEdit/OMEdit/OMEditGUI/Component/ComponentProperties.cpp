@@ -1247,7 +1247,7 @@ void ComponentParameters::updateComponentParameters()
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
         newComponentModifiersMap.insert(componentModifierKey, componentModifierValue);
       } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                               GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
                                                               Helper::scriptingKind, Helper::errorLevel));
       }

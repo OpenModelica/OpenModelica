@@ -133,7 +133,7 @@ void GitCommands::createGitRepository(QString repositoryPath)
   }
   else {
     QString createRepo = getGitStdout(repositoryPath, QStringList() << "init");
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, createRepo,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, createRepo,
                                               Helper::scriptingKind, Helper::notificationLevel));
 
     addStructuresToRepository(repositoryPath);
