@@ -1346,15 +1346,7 @@ UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialSta
  */
 void UpdateInitialStateCommand::redoInternal()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpInitialStateLineAnnotation->initializeTransformation();
-  mpInitialStateLineAnnotation->removeCornerItems();
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->adjustGeometries();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-  mpInitialStateLineAnnotation->update();
-  mpInitialStateLineAnnotation->emitChanged();
-  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+  undoOrRedoDependingOnAnnotation(mNewAnnotation)
 }
 
 /*!
@@ -1363,7 +1355,11 @@ void UpdateInitialStateCommand::redoInternal()
  */
 void UpdateInitialStateCommand::undo()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mOldAnnotation);
+  undoOrRedoDependingOnAnnotation(mOldAnnotation)
+}
+
+void UpdateInitialStateCommand::undoOrRedoDependingOnAnnotation(QString const& annotation) {
+  mpInitialStateLineAnnotation->parseShapeAnnotation(annotation);
   mpInitialStateLineAnnotation->initializeTransformation();
   mpInitialStateLineAnnotation->removeCornerItems();
   mpInitialStateLineAnnotation->drawCornerItems();
