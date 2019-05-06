@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 
 #include <QMessageBox>
+#include <functional>
 
 UndoCommand::UndoCommand(QUndoCommand *pParent)
   : QUndoCommand(pParent), mFailed(false), mEnabled(true)
@@ -926,15 +927,7 @@ UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLine
  */
 void UpdateConnectionCommand::redoInternal()
 {
-  mpConnectionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpConnectionLineAnnotation->initializeTransformation();
-  mpConnectionLineAnnotation->removeCornerItems();
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->adjustGeometries();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpConnectionLineAnnotation->update();
-  mpConnectionLineAnnotation->emitChanged();
-  mpConnectionLineAnnotation->updateConnectionAnnotation();
+  redrawConnectionWithAnnotation(mNewAnnotation);
 }
 
 /*!
@@ -943,15 +936,13 @@ void UpdateConnectionCommand::redoInternal()
  */
 void UpdateConnectionCommand::undo()
 {
-  mpConnectionLineAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpConnectionLineAnnotation->initializeTransformation();
-  mpConnectionLineAnnotation->removeCornerItems();
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->adjustGeometries();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpConnectionLineAnnotation->update();
-  mpConnectionLineAnnotation->emitChanged();
-  mpConnectionLineAnnotation->updateConnectionAnnotation();
+  redrawConnectionWithAnnotation(mOldAnnotation);
+}
+
+void UpdateConnectionCommand::redrawConnectionWithAnnotation(QString const& annotation)
+{
+  auto updateFunction = std::bind(&LineAnnotation::updateConnectionAnnotation ,mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->redraw(annotation, updateFunction);
 }
 
 UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation,
@@ -1162,24 +1153,7 @@ UpdateTransitionCommand::UpdateTransitionCommand(LineAnnotation *pTransitionLine
  */
 void UpdateTransitionCommand::redoInternal()
 {
-  mpTransitionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpTransitionLineAnnotation->initializeTransformation();
-  mpTransitionLineAnnotation->removeCornerItems();
-  mpTransitionLineAnnotation->drawCornerItems();
-  mpTransitionLineAnnotation->adjustGeometries();
-  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpTransitionLineAnnotation->update();
-  mpTransitionLineAnnotation->emitChanged();
-  mpTransitionLineAnnotation->setCondition(mNewCondition);
-  mpTransitionLineAnnotation->setImmediate(mNewImmediate);
-  mpTransitionLineAnnotation->setReset(mNewReset);
-  mpTransitionLineAnnotation->setSynchronize(mNewSynchronize);
-  mpTransitionLineAnnotation->setPriority(mNewPriority);
-  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
-  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
-  mpTransitionLineAnnotation->updateTransitionTextPosition();
-  mpTransitionLineAnnotation->updateTransitionAnnotation(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
-  mpTransitionLineAnnotation->updateToolTip();
+  redrawTransitionWithUpdateFunction(mNewAnnotation, std::bind(&UpdateTransitionCommand::updateTransistionWithNewConditions, this));
 }
 
 /*!
@@ -1188,24 +1162,24 @@ void UpdateTransitionCommand::redoInternal()
  */
 void UpdateTransitionCommand::undo()
 {
-  mpTransitionLineAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpTransitionLineAnnotation->initializeTransformation();
-  mpTransitionLineAnnotation->removeCornerItems();
-  mpTransitionLineAnnotation->drawCornerItems();
-  mpTransitionLineAnnotation->adjustGeometries();
-  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-  mpTransitionLineAnnotation->update();
-  mpTransitionLineAnnotation->emitChanged();
-  mpTransitionLineAnnotation->setCondition(mOldCondition);
-  mpTransitionLineAnnotation->setImmediate(mOldImmediate);
-  mpTransitionLineAnnotation->setReset(mOldReset);
-  mpTransitionLineAnnotation->setSynchronize(mOldSynchronize);
-  mpTransitionLineAnnotation->setPriority(mOldPriority);
-  mpTransitionLineAnnotation->getTextAnnotation()->setTextString("%condition");
-  mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
-  mpTransitionLineAnnotation->updateTransitionTextPosition();
-  mpTransitionLineAnnotation->updateTransitionAnnotation(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
-  mpTransitionLineAnnotation->updateToolTip();
+  redrawTransitionWithUpdateFunction(mOldAnnotation, std::bind(&UpdateTransitionCommand::updateTransistionWithOldConditions, this));
+}
+
+void UpdateTransitionCommand::redrawTransitionWithUpdateFunction(const QString& annotation, std::function<void()> updateFunction)
+{
+  mpTransitionLineAnnotation->redraw(annotation, updateFunction);
+}
+
+void UpdateTransitionCommand::updateTransistionWithNewConditions()
+{
+  mpTransitionLineAnnotation->setProperties(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
+  mpTransitionLineAnnotation->updateTransistion(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
+}
+
+void UpdateTransitionCommand::updateTransistionWithOldConditions()
+{
+  mpTransitionLineAnnotation->setProperties(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
+  mpTransitionLineAnnotation->updateTransistion(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
 }
 
 DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, UndoCommand *pParent)
@@ -1346,15 +1320,7 @@ UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialSta
  */
 void UpdateInitialStateCommand::redoInternal()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpInitialStateLineAnnotation->initializeTransformation();
-  mpInitialStateLineAnnotation->removeCornerItems();
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->adjustGeometries();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-  mpInitialStateLineAnnotation->update();
-  mpInitialStateLineAnnotation->emitChanged();
-  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+  redrawInitialStateWithAnnotation(mNewAnnotation);
 }
 
 /*!
@@ -1363,15 +1329,13 @@ void UpdateInitialStateCommand::redoInternal()
  */
 void UpdateInitialStateCommand::undo()
 {
-  mpInitialStateLineAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpInitialStateLineAnnotation->initializeTransformation();
-  mpInitialStateLineAnnotation->removeCornerItems();
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->adjustGeometries();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-  mpInitialStateLineAnnotation->update();
-  mpInitialStateLineAnnotation->emitChanged();
-  mpInitialStateLineAnnotation->updateInitialStateAnnotation();
+  redrawInitialStateWithAnnotation(mOldAnnotation);
+}
+
+void UpdateInitialStateCommand::redrawInitialStateWithAnnotation(const QString& annotation)
+{
+  auto updateFunction = std::bind(&LineAnnotation::updateInitialStateAnnotation ,mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->redraw(annotation, updateFunction);
 }
 
 DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, UndoCommand *pParent)

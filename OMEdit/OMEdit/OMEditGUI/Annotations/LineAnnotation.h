@@ -42,6 +42,7 @@
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
 #include <QUndoCommand>
+#include<functional>
 
 class Label;
 class Component;
@@ -136,6 +137,8 @@ public:
   void updateOMSConnection();
   void updateToolTip();
   void showOMSConnection();
+  void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
+  void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 
   static QColor findLineColorForConnection(Component *pComponent);
 protected:
@@ -167,6 +170,7 @@ public slots:
   void updateConnectionAnnotation();
   void updateConnectionTransformation();
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
+  void redraw(const QString& annotation, std::function<void()> updateAnnotationFunction);
   void updateInitialStateAnnotation();
   void duplicate();
 };

@@ -1315,6 +1315,19 @@ void LineAnnotation::duplicate()
   pLineAnnotation->setSelected(true);
 }
 
+void LineAnnotation::redraw(const QString& annotation, std::function<void()> updateAnnotationFunction)
+{
+  parseShapeAnnotation(annotation);
+  initializeTransformation();
+  removeCornerItems();
+  drawCornerItems();
+  adjustGeometries();
+  setCornerItemsActiveOrPassive();
+  update();
+  emitChanged();
+  updateAnnotationFunction();
+}
+
 /*!
  * \class ExpandableConnectorTreeItem
  * \brief Contains the information about the expandable connector item.
@@ -2184,4 +2197,22 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
   }
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
+}
+
+void LineAnnotation::setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)
+{
+  setCondition(condition);
+  setImmediate(immediate);
+  setReset(rest);
+  setSynchronize(synchronize);
+  setPriority(priority);
+  getTextAnnotation()->setTextString("%condition");
+}
+
+void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)
+{
+  getTextAnnotation()->updateTextString();
+  updateTransitionTextPosition();
+  updateTransitionAnnotation(condition, immediate, rest, synchronize, priority);
+  updateToolTip();
 }

@@ -185,6 +185,7 @@ public:
   UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
+  void redrawConnectionWithAnnotation(QString const& annotation);
 private:
   LineAnnotation *mpConnectionLineAnnotation;
   QString mOldAnnotation;
@@ -235,6 +236,9 @@ public:
   void redoInternal();
   void undo();
 private:
+  void updateTransistionWithNewConditions();
+  void updateTransistionWithOldConditions();
+  void redrawTransitionWithUpdateFunction(const QString& annotation, std::function<void()> updateFunction);
   LineAnnotation *mpTransitionLineAnnotation;
   QString mOldCondition;
   bool mOldImmediate;
@@ -278,6 +282,7 @@ public:
   UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
+  void redrawInitialStateWithAnnotation(QString const& annotation);
 private:
   LineAnnotation *mpInitialStateLineAnnotation;
   QString mOldAnnotation;
