@@ -195,7 +195,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     }
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
-    fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
+    fprintf(plt, "set output \"%s%s_prof.%s%d_count.%s\"\n", outputPath, prefix, idPrefix, id, plotFormat);
     fprintf(plt, formatCount, outputPath, prefix, 1+numFnsAndBlocks, 2+i, 2);
   }
 }
@@ -491,7 +491,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
     const char *omhome = data->simulationInfo->OPENMODELICAHOME;
     char *buf = NULL;
     int genHtmlRes;
-    buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
+    buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*strlen(outputPath) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     if(omhome) {
