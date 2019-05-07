@@ -61,8 +61,7 @@ val(H, 0.0);
 // true
 // ""
 //
-// Start function evaluation of:
-// h := functionTest8.hl(Tc_model, T_model)
+// Start constant evaluation of expression: functionTest8.hl(Tc_model, T_model)
 //
 // IF-statement:
 //   if T < Tc then
@@ -177,10 +176,11 @@ val(H, 0.0);
 //   end if;
 //
 //
-// the function output is not constant in any case
 //
-// Start function evaluation of:
-// H := functionTest8.hv(Tc_model, T_model)
+// evaluated to: functionTest8.hl(Tc_model, T_model)
+//
+//
+// Start constant evaluation of expression: functionTest8.hv(Tc_model, T_model)
 //
 // assignment:
 //   temp := 298.15;
@@ -259,7 +259,9 @@ val(H, 0.0);
 //   end if;
 //
 //
-// the function output is not constant in any case
+//
+// evaluated to: functionTest8.hv(Tc_model, T_model)
+//
 // record SimulationResult
 //     resultFile = "functionTest8_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'functionTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
