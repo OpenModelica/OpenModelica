@@ -49,6 +49,7 @@ encapsulated package Expression
 // public imports
 public import Absyn;
 public import DAE;
+public import DAEDump;
 
 protected
 type ComponentRef = DAE.ComponentRef;
@@ -7857,50 +7858,48 @@ algorithm
   end match;
 end isImpureWork;
 
-public function containsComplexCall "author: kabdelhak
-  Returns true if an expression contains a complex constructor call."
-  input DAE.Exp inExp;
-  output Boolean isCC;
-algorithm
-  (_, isCC) := traverseExpTopDown(inExp, containsComplexCallWork, false);
-end containsComplexCall;
 
-function containsComplexCallWork "author: kabdelhak"
+public function containsRecordType
+  " Returns true if an expression contains a record type."
   input DAE.Exp inExp;
-  input Boolean inCC;
-  output DAE.Exp outExp;
-  output Boolean cont;
-  output Boolean outCC;
+  output Boolean isRec;
 algorithm
-  (outExp,cont,outCC) := match (inExp,inCC)
-    local
-      Absyn.Path path;
-      Boolean isCC;
-    case (_, true) then (inExp,true,true);
-    case (DAE.CALL(path = Absyn.FULLYQUALIFIED(path = path)), _)
-      equation
-        true = isComplexCall(path);
-      then (inExp,false,true);
-    else (inExp,true,false);
-  end match;
-end containsComplexCallWork;
+  (_, isRec) := traverseExpTopDown(inExp, containsRecordTypeWork, false);
+end containsRecordType;
 
-function isComplexCall "author: kabdelhak"
-  input Absyn.Path path;
-  output Boolean isCC;
+protected function containsRecordTypeWork
+  input DAE.Exp inExp;
+  input Boolean inRec;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont = false;
+  output Boolean outRec = inRec;
 algorithm
-  isCC := match path
-    local
-      Absyn.Path innerPath;
-    case (Absyn.FULLYQUALIFIED(path = innerPath))
-      then isComplexCall(innerPath);
-    case (Absyn.QUALIFIED(name=".Complex"))
-      then true;
-    case (Absyn.IDENT(name=".Complex"))
-      then true;
-    else false;
-  end match;
-end isComplexCall;
+  if not inRec then
+    (outExp,cont,outRec) := matchcontinue inExp
+      local
+        DAE.Type ty;
+        list<DAE.Exp> expLst;
+        Boolean subRec;
+        DAE.ComponentRef cr;
+      case DAE.RECORD()
+        algorithm
+        then (inExp,false,true);
+      case DAE.CALL(expLst=expLst, attr=DAE.CALL_ATTR(ty=ty))
+        algorithm
+          subRec := isRecordType(ty);
+          if not subRec then
+            for exp in expLst loop
+              subRec := containsRecordType(exp);
+              if subRec then
+                break;
+              end if;
+            end for;
+          end if;
+        then (inExp,not subRec,subRec);
+      else (inExp,true,false);
+    end matchcontinue;
+  end if;
+end containsRecordTypeWork;
 
 public function isConst
 "Returns true if an expression is constant"

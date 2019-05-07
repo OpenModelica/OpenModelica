@@ -1943,7 +1943,7 @@ algorithm
 
     case (_, _, _, _, _, (vars, shared as BackendDAE.SHARED(functionTree=functions), eqns, seqns, index, mT, _))
       guard
-        not Expression.isImpure(exp) and not Expression.containsComplexCall(exp) // lochel: this is at least needed for impure functions
+        not Expression.isImpure(exp) and not Expression.containsRecordType(exp) // lochel: this is at least needed for impure functions
       equation
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
         exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false);
@@ -1958,7 +1958,7 @@ algorithm
       // TODO: Remove or fix this case. We do not want to add function calls here as they are inlined in a very bad way sometimes.
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       guard
-        not Expression.isImpure(exp) and not Expression.containsComplexCall(exp) // lochel: this is at least needed for impure functions
+        not Expression.isImpure(exp) and not Expression.containsRecordType(exp) // lochel: this is at least needed for impure functions
       equation
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 2) ", cr, " = ", exp, " found.\n");

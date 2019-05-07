@@ -3356,18 +3356,18 @@ public function dumpCallAttr
 "dumps the DAE.CallAttributes"
   input DAE.CallAttributes ca;
 protected
-  Boolean tpl,bi,impure_;
+  Boolean tpl,bi,impure_,isFunc;
   DAE.InlineType iType;
   DAE.Type ty;
   DAE.TailCall tailCall;
   String s1,s2;
 algorithm
-  DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall) := ca;
+  DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure_,isFunctionPointerCall=isFunc,inlineType=iType,tailCall=tailCall) := ca;
   print("Call attributes: \n----------------------\n");
   (s1,s2) := printTypeStr(ty);
   print("DAE-type: "+s1+"\n");
   print("DAE-type attributes :"+s2+"\n");
-  print("tuple_: "+boolString(tpl)+" builtin: "+boolString(bi)+" impure: "+boolString(impure_)+"\n\n");
+  print("tuple_: "+boolString(tpl)+" builtin: "+boolString(bi)+" impure: "+boolString(impure_)+" isFunctionPointerCall: "+boolString(isFunc)+"\n\n");
 end dumpCallAttr;
 
 public function dumpVarBindingStr
