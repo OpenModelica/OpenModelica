@@ -123,6 +123,7 @@ public:
   void saveTraceabilitySettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
+  void saveGlobalSimulationSettings();
   void saveMessagesSettings();
   void saveNotificationsSettings();
   void saveLineStyleSettings();

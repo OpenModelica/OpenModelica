@@ -1068,7 +1068,12 @@ bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // clear flags before setting the new ones
   MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
+  /* ticket:5456 We don't call OptionsDialog::instance()->saveSimulationSettings() here
+   * instead we call local TranslationFlagsWidget::applyFlags() and OptionsDialog::instance()->saveGlobalSimulationSettings()
+   * so that we apply the local translation flags and global simulation settings as well.
+   */
   mpTranslationFlagsWidget->applyFlags();
+  OptionsDialog::instance()->saveGlobalSimulationSettings();
   // set profiling
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   // set the infoXMLOperations flag
