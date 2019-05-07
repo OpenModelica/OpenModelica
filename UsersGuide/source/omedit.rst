@@ -253,6 +253,7 @@ File Menu
    are loaded as text files.
 -  *Save* - Saves the class.
 -  *Save As* - Save as the class.
+-  *Save Total* - Saves the class and all the classes it uses in a single file. The class and its dependencies can only be loaded later by using the *loadFile()* API function in a script. Allows third parties to reproduce an issue with a class without worrying about library dependencies.
 -  *Import*
   -  *FMU* - Imports the FMU.
   -  *FMU Model Description* - Imports the FMU model description.
