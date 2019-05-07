@@ -115,18 +115,7 @@ end parseFunctionList;
 
 public function getFunctionName
   input DAE.Function inFunction;
-  output String outString;
-algorithm
-  outString := match inFunction
-    local
-      Absyn.Path path;
-      String s, s1;
-
-    case DAE.FUNCTION(path=path) algorithm
-      s := Absyn.pathStringDefault(path);
-      s1 := System.trim(s, ".");
-    then s1;
-  end match;
+  output String outString = Absyn.pathString(Absyn.makeNotFullyQualified(DAEUtil.functionName(inFunction)));
 end getFunctionName;
 
 function getVars
