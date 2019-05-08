@@ -148,6 +148,15 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpBitmapShapeAnnotation = 0;
   createActions();
 }
+bool GraphicsView::isCreatingShapeOrConnection()
+{
+  return isCreatingConnection() ||
+    isCreatingLineShape() ||
+    isCreatingPolygonShape() ||
+    isCreatingRectangleShape() ||
+    isCreatingEllipseShape() ||
+    isCreatingTextShape();
+}
 
 void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
 {
@@ -181,46 +190,41 @@ void GraphicsView::setIsCreatingTransition(bool enable)
 void GraphicsView::setIsCreatingLineShape(bool enable)
 {
   mIsCreatingLineShape = enable;
-  setDragModeInternal(enable);
-  setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
+  setIsCreatingPrologue(enable);
 }
 
 void GraphicsView::setIsCreatingPolygonShape(bool enable)
 {
   mIsCreatingPolygonShape = enable;
-  setDragModeInternal(enable);
-  setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
+  setIsCreatingPrologue(enable);
 }
 
 void GraphicsView::setIsCreatingRectangleShape(bool enable)
 {
   mIsCreatingRectangleShape = enable;
-  setDragModeInternal(enable);
-  setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
+  setIsCreatingPrologue(enable);
 }
 
 void GraphicsView::setIsCreatingEllipseShape(bool enable)
 {
   mIsCreatingEllipseShape = enable;
-  setDragModeInternal(enable);
-  setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
+  setIsCreatingPrologue(enable);
 }
 
 void GraphicsView::setIsCreatingTextShape(bool enable)
 {
   mIsCreatingTextShape = enable;
-  setDragModeInternal(enable);
-  setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
+  setIsCreatingPrologue(enable);
 }
 
 void GraphicsView::setIsCreatingBitmapShape(bool enable)
 {
   mIsCreatingBitmapShape = enable;
+  setIsCreatingPrologue(enable);
+}
+
+void GraphicsView::setIsCreatingPrologue(const bool enable)
+{
   setDragModeInternal(enable);
   setItemsFlags(!enable);
   updateUndoRedoActions(enable);
@@ -2885,6 +2889,8 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
+  fflush(stdout);
+  QTextStream(stdout) << "string to print" << endl;
   // save annotations of all connections
   foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
     pConnectionLineAnnotation->setOldAnnotation(pConnectionLineAnnotation->getOMCShapeAnnotation());
@@ -2991,6 +2997,22 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     removeCurrentConnection();
   } else if (event->key() == Qt::Key_Escape && isCreatingTransition()) {
     removeCurrentTransition();
+  } else if(event->key() == Qt::Key_Escape && isCreatingShapeOrConnection()) {
+    /*Does not matter what we delete here really.*/
+    QTextStream(stdout) << "string to print" << endl;
+    if (mIsCreatingLineShape) {
+      delete mpLineShapeAnnotation;
+    } else if (mIsCreatingPolygonShape) {
+      delete mpPolygonShapeAnnotation;
+    } else if (mIsCreatingRectangleShape) {
+      delete mpRectangleShapeAnnotation;
+    } else if (mIsCreatingEllipseShape) {
+      delete mpEllipseShapeAnnotation;
+    } else if (mIsCreatingTextShape) {
+      delete mpTextShapeAnnotation;
+    } else if (mIsCreatingBitmapShape) {
+      delete mpBitmapShapeAnnotation;
+    }
   } else {
     QGraphicsView::keyPressEvent(event);
   }
@@ -3066,12 +3088,7 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
   /* If we are creating the connection OR creating any shape then don't show context menu */
-  if (isCreatingConnection() ||
-      isCreatingLineShape() ||
-      isCreatingPolygonShape() ||
-      isCreatingRectangleShape() ||
-      isCreatingEllipseShape() ||
-      isCreatingTextShape()) {
+  if (isCreatingShapeOrConnection()) {
     return;
   }
   // if creating a transition
