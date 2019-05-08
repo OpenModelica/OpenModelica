@@ -166,6 +166,7 @@ public:
   bool isCreatingBitmapShape() {return mIsCreatingBitmapShape;}
   bool isCreatingShapeOrConnection();
   void setIsCreatingPrologue(const bool enable);
+  void deleteShapeAndSetItToNullptr(ShapeAnnotation *shape);
   void setIsPanning(bool enable);
   bool isPanning() {return mIsPanning;}
   void setDragModeInternal(bool enable, bool updateCursor = false);

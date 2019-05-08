@@ -227,7 +227,6 @@ void GraphicsView::setIsCreatingPrologue(const bool enable)
 {
   setDragModeInternal(enable);
   setItemsFlags(!enable);
-  updateUndoRedoActions(enable);
 }
 
 void GraphicsView::setIsPanning(bool enable)
@@ -2889,8 +2888,6 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
-  fflush(stdout);
-  QTextStream(stdout) << "string to print" << endl;
   // save annotations of all connections
   foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
     pConnectionLineAnnotation->setOldAnnotation(pConnectionLineAnnotation->getOMCShapeAnnotation());
@@ -2997,25 +2994,37 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     removeCurrentConnection();
   } else if (event->key() == Qt::Key_Escape && isCreatingTransition()) {
     removeCurrentTransition();
-  } else if(event->key() == Qt::Key_Escape && isCreatingShapeOrConnection()) {
-    /*Does not matter what we delete here really.*/
-    QTextStream(stdout) << "string to print" << endl;
-    if (mIsCreatingLineShape) {
-      delete mpLineShapeAnnotation;
-    } else if (mIsCreatingPolygonShape) {
-      delete mpPolygonShapeAnnotation;
-    } else if (mIsCreatingRectangleShape) {
-      delete mpRectangleShapeAnnotation;
-    } else if (mIsCreatingEllipseShape) {
-      delete mpEllipseShapeAnnotation;
-    } else if (mIsCreatingTextShape) {
-      delete mpTextShapeAnnotation;
-    } else if (mIsCreatingBitmapShape) {
-      delete mpBitmapShapeAnnotation;
+  } else if (event->key() == Qt::Key_Escape && isCreatingShapeOrConnection()) {
+    ShapeAnnotation *shapeToDelete = nullptr;
+    bool *isCreatingShape = nullptr;
+    if ( *(isCreatingShape = &mIsCreatingLineShape) ) {
+      shapeToDelete = mpLineShapeAnnotation;
+    } else if ( *(isCreatingShape = &mIsCreatingPolygonShape) ) {
+      shapeToDelete = mpPolygonShapeAnnotation;
+    } else if ( *(isCreatingShape = &mIsCreatingRectangleShape) ) {
+      shapeToDelete = mpRectangleShapeAnnotation;
+    } else if ( *(isCreatingShape = &mIsCreatingEllipseShape) ) {
+      shapeToDelete = mpEllipseShapeAnnotation;
+    } else if ( *(isCreatingShape = &mIsCreatingTextShape) ) {
+      shapeToDelete = mpTextShapeAnnotation;
+    } else if ( *(isCreatingShape = &mIsCreatingBitmapShape) ) {
+      shapeToDelete = mpBitmapShapeAnnotation;
+    }
+    if (shapeToDelete != nullptr) {
+      *isCreatingShape = false;
+      setIsCreatingPrologue(false);
+      mpModelWidget->getUndoStack()->pop();
+      deleteShapeAndSetItToNullptr(shapeToDelete);
     }
   } else {
     QGraphicsView::keyPressEvent(event);
   }
+}
+
+void GraphicsView::deleteShapeAndSetItToNullptr(ShapeAnnotation *shape)
+{
+  delete shape;
+  shape = nullptr;
 }
 
 //! Defines what shall happen when a key is released.
