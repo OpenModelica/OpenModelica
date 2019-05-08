@@ -64,6 +64,7 @@
 #include <QDockWidget>
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QDesktopServices>
 
 /*!
  * \class GraphicsScene
