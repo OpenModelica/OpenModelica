@@ -40,6 +40,9 @@ set(CMAKE_INSTALL_RPATH "${LIBINSTALLEXT}")
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
+install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/libexpat.a DESTINATION ${LIBINSTALLEXT})
+
+
 install(FILES
   ${CMAKE_SOURCE_DIR}/base/include/omsi_event_helper.h
   ${CMAKE_SOURCE_DIR}/base/include/omsi_getters_and_setters.h

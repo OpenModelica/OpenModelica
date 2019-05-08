@@ -187,7 +187,7 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     INCLUDE_DIR_OMSIC_FMI2=$(OMHOME)/include/omc/omsic/fmi2
 
     # Libraries
-    EXPAT_LIBDIR=$(OMHOME)/../OMCompiler/3rdParty/FMIL/build/ExpatEx
+    EXPAT_LIBDIR=$(OMLIB)/omc/omsi
     EXPAT_LIB=expat
 
     LAPACK_LIBDIR=<%lapackDirWin%>
