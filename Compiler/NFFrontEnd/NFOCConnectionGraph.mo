@@ -151,7 +151,6 @@ function handleOverconstrainedConnections
   input String modelNameQualified;
   output FlatEdges outBroken;
 protected
-  Type ty1, ty2;
   ComponentRef lhs, rhs, cref;
   DAE.ElementSource source;
   NFOCConnectionGraph graph = EMPTY;
@@ -159,33 +158,24 @@ protected
   FlatEdges broken, connected;
   Call call;
   list<Expression> lst;
-  ComponentRef lhs, rhs;
   Integer priority;
   Expression root, msg;
-  Connector c1, c2, cc1, cc2;
-  list<Connector> lhsl, rhsl;
+  Connector c1, c2;
+  list<ComponentRef> lhs_crefs, rhs_crefs;
+  Boolean print_trace = Flags.isSet(Flags.CGRAPH);
 algorithm
   // go over all equations, connect, Connection.branch
   for conn in conns.connections loop
     Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
-    lhsl := Connector.split(c1, splitArrays = false);
-    rhsl := Connector.split(c2, splitArrays = false);
 
-    for cc1 in lhsl loop
-      cc2 :: rhsl := rhsl;
-      if not (Connector.isDeleted(cc1) or Connector.isDeleted(cc2)) then
-        lhs := Connector.name(cc1);
-        rhs := Connector.name(cc2);
-        if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
-          lhs := getOverconstrainedCref(lhs);
-          rhs := getOverconstrainedCref(rhs);
+    lhs_crefs := getOverconstrainedCrefs(c1);
+    rhs_crefs := getOverconstrainedCrefs(c2);
 
-          eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, ExpOrigin.EQUATION, c1.source);
-          graph := addConnection(graph, lhs, rhs, eqlBroken);
-          break;
-        end if;
-      end if;
-    end for;
+    if not listEmpty(lhs_crefs) then
+      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, ExpOrigin.EQUATION, c1.source);
+      graph := List.threadFold(lhs_crefs, rhs_crefs,
+        function addConnection(brokenEquations = eqlBroken, printTrace = print_trace), graph);
+    end if;
   end for;
 
   for eq in flatModel.equations loop
@@ -196,16 +186,16 @@ algorithm
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("root"))
               algorithm
                 {Expression.CREF(cref = cref)} := lst;
-                graph := addDefiniteRoot(graph, cref);
+                graph := addDefiniteRoot(cref, print_trace, graph);
               then ();
 
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("potentialRoot"))
               algorithm
                 graph := match lst
                   case {Expression.CREF(cref = cref)}
-                    then addPotentialRoot(graph, cref, 0);
+                    then addPotentialRoot(cref, 0, print_trace, graph);
                   case {Expression.CREF(cref = cref), Expression.INTEGER(priority)}
-                    then addPotentialRoot(graph, cref, priority);
+                    then addPotentialRoot(cref, priority, print_trace, graph);
                 end match;
               then ();
 
@@ -213,16 +203,16 @@ algorithm
               algorithm
                 graph := match lst
                   case {root as Expression.CREF(cref = cref)}
-                    then addUniqueRoots(graph, root, Expression.STRING(""));
+                    then addUniqueRoots(root, Expression.STRING(""), print_trace, graph);
                   case {root as Expression.CREF(cref = cref), msg}
-                    then addUniqueRoots(graph, root, msg);
+                    then addUniqueRoots(root, msg, print_trace, graph);
                 end match;
               then ();
 
             case Absyn.QUALIFIED("Connections", Absyn.IDENT("branch"))
               algorithm
                 {Expression.CREF(cref = lhs), Expression.CREF(cref = rhs)} := lst;
-                graph := addBranch(graph, lhs, rhs);
+                graph := addBranch(lhs, rhs, print_trace, graph);
               then ();
           end match;
         then
@@ -322,6 +312,18 @@ end generateEqualityConstraintEquation;
 
 protected
 
+function getOverconstrainedCrefs
+  input Connector conn;
+  output list<ComponentRef> crefs;
+protected
+  list<Connector> conns;
+algorithm
+  conns := Connector.split(conn, scalarize = NFConnector.ScalarizeSetting.PREFIX);
+  crefs := list(getOverconstrainedCref(c.name) for c
+    guard not Connector.isDeleted(c) and isOverconstrainedCref(c.name) in conns);
+  crefs := List.uniqueOnTrue(crefs, ComponentRef.isEqual);
+end getOverconstrainedCrefs;
+
 function isOverconstrainedCref
   input ComponentRef cref;
   output Boolean b = false;
@@ -413,174 +415,89 @@ algorithm
 end handleOverconstrainedConnections_dispatch;
 
 function addDefiniteRoot
-"Adds a new definite root to NFOCConnectionGraph"
-  input NFOCConnectionGraph inGraph;
-  input ComponentRef inRoot;
-  output NFOCConnectionGraph outGraph;
+  "Adds a new definite root to NFOCConnectionGraph"
+  input ComponentRef root;
+  input Boolean printTrace;
+  input output NFOCConnectionGraph graph;
 algorithm
-  outGraph := match(inGraph, inRoot)
-    local
-      Boolean updateGraph;
-      ComponentRef root;
-      DefiniteRoots definiteRoots;
-      PotentialRoots potentialRoots;
-      UniqueRoots uniqueRoots;
-      Edges branches;
-      FlatEdges connections;
+  if printTrace then
+    print("- NFOCConnectionGraph.addDefiniteRoot(" + ComponentRef.toString(root) + ")\n");
+  end if;
 
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addDefiniteRoot(" + ComponentRef.toString(root) + ")\n");
-        end if;
-      then
-        GRAPH(updateGraph,root::definiteRoots,potentialRoots,uniqueRoots,branches,connections);
-  end match;
+  graph.definiteRoots := root :: graph.definiteRoots;
 end addDefiniteRoot;
 
 function addPotentialRoot
-"Adds a new potential root to NFOCConnectionGraph"
-  input NFOCConnectionGraph inGraph;
-  input ComponentRef inRoot;
-  input Real inPriority;
-  output NFOCConnectionGraph outGraph;
+  "Adds a new potential root to NFOCConnectionGraph"
+  input ComponentRef root;
+  input Real priority;
+  input Boolean printTrace;
+  input output NFOCConnectionGraph graph;
 algorithm
-  outGraph := match(inGraph, inRoot, inPriority)
-    local
-      Boolean updateGraph;
-      ComponentRef root;
-      Real priority;
-      DefiniteRoots definiteRoots;
-      PotentialRoots potentialRoots;
-      UniqueRoots uniqueRoots;
-      Edges branches;
-      FlatEdges connections;
+  if printTrace then
+    print("- NFOCConnectionGraph.addPotentialRoot(" + ComponentRef.toString(root) +
+          ", " + realString(priority) + ")" + "\n");
+  end if;
 
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root, priority)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addPotentialRoot(" + ComponentRef.toString(root) + ", " + realString(priority) + ")" + "\n");
-        end if;
-      then
-        GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,uniqueRoots,branches,connections);
-  end match;
+  graph.potentialRoots := (root, priority) :: graph.potentialRoots;
 end addPotentialRoot;
 
 function addUniqueRoots
-"Adds a new definite root to NFOCConnectionGraph"
-  input NFOCConnectionGraph inGraph;
-  input Expression inRoots;
-  input Expression inMessage;
-  output NFOCConnectionGraph outGraph;
+  "Adds a new unique root to NFOCConnectionGraph"
+  input Expression roots;
+  input Expression message;
+  input Boolean printTrace;
+  input output NFOCConnectionGraph graph;
+protected
+  UniqueRoots unique_roots = graph.uniqueRoots;
 algorithm
-  outGraph := match(inGraph, inRoots, inMessage)
-    local
-      Boolean updateGraph;
-      ComponentRef root;
-      Expression roots;
-      DefiniteRoots definiteRoots;
-      PotentialRoots potentialRoots;
-      UniqueRoots uniqueRoots;
-      Edges branches;
-      FlatEdges connections;
-      NFOCConnectionGraph graph;
-      Type ty;
-      Boolean scalar;
-      list<Expression> rest;
+  for root in Expression.arrayScalarElements(roots) loop
+    unique_roots := match root
+      case Expression.CREF()
+        algorithm
+          if printTrace then
+            print("- NFOCConnectionGraph.addUniqueRoots(" + Expression.toString(root) +
+                  ", " + Expression.toString(message) + ")\n");
+          end if;
+        then
+          (root.cref, message) :: unique_roots;
 
-    // just one component reference
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                Expression.CREF(cref = root), _)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addUniqueRoots(" + ComponentRef.toString(root) + ", " + Expression.toString(inMessage) + ")\n");
-        end if;
-      then
-        GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
+      else
+        algorithm
+          // TODO! FIXME! print some meaningful error message here that the input is not an array of roots or a cref
+        then
+          unique_roots;
 
-    // array of component references, empty case
-    case (GRAPH(), Expression.ARRAY(elements = {}), _)
-      then
-        inGraph;
-
-    // array of component references, something still there
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                Expression.ARRAY(ty, Expression.CREF(cref = root)::rest), _)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addUniqueRoots(" + ComponentRef.toString(root) + ", " + Expression.toString(inMessage) + ")\n");
-        end if;
-        graph = GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
-        graph = addUniqueRoots(graph, Expression.makeArray(ty, rest), inMessage);
-      then
-        graph;
-
-    case (_, _, _)
-      equation
-        // TODO! FIXME! print some meaningful error message here that the input is not an array of roots or a cref
-      then
-        inGraph;
-
-  end match;
+    end match;
+  end for;
 end addUniqueRoots;
 
 function addBranch
-"Adds a new branch to NFOCConnectionGraph"
-  input NFOCConnectionGraph inGraph;
-  input ComponentRef inRef1;
-  input ComponentRef inRef2;
-  output NFOCConnectionGraph outGraph;
+  input ComponentRef ref1;
+  input ComponentRef ref2;
+  input Boolean printTrace;
+  input output NFOCConnectionGraph graph;
 algorithm
-  outGraph := match(inGraph, inRef1, inRef2)
-    local
-      Boolean updateGraph;
-      ComponentRef ref1;
-      ComponentRef ref2;
-      DefiniteRoots definiteRoots;
-      PotentialRoots potentialRoots;
-      UniqueRoots uniqueRoots;
-      Edges branches;
-      FlatEdges connections;
+  if printTrace then
+    print("- NFOCConnectionGraph.addBranch(" + ComponentRef.toString(ref1) + ", " + ComponentRef.toString(ref2) + ")\n");
+  end if;
 
-    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), ref1, ref2)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addBranch(" + ComponentRef.toString(ref1) + ", " + ComponentRef.toString(ref2) + ")\n");
-        end if;
-      then
-        GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,(ref1,ref2)::branches,connections);
-  end match;
+  graph.branches := (ref1, ref2) :: graph.branches;
 end addBranch;
 
 function addConnection
-"Adds a new connection to NFOCConnectionGraph"
-  input NFOCConnectionGraph inGraph;
-  input ComponentRef inRef1;
-  input ComponentRef inRef2;
-  input list<Equation> inEquations;
-  output NFOCConnectionGraph outGraph;
+  "Adds a new connection to NFOCConnectionGraph"
+  input ComponentRef ref1;
+  input ComponentRef ref2;
+  input list<Equation> brokenEquations;
+  input Boolean printTrace;
+  input output NFOCConnectionGraph graph;
 algorithm
-  outGraph := match(inGraph, inRef1, inRef2,inEquations)
-    local
-      Boolean updateGraph;
-      ComponentRef ref1;
-      ComponentRef ref2;
-      list<Equation> eqs;
-      DefiniteRoots definiteRoots;
-      PotentialRoots potentialRoots;
-      UniqueRoots uniqueRoots;
-      Edges branches;
-      FlatEdges connections;
+  if printTrace then
+    print("- NFOCConnectionGraph.addConnection(" + ComponentRef.toString(ref1) + ", " + ComponentRef.toString(ref2) + ")\n");
+  end if;
 
-    case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots, branches = branches, connections = connections), ref1, ref2, eqs)
-      equation
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.addConnection(" + ComponentRef.toString(ref1) + ", " + ComponentRef.toString(ref2) + ")\n");
-        end if;
-      then GRAPH(updateGraph, definiteRoots, potentialRoots, uniqueRoots, branches, (ref1,ref2,eqs)::connections);
-  end match;
+  graph.connections := (ref1, ref2, brokenEquations) :: graph.connections;
 end addConnection;
 
 // ************************************* //

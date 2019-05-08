@@ -204,13 +204,20 @@ public
     output Integer hash = ComponentRef.hash(conn.name, mod);
   end hash;
 
+  type ScalarizeSetting = enumeration(
+    NONE    "a[2].b[2] => {a[2].b[2]}",
+    PREFIX  "a[2].b[2] => {a[1].b[2], a[2].b[2]}",
+    ALL     "a[2].b[2] => {a[1].b[1], a[1].b[2], a[2].b[1], a[2].b[2]}"
+  );
+
   function split
     "Splits a connector into its primitive components."
     input Connector conn;
-    input Boolean splitArrays = Flags.isSet(Flags.NF_SCALARIZE);
+    input ScalarizeSetting scalarize = if Flags.isSet(Flags.NF_SCALARIZE) then
+                                         ScalarizeSetting.ALL else ScalarizeSetting.NONE;
     output list<Connector> connl;
   algorithm
-    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty, splitArrays);
+    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty, scalarize);
   end split;
 
 protected
@@ -236,21 +243,21 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input ConnectorType.Type cty;
-    input Boolean splitArrays;
+    input ScalarizeSetting scalarize;
     input output list<Connector> conns = {};
     input list<Dimension> dims = {} "accumulated dimensions if splitArrays = false";
   algorithm
     conns := match ty
       local
-        Type t;
+        Type ety;
         ComplexType ct;
         ClassTree tree;
 
       case Type.COMPLEX(complexTy = ct as ComplexType.CONNECTOR())
         algorithm
-          conns := splitImpl2(name, face, source, ct.potentials, splitArrays, conns, dims);
-          conns := splitImpl2(name, face, source, ct.flows, splitArrays, conns, dims);
-          conns := splitImpl2(name, face, source, ct.streams, splitArrays, conns, dims);
+          conns := splitImpl2(name, face, source, ct.potentials, scalarize, conns, dims);
+          conns := splitImpl2(name, face, source, ct.flows, scalarize, conns, dims);
+          conns := splitImpl2(name, face, source, ct.streams, scalarize, conns, dims);
         then
           conns;
 
@@ -261,20 +268,28 @@ protected
         algorithm
           tree := Class.classTree(InstNode.getClass(ty.cls));
           conns := splitImpl2(name, face, source,
-            arrayList(ClassTree.getComponents(tree)), splitArrays, conns, dims);
+            arrayList(ClassTree.getComponents(tree)), scalarize, conns, dims);
         then
           conns;
 
-      case Type.ARRAY()
+      case Type.ARRAY(elementType = ety as Type.COMPLEX())
+        guard scalarize >= ScalarizeSetting.PREFIX
         algorithm
-          t := Type.arrayElementType(ty);
-          if splitArrays then
+          for c in ComponentRef.scalarize(name) loop
+            conns := splitImpl(c, ety, face, source, cty, scalarize, conns, dims);
+          end for;
+        then
+          conns;
+
+      case Type.ARRAY(elementType = ety)
+        algorithm
+          if scalarize == ScalarizeSetting.ALL then
             for c in ComponentRef.scalarize(name) loop
-              conns := splitImpl(c, t, face, source, cty, splitArrays, conns, dims);
+              conns := splitImpl(c, ety, face, source, cty, scalarize, conns, dims);
             end for;
           else
             if not Type.isEmptyArray(ty) then
-              conns := splitImpl(name, t, face, source, cty, splitArrays, conns,
+              conns := splitImpl(name, ety, face, source, cty, scalarize, conns,
                                  listAppend(dims, ty.dimensions));
             end if;
           end if;
@@ -290,7 +305,7 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input list<InstNode> comps;
-    input Boolean splitArrays;
+    input ScalarizeSetting scalarize;
     input output list<Connector> conns;
     input list<Dimension> dims;
   protected
@@ -306,7 +321,7 @@ protected
 
       if not ConnectorType.isPotentiallyPresent(cty) then
         cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
-        conns := splitImpl(cref, ty, face, source, cty, splitArrays, conns, dims);
+        conns := splitImpl(cref, ty, face, source, cty, scalarize, conns, dims);
       end if;
     end for;
   end splitImpl2;
