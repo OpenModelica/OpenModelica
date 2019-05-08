@@ -1,6 +1,6 @@
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf DualMassOscillator_me.lua DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log temp-DualMassOscillator_me/
+// teardown_command: rm -rf DualMassOscillator_me.lua DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_me_systemCall.log temp-DualMassOscillator_me/
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 
@@ -43,7 +43,9 @@ oms_terminate(\"DualMassOscillator\")
 oms_delete(\"DualMassOscillator\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_me.lua");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_me.lua", "DualMassOscillator_me_systemCall.log");
+readFile("DualMassOscillator_me_systemCall.log");
+
 
 simulate(DualMassOscillator.CoupledSystem, stopTime=0.1, simflags="-override=system2.s2_start=2.5"); getErrorString();
 val(system1.s1, {0.0,0.1});
@@ -61,7 +63,8 @@ val(system2.s2, {0.0,0.1});
 // ""
 // true
 // ""
-// info:    maximum step size for 'DualMassOscillator.root': 0.100000
+// 0
+// "info:    maximum step size for 'DualMassOscillator.root': 0.100000
 // info:    No result file will be created
 // info:    Initialization
 // info:      system1.s1: 1.0
@@ -72,7 +75,7 @@ val(system2.s2, {0.0,0.1});
 // info:    Final Statistics for 'DualMassOscillator.root':
 //          NumSteps = 1301 NumRhsEvals  = 1545 NumLinSolvSetups = 138
 //          NumNonlinSolvIters = 1544 NumNonlinSolvConvFails = 0 NumErrTestFails = 49
-// 0
+// "
 // record SimulationResult
 //     resultFile = "DualMassOscillator.CoupledSystem_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DualMassOscillator.CoupledSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=system2.s2_start=2.5'",

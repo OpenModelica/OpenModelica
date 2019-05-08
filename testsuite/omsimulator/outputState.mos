@@ -1,5 +1,5 @@
 // status: correct
-// teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log temp-outputState/
+// teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
 
 loadString("
 model outputState
@@ -45,7 +45,8 @@ oms_terminate(\"test\")
 oms_delete(\"test\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua", "outputState_systemCall.log");
+readFile("outputState_systemCall.log");
 
 // Result:
 // true
@@ -56,7 +57,8 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua");
 // ""
 // true
 // ""
-// info:    maximum step size for 'test.root': 0.100000
+// 0
+// "info:    maximum step size for 'test.root': 0.100000
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.y: 1.5
@@ -67,5 +69,5 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator outputState.lua");
 // info:    Final Statistics for 'test.root':
 //          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
 //          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
-// 0
+// "
 // endResult
