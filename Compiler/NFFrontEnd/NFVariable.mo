@@ -86,6 +86,11 @@ public
       variable.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
   end isStructural;
 
+  function variability
+    input Variable variable;
+    output Variability variability = variable.attributes.variability;
+  end variability;
+
   function isEmptyArray
     input Variable variable;
     output Boolean isEmpty = Type.isEmptyArray(variable.ty);
