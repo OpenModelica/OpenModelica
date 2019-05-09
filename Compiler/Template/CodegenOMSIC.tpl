@@ -145,7 +145,7 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     let OMLibs = match makefileParams.platform case "win32" case "win64" then 'lib' case "linux64" then 'lib/x86_64-linux-gnu' else 'lib'
     let lapackDirWin = match makefileParams.platform case "win32" then '$(OMDEV)/tools/msys/mingw32/bin' case "win64" then '$(OMDEV)/tools/msys/mingw64/bin' else ''
     let libEnding = match makefileParams.platform case "win32" case "win64" then 'dll' else 'so'
-    let rpath = match makefileParams.platform case "win32" case "win64" then '' else "-rpath '$$ORIGIN/.'"
+    let rpath = match makefileParams.platform case "win32" case "win64" then '' else "\"-Wl,-rpath,\$$ORIGIN/.\""
     let star = match makefileParams.platform case "win32" case "win64" then '' else '*'
     let fPIC = match makefileParams.platform case "win32" case "win64" then '' else '-fPIC '
 
