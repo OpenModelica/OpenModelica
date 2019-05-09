@@ -10,7 +10,8 @@ endif
 
 TESTFILES = \
 buildSimpleOMSU.mos \
-simulateSimpleOMSU.mos
+simulateSimpleOMSU.mos \
+problem2.mos
 
 # test that currently fail. Move up when fixed.
 

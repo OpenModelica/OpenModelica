@@ -1,6 +1,7 @@
 // name: buildSimpleOMSU
 // keywords: omsi omsic fmu fmi
 // status: correct
+// teardown_command: rm -rf helloWorldOMSU.fmutmp helloWorldOMSU.fmu
 //
 // Tests generating OMSIC OMSU/FMU
 //
