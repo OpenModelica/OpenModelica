@@ -619,6 +619,7 @@ public:
   QCheckBox* getDeleteEntireSimulationDirectoryCheckBox() {return mpDeleteEntireSimulationDirectoryCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
+  QSpinBox* getDisplayLimitSpinBox() {return mpDisplayLimitSpinBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
@@ -642,8 +643,12 @@ private:
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;
+  Label *mpDisplayLimitLabel;
+  QSpinBox *mpDisplayLimitSpinBox;
+  Label *mpDisplayLimitMBLabel;
 public slots:
   void targetBuildChanged(int index);
+  void displayLimitValueChanged(int value);
 };
 
 class MessagesPage : public QWidget

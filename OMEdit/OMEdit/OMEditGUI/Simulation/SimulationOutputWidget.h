@@ -99,6 +99,7 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QToolButton *mpOpenTransformationalDebuggerButton;
+  QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
   QList<QString> mGeneratedAlgLoopFilesList;
@@ -126,6 +127,7 @@ public slots:
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelCompilationOrSimulation();
   void openTransformationalDebugger();
+  void openSimulationLogFile();
   void openTransformationBrowser(QUrl url);
 protected:
   virtual void keyPressEvent(QKeyEvent *event);

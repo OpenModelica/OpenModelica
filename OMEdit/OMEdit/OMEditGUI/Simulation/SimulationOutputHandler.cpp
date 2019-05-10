@@ -32,6 +32,7 @@
  */
 
 #include "SimulationOutputHandler.h"
+#include "Options/OptionsDialog.h"
 
 /*!
   \class SimulationMessageModel
@@ -46,6 +47,7 @@ SimulationMessageModel::SimulationMessageModel(SimulationOutputWidget *pSimulati
 {
   mpSimulationOutputWidget = pSimulationOutputWidget;
   mpRootSimulationMessage = new SimulationMessage;
+  mpRootSimulationMessage->mDeweyId = "1";
 }
 
 /*!
@@ -138,7 +140,13 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
         .arg(QUrl::fromLocalFile(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json").path())
         .arg(pSimulationMessage->mIndex);
     // create display text
-    text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
+    if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
+      QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
+                                      .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+      text = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath);
+    } else {
+      text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
+    }
     // create tooltip
     toolTip = QString("%1 | %2 | %3")
         .arg(pSimulationMessage->mStream)
@@ -209,46 +217,6 @@ void SimulationMessageModel::callLayoutChanged()
 }
 
 /*!
-  Retuns the list of selected rows of the model.\n
-  The rows are returned as they are displayed in the view without any ordering/sorting.\n
-  Beats the QTreeView::selectionModel()::selectedRows() which returns the nested item rows first.
-  */
-QModelIndexList SimulationMessageModel::selectedRows()
-{
-  mSelectedRowsList.clear();
-  selectedRowsHelper(mpRootSimulationMessage);
-  return mSelectedRowsList;
-}
-
-/*!
-  Finds the QModelIndex represented by the specified SimulationMessage.
-  */
-QModelIndex SimulationMessageModel::simulationMessageIndex(const SimulationMessage *pSimulationMessage) const
-{
-  return simulationMessageIndexHelper(pSimulationMessage, mpRootSimulationMessage, QModelIndex());
-}
-
-/*!
-  Helper function for selectedRows.
-  \param pParentSimulationMessage - a pointer to SimulationMessage.
-  \sa selectedRows()
-  */
-void SimulationMessageModel::selectedRowsHelper(SimulationMessage *pParentSimulationMessage)
-{
-  foreach (SimulationMessage *pSimulationMessage, pParentSimulationMessage->children()) {
-    QModelIndex index = simulationMessageIndex(pSimulationMessage);
-    if (index.isValid()) {
-      if (mpSimulationOutputWidget->getSimulationOutputTree()->selectionModel()->isSelected(index)) {
-        mSelectedRowsList.append(index);
-      }
-      if (pSimulationMessage->children().size() > 0) {
-        selectedRowsHelper(pSimulationMessage);
-      }
-    }
-  }
-}
-
-/*!
   Helper function to find the QModelIndex.
   \sa simulationMessageIndex()
   */
@@ -289,7 +257,11 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
 {
   mpSimulationOutputWidget = pSimulationOutputWidget;
   mLevel = 0;
+  mNumberOfBytes = 0;
   mpSimulationMessage = 0;
+  QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
+                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+  mpSimulationLogFile = fopen(simulationLogFilePath.toStdString().c_str(), "w");
   if (mpSimulationOutputWidget->isOutputStructured()) {
     mpSimulationMessageModel = new SimulationMessageModel(mpSimulationOutputWidget);
   } else {
@@ -305,11 +277,14 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
 SimulationOutputHandler::~SimulationOutputHandler()
 {
   delete mpXmlInputSource;
+  simulationProcessFinished();
 }
 
 /*!
-  Sets the new simulation output data and continues the parsing.
-  */
+ * \brief SimulationOutputHandler::parseSimulationOutput
+ * Sets the new simulation output data and continues the parsing.
+ * \param output
+ */
 void SimulationOutputHandler::parseSimulationOutput(QString output)
 {
   mpXmlInputSource->setData(output);
@@ -317,44 +292,124 @@ void SimulationOutputHandler::parseSimulationOutput(QString output)
 }
 
 /*!
-  The reader calls this function when it has parsed a start element tag.
-  */
+ * \brief SimulationOutputHandler::writeSimulationLog
+ * Writes the simulation log file.
+ * \param text
+ */
+void SimulationOutputHandler::writeSimulationLog(const QString &text)
+{
+  if (mpSimulationLogFile) {
+    fputs(text.toStdString().c_str(), mpSimulationLogFile);
+  }
+}
+
+/*!
+ * \brief SimulationOutputHandler::simulationProcessFinished
+ * Closes the simulation log file.
+ */
+void SimulationOutputHandler::simulationProcessFinished()
+{
+  if (mpSimulationLogFile) {
+    fclose(mpSimulationLogFile);
+    mpSimulationLogFile = 0;
+  }
+}
+
+/*!
+ * \brief SimulationOutputHandler::isMaximumDisplayLimitReached
+ * Returns true if maximum display limit is reached.
+ * \return
+ */
+bool SimulationOutputHandler::isMaximumDisplayLimitReached() const
+{
+  return mNumberOfBytes > OptionsDialog::instance()->getSimulationPage()->getDisplayLimitSpinBox()->value() * 1000;
+}
+
+/*!
+ * \brief SimulationOutputHandler::startElement
+ * The reader calls this function when it has parsed a start element tag.
+ * \param namespaceURI
+ * \param localName
+ * \param qName
+ * \param atts
+ * \return
+ */
 bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QString &localName, const QString &qName,
                                            const QXmlAttributes &atts)
 {
   Q_UNUSED(namespaceURI);
   Q_UNUSED(localName);
+
+  // write simulation log file
   if (qName == "message") {
+    QString text = atts.value("text") + "\n";
+    mNumberOfBytes += text.toUtf8().size();
+    writeSimulationLog(text);
+  }
+  /* if display limit is reached then close and display the so far text
+   * and display a message showing that the limit is reached.
+   */
+  if (isMaximumDisplayLimitReached()) {
+    while (mLevel > 0) {
+      endElement("", "", "message");
+    }
+
     if (mpSimulationOutputWidget->isOutputStructured()) {
       mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
     } else {
       mpSimulationMessage = new SimulationMessage;
     }
-    mpSimulationMessage->mStream = atts.value("stream");
-    mpSimulationMessage->mType = StringHandler::getSimulationMessageType(atts.value("type"));
-    // check if we get the message about embedded opc-ua server initialized.
-    if (atts.value("text").compare("The embedded server is initialized.") == 0) {
-      mpSimulationOutputWidget->embeddedServerInitialized();
-    }
-    if (mpSimulationOutputWidget->isOutputStructured()) {
-      mpSimulationMessage->mText = Qt::convertFromPlainText(atts.value("text"));
-    } else {
-      mpSimulationMessage->mText = atts.value("text");
-    }
+    mpSimulationMessage->mStream = "stdout";
+    mpSimulationMessage->mType = StringHandler::OMEditInfo;
+    mpSimulationMessage->mText = QString("Reached display limit");
     mpSimulationMessage->mLevel = mLevel;
     mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-    if (mLevel > 0) {
-      SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
-      if (pSimulationMessage) {
-        mpSimulationMessage->setParent(pSimulationMessage);
-        pSimulationMessage->mChildren.append(mpSimulationMessage);
-      }
-    }
     mLevel++;
+    endElement("", "", "message");
+    return true;
+  }
+
+  if (qName == "message") {
+      if (mpSimulationOutputWidget->isOutputStructured()) {
+        mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+      } else {
+        mpSimulationMessage = new SimulationMessage;
+      }
+      mpSimulationMessage->mStream = atts.value("stream");
+      mpSimulationMessage->mType = StringHandler::getSimulationMessageType(atts.value("type"));
+      // check if we get the message about embedded opc-ua server initialized.
+      if (atts.value("text").compare("The embedded server is initialized.") == 0) {
+        mpSimulationOutputWidget->embeddedServerInitialized();
+      }
+      if (mpSimulationOutputWidget->isOutputStructured()) {
+        mpSimulationMessage->mText = Qt::convertFromPlainText(atts.value("text"));
+      } else {
+        mpSimulationMessage->mText = atts.value("text");
+      }
+      mpSimulationMessage->mLevel = mLevel;
+      mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+      if (mLevel > 0) {
+        SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
+        if (pSimulationMessage) {
+          mpSimulationMessage->setParent(pSimulationMessage);
+          if (mpSimulationOutputWidget->isOutputStructured()) {
+            mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
+            mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
+                                            .arg(QString::number(pSimulationMessage->children().size() + 1));
+          }
+          pSimulationMessage->mChildren.append(mpSimulationMessage);
+        }
+      } else {
+        if (mpSimulationOutputWidget->isOutputStructured()) {
+          mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
+                                          .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
+        }
+      }
+      mLevel++;
   } else if (qName == "used") {
-    if (mpSimulationMessage) {
-      mpSimulationMessage->mIndex = atts.value("index");
-    }
+      if (mpSimulationMessage) {
+        mpSimulationMessage->mIndex = atts.value("index");
+      }
   } else if (qName == "status") {
     int progress = atts.value("progress").toInt();
     mpSimulationOutputWidget->getProgressBar()->setValue(progress/100);
@@ -363,8 +418,13 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
 }
 
 /*!
-  The reader calls this function when it has parsed a end element tag.
-  */
+ * \brief SimulationOutputHandler::endElement
+ * The reader calls this function when it has parsed an end element tag.
+ * \param namespaceURI
+ * \param localName
+ * \param qName
+ * \return
+ */
 bool SimulationOutputHandler::endElement(const QString &namespaceURI, const QString &localName, const QString &qName)
 {
   Q_UNUSED(namespaceURI);
@@ -384,10 +444,16 @@ bool SimulationOutputHandler::endElement(const QString &namespaceURI, const QStr
 }
 
 /*!
-  Reports a non-recoverable error. Details of the error are stored in exception.
-  */
+ * \brief SimulationOutputHandler::fatalError
+ * Reports a non-recoverable error. Details of the error are stored in exception.
+ * \param exception
+ * \return
+ */
 bool SimulationOutputHandler::fatalError(const QXmlParseException &exception)
 {
+  if (isMaximumDisplayLimitReached()) {
+    return false;
+  }
   // read the error message
   QString error = QString("Fatal error on line %1, column %2: %3")
       .arg(exception.lineNumber())

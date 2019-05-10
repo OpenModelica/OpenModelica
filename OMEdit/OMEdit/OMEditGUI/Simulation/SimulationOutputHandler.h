@@ -46,12 +46,13 @@ public:
   QString mText;
   int mLevel;
   QString mIndex;
+  QString mDeweyId;
   QList<SimulationMessage*> mChildren;
   SimulationMessage* mpParentSimulationMessage;
 public:
   SimulationMessage(SimulationMessage *pParentSimulationMessage = 0)
     : mpParentSimulationMessage(pParentSimulationMessage)
-  {mStream = ""; mType = StringHandler::Unknown; mText = ""; mIndex = "";}
+  {mStream = ""; mType = StringHandler::Unknown; mText = ""; mIndex = ""; mDeweyId="";}
   void setParent(SimulationMessage *pParentSimulationMessage) {mpParentSimulationMessage = pParentSimulationMessage;}
   SimulationMessage *parent() {return mpParentSimulationMessage;}
   SimulationMessage *child(int row) {return mChildren.value(row);}
@@ -81,14 +82,11 @@ public:
   int getDepth(const QModelIndex &index) const;
   void insertSimulationMessage(SimulationMessage *pSimulationMessage);
   void callLayoutChanged();
-  QModelIndexList selectedRows();
-  QModelIndex simulationMessageIndex(const SimulationMessage *pSimulationMessage) const;
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   SimulationMessage* mpRootSimulationMessage;
   QModelIndexList mSelectedRowsList;
 
-  void selectedRowsHelper(SimulationMessage *pParentSimulationMessage);
   QModelIndex simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage,
                                            const QModelIndex &parentIndex) const;
 };
@@ -98,12 +96,15 @@ class SimulationOutputHandler : private QXmlDefaultHandler
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   int mLevel;
+  int mNumberOfBytes;
   SimulationMessage* mpSimulationMessage;
   QMap<int, SimulationMessage*> mSimulationMessagesLevelMap;
   SimulationMessageModel *mpSimulationMessageModel;
   QXmlSimpleReader mXmlSimpleReader;
   QXmlInputSource *mpXmlInputSource;
+  FILE *mpSimulationLogFile;
 
+  bool isMaximumDisplayLimitReached() const;
   bool startElement(const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts);
   bool endElement(const QString &namespaceURI, const QString &localName, const QString &qName);
   bool fatalError(const QXmlParseException &exception);
@@ -112,6 +113,8 @@ public:
   ~SimulationOutputHandler();
   SimulationMessageModel* getSimulationMessageModel() {return mpSimulationMessageModel;}
   void parseSimulationOutput(QString output);
+  void writeSimulationLog(const QString &text);
+  void simulationProcessFinished();
 };
 
 #endif // SIMULATIONOUTPUTHANDLER_H
