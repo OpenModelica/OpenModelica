@@ -3012,9 +3012,17 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     }
     if (shapeToDelete != nullptr) {
       *isCreatingShape = false;
+      mpModelWidget->getUndoStack()->undo();
       setIsCreatingPrologue(false);
-      mpModelWidget->getUndoStack()->pop();
       deleteShapeAndSetItToNullptr(shapeToDelete);
+      //Uncheck all actions
+      MainWindow *pMainWindow = MainWindow::instance();
+      pMainWindow->getBitmapShapeAction()->setChecked(false);
+      pMainWindow->getEllipseShapeAction()->setChecked(false);
+      pMainWindow->getLineShapeAction()->setChecked(false);
+      pMainWindow->getPolygonShapeAction()->setChecked(false);
+      pMainWindow->getRectangleShapeAction()->setChecked(false);
+      pMainWindow->getTextShapeAction()->setChecked(false);
     }
   } else {
     QGraphicsView::keyPressEvent(event);
