@@ -163,7 +163,10 @@ protected
   Connector c1, c2;
   list<ComponentRef> lhs_crefs, rhs_crefs;
   Boolean print_trace = Flags.isSet(Flags.CGRAPH);
+  ExpOrigin.Type origin;
 algorithm
+  origin := intBitOr(ExpOrigin.EQUATION, ExpOrigin.CONNECT);
+
   // go over all equations, connect, Connection.branch
   for conn in conns.connections loop
     Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
@@ -172,7 +175,7 @@ algorithm
     rhs_crefs := getOverconstrainedCrefs(c2);
 
     if not listEmpty(lhs_crefs) then
-      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, ExpOrigin.EQUATION, c1.source);
+      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, origin, c1.source);
       graph := List.threadFold(lhs_crefs, rhs_crefs,
         function addConnection(brokenEquations = eqlBroken, printTrace = print_trace), graph);
     end if;

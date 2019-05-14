@@ -1474,6 +1474,14 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
+        if Component.hasCondition(InstNode.component(cref.node)) and
+           (ExpOrigin.flagNotSet(origin, ExpOrigin.CONNECT) or
+            ExpOrigin.flagSet(origin, ExpOrigin.SUBSCRIPT)) then
+          Error.addSourceMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
+            {InstNode.name(cref.node)}, info);
+          fail();
+        end if;
+
         // The origin used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given origin, e.g. for package constants used in a function.

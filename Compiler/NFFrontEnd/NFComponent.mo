@@ -470,6 +470,24 @@ uniontype Component
     b := Binding.isBound(getBinding(component));
   end hasBinding;
 
+  function getCondition
+    input Component component;
+    output Binding cond;
+  algorithm
+    cond := match component
+      case UNTYPED_COMPONENT() then component.condition;
+      case TYPED_COMPONENT() then component.condition;
+      else NFBinding.EMPTY_BINDING;
+    end match;
+  end getCondition;
+
+  function hasCondition
+    input Component component;
+    output Boolean b;
+  algorithm
+    b := Binding.isBound(getCondition(component));
+  end hasCondition;
+
   function direction
     input Component component;
     output Direction direction;
