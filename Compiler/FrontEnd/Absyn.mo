@@ -6917,5 +6917,38 @@ algorithm
   end match;
 end pathPartCount;
 
+public function getAnnotationsFromConstraintClass
+  input Option<ConstrainClass> inCC;
+  output list<ElementArg> outElArgLst;
+algorithm
+  outElArgLst := match(inCC)
+    local list<ElementArg> elementArgs;
+    case SOME(CONSTRAINCLASS(comment = SOME(COMMENT(annotation_ = SOME(ANNOTATION(elementArgs))))))
+      then elementArgs;
+    else {};
+  end match;
+end getAnnotationsFromConstraintClass;
+
+public function getAnnotationsFromItems
+  input list<ComponentItem> inComponentItems;
+  input list<ElementArg> ccAnnotations;
+  output list<list<ElementArg>> outLst = {};
+protected
+  list<Absyn.ElementArg> annotations;
+  list<String> res;
+  String str;
+algorithm
+  for comp in listReverse(inComponentItems) loop
+    annotations := match comp
+      case Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(annotation_ =
+          SOME(Absyn.ANNOTATION(annotations)))))
+        then listAppend(annotations, ccAnnotations);
+      else ccAnnotations;
+    end match;
+
+    outLst := annotations :: outLst;
+  end for;
+end getAnnotationsFromItems;
+
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;

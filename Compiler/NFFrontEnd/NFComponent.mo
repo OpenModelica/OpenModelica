@@ -177,6 +177,7 @@ uniontype Component
     Binding binding;
     Binding condition;
     Component.Attributes attributes;
+    Option<Modifier> ann "the annotation from SCode.Comment as a modifier";
     Option<SCode.Comment> comment;
     SourceInfo info;
   end TYPED_COMPONENT;
@@ -342,7 +343,7 @@ uniontype Component
     component := match component
       case UNTYPED_COMPONENT()
         then TYPED_COMPONENT(component.classInst, ty, component.binding,
-          component.condition, component.attributes, component.comment, component.info);
+          component.condition, component.attributes, NONE(), component.comment, component.info);
 
       case TYPED_COMPONENT()
         algorithm
@@ -806,6 +807,16 @@ uniontype Component
       else NONE();
     end match;
   end comment;
+
+  function ann
+    input Component component;
+    output Option<Modifier> ann;
+  algorithm
+    ann := match component
+      case TYPED_COMPONENT() then component.ann;
+      else NONE();
+    end match;
+  end ann;
 
   function getEvaluateAnnotation
     input Component component;

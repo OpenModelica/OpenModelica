@@ -390,6 +390,7 @@ constant InstNode TIME =
       NFBinding.EMPTY_BINDING,
       NFComponent.INPUT_ATTR,
       NONE(),
+      NONE(),
       Absyn.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());

@@ -107,10 +107,12 @@ if true then /* Suppress output */
     "../Script/GlobalScriptDump.mo",
     "../Script/GlobalScriptUtil.mo",
     "../Script/Interactive.mo",
+	"../Script/NFApi.mo",
     "../Script/StaticScript.mo",
     "../Script/SymbolTable.mo",
+    "../Script/InteractiveUtil.mo",
 
-  // "Template";
+// "Template";
     "../Template/AbsynDumpTpl.mo",
     "../Template/CodegenCFunctions.mo",
     "../Template/CodegenUtil.mo",
@@ -205,6 +207,7 @@ if true then /* Suppress output */
     "../Stubs/DumpGraphviz.mo",
     "../Stubs/FGraphStream.mo",
     "../Stubs/MidCode.mo",
+	"../Stubs/NFApi.mo",
     "../Stubs/NFInstDump.mo",
     "../Stubs/NFUnitCheck.mo",
     "../Stubs/Refactor.mo",

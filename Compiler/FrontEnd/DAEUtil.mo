@@ -1930,10 +1930,16 @@ public function getVariableBindingsStr "
   input list<DAE.Element> elts;
   output String str;
 protected
-  list<DAE.Element> varlst;
+  list<DAE.Element> varlst, els;
 algorithm
-  varlst := getVariableList(elts);
-  str := getBindingsStr(varlst);
+  str := match elts
+    case {DAE.COMP(dAElist = els)} then getVariableBindingsStr(els);
+    else
+     algorithm
+       varlst := getVariableList(elts);
+       str := getBindingsStr(varlst);
+     then str;
+  end match;
 end getVariableBindingsStr;
 
 protected function getVariableList "

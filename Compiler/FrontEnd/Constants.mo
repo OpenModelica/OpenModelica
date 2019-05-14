@@ -227,9 +227,9 @@ record Transformation
 end Transformation;
 
 record Placement
-  Boolean visible = true;
-  Transformation transformation \"Placement in the dagram layer\";
-  Transformation iconTransformation \"Placement in the icon layer\";
+  parameter Boolean visible = true;
+  parameter Transformation transformation \"Placement in the dagram layer\";
+  parameter Transformation iconTransformation \"Placement in the icon layer\";
 end Placement;
 
 record IconMap
@@ -413,9 +413,9 @@ end OnMouseDownEditString;
 //
 record Dialog
    parameter String tab = \"General\";
-   parameter String group = \"\";
+   parameter String group = \"Parameters\";
    parameter Boolean enable = true;
-   parameter Boolean showStartAttribute;
+   parameter Boolean showStartAttribute = false;
    parameter Boolean colorSelector = false;
    parameter Selector loadSelector;
    parameter Selector saveSelector;

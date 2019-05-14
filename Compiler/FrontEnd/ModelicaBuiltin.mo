@@ -893,7 +893,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
 
   function solverClock
     input Clock c;
-    input String solverMethod;
+    parameter input String solverMethod;
     output Clock clk;
     external "builtin";
   end solverClock;
@@ -2742,6 +2742,18 @@ function getPackages "Returns the list of packages defined in the class."
 external "builtin";
 annotation(preferredView="text");
 end getPackages;
+
+function getAllSubtypeOf
+  "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
+  input TypeName parentClass = $TypeName(AllLoadedClasses);
+  input TypeName class_;
+  input Boolean qualified = false;
+  input Boolean includePartial = false;
+  input Boolean sort = false;
+  output TypeName classNames[:];
+external "builtin";
+annotation(preferredView="text");
+end getAllSubtypeOf;
 
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";

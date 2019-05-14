@@ -3138,8 +3138,8 @@ algorithm
       Absyn.Class absynClass;
       String str,re;
       Option<SCode.Program> fp;
-      SCode.Program scodeP, scodePNew, scode_builtin;
-      Absyn.Program p,ptot,p_builtin;
+      SCode.Program scodeP, scodePNew, scode_builtin, graphicProgramSCode;
+      Absyn.Program p,ptot,p_builtin, placementProgram;
       DAE.FunctionTree funcs;
 
    case (cache,env,_)
@@ -3167,6 +3167,14 @@ algorithm
         (_,scode_builtin) := FBuiltin.getInitialFunctions();
         scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
         ExecStat.execStat("FrontEnd - Absyn->SCode");
+
+        // add also the graphics annotations if we are using the NF_API
+        if Flags.isSet(Flags.NF_API) then
+          placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+          graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
+          scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
+          scodeP := listAppend(scodeP, graphicProgramSCode);
+        end if;
 
         (dae, funcs) := NFInst.instClassInProgram(className, scodeP);
 

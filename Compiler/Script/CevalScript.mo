@@ -88,6 +88,7 @@ import Graph;
 import HashSetString;
 import Inst;
 import InstFunction;
+import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
@@ -533,7 +534,7 @@ algorithm
              systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
-      Absyn.Path path,classpath,className,baseClassPath;
+      Absyn.Path path,classpath,className,baseClassPath,parentClass;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       FCore.Graph env;
@@ -558,7 +559,9 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, includeConstants, inputConnectors, outputConnectors, mergeAST;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, logX, logY, autoScale, forceOMPlot,
+              gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected,
+              includeConstants, inputConnectors, outputConnectors, mergeAST, includePartial, qualified;
       FCore.Cache cache;
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
@@ -1765,6 +1768,20 @@ algorithm
         r = System.getMemorySize();
         v = Values.REAL(r);
       then (cache,v);
+
+    case (cache,_,"getAllSubtypeOf",{
+          Values.CODE(Absyn.C_TYPENAME(parentClass)),
+          Values.CODE(Absyn.C_TYPENAME(path)),
+          Values.BOOL(qualified),
+          Values.BOOL(includePartial),
+          Values.BOOL(sort)},_)
+      equation
+        paths = InteractiveUtil.getAllSubtypeOf(parentClass, path, SymbolTable.getAbsyn(), qualified, includePartial);
+        paths = listReverse(paths);
+        paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals));
 
     else
       algorithm
