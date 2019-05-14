@@ -344,6 +344,7 @@ ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \
 ExpandableConnectorNonDecl2.mo \
 ExpandableConnectorNonDecl3.mo \
+ExpandableConnectorNonDecl4.mo \
 ExpandableConnectorPresent1.mo \
 ExpandableConnectorPresent2.mo \
 Extends1.mo \
