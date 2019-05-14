@@ -778,6 +778,7 @@ algorithm
   try
     n := Class.lookupElement(name, cls);
   else
+    true := InstNode.isComponent(node);
     n := InstNode.NAME_NODE(name);
   end try;
 
