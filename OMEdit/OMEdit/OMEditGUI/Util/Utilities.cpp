@@ -242,17 +242,22 @@ void Label::setText(const QString &text)
 {
   mText = text;
   setToolTip(text);
-  QLabel::setText(text);
+  QLabel::setText(elidedText());
+}
+
+QString Label::elidedText() const
+{
+  if (mElideMode != Qt::ElideNone) {
+    return fontMetrics().elidedText(mText, mElideMode, size().width());
+  } else {
+    return mText;
+  }
 }
 
 void Label::resizeEvent(QResizeEvent *event)
 {
-  if (mElideMode != Qt::ElideNone) {
-    QFontMetrics fm(fontMetrics());
-    QString str = fm.elidedText(mText, mElideMode, event->size().width());
-    QLabel::setText(str);
-  }
   QLabel::resizeEvent(event);
+  QLabel::setText(elidedText());
 }
 
 FixedCheckBox::FixedCheckBox(QWidget *parent)

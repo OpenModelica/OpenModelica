@@ -625,6 +625,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
+  if (mpSettings->contains("simulation/displayLimit")) {
+    mpSimulationPage->getDisplayLimitSpinBox()->setValue(mpSettings->value("simulation/displayLimit").toInt());
+  }
 }
 //! Reads the Messages section settings from omedit.ini
 void OptionsDialog::readMessagesSettings()
@@ -1206,6 +1209,7 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/deleteIntermediateCompilationFiles", mpSimulationPage->getDeleteIntermediateCompilationFilesCheckBox()->isChecked());
   mpSettings->setValue("simulation/deleteEntireSimulationDirectory", mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
+  mpSettings->setValue("simulation/displayLimit", mpSimulationPage->getDisplayLimitSpinBox()->value());
 }
 
 /*!
@@ -3656,10 +3660,24 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   QHBoxLayout *pOutputRadioButtonsLayout = new QHBoxLayout;
   pOutputRadioButtonsLayout->addWidget(mpStructuredRadioButton);
   pOutputRadioButtonsLayout->addWidget(mpFormattedTextRadioButton);
+  // display limit
+  mpDisplayLimitLabel = new Label(tr("Display Limit:"));
+  mpDisplayLimitSpinBox = new QSpinBox;
+  mpDisplayLimitSpinBox->setSuffix(" KB");
+  mpDisplayLimitSpinBox->setRange(1, std::numeric_limits<int>::max());
+  mpDisplayLimitSpinBox->setSingleStep(100);
+  mpDisplayLimitSpinBox->setValue(500);
+  mpDisplayLimitMBLabel = new Label;
+  connect(mpDisplayLimitSpinBox, SIGNAL(valueChanged(int)), SLOT(displayLimitValueChanged(int)));
+  // calculate the display limit in MBs.
+  displayLimitValueChanged(mpDisplayLimitSpinBox->value());
   // set the layout of output view mode group
   QGridLayout *pOutputGroupGridLayout = new QGridLayout;
   pOutputGroupGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOutputGroupGridLayout->addLayout(pOutputRadioButtonsLayout, 0, 0);
+  pOutputGroupGridLayout->addLayout(pOutputRadioButtonsLayout, 0, 0, 1, 3, Qt::AlignLeft);
+  pOutputGroupGridLayout->addWidget(mpDisplayLimitLabel, 1, 0);
+  pOutputGroupGridLayout->addWidget(mpDisplayLimitSpinBox, 1, 1);
+  pOutputGroupGridLayout->addWidget(mpDisplayLimitMBLabel, 1, 2);
   mpOutputGroupBox->setLayout(pOutputGroupGridLayout);
   // set the layout of simulation group
   QGridLayout *pSimulationLayout = new QGridLayout;
@@ -3723,6 +3741,18 @@ void SimulationPage::targetBuildChanged(int index)
     mpCompilerComboBox->setEnabled(false);
     mpCXXCompilerComboBox->setEnabled(false);
   }
+}
+
+/*!
+ * \brief SimulationPage::displayLimitValueChanged
+ * Slot activated when mpDisplayLimitSpinBox valueChanged SIGNAL is raised.
+ * Shows the display limit is MBs.
+ * 1 KB is 0,001 MB.
+ * \param value
+ */
+void SimulationPage::displayLimitValueChanged(int value)
+{
+  mpDisplayLimitMBLabel->setText(QString("(%1 MB)").arg(value*0.001));
 }
 
 //! @class MessagesPage

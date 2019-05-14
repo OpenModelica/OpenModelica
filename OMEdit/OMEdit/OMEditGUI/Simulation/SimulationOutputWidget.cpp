@@ -92,8 +92,11 @@ SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOu
 }
 
 /*!
-  Asks the model about the depth/level of QModelIndex.
-  */
+ * \brief SimulationOutputTree::getDepth
+ * Asks the model about the depth/level of QModelIndex.
+ * \param index
+ * \return
+ */
 int SimulationOutputTree::getDepth(const QModelIndex &index) const
 {
   SimulationMessageModel *pSimulationMessageModel = qobject_cast<SimulationMessageModel*>(model());
@@ -105,9 +108,11 @@ int SimulationOutputTree::getDepth(const QModelIndex &index) const
 }
 
 /*!
-  Shows a context menu when user right click on the Messages tree.
-  Slot activated when SimulationOutputTree::customContextMenuRequested() signal is raised.
-  */
+ * \brief SimulationOutputTree::showContextMenu
+ * Shows a context menu when user right click on the Messages tree.
+ * Slot activated when SimulationOutputTree::customContextMenuRequested() signal is raised.
+ * \param point
+ */
 void SimulationOutputTree::showContextMenu(QPoint point)
 {
   QMenu menu(this);
@@ -120,10 +125,14 @@ void SimulationOutputTree::showContextMenu(QPoint point)
 }
 
 /*!
-  Slot activated when QHeaderView sectionResized signal is raised.\n
-  Tells the model to emit layoutChanged signal.\n
-  \sa SimulationMessageModel::callLayoutChanged()
-  */
+ * \brief SimulationOutputTree::callLayoutChanged
+ * Slot activated when QHeaderView sectionResized signal is raised.\n
+ * Tells the model to emit layoutChanged signal.\n
+ * \sa SimulationMessageModel::callLayoutChanged()
+ * \param logicalIndex
+ * \param oldSize
+ * \param newSize
+ */
 void SimulationOutputTree::callLayoutChanged(int logicalIndex, int oldSize, int newSize)
 {
   Q_UNUSED(logicalIndex);
@@ -136,24 +145,43 @@ void SimulationOutputTree::callLayoutChanged(int logicalIndex, int oldSize, int 
 }
 
 /*!
-  Selects all the Messages.
-  Slot activated when mpSelectAllAction triggered signal is raised.
-  */
+ * \brief SimulationOutputTree::selectAllMessages
+ * Selects all the Messages.
+ * Slot activated when mpSelectAllAction triggered signal is raised.
+ */
 void SimulationOutputTree::selectAllMessages()
 {
   selectAll();
 }
 
 /*!
-  Copy the selected Messages to the clipboard.
-  Slot activated when mpCopyAction triggered signal is raised.
-  */
+ * \brief compareSimulationMessageDeweyId
+ * Compares the QModelIndexes based on their deweyid
+ * \param index1
+ * \param index2
+ * \return
+ */
+bool compareSimulationMessageDeweyId(const QModelIndex &index1, const QModelIndex &index2)
+{
+  SimulationMessage *pSimulationMessage1 = static_cast<SimulationMessage*>(index1.internalPointer());
+  SimulationMessage *pSimulationMessage2 = static_cast<SimulationMessage*>(index2.internalPointer());
+
+  return pSimulationMessage1 && pSimulationMessage2 && pSimulationMessage1->mDeweyId < pSimulationMessage2->mDeweyId;
+}
+
+/*!
+ * \brief SimulationOutputTree::copyMessages
+ * Copy the selected Messages to the clipboard.
+ * Slot activated when mpCopyAction triggered signal is raised.
+ */
 void SimulationOutputTree::copyMessages()
 {
   SimulationMessageModel *pSimulationMessageModel = qobject_cast<SimulationMessageModel*>(model());
   if (pSimulationMessageModel) {
     QStringList textToCopy;
-    const QModelIndexList modelIndexes = pSimulationMessageModel->selectedRows();
+    QModelIndexList modelIndexes = selectionModel()->selectedRows();
+    // sort the selected indexes based on deweyid so that we get the correct order since selectionModel()->selectedRows() changes the order.
+    std::sort(modelIndexes.begin(), modelIndexes.end(), compareSimulationMessageDeweyId);
     foreach (QModelIndex modelIndex, modelIndexes) {
       SimulationMessage *pSimulationMessage = static_cast<SimulationMessage*>(modelIndex.internalPointer());
       if (pSimulationMessage) {
@@ -162,7 +190,7 @@ void SimulationOutputTree::copyMessages()
 //                          .arg(pSimulationMessage->mStream)
 //                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
 //                          .arg(pSimulationMessage->mText));
-        textToCopy.append(QString(pSimulationMessage->mText).remove("<p>").remove("</p>"));
+        textToCopy.append(QTextDocumentFragment::fromHtml(QString(pSimulationMessage->mText).remove("<p>").remove("</p>")).toPlainText());
       }
     }
     QApplication::clipboard()->setText(textToCopy.join("\n"));
@@ -170,9 +198,11 @@ void SimulationOutputTree::copyMessages()
 }
 
 /*!
-  Reimplementation of keypressevent.
-  Defines what to do for Ctrl+A, Ctrl+C and Del buttons.
-  */
+ * \brief SimulationOutputTree::keyPressEvent
+ * Reimplementation of keypressevent.
+ * Defines what to do for Ctrl+A, Ctrl+C and Del buttons.
+ * \param event
+ */
 void SimulationOutputTree::keyPressEvent(QKeyEvent *event)
 {
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
@@ -201,7 +231,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
   // progress label
   mpProgressLabel = new Label;
-  mpProgressLabel->setTextFormat(Qt::RichText);
+  mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilationOrSimulation()));
@@ -209,6 +239,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpOpenTransformationalDebuggerButton->setIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   mpOpenTransformationalDebuggerButton->setToolTip(tr("Open Transformational Debugger"));
   connect(mpOpenTransformationalDebuggerButton, SIGNAL(clicked()), SLOT(openTransformationalDebugger()));
+  mpOpenOutputFileButton = new QPushButton(tr("Open Output File"));
+  mpOpenOutputFileButton->setEnabled(false);
+  connect(mpOpenOutputFileButton, SIGNAL(clicked()), SLOT(openSimulationLogFile()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
@@ -352,11 +385,12 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
-  pMainLayout->addWidget(mpProgressLabel, 0, 0, 1, 3);
+  pMainLayout->addWidget(mpProgressLabel, 0, 0, 1, 4);
   pMainLayout->addWidget(mpProgressBar, 1, 0);
   pMainLayout->addWidget(mpCancelButton, 1, 1);
   pMainLayout->addWidget(mpOpenTransformationalDebuggerButton, 1, 2);
-  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 3);
+  pMainLayout->addWidget(mpOpenOutputFileButton, 1, 3);
+  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 4);
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
@@ -425,11 +459,14 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   static QString lastType;
   /* format the error message */
   QString type = StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType);
-  QString error = ((lastSream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
-  error += ((lastSream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
-  for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
-    error += "| ";
-  error += pSimulationMessage->mText;
+  QString text;
+  if (pSimulationMessage->mType != StringHandler::OMEditInfo) {
+    text = ((lastSream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
+    text += ((lastSream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
+    for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
+      text += "| ";
+  }
+  text += pSimulationMessage->mText;
   /* move the cursor down before adding to the logger. */
   QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
   textCursor.movePosition(QTextCursor::End);
@@ -440,7 +477,13 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
   /* append the output */
   /* write the error message */
-  mpSimulationOutputTextBrowser->insertPlainText(error);
+  if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
+      QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getClassName());
+      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>")
+                                                .arg(simulationLogFilePath));
+  } else {
+    mpSimulationOutputTextBrowser->insertPlainText(text);
+  }
   /* write the error link */
   if (!pSimulationMessage->mIndex.isEmpty()) {
     mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
@@ -546,7 +589,7 @@ void SimulationOutputWidget::socketDisconnected()
  */
 void SimulationOutputWidget::compilationProcessStarted()
 {
-  mpProgressLabel->setText(tr("Compiling <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Compiling %1. Please wait for a while.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setRange(0, 0);
   mpProgressBar->setTextVisible(false);
   mpCancelButton->setText(tr("Cancel Compilation"));
@@ -579,7 +622,7 @@ void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color
  */
 void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mpProgressLabel->setText(tr("Compilation of <b>%1</b> is finished.").arg(mSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Compilation of %1 is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setRange(0, 1);
   mpProgressBar->setValue(1);
   mpCancelButton->setEnabled(false);
@@ -606,14 +649,15 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
 void SimulationOutputWidget::simulationProcessStarted()
 {
   if (mSimulationOptions.isInteractiveSimulation()) {
-    mpProgressLabel->setText(tr("Running interactive simulation of <b>%1</b>.").arg(mSimulationOptions.getClassName()));
+    mpProgressLabel->setText(tr("Running interactive simulation of %1.").arg(mSimulationOptions.getClassName()));
   } else {
-    mpProgressLabel->setText(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mSimulationOptions.getClassName()));
+    mpProgressLabel->setText(tr("Running simulation of %1. Please wait for a while.").arg(mSimulationOptions.getClassName()));
   }
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpCancelButton->setText(Helper::cancelSimulation);
   mpCancelButton->setEnabled(true);
+  mpOpenOutputFileButton->setEnabled(true);
   // save the current datetime as last modified datetime for result file.
   mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   mpArchivedSimulationItem->setStatus(Helper::running);
@@ -630,43 +674,25 @@ void SimulationOutputWidget::simulationProcessStarted()
 void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
   mpGeneratedFilesTabWidget->setTabEnabled(0, true);
-  if (isOutputStructured()) {
-    if (textFormat) {
+
+  if (textFormat) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-      QString escaped = QString(output).toHtmlEscaped();
+    QString escaped = QString(output).toHtmlEscaped();
 #else /* Qt4 */
-      QString escaped = Qt::escape(output);
+    QString escaped = Qt::escape(output);
 #endif
-      output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
-          .arg(StringHandler::getSimulationMessageTypeString(type))
-          .arg(escaped);
-    }
-    if (!mpSimulationOutputHandler) {
-      mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
+    output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
+        .arg(StringHandler::getSimulationMessageTypeString(type))
+        .arg(escaped);
+  }
+
+  if (!mpSimulationOutputHandler) {
+    mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
+    if (isOutputStructured()) {
       mpSimulationOutputTree->setModel(mpSimulationOutputHandler->getSimulationMessageModel());
-    } else {
-      mpSimulationOutputHandler->parseSimulationOutput(output);
     }
   } else {
-    /* move the cursor down before adding to the logger. */
-    QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
-    textCursor.movePosition(QTextCursor::End);
-    mpSimulationOutputTextBrowser->setTextCursor(textCursor);
-    /* set the text color */
-    QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-    charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-    mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
-    /* append the output */
-    if (textFormat) {
-      mpSimulationOutputTextBrowser->insertPlainText(output + "\n");
-    } else if (!mpSimulationOutputHandler) {
-      mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
-    } else {
-      mpSimulationOutputHandler->parseSimulationOutput(output);
-    }
-    /* move the cursor */
-    textCursor.movePosition(QTextCursor::End);
-    mpSimulationOutputTextBrowser->setTextCursor(textCursor);
+    mpSimulationOutputHandler->parseSimulationOutput(output);
   }
   /* make the compilation tab the current one */
   mpGeneratedFilesTabWidget->setCurrentIndex(0);
@@ -683,11 +709,14 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
-  mpProgressLabel->setText(tr("Simulation of <b>%1</b> is finished.").arg(mSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);
   MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
+  if (mpSimulationOutputHandler) {
+    mpSimulationOutputHandler->simulationProcessFinished();
+  }
   // remove the generated files
   if (!mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
@@ -704,7 +733,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   if (mpSimulationProcessThread->isCompilationProcessRunning()) {
     mpSimulationProcessThread->setCompilationProcessKilled(true);
     mpSimulationProcessThread->getCompilationProcess()->kill();
-    mpProgressLabel->setText(tr("Compilation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
+    mpProgressLabel->setText(tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
     mpProgressBar->setRange(0, 1);
     mpProgressBar->setValue(1);
     mpCancelButton->setEnabled(false);
@@ -712,7 +741,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   } else if (mpSimulationProcessThread->isSimulationProcessRunning()) {
     mpSimulationProcessThread->setSimulationProcessKilled(true);
     mpSimulationProcessThread->getSimulationProcess()->kill();
-    mpProgressLabel->setText(tr("Simulation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
+    mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName()));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
@@ -737,6 +766,20 @@ void SimulationOutputWidget::openTransformationalDebugger()
 }
 
 /*!
+ * \brief SimulationOutputWidget::openSimulationLogFile
+ * Slot activated when mpOpenOutputFileButton clicked SIGNAL is raised.\n
+ * Opens the simulation log file.
+ */
+void SimulationOutputWidget::openSimulationLogFile()
+{
+  QUrl logFile (QString("file:///%1/%2.log").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getClassName()));
+  if (!QDesktopServices::openUrl(logFile)) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), Helper::ok);
+  }
+}
+
+/*!
  * \brief SimulationOutputWidget::openTransformationBrowser
  * Slot activated when a link is clicked from simulation output.\n
  * Parses the url and loads the TransformationsWidget with the used equation.
@@ -747,34 +790,37 @@ void SimulationOutputWidget::openTransformationalDebugger()
  */
 void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 {
-  /* read the file name */
-  if (url.scheme() != "omedittransformationsbrowser") {
-    /* TODO: Write error-message?! */
-    return;
-  }
-  QString fileName = url.path();
+  if (url.scheme().compare("omedittransformationsbrowser") == 0) {
+    /* read the file name */
+    QString fileName = url.path();
 #ifdef WIN32
-  if (fileName.startsWith("/")) fileName.remove(0, 1);
+    if (fileName.startsWith("/")) fileName.remove(0, 1);
 #endif
-  /* open the model_info.json file */
-  if (QFileInfo(fileName).exists()) {
-    TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName);
+    /* open the model_info.json file */
+    if (QFileInfo(fileName).exists()) {
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-    QUrlQuery query(url);
-    int equationIndex = query.queryItemValue("index").toInt();
+      QUrlQuery query(url);
+      int equationIndex = query.queryItemValue("index").toInt();
 #else /* Qt4 */
-    int equationIndex = url.queryItemValue("index").toInt();
+      int equationIndex = url.queryItemValue("index").toInt();
 #endif
-    QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
-    if (pTreeWidgetItem) {
-      pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
-      pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
+      QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
+      if (pTreeWidgetItem) {
+        pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
+        pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
+      }
+      pTransformationsWidget->fetchEquationData(equationIndex);
+    } else {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
+                            .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
+                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
     }
-    pTransformationsWidget->fetchEquationData(equationIndex);
+  } else if (url.scheme().compare("file") == 0) {
+    // we know that file link is always simulation log file.
+    openSimulationLogFile();
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
-                          .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                          .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
+    /* TODO: Write error-message?! */
   }
 }
 

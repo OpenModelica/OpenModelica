@@ -159,6 +159,8 @@ public:
 private:
   Qt::TextElideMode mElideMode;
   QString mText;
+
+  QString elidedText() const;
 protected:
   virtual void resizeEvent(QResizeEvent *event);
 };
