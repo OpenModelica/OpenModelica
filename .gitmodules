@@ -1,9 +1,6 @@
 [submodule "OMOptim"]
 	path = OMOptim
 	url = ../OMOptim.git
-[submodule "common"]
-	path = common
-	url = ../OpenModelica-common.git
 [submodule "libraries"]
 	path = libraries
 	url = ../OMLibraries.git
