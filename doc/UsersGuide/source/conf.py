@@ -87,7 +87,6 @@ if os.path.exists('../../../.git'):
   patch = int(versionx.group(3))
   thisrelease = (major,minor,patch)
   allversions = [thisrelease]
-  docrepo = git.repo.Repo('../../')
   for t in r.tags:
     try:
       versionx = re.search("^v([0-9]+)[.]([0-9]+)[.]([0-9]+)$", str(t))
