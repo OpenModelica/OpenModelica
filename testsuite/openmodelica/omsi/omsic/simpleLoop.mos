@@ -1,0 +1,68 @@
+// name: simpleLoop
+// keywords: omsi omsic fmu fmi
+// status: correct
+// teardown_command: rm -rf simpleLoop.fmutmp simpleLoop.fmu simpleLoop_systemCall.log simpleLoop-tmp simpleLoop*res.mat simpleLoop_result_diff.log
+//
+// Tests simulating OMSIC OMSU/FMU with OMSimulator and check results
+// Simple model containing linear loop.
+//
+
+loadString("
+model simpleLoop
+    Real x;
+    Real y;
+    Real z;
+    Real s(start=1, fixed=true);
+    parameter Real a=1, b=-1, c = 7;
+  equation
+    time = a*x+b*y+c*z;
+    2*time = 2*a*x+y-3*z;
+    7 = 23*a-3/8*b+z;
+    der(s) = x+y+z;
+end simpleLoop;
+"); getErrorString();
+
+// Simulate model for reference results
+simulate(simpleLoop); getErrorString();
+
+// Build omsic FMU
+setCommandLineOptions("--simCodeTarget=omsic"); getErrorString();
+buildModelFMU(simpleLoop); getErrorString();
+
+// Simulate with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu --intervals=500 --tolerance=1e-6 --resultFile=\"simpleLoop_OMS_res.mat\" --suppressPath=true --tempDir=\"simpleLoop-tmp\"", "simpleLoop_systemCall.log"); getErrorString();
+readFile("simpleLoop_systemCall.log");
+
+// Compare results
+compareSimulationResults("simpleLoop_OMS_res.mat",
+                         "simpleLoop_res.mat",
+                         "simpleLoop_result_diff.log",
+                         vars = {"x","y","z","s","der(s)","a","b","c"}
+);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "simpleLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'simpleLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// "simpleLoop.fmu"
+// ""
+// 0
+// ""
+// "info:    maximum step size for 'model.root': 0.100000
+// info:    Result file: simpleLoop_OMS_res.mat (bufferSize=1)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 120 NumRhsEvals  = 258 NumLinSolvSetups = 96
+//          NumNonlinSolvIters = 256 NumNonlinSolvConvFails = 0 NumErrTestFails = 49
+// "
+// {"Files Equal!"}
+// endResult
