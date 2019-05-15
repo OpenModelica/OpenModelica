@@ -1,6 +1,3 @@
-[submodule "doc"]
-	path = doc
-	url = ../OpenModelica-doc.git
 [submodule "OMOptim"]
 	path = OMOptim
 	url = ../OMOptim.git
@@ -10,9 +7,6 @@
 [submodule "libraries"]
 	path = libraries
 	url = ../OMLibraries.git
-[submodule "OMC"]
-	path = OMCompiler
-	url = ../OMCompiler.git
 [submodule "OMSimulator"]
 	path = OMSimulator
 	url = ../OMSimulator.git
