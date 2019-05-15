@@ -1,0 +1,48 @@
+#
+# Makefile for Compiler/runtime
+#
+# $Id$
+#
+
+USE_CORBA = @USE_CORBA@
+
+TOP_DIR=@abs_top_builddir@
+FMIINCLUDE = ../../3rdParty/FMIL/install/include
+GRAPHINCLUDE=../../3rdParty/metis-5.1.0/include
+GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
+CJSONINCLUDE = ../../3rdParty/cJSON
+ZMQINCLUDE = ../../3rdParty/libzmq/include
+CFLAGS = @CFLAGS@ @CHECK_C_ERRORS@ $(USE_CORBA)
+OMPCC = @CC@ @OMPCFLAGS@
+OMBUILDDIR = @OMBUILDDIR@
+OMC=@OMC@
+
+ifdef USE_CORBA
+  CORBAINCL = @CORBACFLAGS@
+  OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
+  IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/stubs/omc_communication_idl.py
+else
+  CORBAINCL =
+  OMCCORBASRC = corbaimpl_stub_omc.o
+  IDLPYTHONTARGET =
+endif
+
+SHELL	= /bin/sh
+CC	= @CC@
+CXX	= @CXX@
+IDL	= @IDLCMD@
+IDLPYTHON = @IDLPYTHONCMD@
+CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@ -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)
+TRIPLE=@host_short@
+SHREXT=@SHREXT@
+RPATH=@RPATH@
+LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" -lOpenModelicaRuntimeC @OMCRUNTIME_SHARED_LDFLAGS@
+
+include Makefile.common
+
+config.unix.h: config.unix.h.in
+	cd $(top_builddir) && ./config.status
+
+Makefile: Makefile.in
+	cd @top_builddir@ && ./config.status

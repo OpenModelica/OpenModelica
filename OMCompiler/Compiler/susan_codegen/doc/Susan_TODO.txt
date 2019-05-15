@@ -1,0 +1,70 @@
+Feel free to add your suggestion what you thing should be done with Susan
+write me at: Pavol Privitzer <ppriv@lf1.cuni.cz> to let me know about it
+
+
+- warning/error for unreacheable case for unintended omition of (__) after the pattern record constructor
+- errors - fatal mainly
+- let _ = "a"
+  let _ = "b"
+- warning for unused let bindings except "_"
+- warning for PATTERN without () ... noniintended variable binding of PATTERN variable -> non-used binding names
+- try to eliminate unnecessary imported packages
+- redesign the empty= option with countEmpty=true, separateEmpty=false and empty="" by default
+  - make the empty= and separator= to be only string token typed instead Option,
+    so all the options would have a concrete default value
+    so, maybe this will work the most intuitively :
+  - there will be these three options with their respective defaults (they have these values when nothing is specified):
+    countEmpty=true
+    separateEmpty=false
+    empty=""
+
+  with addition that only the filtered values are considered
+  and, when one need to count everything, she can use:
+
+  list |> val hasindex idx =>
+    match val case ...
+  and still can filter the values needed only ...
+  when empty= would be specified the other options will remain still logical considering that in that case no empty value occur ...
+  or, the emptiness will be tested only on the actual result value regardless the value of the empty= option;
+  that would be, possibly, not that intuitive, but the most flexible
+  --> yes, so I'll go for the most general ... the emptiness will be guided by the actual values;
+   and, the only semantics of the empty= option will be, what to fill in the empty "space"
+- check the interface pid with the .mo name to be ==
+
+- smarter smart new line:
+  <<
+  some text
+  <% someTmpl() %>
+  >>
+
+  should have smart new line after "text" as well
+  see SimCodeC.inlineVars() template
+- the last empty new line should be discarded,
+  but the smart new line after previous line to let
+  <<
+  ahoj
+
+  >>
+  should be equivalent to
+  <<
+  ahoj<%\n%>
+  >>
+- possible usage of
+  match exp
+  case PATTERN(__) then exp.field
+- & enforcing and checking
+- optimization of the calls in daeExp() cases
+  (inlining of the called templates while checking the patterns of the cases)
+- do not emit imports for unused packages from package interface (by templates)
+- maybe an optimization of Tpl.writeTok(txt, Tpl.ST_STRING("bla")) -> Tpl.writeStr(..)
+
+- legalize non-ret functions to be effectively convertible to "" on proper places
+- keywords checking to not be used as names
+- support of $'valueName' quoted variable names
+
++ pull case local variables to be matchcontinue local
++ finish the hasindex
++ proper let scoping
++ indexedby -> hasindex
++ test of empty TEXT in if condition without the need to make it a string
++ if exp then ... not hidening outer scope

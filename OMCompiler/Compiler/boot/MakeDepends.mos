@@ -1,0 +1,7 @@
+// echo(false);
+runScript("LoadCompilerInterface.mos");
+if not generateSeparateCodeDependenciesMakefile("Makefile.depends",directory="$(GEN_DIR)",suffix=".stamp") then
+  print("Failed to generate dependencies:\n" + getErrorString());
+  exit(1);
+end if;
+exit(0);

@@ -1,0 +1,12 @@
+loadFile("BouncingBall.mo");
+getErrorString();
+simulate(BouncingBall, stopTime=3.0);
+getErrorString();
+// plotting height h and flying status
+plot({h,flying});
+// or plotting speed v
+// plot(v);
+// plotting all variables
+// plotAll(BouncingBall);
+// Remove generated files is disabled because if you run it at the same time as plotting, the plot tool might crash
+// system("rm -rf BouncingBall.log BouncingBall.makefile BouncingBall BouncingBall.exe BouncingBall.libs BouncingBall.cpp BouncingBall_* output.log");

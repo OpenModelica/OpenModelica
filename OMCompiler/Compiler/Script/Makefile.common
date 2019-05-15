@@ -1,0 +1,17 @@
+all: OpenModelicaScriptingAPI.mo $(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp $(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
+
+OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo ../Template/GenerateAPIFunctionsTpl.tpl
+	$(OMC) -g=MetaModelica $<
+	test -f OpenModelicaScriptingAPI.mo
+	test -f OpenModelicaScriptingAPIQt.cpp
+	test -f OpenModelicaScriptingAPIQt.h
+OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPI.mo
+OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPIQt.cpp
+
+$(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPIQt.cpp
+	cp "$<" "$@"
+$(OMBUILDDIR)/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPIQt.h
+	cp "$<" "$@"
+
+clean:
+	rm -f OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h OpenModelicaScriptingAPI.mo

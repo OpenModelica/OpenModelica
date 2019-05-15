@@ -1,0 +1,89 @@
+#
+# Makefile for omc
+#
+# David Kågedal <x97davka@ida.liu.se>
+#
+# $Id$
+#
+
+srcdir= .
+top_srcdir= @top_srcdir@
+OMBUILDDIR= @OMBUILDDIR@
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc/
+builddir_scripts=$(OMBUILDDIR)/share/omc/scripts
+
+ANTLR_HOME = @antlrhome@
+EXEEXT = @EXEEXT@
+
+ANTLR_INCP = -I@antlrinc@
+ANTLR_LIBP = -L@antlrlib@
+LIBSOCKET = @LIBSOCKET@
+
+SHELL	= /bin/sh
+CC	= gcc
+CFLAGS	= $(USE_CORBA) -DCYGWIN
+
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
+
+PROG = omc
+
+SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl ngspicetoModelica.py
+
+SUBDIRS	= runtime Script
+
+.SUFFIXES:
+.SUFFIXES: .o .mo .h
+.PHONY: all subdirs report depend clean dclean test reallyclean simcode builtin
+
+all : release
+
+include Makefile.common
+
+debug:	dinstall
+
+release: install
+
+install_scripts:
+	cd scripts; cp $(SCRIPT_FILES) $(builddir_scripts)
+	cp OpenModelicaBootstrappingHeader.h $(OMBUILDDIR)/include/omc/c/
+
+install: install_scripts
+
+clean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) clean) \
+	done
+	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
+
+reallyclean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) reallyclean) \
+	done
+
+report:
+	@(cd report ; $(MAKE))
+
+ifeq ($(wildcard @OMC@),)
+simcode:
+	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
+OpenModelicaBootstrappingHeader.h:
+	@test -f $@ || (echo OpenModelica has not been compiled and $@ is missing. Compilation will fail. ; false)
+	@echo OpenModelica has not been compiled yet. Using previously generated $@.
+else
+simcode: OpenModelicaBootstrappingHeader.h
+	$(MAKE) -C Template/
+OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/GlobalScript.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos
+	@OMC@ -g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	@mv $@.new $@
+endif
+$(SUSANMO): simcode
+
+builtin:
+	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo NFFrontEnd/NFModelicaBuiltin.mo FrontEnd/PDEModelicaBuiltin.mo $(builddir_lib)
+
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	cd $(top_srcdir) && ./config.status

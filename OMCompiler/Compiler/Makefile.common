@@ -1,0 +1,10 @@
+#
+#
+# Common part of Makefile for omc. Contains sourcenames.
+#
+# David Kågedal <x97davka@ida.liu.se>
+#
+# $Id$
+#
+
+AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a

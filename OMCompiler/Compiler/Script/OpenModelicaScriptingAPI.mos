@@ -1,0 +1,17 @@
+echo(false);
+(bool,a,b,c) := OpenModelica.Scripting.generateScriptingAPI(OpenModelica.Scripting, "OMCInterface");
+if bool then
+  writeFile("OpenModelicaScriptingAPI.tmp.mo","encapsulated package OpenModelicaScriptingAPI\n\n" + a + "annotation(__OpenModelica_Interface=\"backend\");\nend OpenModelicaScriptingAPI;\n");getErrorString();
+  setCommandLineOptions("-g=MetaModelica");
+  bool := loadFile("OpenModelicaScriptingAPI.tmp.mo");
+  if bool then
+    bool := 0 == system("mv OpenModelicaScriptingAPI.tmp.mo OpenModelicaScriptingAPI.mo");
+  else
+    exit(1);
+  end if;
+  writeFile("OpenModelicaScriptingAPIQt.cpp", b);
+  writeFile("OpenModelicaScriptingAPIQt.h", c);
+end if;
+if not bool then
+  print("Failed to generate OpenModelicaScriptingAPI; falling back to old generated one until new tarball exists: " + getErrorString());
+end if;

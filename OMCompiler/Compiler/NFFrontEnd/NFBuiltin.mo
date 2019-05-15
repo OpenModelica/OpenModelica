@@ -1,0 +1,427 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+
+encapsulated package NFBuiltin
+" file:        NFBuiltin.mo
+  package:     NFBuiltin
+  description: Builtin definitions.
+
+
+  Definitions for various builtin Modelica types and variables that can't be
+  defined by ModelicaBuiltin.mo.
+  "
+
+public
+import Absyn;
+import SCode;
+import NFBinding;
+import NFClass.Class;
+import NFClassTree.ClassTree;
+import NFComponent.Component;
+import Expression = NFExpression;
+import NFInstNode.InstNode;
+import NFInstNode.InstNodeType;
+import NFModifier.Modifier;
+import Type = NFType;
+import BuiltinFuncs = NFBuiltinFuncs;
+import Pointer;
+import NFPrefixes.Variability;
+import NFPrefixes.Visibility;
+import ComponentRef = NFComponentRef;
+import NFComponentRef.Origin;
+import Restriction = NFRestriction;
+import NFClassTree.LookupTree;
+import NFClassTree.DuplicateTree;
+
+protected
+import MetaModelica.Dangerous.*;
+
+public
+encapsulated package Elements
+  import SCode;
+  import Absyn;
+
+  // Default parts of the declarations for builtin elements and types:
+  public constant Absyn.TypeSpec ENUMTYPE_SPEC =
+    Absyn.TPATH(Absyn.IDENT("$EnumType"), NONE());
+
+  // StateSelect-specific elements:
+  constant SCode.Element REAL = SCode.CLASS("Real",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element INTEGER = SCode.CLASS("Integer",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element STRING = SCode.CLASS("String",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element ENUMERATION = SCode.CLASS("enumeration",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element ANY = SCode.CLASS("polymorphic",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
+  constant SCode.Element CLOCK = SCode.CLASS("Clock",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_PREDEFINED_CLOCK(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo) "the Clock type";
+
+end Elements;
+
+// An empty InstNode cache for the builtin types. This should really be an empty
+// array to make sure all attempts at using the cache fails, since trying to
+// update the cache of a constant literal would cause a segfault. Creating a
+// completely empty array here doesn't work due to compiler bugs though
+// (generates invalid C code), but this is probably close enough.
+constant array<NFInstNode.CachedData> EMPTY_NODE_CACHE = listArrayLiteral({
+  NFInstNode.CachedData.FUNCTION({}, true, true)
+});
+
+// InstNodes for the builtin types. These have empty class trees to prevent
+// access to the attributes via dot notation (which is not needed for
+// modifiers and illegal in other cases).
+constant InstNode POLYMORPHIC_NODE = InstNode.CLASS_NODE("polymorphic",
+  Elements.ANY, Visibility.PUBLIC,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), ClassTree.EMPTY_TREE(),
+    Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+// Lookup tree for Real. Generated by makeBuiltinLookupTree.
+constant LookupTree.Tree REAL_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 4,
+  left = NFClassTree.LookupTree.Tree.NODE(
+    key = "max", value = LookupTree.Entry.COMPONENT(index = 5), height = 3,
+    left = LookupTree.Tree.NODE(
+      key = "displayUnit", value = NFClassTree.LookupTree.Entry.COMPONENT(index = 3), height = 2,
+      left = LookupTree.Tree.EMPTY(),
+      right = LookupTree.Tree.LEAF(
+        key = "fixed", value = LookupTree.Entry.COMPONENT(index = 7))),
+    right = LookupTree.Tree.NODE(
+      key = "min", value = LookupTree.Entry.COMPONENT(index = 4), height = 2,
+      left = LookupTree.Tree.EMPTY(),
+      right = LookupTree.Tree.LEAF(
+        key = "nominal", value = LookupTree.Entry.COMPONENT(index = 8)))),
+  right = LookupTree.Tree.NODE(
+    key = "unbounded", value = LookupTree.Entry.COMPONENT(index = 9), height = 3,
+    left = LookupTree.Tree.NODE(
+      key = "start", value = LookupTree.Entry.COMPONENT(index = 6), height = 2,
+      left = LookupTree.Tree.EMPTY(),
+      right = LookupTree.Tree.LEAF(
+        key = "stateSelect", value = LookupTree.Entry.COMPONENT(index = 10))),
+    right = LookupTree.Tree.LEAF(
+      key = "unit", value = LookupTree.Entry.COMPONENT(index = 2))));
+
+constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
+  REAL_LOOKUP_TREE,
+  listArrayLiteral({}),
+  listArrayLiteral({
+    InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("unit", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("displayUnit", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("min", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("max", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("nominal", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("unbounded", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("stateSelect", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(STATESELECT_TYPE,
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
+  }),
+  listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
+  DuplicateTree.EMPTY());
+
+constant InstNode REAL_NODE = InstNode.CLASS_NODE("Real",
+  Elements.REAL, Visibility.PUBLIC,
+  Pointer.createImmutable(
+    Class.PARTIAL_BUILTIN(Type.REAL(), REAL_CLASS_TREE, Modifier.NOMOD(),
+      NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+// Lookup tree for Integer. Generated by makeBuiltinLookupTree.
+constant LookupTree.Tree INTEGER_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "min", value = LookupTree.Entry.COMPONENT(index = 2), height = 3,
+  left = LookupTree.Tree.NODE(
+    key = "max", value = LookupTree.Entry.COMPONENT(index = 3), height = 2,
+    left = LookupTree.Tree.LEAF(
+      key = "fixed", value = LookupTree.Entry.COMPONENT(index = 5)),
+    right = LookupTree.Tree.EMPTY()),
+  right = LookupTree.Tree.NODE(
+    key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 2,
+    left = LookupTree.Tree.EMPTY(),
+    right = LookupTree.Tree.LEAF(
+      key = "start", value = LookupTree.Entry.COMPONENT(index = 4))));
+
+constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
+  INTEGER_LOOKUP_TREE,
+  listArrayLiteral({}),
+  listArrayLiteral({
+    InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("min", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("max", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
+  }),
+  listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
+  DuplicateTree.EMPTY());
+
+constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("Integer",
+  Elements.INTEGER, Visibility.PUBLIC,
+  Pointer.createImmutable(
+    Class.PARTIAL_BUILTIN(Type.INTEGER(), INTEGER_CLASS_TREE, Modifier.NOMOD(),
+      NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+// Lookup tree for Boolean. Generated by makeBuiltinLookupTree.
+constant LookupTree.Tree BOOLEAN_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 2,
+  left = LookupTree.Tree.LEAF(
+    key = "fixed", value = LookupTree.Entry.COMPONENT(index = 3)),
+  right = LookupTree.Tree.LEAF(
+    key = "start", value = LookupTree.Entry.COMPONENT(index = 2)));
+
+constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
+  BOOLEAN_LOOKUP_TREE,
+  listArrayLiteral({}),
+  listArrayLiteral({
+    InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
+  }),
+  listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
+  DuplicateTree.EMPTY());
+
+constant InstNode BOOLEAN_NODE = InstNode.CLASS_NODE("Boolean",
+  Elements.BOOLEAN, Visibility.PUBLIC,
+  Pointer.createImmutable(
+    Class.PARTIAL_BUILTIN(Type.BOOLEAN(), BOOLEAN_CLASS_TREE, Modifier.NOMOD(),
+      NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+constant ComponentRef BOOLEAN_CREF =
+  ComponentRef.CREF(BOOLEAN_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+
+// Lookup tree for String. Generated by makeBuiltinLookupTree.
+constant LookupTree.Tree STRING_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 2,
+  left = LookupTree.Tree.LEAF(
+    key = "fixed", value = LookupTree.Entry.COMPONENT(index = 3)),
+  right = LookupTree.Tree.LEAF(
+    key = "start", value = LookupTree.Entry.COMPONENT(index = 2)));
+
+constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
+  STRING_LOOKUP_TREE,
+  listArrayLiteral({}),
+  listArrayLiteral({
+    InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
+  }),
+  listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
+  DuplicateTree.EMPTY());
+
+constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
+  Elements.STRING, Visibility.PUBLIC,
+  Pointer.createImmutable(
+    Class.PARTIAL_BUILTIN(Type.STRING(), STRING_CLASS_TREE, Modifier.NOMOD(),
+      NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+// Lookup tree for enumerations. Generated by makeBuiltinLookupTree.
+// NOTE: The enumeration attributes themselves are created by ClassTree.fromEnumeration,
+//       so any changes to this lookup tree requires fromEnumeration to be updated too.
+constant LookupTree.Tree ENUM_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "min", value = LookupTree.Entry.COMPONENT(index = 2), height = 3,
+  left = LookupTree.Tree.NODE(
+    key = "max", value = LookupTree.Entry.COMPONENT(index = 3), height = 2,
+    left = LookupTree.Tree.LEAF(
+      key = "fixed", value = LookupTree.Entry.COMPONENT(index = 5)),
+    right = LookupTree.Tree.EMPTY()),
+  right = LookupTree.Tree.NODE(
+    key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 2,
+    left = LookupTree.Tree.EMPTY(),
+    right = LookupTree.Tree.LEAF(
+      key = "start", value = LookupTree.Entry.COMPONENT(index = 4))));
+
+constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
+  Elements.ENUMERATION, Visibility.PUBLIC,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY_TREE(),
+    Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.ENUMERATION())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+constant Type STATESELECT_TYPE = Type.ENUMERATION(
+  Absyn.IDENT("StateSelect"), {"never", "avoid", "default", "prefer", "always"});
+
+constant Type ASSERTIONLEVEL_TYPE = Type.ENUMERATION(
+  Absyn.IDENT("AssertionLevel"), {"error", "warning"});
+
+constant Expression ASSERTIONLEVEL_ERROR = Expression.ENUM_LITERAL(
+  ASSERTIONLEVEL_TYPE, "error", 1);
+
+constant Expression ASSERTIONLEVEL_WARNING = Expression.ENUM_LITERAL(
+  ASSERTIONLEVEL_TYPE, "error", 2);
+
+// Lookup tree for Clock. Generated by makeBuiltinLookupTree.
+constant LookupTree.Tree CLOCK_LOOKUP_TREE = LookupTree.Tree.NODE(
+  key = "quantity", value = LookupTree.Entry.COMPONENT(index = 1), height = 2,
+  left = LookupTree.Tree.LEAF(
+    key = "fixed", value = LookupTree.Entry.COMPONENT(index = 3)),
+  right = LookupTree.Tree.LEAF(
+    key = "start", value = LookupTree.Entry.COMPONENT(index = 2)));
+
+constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
+  CLOCK_LOOKUP_TREE,
+  listArrayLiteral({}),
+  listArrayLiteral({
+    InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
+    InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
+  }),
+  listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
+  DuplicateTree.EMPTY());
+
+constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
+  Elements.CLOCK, Visibility.PUBLIC,
+  Pointer.createImmutable(
+    Class.PARTIAL_BUILTIN(Type.CLOCK(), CLOCK_CLASS_TREE, Modifier.NOMOD(),
+      NFClass.DEFAULT_PREFIXES, Restriction.CLOCK())),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+constant ComponentRef CLOCK_CREF =
+  ComponentRef.CREF(CLOCK_NODE, {}, Type.CLOCK(), Origin.CREF, ComponentRef.EMPTY());
+
+constant InstNode TIME =
+  InstNode.COMPONENT_NODE("time",
+    Visibility.PUBLIC,
+    Pointer.createImmutable(Component.TYPED_COMPONENT(
+      REAL_NODE,
+      Type.REAL(),
+      NFBinding.EMPTY_BINDING,
+      NFBinding.EMPTY_BINDING,
+      NFComponent.INPUT_ATTR,
+      NONE(),
+      NONE(),
+      Absyn.dummyInfo)),
+    InstNode.EMPTY_NODE(),
+    InstNodeType.NORMAL_COMP());
+
+constant ComponentRef TIME_CREF = ComponentRef.CREF(TIME, {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY());
+
+function makeBuiltinLookupTree
+  "This function takes lists of component and class names and prints out a lookup tree.
+   Useful in case any attributes needs to be added to any of the builtin type."
+  input String name "Not used in the tree, only to identify the printout.";
+  input list<String> components;
+  input list<String> classes = {};
+protected
+  LookupTree.Tree ltree = LookupTree.new();
+  Integer i;
+algorithm
+  i := 1;
+  for comp in components loop
+    ltree := LookupTree.add(ltree, comp, LookupTree.Entry.COMPONENT(i));
+    i := i + 1;
+  end for;
+
+  for cls in classes loop
+    ltree := LookupTree.add(ltree, cls, LookupTree.Entry.COMPONENT(i));
+    i := i + 1;
+  end for;
+
+  print("Lookup tree for " + name + ":\n");
+  print(anyString(ltree));
+  print("\n");
+end makeBuiltinLookupTree;
+
+annotation(__OpenModelica_Interface="frontend");
+end NFBuiltin;

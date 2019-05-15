@@ -1,0 +1,81 @@
+# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
+# Makefile for compilation of OMC using OMDev-mingw
+# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+#
+# $Id: Makefile.omdev.mingw.in 1817 2006-02-01 12:21:26Z adrpo $
+#
+
+# The path to the OMDev-mingw package MUST BE SET!
+#OMDEV=$OMDEV
+# Test if the needed variables are there...
+
+.testvariables:
+ifndef OMDEV
+	@echo You have to set the OMDEV variabile pointing to your OMDev package root! Exiting....
+	@echo Take the OMDev package from: http://www.ida.liu.se/~adrpo/omc/omdev/
+	@echo For questions or problems email Adrian Pop, adrpo@ida.liu.se
+	ABORT
+endif
+
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_scripts=$(OMBUILDDIR)/share/omc/scripts
+builddir_lib=$(OMBUILDDIR)/lib/omc
+
+# adrpo, libsocket should be -lwsock32 but is not needed!
+LIBSOCKET = -lwsock32
+
+SHELL	= /bin/sh
+override CFLAGS	+= $(USE_CORBA)
+
+USE_CORBA = -DUSE_CORBA
+CORBAHOME = $(OMDEV)
+
+SCRIPT_FILES = Compile.bat Prompt.bat openmodelica.lefty default_profiling.xsl replace-startValue.* simcodedump.xsl ngspicetoModelica.py
+
+SUBDIRS	= runtime Script
+
+.SUFFIXES:
+.SUFFIXES: .o .mo .h
+.PHONY:  all subdirs report vctarget release clean test reallyclean builtin
+
+all : .testvariables release simcode builtin
+
+include Makefile.common
+
+release: .testvariables install
+
+install_scripts:
+	cd scripts; cp -puf $(SCRIPT_FILES) $(builddir_scripts)
+
+install: install_scripts # install_doc
+	cp OpenModelicaBootstrappingHeader.h $(OMBUILDDIR)/include/omc/c/
+
+clean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) -f Makefile.omdev.mingw clean) \
+	done
+	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
+
+reallyclean:
+	@for d in $(SUBDIRS); do \
+		(cd $$d ; $(MAKE) -f Makefile.omdev.mingw reallyclean) \
+	done
+
+report:
+	@(cd report ; $(MAKE))
+
+ifeq ($(wildcard $(OMBUILDDIR)/bin/omc.exe),)
+simcode:
+	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
+else
+simcode: OpenModelicaBootstrappingHeader.h
+	$(MAKE) -C Template/ -f Makefile.omdev.mingw
+OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/GlobalScript.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos
+	$(OMBUILDDIR)/bin/omc -g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	@mv $@.new $@
+endif
+$(SUSANMO): simcode
+
+builtin:
+	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo NFFrontEnd/NFModelicaBuiltin.mo FrontEnd/PDEModelicaBuiltin.mo $(builddir_lib)
+

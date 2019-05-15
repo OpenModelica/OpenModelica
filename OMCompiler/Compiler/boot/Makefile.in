@@ -1,0 +1,50 @@
+# make Makefile.sources ~4.4s (1 time; only updated when the number of source files change)
+# make -j4 interfaces   ~5.3s (individual updates; parses the changed file and creates the interface, in parallel)
+# make Makefile.depends ~0.5s (after interfaces are generated, parse them all and generate the dependencies if any interface file changed)
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@ @CHECK_C_ERRORS@
+TOP_DIR=@abs_top_builddir@
+OMHOME=@OMBUILDDIR@
+OMBUILDDIR=@OMBUILDDIR@
+EXE_EXT=@EXE@
+EXE_SUFFIX=
+OMENCRYPTION=@OMENCRYPTION@
+
+LIB_OMC=lib/@host_short@/omc
+
+ifeq ($(OMENCRYPTION),yes)
+OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto
+else
+OMENCRYPTIONLIBS=
+endif
+
+LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/$(LIB_OMC)" $(LOMPARSE) $(LCOMPILERRUNTIME) -lOpenModelicaRuntimeC -lModelicaExternalC -lModelicaIO -lModelicaMatIO -lzlib -lomantlr3 $(CORBALIBS) $(FMILIB_OR_BOOT) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ @GRAPHLIB@ @LD_LAPACK@ -lzmq $(OMENCRYPTIONLIBS)
+LDFLAGS_SHARED_MAIN=-L"$(OMHOME)/$(LIB_OMC)" @RT_LDFLAGS_SHARED@
+ifeq (@WITH_FMIL@,yes)
+FMILIB = $(TOP_DIR)/3rdParty/FMIL/install/lib/libfmilib.a
+endif
+CPPFLAGS=-I"$(OMHOME)/include/omc/c" -I../Util/ @CPPFLAGS@ -DADD_METARECORD_DEFINITIONS=
+CORBALIBS=@CORBALIBS@
+ULIMIT_CMD=true
+SHREXT=@DLLEXT@
+OMC=@OMC@
+OMC_EXTRA_FLAGS=
+RPATH=@RPATH@
+STATIC=@BOOTSTRAP_STATIC@
+BOOTSTRAP_OMC=@OMBUILDDIR@/bin/omc
+defaultMakefileTarget=Makefile
+OMCRUNTIMEAR1=../runtime/libomcruntime-boot$(SHREXT)
+OMCRUNTIMEAR2=$(OMHOME)/$(LIB_OMC)/libomcruntime$(SHREXT)
+
+
+default: all
+
+include Makefile.common
+
+../Util/Autoconf.mo: ../Util/Autoconf.mo.in
+	(cd "$(TOP_DIR)" && ./config.status)
+
+Makefile: Makefile.in
+	(cd @top_builddir@ && ./config.status)

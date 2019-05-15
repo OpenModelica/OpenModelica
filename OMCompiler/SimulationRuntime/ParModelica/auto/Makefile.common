@@ -1,0 +1,39 @@
+
+# cp -u is a GNU extension. Do not rely on it.
+COPY=cp -rp
+AR_=ar -rcs
+
+SRCS = $(OS_SRCS) \
+om_pm_equation.cpp \
+pm_utility.cpp \
+om_pm_interface.cpp \
+om_pm_model.cpp 
+# ParModelicaTaskGrapExt_rml.cpp
+# ParModelicaTaskGrapExt_omc.cpp \
+
+HDRS = *.hpp *.inl
+OBJS = $(SRCS:.cpp=.o)
+DPFILE = Makefile.dependencies
+
+DPFLAGS = -MM
+
+.PHONY : clean
+
+libParModelicaAuto.a: $(OBJS)
+	@rm -f $@
+	$(AR_) $@ $(OBJS)
+    
+.cpp.o: $(DPFILE)
+	$(CC) $(CPPFLAGS) $(INCDIRS) -c $<    
+    
+test: test_task_graph.cpp libParModelicaAuto.a
+	$(CXX) $(CPPFLAGS) -I. $(INCDIRS) test_task_graph.cpp -o gen_graph$(EXEEXT) libParModelicaAuto.a -L$(TBB_LIB) -ltbb
+
+clean :
+	rm -f *.o *.a
+	touch $(DPFILE)
+    
+$(DPFILE) depend : $(HDRS) $(SRCS)
+	$(CC) $(DPFLAGS) $(CPPFLAGS) $(SRCS) > $(DPFILE)    
+    
+include $(DPFILE)

@@ -1,0 +1,202 @@
+ifeq ($(wildcard $(OMC)),)
+all:
+	$(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball
+else
+all: runtime-depends
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory install INCLUDESOURCES=1
+endif
+
+generate-files-in-steps:
+	$(MAKE) -f $(defaultMakefileTarget) templates scripting
+	$(MAKE) -f $(defaultMakefileTarget) Makefile.sources
+	$(MAKE) -f $(defaultMakefileTarget) interfaces INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
+
+.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files
+
+GEN_DIR=build/
+
+PATCH_SOURCES=sed -i=.bak 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
+
+PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
+
+ifeq ($(BOOTSTRAP_STAGE_1),1)
+OMCRUNTIMEAR=$(OMCRUNTIMEAR1)
+OMPARSEAR=../../Parser/libomparse-boot.a
+LOMPARSE=$(OMPARSEAR)
+LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a $(abspath $(OMCRUNTIMEAR))
+FMILIB_OR_BOOT=
+else
+OMCRUNTIMEAR=$(OMCRUNTIMEAR2)
+OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
+LOMPARSE=-lomparse
+LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a -lomcruntime
+FMILIB_OR_BOOT=$(FMILIB) -lexpat
+endif
+
+ifeq ($(BOOTSTRAP_OMHOME),1)
+else
+export OPENMODELICAHOME := $(OMBUILDDIR)
+endif
+
+%.patch: %.patch.xz
+	xz --keep --decompress --force $<
+
+patch-files: $(PATCHES)
+
+bootstrap-from-tarball:
+	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
+	tar xJf bootstrap-sources.tar.xz
+	# Patch _main.c to avoid a new tarball
+	$(MAKE) -f $(defaultMakefileTarget) patch-files
+	$(PATCH_SOURCES)
+	cd build && patch -i ../patches/CevalScript.c.1.patch CevalScript.c
+	cd build && patch -i ../patches/System_includes.h.patch System_includes.h
+	# We have not compiled OpenModelicaScriptingAPI.mo yet
+	touch build/OpenModelicaScriptingAPI.h
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
+	@echo "Bootstrapping phase 1/3 completed"
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= BOOTSTRAP_OMHOME=1 TEMPLATES_TARGET=templates-bootstrap
+	# Patch _main.c to avoid a new tarball
+	$(PATCH_SOURCES)
+	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
+	# We have not compiled OpenModelicaScriptingAPI.mo yet
+	touch build/OpenModelicaScriptingAPI.h
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2" BOOTSTRAP_OMHOME=1
+	@echo "Bootstrapping phase 2/3 completed"
+	$(MAKE) -f $(defaultMakefileTarget) clean OMC="$(BOOTSTRAP_OMC)"
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMC="$(BOOTSTRAP_OMC)" clean
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMC="$(BOOTSTRAP_OMC)" clean
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" "OMC_EXTRA_FLAGS=$(OMC_EXTRA_FLAGS)"
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS)"
+	@echo "Bootstrapping phase 3/3 completed"
+
+runtime-depends:
+	@# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
+	$(MAKE) -f $(defaultMakefileTarget) -C .. OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR) OMC="$(OMC)"
+	$(MAKE) -f $(defaultMakefileTarget) parser compilerruntime
+parser:
+	$(MAKE) -f $(defaultMakefileTarget) -C ../../Parser install OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
+compilerruntime:
+	$(MAKE) -f $(defaultMakefileTarget) -C ../runtime install OMBUILDDIR=$(OMBUILDDIR)
+
+bootstrap-from-compiled: make-separate
+
+make-bootstrap-tarball: clean
+	test ! -f Makefile.sources || rm Makefile.sources
+	test ! -f Makefile.depends || rm Makefile.depends
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
+	sed -i.bak -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
+	tar cf bootstrap-sources.tar $(GEN_DIR) Makefile.sources
+	xz --best --force bootstrap-sources.tar
+
+templates:
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR) $(TEMPLATES_TARGET)
+
+scripting:
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMBUILDDIR=$(OMBUILDDIR)
+
+clean:
+	rm -rf "$(GEN_DIR)"
+	rm -f Makefile.sources LoadCompilerInterface.mos Makefile.depends
+	rm -f patches/*.patch
+
+ifeq ($(INCLUDESOURCES),1)
+include Makefile.sources
+endif
+
+ifeq ($(INCLUDEDEPENDS),1)
+include Makefile.depends
+endif
+
+generate-files: $(ALL_INTERFACES:%.stamp.mo=%.stamp) $(GEN_DIR)_main.c
+	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
+
+ALL_OBJECTS=$(ALL_INTERFACES:%.stamp.mo=%.o) $(ALL_INTERFACES:%.stamp.mo=%_records.o)
+
+compile-files: $(ALL_OBJECTS) $(GEN_DIR)_main.o
+	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
+
+interfaces: $(ALL_INTERFACES) $(ALL_SOURCES)
+
+%.stamp.mo:
+	@mkdir -p build
+	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; className := $$TypeName($(@:$(GEN_DIR)%.stamp.mo=%)); runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
+	$(OMC) -g=MetaModelica -n=1 $@.mos
+	@touch $@
+%.interface.mo: %.stamp.mo
+
+ifeq ($(wildcard $(OMC)),)
+else
+Makefile.sources: LoadCompilerSources.mos MakeSources.mos ../Util/Autoconf.mo
+	$(OMC) -g=MetaModelica -n=1 MakeSources.mos
+	mv Makefile.sources.tmp Makefile.sources
+	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
+
+LoadCompilerInterface.mos: Makefile.sources
+	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
+Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo) ../Util/Autoconf.mo
+	@rm -f $@
+	$(OMC) -g=MetaModelica -n=1 $<
+endif
+
+$(GEN_DIR)%.stamp:
+	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
+	@echo 'echo(false);files:={"'`echo $^ | sed 's/ /","/g'`'"};mainClass:=$$TypeName('`basename $@ | sed "s/[.]stamp//"`');runScript("CompileFile.mos");print("Something went horribly wrong for '$@'\\n");exit(1);' > $@.mos
+	$(OMC) -g=MetaModelica -n=1 $(OMC_EXTRA_FLAGS) $@.mos
+	@touch $@
+
+$(GEN_DIR)_main.c:
+	$(OMC) -g=MetaModelica GenerateEntryPoint.mos
+
+$(GEN_DIR)_main.o: $(GEN_DIR)_main.c
+	$(CC) -DOMC_ENTRYPOINT_STATIC= -c $(GEN_DIR)_main.c -o  $(GEN_DIR)_main.o $(CFLAGS) $(CPPFLAGS)
+
+$(GEN_DIR)_main_omc.c: $(GEN_DIR)_main.c
+	cp -a $^ $@
+
+$(GEN_DIR)_main_static_omc.c: $(GEN_DIR)_main.c
+	sed -e s/DLLImport// -e s/DLLExport// $^ > $@.tmp
+	mv $@.tmp $@
+
+$(GEN_DIR)_main_static.c: $(GEN_DIR)_main_static_omc.c
+	cp -a $^ $@
+
+$(GEN_DIR)_main_omc.o: $(GEN_DIR)_main_omc.c
+	$(CC) -c $(GEN_DIR)_main_omc.c -o  $(GEN_DIR)_main_omc.o $(CFLAGS) $(CPPFLAGS)
+
+$(GEN_DIR)_main_static_omc.o: $(GEN_DIR)_main_static_omc.c
+	$(CC) -c $(GEN_DIR)_main_static_omc.c -o  $(GEN_DIR)_main_static_omc.o $(CFLAGS) $(CPPFLAGS)
+
+$(GEN_DIR)_main_static.o: $(GEN_DIR)_main_static.c
+	$(CC) -DOMC_ENTRYPOINT_STATIC -c $(GEN_DIR)_main_static.c -o  $(GEN_DIR)_main_static.o $(CFLAGS) $(CPPFLAGS)
+
+$(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTIMEAR) $(OMPARSEAR) $(GEN_DIR)_main_omc.o
+	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
+	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $(ALL_OBJECTS) $(GEN_DIR)_main_omc.o $(LDFLAGS)
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
+
+ifeq (${STATIC},)
+#shared
+$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main_omc.o $(GEN_DIR)_main.o
+	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS_SHARED_MAIN) -lOpenModelicaCompiler
+install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
+	cp -a $< $(OMHOME)/bin/
+	test ! "$(SHREXT)" = ".dll" || cp -a $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT) $(OMHOME)/bin/
+
+else
+#static
+$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main_static.o $(GEN_DIR)_main_static_omc.o $(OMCRUNTIMEAR) $(OMPARSEAR)
+	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
+	$(CC) $(GEN_DIR)_main_static.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(GEN_DIR)_main_static_omc.o $(ALL_OBJECTS) $(LDFLAGS)
+install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
+	cp -a $< $(OMHOME)/bin/
+endif
+
+install-interface:
+	cp -a $(GEN_DIR)OpenModelicaScriptingAPI.h $(OMHOME)/include/omc/scripting-API

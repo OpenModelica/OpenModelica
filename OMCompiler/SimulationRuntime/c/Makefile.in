@@ -1,0 +1,82 @@
+# Adrian Pop, adrpo@ida.liu.se, Martin Sjölund, marsj@ida.liu.se
+# - Use make -f Makefile.omdev.mingw if you want to compile on Windows/MinGW
+# - Please leave the UNIX Makefile as it is if you are not using UNIX/Linux
+# If you need to add files, etc, you modify Makefile.common - a common file
+# for both UNIX/Linux and Windows platforms.
+
+top_builddir = @top_builddir@
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/@host_short@/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
+
+AR = @AR_SH@
+CC = @CC@
+CXX = @CXX@
+CONFIG_CPPFLAGS = @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+IPOPT_CFLAGS=@IPOPT_CFLAGS@
+else
+IPOPT_CFLAGS=
+endif
+CONFIG_CFLAGS = @CHECK_C_ERRORS@ @CFLAGS@ $(IPOPT_CFLAGS)
+FPMATHFORTRAN = @FPMATHFORTRAN@
+OMBUILDDIR = @OMBUILDDIR@
+
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS@ @RT_LDFLAGS_OPTIONAL@ @RPATH@
+LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc -L$(CDASKRDIR) @RT_LDFLAGS_SIM@ @RT_LDFLAGS_SIM_OPTIONAL@
+else
+LDFLAGS=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS@
+LDFLAGS_SIM=-L$(OMBUILDDIR)/lib/@host_short@/omc @RT_LDFLAGS_SIM@
+endif
+
+defaultMakefileTarget = Makefile
+
+LIBMAKEFILE = Makefile
+QMAKE=@QMAKE@
+CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
+LIBSIMULATION=@LIBSIMULATION@
+LIBRUNTIME=@LIBRUNTIME@
+LIBFMIRUNTIME=@LIBFMIRUNTIME@
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+OBJ_EXT=.o
+else
+ifeq ($(OMC_FMI_RUNTIME),)
+OBJ_EXT=.minimal.o
+else
+OBJ_EXT=.o
+endif
+endif
+
+REGEN = Makefile.in
+
+include Makefile.common
+
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status
+
+expat.h:
+	cp /usr/include/expat*.h .
+emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/mdpad/mdpad.html
+	cp -a emcc/pre.js emcc/*.so emcc/mdpad $(builddir_lib)/emcc/
+	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
+emcc/liblapack.so:
+	wget -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/liblapack.so?raw=true || (rm -f $@ ; false)
+emcc/libblas.so:
+	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libblas.so?raw=true || (rm -f $@ ; false)
+emcc/libexpat.so:
+	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libexpat.so?raw=true || (rm -f $@ ; false)
+emcc/libSimulationRuntimeC.so: expat.h
+	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY" libSimulationRuntimeC.bc
+	cp libSimulationRuntimeC.bc emcc/libSimulationRuntimeC.so
+mdpad.tar.gz:
+	wget -O mdpad.tar.gz https://github.com/sjoelund/mdpad/tarball/484fe6bfd592a0f549ce7269cab34fc793d0c1cb
+emcc/mdpad/mdpad.html: mdpad.tar.gz
+	tar xzf mdpad.tar.gz
+	rm -rf emcc/mdpad
+	mv sjoelund-mdpad-484fe6b emcc/mdpad
+emcc-clean: Makefile
+	$(MAKE) OBJ_EXT=.bc clean
+	rm -f emcc/*.so mdpad.tar.gz
+	rm -rf emcc/mdpad

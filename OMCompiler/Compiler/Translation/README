@@ -1,0 +1,27 @@
+Translation guide for OpenModelica kernel.
+See the OMEdit directory for instructions on how to translate the GUI.
+They are different projects and use different libraries to handle the
+translations. The kernel uses gettext (libintl).
+
+# Setup a new translation target
+make update
+msginit --locale=sv_SE.utf8 -i openmodelica.pot
+svn add sv.po
+
+# Edit the .po-file using your favorite gettext po-file editor
+# Maybe linguist (same as for OMEdit), gtranslate, or poedit.
+# Maybe something else entirely
+
+# To update a translation file
+msgmerge -U sv.po openmodelica.pot
+# or to merge all files (might screw other translators)
+make merge-all
+
+# To install the files to the build directory
+make
+# To test the settings
+omc +locale=sv_SE.UTF-8 ???.{mo,mos}
+Or omit +locale if your environment is already set
+
+Note: The files are not yet installed automatically because they do not
+contain translations.
