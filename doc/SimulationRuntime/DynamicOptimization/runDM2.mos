@@ -1,0 +1,16 @@
+// name: diesel_model
+// status: correct
+
+
+loadFile("DM2.mo");
+getErrorString();
+
+setCommandLineOptions("+g=Optimica");
+getErrorString();
+
+loadFile("DM2_ocp.mo");
+getErrorString();
+
+optimize(opt_diesel_model, stopTime=0.5, numberOfIntervals=100,tolerance=1e-10, simflags="-lv LOG_IPOPT");
+getErrorString();
+plot({w_ice,p_im,p_em,w_tc,u_f,u_wg});

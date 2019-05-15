@@ -1,0 +1,9 @@
+/*!
+  \page CodingStyle
+  There are some rules that should be considered if a contribution to the runtime is made.
+
+  - use 2 spaces instead of tabs
+  - all function-names should start with a lower letter and multiple words should be combined in camel case (e.g. getName)
+  - member variables start with an underscore, multiple words are combined in camel case as well (e.g. _isActive)
+  - use the Doxygen JavaDoc/C - notation to document your code (this notation starts with a slash followed by 2 stars)
+ */

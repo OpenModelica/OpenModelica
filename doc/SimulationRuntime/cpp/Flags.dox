@@ -1,0 +1,43 @@
+/*!
+  \page Flags
+  There are several flags that can be passed to a binary which is linked against the simulation runtime. The most important flags
+  are automatically built into the executable. Alternatively an additional script file (.sh or .bat) passes the flags to the executable.
+  Moreover flags of the C runtime are mapped to the respective Cpp flags. This is needed when running in OMEdit.
+
+  Flag                                                                | Description                                                                                              |
+  ------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------- |
+  - -help                                                             | Produce the help message                                                                                 |
+  -R \<PATH\>                                                         | Path to the cpp runtime libraries (required)                                                             |
+  -M \<PATH\>                                                         | Path to the modelica system library (required)                                                           |
+  -F \<NAME\>                                                         | Name of the results file (required)                                                                      |
+  -S \<VALUE\>                                                        | Simulation start time (default: 0.0)                                                                     |
+  -E \<VALUE\>                                                        | Simulation stop time (default: 1.0)                                                                      |
+  -H \<VALUE\>                                                        | Simulation step size (default: 0.0)                                                                      |
+  -G \<VALUE\>                                                        | Number of output intervals in equidistant grid (default: 500)                                            |
+  -T \<VALUE\>                                                        | Tolerance for the time integration algorithm (default: 1e-6)                                             |
+  -I \[\"euler\"\|\"peer\"\|\"rtrk\"\|\"ida\"\|\"cvode\"\|\"dassl\"\] | Time integration algorithm that should be used (default: \"euler\")                                      |
+  -L \[\"umfpack\"\|\<NONLINEARSOLVER\>\]                             | Solver for linear equation systems that should be used (default: \"kinsol\")                             |
+  -N \[\"newton\"\|\"kinsol\"\|\"hybrj\"\]                            | Solver for non linear equation systems that should be used (default: \"kinsol\")                         |
+  -V \<VALUE\>                                                        | This flag can be added multiple times. Pass a key=value pair as argument. See the description below.     |
+  -A \<VALUE\>                                                        | Timeout in seconds for the simulation (default: 360)                                                     |
+  -O \[\"all\"\|\"step\"\|\"none\"\]                                  | The time points that should be written to the result file (default: all)                                 |
+  --nls-continue                                                      | The non linear solver will continue if it does not reach the given accuracy                              |
+
+  There are several settings available to control the behavior of the logger. You can specify multiple key-value-pairs to set the log-output for several log-categories. All key-value-pairs have the form LOG_CATEGORY=LOG_LEVEL. The following categories are available:
+   - \b init logger messages related to the initialization phase
+   - \b nls output of the non linear solver
+   - \b ls output of the linear solver
+   - \b solv messages related to the time integration algorithm
+   - \b output information related to the output algorithm (e.g. matfile writer)
+   - \b event logger messages that belong to the event handling part of the simulation
+   - \b model output of the model equations etc. 
+   - \b other messages that belong to other parts, not specified by the categories above
+
+  All logger messages belong to a log level. If a category is set to a certain level, all messages are written that have the given level or a higher one.
+   - \b error One critical errors are displayed.
+   - \b warning Contains messages that can influence the simulation performance or simulation results
+   - \b info Just some information, e.g. the number of steps the time integration algorithm took
+   - \b debug Output related to debug information like function invocations etc.
+
+  To set a specific level for all categories, use all=LOG_LEVEL.
+*/

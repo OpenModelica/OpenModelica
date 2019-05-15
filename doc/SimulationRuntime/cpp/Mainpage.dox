@@ -1,0 +1,8 @@
+/**
+\mainpage Overview
+
+This is the documentation of the C++ Simulation-Runtime, which is delivered as part of OpenModelica. Besides the source code documentation, there are some further informations given in this documentation. Please take a look into the related pages, to get some information about the flags and the coding style.
+
+There are some open things TODO!
+\todo The linaer solver is set to "kinsol", but lapack is used instead
+*/

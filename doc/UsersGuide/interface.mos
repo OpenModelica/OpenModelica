@@ -1,0 +1,40 @@
+loadString("
+function trim
+  input String s;
+  output String o;
+protected
+  String a[1];
+algorithm
+  (,a) := OpenModelica.Scripting.regex(s, \"[^ ].*\");
+  o := a[1];
+end trim;
+
+function reSTInterface
+  input OpenModelica.Scripting.TypeName cl;
+  output String out;
+protected
+  String s;
+  String strs[:] = OpenModelica.Scripting.typeNameStrings(cl);
+  String doc[3] = OpenModelica.Scripting.getDocumentationAnnotation(cl);
+  String doc1 = doc[1];
+  String cmt = \"\";
+algorithm
+  out := \"\\n.. _\" + strs[end] + \" :\\n\\n\" + strs[end] + \"\\n\" + sum(\"^\" for c in 1:stringLength(strs[end])) + \"\\n\";
+  cmt := sum(\"  \" + trim(l) + \"\\n\" for l in OpenModelica.Scripting.strtok(OpenModelica.Scripting.getClassComment(cl), \"\\n\"));
+  cmt := if (cmt == \"\") then \"\" else \"::\\n\\n\" + cmt + \"\\n\";
+  out := out + cmt;
+  OpenModelica.Scripting.writeFile(\"tmp/interface.inc.tmp\", doc1, false);
+  // Disable wrapping in order to fix some modelica:// links
+  OpenModelica.Scripting.system(\"pandoc --wrap=none -t rst -f html -o tmp/interface.inc.tmp.rst tmp/interface.inc.tmp\");
+  OpenModelica.Scripting.system(\"sed -i= 's,`\\\\([^`]*\\\\) <modelica://OpenModelica.Scripting.\\\\([A-Za-z0-9_-]*\\\\)>`__,:ref:`\\\\1 <\\\\2>`,g' tmp/interface.inc.tmp.rst\");
+  out := out + \"\\n\" + sum(\"\" + l + \"\\n\" for l in OpenModelica.Scripting.stringSplit(OpenModelica.Scripting.readFile(\"tmp/interface.inc.tmp.rst\"), \"\\n\")) + \"  \\n\";
+  s := OpenModelica.Scripting.list(cl, interfaceOnly=true);
+  if stringLength(s) > 0 then
+    out := out + \"\\n.. code-block :: modelica\\n\\n\";
+    out := out + sum(\"  \" + l + \"\\n\" for l in OpenModelica.Scripting.strtok(s, \"\\n\")) + \"  \\n\";
+  end if;
+end reSTInterface;
+");
+getErrorString();
+
+writeFile("interface.inc", sum(reSTInterface(cl) for cl guard isFunction(cl) and not isPartial(cl) and not regexBool(typeNameString(cl), "Internal") in getClassNames(OpenModelica.Scripting, sort=true, recursive=true)));getErrorString();

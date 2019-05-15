@@ -1,0 +1,4740 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{microtype}
+\DisableLigatures{encoding = *, family = * }
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\end_preamble
+\use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3cm
+\rightmargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+PDE extension
+\begin_inset Newline newline
+\end_inset
+
+Changes over Levon's extension
+\end_layout
+
+\begin_layout Author
+Jan Šilar
+\begin_inset Newline newline
+\end_inset
+
+jan.silar@lf1.cuni.cz
+\end_layout
+
+\begin_layout Standard
+New extension is compared to Levon's work (
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+), mostly chapter 4
+\end_layout
+
+\begin_layout Part*
+Domains 
+\series bold
+Geometry Definition
+\end_layout
+
+\begin_layout Paragraph*
+
+\series bold
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+ -- 4.3.1.1 and 4.3.1.2
+\end_layout
+
+\begin_layout Standard
+Saldamli defines domain shape by listing its boundaries.
+ Individual boundaries (points in 1D, curves in 2D resp.
+ surfaces in 3D) are describes by shape-functions.
+ Shape-function maps intervals ([0,1] for curves, [0,1]
+\begin_inset Formula $\times$
+\end_inset
+
+[0,1] for surfaces) onto the boundary.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+Example rectangular domain
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Box Frameless
+position "c"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+class Line
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+extends Boundary(ndims=2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+parameter Point p1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+parameter Point p2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+redeclare function shape
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+input Real u[1];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+output Real coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+coord := p1 + u*(p2-p1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+end Line;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type RectangularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Cartesian2D (boundary ={left, bottom, right, top});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real w;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real h;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p2 = Point(p.x+w, p.y);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p3 = Point(p.x+w, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p4 = Point(p, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line bottom = Line(p, p2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line right = Line(p2, p3);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line top = Line(p3, p4);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line left = Line(p4, p);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end RectangularDomain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Example half-circular domain according to 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class Arc
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Boundary(ndims=2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point c = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real r = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a_start = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a_end = 2*Pi;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+redeclare function shape
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+input Real tau;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//tau in [0,1]
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+output Real coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+coord := c + r * { cos(a_start + (a_end - a_start) * tau),
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset Phantom Phantom
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+coord := c + r * { 
+\end_layout
+
+\end_inset
+
+sin(a_start + (a_end - a_start) * tau) };
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Arc;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class Line
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Boundary(ndims=2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p1 = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p2 = {1,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+redeclare function shape
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+input Real h;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//h in [0,1]
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+output Real coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+coord := p1 + (p2 - p1) * h;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Line;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Half-circularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Cartesian2D(boundary = {arc, line});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Arc arc (c = {0,0}, r = 2, a_start = Pi/2, a_end = Pi*3/2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line line (p1 = {0,-2}, p2 = {0,2});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Half-circularDomain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph*
+\begin_inset VSpace defskip
+\end_inset
+
+
+\series bold
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This approach doesn't work well in 3D: if boundaries of the whole domain
+ are composed of several surfaces, parameters (arguments) of shape-functions
+ of these surfaces must be bounded not just in 
+\begin_inset Formula $[0,a]\times[0,b]$
+\end_inset
+
+ interval but in some more complex set for each boundary surface so that
+ they form a continuous boundary, e.g.
+ see fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Boundary-in-3D"
+
+\end_inset
+
+.
+ And there is no way to write this in Levon's extension.
+\end_layout
+
+\begin_layout Standard
+Even if the syntax allowed this, it would be difficult for the user to determine
+ these sets where parameters are bounded.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/Boolean_difference.PNG
+	width 40col%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Boundary in 3D
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Boundary-in-3D"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+There is also no simple way to generate grid points during translation/solution.
+\end_layout
+
+\begin_layout Paragraph*
+
+\series bold
+Alternative approach
+\end_layout
+
+\begin_layout Standard
+We define explicitely both interior and boundaries of the domain (these
+ elements are called 
+\emph on
+regions
+\emph default
+ here).
+ 
+\end_layout
+
+\begin_layout Standard
+
+\series medium
+We have new built-in
+\series default
+ type 
+\family typewriter
+Coordinate:
+\family default
+
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Coordinate = Real;
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace defskip
+\end_inset
+
+
+\series medium
+Another new built-in type is
+\family typewriter
+\series default
+ Domain
+\family default
+.
+ It contains also 
+\family typewriter
+type Region
+\family default
+ to represent interior and boundaries of the domain.
+ 
+\family typewriter
+Region
+\family default
+ is nested in 
+\family typewriter
+Domain
+\family default
+ to prevent instantiating 
+\family typewriter
+Region
+\family default
+ outside a 
+\family typewriter
+Domain
+\family default
+.
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Domain
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+type Region 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndim; //dimension of the region
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[ndims][2] interval;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end Region;
+\family default
+
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+replaceable function shapeFunc 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real u[ndim]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real coord[ndim]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shapeFunc; 
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndimD; //dimension of the domain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate coord[ndimD];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+replaceable Region interior; //main region of the domain
+\begin_inset Newline newline
+\end_inset
+
+end Domain;
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace defskip
+\end_inset
+
+
+\family typewriter
+type Domain
+\family default
+ is extended by domain types for particular dimensions, e.g.
+ in 2D:
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Domain2D 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain(ndimD = 2); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+type Region0D = Region(ndim = 0); //for points
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+type Region1D = Region(ndim = 1); //for boundaries
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+type Region2D = Region(ndim = 2); //for interior
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Domain2D;
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace defskip
+\end_inset
+
+These types are extended by particular domains, e.g.:
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type DomainRectangle2D 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real lx = 1; //length in x dir.
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real ly = 1; //lenght in y dir.
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; //alias for the first coordinate
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2]; //alias for the second coordinate
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(x in {0,lx}, y in {0,ly}); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D top(x in {0,ly}, y = ly); //boundaries 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D right(x = lx, y in {0,ly}); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D bottom(x in {0,ly}, y = 0); 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D left(x = 0, y in {0,ly});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+New syntax (
+\family typewriter
+x in {0,l
+\family default
+x}) is used here to specify the interval for the coordinate x within the
+ region.
+ 
+\end_layout
+
+\begin_layout Standard
+If the domain geometry is more complex than just cartesian product of intervals
+ we define all regions of the domain using one common
+\emph on
+ shape-function
+\emph default
+ (or assignment or equation) and for each region we specify intervals for
+ the shape-function arguments (idea from Peters Book 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
+
+\end_inset
+
+).
+ This approach isn't more general (actualy less), but is consistent in 1,
+ 2 and 3D and (to me) si more natural.
+ Example half-circular domain:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type DomainHalf-circle 
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//1.
+ variant
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius = 2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[2] c = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(interval = {{O,1},{O,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D arc(interval = {1,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(interval = {{-1,1},0});
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+redaclare function shapeFunc
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real coordinate[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coordinate := c + radius * r * { cos(Pi*(1/2 + v), 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Phantom Phantom
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coordinate := c + radius * r * { 
+\end_layout
+
+\end_inset
+
+sin(Pi*(1/2 + v) };
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shapeFunc;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainHalf-circle;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Shape-function is not a pure function (here parameters 
+\family typewriter
+c 
+\family default
+and 
+\family typewriter
+radius
+\family default
+ are defined outside the function body) and thus it is not supported in
+ current Modelica.
+ The shape-function may be replaced by just algorithm inserted directly
+ into the domain class to avoid this problem.
+ Parameters of shape-function are replaced by new general auxiliary coordinate
+ system (
+\family typewriter
+r,v
+\family default
+ here) (that may not have a good physical meaning in some cases):
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type DomainHalf-circle
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//2.
+ variant
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius = 2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[2] c = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(r in {O,1}, v in {O,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D arc(r = 1, v in {0,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(r in {-1,1}, v = 0);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coord := c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainHalf-circle;
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Probably the algorithm is not needed and may be replaced by equations:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type DomainHalf-circle
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//3.
+ variant
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x(name = "cartesian") = coord[1]; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y(name = "cartesian") = coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius = 2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[2] c = {0,0};
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(r in {O,1}, v in {O,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D arc(r = 1, v in {0,1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D line(r in {-1,1}, v = 0);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+equation
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+coord = c + radius * r * { cos(Pi*(1/2 + v), sin(Pi*(1/2 + v) };
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainHalf-circle;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+One of these approches should be chosen.
+ I prefare the third one.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="3">
+<features tabularvalignment="middle">
+<column alignment="left" valignment="top" width="0">
+<column alignment="left" valignment="top" width="0">
+<column alignment="left" valignment="top" width="0">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Levon
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Peters book
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Peters book --modified
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+class Line
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+extends Boundary(ndims=2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+parameter Point p1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+parameter Point p2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+redeclare function shape
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+input Real u[1];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+output Real coord[2];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+coord := p1 + u*(p2-p1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\family default
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+end Line;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+type RectangularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Cartesian2D (boundary ={left, bottom, right, top});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real w;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real h;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p2 = Point(p.x+w, p.y);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p3 = Point(p.x+w, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p4 = Point(p, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line bottom = Line(p, p2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line right = Line(p2, p3);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line top = Line(p3, p4);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Line left = Line(p4, p);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end RectangularDomain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainRectangle2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real Lx;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real Ly;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real ax;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real ay;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+function shapeFunc
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+input Real v1, v2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+output Real x = ax + Lx * v1, y = ay + Ly * v2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+end shapeFunc;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate x (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate y (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region2D interior(shape = shapeFunc, interval = {{0,1},{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D right(shape = shapeFunc, interval = {1,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D bottom(shape = shapeFunc, interval = {{0,1},0});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D left(shape = shapeFunc, interval = {0,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D top(shape = shapeFunc, interval = {{0,1},1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainRectangle2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate x (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate y (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a1; //x-coordinate of left side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a2; //y-coorinate of lower side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real b1; //x-coordinate of right side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real b2; //y-coorinate of upper side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region2D interior (x in {a1,b1}, y in {a2,b2}); //or rather (x,y) in {a1,b1}@{a2
+,b2}
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D right (x = a, y in {a2,b2});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D bottom (x in {a1,b1}, y = b1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D left (x = a1, y = {a2,b2});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D top (x in {a1,b1}, y = b2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type CircularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Cartesian2D(boundary = circle);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Point center;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Circle circle (c = center, r = radius);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end CircularDomain
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainCircular2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real cx = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real cy = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+function shapeFunc
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real x,y;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+x:=cx + radius * r * cos(2 * C.pi * v)
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+y:=cy + radius * r * sin(2 * C.pi * v);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shapeFunc;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x (name="cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y (name="cartesian";
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D boundary(shape = shapeFunc, interval = {1,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainCircular2D;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "33col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainCircular2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+extends Domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real radius = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real cx = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real cy = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate x (name="cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate y (name="cartesian";
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate r (name="polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Coordinate theta (name="polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region2D interior(theta in (O,2*C.pi), r in (O,radius));
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region1D boundary(theta in (O,2*C.pi), r = radius);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+equation
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+x = r*cos(theta) + cx;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+y = r*sin(theta) + cy;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainCircular2D;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+More complex geometries
+\end_layout
+
+\begin_layout Standard
+May be more complex geometries could be defined using 
+\emph on
+Constructive Solid Geometry
+\emph default
+ -- it is applying union, intersection and difference on previously defined
+ shapes.
+ The syntax is not designed already.
+ It should be also possible to define domain in external file from some
+ CAD app.
+\end_layout
+
+\begin_layout Part*
+Differential operators
+\end_layout
+
+\begin_layout Standard
+4.3.2
+\end_layout
+
+\begin_layout Section*
+Partial derivatives
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.3.2.1
+\end_layout
+
+\begin_layout Standard
+e.g.
+ 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial u}{\partial t}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u), 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+der(u,x,y)
+\end_layout
+
+\begin_layout Paragraph*
+Further specification
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+for higher order time derivative and mixed time and space derivative, we
+ write 
+\family typewriter
+time 
+\family default
+explicitly, 
+\family typewriter
+e
+\family default
+.g.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,time,time)
+\family default
+ for 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial^{2}u}{\partial t^{2}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+der(u,x,time)
+\family default
+ for 
+\family typewriter
+
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+
+\family default
+.
+\end_layout
+
+\begin_layout Paragraph*
+\begin_inset Note Note
+status open
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+There is no way to write mixed time and space derivative 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+ in this notation.
+\end_layout
+
+\begin_layout Plain Layout
+This notation doesn't agree with mathematics, where we have different operators
+ for ordinary (
+\begin_inset Formula $\frac{du}{dx}$
+\end_inset
+
+) and partial (
+\begin_inset Formula $\frac{\partial u}{\partial x}$
+\end_inset
+
+) derivatives.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+der(u)
+\family default
+ for partial time derivative is confusing.
+\end_layout
+
+\begin_layout Paragraph*
+Alternative approach
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Formula $\frac{\partial u}{\partial t}$
+\end_inset
+
+
+\family default
+ ..
+
+\family typewriter
+ pder(u,time)
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+
+\family default
+ ..
+ 
+\family typewriter
+pder(u,x,y)
+\end_layout
+
+\begin_layout Plain Layout
+Now we can also write 
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial t}$
+\end_inset
+
+ as 
+\family typewriter
+pder(u,x,time)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+
+\series bold
+Normal derivative and normal vector
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.3.2.2
+\end_layout
+
+\begin_layout Standard
+normal vector is implicit member of domain
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Normal vector makes sense only in regions of dimension 
+\emph on
+n-1
+\emph default
+ in 
+\emph on
+n
+\emph default
+-dimensional domain (i.e.
+ surface in 3D, curve in 2D and point in 1D).
+ There is no normal vector in 
+\emph on
+n
+\emph default
+ dimensional region and infinitely many in less than 
+\emph on
+n-1
+\emph default
+ dimensional regions.
+\end_layout
+
+\begin_layout Paragraph*
+Alternative approach
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+normal vector 
+\family typewriter
+n
+\family default
+ is implicit member of all 
+\emph on
+n-1
+\emph default
+ dimensional regions in 
+\emph on
+n
+\emph default
+-dimensional domain.
+ So we write
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+pder(u,omega.boundary.n) = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+A shorten notation is suggested in next section.
+\end_layout
+
+\begin_layout Standard
+Using normal vector outside differential operators should be also possible
+ e.g.:
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+field Real[3] flux;
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+flux*omega.boundary.n = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Accessing coordinates and normal vector in der() operator
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+not discussed
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Coordinates and normal vector are defined within the domain class, but they
+ are used in equations that are written outside domains.
+ Thus they should be accessed using 
+\family typewriter
+domainName.
+
+\family default
+ prefix (e.g.
+ 
+\family typewriter
+omega.x
+\family default
+), which is tedious.
+\end_layout
+
+\begin_layout Standard
+In the example in 4.3.2.2 in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+ the normal vector 
+\family typewriter
+n
+\family default
+ is reached outside the domain class without 
+\family typewriter
+domainName.
+
+\family default
+ prefix even thou it is defined in the domain
+\family typewriter
+.
+
+\family default
+ It is not explained how this is enabled.
+\end_layout
+
+\begin_layout Paragraph*
+Solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Fields are differentiated with respect to coordinates or normal vector only
+ (or may be also some other vector for directional derivative??).
+ Thus in place of second and following operands of 
+\family typewriter
+der()
+\family default
+ operator may be given only coordinates or normal vector.
+ So variables in this positions may be treated specially and coordinates
+ and normal vector of the domain of the field being differentiated may be
+ accessed without the 
+\family typewriter
+domainName.
+
+\family default
+ prefix here.
+\end_layout
+
+\begin_layout Standard
+If coordinates or normal vector is used in different context (not in place
+ of second and following operands of 
+\family typewriter
+der()
+\family default
+), an alias for it may be defined in the model, e.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Coordinate x = omega.x; 
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Perhaps usage of this shortened notation was intended even in the original
+ extension but was not mentioned.
+\end_layout
+
+\begin_layout Part*
+Start values of derivatives
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+not discussed
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Higher derivatives are allowed for fields thus we need to assign initial
+ values to its derivatives sometimes.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+New attribute 
+\family typewriter
+startTD
+\family default
+ for field variables to assign its first time derivative start value is
+ introduced.
+ Usage e.g.:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+field Real u(start = 0, startDer = sin(omega.x*omega.y));
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+Initial values for higher time derivatives or space derivatives must be
+ assigned in 
+\family typewriter
+initial equation
+\family default
+ section.
+\end_layout
+
+\begin_layout Part*
+
+\family typewriter
+In
+\family default
+ operator
+\end_layout
+
+\begin_layout Standard
+Just a remark: All equations containing a field variable (defined on a domain)
+ hold on particular region of the domain.
+ If the region is not specified (using 
+\family typewriter
+
+\begin_inset Quotes eld
+\end_inset
+
+in domain.region
+\begin_inset Quotes erd
+\end_inset
+
+
+\family default
+) region 
+\family typewriter
+interior
+\family default
+ is assumed implicitly.
+\end_layout
+
+\begin_layout Part*
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Part*
+Usage of 
+\family typewriter
+in
+\family default
+ operator
+\end_layout
+
+\begin_layout Section*
+PDEs
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+see 4.3.3
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+in
+\family default
+ operator is used for BCs to specifie on which region they hold.
+ It is not used for PDEs.
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+PDEs hold on particular regions (usualy 
+\family typewriter
+interior
+\family default
+) as well.
+ Specification of region for BC but not for PDE is confusing.
+ Besides that, the domain may be splited into separate regions and different
+ PDE may hold on each region.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+We suggest to use 
+\family typewriter
+in
+\family default
+ operator also in PDEs to specifie the region, as it is also in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
+
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Accessing field values
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.2.4, in function-like style
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It is not consistent with curent Modelica -- to access values of regular
+ variables in particular time in this function-like style is also not allowed.
+\end_layout
+
+\begin_layout Standard
+If more then one coordinate system are defined in a domain (discussed later),
+ it is not clear which coordinates are used in the function-like expression.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Regions consisting of one point and the 
+\family typewriter
+in
+\family default
+ operator will be used instead to represent the particular point.
+ E.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+model heatPID
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+record Room extends DomainBlock3D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Region0D sensorPosition(shape = shapeFunc, range = {{1, 1}, {0.5, 0.5}, {0.5,
+ 0.5}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end Room
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Room room(...)
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+field Real T(domain = room);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Real Ts;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+equation
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Ts = T in room.sensorPosition;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end heatPID;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+in
+\family default
+ operator will be probably used also to match regions from different domains
+ and to write equations (boundary conditions) relating fields from different
+ domains.
+ The syntax is not developed yet.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Modifications presented below are not so important and are questionable.
+ 
+\end_layout
+
+\begin_layout Part*
+Coordinates
+\end_layout
+
+\begin_layout Paragraph*
+Originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.3.1.1 and 4.3.1.3
+\end_layout
+
+\begin_layout Standard
+There are two arrays for coordinates predefined in the built-in 
+\family typewriter
+Domain
+\family default
+ type.
+ 
+\family typewriter
+cartesian
+\family default
+ for cartesian coordinates and 
+\family typewriter
+coord
+\family default
+ for arbitrary coordinates specified by the user.
+ No other coordinates may be defined except aliases to elements of these
+ predefined arrays.
+\end_layout
+
+\begin_layout Paragraph*
+Problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+May be this is not flexible enough.
+ User may need more different coordinate systems.
+ 
+\end_layout
+
+\begin_layout Paragraph*
+Solution
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+new type C
+\family typewriter
+oordinate
+\family default
+ to define coordinates.
+ Usage e.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Coordinate coordName;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The array 
+\family typewriter
+coord
+\family default
+ in the built-in 
+\family typewriter
+Domain
+\family default
+ type may be left out then.
+\end_layout
+
+\begin_layout Part*
+Field literal constructor
+\end_layout
+
+\begin_layout Paragraph*
+originally
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+see 4.2.2, e.g.: 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = field(2*a+b for (a,b) in omega)
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+where iterator variables 
+\family typewriter
+(a,b)
+\family default
+ exist only in constructor expression and represent coordinates in omega
+ (probably 
+\family typewriter
+coord,
+\family default
+ but may be 
+\family typewriter
+cartesian,
+\family default
+ it is not clear from the document.)
+\end_layout
+
+\begin_layout Paragraph*
+problem
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series medium
+This syntactic feature is redundant (explained in next paragraph).
+
+\series default
+ Another problem is that it enables to define the field values in terms
+ of only one coordinate system.
+ There may be two (or more) coordinate systems defined and it may be useful
+ to be able to define fields using any of them.
+\end_layout
+
+\begin_layout Paragraph*
+solution
+\end_layout
+
+\begin_layout Standard
+
+\series medium
+Coordinate variables are special kind of fields.
+ (Coordinates vary their value over space as other fields.) Thus any expression
+ depending on coordinates should be evaluated to another field.
+ 
+\series default
+So we can write just
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = 2*omega.x+omega.y;
+\end_layout
+
+\begin_layout Paragraph*
+
+\series medium
+According to the section 
+\begin_inset Quotes eld
+\end_inset
+
+In operator
+\begin_inset Quotes erd
+\end_inset
+
+ this is equivalent to
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+u = 2*omega.x+omega.y
+\begin_inset space ~
+\end_inset
+
+in omega.interior;
+\end_layout
+
+\begin_layout Standard
+If coordinates are used often (not only in 
+\family typewriter
+pder()
+\family default
+), an alias for it may be defined to avoid 
+\family typewriter
+
+\begin_inset Quotes eld
+\end_inset
+
+omega.
+\begin_inset Quotes erd
+\end_inset
+
+
+\family default
+ prefix, e.g.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+Coordinate x = omega.x; 
+\end_layout
+
+\begin_layout Part*
+Further problems
+\end_layout
+
+\begin_layout Standard
+How to write equations (mainly BC) connecting fields defined in different
+ domains (some kind of distributed connectors)?
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "bibliography"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

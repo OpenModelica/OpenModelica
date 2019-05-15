@@ -1,0 +1,738 @@
+.\" --------------------------------------------------------------------
+.\" Title 
+.\" --------------------------------------------------------------------
+.
+.TH omc 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
+.
+.
+.\" --------------------------------------------------------------------
+.SH "NAME"
+.\" --------------------------------------------------------------------
+.
+omc \- OpenModelica Compiler/Interpreter a Modelica compiler based on free
+software
+.
+.
+.\" --------------------------------------------------------------------
+.SH "HINT"
+.\" --------------------------------------------------------------------
+.
+This man page of omc \- OpenModelica Compiler/Interpreter is in most
+parts a copy of the man page from omc version 1.4.5. A description of new
+parameters aren't included in the man page of this release candidate.
+The maintainer will include the description of new parameters in the final
+version of omc.
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SYNOPSIS"
+.\" --------------------------------------------------------------------
+.
+.BR "omc" " [" "omcOptions" "] " "" "[" "runtimeOptions \- general commands" "]"
+.RB "[" "runtimeOptions \- tuning commands" "]"
+.RB "[" "runtimeOptions \- tracing commands" "]"
+.RB "[" "runtimeOptions \- debugging commands" "]"
+.RI "[" "optionalFiles" "]"
+.
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B omc
+is a compiler that translates source code written in Modelica language to C++.
+With a suitable C++ compiler \fBomc\fP creates a executable simulation file,
+runs the simulation file and presents the result in a graphical view.
+.P
+The executable \fBomc\fP knows two running modes, the direct mode and the
+server mode.
+.P
+In direct mode \fBomc\fP act upon the delivered model or script
+file. Model files \fIModel.mo\fP or \fIModel.mof\fP will be translated in
+flattened Modelica source code. The result will be send to the standard
+output. Using the \fBomcOption +s\fP followed by a \fIModel.mo\fP file will
+create a C++ source code file, a make file and several support files. These
+files will be stored in the current working directory.
+.P
+Script files \fIScript.mos\fP includes \%OpenModelica control commands.
+These commands control the executable behavior of \fBomc\fP. With a script
+\fBomc\fP can load, translate, build, simulate a model and plot the result
+of a simulation. The plot of a simulation result ensues with the aid of the
+JAVA client Ptolemy or the Qt client graphWindow. Consequently \fBomc\fP can
+execute plot commands only in a X\-Windows environment like GNOME or KDE.
+All from the script produced files, the C++ source code file, the support
+files, the simulation file and the plot file will be stored in the current
+working directory. Consequently \fBomc\fP shouldn't be started from the
+user's home directory or another sensitive directory.
+.P
+In server mode \fBomc\fP runs in the background and waits for inputs from a
+client. The Debian package of the \%OpenModelica Project includes the clients
+\fBOMNotebook\fP, \fBOMShell\fP and \fBOMShell\-terminal\fP. The clients
+\%\fBOMNotebook\fP and \fBOMShell\fP are Qt\-Windows applications. The client
+\%\fBOMShell-terminal\fP is a console application and runs in most terminal 
+like gnome\-terminal. The communication between the clients
+and the server can be based on \fBCORBA\fP or on \fBBSD\-sockets\fP.
+.P
+More documentation will be found in the enclosed \%OpenModelica System
+Documentation or the \%OpenModelica Users Guide. The documentation
+\%OpenModelica System Documentation shows how to run \fBomc\fP in
+stand alone mode. Section \fBDOCUMENTATION\fP of this manual page shows
+where the above mentioned documentations are stored on this computer system.
+The section \fBUSING OMC\fP shows how to run the compiler \fBomc\fP.
+.P
+\%OpenModelica Compiler/Interpreter \fBomc\fP is the work of the members from
+Programming Environment Laboratory (PELAB) of the Department of Computer and
+Information Science (IDA) in the Linkoeping University (LiU). The goal of The
+\%OpenModelica Project is the creation of a complete \%Modelica modeling,
+compilation and simulation environment based on free software. The
+\%OpenModelica Project is supported by The Open Source \%Modelica Consortium
+(OSMC).
+.P
+Modelica is a formal computer language for object\-oriented modeling and 
+simulation of technical systems.
+.
+.
+.\" --------------------------------------------------------------------
+.SH OPTIONS
+.\" --------------------------------------------------------------------
+.
+.
+.\" --------------------------------------------------------------------
+.SS omcOptions:
+.\" --------------------------------------------------------------------
+.
+.TP
+.B ++v, +version
+Will print the version and exit.
+.TP
+.B +s
+Generate simulation code.
+.TP
+.BI +s " Model.mo"
+Will generate code for the model \*[lq]Model\*[rq]:
+.P
+.RS
+.PD 0
+.IP "\fIModel.cpp\fP" 22
+the model C++ code
+.IP "\fIModel_functions.cpp\fP" 22
+the model functions C++ code
+.IP "\fIModel.makefile\fP" 22
+the makefile to compile the model
+.IP "\fIModel_init.txt\fP" 22
+the initial values for parameters
+.PD
+.RE
+.TP
+.B +d=interactive
+Will start \fBomc\fP as a server listening on the socket interface.
+.TP
+.B +d=interactiveCorba
+Will start \fBomc\fP as a server listening on the CORBA interface.
+.TP
+.B +c=corbaName
+Works together with +d=interactiveCorba. It will start \fBomc\fP with
+a different CORBA session name. This way multiple \fBomc\fP compilers
+can be started.
+.TP
+.BI +annotationVersion=< "value">
+What annotation version should we use. Accepted values are 1.x, 2.x or 3.x.
+.RS
+.IP "Default annotation value:" 26
+2.x
+.RE
+.TP
+.B +noSimplify
+Do not simplify expressions.
+.RS
+.TP
+Default is to simplify.
+.RE
+.TP
+.B +q
+Run in quiet mode, output nothing.
+.TP
+.B +g=[Modelica|MetaModelica]
+Accept Modelica or MetaModelica grammar and semantics.
+.TP
+.BI +d=< "flags">
+Set debug flags.
+.PD 0
+.P
+.RS
+.IP "NOTE:" 7
+Read more about debug flags in the OpenModelica System Documentation, 
+\*[lq]Compiler Debug Flags\*[rq]. See section
+\fBDOCUMENTATION\fP in this manual page, for more informations about
+the above mentioned document.
+.RE
+.PD
+.TP
+.B +d=bltdump
+Dump in the blt form.
+.TP
+.B +d=failtrace
+Print what function fail.
+.TP
+.B +d=parsedump
+Dump the parsing tree.
+.TP
+.B +d=parseonly
+Will only parse the given file and exit.
+.TP
+.B +d=dynload
+Display debug information about dynamic loading of compiled functions.
+.P
+.
+.
+.\" --------------------------------------------------------------------
+.SS runtimeOptions \- general commands:
+.\" --------------------------------------------------------------------
+.
+.TP
+.B \-help
+Prints the RML runtime options and exits.
+.P
+.
+.
+.\" --------------------------------------------------------------------
+.SS runtimeOptions \- tuning commands:
+.\" --------------------------------------------------------------------
+.
+.TP
+.B \-log
+Prints runtime log information at the program exit.
+.TP
+.B \-gcgag
+Prints garbage collector log information at the program exit.
+.TP
+.B \-bench
+Prints running time and other log information at the program exit.
+.TP
+.B \-no-stack-check
+Instructs the runtime not to check for stack overflow.
+.TP
+.BI \-stack-size=< "size">
+Instructs the runtime to allocate a stack of specified size.
+.TP
+.BI \-young-size=< "size">
+Instructs the runtime to allocate a young size of specified size.
+.P
+.
+.
+.\" --------------------------------------------------------------------
+.SS runtimeOptions \- tracing commands:
+.\" --------------------------------------------------------------------
+.
+.TP
+.B \-trace
+Prints all the function names during execution \- default to 'no'.
+.PD 0
+.P
+.RS
+.IP "NOTE:" 7
+Compiled with -ftrace
+.RE
+.PD
+.TP
+.B \-no-trace
+Disable printing of all the function names \- default to 'yes'.
+.PD 0
+.P
+.RS
+.IP "NOTE:" 7
+Compiled with -ftrace
+.RE
+.PD
+.P
+.
+.
+.\" --------------------------------------------------------------------
+.SS runtimeOptions \- debugging commands:
+.\" --------------------------------------------------------------------
+.
+.RS
+.IP "NOTE:" 7
+If you don't specify one of the ports below, the executable will
+run without any debugging.
+.RE
+.TP
+.BI \-dbgCmdPort=< "port">
+Open the server localhost:CmdPort and listen for commands from the client.
+.TP
+.BI \-dbgReplyPort=< "port">
+Open the server localhost:ReplyPort and send reply to commands from the client.
+.TP
+.BI \-dbgEventPort=< "port">
+Open the server localhost:EventPort and send async events to the client.
+.TP
+.BI \-dbgSignalPort=< "port">
+Open the server localhost:SignalPort and listen to async events from
+the client.
+.TP
+.B \-dbgSocket
+Debug the socket communication.
+.TP
+.B \-debugAll
+Dumps all the calls and the values of variables to standard output.
+.PD 0
+.P
+.RS
+.IP "NOTE:" 7
+Can be extremely large
+.RE
+.PD
+.P
+.
+.
+.\" --------------------------------------------------------------------
+.SS optionalFiles:
+.\" --------------------------------------------------------------------
+.
+.TP
+.I Model.mo
+OpenModelica or Modelica model source code file
+.TP
+.I Model.mof
+OpenModelica or Modelica flattened model source code file
+.TP
+.I Script.mos
+OpenModelica script file
+.
+.
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.\" --------------------------------------------------------------------
+.
+.TP
+.B OPENMODELICAHOME
+This variable contains the absolute path towards the \%OpenModelica
+Compiler/Interpreter executable \fBomc\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/
+.RE
+.TP
+.B OPENMODELICALIBRARY
+Absolute path towards the \%OpenModelica library \fBModelica\fP.
+.RS
+.IP "Default directory:" 19
+.I /usr/share/omlibrary/msl31/:/usr/share/omlibrary/common/
+.RE
+.TP
+.B MODELICAUSERCFLAGS
+Extend the compiler variable CFLAGS in the make control file
+\fIModel.makefile\fP by user supplied optimization flags. The variable must
+be set before the start of the compiler \fBomc\fP or before the execution
+of the make file \fIModel.makefile\fP via the command make -f
+\fIModel.makefile\fP.
+.
+.
+.\" --------------------------------------------------------------------
+.SH FILES
+.\" --------------------------------------------------------------------
+.
+The compiler \fBomc\fP needs some support files. These files are C++ include
+files, libraries, shell scripts and executables. The following subsections
+list the required files and there storage place.
+.
+.
+.\" --------------------------------------------------------------------
+.SS Executables:
+.\" --------------------------------------------------------------------
+.
+The following executables supports the various \%OpenModelica plot commands.
+How to use these applications is shown in the 4th example in section
+\fBUSING OMC\fP.
+.
+.IP \(bu 3
+The Qt based graphWindow application is a advanced variant of Ptolemy. The
+\%OpenModelica command plot() and his variants use graphWindow.
+.
+.RS
+.IP "File:" 7
+.I OMPlotWindow
+.PD 0
+.IP "Path:" 7
+.I /usr/bin/
+.PD
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SS Shell\-Scripts:
+.\" --------------------------------------------------------------------
+.
+The script files supports \fBomc\fP during the build of the executable
+simulation file and the presentation of the simulation results via Ptolemy.
+.
+.IP \(bu 3
+Compile execute the GNU \fBmake\fP utility with a make control file
+\fI$1.makefile\fP as parameter. The shell variable \fB$1\fP is the name of
+the simulation model. The \%OpenModelica command simulate() triggers via
+\fBomc\fP this script.
+.
+.RS
+.IP "File:" 7
+.I Compile
+.PD 0
+.IP "Path:" 7
+.I /usr/share/omc/scripts/
+.PD
+.RE
+.
+.\" --------------------------------------------------------------------
+.SS Includes:
+.\" --------------------------------------------------------------------
+.
+To compile a translated C++ model source code file, the C++ compiler needs
+suitable include files. These include files are stored in following
+directory.
+.
+.RS 3
+.IP "Path:" 7
+.I /usr/include/omc/
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SS Libraries:
+.\" --------------------------------------------------------------------
+.
+This version of \fBomc\fP compiles with his companion C++ compiler
+simulation files with the support of Qt libraries. The required Qt
+libraries and other libraries are stored under the following directory.
+.
+.RS 3
+.IP "Path:" 7
+.I /usr/lib/omc/
+.RE
+.
+.\" --------------------------------------------------------------------
+.SS JAVA interface:
+.\" --------------------------------------------------------------------
+.
+The following files supports the bidirectional OpenModelica-Java CORBA
+interoperability.
+.
+.RS 3
+.IP "Files:" 7
+.IR antlr-3.1.3.jar ", " modelica_java.jar
+.PD 0
+.IP "Path:" 7
+.I /usr/share/java/
+.PD
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH "USING OMC"
+.\" --------------------------------------------------------------------
+.
+This section shows in some examples, how to invoke the compiler \fBomc\fP
+from the console.
+.
+.IP "NOTE:" 7
+The examples shouldn't be launched in user's home directory or another
+sensitive directory. In some examples the compiler \fBomc\fP produce during
+his run C++ source code and some auxiliary files. This files will be stored
+in the current working directory. The best way to avoid the clutter in a
+used directory, is the creation of a fresh directory for the coming
+examples.
+.
+.IP "1." 3
+This example will flattened Modelica source code. The result is delivered
+on the standard output. In this mode \fBomc\fP flattened only source code
+without references to external Modelica libraries. The following Modelica
+source code file \fICircle.mo\fP has no references to a Modelica library. The
+example file \fIdcmotor.mo\fP includes code from the Modelica standard library.
+The path to above mentioned example files is shown in section \fBEXAMPLES\fP.
+How to flatten Modelica source code with included Modelica library code,
+will be shown in one of the following examples. Now follows the command
+to flatten the source code of the file \fICircle.mo\fP:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc Circle.mo
+.RE
+.
+.IP "2." 3
+The following command will throw out the translated \fICircle.mo\fP file.
+The result is the C++ source code file \fICircle.cpp\fP of \fICircle.mo\fP.
+The C++ file is stored in the current working directory:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +s Circle.mo
+.RE
+.
+.IP "" 3
+The above command produce among several other support files a make file.
+With a suitable C++ compiler the following commands will compile the C++
+source code:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+make -f Circle.makefile
+.PD
+.RE
+.
+.IP "" 3
+The result of the compilation is the executable file \fICircle\fP, called
+simulation file. If started it will solve the model of \fICircle.mo\fP and
+will spite out the numerical solution of its simulation:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+\&./Circle
+.RE
+.
+.IP "" 3
+The numerical values of the simulation are stored in the plot file
+\fICircle_res.mat\fP. The plot file includes all values of all
+variables that describe the model. A plot of all these values can be
+displayed by using a tool such as
+.BR octave (1)
+or
+.BR OMPlot (1).
+.
+.IP "" 3
+The above command sequence isn't the usual way, how a simulation is realized.
+Usually a client like 
+.BR OMEdit (1)
+or
+.BR OMNotebook (1)
+triggers the above sequence. The above
+example is a visualization of the work flow and should make the whole process
+a little more transparent.
+.
+.IP "3." 3
+This example will demonstrate the scripting capabilities of
+.BR omc (1).
+The following script flat_dcmotor.mos will instruct
+.BR omc (1)
+to load the standard Modelica library, load the Modelica source code of the
+dcmotor model and flatten the loaded source code.
+The source code of the dcmotor model is stored in the file \fIdcmotor.mo\fP.
+The result will be printed on the standard output. The following rows shows
+the contents of the script
+\fIflat_dcmotor.mos\fP:
+.
+.RS
+.IP "01" 6
+loadModel(Modelica);
+.PD 0
+.IP "02" 6
+loadFile("dcmotor.mo");
+.IP "03" 6
+instantiateModel(dcmotor);
+.PD
+.RE
+.
+.IP "" 3
+The following command will do the job. The flattened Modelica source code
+will be printed on standard output:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc flat_dcmotor.mos
+.RE
+.
+.IP "" 3
+Or pipe the output to the pager less:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc flat_dcmotor.mos | less -SM
+.RE
+.
+.IP "4." 3
+This example runs a complete simulation of a starting D.C. motor.
+The commands in the script \fIsim_dcmotor.mos\fP will translate the \%Modelica
+source code of the dcmotor model in the corresponding C++ code, will
+create a executable simulation file, will execute the simulation file
+and will plot the result. The plot can run via two different plot clients.
+The plot2() command uses Ptolemy a JAVA based graph plotting application.
+The newer plot() command presents the results in a Qt based window. The
+following rows shows the contents of the script \fIsim_dcmotor.mos\fP:
+.
+.RS
+.IP "01" 6
+loadModel(Modelica);
+.PD 0
+.IP "02" 6
+loadFile("dcmotor.mo");
+.IP "03" 6
+simulate(dcmotor,startTime=0.0,stopTime=10.0);
+.IP "04" 6
+plot({load.w,load.phi});
+.IP "05" 6
+plot2({load.w,load.phi});
+.PD
+.RE
+.
+.IP "" 3
+The following command will present the result in Ptolemy and the Qt graphic
+window:
+.
+.RS
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc sim_dcmotor.mos
+.RE
+.
+.IP "5." 3
+The next examples will show how to start \fBomc\fP in the server mode. In the
+server mode \fBomc\fP runs as independent process and will act upon inquiries
+from a client. The communication between \fBomc\fP and the client can use
+two different communication interfaces. One is based on the BSD socket
+interface, the other use CORBA. The following examples shows how to run
+the server \fBomc\fP with the client \fBOMShell\-terminal\fP. In the first
+example \fBomc\fP will be launched in server mode with the BSD socket
+interface:
+.
+.RS
+.P
+First console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +d=interactive
+.PD
+.P
+In a second console run the following command:
+.P
+Second console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+OMShell\-terminal -noserv
+.PD
+.P
+The option -noserv is required. Without the option -noserv the client
+\fBOMShell\-terminal\fP will create his own instance of the compiler
+\fBomc\fP.
+.P
+The second example does the same, but the communication between the server and
+the client will use the CORBA interface:
+.P
+First console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +d=interactiveCorba
+.PD
+.P
+In a second console run the following command:
+.P
+Second console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+OMShell\-terminal -noserv -corba
+.PD
+.
+.IP "NOTE:" 7
+In the above and in the following examples the compiler \fBomc\fP can't be put
+in the background. A command like \*[lq]omc \%+d=interactive &\*[rq]
+will not do the expected job. Only in a script the compiler can run in the
+background. The script \fBOMShell\-terminal\fP shows how the compiler \fBomc\fP
+can be put in background. The script is stored in the directory \fI/usr/bin/\fP.
+.
+.P
+The clients \fBOMShell\fP and \fBOMNotebook\fP needs some special treatment.
+These clients don't know the options -noserv and -corba. The default
+communication interface is CORBA and it can't be changed. Consequently the
+compiler \fBomc\fP can only be put in the independent server mode
+\%\*[lq]interactiveCorba\*[rq].
+.
+.P
+The compiler \fBomc\fP needs a special treatment to. Running \fBomc\fP in an
+independent server mode and with one of the above clients \fBOMShell\fP or
+\fBOMNotebook\fP, the current working directory shouldn't be the user's home
+directory. The start of \fBomc\fP should be happened in a sub directory. The
+next examples uses the directory \fI/home/\fP\fB${USER}\fP\fI/OMWorkspace/\fP
+as start and working directory.
+.
+.P
+The following examples will run the compiler \fBomc\fP in the independent
+server mode and with the communication interface CORBA. The clients will be
+called in a separate console. The clients will switched automatically to the
+interface of the server \fBomc\fP. In these cases the option -noserv is not
+needed:
+.P
+First console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+cd /home/${USER}/OMWorkspace/
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +d=interactiveCorba
+.PD
+.P
+Second console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+cd /home/${USER}/OMWorkspace/
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+OMShell
+.PD
+.P
+The next example does the same but now \fBOMNotebook\fP runs as client:
+.P
+First console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+cd /home/${USER}/OMWorkspace/
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+omc +d=interactiveCorba
+.PD
+.P
+Second console
+.PD 0
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+cd /home/${USER}/OMWorkspace/
+.IP "\fBuser\fP@\fBhost\fP$>" 13
+OMNotebook
+.PD
+.P
+.RE
+.
+.
+.\" --------------------------------------------------------------------
+.SH "EXAMPLES"
+.\" --------------------------------------------------------------------
+.
+Modelica source code examples, Modelica scripts and \fBOMNotebook\fP files
+are stored under the following directory.
+.
+.IP "Path:" 7
+.I /usr/share/doc/omc/testmodels/
+.P
+.
+Files with the extention .mo are Modelica source code files. Scripts
+are extended with the short .mos and the .onb extention is used for
+\fBOMNotebook\fP files.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+See OpenModelicaUsersGuide.pdf for a full list of contributors to the
+\%OpenModelica project.
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+If you find a bug, please report it at:
+.P
+<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMEdit (1),
+.BR OMNotebook (1),
+.BR OMPlot (1),
+.BR OMShell (1),
+.BR OMShell\-terminal (1)
+.BR octave (1)
+.
+.

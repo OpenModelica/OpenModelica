@@ -1,0 +1,88 @@
+.\" --------------------------------------------------------------------
+.\" Title 
+.\" --------------------------------------------------------------------
+.
+.TH OMNotebook 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
+.
+.
+.\" -------------------------------------------------------------------- 
+.SH NAME
+.\" --------------------------------------------------------------------
+.
+OMNotebook \- A Mathematica-style Notebook for OpenModelica
+.
+.
+.\" --------------------------------------------------------------------
+.SH "SYNOPSIS"
+.\" --------------------------------------------------------------------
+.
+.B OMNotebook
+[\fIFILE\fR]...
+.
+.
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+.\" --------------------------------------------------------------------
+.
+.B OMNotebook
+is a Mathematica\-style Notebook for Modelica. It provides
+an integrated environment for providing text and interactive examples,
+including plot viewers to further investigate the results of simulations.
+The purpose of \fBOMNotebook\fP is to provide an advanced \%Modelica teaching
+tool. This release includes two courses:
+.
+.IP \(bu 3
+.
+.B DrModelica
+is a course in Modelica 2.1 that uses all examples from Peter Fritzson's book
+\*[lq]Principles of Object-Oriented Modeling and Simulation with Modelica 2.1\*[rq].
+.
+.IP \(bu 3
+.
+.B DrControl
+is a course in basic control theory using Modelica 3.1.
+.
+.P
+The default working directory is /tmp/OpenModelica/.
+This is to avoid \fBomc\fP producing its C++ source code and auxiliary
+files in the working directory.
+.P
+The files recognized by \fBOMNotebook\fP have the extension \fB.onb\fP.
+.
+.\" --------------------------------------------------------------------
+.SH ENVIRONMENT
+.\" --------------------------------------------------------------------
+.
+.TP
+.B DRMODELICAHOME
+This variable contains the absolute path towards the \%DrModelica
+package which provides all the examples from Peter Fritzson's book the
+\*[lq]Principles of Object-Oriented Modeling and Simulation with
+Modelica 2.1\*[rq].
+.RS
+.IP "Default directory:" 19
+.I /usr/share/omnotebook/drmodelica/
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+See OpenModelicaUsersGuide.pdf for a full list of contributors to the
+\%OpenModelica project.
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+If you find a bug, please report it at:
+.P
+<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.\" --------------------------------------------------------------------
+.
+.BR omc (1),
+.BR OMShell (1),
+.BR OMShell\-terminal (1)
+.

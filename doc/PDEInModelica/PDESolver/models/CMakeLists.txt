@@ -1,0 +1,8 @@
+INCLUDE_DIRECTORIES(../runtime)
+LINK_DIRECTORIES(../runtime)
+INCLUDE_DIRECTORIES(../shared_numerics)
+LINK_DIRECTORIES(../shared_numerics)
+ADD_EXECUTABLE(advection advection.c model.h)
+TARGET_LINK_LIBRARIES(advection runtime shared_numerics)
+ADD_EXECUTABLE(string string.c model.h)
+TARGET_LINK_LIBRARIES(string runtime shared_numerics)
