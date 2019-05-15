@@ -5732,13 +5732,10 @@ void ModelWidget::drawModelIconComponents()
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
-      QString annotation;
-      if (mComponentsAnnotationsList.size() >= i) {
-        annotation = mComponentsAnnotationsList.at(i);
-        if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
-          annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
-          annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
-        }
+      QString annotation = mComponentsAnnotationsList.size() > i ? mComponentsAnnotationsList.at(i) : "";
+      if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
+        annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
+        annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
       }
       mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
                                              false, true);
@@ -5773,13 +5770,10 @@ void ModelWidget::drawModelDiagramComponents()
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
     }
-    QString annotation;
-    if (mComponentsAnnotationsList.size() >= i) {
-      annotation = mComponentsAnnotationsList.at(i);
-      if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
-        annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
-        annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
-      }
+    QString annotation = mComponentsAnnotationsList.size() > i ? mComponentsAnnotationsList.at(i) : "";
+    if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
+      annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
+      annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
     }
     mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
                                               false, true);
