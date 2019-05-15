@@ -10,3 +10,6 @@
 [submodule "OMSimulator"]
 	path = OMSimulator
 	url = ../OMSimulator.git
+[submodule "OMCompiler/3rdParty"]
+	path = OMCompiler/3rdParty
+	url = ../OMCompiler-3rdParty
