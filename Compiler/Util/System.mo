@@ -95,7 +95,7 @@ public function strcmp_offset
   external "C" outInteger=System_strcmp_offset(string1,offset1,length1,string2,offset2,length2) annotation(Library = "omcruntime");
 end strcmp_offset;
 
-public function stringFind "locates substring searchStr in str. If succeeds return position, otherwise return -1"
+public function stringFind "locates substring searchStr in str. If succeeds return position (starting from 0), otherwise return -1"
   input String str;
   input String searchStr;
   output Integer outInteger;

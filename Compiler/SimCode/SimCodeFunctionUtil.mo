@@ -1963,14 +1963,8 @@ end generateExtFunctionLibraryDirectoryFlags2;
 protected function getGerneralTarget
    input String target;
   output String generalTarget;
-  algorithm
-  generalTarget := matchcontinue (target)
-  case("msvc10")then "msvc";
-  case("msvc12")then "msvc";
-  case("msvc13")then "msvc";
-  case("msvc14")then "msvc";
-  else target;
- end matchcontinue;
+algorithm
+  generalTarget := if (System.stringFind(target, "msvc") == 0) then "msvc" else target;
 end getGerneralTarget;
 
 
