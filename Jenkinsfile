@@ -164,7 +164,7 @@ pipeline {
           }
           environment {
             LIBRARIES = "/cache/omlibrary"
-            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures"
+            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures --flakyTests=.CI/compliance.flaky"
             COMPLIANCEPREFIX = "compliance"
           }
           steps {
