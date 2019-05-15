@@ -8,7 +8,7 @@ import subprocess
 import time
 from natsort import natsorted
 
-def readTest(f, expectedFailures):
+def readTest(f, expectedFailures, flakyTests):
   cl = ".".join(f.split(".")[:-1])
   name = f.split(".")[-2]
   with open(f) as fin:
@@ -34,7 +34,11 @@ def readTest(f, expectedFailures):
   tc2 = TestCase(name, cl, res["time"], res["messages"], '')
   success = res["success"]
   shouldPass = res["shouldPass"]
-  if expectFail:
+  if cl in flakyTests:
+    tc1.add_skipped_info('This test is flaky (randomly fails) and is skipped')
+    tc2.add_skipped_info('This test is flaky (randomly fails) and is skipped')
+    success = True
+  elif expectFail:
     if success:
       tc1.add_error_info('This testcase started working (failure was expected)')
     else:
@@ -54,10 +58,12 @@ def readTest(f, expectedFailures):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='OpenModelica ModelicaCompliance testing tool')
   parser.add_argument('--expectedFailures', default=None)
+  parser.add_argument('--flakyTests', default=None)
   parser.add_argument('--outPrefix', default="openmodelica")
   parser.add_argument('--version', default="OpenModelica ???")
   args = parser.parse_args()
   expectedFailuresFile = args.expectedFailures
+  flakyTestsFiles = args.flakyTests
   outPrefix = args.outPrefix
   version = args.version
 
@@ -65,11 +71,17 @@ if __name__ == '__main__':
   if expectedFailuresFile:
     with open(expectedFailuresFile) as fin:
       expectedFailures = set(l.strip() for l in fin.readlines())
+  flakyTests = set()
+  if flakyTestsFiles:
+    with open(flakyTestsFiles) as fin:
+      flakyTests = set(l.strip() for l in fin.readlines())
   print("=== Expected Failures ===")
   print(expectedFailures)
+  print("=== Flaky Testa ===")
+  print(flakyTests)
   print("=== End Expected Failures ===")
 
-  res = [readTest(f, expectedFailures) for f in natsorted(glob.glob("*.res"))]
+  res = [readTest(f, expectedFailures, flakyTests) for f in natsorted(glob.glob("*.res"))]
 
   (tcs1,tcs2,failures) = zip(*res)
   ts1 = TestSuite(version, tcs1)
