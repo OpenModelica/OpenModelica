@@ -1247,7 +1247,7 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	myfile << "<tr> \n" << "<th align=right> ModelName: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> ModelDirectory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
 	myfile << "<tr> \n" << "<th align=right> Measurement Files: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
-	myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by <b>OpenModelica-</b>"<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
+	myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
 	myfile << "</table>\n";
 
 	/* Add Analysis data */
