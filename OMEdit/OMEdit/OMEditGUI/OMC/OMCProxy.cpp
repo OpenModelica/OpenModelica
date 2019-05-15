@@ -213,9 +213,6 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   mHasInitialized = true;
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
-#ifdef WIN32
-  sendCommand("\"" +  QString(GIT_SHA) + "\"");
-#endif
   // set OpenModelicaHome variable
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath();
 #ifdef WIN32

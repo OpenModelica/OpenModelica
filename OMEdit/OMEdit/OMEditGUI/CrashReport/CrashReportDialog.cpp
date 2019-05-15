@@ -67,7 +67,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace)
   // bug description label and textbox
   mpBugDescriptionLabel = new Label(tr("Describe in a few words what you were doing when the error occurred:"));
   mpBugDescriptionTextBox = new QPlainTextEdit(
-    QString("%1 connected to %2%5.\nThe running OS is %3 on %4.\n").arg(GIT_SHA,Helper::OpenModelicaVersion,
+    QString("Connected to %1%4.\nThe running OS is %2 on %3.\n").arg(Helper::OpenModelicaVersion,
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
   QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture(),
 #elif defined(__APPLE__)
