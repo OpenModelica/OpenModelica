@@ -1,0 +1,532 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\use_default_options false
+\maintain_unincluded_children false
+\language british
+\language_package none
+\inputencoding utf8
+\fontencoding default
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 0
+\use_mathdots 0
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language swedish
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Numerics
+\end_layout
+
+\begin_layout Paragraph
+Goals
+\end_layout
+
+\begin_layout Enumerate
+advection equation in 1D and eulerian coordinate, dirichlet BC, explicit
+ solver
+\end_layout
+
+\begin_layout Enumerate
+numann BC
+\end_layout
+
+\begin_layout Enumerate
+automatic dt
+\end_layout
+
+\begin_layout Enumerate
+diffusion or mixed equation
+\end_layout
+
+\begin_layout Enumerate
+implicit solver
+\end_layout
+
+\begin_layout Enumerate
+systems of equations
+\end_layout
+
+\begin_layout Enumerate
+2D (rectangle), 3D (cube)
+\end_layout
+
+\begin_layout Enumerate
+lagrangian coordinate
+\end_layout
+
+\begin_layout Enumerate
+general domain
+\end_layout
+
+\begin_layout Standard
+difference schemes separated from the rest of solver
+\end_layout
+
+\begin_layout Standard
+Difussion eq:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u_{t}=\alpha u_{xx}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+u_{t} & = & -w_{x}\\
+w & = & -\alpha u_{x}.
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+String eq:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+y_{tt}=ky_{xx}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+s_{x} & = & kv_{t}\\
+y_{t} & = & v\\
+y_{x} & = & s
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The description without higher derivative is ugly, we need higher derivatives.
+\end_layout
+
+\begin_layout Paragraph
+Representation
+\end_layout
+
+\begin_layout Subparagraph
+Explicit
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+u_{t}=f(u,u_{x},t)\label{eq:explicit}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+resp.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u_{t}=f(u,u_{x},u_{xx},...\,,t)
+\]
+
+\end_inset
+
+..
+\end_layout
+
+\begin_layout Subparagraph
+Implicit
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+F(u,u_{t},u_{x},t)=0\label{eq:implicit}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+resp.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+F(u,u_{t},u_{x},u_{xx},...\,,t)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Solvers
+\end_layout
+
+\begin_layout Subparagraph
+Difference schemes for explicit solver
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $U$
+\end_inset
+
+ denotes discretized 
+\begin_inset Formula $u$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Time difference from Lax-Friedrichs in explicit form (i.e.
+ with the 
+\begin_inset Formula $u_{m}^{n+1}$
+\end_inset
+
+ on LHS): 
+\begin_inset Formula 
+\begin{equation}
+u_{m}^{n+1}=D_{t}^{exp}(v,U,n,m)=v\Delta t+\frac{1}{2}(u_{m+1}^{n}+u_{m-1}^{n})\label{eq:explicit_time_difference}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Space difference from Lax-Friedrichs:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+D_{x}(U,n,m)=\frac{u_{i+1}^{n}-u_{i-1}^{n}}{2\Delta x}\label{eq:explicit_space_difference}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Explicit solver
+\end_layout
+
+\begin_layout Standard
+Lax-Friedrichs
+\end_layout
+
+\begin_layout Standard
+We solve equation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:explicit"
+
+\end_inset
+
+) substituing space difference (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:explicit_space_difference"
+
+\end_inset
+
+) and applying time difference in explicit form (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:explicit_time_difference"
+
+\end_inset
+
+):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+u_{m}^{n+1} & = & D_{t}^{exp}(f((u_{m}^{n},D_{x}(U,n,m),t^{n})))=\\
+ & = & \Delta t\cdot f(u,\frac{u_{i+1}^{n}-u_{i-1}^{n}}{2\Delta x},t)+\frac{1}{2}(u_{m+1}^{n}+u_{m-1}^{n})
+\end{eqnarray*}
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Subparagraph
+Difference schemes for implicit solver
+\end_layout
+
+\begin_layout Standard
+space difference from Crank-Nicolson
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{multline}
+D_{x}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1})=\frac{1}{2}\left(\frac{u_{m+1}^{n+1}-u_{m-1}^{n+1}}{2\Delta x}+\frac{u_{m+1}^{n}-u_{m-1}^{n}}{2\Delta x}\right)\label{eq:space_implicit_difference}\\
+D_{xx}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1})=\frac{1}{2}\left(\frac{u_{m+1}^{n+1}-2u_{m}^{n+1}+u_{m-1}^{n+1}}{2(\Delta x)^{2}}+\frac{u_{m+1}^{n}-2u_{m}^{n}+u_{m-1}^{n}}{2(\Delta x)^{2}}\right)
+\end{multline}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+time difference from Crank-Nicolson
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+D_{t}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1})=\frac{u_{m}^{n+1}-u_{m}^{n}}{\Delta t}\label{eq:time_implicit_difference}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+Implicit solver
+\end_layout
+
+\begin_layout Standard
+Crank-Nicolson
+\end_layout
+
+\begin_layout Standard
+With nonlinear solver:
+\end_layout
+
+\begin_layout Standard
+We solve equation (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:implicit"
+
+\end_inset
+
+) substituting space (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:space_implicit_difference"
+
+\end_inset
+
+) and time (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:time_implicit_difference"
+
+\end_inset
+
+) differences
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+F\left(u_{m}^{n},D_{t}(u_{m-1}^{n},...),D_{x}(u_{m-1}^{n},...),t^{n}\right)=0,\; m\in\hat{M}\label{eq:implicit_system}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and than solving the whole system for all unknown 
+\begin_inset Formula $u_{:}^{n+1}$
+\end_inset
+
+.
+ System has 3-band Jacobian.
+ If 
+\begin_inset Formula $F$
+\end_inset
+
+ is linear in 
+\begin_inset Formula $u_{x}$
+\end_inset
+
+ and 
+\begin_inset Formula $u_{t}$
+\end_inset
+
+, system is also linear with 3-band matrix eventhou is given generaly.
+ Is there any solver eficient in solving linear equations with banded matrix
+ given implicitly? (I hope Newton-Raphson is.) As initial guess for the solution
+ we can use extrapolated values.
+ If solving fails we can try value from the node on left or right (this
+ could help on shocks).
+\end_layout
+
+\begin_layout Standard
+With linear solver:
+\end_layout
+
+\begin_layout Standard
+If 
+\begin_inset Formula $F$
+\end_inset
+
+ is linear, we expres (
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:implicit_system"
+
+\end_inset
+
+) as
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\boldsymbol{A}\bar{u}_{:}^{n+1}=\bar{b}.
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\boldsymbol{A}$
+\end_inset
+
+ is 
+\begin_inset Formula $M\times M$
+\end_inset
+
+ 3-diagonal.
+ Functions for evaluation of 
+\begin_inset Formula $\boldsymbol{M}$
+\end_inset
+
+ and 
+\begin_inset Formula $\bar{b}$
+\end_inset
+
+ are generated during compilation.
+ In runtime we solve just the linear system.
+ In this aproach difference schema must be chosen before compilation of
+ model.
+\end_layout
+
+\begin_layout Subparagraph*
+Implicit solver and systems of PDE
+\end_layout
+
+\begin_layout Standard
+If we solve e.g.
+ system with three variables 
+\begin_inset Formula $u,\, v,\, w$
+\end_inset
+
+, se can sort difference equations in order 
+\begin_inset Formula 
+\[
+u_{1},\, v_{1},\, w_{1},\, u_{2},\, v_{2},\, w_{2},\, u_{3},\, v_{3},\, w_{3},\,...
+\]
+
+\end_inset
+
+ so that the system is stil banded.
+\end_layout
+
+\begin_layout Paragraph
+
+\end_layout
+
+\end_body
+\end_document

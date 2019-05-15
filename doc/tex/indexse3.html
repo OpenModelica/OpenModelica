@@ -1,0 +1,1058 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  
+  "http://www.w3.org/TR/html4/loose.dtd">  
+<html > 
+<head><title>OpenModelica Compiler Design</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<!-- 2,html --> 
+<meta name="src" content="index.tex"> 
+<meta name="date" content="2011-11-03 12:29:00"> 
+<link rel="stylesheet" type="text/css" href="index.css"> 
+</head><body 
+>
+<!--l. 49--><div class="crosslinks"><p class="noindent">[<a 
+href="indexse4.html" >next</a>] [<a 
+href="indexse2.html" >prev</a>] [<a 
+href="indexse2.html#tailindexse2.html" >prev-tail</a>] [<a 
+href="#tailindexse3.html">tail</a>] [<a 
+href="index.html#indexse3.html" >up</a>] </p></div>
+<h3 class="sectionHead"><span class="titlemark">3   </span> <a 
+ id="x4-30003"></a>OpenModelica Compiler Design</h3>
+<!--l. 1--><p class="noindent" >This documentation describes how the OpenModelica compiler is designed. The first
+section will give a brief overview of the design, and the rest of the sections will go
+into further detail about the different parts of the compiler in an order that roughly
+follows the compilation process.
+<!--l. 6--><p class="noindent" >This documentation assumes some familiarity with the MetaModelica language,
+which most of the compiler is implemented in. If you are not familiar with
+MetaModelica it might be beneficial to read through the first parts of the
+MetaModelica documentation in section <a 
+href="indexse2.html#x3-20002">2<!--tex4ht:ref: sec:metamodelica --></a> to become familiar with the MetaModelica
+syntax and data types. Also note that code examples in this documentation might be
+incomplete when it&#8217;s
+<!--l. 13--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.1   </span> <a 
+ id="x4-40003.1"></a>Modelica Translation Stages</h4>
+<!--l. 14--><p class="noindent" >The translation process of Modelica code to a simulation executable is schematically
+depicted in figure <a 
+href="#x4-40011">1<!--tex4ht:ref: fig:process_overview --></a> below. <hr class="figure"><div class="figure" 
+>
+                                                                  
+
+                                                                  
+<a 
+ id="x4-40011"></a>
+                                                                  
+
+                                                                  
+<!--l. 18--><p class="noindent" ><img 
+src="img/compilerstages.png" alt="Translationstages"  
+>
+<br /> <div class="caption" 
+><span class="id">Figure&#x00A0;1: </span><span  
+class="content">Translation stages from Modelica code to executing simulation.</span></div><!--tex4ht:label?: x4-40011 -->
+                                                                  
+
+                                                                  
+<!--l. 21--><p class="noindent" ></div><hr class="endfigure">
+<!--l. 22--><p class="noindent" ><span id="textcolor1"><span 
+class="ec-lmri-10">Insert references to sections below</span></span>
+<!--l. 24--><p class="noindent" >The OpenModelica compiler can be seen as divided into a front end and a back end.
+The input to the front end is Modelica code (typically .mo files), which is parsed and
+translated to a so-called flat model. This flattening phase removes the object-oriented
+structure from the model by instantiating the model&#8217;s components and performs
+operations such as inheritance, redeclares, and modifications. It also does type
+checking, expansion of connect equations, and handles package includes and imports.
+The result from this instantiation phase is a set of variables, equations, algorithms
+and functions, with all object-oriented structure removed apart from dot notation
+within names.
+<!--l. 34--><p class="noindent" >The result from the front end is then passed to the back end, where the first phase is
+the equation analyzer. In this phase the equations are sorted and transformed from
+their DAE representation into a Block Lower Triangular DAE form. The sorted
+equations are then passed to the equation optimizer, which tries to optimize the
+equations.
+<!--l. 40--><p class="noindent" >The optimized DAE is finally sent to the code generator, which generates code that
+can be compiled to produce a simulation executable. The default target language is
+C, but the code generator can be replaced to generate code for other target
+languages.
+<!--l. 45--><p class="noindent" >The OpenModelica compiler is also capable of compiling MetaModelica code, and the
+process for doing this is mostly similar to compiling normal Modelica functions with
+MetaModelica additions. It also handles MetaModelica scripts (.mos files), which is
+described in section <a 
+href="#x4-110003.5">3.5<!--tex4ht:ref: sec:mm_scripting --></a>.
+<h4 class="subsectionHead"><span class="titlemark">3.2   </span> <a 
+ id="x4-50003.2"></a>Simplified Overall Structure of the Compiler</h4>
+<!--l. 51--><p class="noindent" >The OpenModelica compiler is separated into a number of modules, implemented as
+MetaModelica packages. The entry point of the compiler is the <span id="textcolor2">Main.main</span>
+function.
+<!--l. 55--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.3   </span> <a 
+ id="x4-60003.3"></a>The front end</h4>
+<!--l. 57--><p class="noindent" >
+<h5 class="subsubsectionHead"><span class="titlemark">3.3.1   </span> <a 
+ id="x4-70003.3.1"></a>Parsing and Abstract Syntax</h5>
+                                                                  
+
+                                                                  
+<!--l. 58--><p class="noindent" >The parser is implemented as an ANTLR 3 grammar <span class="cite">[<span 
+class="ec-lmbx-10">?</span>]</span>, and C code for the parser is
+generated with the ANTLR parser generator tool. The generated parser
+is then encapsulated by the <span id="textcolor3">Parser</span> module, which provides functions for
+parsing source code either from file or from memory. These functions are
+implemented as external C functions which calls the generated C code from
+ANTLR.
+<!--l. 65--><p class="noindent" >The parser builds an <a 
+href="#glo:ast">Abstract Syntax Tree (AST)</a> from the source code, using the
+AST data types in the <span id="textcolor4">Absyn</span> module. The <span id="textcolor5">Parser.parse</span> functions returns an
+<span id="textcolor6">Absyn.Program</span>, which is simply a list of classes: <!--l. 68-->
+<div class="lstlisting" id="listing-1"><span class="label"><a 
+ id="x4-7001r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Program</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7002r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PROGRAM</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7003r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">Class</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">classes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7004r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PROGRAM</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7005r5"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Program</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 75--><p class="noindent" >The <span id="textcolor7">Absyn.Class</span> type contains the name of the class, the class&#8217; prefixes and the body
+of the class: <!--l. 77-->
+<div class="lstlisting" id="listing-2"><span class="label"><a 
+ id="x4-7006r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Class</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7007r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASS</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7008r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Ident</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">name</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7009r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Boolean</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">partialPrefix</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7010r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Boolean</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">finalPrefix</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7011r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Boolean</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">encapsulatedPrefix</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7012r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Restriction</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">restriction</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7013r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ClassDef</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">body</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7014r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Info</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">info</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7015r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASS</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7016r11"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Class</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 90--><p class="noindent" >Something to note is that the type also contains an <span id="textcolor8">Absyn.Info</span> object, which contains
+information about where an <a 
+href="#glo:ast">AST</a> element was found: <!--l. 92-->
+<div class="lstlisting" id="listing-3"><span class="label"><a 
+ id="x4-7017r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Info</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7018r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">INFO</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7019r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">String</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">fileName</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7020r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Boolean</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">isReadOnly</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7021r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Integer</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">lineNumberStart</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7022r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Integer</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">columnNumberStart</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7023r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Integer</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">lineNumberEnd</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7024r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Integer</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">columnNumberEnd</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7025r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">TimeStamp</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">buildTimes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7026r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">INFO</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7027r11"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Info</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 105--><p class="noindent" >Almost all <a 
+href="#glo:ast">AST</a> elements contains an <span id="textcolor9">Absyn.Info</span> object in some way or another. This
+is one of a few types that are propagated through the different stages of the compiler,
+and used when printing error messages to give the user a clue about where the errors
+are.
+<!--l. 110--><p class="noindent" >The AST closely corresponds to the parse tree and keeps the structure of the source
+file. The <span id="textcolor10">Absyn.ClassDef</span> type can represent several different types of class
+definitions, but for normal classes it keeps a list of <span id="textcolor11">Absyn.ClassPart</span> objects.
+These class parts represents the different declaration sections that a class
+might contain, such as public, protected, equation, and algorithm sections:
+<!--l. 116-->
+<div class="lstlisting" id="listing-4"><span class="label"><a 
+ id="x4-7028r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ClassPart</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7029r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PUBLIC</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7030r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">ElementItem</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">contents</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7031r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PUBLIC</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7032r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7033r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PROTECTED</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7034r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">ElementItem</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">contents</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7035r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">PROTECTED</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7036r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7037r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">EQUATIONS</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7038r11"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">EquationItem</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">contents</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7039r12"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">EQUATIONS</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7040r13"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7041r14"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ALGORITHMS</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7042r15"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">EquationItem</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">contents</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7043r16"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ALGORITHMS</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7044r17"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ClassPart</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 135--><p class="noindent" >Modelica classes are allowed to contain multiple sections of the same type, with an
+implicit public sections first, so the class definition might similarly contain several
+ClassParts of the same type.
+                                                                  
+
+                                                                  
+<!--l. 139--><p class="noindent" >Class elements are ultimately represented by AbsynElementSpec objects, which can
+represent class definitions, components and other elements: <!--l. 141-->
+<div class="lstlisting" id="listing-5"><span class="label"><a 
+ id="x4-7045r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ElementSpec</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7046r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASSDEF</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7047r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Boolean</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">replaceable_</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7048r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Class</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">class_</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7049r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASSDEF</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7050r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7051r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">COMPONENTS</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7052r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ElementAttributes</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">attributes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7053r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">TypeSpec</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">typeSpec</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7054r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">ComponentItem</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">components</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7055r11"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">COMPONENTS</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7056r12"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ElementSpec</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 155--><p class="noindent" >Parsing a Modelica model such as <!--l. 156-->
+<div class="lstlisting" id="listing-6"><span class="label"><a 
+ id="x4-7057r1"></a></span><span 
+class="ec-lmbx-10">model</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">M</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7058r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Real</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">x,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">y</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7059r3"></a></span><span 
+class="ec-lmbx-10">equation</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7060r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">x</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">y</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7061r5"></a></span><span 
+class="ec-lmbx-10">equation</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7062r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">y</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">2;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-7063r7"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">M</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 165--><p class="noindent" >will thus produce an <span id="textcolor12">Absyn.Program</span> that contains the class M. The class definition
+for M will contain a public section with the components x and y, and two equation
+sections: one section for x equals y and another for y equals 2. Note that the x and y
+components will be stored as a single <span id="textcolor13">Absyn.COMPONENTS</span>, since they
+are declared with the same statement and thus share the same type and
+attributes.
+<!--l. 172--><p class="noindent" >
+<h5 class="subsubsectionHead"><span class="titlemark">3.3.2   </span> <a 
+ id="x4-80003.3.2"></a>Rewriting the AST into SCode</h5>
+<!--l. 173--><p class="noindent" >Since the <a 
+href="#glo:ast">AST</a> closely follows the structure of the source code it has several
+disadvantages when it comes to further translations of the code. Multiple class
+components might e.g.&#x00A0;be grouped together into a single element node. A
+simpler intermediate form is therefore introduced, called <span id="textcolor14">SCode</span>, with the
+purpose of simplifying further translations. The translation from <span id="textcolor15">Absyn</span> to
+<span id="textcolor16">SCode</span> is handled by the <span id="textcolor17">SCodeUtil</span> package, with the entry point being
+<span id="textcolor18">SCodeUtil.translateAbsyn2SCode</span>. <span id="textcolor19">SCode</span> differs in many ways from <span id="textcolor20">Absyn</span>, but some
+notable differences are:
+     <ul class="itemize1">
+     <li class="itemize">All class components are stored separately. A declaration such as <span 
+class="ec-lmtt-10">Real x,</span>
+     <span 
+class="ec-lmtt-10">y[17]; </span>is split and stored as two separate elements in the SCode, as if it
+     was declared <span 
+class="ec-lmtt-10">Real x; Real y[17]</span>.
+     </li>
+     <li class="itemize">Class declarations of the same type are merged together, so that e.g.&#x00A0;all
+     equations are stored in one list in the class while all algorithm statements
+     are  stored  in  another.  Public  and  protected  elements  are  also  merged
+     together,  and  the  public/protected  attribute  is  instead  stored  in  the
+     elements themselves rather than derived from the section they are stored
+     in.</li></ul>
+                                                                  
+
+                                                                  
+<!--l. 195--><p class="noindent" >An <span id="textcolor21">SCode.Program</span>, the equivalence to <span id="textcolor22">Absyn.Program</span> in <span id="textcolor23">SCode</span>, is simply defined
+as a list of <span id="textcolor24">SCode.Element</span>s: <!--l. 197-->
+<div class="lstlisting" id="listing-7"><span class="label"><a 
+ id="x4-8001r1"></a></span><span 
+class="ec-lmbx-10">type</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Program</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">list</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">Element</span><span 
+class="ec-lmtt-10">&#x003E;;</span>
+</div>
+<!--l. 200--><p class="noindent" >The <span id="textcolor25">SCode.Element</span> type represents the different types of elements, such as classes
+and components: <!--l. 202-->
+<div class="lstlisting" id="listing-8"><span class="label"><a 
+ id="x4-8002r1"></a></span><span 
+class="ec-lmbx-10">uniontype</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Element</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8003r2"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASS</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8004r3"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Ident</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">name</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8005r4"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Prefixes</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">prefixes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8006r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Encapsulated</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">encapsulatedPrefix</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8007r6"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Partial</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">partialPrefix</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8008r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Restriction</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">restriction</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8009r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">ClassDef</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">classDef</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8010r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Absyn.Info</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">info</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8011r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">CLASS</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8012r11"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8013r12"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">record</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">COMPONENT</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8014r13"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Ident</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">name</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8015r14"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Prefixes</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">prefixes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8016r15"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Attributes</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">attributes</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8017r16"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Absyn.TypeSpec</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">typeSpec</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8018r17"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Mod</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">modifications</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8019r18"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">Option</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">Comment</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">comment</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8020r19"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">Option</span><span 
+class="ec-lmtt-10">&#x003C;</span><span 
+class="ec-lmtt-10">Absyn.Exp</span><span 
+class="ec-lmtt-10">&#x003E;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">condition</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8021r20"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Absyn.Info</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">info</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8022r21"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">COMPONENT</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x4-8023r22"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Element</span><span 
+class="ec-lmtt-10">;</span>
+</div>
+<!--l. 226--><p class="noindent" >Not all <span id="textcolor26">Absyn</span> data structures are translated into <span id="textcolor27">SCode</span> ones, as is evident in the
+code listing above. Some types are already simple enough that they are reused in the
+<span id="textcolor28">SCode</span>, some notable examples being <span id="textcolor29">Absyn.Exp</span>, <span id="textcolor30">Absyn.TypeSpec</span>, <span id="textcolor31">Absyn.Info</span>,
+<span id="textcolor32">Absyn.ComponentRef</span>, and <span id="textcolor33">Absyn.Path</span>.
+<!--l. 262--><p class="noindent" >
+<h5 class="subsubsectionHead"><span class="titlemark">3.3.3   </span> <a 
+ id="x4-90003.3.3"></a>Model Flattening and Instantiation</h5>
+<!--l. 418--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.4   </span> <a 
+ id="x4-100003.4"></a>The back end</h4>
+<!--l. 419--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">3.5   </span> <a 
+ id="x4-110003.5"></a>Scripting MetaModelica</h4>
+<!--l. 421--><p class="noindent" >Describes the Interactive module.
+                                                                  
+
+                                                                  
+<!--l. 51--><div class="crosslinks"><p class="noindent">[<a 
+href="indexse4.html" >next</a>] [<a 
+href="indexse2.html" >prev</a>] [<a 
+href="indexse2.html#tailindexse2.html" >prev-tail</a>] [<a 
+href="indexse3.html" >front</a>] [<a 
+href="index.html#indexse3.html" >up</a>] </p></div>
+<!--l. 51--><p class="noindent" ><a 
+ id="tailindexse3.html"></a>  
+</body></html> 

@@ -1,0 +1,46 @@
+#
+# A common Makefile for subdirectories (runtime and parser)
+# Should be used for both OMDev and Linux
+#
+
+include $(srcdir)/Makefile.common
+
+all : .testvariables .depend runtime parser
+
+SUBDIRS	= runtime parser Script
+SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
+
+.SUFFIXES: .o .mo .h .c
+.PHONY: all clean reallyclean $(SUBDIRS)
+
+$(SRCO): %.o : %.c %.h
+	$(CC) $(CFLAGS) $(RMLINC) -c $<
+
+$(SRCHSRCDIR) : $(srcdir)/%.h : %.h
+	cp $< $@
+
+runtime: $(SRCHSRCDIR)
+	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
+parser: $(SRCHSRCDIR)
+	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
+
+clean:
+	for d in ../runtime/ ../../Parser/ Scripts; do \
+		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
+	done
+	(cd $(srcdir) && $(RM) $(SRCH))
+	$(RM) -f .depend
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) *~
+
+reallyclean: clean
+
+# don't remove these files after intermediate build steps
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status
+
+## dependencies
+ifeq ($shell(test -f .depend && echo a),a)
+-include .depend
+endif

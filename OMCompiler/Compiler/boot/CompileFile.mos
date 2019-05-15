@@ -1,0 +1,35 @@
+setCommandLineOptions("-g=MetaModelica --debug=-buildExternalLibs");getErrorString(); // Do not set -d=rml yet, checkInterfaceOfPackages takes a Modelica matrix as input
+if not loadFiles(files) /* TODO: Change to loadFiles */ then
+  print("Failed to load files:\n" + getErrorString());
+  exit(1);
+end if;
+mkdir("build/tmp");
+cd("build/tmp");
+if not checkInterfaceOfPackages(mainClass, {
+  {"backendInterface", "backend", "frontend", "util", "susan"},
+  {"backend", "frontend", "util", "susan", "backendInterface"},
+  {"frontend", "util", "susan", "backendInterface", ""},
+  {"susan", "util", "", "", ""},
+  {"util", "", "", "", ""}
+}) then
+  print(getErrorString());
+  exit(1);
+end if;
+setCommandLineOptions("-d=rml");
+status:=OpenModelica.Scripting.generateSeparateCode(mainClass);
+(numMessages,numErrors,numWarnings) := countMessages();
+messageFile := "../" + typeNameString(mainClass) + ".log";
+if numMessages > 0 or not status then
+  status := false;
+  messages := getErrorString(warningsAsErrors=true);
+  print(intString(numErrors+numWarnings) + " errors out of " + intString(numMessages) + " messages:\n" + messages);
+  writeFile(messageFile, messages);
+  if numErrors+numWarnings > 0 then
+    exit(1);
+  end if;
+else
+  remove(messageFile);
+end if;
+files:={typeNameString(mainClass) + ext for ext in {".c",".h","_includes.h","_records.c",".deps"}};getErrorString();
+{compareFilesAndMove(file,"../" + file) for file in files};
+exit(0);

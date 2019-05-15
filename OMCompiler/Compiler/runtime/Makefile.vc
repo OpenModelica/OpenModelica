@@ -1,0 +1,49 @@
+# Peter Aronsson MathCore Engineering AB
+# Peter.aronsson@mathcore.com
+
+USE_CORBA = /DUSE_CORBA
+
+INCLUDES = $(INCP) /I. /I..\..\SimulationRuntime\c\ /I..\ /I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include /Ilpsolve
+
+CFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TC
+CXXFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP
+
+CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
+CORBAINCL = -I$(OMDEV)/lib/omniORB-4.2.0-msvc-10/include
+
+SHELL	= /bin/sh
+CC	= cl
+IDL	= $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
+IDLPYTHON = $(IDL)
+
+OBJ = socketimpl.obj printimpl.obj systemimpl.obj systemimplmisc.obj dynload.obj dynload_try.obj settingsimpl.obj \
+ptolemyio.obj BackendDAEEXT.obj ErrorMessage.obj errorext.obj \
+omc_communication.obj omc_communication_impl.obj corbaimpl.obj \
+unitparser.obj unitparserext.obj SimulationResults.obj IOStreamExt.obj rtclock.obj
+
+all: $(OBJ) runtimevc.lib
+
+runtimevc.lib: $(OBJ)
+	LIB /out:runtimevc.lib $(OBJ)
+
+.cpp.obj:
+	$(CC) $(CXXFLAGS) $<
+
+.c.obj:
+	$(CC) $(CFLAGS) $<
+
+.cc.obj:
+	$(CC) $(CXXFLAGS) $<
+
+
+
+omc_communication.cc omc_communication.h : omc_communication.idl
+	$(IDL) omc_communication.idl
+
+
+omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
+
+clean:
+	del  *.obj omc_communication.cc omc_communication.h
+
+

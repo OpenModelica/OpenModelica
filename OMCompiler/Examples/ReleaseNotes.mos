@@ -1,0 +1,9 @@
+system("mkdir -p wiki");
+cd("wiki");
+system("ruby ../ReleaseNotes.rb ../ReleaseNotes.yaml");
+versions:={
+  // $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.8.1'),
+  $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.9.0')
+};
+system("grep -v DOCTYPE ReleaseNotes/release-notes/1.9.0.html | grep -v xhtml11.dtd | sed 's/<html .*>/<html>/g' > 1.9.0.html");
+readFile("1.9.0.html");

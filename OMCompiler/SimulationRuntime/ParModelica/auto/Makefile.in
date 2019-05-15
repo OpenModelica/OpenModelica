@@ -1,0 +1,35 @@
+TOP_BUILDDIR = @OMBUILDDIR@
+HOST_SHORT = @host_short@
+
+OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
+PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/$(HOST_SHORT)/omc
+OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
+
+BOOST_HOME = @BOOSTHOME@
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I"../pugixml-1.2/src/" 
+
+
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@ $(INCDIRS)
+CPPFLAGS= -O3 -Wall -fPIC 
+
+OS_SRCS = pm_posix_timer.cpp
+
+EXEEXT=
+DLLEXT=.so
+
+all: transfer
+
+transfer: libParModelicaAuto.a
+	$(COPY) libParModelicaAuto.a $(OPENMODELICA_LIB)
+	mkdir -p $(PARMODELICAAUTO_INC)
+	$(COPY) om_pm_interface.hpp $(PARMODELICAAUTO_INC)
+	$(COPY) om_pm_model.hpp $(PARMODELICAAUTO_INC)
+
+Makefile: Makefile.in
+	(cd ../../../ && ./config.status)
+
+include Makefile.common

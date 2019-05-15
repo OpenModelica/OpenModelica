@@ -1,0 +1,18 @@
+Just run sh upload.sh and all should work.
+
+More information for the curious:
+
+Dependencies:
+  bibtex2html
+
+Files:
+openmodelica.bib
+  bibtex database used to generate the html includes
+*.cite
+  Determines which bibtex files will be shown on the homepage
+upload.sh
+  Run this; it tries to upload stuff to the openmodelica.org server ;)
+generate.sh
+  Call this to generate the includes for all groups
+bib2html.sh
+  Generates an include-file from bib+cite

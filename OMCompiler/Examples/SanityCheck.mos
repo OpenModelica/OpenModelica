@@ -1,0 +1,12 @@
+// cd();
+path := getTempDirectoryPath() + "/omc-sanity-check";
+system("mkdir -p '"+path+"'");
+cd(path);
+loadString("model M Real r(start=1.0); equation der(r) = 1.0; end M;");
+res:=simulate(M);getErrorString();
+resultFile := res.resultFile;
+if resultFile <> "" then
+  exit(0);
+end if;
+print("Sanity check failed");
+exit(1);

@@ -1,0 +1,7 @@
+bibtexparser
+gitpython
+natsort
+sphinx
+sphinxcontrib-bibtex
+sphinxcontrib-inlinesyntaxhighlight
+ompython

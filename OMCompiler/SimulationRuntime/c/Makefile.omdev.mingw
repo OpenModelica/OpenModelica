@@ -1,0 +1,50 @@
+# Adrian Pop, adrpo@ida.liu.se, 2006-02-01
+# Makefile for compilation of OMC using OMDev-mingw
+# OMDev-mingw: http://www.ida.liu.se/~adrpo/omc/omdev/
+
+# The path to the OMDev-mingw package MUST BE SET!
+#OMDEV=$OMDEV
+# Test if the needed variables are there...
+
+top_builddir = ../..
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
+
+builddir = $(OMBUILDDIR)
+
+AR = ar -ru
+CC = gcc
+FC = g77
+#include the sundials, ipopt from OMDev and the top_builddir for revision.h
+CONFIG_CFLAGS = -O2 -falign-functions -mstackrealign -msse2 -mfpmath=sse \
+-I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
+-I$(top_builddir)/3rdParty/sundials/build/include \
+-I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ -I. \
+-Wall -Wno-unused-variable
+CXXFLAGS = $(CFLAGS)
+
+# Not needed since we already set fpmath
+FPMATHFORTRAN =
+
+LIBMAKEFILE = Makefile.omdev.mingw
+CONFIG_H=$(top_builddir)/Compiler/runtime/config.h
+LIBSIMULATION=libSimulationRuntimeC.a
+LIBRUNTIME=libOpenModelicaRuntimeC.a
+LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+CMINPACK_NO_DLL=-DCMINPACK_NO_DLL
+
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+OBJ_EXT=.o
+else
+ifeq ($(OMC_FMI_RUNTIME),)
+OBJ_EXT=.minimal.o
+else
+OBJ_EXT=.o
+endif
+endif
+
+defaultMakefileTarget = Makefile.omdev.mingw
+
+include Makefile.common
+

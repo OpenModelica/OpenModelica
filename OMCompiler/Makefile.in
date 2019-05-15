@@ -1,0 +1,222 @@
+all: omc
+
+autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
+
+OMBUILDDIR=@OMBUILDDIR@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_CHECK_UNDEFINED_LOOKUP = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_TARGET = "Unix Makefiles"
+OPENCL = @OPENCL@
+AR = @AR@
+host = @host@
+host_short = @host_short@
+FC = @FC@
+
+defaultMakefileTarget = Makefile
+MAKEFILE_BOOT = LinkMain.makefile
+QMAKE=@QMAKE@
+APP=@APP@
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@
+MSGPACK_CFLAGS =
+CPPFLAGS=@CPPFLAGS@
+CXXFLAGS=@CXXFLAGS@
+LDFLAGS=@LDFLAGS@
+LDFLAGS_LIBSTDCXX=@LDFLAGS_LIBSTDCXX@
+LINK=@LINK@
+MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
+# LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
+# Do not use munmap; it crashes processes...
+LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark
+LIBFMILIB=@LIBFMILIB@
+LIBCMINPACKLIB=@LIBCMINPACKLIB@
+LIBZMQLIB=@LIBZMQLIB@
+LD_LAPACK=@LD_LAPACK@
+LAPACK_TARGET=@LAPACK_TARGET@
+OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
+IPOPT_TARGET=@IPOPT_TARGET@
+UMFPACK_TARGET=@UMFPACK_TARGET@
+UMFPACK_SHARED=@UMFPACK_SHARED@
+SUNDIALS_TARGET=sundials
+# We don't want the shared version, but symbols are not exported if we use the static version
+# This compiles the shared and static versions, but we only copy the static version...
+FMILIB_SHARED = @FMILIB_SHARED@
+CMINPACKLIB_SHARED = @CMINPACKLIB_SHARED@
+MODELICA_SPEC_PLATFORM=@MODELICA_SPEC_PLATFORM@
+SHREXT = @SHREXT@
+STAEXT = .a
+BOOST_INCLUDE = @BOOST_INCLUDE@
+WITH_FMIL=@WITH_FMIL@
+ifeq ($(WITH_FMIL),yes)
+BOOTSTRAP_FMIL_DEP=fmil
+endif
+LIB_OMC=lib/@host_short@/omc
+LIBMODELICAEXTERNALC=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaExternalC$(STAEXT)
+LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardTables$(STAEXT)
+LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib$(STAEXT)
+LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO$(STAEXT)
+LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO$(STAEXT)
+OMENCRYPTION=@OMENCRYPTION@
+LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
+MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
+
+SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)"
+
+include Makefile.common
+include Makefile.omsi.common
+
+# We don't need OMDEV hacks, but using the same Makefile sure is nice!
+.testvariables:
+settings:
+
+ifeq ($(OMENCRYPTION),yes)
+omc: semla omc-bootstrapped
+else
+omc: omc-bootstrapped
+endif
+
+boehm-gc-lib: @LIBGC@
+$(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
+	mkdir -p $(OMBUILDDIR)/$(LIB_OMC)
+	cp -pPR $< $<.* $(OMBUILDDIR)/$(LIB_OMC)/
+3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
+	$(MAKE) -C 3rdParty/gc/ libomcgc.la
+
+omc-bootstrapped:
+	$(MAKE) bootstrap-dependencies interactive sim-dependencies
+	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
+	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)
+	test ! `uname` = Darwin || ( ! otool -L "$(builddir_lib_omc)"/*.dylib | egrep "$(OMBUILDDIR)|`pwd`" | grep -v : || ( echo All dylibs should be linked using @rpath ; false ) )
+
+omc-no-sim:
+	$(MAKE) bootstrap-dependencies interactive-short
+	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
+
+lis: lis-configure
+	@echo Building Lis from sources
+	$(MAKE) -C 3rdParty/lis-1.4.12/src
+	# Copy the library; not headers (as they are not used by the runtime system)
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
+	@# FreeBSD lis does not create the symlinks...
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so.0
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so
+lis-configure:
+	# Configure and build lis
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && autoconf && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
+lis-clean:
+	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
+	rm -f 3rdParty/lis-1.4.12/Makefile
+
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in config.status common/m4/*.m4 m4/*.m4
+	./config.status
+
+config.status: configure
+	./config.status -recheck
+configure: configure.ac m4/lapack.m4 common/m4/*.m4
+	autoconf
+
+emcc: msl-external-libs-emcc emcc-simulationruntime
+emcc-simulationruntime:
+	mkdir -p build/lib/omc/emcc/
+	$(MAKE) -C SimulationRuntime/c emcc
+
+copycppheader:
+
+OMDEV_CMAKE="$(OMDEV)/bin/cmake/bin/cmake.exe"
+
+checkMSVCwine:
+	@echo 'Test for WINE, OMDEV, VS140COMNTOOLS env.vars'
+	env
+	test ! -z "$(WINE)"
+	test ! -z "$(OMDEV)"
+	test ! -z "$(VS140COMNTOOLS)"
+	$(WINE) cl.exe
+	$(WINE) cmd /c "if not exist $(OMDEV_CMAKE) (exit 1)"
+	# Remove wine-mono
+	$(WINE) uninstaller --remove '{E45D8920-A758-4088-B6C6-31DBB276992E}'
+
+wine_fmil_msvc: .wine_fmil_msvc
+.wine_fmil_msvc: checkMSVCwine
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/FMIL
+
+	(test -f $@ && test -d 3rdParty/FMIL/build_msvc && test -d 3rdParty/FMIL/install_msvc) || (rm -rf 3rdParty/FMIL/build_msvc && rm -rf 3rdParty/FMIL/install_msvc && mkdir -p 3rdParty/FMIL/build_msvc && cd 3rdParty/FMIL/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib.lib)
+	# copy the dll with the actual name: fmilib_shared.dll as the fmilib.lib contains that name and the exe will look for it
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.lib)
+	@touch $@
+
+wine_sundials_msvc: .wine_sundials_msvc
+.wine_sundials_msvc: checkMSVCwine
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/sundials*
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/sundials
+
+	(test -f $@ && test -d 3rdParty/sundials/build_msvc) || (rm -rf 3rdParty/sundials/build_msvc && mkdir -p 3rdParty/sundials/build_msvc && cd 3rdParty/sundials/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
+	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
+	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
+	@touch $@
+
+wine_runc_msvc_release: .wine_runc_msvc_release
+.wine_runc_msvc_release:  checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/release
+	echo 'Build the MSVC RELEASE'
+
+	(test -f $@ && test -d SimulationRuntime/c/build_msvc/) || (rm -rf SimulationRuntime/c/build_msvc && mkdir -p SimulationRuntime/c/build_msvc && cd SimulationRuntime/c/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=$(OMBUILDDIR) ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
+	(cd SimulationRuntime/c/build_msvc && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
+	(cd SimulationRuntime/c/build_msvc && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
+	@touch $@
+
+wine_runc_msvc_debug: .wine_runc_msvc_debug
+.wine_runc_msvc_debug:  checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
+	echo 'Build the MSVC DEBUG'
+
+	(test -f $@ && test -d SimulationRuntime/c/build_msvc_debug/) || (rm -rf SimulationRuntime/c/build_msvc_debug && mkdir -p SimulationRuntime/c/build_msvc_debug && cd SimulationRuntime/c/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:String=$(OMBUILDDIR) ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
+	(cd SimulationRuntime/c/build_msvc_debug && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
+	(cd SimulationRuntime/c/build_msvc_debug && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
+	@touch $@
+
+wine_runc_msvc_gc: .wine_runc_msvc_gc
+.wine_runc_msvc_gc:  checkMSVCwine
+	# build gc as well, as it is needed for the msvc c runtime
+	@echo 'Build gc (RelWithDebInfo)'
+
+	(test -f $@ && test -d 3rdParty/gc/build_msvc/) || (rm -rf 3rdParty/gc/build_msvc/ && mkdir -p 3rdParty/gc/build_msvc && cd 3rdParty/gc/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
+	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	@touch $@
+
+wine_run_omc_msvc: .wine_run_omc_msvc
+.wine_run_omc_msvc: checkMSVCwine
+	@echo 'Build MSVC Compiler/runtime (RelWithDebInfo)'
+
+	(test -f $@ && test -d Compiler/runtime/build_msvc/) || (rm -rf Compiler/runtime/build_msvc/ && mkdir -p Compiler/runtime/build_msvc && cd Compiler/runtime/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
+	# cp -u Compiler/runtime/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	@touch $@

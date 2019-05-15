@@ -1,0 +1,7 @@
+OMC_PATH=@OMC@
+OMC=$(OMC_PATH) -d=failtrace
+
+include Makefile.common
+
+maybe-run:
+	test ! -f $(OMC_PATH) || $(MAKE)

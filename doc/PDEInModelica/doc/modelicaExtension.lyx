@@ -1,0 +1,2074 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package none
+\inputencoding auto
+\fontencoding default
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 0
+\use_mathdots 0
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3.5cm
+\rightmargin 3.5cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language swedish
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Modelica extension for PDE
+\end_layout
+
+\begin_layout Section
+Requests on language extension and possible approaches
+\end_layout
+
+\begin_layout Section*
+Space & coordinates
+\end_layout
+
+\begin_layout Subsubsection*
+What should be specified
+\end_layout
+
+\begin_layout Itemize
+Dimension of the problem (1,2 or 3D)
+\end_layout
+
+\begin_layout Itemize
+?? Coordinates (cartesian, cylindrical, spherical ...) -- where this information
+ will be used (if at all):
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+in differential operators as grad, div, rot etc.
+\end_layout
+
+\begin_layout Itemize
+in visualization of results
+\end_layout
+
+\begin_layout Itemize
+?? in computation -- perhaps equations should be transformed and the calculation
+ would be performed in cartesian coordinates
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Names of independent (coordinate) variables (
+\begin_inset Formula $x$
+\end_inset
+
+, 
+\begin_inset Formula $y$
+\end_inset
+
+, 
+\begin_inset Formula $z$
+\end_inset
+
+, 
+\begin_inset Formula $r$
+\end_inset
+
+, 
+\begin_inset Formula $\varphi$
+\end_inset
+
+, 
+\begin_inset Formula $\theta$
+\end_inset
+
+...) 
+\end_layout
+
+\begin_layout Standard
+Perhaps all these should be specified within the domain deffinition.
+ 
+\begin_inset Newline newline
+\end_inset
+
+Dimension can be infered from number of return values of shape-function
+ or different properities of the domain in other cases.
+\begin_inset Newline newline
+\end_inset
+
+The base coordinates would be cartesian and they would be always implicitly
+ defined in any domain.
+ Besides that other coordinate systems could be defined also.
+ 
+\begin_inset Newline newline
+\end_inset
+
+Names of independent variables in cartesian coordinates should be fixed
+ 
+\emph on
+x, (x,y), (x,y,z) 
+\emph default
+in 1D, 2D and 3D domains respectively.
+\end_layout
+
+\begin_layout Section*
+Domain & boundary
+\end_layout
+
+\begin_layout Subsection*
+What should be specified
+\end_layout
+
+\begin_layout Itemize
+the domain where we perform the computation and where equations hold
+\end_layout
+
+\begin_layout Itemize
+boundary and its subsets where particular boundary conditions hold
+\end_layout
+
+\begin_layout Itemize
+normal vector of the boundary
+\end_layout
+
+\begin_layout Subsection*
+Possible approaches
+\end_layout
+
+\begin_layout Description
+Parametrization
+\begin_inset space ~
+\end_inset
+
+of
+\begin_inset space ~
+\end_inset
+
+the
+\begin_inset space ~
+\end_inset
+
+domain with shape function and intervals -- from The Book (Principles of
+ ...), section 8.5.2
+\end_layout
+
+\begin_layout Standard
+Example from the book:
+\end_layout
+
+\begin_layout Standard
+\align left
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+model HeatCircular2D 
+\end_layout
+
+\begin_layout Plain Layout
+
+	import DifferentialOperators2D.*;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter DomainCircular2DGrid omega;
+\end_layout
+
+\begin_layout Plain Layout
+
+	FieldCircular2DGrid u(domain=omega, FieldValueType=SI.Temperature);
+\end_layout
+
+\begin_layout Plain Layout
+
+equation 
+\end_layout
+
+\begin_layout Plain Layout
+
+	der (u) = pder (u,D.x2)+ pder (u,D .
+ y 2 )	in omega.interior;
+\end_layout
+
+\begin_layout Plain Layout
+
+	nder(u) = 0		in omega.boundary; 
+\end_layout
+
+\begin_layout Plain Layout
+
+end HeatCircular2D;
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record DomainCircular2DGrid "Domain being a circular region"
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Real radius = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Integer nx = 100;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Integer ny = 100;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable function shapeFunc = circular2Dfunc "2D circular region";
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D interior(shape=shapeFunc,interval={{O,radius},{O,l}},geom= ...
+ );
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D boundary (shape=shapeFunc, interval={{radius, radius), { 0,1}}
+ ,geom=);
+\end_layout
+
+\begin_layout Plain Layout
+
+	function shapeFunc = circular2Dfunc "Function spanning circular region";
+\end_layout
+
+\begin_layout Plain Layout
+
+end DomainCircular2DGrid; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function circular2Dfunc "Spanned circular region for v in interval 0..1" 
+\end_layout
+
+\begin_layout Plain Layout
+
+	input Real r,v; 
+\end_layout
+
+\begin_layout Plain Layout
+
+	output Real x,y; 
+\end_layout
+
+\begin_layout Plain Layout
+
+algorithm 
+\end_layout
+
+\begin_layout Plain Layout
+
+	x : = r*cos (2*PI*v);
+\end_layout
+
+\begin_layout Plain Layout
+
+	y := r*sin(2*PI*v); 
+\end_layout
+
+\begin_layout Plain Layout
+
+end circular2Dfunc; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record FieldCircular2DGrid 
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter DomainCircular2DGrid domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable type FieldValueType = Real;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable type FieldType = Real[domain.nx,domain.ny,domain.nz];
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter FieldType start = zeros(domain.nx,domain.ny,domain.nz);
+\end_layout
+
+\begin_layout Plain Layout
+
+	FieldType Val;
+\end_layout
+
+\begin_layout Plain Layout
+
+end FieldCircular2DGrid; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And modified version, where all numerical stuff (grid, number of points
+ -- this should be configured using simulation setup or annotations ) omitted,
+ modified 
+\family typewriter
+pder
+\family default
+ operator, 
+\family typewriter
+Field
+\family default
+ as Modelica build-in type:
+\end_layout
+
+\begin_layout Standard
+\align left
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+\align left
+
+model HeatCircular2D
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	parameter DomainCircular2D omega(radius=2);
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	field Real u(domain=omega, start = 0, FieldValueType=SI.Temperature);
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+equation 
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	pder(u,time) = pder(u,x)+ pder(u,y) in omega.interior;
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	pder(u,omega.boundary.n) = 0   in omega.boundary; 
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+end HeatCircular2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record DomainCircular2D
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Real radius = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+    parameter Real cx = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Real cy = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	function shapeFunc
+\end_layout
+
+\begin_layout Plain Layout
+
+		input Real r,v;
+\end_layout
+
+\begin_layout Plain Layout
+
+		output Real x,y;
+\end_layout
+
+\begin_layout Plain Layout
+
+	algorithm
+\end_layout
+
+\begin_layout Plain Layout
+
+		x := cx + radius*r * cos(2 * C.pi * v);
+\end_layout
+
+\begin_layout Plain Layout
+
+		y := cy + radius*r * sin(2 * C.pi * v);
+\end_layout
+
+\begin_layout Plain Layout
+
+	end shapeFunc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});     	
+\end_layout
+
+\begin_layout Plain Layout
+
+	Region1D boundary(shape = shapeFunc, interval = {{1,1},{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+end DomainCircular2D; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+Description
+\begin_inset space ~
+\end_inset
+
+by
+\begin_inset space ~
+\end_inset
+
+the
+\begin_inset space ~
+\end_inset
+
+boundary Domain is defined by closed boundary curve, which may by composed
+ of several connected curves.
+ Needs new operator 
+\emph on
+interior
+\emph default
+ and type 
+\emph on
+Domain2d
+\emph default
+ (and 
+\emph on
+Domain1D
+\emph default
+ and 
+\emph on
+Domain3d
+\emph default
+).
+ (similarly used in FlexPDE -- http://www.pdesolutions.com/.) 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "boundaryRepresentation.mo"
+lstparams "breaklines=true,captionpos=b"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+Constructive
+\begin_inset space ~
+\end_inset
+
+solid
+\begin_inset space ~
+\end_inset
+
+geometry used in Matlab PDE toolbox, http://en.wikipedia.org/wiki/Constructive_sol
+id_geometry 
+\end_layout
+
+\begin_layout Standard
+Domain is build from primitives (cuboids, cylinders, spheres, cones, user
+ defined shapes ...) applying boolean operations 
+\emph on
+union
+\emph default
+, 
+\emph on
+intersection
+\emph default
+ and 
+\emph on
+difference.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/Csg_tree.png
+	lyxscale 30
+	width 40text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+constructive solid geometry
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+How to describe boundaries?
+\end_layout
+
+\begin_layout Description
+Listing
+\begin_inset space ~
+\end_inset
+
+of
+\begin_inset space ~
+\end_inset
+
+points -- export from CAD
+\end_layout
+
+\begin_layout Description
+Inequalities
+\end_layout
+
+\begin_layout Description
+Boundary
+\begin_inset space ~
+\end_inset
+
+representation
+\begin_inset space ~
+\end_inset
+
+(BRep) (NETGEN, STEP)
+\end_layout
+
+\begin_layout Section*
+Fields
+\end_layout
+
+\begin_layout Section*
+Partial derivative
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+ ...
+ pder(u,x,y)
+\end_layout
+
+\begin_layout Standard
+directional derivative ...
+ 
+\family typewriter
+pder(u,omega.boundary.n)
+\end_layout
+
+\begin_layout Section*
+Equations, boundary and initial conditions
+\end_layout
+
+\begin_layout Standard
+Use the 
+\emph on
+in
+\emph default
+ operator to express where equations hold.
+\end_layout
+
+\begin_layout Section
+New concepts and language elements
+\end_layout
+
+\begin_layout Subsection
+Domain deffinition
+\end_layout
+
+\begin_layout Standard
+Three concurent aproaches - one has to be chosen:
+\end_layout
+
+\begin_layout Subsubsection
+By boundary
+\end_layout
+
+\begin_layout Standard
+This is the aproach from 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+.
+ Defining domains using curves (that have one parameter) to build up the
+ boundary works very well in 2D.
+ Parameters of these curves are bounded in one dimensional interval.
+ In 3D we have to use surfaces (haveing two parameters) instead of curves.
+ Parameters must be bounded in some subsets of 
+\begin_inset Formula $R^{2}$
+\end_inset
+
+ now.
+ If the boundary is composed of several surfaces, parameters of these surfaces
+ must be often bounded not just in Cartesian product of two intervals but
+ in some more complex sets so that these surfaces are continuously connected.
+ There is no way to write this in the current extension.
+ It is possible to just slightly generalize this method and allow specification
+ of more general sets for these parameters.
+ But this is questionable, as user would have to calculate boundaries where
+ surfaces mutually intersect.
+ This could be often quite hard.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Domain type
+\end_layout
+
+\begin_layout Standard
+There is also a built-in Domain type here to be inherited in all other domain
+ types, but it has different members.
+ It is defined as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Domain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndims;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Real cartesian[ndims];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Real coord[ndims] = cartesian;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+replaceable Region interior;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+replaceable function shape
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real u[ndims];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real coord[ndims];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Domain;
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+type Domain
+\end_layout
+
+\begin_layout Plain Layout
+parameter Integer ndim;
+\end_layout
+
+\begin_layout Plain Layout
+replaceable Region interior;
+\end_layout
+
+\begin_layout Plain Layout
+end Domain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Using shape-function
+\end_layout
+
+\begin_layout Standard
+Other approach was introduced in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
+
+\end_inset
+
+.
+ A so called shape-function is used to map Cartesian product of intervals
+ onto the interior and boundaries of the domain.
+ These functions allows to simply generate points in the domain or if inverted
+ gives straightforward rule to determine whether any given point belongs
+ to the domain.
+ This would later simplify generating the computational grid to simulate
+ the model.
+ This description is also perhaps closer to the way how such a region (subsets
+ of 
+\begin_inset Formula $\mathbb{R}^{n}$
+\end_inset
+
+) is usually described in mathematics.
+ To allow this approach we need some changes to the language.
+\end_layout
+
+\begin_layout Subsection
+Domain type
+\end_layout
+
+\begin_layout Standard
+Any domain type extends built-in 
+\family typewriter
+type Domain
+\family default
+, that has two members 
+\family typewriter
+replaceable Region interior;
+\family default
+ and 
+\family typewriter
+parameter Integer ndim;
+\family default
+.
+ Other domains extends this general domain and redeclares 
+\family typewriter
+Region interior
+\family default
+ into 
+\family typewriter
+Region1D
+\family default
+, 
+\family typewriter
+2D
+\family default
+ or 
+\family typewriter
+3D
+\family default
+.
+ During translation are domains treated in special way.
+
+\family typewriter
+ 
+\family default
+There will be packege 
+\family typewriter
+PDEDomains
+\family default
+ containing library of common domains
+\family typewriter
+ DomainLineSegment1D
+\family default
+, 
+\family typewriter
+DomainRectangle2D
+\family default
+, 
+\family typewriter
+DomainCircular2D
+\family default
+, 
+\family typewriter
+DomainBlock3D
+\family default
+ and others.
+ User can define other new domain classes.
+ 
+\begin_inset Newline newline
+\end_inset
+
+Needs OMC modification.
+\end_layout
+
+\begin_layout Subsection
+Region type
+\end_layout
+
+\begin_layout Standard
+How to evaluate ndimr (equality operator for Reals problematic)?
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "80text%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Region
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndims;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//dim of space
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Integer ndimr;
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//dim of region
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+parameter Real[ndims][2] interval;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+replaceable function shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+input Real u[ndim];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+output Real coord[ndims];
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+end shape;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Region;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+
+\family typewriter
+coordinate
+\end_layout
+
+\begin_layout Standard
+Space coordinate variables are of a different kind than other variables.
+ They are similar to the time variable in Modelica.
+ Both coordinates and time are independent variables.
+ They can get any value from the domain resp.
+ time interval.
+ Other (dependent) variables are actually functions of time and as for fields
+ also of space coordinates.
+ Thus coordinate variables should not hold any particular value of the physical
+ quantity they represent.
+ They have rather a symbolic meaning.
+\end_layout
+
+\begin_layout Standard
+New keyword 
+\family typewriter
+coordinate
+\family default
+ is used as a modifier to define coordinates.
+ The syntax is
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"coordinate Real" coordName;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Or without Real?
+\end_layout
+
+\begin_layout Subsection
+interval
+\end_layout
+
+\begin_layout Standard
+to define parameter interval for a shape-function.
+ E.g.
+ 
+\family typewriter
+interval={{0,1},0}.
+ 
+\family default
+Used in domain records.
+ (Previously called range.)
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Subsection
+shape function
+\end_layout
+
+\begin_layout Standard
+one-to-one map of points in k-dimensional interval (usualy cartesian product
+ of intervals) to points in n-dimensional domain and thus deffine a coordinate
+ system in domain
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+How is the last sentence meant? (Should it be rather: 
+\begin_inset Quotes sld
+\end_inset
+
+and thus determine shape of the domain in particular coordinates.
+\begin_inset Quotes srd
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Description
+region
+\begin_inset space ~
+\end_inset
+
+types
+\begin_inset space ~
+\end_inset
+
+and
+\begin_inset space ~
+\end_inset
+
+regions 
+\family typewriter
+Region0D
+\family default
+, 
+\family typewriter
+Region1D
+\family default
+, 
+\family typewriter
+Region2D
+\family default
+, 
+\family typewriter
+Region3D
+\family default
+ used in domain records to define interior, boundaries and othere regions
+ where certain equations hold (e.g.
+ connection of PDE and ODE).
+ Two mandatory attributes are 
+\family typewriter
+shape
+\family default
+ and 
+\family typewriter
+interval
+\family default
+.
+ E.g.
+ 
+\family typewriter
+Region2D left (shape = shapeFunc, interval = {0,{0,1}}).
+
+\family default
+ 
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Subsection
+fields
+\begin_inset CommandInset label
+LatexCommand label
+name "fields"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A variable whose value depends on space position, is called field.
+ It is defined with keyword 
+\family typewriter
+field
+\family default
+.
+ Field can be of either 
+\family typewriter
+Real
+\family default
+, 
+\family typewriter
+Integer
+\family default
+ or 
+\family typewriter
+Boolean
+\family default
+ type.
+ It can be defined also as a parameter.
+ Field may be an array to represent vector field.
+ Mandatory attribute is 
+\family typewriter
+domain
+\family default
+.
+ Other attributes are same as for corresponding regular type (e.g.
+ for 
+\family typewriter
+Real:
+\family default
+ 
+\family typewriter
+start
+\family default
+, 
+\family typewriter
+fixed
+\family default
+, 
+\family typewriter
+nominal
+\family default
+, 
+\family typewriter
+min
+\family default
+, 
+\family typewriter
+max
+\family default
+, 
+\family typewriter
+unit
+\family default
+, 
+\family typewriter
+displayUnit
+\family default
+, 
+\family typewriter
+quantity
+\family default
+, 
+\family typewriter
+stateSelect
+\family default
+.
+ (Not shure about 
+\family typewriter
+fixed
+\family default
+ and 
+\family typewriter
+stateSelect
+\family default
+.) Fields may be initialized in initialEquation section or us- ing start
+ attribute in declaration as other variables.
+ Because higher derivatives are allowed for fields it is sometimes necessary
+ to specify start value for some field derivative.
+ This is not a problem in the initialEquation.
+ To initialize field derivative using start attribute we can treat it as
+ an array.
+ Here it is confusing that arrays are indexed starting with 1, so that start[1]
+ is start value the field itself, start[2] is for first derivative etc.
+ They can be assigned either constant values or field literals.
+\family typewriter
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+see 
+\family typewriter
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "String-equation-(1D)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+New language element.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+??Use 
+\family typewriter
+in
+\family default
+ operator to specifie the domain in field declaration instead of 
+\family typewriter
+domain
+\family default
+ attribute:
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+field Real u in omega;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+field literal constructor
+\begin_inset CommandInset label
+LatexCommand label
+name "field-literal-constructor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align left
+
+\family typewriter
+\begin_inset Quotes sld
+\end_inset
+
+field
+\begin_inset Quotes srd
+\end_inset
+
+ 
+\begin_inset Quotes sld
+\end_inset
+
+(” expr1 ”in” expr2 ”)”
+\family default
+, 
+\begin_inset Newline newline
+\end_inset
+
+or just shortcut 
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+”{” expr1 ”in” expr2 ”}”
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+where 
+\family typewriter
+expr2
+\family default
+ is a domain and 
+\family typewriter
+expr1
+\family default
+ may depend on coordinates defined in this domain.
+ E.g.
+ 
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+field Real f = field(2*dom.x+dom.y in omega.interior);
+\end_layout
+
+\begin_layout Description
+operations
+\begin_inset space ~
+\end_inset
+
+and
+\begin_inset space ~
+\end_inset
+
+functions
+\begin_inset space ~
+\end_inset
+
+on
+\begin_inset space ~
+\end_inset
+
+fields All operators (= , :=, +, -, *, /, ^, <, <= ,> ,>= ,== , <>) and
+ functions can be applied on fields.
+ The result is also a field.
+ If a binary operator or function of more arguments is applied on two (or
+ more) fields, these fields must be defined within the same domain.
+\begin_inset Newline newline
+\end_inset
+
+If some binary operator or function with more arguments is performed on
+ field and regular variable (it means a variable that is not a field), the
+ operation is performed as if the regular variable is field that is constant
+ in space.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+pder()
+\family default
+
+\begin_inset space ~
+\end_inset
+
+operator for partial and directional derivative of real field.
+ Higher derivatives are allowed.
+ E.g.
+ 
+\family typewriter
+pder(u,omega.x,omega.x,omega.y)
+\family default
+ means 
+\begin_inset Formula $\frac{\partial^{3}u}{\partial x^{2}y}$
+\end_inset
+
+
+\family typewriter
+.
+
+\family default
+ Directional derivative: 
+\family typewriter
+pder(u,omega.left.n)
+\family default
+.
+ Time derivative of field must be written also using 
+\family typewriter
+pder
+\family default
+ operator not 
+\family typewriter
+der.
+\end_layout
+
+\begin_layout Description
+normal
+\begin_inset space ~
+\end_inset
+
+vector implicitly defined for all N-1 dimensional regions in N dimensional
+ domain.
+ (e.g.
+ 
+\family typewriter
+omega.left.n
+\family default
+) Used in boundary condition equations.
+ How to write domain and region independently - perhaps 
+\family typewriter
+region.n
+\family default
+?
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Subsection
+
+\family typewriter
+in
+\family default
+ operator
+\begin_inset CommandInset label
+LatexCommand label
+name "in-operator"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+is used to define where PDE, boundary conditions and other equations hold
+ and to acces field values in particular point (see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "heatPID.mo"
+
+\end_inset
+
+).
+ On left is an equation on right is a region where the equation hold.
+ 
+\begin_inset Newline newline
+\end_inset
+
+E.g.
+ 
+\family typewriter
+x=0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+dom
+\family default
+
+\begin_inset space ~
+\end_inset
+
+keyword stands for current domain specified with 
+\family typewriter
+in
+\family default
+ operator.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,dom.x)=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.interior;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+is equivalent to
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,omega.x)=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.interior;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+Is useful to write equations domain independent.
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+region
+\family default
+
+\begin_inset space ~
+\end_inset
+
+keyword stands for current region specified with 
+\family typewriter
+in
+\family default
+ operator.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v*region.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.left, omega.right;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+is equivalent to
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v*omega.left.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.left;
+\begin_inset space ~
+\end_inset
+
+v*omega.right.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.right;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+Is useful to get normal vector in domain independent equations and on anonymous
+ regions.
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+ Not shure if it will be needed.
+\end_layout
+
+\begin_layout Description
+region
+\begin_inset space ~
+\end_inset
+
+addition?? + operator can be used to add regions.
+ Can be used in domain record to form a new region, e.g.
+ 
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+boundaries = left + right;
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+or on right side of 
+\family typewriter
+in
+\family default
+ operator, e.g.
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+x = 0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left + omega.right;
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+New language element.
+ Not shure if it will be needed.
+\end_layout
+
+\begin_layout Description
+vector
+\begin_inset space ~
+\end_inset
+
+differential
+\begin_inset space ~
+\end_inset
+
+operators
+\family typewriter
+ grad,
+\begin_inset space ~
+\end_inset
+
+div,
+\begin_inset space ~
+\end_inset
+
+rot
+\end_layout
+
+\begin_layout Section
+Changes and additions to Levon Saldamlis proposals
+\end_layout
+
+\begin_layout Subsection*
+Field literal constructor
+\end_layout
+
+\begin_layout Standard
+is modified to handle several different coordinate systems.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Previously
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"field" "(" expr1 "for" iter "in" aDomain ")"
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"{" expr1 "for" iter "in" aDomain "}"
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+iter
+\family default
+ is one variable or touple of variables of arbitrary name that are binded
+ to coordinates in 
+\family typewriter
+aDomain.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Now
+\end_layout
+
+\begin_layout Standard
+see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "field-literal-constructor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Disable accessing field values in function-like style
+\end_layout
+
+\begin_layout Standard
+Accessing field values in function-like style should not be allowed, if
+ possible, for two reasons: first it is not allowed in current Modelica
+ for regular (non-field) variables (that are unknown functions of time)
+ in ODE.
+ We should be in agreement with current Modelica.
+ Second, if more than one coordinate system are defined in a domain, it
+ is not indicated which coordinates are used in the argument.
+ Regions consisting of one point and the 
+\family typewriter
+in
+\family default
+ operator may be used instead, see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "in-operator"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Initialization of derivatives of fields
+\end_layout
+
+\begin_layout Standard
+in case of field that is differentiated at least twice (in constructor,
+ not in initial equation section).
+ Previously not solved, now see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fields"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Coordinates
+\end_layout
+
+\begin_layout Standard
+new keyword 
+\family typewriter
+coordinate
+\family default
+.
+ They were previously member of built-in class 
+\family typewriter
+domain
+\family default
+, that was inherited by all other domains.
+\end_layout
+
+\end_body
+\end_document

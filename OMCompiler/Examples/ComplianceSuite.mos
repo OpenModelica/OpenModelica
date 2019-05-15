@@ -1,0 +1,93 @@
+// Runs the ModelicaCompliance suite
+// Default output is the files "openmodelica.xml" and "openmodelica.html", which is a valid jUnit testcase and possible to generate html reports from (the generated file is one example, using the default xsl)
+// A file called "openmodelica.ignore.xml" is also generated, which can be used together with a file to mark skipped tests (they still run to see if the results have improved)
+// COMPLIANCEEXTRAOMFLAGS=-d=newInst COMPLIANCEPREFIX=openmodelica-newinst can be used as well
+
+setCommandLineOptions("-g=Modelica");
+loadModel(ModelicaCompliance);getErrorString();
+setCommandLineOptions("-g=MetaModelica");
+writeFile("version","omc "+getVersion()+" compliance suite "+getVersion(ModelicaCompliance));getErrorString();
+
+COMPLIANCEEXTRAOMFLAGS := getEnvironmentVar("COMPLIANCEEXTRAFLAGS");
+COMPLIANCEEXTRAREPORTFLAGS := getEnvironmentVar("COMPLIANCEEXTRAREPORTFLAGS");
+COMPLIANCEPREFIX := getEnvironmentVar("COMPLIANCEPREFIX");
+if COMPLIANCEPREFIX=="" then
+  COMPLIANCEPREFIX := "openmodelica";
+end if;
+
+loadString("
+function last
+  input String str[:];
+  output String ostr = str[end];
+end last;
+function fixName
+  input String str;
+  output String out;
+algorithm
+  out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),\"\\\"\",\"\"),\"\\\\\",\"\");
+end fixName;
+");getErrorString();
+
+system("rm -f ModelicaCompliance.*.res");getErrorString();
+
+echo(false);
+allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
+commands:={"ulimit -t 120 && ("+getInstallationDirectoryPath()+"/bin/omc -d=nogen "+COMPLIANCEEXTRAOMFLAGS+" \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
+echo(true);
+String(size(allClasses,1)) + " number of classes";
+
+min(OpenModelica.Scripting.writeFile(fixName(typeNameString(cl))+".mos","
+OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"killed\\\":true}\");
+
+loadModel(ModelicaCompliance);getErrorString();
+// delete classes that generate errors all the time
+/*
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName); getErrorString();
+deleteClass(ModelicaCompliance.Classes.Enumeration.EnumDuplicateLiteral); getErrorString();
+deleteClass(ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflict); getErrorString();
+deleteClass(ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable); getErrorString();
+*/
+
+loadString(\"record OpenModelicaSimulationResult
+  String resultFile, messages;
+end OpenModelicaSimulationResult;\");
+// Give rec a value even if we overflow the stack and fail to execute the command
+rec:=OpenModelicaSimulationResult(\"\", \"\");
+rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");err:=getErrorString();
+resultFile := rec.resultFile;
+loadString(\"
+function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
+function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
+function firstPart input String str; output String out; algorithm out := if length(str) < 4096 then str else substring(str,1,4096); end firstPart;
+function fixName
+  input String str;
+  output String out;
+algorithm
+  out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\\\"'\\\",\\\"\\\"),\\\"\\\\\\\"\\\",\\\"\\\"),\\\"\\\\\\\\\\\",\\\"\\\");
+end fixName;
+\");
+shouldPass := OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Scripting.typeNameString(cl)+",__ModelicaAssociation.TestCase.shouldPass);
+success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
+messages := rec.messages;
+messages := messages + err;
+messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
+messages := firstPart(messages);
+messages := stringReplace(messages, \"\\\\\",\"/\");
+messages := stringReplace(messages, \"\\\"\",\"'\");
+messages := stringReplace(messages,\"\n\",\"\\\\n\");
+errorType := if shouldPass then \"failed\" else \"expected failure\";
+if resultFile <> \"\" then
+  time := rec.timeTotal;
+else
+  time := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
+end if;
+writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"time\\\":\"+String(time)+\", \\\"success\\\":\"+String(success)+\", \\\"messages\\\":\\\"\"+messages+\"\\\", \\\"shouldPass\\\":\"+String(shouldPass)+\"}\n\");
+") for cl in allClasses);
+getErrorString();
+
+filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl");getErrorString();
+system_parallel(commands);getErrorString();
+system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\" --outPrefix=\"" + COMPLIANCEPREFIX + "\" " + COMPLIANCEEXTRAREPORTFLAGS);getErrorString();
+system("xsltproc -o "+COMPLIANCEPREFIX+".html '" + filename + "' "+COMPLIANCEPREFIX+".xml");getErrorString();

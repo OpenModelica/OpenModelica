@@ -1,0 +1,246 @@
+A compiler is a complex tool, and even seemingly trivial changes to it might
+have unforseen consequences. The OpenModelica project therefore includes a test
+suite that is used to verify the correctness of the compiler's behavior. Every
+change to the compiler's behavior should be accompanied by an update or extension
+of the test suite. This section describes the design and usage of the test
+suite, and how new test cases are added to the suite.
+
+\subsection{Design}
+\label{sec:test:design}
+The OpenModelica test suite resides in the testsuite directory of the source
+tree, which contains the test cases, makefiles and a testing tool called rtest.
+A test case consists of Modelica or MetaModelica code that should be processed
+by the compiler, and an expected output. The test case format is described in
+greater detail in section \ref{sec:test:writing} below. Test cases are then run
+by the rtest tool, which is implemented as a perl script. The rtest tool runs a
+test case through the compiler and matches the output from the compiler with
+the expected output specified in the test case.
+
+Since the test cases might be e.g. simulation tests that have slightly different
+results on different platforms it is necessary to allow the actual output to
+differ slightly with regards to the expected output. The matching in rtest is
+therefore done by another tool written as a flex lexer that is aware of Modelica
+floating point numbers, and which allows for an acceptable relative error in the
+output.
+
+The layout of the test suite is that test cases reside in subdirectories. Each
+subdirectory contains a makefile that is called from the main makefile in the
+test suite directory. The contents of each subdirectory is described below:
+\begin{description}
+\item[bootstrapping] Tests for the bootstrapped compiler.
+\item[dependency] Tests for the dependency analysis (+d=usedep flag).
+\item[expandable] Tests for expandable connectors.
+\item[fmi] Tests for FMI.
+\item[initialization] Variable initialization tests.
+\item[interactive] Tests for the interactive API.
+\item[interactive-simulation] Tests for the interactive simulation.
+\item[libraries] Modelica standard library tests.
+\item[linearize] Linearization tests.
+\item[meta] MetaModelica tests.
+\item[modelicaML] ModelicaML tests.
+\item[mofiles] Tests for modelica language constructs.
+\item[mosfiles] Various simulation tests.
+\item[mosfiles-msl22] Simulation tests for modelica standard library 2.2 models.
+\item[mosfiles-nosim] mos-file tests which don't do simulations.
+\item[parser] Parser tests.
+\item[records] Modelica record tests.
+\item[redeclare] Tests for the Modelica redeclare construct.
+\item[streams] Stream connector tests.
+\end{description}
+
+\subsection{Usage}
+\label{sec:test:usage}
+The test suite can be used in several ways. The most common is to simply run
+\termcmd{make test} in the test suite directory, which will run all working
+tests in the testsuite and print out a report that shows how many tests
+succeeded and how many failed. Each subdirectory in the test suite is also
+independent, so it's possible to run \termcmd{make} in any subdirectory to only
+run those tests. Each makefile contain two lists of test cases: working tests
+and failing tests. The working tests are those tests that are known to work and
+used in a normal run of the test suit. Failing tests are those tests that
+currently does not produce the correct output, and so are awaiting compiler
+fixes before they can be used. They can be run with \termcmd{make failingtest}.
+
+It's also possible to use the rtest tool directly on a test case, in the case
+when you only want to run a single test case. Flags can be passed to the
+compiler through the rtest tool either by giving them directly on the command
+line, or by setting the \texttt{RTEST_OMCFLAGS} environment variable. The
+following two calls are equivalent:
+\begin{lstlisting}
+$ rtest +d=failtrace SomeTestcase.mo
+$ RTEST_OMCFLAGS=+d=failtrace rtest SomeTestcase.mo
+\end{lstlisting}
+
+The makefile solution does have some problems though, the foremost being that it
+only provides a limited support for running tests in parallel which is important
+for developers using multi-core processors. A parallel test tool called runtests
+is available in the partest directory in the test suite. It is a perl script
+that parses the makefiles to get the test cases to run, and then runs the tests
+in parallel to significantly speed up the testing. To avoid conflicts between
+tests it creates a temporary directory for each test and links the necessary
+files into the directory. The disadvantage of this tool is that it so far only
+works on Linux.
+
+\subsection{Writing test cases}
+\label{sec:test:writing}
+OpenModelica test cases should follow the following format, where text in
+brackets should be replaced with real data:
+\begin{lstlisting}[language=modelica]
+// [key: value]
+//
+// [Comment describing the test case.]
+//
+
+[Modelica/MetaModelica code]
+
+// Result:
+// [Expected result]
+// endResult
+\end{lstlisting}
+The key, value pair corresponds to test case information or options, and the
+following keys are accepted by rtest:
+\begin{description}
+\item[name] The name of the test case. In the case where the test case tests a
+single model it is customary that this name is the models name.
+\item[keyword] A list of keywords associated with the test, delimited by spaces.
+\item[status] Either \emph{correct} or \emph{incorrect}. Correct means that the
+code that makes up the test is correct and should pass compilation, while
+incorrect means that the code is incorrect and that it's expected that the
+compiler will fail with an error message.
+\item[cflags] Extra compiler flags that will be sent to the compiler by rtest.
+\item[setup_command] A command that will be run before the compiler is invoked
+by rtest.
+\item[teardown_command] A command that will be run after the compiler has been
+invoked by rtest.
+\end{description}
+The \emph{name}, \emph{keyword}, and \emph{status} information should always be
+given for a test case, while the rest of the options are optional. The expected
+result of a test case can be automatically generated with rtest by calling rtest
+with the -b flag (b stands for baseline). The Result and endResult markers can
+be omitted in this case, since they will be generated by rtest at the end of the
+test case. This flag can also be used to update a test case whose expected
+result has changed. 
+
+Adding a new test to the test suite is a simple matter of writing the test case
+and placing it in the correct directory, see section \ref{sec:test:design}, and
+adding it to either the list of working tests or the list of failing tests in
+the directories makefile.
+
+Since the content of a test case is specified as Modelica or MetaModelica code
+there is considerable freedom when designing a test case. A test case should be
+kept small and specific though, so it is important to not abuse that freedom.
+The vast majority of the test cases in the test suite follow the same structure,
+and it is therefore normal procedure to copy and modify a similar test instead
+of writing new tests from scratch. The rest of this section will show some
+examples of different test cases.
+
+The simplest type of test case is a test case that tests the flattening of a
+single Modelica model:
+\begin{lstlisting}[language=modelica]
+// name:     Abs
+// keywords: abs builtin
+// status:   correct
+//
+// Testing the built-in abs function.
+//
+
+model Abs
+  Real r1, r2;
+equation
+  r1 = abs(100);
+  r2 = abs(-100);
+end Abs;
+
+// Result:
+// class Abs
+//   Real r1;
+//   Real r2;
+// equation
+//   r1 = 100.0;
+//   r2 = 100.0;
+// end Abs;
+// endResult
+\end{lstlisting}
+The test cases name is in this example the same as the models name, and the
+filename of the test case should also be Abs.mo. When this test case is given to
+rtest it will be flattened by the compiler, which only sees the single model
+since everything else is seen as comments. The output from the compiler will
+then be compared with the expected output given in the test case between the
+Result and endResult keywords, and the test will pass or fail depending on
+whether the output matches or not.
+
+A more complicated test case is the following:
+\begin{lstlisting}[language=modelica]
+// name:     Xpowers1
+// keywords: events
+// status: correct
+// teardown_command: rm -rf Xpowers1_* Xpowers1 Xpowers1.exe Xpowers1.cpp Xpowers1.makefile Xpowers1.libs Xpowers1.log output.log
+//
+// Event handling
+//
+// Drmodelica: 8.2 XPowers (p. 242)
+// 
+
+loadFile("Xpowers1.mo");
+simulate(Xpowers1, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5, outputFormat="mat");
+echo(false);
+size:=readSimulationResultSize("Xpowers1_res.mat");
+res:=readSimulationResult("Xpowers1_res.mat",{xpowers[1],xpowers[2], xpowers[3],xpowers[4],xpowers[5]},size);
+echo(true);
+res[:,1];
+
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "Xpowers1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, [cut for brevity]
+//     messages = ""
+// end SimulationResult;
+// true
+// {1.0,10.0,100.0,1000.0,10000.0}
+// endResult
+\end{lstlisting}
+This test case uses the user API to load a file that contains the model to be
+simulated. It then simulates the loaded model, and then reads the simulation
+result into the res variable. In this case only the first column of the result
+matrix is interesting, so \inlinecode{res[:,1]} is used to display these values.
+The echo command is also used to turn on and off automatic echoing to the
+standard output where appropriate. This test also declares a teardown command
+that will be executed by rtest after the test case has been processed by the
+compiler, in this case a command that cleans up some files that where generated
+during the simulation.
+
+The following example is a typical test case that tests a model from the
+Modelica standard library:
+\begin{lstlisting}[language=modelica]
+// name:        Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir [version 3.1]
+// keyword:     media
+// status:      correct
+// cflags:      +d=nogen,noevalfunc
+//
+// instantiate/check model example
+//
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+instantiateModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir); getErrorString();
+checkModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir); getErrorString();
+
+// Result:
+// true
+// ""
+// "[Flattened model, omitted for brevity]
+// "
+// ""
+// "Check of Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir completed successfully.
+// 
+// Class Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir has 60 equation(s) and 60 variable(s).
+// 36 of these are trivial equation(s).
+// "
+// ""
+// endResult
+\end{lstlisting}
+This test case loads the standard library, version 3.1, and then instantiates
+and checks a model from Modelica.Media. It uses the getErrorString command to
+display any errors that might occur, and it also use the cflags option to
+specify a couple of debug flags that is needed for this specific model.

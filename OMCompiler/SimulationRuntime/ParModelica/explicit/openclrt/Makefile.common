@@ -1,0 +1,24 @@
+
+# cp -u is a GNU extension. Do not rely on it.
+COPY=cp -rp
+AR_=ar -rcs
+
+SRCS = \
+omc_ocl_memory_ops.c \
+omc_ocl_interface.c \
+omc_ocl_builtin_kernels.c \
+omc_ocl_util.c
+
+OBJS = $(SRCS:.c=.o)
+
+.PHONY : ocloffc libParModelicaExpl clean
+
+ocloffc: omc_ocl_util.h libParModelicaExpl.a
+	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.cpp libParModelicaExpl.a $(OPENLC_LIB) $(CFLAGS)
+
+libParModelicaExpl.a: $(OBJS)
+	@rm -f $@
+	$(AR_) $@ $(OBJS)
+
+clean :
+	rm -f *.o *.a

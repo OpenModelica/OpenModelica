@@ -1,0 +1,548 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+/*
+ * Generates Modelica documentation automatically in about 4 minutes on Linux, 30 on Windows
+ *   Includes Modelica standard libraries
+ *   Most Modelica builtin operators
+ *   Some non-Modelica-but-used-in-MSL operators
+ *   OpenModelica scripting
+ *
+ * $Id$
+ */
+
+setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
+setCommandLineOptions("--noSimplify");
+
+// rmSymlinks
+// (false) should we keep readable names (nice online, if the server handles symbolic links), or
+// (true) use the hashed names in the links (nice if you want a zipped version to work on Windows). This removes the readable names, keeping only the hashed and de-duped images.
+rmSymlinks := false;
+// should we generate documentation for OM built-in functions?
+genBuiltin := true;
+// should we generate MetaModelica documentation?
+genMetaModelica := true and genBuiltin;
+
+shouldEcho := true;
+if getEnvironmentVar("GenerateDocTest") == "YES"
+then
+  writeFile("loadModel.mos","
+  loadString(\"
+  package TestGenerateDoc
+    annotation(Documentation(info=\\\"<html>TestGenerateDoc HTML</html>\\\"));
+  end TestGenerateDoc;\");"); getErrorString();
+  // should we generate documentation for OM built-in functions?
+  genBuiltin := false;
+  // should we generate MetaModelica documentation?
+  genMetaModelica := false;
+  // should we echo?
+  shouldEcho := false;
+else
+  loadModel(Modelica); getErrorString();
+  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
+end if;
+getErrorString();
+runScript("loadModel.mos");
+getErrorString();
+getClassNames();
+
+echo(false);
+self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
+py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
+
+// adrpo: do not run the python stuff when running the testsuite
+if getEnvironmentVar("GenerateDocTest") == "YES" then
+  system("mkdir -p Icons");
+else
+  system("find . -maxdepth 1 -name '*.html' -delete");
+  commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in getClassNames(builtin=false)};getErrorString();
+  res:=system_parallel(commands);getErrorString();
+  //system("rm -f *.json");getErrorString();
+end if;
+/* if max(res) <> 0 then
+  exit(1);
+end if; */
+
+if genMetaModelica then
+  setCommandLineOptions("-g=MetaModelica");
+  loadString("package MetaModelica \"MetaModelica Language Extensions\"\n" + readFile(getInstallationDirectoryPath()+"/lib/omc/MetaModelicaBuiltin.mo") + "\nend MetaModelica;","MetaModelicaBuiltin.mo");
+  setCommandLineOptions("-g=Modelica");
+end if;
+
+genTimeStamp := "2016";
+allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
+if not getEnvironmentVar("GenerateDocTest") == "YES" then
+system("date -u +%FT%TZ > tmp");
+genTimeStamp := readFile("tmp");
+end if;
+version := "<hr />Generated at " + genTimeStamp + " by <a href=\"http://openmodelica.org\">OpenModelica</a>" + getVersion() + " using <a href=\"GenerateDoc.mos\">GenerateDoc.mos</a>";
+
+echo(shouldEcho);
+"classNames";
+classNames := getClassNames(builtin=genBuiltin,sort=true);
+
+"Defining functions used in this script...";
+loadString("
+function filename \"Replace characters that mess with filesystems and shell expansions\"
+  input String str;
+  output String ostr =
+        OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(str,\"/\",\"Division\"),
+        \"*\",\"Multiplication\"),
+        \"<\",\"x3C\"),
+        \">\",\"x3E\")
+;
+end filename;
+
+function uriEncode
+  input String str;
+  output String uri;
+algorithm
+  uri := OpenModelica.Scripting.stringReplace(str,\"'\",\"%27\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\" \",\"%20\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\"<\",\"x3C\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\">\",\"x3E\");
+end uriEncode;
+
+function last
+  input String str[:];
+  output String ostr = str[end];
+end last;
+
+function preSuffixIfNotEmpty
+  input String prefix;
+  input String str;
+  input String suffix;
+  output String out = if str <> \"\" then prefix + str + suffix else \"\";
+end preSuffixIfNotEmpty;
+
+function svgIcon
+  input String file;
+  input String link;
+  input String cssClass;
+  input Boolean rmSymlinks;
+  output String tag;
+protected
+  String hashedName;
+algorithm
+  if OpenModelica.Scripting.regularFileExists(file) then
+    hashedName := if rmSymlinks then OpenModelica.Scripting.dirname(file) + \"/\" + OpenModelica.Scripting.basename(OpenModelica.Scripting.realpath(file)) else file;
+    tag := \"<a href=\\\"\" + uriEncode(if link == file then hashedName else link) + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ hashedName +\"\\\" /></a>&nbsp;\";
+  else
+    tag := \"\";
+  end if;
+end svgIcon;
+
+function head
+  input String strs[:];
+  input String svgFile;
+  input Boolean rmSymlinks;
+  output String head;
+protected
+  String compound = \"\", file;
+algorithm
+  head :=
+\"<head>
+  <meta http-equiv=\\\"Content-Type\\\" content=\\\"text/html; charset=utf-8\\\" />
+  <link href=\\\"style.css\\\" rel=\\\"stylesheet\\\" type=\\\"text/css\\\" />
+  <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
+  </head>
+  <body>
+  <h1>\" + svgIcon(\"Icons/\" + svgFile,\"Icons/\" + svgFile,\"svgiconhead\",rmSymlinks=rmSymlinks) + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
+  for ident in strs[1:end-1] loop
+    compound := if compound == \"\" then ident else compound+\".\"+ident;
+    file := filename(compound+\".html\");
+    head := head + \"<a class=\\\"omc-h1-a\\\" href = \\\"\"+file+\"\\\">\"+ident+\"</a>.\";
+  end for;
+  head := head + \"<span class=\\\"omc-h1\\\">\" + strs[end] + \"</span></h1>\";
+end head;
+
+record Item
+  String file;
+  String head;
+  String docInfo[3];
+  String contents;
+  String comment;
+  String interface;
+  String short;
+end Item;
+
+function itemString
+  input Item item;
+  input String version;
+  output String res;
+protected
+  String docInfo, revision;
+algorithm
+  docInfo := if item.docInfo[1] == \"\"
+    then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
+    else if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\", caseInsensitive=true)
+    then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
+    else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", toHtml(item.docInfo[1]), \"</pre>\");
+  revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
+  res := item.head + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
+end itemString;
+
+function itemFile
+  input Item item;
+  output String file;
+algorithm
+  file := item.file;
+end itemFile;
+
+function toHtml
+  input String str;
+  output String ostr;
+protected
+  Integer n;
+  String[2] matches;
+algorithm
+  (n,matches) := OpenModelica.Scripting.regex(str,\"^[:space:]*<html>(.*)</html>[:space:]*\",caseInsensitive=true,maxMatches=2);
+  ostr := if n==2 then matches[2] else OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"&\",\"&amp;\"),\"<\",\"&lt;\"),\">\",\"&gt;\");
+end toHtml;
+");
+
+"Start calculate items";
+echo(false);
+items:={Item(
+      filename(OpenModelica.Scripting.typeNameString(c))+".html",
+      head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg",rmSymlinks=rmSymlinks),
+      OpenModelica.Scripting.getDocumentationAnnotation(c),
+      preSuffixIfNotEmpty(
+        "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
+        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall",rmSymlinks=rmSymlinks) +"<a href=\"" + uriEncode(filename(OpenModelica.Scripting.typeNameString(cl))) + ".html\">" +
+             last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
+             toHtml(OpenModelica.Scripting.getClassComment(cl)) +
+             "</td></tr>\n"
+             for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=false)),
+        "</table>"
+        ),
+      toHtml(OpenModelica.Scripting.getClassComment(c)),
+      preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
+      preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
+    ) for c in allClassNames};
+
+echo(shouldEcho);
+"Start writing items to file";
+writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
+getErrorString();
+"Finished writing " + String(size(items,1)) + " items";
+echo(false);
+
+dirs := "";
+replaceCommands := "";
+filetmp := "index.html";
+writeFile(filetmp, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
+writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, miscellaneous Modelica libraries stored in a <a href=\"https://openmodelica.org/git/OpenModelicaLibraries.git\">git</a> repository. There is also documentation for OpenModelica-specific <a href=\"OpenModelica.Scripting.html\">scripting</a>.</p>\n", append = true);
+writeFile(filetmp, "<p>Note that not all libraries are supported or have been tested. Feel free to add bug reports either to <a href=\"https://trac.openmodelica.org/OpenModelica/newticket\">OpenModelica</a> (for compiler bugs) or to the <a href=\"https://github.com/modelica-3rdparty\">GitHub projects</a> for enhancements or bugs in the libraries. Older libraries may contain broken links and images (only libraries with modelica:// links produce good documentation). The Modelica Standard Library is the best supported package in OpenModelica.</p>\n", append = true);
+writeFile(filetmp, "<h2>Libraries</h2>\n", append = true);
+writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
+for cl in classNames loop
+  file := getSourceFile(cl);
+  base := basename(file);
+  if base <> "ModelicaBuiltin.mo" and base <> "MetaModelicaBuiltin.mo" then
+    base := basename(file);
+    modelVersion := getVersion(cl);
+    contentStr := typeNameString(cl);
+    if base == "package.mo" then
+      /* The replaceCommands are used in the Python script generated later. These are sed-style replacements with & as delimiter to avoid escaping slashes. */
+      replaceCommands := replaceCommands + "\n (re.compile('^[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://"+contentStr+"/'),'"+dirname(file)+"/'),";
+      dirpaths := strtok(dirname(file),"/");
+      dirs := dirs + " \"" + dirpaths[end] + "\" ";
+    end if;
+    comment := toHtml(getClassComment(cl)); // let's escape "&" on the fly
+    fileName := filename(contentStr);
+    writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall",rmSymlinks=rmSymlinks) + "<a href=\"" + uriEncode(fileName) + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+  end if;
+end for;
+writeFile(filetmp, "</table>\n", append = true);
+
+if genBuiltin then
+  writeFile(filetmp, "<h2>Builtin Environment</h2>\n", append = true);
+  writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
+  for cl in classNames loop
+    file := getSourceFile(cl);
+    base := basename(file);
+    if base == "ModelicaBuiltin.mo" or base == "MetaModelicaBuiltin.mo" then
+      contentStr := typeNameString(cl);
+      modelVersion := getVersion(cl);
+      comment := toHtml(getClassComment(cl)); // lets escape "&" on the fly
+      fileName := filename(contentStr);
+      writeFile(filetmp, "<tr><td><a href=\"" + uriEncode(fileName) + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+    end if;
+  end for;
+  writeFile(filetmp, "</table>\n", append = true);
+end if;
+writeFile(filetmp, version + ". <a title=\"Tarball for case-sensitive file systems that support symbolic links\" href=\"ModelicaDocumentation.tar.xz\">Offline version (tar.xz)</a> <a title=\"Case-insensitive version for Windows and some Mac systems. Icons are duplicated since zip does not support symlinks.\" href=\"ModelicaDocumentation.zip\">(zip)</div></a>.", append = true);
+writeFile(filetmp, "</body>\n</html>", append = true);
+
+writeFile("Tidy.py","#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import with_statement
+from bs4 import BeautifulSoup
+import subprocess as sub
+import re
+import glob
+import sys
+
+repls = ["+replaceCommands+"
+ (re.compile(r'.*/omlibrary/'), ''),
+ (re.compile(r' '), r'%20'),
+ (re.compile(r'\\''), r'%27'),
+ (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %]*)#'), r'\\1.html#'),
+ (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %]*)'), r'\\1.html'),
+]
+rehttp = re.compile(r'https?://',flags=re.IGNORECASE)
+ignorebookmark = re.compile(r'^([^#]*)#.*')
+links = open('tidy.links','w')
+
+def linkreplace(link,filepath):
+  result = link
+  for (regex,repl) in repls:
+    try:
+      result = regex.sub(repl,result)
+    except:
+      pass
+  if result is not link and not rehttp.match(result):
+    links.write('%s!%s\\n' % (filepath,ignorebookmark.sub(r'\\1',result)))
+  return result
+
+for filepath in sorted(glob.glob('*.html')):
+#  sub.call(['cp', filepath, filepath + '.original'])
+  tag = '[Checking file %s]:\\n' % filepath
+#  sys.stdout.write(tag)  # not much point in writing the tags to stdout
+  sys.stderr.write(tag)
+  pid = sub.call(['tidy', '-utf8', '-modify', '-asxhtml', '--add-xml-decl', 'yes', '-quiet', filepath])
+  if pid != 2:
+    with open(filepath,'r') as html_file:
+      soup = BeautifulSoup(html_file, fromEncoding='utf-8')
+      for a in soup.findAll('a'):
+        try:
+          a['href'] = linkreplace(a['href'],filepath)
+        except:
+          pass
+      for a in soup.findAll('link'):
+        try:
+          a['href'] = linkreplace(a['href'],filepath)
+        except:
+          pass
+      for img in soup.findAll('img'):
+        try:
+          img['src'] = linkreplace(img['src'],filepath)
+        except:
+          pass
+    with open(filepath,'w') as html_file:
+      html_file.write(str(soup))
+  else:
+    print('Tidy failed with %s, skipping link-replacement for %s!'  % (pid,filepath))
+");
+
+writeFile("FindFiles.sh","#!/bin/bash
+rm -f *.png *.pdf FindFiles.log*
+touch FindFiles.log.tmp
+OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
+for f in `sort -u tidy.links`; do
+  link=`echo $f | cut '-d!' -f2-`
+  link=`python -c \"import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])\" \"$link\"`
+  if test -f \"$OMLIBRARY/$link\"; then
+    d=`dirname \"$link\"`
+    mkdir -p \"$d\"
+    cp \"$OMLIBRARY/$link\" \"$link\"
+  elif test -f \"$link\"; then
+    true
+  else
+    inFile=`echo $f | cut '-d!' -f1`
+    inLib=`echo $inFile | cut '-d.' -f1`
+    echo \"$inLib $inFile: Not found: $link\" | tee -a FindFiles.log.tmp
+  fi
+done
+# Sort on library, then remove the library
+sort FindFiles.log.tmp | cut -d' ' -f2- > FindFiles.log
+rm -f tmp FindFiles.log.tmp
+");
+
+writeFile("style.css",".omc-h1
+{
+    font-family: mono;
+    font-size: x-large;
+    color:rgb(153,0,0);
+    vertical-align: middle;
+}
+
+.omc-h1-a
+{
+    font-family: mono;
+    font-size: large;
+    vertical-align: middle;
+}
+
+table
+{
+    border-color: black;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+table td,th
+{
+    border-color: black;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    margin: 0;
+    padding: 4px;
+    vertical-align: top;
+}
+
+pre
+{
+    white-space: pre-wrap; /* CSS 3 */
+}
+
+.svgiconhead {
+  height: 32px;
+  width: 32px;
+  vertical-align: top;
+  -o-object-fit: contain;
+}
+.svgiconsmall {
+  height: 20px;
+  width: 20px;
+  vertical-align: top;
+  -o-object-fit: contain;
+}
+");
+
+writeFile("FilterTidy.sh","#!/bin/bash
+grep -v DOCTYPE tidy.err | grep -v \"<body>\" |grep -v \"<html>\\|</html>\" |grep -v lacks |grep -v apos | grep -B1 Warning > tidy.filtered
+");
+
+echo(shouldEcho);
+"Removing previous generation output files...";
+system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
+
+"Copying original HTML files to 'old-html-tmp'";
+writeFile("copyold.py","#!/usr/bin/env python
+import glob
+import os
+import shutil
+oldtmp = 'old-html-tmp'
+if not os.path.exists(oldtmp):
+  os.mkdir(oldtmp)
+for file in glob.glob('*.html'):
+  shutil.copy(file, oldtmp)
+");
+system("python copyold.py");
+
+"Tidy.py";
+system("python Tidy.py 2> tidy.err");
+
+"FilterTidy.sh";
+system("bash FilterTidy.sh");
+
+system("rm -f Icons/*.json");
+if rmSymlinks then
+  system("for symlink in `find -type l`; do rm $symlink;  done");
+end if;
+
+writeFile("fix-case-sensitive.py","#!/usr/bin/env python
+# Finds files *.html that have the same case-insensitive names and renames one or more of them
+# Example: Ab.html AB.html ab.html becomes: Ab.1.html ab.2.html AB.html
+
+import glob
+import os
+import re
+
+def getFiles():
+  files = sorted([f for f in glob.glob('*.html') if os.path.isfile(f)], key=str.lower)
+  return files
+
+def update(subst):
+  for file in glob.glob('*.html'):
+    if os.path.isfile(file):
+      with open (file, 'r' ) as f: orig = f.read()
+      patched = orig
+      for s in subst.items():
+        patched = re.sub('\\\\b'+s[0],s[1],patched)
+      if patched is not orig:
+        with open (file, 'w' ) as f: f.write(patched)
+  return
+
+def makeCaseSensitive():
+  files = getFiles()
+  last = ''
+  idx = 0
+  repls = {}
+  for file in files:
+    upper = file.upper()
+    if upper == last:
+      while True:
+        idx += 1
+        nfile = file.split('.')
+        nfile.insert(len(nfile)-1,str(idx))
+        nfile = '.'.join(nfile)
+        if not os.path.isfile(nfile):
+          print('Renaming file %s to %s' % (file,nfile))
+          repls[file] = nfile
+          os.rename(file, nfile)
+          break
+    else:
+      idx = 0
+    last = upper
+  return repls
+
+print('Running Python script: makeCaseSensitive')
+repls = makeCaseSensitive()
+update(repls)
+");
+
+// Make tarball (case-sensitive)
+"FindFiles.sh";
+system("bash FindFiles.sh");
+system("rm -f ModelicaDocumentation.tar.xz");
+system("mkdir -p " + dirs);
+system("cp '" + py + "' '" + self + "' .");
+"tar";
+dirs;
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
+system(cmd);
+getErrorString();
+
+// Make zip (case-insensitive)
+system("python ./fix-case-sensitive.py");
+system("rm -f ModelicaDocumentation.zip");
+"zip";
+cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+system(cmd);
+getErrorString();

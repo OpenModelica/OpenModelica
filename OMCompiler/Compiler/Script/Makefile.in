@@ -1,0 +1,11 @@
+OMC_PATH=@OMC@
+OMC=$(OMC_PATH) -d=failtrace
+OMBUILDDIR=@OMBUILDDIR@
+
+include Makefile.common
+
+maybe-run:
+	test ! -f $(OMC_PATH) || $(MAKE)
+
+Makefile: Makefile.in
+	(cd @top_builddir@ && ./config.status)

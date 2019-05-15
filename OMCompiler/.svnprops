@@ -1,0 +1,62 @@
+### Section for configuring automatic properties.
+[auto-props]
+### The format of the entries is:
+###   file-name-pattern = propname[=value][;propname[=value]...]
+### The file-name-pattern can contain wildcards (such as '*' and
+### '?').  All entries which match (case-insensitively) will be
+### applied to the file.  Note that auto-props functionality
+### must be enabled, which is typically done by setting the
+### 'enable-auto-props' option.
+*.c = svn:eol-style=native
+*.cpp = svn:eol-style=native
+*.h = svn:eol-style=native
+# *.dsp = svn:eol-style=CRLF
+# *.dsw = svn:eol-style=CRLF
+*.pl = svn:eol-style=native;svn:executable
+*.py = svn:eol-style=native;svn:executable
+*.sh = svn:eol-style=native;svn:executable
+*.tex = svn:eol-style=native
+*.txt = svn:eol-style=native
+package.mo = svn:eol-style=native;svn:keywords=Author Date Id Revision
+*.mo = svn:eol-style=LF
+*.mos = svn:eol-style=LF
+*.order = svn:eol-style=LF
+*.html = svn:eol-style=native
+*.dxf = svn:eol-style=native
+*.info = svn:eol-style=native
+*.layout = svn:eol-style=native
+*.css = svn:eol-style=native
+*.js = svn:eol-style=native
+Makefile = svn:eol-style=LF
+*.in = svn:eol-style=LF
+# Image formats
+*.bmp        = svn:mime-type=image/bmp
+*.gif        = svn:mime-type=image/gif
+*.ico        = svn:mime-type=image/ico
+*.jpeg       = svn:mime-type=image/jpeg
+*.jpg        = svn:mime-type=image/jpeg
+*.png        = svn:mime-type=image/png
+*.tif        = svn:mime-type=image/tiff
+*.tiff       = svn:mime-type=image/tiff
+# Data formats
+*.csv        = svn:mime-type=text/csv;svn:eol-style=native
+*.pdf        = svn:mime-type=application/pdf
+*.avi        = svn:mime-type=video/avi
+*.doc        = svn:mime-type=application/msword
+*.eps        = svn:mime-type=application/postscript
+*.gz         = svn:mime-type=application/gzip
+*.mov        = svn:mime-type=video/quicktime
+*.mp3        = svn:mime-type=audio/mpeg
+*.ppt        = svn:mime-type=application/vnd.ms-powerpoint
+*.ps         = svn:mime-type=application/postscript
+*.psd        = svn:mime-type=application/photoshop
+*.rtf        = svn:mime-type=text/rtf
+*.swf        = svn:mime-type=application/x-shockwave-flash
+*.tgz        = svn:mime-type=application/gzip
+*.wav        = svn:mime-type=audio/wav
+*.xls        = svn:mime-type=application/vnd.ms-excel
+*.zip        = svn:mime-type=application/zip
+*.odt	       = svn:mime-type=application/vnd.oasis.opendocument.text
+*.odg 	     = svn:mime-type=application/vnd.oasis.opendocument.graphics
+*.odp 	     = svn:mime-type=application/vnd.oasis.opendocument.presentation
+*.ods 	     = svn:mime-type=application/vnd.oasis.opendocument.spreadsheet

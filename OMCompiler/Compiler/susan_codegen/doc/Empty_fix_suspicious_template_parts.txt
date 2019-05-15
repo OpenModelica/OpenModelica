@@ -1,0 +1,161 @@
+
+---------------
+-- CodegenC.tpl
+---------------
+
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+
+template functionDAE(
+...
+  let reinit = (whenClauses |> when hasindex i0 =>
+    genreinits(when, &varDecls,i0) //i0 is used only in generated comment; so it should be a fix
+    ;separator="\n")
+
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+
+template functionBodyRegularFunction(
+...
+.. (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") ...
+...
+//the above code was written by somebody aware of the "empty" option semantics (Martin ?)
+
+?? what happens for FUNCTION_PTR ?? should it be counted or it cannot occur ?
+
+template writeOutVar(Variable var, Integer index)
+ "Generates code for writing a variable to outVar."
+
+::=
+  match var
+  case VARIABLE(ty=T_COMPLEX(complexClassType=RECORD(__))) then
+    <<
+    write_modelica_record(outVar, <%writeOutVarRecordMembers(ty, index, "")%>);
+    >>
+  case VARIABLE(__) then
+
+    <<
+    write_<%varType(var)%>(outVar, &out.c<%index%>);
+    >>
+end writeOutVar;
+
+
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+
+
+template functionBodyParallelFunction(
+...
+   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
+      varInitParallel(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/)
+    )
+....
+
+//varInitParallel() can produce empty results ... is the above counting based upon the feature of non-counting the empty results ?
+//it looks so ... see the usage of " " and "" below
+
+template varInitParallel(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, Text &varFrees /*BUFP*/)
+ "Generates code to initialize variables in PARALLEL FUNCTIONS.
+  Does not return anything: just appends declarations to buffers."
+::=
+match var
+case var as VARIABLE(__) then
+  let &varDecls += if not outStruct then '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>' //else ""
+  let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCref(var.name,contextFunction)%>'
+  let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+    ;separator=", ")
+  if instDims then
+    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
+    let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+    let &varInits += defaultValue
+    " "
+  else
+    (match var.value
+    case SOME(exp) then
+      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let &varInits += defaultValue
+      " "
+    else
+      "")
+case var as FUNCTION_PTR(__) then
+  let &ignore = buffer ""
+  let &varDecls += functionArg(var,&ignore)
+  ""
+else let &varDecls += '#error Unknown local variable type<%\n%>' ""
+end varInitParallel;
+
+
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------
+
+
+template algStmtTupleAssign(
+...
+  let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 1 =>
+                    let rhsStr = '<%retStruct%>.c<%i1%>'
+                    writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
+                  ;separator="\n")
+...
+  let lhsCrefs = (expExpLst |> cr hasindex i0 =>
+                    let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
+                    writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
+                  ;separator="\n")
+...
+//when the CREF is WILD, the reference is not counted; is it the intention ?
+
+
+template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
+              Text &varDecls /*BUFP*/)
+ "Generates code for writing a returnStructur to var."
+::=
+match exp
+case ecr as CREF(componentRef=WILD(__)) then
+  ''
+case CREF(ty= t as DAE.T_ARRAY(__)) then
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  match context
+  case SIMULATION(__) then
+    <<
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >>
+  else
+    '<%lhsStr%> = <%rhsStr%>;'
+case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  match context
+  case SIMULATION(__) then
+    <<
+    usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >>
+  else
+    '<%lhsStr%> = -<%rhsStr%>;'
+case CREF(__) then
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%lhsStr%> = <%rhsStr%>;
+  >>
+case UNARY(exp = e as CREF(__)) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%lhsStr%> = -<%rhsStr%>;
+  >>
+case _ then
+  <<
+  /* SimCodeC.tpl template: writeLhsCref: UNHANDLED LHS
+   * <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>
+   */
+  >>
+end writeLhsCref;
+
+
+
+---------------
+-- CodegenCpp.tpl
+---------------
+
+--- all the similar constructs as in CodegenC.tpl are considered as they assume the "empty" option
+--- in the first step, I've added an explicit "empty" option to every ireration expression with hasindex where it is not obvious that every iteration produces an output
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------

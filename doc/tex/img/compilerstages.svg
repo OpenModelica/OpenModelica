@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="49cm" height="7cm" viewBox="78 -8 971 135" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="80" y="40" width="100" height="30.4667"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="80" y="40" width="100" height="30.4667"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:6.77333;font-family:sanserif;font-style:normal;font-weight:normal" x="130" y="57.25">
+      <tspan x="130" y="57.25">Modelica Source Code</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="280" y="40" width="83.4" height="37.5222"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="280" y="40" width="83.4" height="37.5222"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="321.7" y="62.5">
+      <tspan x="321.7" y="62.5">Translator</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="400" y="40" width="80" height="40"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="400" y="40" width="80" height="40"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="440" y="63.7389">
+      <tspan x="440" y="63.7389">Analyzer</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="520" y="40" width="82.7" height="37.5222"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="520" y="40" width="82.7" height="37.5222"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="561.35" y="62.5">
+      <tspan x="561.35" y="62.5">Optimizer</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="640" y="40" width="120.7" height="40"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="640" y="40" width="120.7" height="40"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="700.35" y="63.7389">
+      <tspan x="700.35" y="63.7389">Code Generator</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="800" y="40" width="120.2" height="40"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="800" y="40" width="120.2" height="40"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="860.1" y="63.7389">
+      <tspan x="860.1" y="63.7389">Target Compiler</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="960" y="40" width="88.05" height="37.5222"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="960" y="40" width="88.05" height="37.5222"/>
+    <text style="fill: #000000;text-anchor:middle;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="1004.03" y="62.5">
+      <tspan x="1004.03" y="62.5">Simulation</tspan>
+    </text>
+  </g>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="220" y="124.3">
+    <tspan x="220" y="124.3">Modelica model</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="340" y="4.3">
+    <tspan x="340" y="4.3">Flat model</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="460" y="124.3">
+    <tspan x="460" y="124.3">Sorted equations</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="580" y="4.3">
+    <tspan x="580" y="4.3">Optimized sorted equations</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="760" y="124.3">
+    <tspan x="760" y="124.3">Target Code</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.4178;font-family:sanserif;font-style:normal;font-weight:normal" x="920" y="4.3">
+    <tspan x="920" y="4.3">Executable</tspan>
+  </text>
+  <text style="fill: #000000;text-anchor:start;font-size:12.8;font-family:sanserif;font-style:normal;font-weight:normal" x="180" y="80">
+    <tspan x="180" y="80"></tspan>
+  </text>
+  <g>
+    <polygon style="fill: #ffffff" points="240,53 260,53 260,48 280,58 260,68 260,63 240,63 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="240,53 260,53 260,48 280,58 260,68 260,63 240,63 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="240,53 260,53 260,48 280,58 260,68 260,63 240,63 "/>
+  </g>
+  <g>
+    <polygon style="fill: #ffffff" points="360,65 380,65 380,60 400,70 380,80 380,75 360,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="360,65 380,65 380,60 400,70 380,80 380,75 360,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="360,65 380,65 380,60 400,70 380,80 380,75 360,75 "/>
+  </g>
+  <g>
+    <polygon style="fill: #ffffff" points="480,65 500,65 500,60 520,70 500,80 500,75 480,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="480,65 500,65 500,60 520,70 500,80 500,75 480,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="480,65 500,65 500,60 520,70 500,80 500,75 480,75 "/>
+  </g>
+  <g>
+    <polygon style="fill: #ffffff" points="600,65 620,65 620,60 640,70 620,80 620,75 600,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="600,65 620,65 620,60 640,70 620,80 620,75 600,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="600,65 620,65 620,60 640,70 620,80 620,75 600,75 "/>
+  </g>
+  <g>
+    <polygon style="fill: #ffffff" points="760,65 780,65 780,60 800,70 780,80 780,75 760,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="760,65 780,65 780,60 800,70 780,80 780,75 760,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="760,65 780,65 780,60 800,70 780,80 780,75 760,75 "/>
+  </g>
+  <g>
+    <polygon style="fill: #ffffff" points="920,65 939.25,65 939.25,60 958.5,70 939.25,80 939.25,75 920,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="920,65 939.25,65 939.25,60 958.5,70 939.25,80 939.25,75 920,75 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="920,65 939.25,65 939.25,60 958.5,70 939.25,80 939.25,75 920,75 "/>
+  </g>
+</svg>

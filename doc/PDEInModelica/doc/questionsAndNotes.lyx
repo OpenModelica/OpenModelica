@@ -1,0 +1,1194 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+\start_of_appendix
+
+\lang british
+Articles and books
+\end_layout
+
+\begin_layout Subparagraph
+
+\lang british
+I want to read:
+\end_layout
+
+\begin_layout Standard
+Other parts of Saldamli's thesis, e.g.
+ first sections of chapter 7 and 9.3.
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+A DIFFERENTIATION INDEX FOR PARTIAL DIFFERENTIAL-ALGEBRAIC EQUATIONS 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "martinson2000differentiation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+INDEX AND CHARACTERISTIC ANALYSIS OF LINEAR PDAE SYSTEMS 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "martinson2003index"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+Finite difference methods for ordinary and partial differential equations
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "leveque2007finite"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+A Framework for Describing and Solving PDE Models in Modelica 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2005framework"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+Solving pde models in modelica.
+\begin_inset CommandInset citation
+LatexCommand cite
+key "li2008solving"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+Solid modeling on Wikipedia.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "SolidModeling"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+OO Modeling with PDE, Saldamli, Modelica work shop 2000
+\end_layout
+
+\begin_layout Standard
+Solving PDE models in Modelica
+\end_layout
+
+\begin_layout Chapter
+
+\lang british
+Questions & problems: 
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+important topics are written in bold
+\end_layout
+
+\begin_layout Section
+
+\lang british
+Modelica language extension
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+is it necessary to specifie the domain using 
+\begin_inset Quotes eld
+\end_inset
+
+in
+\begin_inset Quotes erd
+\end_inset
+
+ within equations, when it is actualy determined by the fields used in equations
+?
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Coordinates
+\end_layout
+
+\begin_layout Itemize
+Should be some coordinate system defined by default within the domain deffinitio
+n? (Perhaps cartesian by default and others defined extra by user if needed?)
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+I would say no.
+ If yes, user should have option to give them a name, so that they are not
+ always x, y, z.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to call atribute of Coordinate variable saying the type of the coordinate
+ (now called 
+\family typewriter
+name
+\family default
+) should be the value assigned to this attribut written in quotes? It is
+ also related with the previous question.
+ 
+\begin_inset Newline newline
+\end_inset
+
+e.g.
+ somethink like 
+\family typewriter
+Coordinate x (name = 
+\begin_inset Quotes eld
+\end_inset
+
+cartesian
+\begin_inset Quotes erd
+\end_inset
+
+);
+\end_layout
+
+\begin_layout Itemize
+Is needed 
+\family typewriter
+Coordinate
+\family default
+ type?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Could be used just 
+\family typewriter
+Real
+\family default
+ instead and compiler would infer that it is coordinate as it distinguishes
+ e.g.
+ state and algebraic variable now? How it may be infered? If domain is defined
+ using coordinate equations -- coordinate variables are either in region
+ deffinitions (e.g.
+ 
+\family typewriter
+Region1D interior(x in (a,b));
+\family default
+) or appear in equations with these variables.
+\end_layout
+
+\begin_layout Itemize
+or should it be 
+\family typewriter
+coordinate Real x;
+\family default
+ or 
+\family typewriter
+coordinate x;
+\family default
+? Coordinate isn't actualy a data type, as it doesn't hold any data, it
+ has no value.
+ It is symbolic stuff.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Should coordinates of one system be placed in an array so that they are
+ ordered? Than individual elements could have alieses with the usual name.
+ E.g.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+cartesian[1] = x; cartesian[2] = y;
+\end_layout
+
+\begin_layout Itemize
+How to map shape function return values on particular space variables (e.g.
+ 
+\family typewriter
+x, y, z
+\family default
+) when they are not ordered? And what if there are more coordinate systems
+ defined (e.g.
+ cartesian and polar)? 
+\end_layout
+
+\begin_layout Itemize
+Avoid equations of coordinate transformations in equation section and write
+ somethink like
+\begin_inset Newline newline
+\end_inset
+
+Coordinate r (name = "polar", deffinition = sqrt(x^2 + y^2));
+\begin_inset Newline newline
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Other
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+How to define domain: using boundary description, shape-function or shape-equati
+ons?
+\end_layout
+
+\begin_layout Itemize
+Should be built-in 
+\family typewriter
+class Domain
+\family default
+ empty, or contain perhaps 
+\family typewriter
+interior
+\family default
+ and 
+\family typewriter
+boundary
+\family default
+ regions? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+perhaps it should contain 
+\family typewriter
+replaceable interior
+\family default
+ of general type 
+\family typewriter
+Region
+\family default
+.
+ Ut would be redeclared to 
+\family typewriter
+Region1D, Region2D, 
+\family default
+or 
+\family typewriter
+Region3D 
+\family default
+later
+\family typewriter
+.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to define general differential operators (as 
+\family typewriter
+grad, div
+\family default
+ ...) , if we use user defined coordinates?
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+How to write equations (boundary conditions) that combine field variables
+ from different domains?
+\series default
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Using a region that is subset of both domains -- how to write this?
+\end_layout
+
+\begin_layout Itemize
+Use just one domain, transform coordinates from the other domain.
+ Example from 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Vibrating-membrane"
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v(dom.x,dom.y,dom.z,t)*region.n = pder(u,t)(dom.x - a_x,dom.y - a_y,t) in room.membrane
+;
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+I dislike usage of arguments in equations.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+addition of regions (operator +)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+the meaning is unintuitive, it is not clear thet regions are treated as
+ sets
+\end_layout
+
+\begin_layout Itemize
+the resulting type is doubtable, should it be realy region as well? In 1D
+ it is completly strange.
+ In Rectangle2D e.g the 
+\family typewriter
+left
+\family default
+ and 
+\family typewriter
+top
+\family default
+ regions are defined using the same shape-functon, but shape-function of
+ 
+\family typewriter
+left + right
+\family default
+ is different, and complicated -- requires conditions.
+\end_layout
+
+\begin_layout Itemize
+perhaps instead of 
+\family typewriter
+Region1D reg3 = reg1 + reg2;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+write
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+Region1D[] reg3 = {reg1, reg2};
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Atribut 
+\family typewriter
+interval
+\family default
+ in region constructor is assigned an interval value or a single constant.
+ The letter is strange.
+ Should be done in different way.
+\end_layout
+
+\begin_layout Itemize
+Initialization.
+\end_layout
+
+\begin_layout Itemize
+Rename 
+\emph on
+region
+\emph default
+ to 
+\emph on
+manifold
+\emph default
+\lang british
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raey"
+
+\end_inset
+
+
+\lang english
+?
+\end_layout
+
+\begin_layout Itemize
+unify somehow concept of region and domain?
+\end_layout
+
+\begin_layout Itemize
+How to call divergence operator (standard 
+\family typewriter
+div
+\family default
+ is is already used for integer division)
+\end_layout
+
+\begin_layout Itemize
+How should the shape, geometrical structure, mesh structure, etc.
+ be described by an external file? Should be the file imported into the
+ Modelica language, or just loaded by the runtime.
+\end_layout
+
+\begin_layout Itemize
+Philosophical problem: What exists first, domain or coordinates? I would
+ say coordinates must exist first as domain shape is defined using shape-functio
+n using some coordinates.
+\end_layout
+
+\begin_layout Itemize
+is OK := op in fields?
+\end_layout
+
+\begin_layout Itemize
+Allow higer derivatives? Perhaps allow only higher space derivatives, not
+ time? Why are higher derivatives not allowed in current Modelica?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+rather allow
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Allow some of this shortcuts to 
+\family typewriter
+pder(u,dom.x) = ...
+ in omega.interior
+\family default
+:
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,dom.x) = ...
+ in omega //if no region specified, interior used implicitly
+\begin_inset Newline newline
+\end_inset
+
+pder(u,omega.x) = ...
+ //in omega ommited, information inferd from omega.x
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+rather not
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Field variables and equations written within domains?
+\end_layout
+
+\begin_layout Itemize
+Normal vector -- should it be written rather in function-like way, 
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+normal(omega.region1)
+\family default
+ rather than 
+\family typewriter
+omega.region1.n
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+perhaps 
+\begin_inset Quotes eld
+\end_inset
+
+.
+\begin_inset Quotes erd
+\end_inset
+
+ notation is better as the normal vector is not a value but a function of
+ coordinates
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+field literal constructor:
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2*x+y for (omega.x,omega.y));
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+or
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2*dom.x+dom.y in omega.interior );
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+or
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2* x+y for (x, y) in omega ) ;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "45col%"
+height "1pt"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Solved problems:
+\end_layout
+
+\begin_layout Itemize
+Multiple inheritance of domains -- should it be allowd, what is the meaning?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+multiple inheritance is allowed in general, but resulting equations must
+ not be in conflict.
+ Deffinition of regions using intervals is also som kind of equation.
+ So we cannot inherit two domain calses that both defines e.g.
+ Region interior.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+How to deal with (name of) coordinate (independent) 
+\series default
+variables, so that it doesn't meddle with other variables (ODE)?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+coordinates are defined within the domain class.
+ This solves the problem.
+ Inside this class they may be addressed directly, outside 
+\family typewriter
+className.coordName
+\family default
+ as other class members are accesed.
+ In equation may be used shortcut keywords 
+\family typewriter
+domain
+\family default
+ (or 
+\family typewriter
+dom
+\family default
+?) (and 
+\family typewriter
+region
+\family default
+) to address domain (and region) specified with 
+\family typewriter
+in
+\family default
+ operator.
+
+\family typewriter
+ E.g.
+\begin_inset Newline newline
+\end_inset
+
+pder(u, domain.x)=0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left
+\end_layout
+
+\begin_layout Itemize
+NO.
+ avoid coordinate variables at all
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\bar under
+allow writing equations coordinate-free, using only 
+\family typewriter
+pder(u,time), grad, div,
+\family default
+ ...
+ operators (does it mean, we need no coordinates defined in domain?).
+\end_layout
+
+\begin_layout Itemize
+use operators 
+\family typewriter
+pderx(u)
+\family default
+, 
+\family typewriter
+pdert(u) or
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+NO.
+ Fixed names 
+\family typewriter
+x, y, z
+\family default
+ used stand-alone.
+ If they meddle with other variable, infere which one is it from tha fact
+ that we differentiate with respect to this variable and from the actual
+ domain (indicated with 
+\family typewriter
+in
+\family default
+ op.).
+ -- Makes model confusing.
+\end_layout
+
+\begin_layout Itemize
+NO.
+ fixed names and approach ODE variables from PDE in some special way.
+\end_layout
+
+\begin_layout Itemize
+NO.
+ use longer name for coordinate variables (e.g.
+ 
+\family typewriter
+spaceX
+\family default
+ ...)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+Allow writing equations independent on particular domain and also coordinate
+ system?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes, using 
+\family typewriter
+replaceable
+\family default
+ and 
+\family typewriter
+redeclare
+\family default
+ on domain class and using coordinate free differential operators if we
+ even don't know the dimension 
+\family typewriter
+(grad, div
+\family default
+ etc.) 
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Rename ranges to intervals?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Domain description where some parameters are in range and others are fixed:
+ {{1,1}, {0.5,0.5}} or {{1,1}, 0.5}? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+allow both
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to deal with vector fields? How to acces its elements -- using an index
+ or scalar product with standard base vectors? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+both
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to distinguish the main domain (now called 
+\family typewriter
+DomainLineSegment1D
+\family default
+, 
+\family typewriter
+DomainRectangle2D
+\family default
+ ...) and its 
+\begin_inset Quotes eld
+\end_inset
+
+subsets
+\begin_inset Quotes erd
+\end_inset
+
+ where some equations hold (now called 
+\family typewriter
+Domain0D
+\family default
+, 
+\family typewriter
+Domain1D
+\family default
+ ...).
+ I think only one of them should be called domain.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+subsets
+\begin_inset Quotes erd
+\end_inset
+
+ renaimed to regions -- 
+\family typewriter
+(Region0D, Region1D, Region 2D, Region3D)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+directional derivative
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+der(u,v)
+\family default
+ (
+\begin_inset Formula $u$
+\end_inset
+
+ is scalar or vector field in 
+\begin_inset Formula $\mathrm{R}^{n}$
+\end_inset
+
+, 
+\begin_inset Formula $v$
+\end_inset
+
+ is vector in 
+\begin_inset Formula $\mathrm{R}^{n}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Should it be possible to override initial and boundary conditions given
+ in model with some different values from external configuration file?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to set initial condition for field derivative in similar way as using
+ 
+\family typewriter
+start
+\family default
+ atribute (i.e.
+ not using equation in 
+\family typewriter
+initial
+\family default
+ section)? See 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "String-equation-(1D)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+start
+\family default
+ atribut is array where index denotes the derivative 
+\family typewriter
+start[0]
+\family default
+ - actual value, 
+\family typewriter
+start[1]
+\family default
+ - first derivative
+\end_layout
+
+\end_deeper
+\begin_layout Section
+
+\lang british
+Translation and generated code
+\end_layout
+
+\begin_layout Itemize
+Should it be possible to write more BC (connecting PDE with ODE) than needed
+ to solve the PDE model and let the compiler determine the causality of
+ them (which are input and which output)
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to represent on which particular boundary an boundary condition hold
+ in generated code (or even on which interior domain hold which PDE equation
+ system, if we support various interiors)? -- Some domain struct could hold
+ both shapeFunction parameter ranges and pointer (or some index) to function
+ with the corresponding equations.
+ Or boundary condition function knows on which elements (indexes) of variable
+ arrays should be applied.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+Should be generated functions independent on grid? It means either
+\series default
+
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+functionPDEIndependent(u,u_x,t,x)
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+u_t = ...
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+return u_t
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+or
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+functionPDEDependent(data)
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+for (int i ...)
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset space \qquad{}
+\end_inset
+
+u_t[i] = ...
+\end_layout
+
+\begin_layout Section
+
+\lang british
+Numerics and solver
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+Shall we support higher derivatives in solver?
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+What about space derivatives? -- All state and algebraics have corresponding
+ array for its space derivative, not all of them are used.
+ -- Or all space derivatives of states and algebraics are stored as different
+ algebraic fields.
+ -- Or there is array for space derivatives that is utilised by both states
+ and algebraics that need it.
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+What about multi step mothods (RK, P-K)?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to generate even (or arbitrary) meshes with nonlinea shape functions?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to generate mesh points just on the boundary? 1D -- simple -- just two
+ points.
+ 2D -- We can go through the boundary curve and detect crossings of grid
+ lines.
+ 3D -- who knows?!
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to plugin an already existing solver?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to determine causality of boundary conditions and other equations that
+ hold on less dimensional manifolds.
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+Build whole solver in some PDE framework, perhaps Overture (http://www.overturefr
+amework.org/)
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+libraries to solve PDEs: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\series bold
+\lang british
+clawpack
+\series default
+, http://www.amath.washington.edu/~claw/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+pydstool, http://www.cam.cornell.edu/~rclewley/cgi-bin/moin.cgi/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+FemHub, http://femhub.org/welcome.html
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+Hermes
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+dealII
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+overture, http://www.overtureframework.org/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+hiflow3, http://www.hiflow3.org/
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+flex, http://www.pdesolutions.com/
+\end_layout
+
+\end_deeper
+\begin_layout Section
+TODO
+\end_layout
+
+\begin_layout Itemize
+Write a library for vector fields defining scalar and vector product, divergence
+, gradient, rotation...
+\end_layout
+
+\begin_layout Itemize
+Write model in coordinates different from cartesian
+\end_layout
+
+\end_body
+\end_document

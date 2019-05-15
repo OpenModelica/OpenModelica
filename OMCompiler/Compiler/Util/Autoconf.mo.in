@@ -1,0 +1,26 @@
+encapsulated package Autoconf
+
+  constant Boolean haveBStatic = @BSTATIC@;
+  constant String bstatic = if haveBStatic then "-Wl,-Bstatic" else "";
+  constant String bdynamic = if haveBStatic then "-Wl,-Bdynamic" else "";
+  constant String configureCommandLine = "Configured @date@ using arguments: @CONFIGURE_ARGS@";
+  constant String os = "@CONFIG_OS@";
+  constant String make = "@MAKE@";
+  constant String exeExt = "";
+  constant String dllExt = "@SHREXT@";
+  constant String ldflags_runtime = "@RT_LDFLAGS_GENERATED_CODE@";
+  constant String ldflags_runtime_sim = "@RT_LDFLAGS_GENERATED_CODE_SIM@";
+  constant String ldflags_runtime_fmu = "@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@";
+
+  constant String platform = "Unix";
+  constant String pathDelimiter = "/";
+  constant String groupDelimiter = ":";
+
+  constant String corbaLibs = "@CORBALIBS@";
+  constant String hwloc = if @WITH_HWLOC@ == 1 then "-lhwloc" else "";
+  constant list<String> systemLibs = {"-lomcruntime", "-lexpat", "-lsqlite3", "@LIBLPSOLVE55@", corbaLibs, "-lomcgc", hwloc};
+
+  constant String triple = "@host_short@";
+
+annotation(__OpenModelica_Interface="util");
+end Autoconf;

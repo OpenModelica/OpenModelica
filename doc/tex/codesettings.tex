@@ -1,0 +1,20 @@
+\lstdefinelanguage{modelica}
+{
+  keywords={
+    algorithm,and,annotation,as,assert,block,break,case,class,connect,connector,
+    constant,constrainedby,der,discrete,each,else,elseif,elsewhen,encapsulated,
+    end,enumeration,equality,equation,expandable,extends,external,failure,final,
+    flow,for,function,guard,if,import,in,initial,inner,input,List,local,loop,
+    match,matchcontinue,model,not,operator,Option,or,outer,output,package,parameter,
+    partial,protected,public,record,redeclare,replaceable,return,stream,
+    subtypeof,then,Tuple,type,uniontype,when,while,within},
+  % Do not make true,false keywords because fn(true,x, false ) shows up as fn(true,x, *false*)
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morecomment=[s]{"}{"},
+  alsodigit={.,-},
+}
+
+\lstset{breaklines=true,language=modelica,basicstyle=\ttfamily}
+\lstset{keywordstyle = \bf}

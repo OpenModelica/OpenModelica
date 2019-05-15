@@ -1,0 +1,13 @@
+loadFile("FrontEnd/Absyn.mo");
+loadFile("Script/GlobalScript.mo");
+loadFile("FrontEnd/Values.mo");
+loadFile("Util/Error.mo");
+loadFile("Util/Config.mo");
+loadFile("Util/Util.mo");
+loadFile("Util/FMI.mo");
+err:=getErrorString();
+if err == "" then loadOK := true; end if;
+a:=loadOK; // Will cause exit(1) if loadOK is undefined
+b3:=generateHeader("OpenModelicaBootstrappingHeader.h.new");
+if b3 then genOK := true; end if;
+a:=genOK; // Will cause exit(1) if genOK is undefined

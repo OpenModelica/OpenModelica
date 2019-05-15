@@ -1,0 +1,172 @@
+# Binary objects; compiler output
+*.so
+*.o
+*.class
+*.a
+*.exe
+*.dylib
+*.la
+*.log
+*.stamp
+**/*.dylib.dSYM/
+*.tmp
+
+# autoconf
+autom4te.cache/
+config.guess
+config.log
+config.status
+config.sub
+configure
+install-sh
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# =========================
+# Operating System Files
+# =========================
+
+# OSX
+# =========================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ANTLR
+*.tokens
+
+# Vim buffer files
+[._]*.sw?
+*~
+
+# =========================
+# OpenModelica Files
+# =========================
+
+build/
+.externalToolBuilders/OpenModelicaBuilder.launch
+.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+.project
+.metadata
+.vscode/
+revision.h
+SimulationRuntime/c/Makefile
+SimulationRuntime/cpp/Makefile
+SimulationRuntime/cpp/Makefile.env
+SimulationRuntime/cpp/Build_*/
+SimulationRuntime/cpp/Debug/
+SimulationRuntime/cpp/.cproject
+SimulationRuntime/cpp/confdefs.h
+SimulationRuntime/ParModelica/Makefile
+SimulationRuntime/ParModelica/auto/Makefile
+SimulationRuntime/ParModelica/explicit/Makefile
+SimulationRuntime/ParModelica/explicit/openclrt/Makefile
+SimulationRuntime/build_c/
+SimulationRuntime/opc/ua/open62541.h
+SimulationRuntime/opc/ua/open62541.c
+SimulationRuntime/opc/ua/libomopcua.dll
+SimulationRuntime/OMSI/Build_dynamic/
+SimulationRuntime/OMSI/Build_static/
+SimulationRuntime/OMSIC/Build_dynamic/
+SimulationRuntime/OMSIC/Build_static/
+
+# OpenModelicaSetup
+Compiler/OpenModelicaSetup
+# Compiler files
+Compiler/Makefile
+Compiler/OpenModelicaBootstrappingHeader.h
+Compiler/OpenModelicaBootstrappingHeader.h.log
+Compiler/Script/Makefile
+Compiler/Script/OpenModelicaScriptingAPI.mo
+Compiler/Script/OpenModelicaScriptingAPIQt.cpp
+Compiler/Script/OpenModelicaScriptingAPIQt.h
+Compiler/Template/AbsynDumpTpl.mo
+Compiler/Template/Codegen*.mo
+Compiler/Template/DAEDumpTpl.mo
+Compiler/Template/ExpressionDumpTpl.mo
+Compiler/Template/GenerateAPIFunctionsTpl.mo
+Compiler/Template/GraphMLDumpTpl.mo
+Compiler/Template/GraphvizDump.mo
+Compiler/Template/Makefile
+Compiler/Template/NFInstDumpTpl.mo
+Compiler/Template/SCodeDumpTpl.mo
+Compiler/Template/SimCodeDump.mo
+Compiler/Template/TaskSystemDump.mo
+Compiler/Template/TplCodegen.mo
+Compiler/Template/Unparsing.mo
+Compiler/Template/VisualXMLTpl.mo
+Compiler/Template/*.err.mo
+Compiler/boot/LoadCompilerInterface.mos
+Compiler/boot/Makefile
+Compiler/boot/Makefile.depends
+Compiler/boot/Makefile.sources
+Compiler/boot/patches/*.patch
+Compiler/runtime/Makefile
+Compiler/runtime/config.unix.h
+Compiler/runtime/omc_communication.cc
+Compiler/runtime/omc_communication.h
+Compiler/susan_codegen/TplCodegen.mo
+Makefile
+# Parser files
+Parser/Makefile
+Parser/MetaModelica_Lexer.c
+Parser/MetaModelica_Lexer.h
+Parser/MetaModelica_Lexer_BaseModelica_Lexer.c
+Parser/MetaModelica_Lexer_BaseModelica_Lexer.h
+Parser/ModelicaParser.c
+Parser/ModelicaParser.h
+Parser/Modelica_3_Lexer.c
+Parser/Modelica_3_Lexer.h
+Parser/Modelica_3_Lexer_BaseModelica_Lexer.c
+Parser/Modelica_3_Lexer_BaseModelica_Lexer.h
+Parser/ParModelica_Lexer.c
+Parser/ParModelica_Lexer.h
+Parser/ParModelica_Lexer_BaseModelica_Lexer.c
+Parser/ParModelica_Lexer_BaseModelica_Lexer.h
+
+SimulationRuntime/c/RuntimeSources.mo
+SimulationRuntime/**/test_files/*.jar
+SimulationRuntime/cpp/build_msvc/
+# Visual Studio 2015/2017 cache/options directory
+SimulationRuntime/cpp/.vs/
+SimulationRuntime/cpp/CMakeSettings.json
+tags
+
+*.plist
+*clang_output*
+
+Compiler/Util/Autoconf.mo

@@ -1,0 +1,1059 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  
+  "http://www.w3.org/TR/html4/loose.dtd">  
+<html > 
+<head><title>Testcases</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)"> 
+<!-- 2,html --> 
+<meta name="src" content="index.tex"> 
+<meta name="date" content="2011-11-03 12:29:00"> 
+<link rel="stylesheet" type="text/css" href="index.css"> 
+</head><body 
+>
+<!--l. 56--><div class="crosslinks"><p class="noindent">[<a 
+href="indexse8.html" >prev</a>] [<a 
+href="indexse8.html#tailindexse8.html" >prev-tail</a>] [<a 
+href="#tailindexse9.html">tail</a>] [<a 
+href="index.html#indexse9.html" >up</a>] </p></div>
+<h3 class="sectionHead"><span class="titlemark">9   </span> <a 
+ id="x10-170009"></a>Testcases</h3>
+<!--l. 1--><p class="noindent" >A compiler is a complex tool, and even seemingly trivial changes to it might have
+unforseen consequences. The OpenModelica project therefore includes a test suite
+that is used to verify the correctness of the compiler&#8217;s behavior. Every change to the
+compiler&#8217;s behavior should be accompanied by an update or extension of the test
+suite. This section describes the design and usage of the test suite, and how new test
+cases are added to the suite.
+<!--l. 8--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">9.1   </span> <a 
+ id="x10-180009.1"></a>Design</h4>
+<!--l. 10--><p class="noindent" >The OpenModelica test suite resides in the testsuite directory of the source tree,
+which contains the test cases, makefiles and a testing tool called rtest. A test case
+consists of Modelica or MetaModelica code that should be processed by the compiler,
+and an expected output. The test case format is described in greater detail in section
+<a 
+href="#x10-200009.3">9.3<!--tex4ht:ref: sec:test:writing --></a> below. Test cases are then run by the rtest tool, which is implemented as a perl
+script. The rtest tool runs a test case through the compiler and matches the
+output from the compiler with the expected output specified in the test
+case.
+<!--l. 19--><p class="noindent" >Since the test cases might be e.g. simulation tests that have slightly different
+results on different platforms it is necessary to allow the actual output to
+differ slightly with regards to the expected output. The matching in rtest is
+therefore done by another tool written as a flex lexer that is aware of Modelica
+floating point numbers, and which allows for an acceptable relative error in the
+output.
+<!--l. 26--><p class="noindent" >The layout of the test suite is that test cases reside in subdirectories. Each
+subdirectory contains a makefile that is called from the main makefile in the test
+suite directory. The contents of each subdirectory is described below:
+     <dl class="description"><dt class="description">
+<span 
+class="ec-lmbx-10">bootstrapping</span> </dt><dd 
+class="description">Tests for the bootstrapped compiler.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">dependency</span> </dt><dd 
+class="description">Tests for the dependency analysis (+d=usedep flag).
+                                                                  
+
+                                                                  
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">expandable</span> </dt><dd 
+class="description">Tests for expandable connectors.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">fmi</span> </dt><dd 
+class="description">Tests for FMI.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">initialization</span> </dt><dd 
+class="description">Variable initialization tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">interactive</span> </dt><dd 
+class="description">Tests for the interactive API.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">interactive-simulation</span> </dt><dd 
+class="description">Tests for the interactive simulation.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">libraries</span> </dt><dd 
+class="description">Modelica standard library tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">linearize</span> </dt><dd 
+class="description">Linearization tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">meta</span> </dt><dd 
+class="description">MetaModelica tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">modelicaML</span> </dt><dd 
+class="description">ModelicaML tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">mofiles</span> </dt><dd 
+class="description">Tests for modelica language constructs.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">mosfiles</span> </dt><dd 
+class="description">Various simulation tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">mosfiles-msl22</span> </dt><dd 
+class="description">Simulation tests for modelica standard library 2.2 models.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">mosfiles-nosim</span> </dt><dd 
+class="description">mos-file tests which don&#8217;t do simulations.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">parser</span> </dt><dd 
+class="description">Parser tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">records</span> </dt><dd 
+class="description">Modelica record tests.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">redeclare</span> </dt><dd 
+class="description">Tests for the Modelica redeclare construct.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">streams</span> </dt><dd 
+class="description">Stream connector tests.</dd></dl>
+                                                                  
+
+                                                                  
+<!--l. 51--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">9.2   </span> <a 
+ id="x10-190009.2"></a>Usage</h4>
+<!--l. 53--><p class="noindent" >The test suite can be used in several ways. The most common is to simply run <span 
+class="ec-lmtt-10">make</span>
+<span 
+class="ec-lmtt-10">test </span>in the test suite directory, which will run all working tests in the testsuite and
+print out a report that shows how many tests succeeded and how many failed. Each
+subdirectory in the test suite is also independent, so it&#8217;s possible to run <span 
+class="ec-lmtt-10">make </span>in any
+subdirectory to only run those tests. Each makefile contain two lists of test cases:
+working tests and failing tests. The working tests are those tests that are
+known to work and used in a normal run of the test suit. Failing tests are
+those tests that currently does not produce the correct output, and so are
+awaiting compiler fixes before they can be used. They can be run with <span 
+class="ec-lmtt-10">make</span>
+<span 
+class="ec-lmtt-10">failingtest</span>.
+<!--l. 64--><p class="noindent" >It&#8217;s also possible to use the rtest tool directly on a test case, in the case when you
+only want to run a single test case. Flags can be passed to the compiler through the
+rtest tool either by giving them directly on the command line, or by setting the
+<span 
+class="ec-lmtt-10">RTEST_OMCFLAGS </span>environment variable. The following two calls are equivalent:
+<!--l. 69-->
+<div class="lstlisting" id="listing-9"><span class="label"><a 
+ id="x10-19001r1"></a></span><span 
+class="ec-lmtt-10">$</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">rtest</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">+</span><span 
+class="ec-lmtt-10">d</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">failtrace</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">SomeTestcase.mo</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-19002r2"></a></span><span 
+class="ec-lmtt-10">$</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">RTEST_OMCFLAGS</span><span 
+class="ec-lmtt-10">=+</span><span 
+class="ec-lmtt-10">d</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">failtrace</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">rtest</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">SomeTestcase.mo</span>
+</div>
+<!--l. 74--><p class="noindent" >The makefile solution does have some problems though, the foremost being that it
+only provides a limited support for running tests in parallel which is important for
+developers using multi-core processors. A parallel test tool called runtests is
+available in the partest directory in the test suite. It is a perl script that
+parses the makefiles to get the test cases to run, and then runs the tests in
+parallel to significantly speed up the testing. To avoid conflicts between tests it
+creates a temporary directory for each test and links the necessary files into
+the directory. The disadvantage of this tool is that it so far only works on
+Linux.
+<!--l. 84--><p class="noindent" >
+<h4 class="subsectionHead"><span class="titlemark">9.3   </span> <a 
+ id="x10-200009.3"></a>Writing test cases</h4>
+<!--l. 86--><p class="noindent" >OpenModelica test cases should follow the following format, where text in brackets
+should be replaced with real data: <!--l. 88-->
+<div class="lstlisting" id="listing-10"><span class="label"><a 
+ id="x10-20001r1"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">[</span><span 
+class="ec-lmtti-10">key</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">value</span><span 
+class="ec-lmtti-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20002r2"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20003r3"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">[</span><span 
+class="ec-lmtti-10">Comment</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">describing</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">the</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">test</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">case.</span><span 
+class="ec-lmtti-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20004r4"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20005r5"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20006r6"></a></span><span 
+class="ec-lmtt-10">[</span><span 
+class="ec-lmtt-10">Modelica</span><span 
+class="ec-lmtt-10">/</span><span 
+class="ec-lmtt-10">MetaModelica</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">code</span><span 
+class="ec-lmtt-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20007r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20008r8"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Result</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20009r9"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">[</span><span 
+class="ec-lmtti-10">Expected</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">result</span><span 
+class="ec-lmtti-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20010r10"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">endResult</span>
+</div>
+                                                                  
+
+                                                                  
+<!--l. 100--><p class="noindent" >The key, value pair corresponds to test case information or options, and the following
+keys are accepted by rtest:
+     <dl class="description"><dt class="description">
+<span 
+class="ec-lmbx-10">name</span> </dt><dd 
+class="description">The name of the test case. In the case where the test case tests a single
+     model it is customary that this name is the models name.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">keyword</span> </dt><dd 
+class="description">A list of keywords associated with the test, delimited by spaces.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">status</span> </dt><dd 
+class="description">Either <span 
+class="ec-lmri-10">correct </span>or <span 
+class="ec-lmri-10">incorrect</span>. Correct means that the code that makes up
+     the test is correct and should pass compilation, while incorrect means that
+     the code is incorrect and that it&#8217;s expected that the compiler will fail with
+     an error message.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">cflags</span> </dt><dd 
+class="description">Extra compiler flags that will be sent to the compiler by rtest.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">setup_command</span> </dt><dd 
+class="description">A command that will be run before the compiler is invoked
+     by rtest.
+     </dd><dt class="description">
+<span 
+class="ec-lmbx-10">teardown_command</span> </dt><dd 
+class="description">A command that will be run after the compiler has
+     been invoked by rtest.</dd></dl>
+<!--l. 116--><p class="noindent" >The <span 
+class="ec-lmri-10">name</span>, <span 
+class="ec-lmri-10">keyword</span>, and <span 
+class="ec-lmri-10">status </span>information should always be given for a test case,
+while the rest of the options are optional. The expected result of a test case can
+be automatically generated with rtest by calling rtest with the -b flag (b
+stands for baseline). The Result and endResult markers can be omitted in
+this case, since they will be generated by rtest at the end of the test case.
+This flag can also be used to update a test case whose expected result has
+changed.
+<!--l. 124--><p class="noindent" >Adding a new test to the test suite is a simple matter of writing the test
+case and placing it in the correct directory, see section <a 
+href="#x10-180009.1">9.1<!--tex4ht:ref: sec:test:design --></a>, and adding it to
+either the list of working tests or the list of failing tests in the directories
+makefile.
+<!--l. 129--><p class="noindent" >Since the content of a test case is specified as Modelica or MetaModelica code there
+is considerable freedom when designing a test case. A test case should be kept small
+and specific though, so it is important to not abuse that freedom. The vast majority
+of the test cases in the test suite follow the same structure, and it is therefore normal
+procedure to copy and modify a similar test instead of writing new tests from
+scratch. The rest of this section will show some examples of different test
+cases.
+<!--l. 137--><p class="noindent" >The simplest type of test case is a test case that tests the flattening of a single
+Modelica model: <!--l. 139-->
+                                                                  
+
+                                                                  
+<div class="lstlisting" id="listing-11"><span class="label"><a 
+ id="x10-20011r1"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">name</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Abs</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20012r2"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">keywords</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">abs</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">builtin</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20013r3"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">status</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">correct</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20014r4"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20015r5"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Testing</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">the</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">built-in</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">abs</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">function.</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20016r6"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20017r7"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20018r8"></a></span><span 
+class="ec-lmbx-10">model</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Abs</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20019r9"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Real</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">r1,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">r2</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20020r10"></a></span><span 
+class="ec-lmbx-10">equation</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20021r11"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">r1</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">abs</span><span 
+class="ec-lmtt-10">(100)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20022r12"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">r2</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">abs</span><span 
+class="ec-lmtt-10">(-100)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20023r13"></a></span><span 
+class="ec-lmbx-10">end</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">Abs</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20024r14"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20025r15"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Result</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20026r16"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">class</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Abs</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20027r17"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Real</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">r1</span><span 
+class="ec-lmtti-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20028r18"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Real</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">r2</span><span 
+class="ec-lmtti-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20029r19"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">equation</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20030r20"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">r1</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">100.0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20031r21"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">r2</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">100.0;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20032r22"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">end</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Abs</span><span 
+class="ec-lmtti-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20033r23"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">endResult</span>
+</div>
+<!--l. 164--><p class="noindent" >The test cases name is in this example the same as the models name, and the
+filename of the test case should also be Abs.mo. When this test case is given to rtest
+it will be flattened by the compiler, which only sees the single model since everything
+else is seen as comments. The output from the compiler will then be compared with
+the expected output given in the test case between the Result and endResult
+keywords, and the test will pass or fail depending on whether the output matches or
+not.
+<!--l. 172--><p class="noindent" >A more complicated test case is the following: <!--l. 173-->
+<div class="lstlisting" id="listing-12"><span class="label"><a 
+ id="x10-20034r1"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">name</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20035r2"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">keywords</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">events</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20036r3"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">status</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">correct</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20037r4"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">teardown_command</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">rm</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">-</span><span 
+class="ec-lmtti-10">rf</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1_</span><span 
+class="ec-lmtti-10">*</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1.exe</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1.cpp</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1.makefile</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1.libs</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Xpowers1.log</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">output.log</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20038r5"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20039r6"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Event</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">handling</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20040r7"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20041r8"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Drmodelica</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">8.2</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">XPowers</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">(</span><span 
+class="ec-lmtti-10">p.</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">242)</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20042r9"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20043r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20044r11"></a></span><span 
+class="ec-lmtt-10">loadFile</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">Xpowers1.mo</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20045r12"></a></span><span 
+class="ec-lmtt-10">simulate</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">Xpowers1,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">startTime</span><span 
+class="ec-lmtt-10">=0.0,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">stopTime</span><span 
+class="ec-lmtt-10">=1.0,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">numberOfIntervals</span><span 
+class="ec-lmtt-10">=2,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">tolerance</span><span 
+class="ec-lmtt-10">=1</span><span 
+class="ec-lmtt-10">e-5,</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">outputFormat</span><span 
+class="ec-lmtt-10">=</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">mat</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20046r13"></a></span><span 
+class="ec-lmtt-10">echo</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">false</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20047r14"></a></span><span 
+class="ec-lmtt-10">size</span><span 
+class="ec-lmtt-10">:=</span><span 
+class="ec-lmtt-10">readSimulationResultSize</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">Xpowers1_res.mat</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20048r15"></a></span><span 
+class="ec-lmtt-10">res</span><span 
+class="ec-lmtt-10">:=</span><span 
+class="ec-lmtt-10">readSimulationResult</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">Xpowers1_res.mat</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">,{</span><span 
+class="ec-lmtt-10">xpowers</span><span 
+class="ec-lmtt-10">[1],</span><span 
+class="ec-lmtt-10">xpowers</span><span 
+class="ec-lmtt-10">[2],</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">xpowers</span><span 
+class="ec-lmtt-10">[3],</span><span 
+class="ec-lmtt-10">xpowers</span><span 
+class="ec-lmtt-10">[4],</span><span 
+class="ec-lmtt-10">xpowers</span><span 
+class="ec-lmtt-10">[5]},</span><span 
+class="ec-lmtt-10">size</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20049r16"></a></span><span 
+class="ec-lmtt-10">echo</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">true</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20050r17"></a></span><span 
+class="ec-lmtt-10">res</span><span 
+class="ec-lmtt-10">[:,1];</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20051r18"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20052r19"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Result</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20053r20"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">true</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20054r21"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">record</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">SimulationResult</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20055r22"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">resultFile</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">Xpowers1_res.mat</span><span 
+class="ec-lmtti-10">",</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20056r23"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">simulationOptions</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">startTime</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">0.0,</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">stopTime</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">1.0,</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">numberOfIntervals</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">2,</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">[</span><span 
+class="ec-lmtti-10">cut</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">for</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">brevity</span><span 
+class="ec-lmtti-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20057r24"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">messages</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">""</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20058r25"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">end</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">SimulationResult</span><span 
+class="ec-lmtti-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20059r26"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">true</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20060r27"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">{1.0,10.0,100.0,1000.0,10000.0}</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20061r28"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">endResult</span>
+</div>
+<!--l. 203--><p class="noindent" >This test case uses the user API to load a file that contains the model to be
+simulated. It then simulates the loaded model, and then reads the simulation result
+into the res variable. In this case only the first column of the result matrix is
+interesting, so <span 
+class="ec-lmtt-10">res[:,1] </span>is used to display these values. The echo command
+is also used to turn on and off automatic echoing to the standard output
+where appropriate. This test also declares a teardown command that will be
+executed by rtest after the test case has been processed by the compiler, in this
+case a command that cleans up some files that where generated during the
+simulation.
+<!--l. 213--><p class="noindent" >The following example is a typical test case that tests a model from the Modelica
+standard library: <!--l. 215-->
+<div class="lstlisting" id="listing-13"><span class="label"><a 
+ id="x10-20062r1"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">name</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">[</span><span 
+class="ec-lmtti-10">version</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">3.1]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20063r2"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">keyword</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">media</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20064r3"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">status</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">correct</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20065r4"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">cflags</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">+</span><span 
+class="ec-lmtti-10">d</span><span 
+class="ec-lmtti-10">=</span><span 
+class="ec-lmtti-10">nogen,noevalfunc</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20066r5"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20067r6"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">instantiate</span><span 
+class="ec-lmtti-10">/</span><span 
+class="ec-lmtti-10">check</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">model</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">example</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20068r7"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20069r8"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20070r9"></a></span><span 
+class="ec-lmtt-10">loadModel</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">Modelica,</span><span 
+class="ec-lmtt-10">{</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">3.1</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">})</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">getErrorString</span><span 
+class="ec-lmtt-10">()</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20071r10"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20072r11"></a></span><span 
+class="ec-lmtt-10">instantiateModel</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">getErrorString</span><span 
+class="ec-lmtt-10">()</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20073r12"></a></span><span 
+class="ec-lmtt-10">checkModel</span><span 
+class="ec-lmtt-10">(</span><span 
+class="ec-lmtt-10">Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir</span><span 
+class="ec-lmtt-10">)</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><span 
+class="ec-lmtt-10">getErrorString</span><span 
+class="ec-lmtt-10">()</span><span 
+class="ec-lmtt-10">;</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20074r13"></a></span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20075r14"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Result</span><span 
+class="ec-lmtti-10">:</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20076r15"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">true</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20077r16"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">""</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20078r17"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"[</span><span 
+class="ec-lmtti-10">Flattened</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">model,</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">omitted</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">for</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">brevity</span><span 
+class="ec-lmtti-10">]</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20079r18"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20080r19"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">""</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20081r20"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtti-10">Check</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">of</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">completed</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">successfully.</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20082r21"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20083r22"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Class</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">has</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">60</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">equation</span><span 
+class="ec-lmtti-10">(</span><span 
+class="ec-lmtti-10">s</span><span 
+class="ec-lmtti-10">)</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">and</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">60</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">variable</span><span 
+class="ec-lmtti-10">(</span><span 
+class="ec-lmtti-10">s</span><span 
+class="ec-lmtti-10">)</span><span 
+class="ec-lmtti-10">.</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20084r23"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">36</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">of</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">these</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">are</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">trivial</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">equation</span><span 
+class="ec-lmtti-10">(</span><span 
+class="ec-lmtti-10">s</span><span 
+class="ec-lmtti-10">)</span><span 
+class="ec-lmtti-10">.</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20085r24"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">"</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20086r25"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">""</span><span 
+class="ec-lmtt-10">&#x00A0;</span><br /><span class="label"><a 
+ id="x10-20087r26"></a></span><span 
+class="ec-lmtti-10">//</span><span 
+class="ec-lmtti-10">&#x00A0;</span><span 
+class="ec-lmtti-10">endResult</span>
+</div>
+<!--l. 243--><p class="noindent" >This test case loads the standard library, version 3.1, and then instantiates and
+checks a model from Modelica.Media. It uses the getErrorString command to display
+any errors that might occur, and it also use the cflags option to specify a couple of
+debug flags that is needed for this specific model.
+                                                                  
+
+                                                                  
+<!--l. 65--><div class="crosslinks"><p class="noindent">[<a 
+href="indexse8.html" >prev</a>] [<a 
+href="indexse8.html#tailindexse8.html" >prev-tail</a>] [<a 
+href="indexse9.html" >front</a>] [<a 
+href="index.html#indexse9.html" >up</a>] </p></div>
+<!--l. 65--><p class="noindent" ><a 
+ id="tailindexse9.html"></a>  
+</body></html> 

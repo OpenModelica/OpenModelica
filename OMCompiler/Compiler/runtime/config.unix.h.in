@@ -1,0 +1,50 @@
+/* @configure_input@ */
+#define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
+#define CONFIG_DLL_EXT "@SHREXT@"
+#define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
+#define CONFIG_OPENMODELICA_SPEC_PLATFORM "@OPENMODELICA_SPEC_PLATFORM@"
+
+#define DEFAULT_CC "@RUNTIMECC@"
+#define DEFAULT_CXX "@CXX@"
+#define DEFAULT_OMPCC "@CC@ @OMPCFLAGS@"
+
+#if defined(__sparc__)
+  #define DEFAULT_LINKER "@RUNTIMECC@ -G"
+#elif defined(__APPLE_CC__)
+  #define DEFAULT_LINKER "@RUNTIMECC@ -single_module -dynamiclib -flat_namespace"
+#elif defined(__x86_64__)
+  /* -fPIC needed on x86_64! */
+  #define DEFAULT_LINKER "@RUNTIMECC@ -shared"
+#else
+  #define DEFAULT_LINKER "@RUNTIMECC@ -shared"
+#endif
+
+#define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
+
+#define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
+@NO_LPLIB@
+@NO_LAPACK@
+@NO_FMIL@
+
+#define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"
+#define CONFIG_REVISION "@SOURCE_REVISION@"
+#define CONFIG_WITH_OPENMP @CONFIG_WITH_OPENMP@
+
+/* Skip compiling against some stuff for the JavaScript runtime */
+#if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
+#define WITH_SUNDIALS
+#define WITH_IPOPT
+@WITH_UMFPACK@
+#define WITH_HWLOC @WITH_HWLOC@
+@WITH_UUID@
+#endif
+#if !defined(OMC_MINIMAL_RUNTIME)
+#define WITH_DASSL
+#endif
+
+#define USE_GRAPH @USE_GRAPH@
+#if USE_GRAPH
+#define USE_PATOH @USE_PATOH@
+#define USE_METIS @USE_METIS@
+#endif
+@HAVE_GETTEXT@

@@ -1,0 +1,421 @@
+This documentation describes how the OpenModelica compiler is designed. The
+first section will give a brief overview of the design, and the rest of the
+sections will go into further detail about the different parts of the compiler
+in an order that roughly follows the compilation process. 
+
+This documentation assumes some familiarity with the MetaModelica language,
+which most of the compiler is implemented in. If you are not familiar with
+MetaModelica it might be beneficial to read through the first parts of the
+MetaModelica documentation in section \ref{sec:metamodelica} to become familiar
+with the MetaModelica syntax and data types. Also note that code examples in
+this documentation might be incomplete when it's 
+
+\subsection{Modelica Translation Stages}
+The translation process of Modelica code to a simulation executable is
+schematically depicted in figure \ref{fig:process_overview} below. 
+\begin{figure}[h!t]
+\centering
+\Picture[Translationstages]{img/compilerstages.png}
+\caption{Translation stages from Modelica code to executing simulation.}
+\label{fig:process_overview}
+\end{figure}
+\textcolor{red}{\em Insert references to sections below}
+
+The OpenModelica compiler can be seen as divided into a front end and a back
+end. The input to the front end is Modelica code (typically .mo files), which is
+parsed and translated to a so-called flat model.  This flattening phase removes
+the object-oriented structure from the model by instantiating the model's
+components and performs operations such as inheritance, redeclares, and
+modifications.  It also does type checking, expansion of connect equations, and
+handles package includes and imports. The result from this instantiation phase
+is a set of variables, equations, algorithms and functions, with all
+object-oriented structure removed apart from dot notation within names.
+
+The result from the front end is then passed to the back end, where the first
+phase is the equation analyzer. In this phase the equations are sorted and
+transformed from their DAE representation into a Block Lower Triangular DAE
+form. The sorted equations are then passed to the equation optimizer, which
+tries to optimize the equations.
+
+The optimized DAE is finally sent to the code generator, which generates code
+that can be compiled to produce a simulation executable. The default target
+language is C, but the code generator can be replaced to generate code for other
+target languages.
+
+The OpenModelica compiler is also capable of compiling MetaModelica code, and
+the process for doing this is mostly similar to compiling normal Modelica
+functions with MetaModelica additions. It also handles MetaModelica scripts
+(.mos files), which is described in section \ref{sec:mm_scripting}.
+
+\subsection{Simplified Overall Structure of the Compiler}
+The OpenModelica compiler is separated into a number of modules, implemented as
+MetaModelica packages. The entry point of the compiler is the
+\function{Main}{main} function. 
+
+\subsection{The front end}
+
+\subsubsection{Parsing and Abstract Syntax}
+The parser is implemented as an ANTLR 3 grammar \cite{antrl3}, and C code for
+the parser is generated with the ANTLR parser generator tool.  The generated
+parser is then encapsulated by the \package{Parser} module, which provides
+functions for parsing source code either from file or from memory.  These
+functions are implemented as external C functions which calls the generated C
+code from ANTLR.
+
+The parser builds an \gls{ast} from the source code, using the AST data types in
+the \package{Absyn} module. The \function{Parser}{parse} functions returns an
+\type{Absyn}{Program}, which is simply a list of classes:
+\begin{lstlisting}[language=modelica]
+uniontype Program
+  record PROGRAM
+    list<Class> classes;
+  end PROGRAM;
+end Program;
+\end{lstlisting}
+The \type{Absyn}{Class} type contains the name of the class, the class' prefixes
+and the body of the class:
+\begin{lstlisting}[language=modelica]
+uniontype Class
+  record CLASS
+    Ident       name;
+    Boolean     partialPrefix;
+    Boolean     finalPrefix;
+    Boolean     encapsulatedPrefix;
+    Restriction restriction;
+    ClassDef    body;
+    Info        info;
+  end CLASS;
+end Class;
+\end{lstlisting}
+Something to note is that the type also contains an \type{Absyn}{Info} object,
+which contains information about where an \gls{ast} element was found: 
+\begin{lstlisting}[language=modelica]
+uniontype Info
+  record INFO
+    String fileName;
+    Boolean isReadOnly;
+    Integer lineNumberStart;
+    Integer columnNumberStart;
+    Integer lineNumberEnd;
+    Integer columnNumberEnd;
+    TimeStamp buildTimes;
+  end INFO;
+end Info;
+\end{lstlisting}
+Almost all \gls{ast} elements contains an \type{Absyn}{Info} object in some way
+or another.  This is one of a few types that are propagated through the
+different stages of the compiler, and used when printing error messages to give
+the user a clue about where the errors are.
+
+The AST closely corresponds to the parse tree and keeps the structure of the
+source file. The \type{Absyn}{ClassDef} type can represent several different
+types of class definitions, but for normal classes it keeps a list of
+\type{Absyn}{ClassPart} objects. These class parts represents the different
+declaration sections that a class might contain, such as public, protected,
+equation, and algorithm sections:
+\begin{lstlisting}[language=modelica]
+uniontype ClassPart
+  record PUBLIC
+    list<ElementItem> contents;
+  end PUBLIC;
+
+  record PROTECTED
+    list<ElementItem> contents;
+  end PROTECTED;
+
+  record EQUATIONS
+    list<EquationItem> contents;
+  end EQUATIONS;
+
+  record ALGORITHMS
+    list<EquationItem> contents;
+  end ALGORITHMS;
+end ClassPart;
+\end{lstlisting}
+Modelica classes are allowed to contain multiple sections of the same type, with
+an implicit public sections first, so the class definition might similarly
+contain several ClassParts of the same type.
+
+Class elements are ultimately represented by {Absyn}{ElementSpec} objects, which
+can represent class definitions, components and other elements:
+\begin{lstlisting}[language=modelica]
+uniontype ElementSpec
+  record CLASSDEF
+    Boolean replaceable_;
+    Class class_;
+  end CLASSDEF;
+
+  record COMPONENTS
+    ElementAttributes attributes;
+    TypeSpec typeSpec;
+    list<ComponentItem> components;
+  end COMPONENTS;
+end ElementSpec;
+\end{lstlisting}
+Parsing a Modelica model such as
+\begin{lstlisting}[language=modelica]
+model M
+  Real x, y;
+equation
+  x = y;
+equation
+  y = 2;
+end M;
+\end{lstlisting}
+will thus produce an \type{Absyn}{Program} that contains the class M. The class
+definition for M will contain a public section with the components x and y, and
+two equation sections: one section for x equals y and another for y equals 2. 
+Note that the x and y components will be stored as a single
+\record{Absyn}{ElementSpec}{COMPONENTS}, since they are declared with the same
+statement and thus share the same type and attributes.
+
+\subsubsection{Rewriting the AST into SCode}
+Since the \gls{ast} closely follows the structure of the source code it has
+several disadvantages when it comes to further translations of the code.
+Multiple class components might e.g.\ be grouped together into a single element
+node. A simpler intermediate form is therefore introduced, called
+\package{SCode}, with the purpose of simplifying further translations. The
+translation from \package{Absyn} to \package{SCode} is handled by the
+\package{SCodeUtil} package, with the entry point being
+\function{SCodeUtil}{translateAbsyn2SCode}.
+\package{SCode} differs in many ways from \package{Absyn}, but some notable
+differences are:
+\begin{itemize}
+\item All class components are stored separately. A declaration such as
+      \inlinecode{Real x, y[17];} is split and stored as two separate elements
+      in the SCode, as if it was declared \inlinecode{Real x; Real y[17]}.
+
+\item Class declarations of the same type are merged together, so that e.g.\ all
+      equations are stored in one list in the class while all algorithm
+      statements are stored in another. Public and protected elements are also
+      merged together, and the public/protected attribute is instead stored in
+      the elements themselves rather than derived from the section they are
+      stored in.
+\end{itemize}
+An \type{SCode}{Program}, the equivalence to \type{Absyn}{Program} in
+\package{SCode}, is simply defined as a list of \type{SCode}{Element}s:
+\begin{lstlisting}[language=modelica]
+type Program = list<Element>;
+\end{lstlisting}
+The \type{SCode}{Element} type represents the different types of elements, such
+as classes and components:
+\begin{lstlisting}[language=modelica]
+uniontype Element
+  record CLASS
+    Ident             name;
+    Prefixes          prefixes;
+    Encapsulated      encapsulatedPrefix;
+    Partial           partialPrefix;
+    Restriction       restriction;
+    ClassDef          classDef;
+    Absyn.Info        info;
+  end CLASS;
+
+  record COMPONENT
+    Ident             name;
+    Prefixes          prefixes;
+    Attributes        attributes;
+    Absyn.TypeSpec    typeSpec;
+    Mod               modifications;
+    Option<Comment>   comment;
+    Option<Absyn.Exp> condition;
+    Absyn.Info        info;
+  end COMPONENT;
+end Element;
+\end{lstlisting}
+Not all \package{Absyn} data structures are translated into \package{SCode}
+ones, as is evident in the code listing above. Some types are already simple
+enough that they are reused in the \package{SCode}, some notable examples being
+\type{Absyn}{Exp}, \type{Absyn}{TypeSpec}, \type{Absyn}{Info},
+\type{Absyn}{ComponentRef}, and \type{Absyn}{Path}.
+
+%\subsection{Simplified Overall Structure of the Compiler}
+%The OpenModelica compiler is separated into a number of modules, to separate
+%different stages of the translation, and to make it more manageable. The top
+%level function is called main, and appears as follows in simplified form that
+%emits flat Modelica (leaving out the code generation and symbolic equation
+%manipulation):
+%\begin{lstlisting}[language=modelica]
+%function main 
+%  input String f;  // file name
+%algorithm
+%  ast := Parser.parse(f);
+%  scode1 := SCode.elaborate(ast);
+%  scode2 := Inst.elaborate(scode1);
+%  DAE.dump(scode2);
+%end main;
+%\end{lstlisting}
+%The simplified overall structure of the OpenModelica compiler is depicted in
+%Figure  1-3, showing the most important modules, some of which can be recognized
+%from the above main function. The total system contains approximately 40
+%modules.
+%
+%Figure 1-3. Some module connections and data flows in the OpenModelica compiler.
+%The parser generates abstract syntax (Absyn) which is converted to the
+%simplified (SCode) intermediate form. The code instantiation module (Inst) calls
+%Lookup to find a name in an environment. It also generates the DAE equation
+%representation which is simplified by DAELow. The Ceval module performs
+%compile-time or interactive expression evaluation and returns values. The Static
+%module performs static semantics and type checking. The DAELow module performs
+%BLT sorting and index reduction.  
+
+\subsubsection{Model Flattening and Instantiation}
+%To be executed, classes in a model need to be instantiated, i.e., data objects
+%are created according to the class declaration. There are two phases of
+%instantiation: 
+%\begin{itemize}
+%\item The symbolic, or compile time, phase of instantiation is usually called
+%      flattening/elaboration or code instantiation. No data objects are created
+%      during this phase. Instead the symbolic internal representation of the
+%      model to be executed/simulated is transformed, by performing inheritance
+%      operations, modification operations, aggregation operations, etc.
+%
+%\item The creation of the data object, usually called instantiation in ordinary
+%      object-oriented terminology. This can be done either at compile time or at
+%      run-time depending on the circumstances and choice of implementation.
+%\end{itemize}
+%
+%The central part of the translation is the code instantiation or
+%flattening/elaboration of the model. The convention is that the top-level model
+%in the instance hierarchy in the source file is elaborated, which means that the
+%equations in that model declaration, and all its subcomponents, are computed and
+%collected.  The elaboration of a class is done by looking at the class
+%definition, elaborating all subcomponents and collecting all equations,
+%functions, and algorithms. To accomplish this, the translator needs to keep
+%track of the class context.  The context includes the lexical scope of the class
+%definition. This constitutes the environment which includes the variables and
+%classes declared previously in the same scope as the current class, and its
+%parent scope, and all enclosing scopes. The other part of the context is the
+%current set of modifiers which modify things like parameter values or redeclare
+%subcomponents.
+%\begin{lstlisting}[language=modelica]
+%model M
+%  constant Real c = 5;
+%    model Foo
+%      parameter Real p = 3;
+%      Real x;
+%    equation
+%    x = p * sin(time) + c;
+%  end Foo;
+%
+%  Foo f(p = 17);
+%end M;
+%\end{lstlisting}
+%In the example above, elaborating the model M means elaborating its subcomponent
+%f, which is of type Foo. While elaborating f the current environment is the
+%parent environment, which includes the constant c. The current set of
+%modifications is (p = 17), which means that the parameter p in the component f
+%will be 17 rather than 3.  There are many semantic rules that takes care of
+%this, but only a few are shown here. They are also somewhat simplified to focus
+%on the central aspects.
+%
+%\subsubsection{The instClass and instElement Functions}
+%The function instClass elaborates a class. It takes five arguments, the
+%environment env, the set of modifications mod, the prefix inPrefix which is used
+%to build a globally unique name of the component in a hierarchical fashion, a
+%collection of connection sets csets, and the class definition inScodeclass. It
+%opens a new scope in the environment where all the names in this class will be
+%stored, and then uses a function called instClassIn to do most of the work.
+%Finally it generates equations from the connection sets collected while
+%elaborating this class.  The "result" of the function is the elaborated
+%equations and some information about what was in the class. In the case of a
+%function, regarded as a restricted class, the result is an algorithm section.
+%One of the most important functions is instElement, that elaborates an element
+%of a class.  An element can typically be a class definition, a variable or
+%constant declaration, or an extends-clause. Below is shown only the rule in
+%instElement for elaborating variable declarations.  The following are simplified
+%versions of the instClass and instElement functions.
+%\begin{lstlisting}[language=modelica]
+%function instClass  "Symbolic instantiation of a class"
+%  input Env          inEnv;
+%  input Mod          inMod;
+%  input Prefix       inPrefix;
+%  input Connect.Sets inConnectsets;
+%  input Scode.Class  inScodeclass;
+%  output list<DAE.Element> outDAEelements;
+%  output Connect.Sets outConnectSets;
+%  output Types.Type   outType;
+%algorithm
+%  (outDAEelements, outConnectSets, outType) := 
+%  matchcontinue (inEnv,inMod,inPrefix,inConnectsets,inScodeclass)
+%    local
+%      Env env,env1;  Mod mod;  Prefix prefix;
+%      Connect.Sets connectSets,connectSets1;
+%      ... n,r;  list<DAE.Element> dae1,dae2;
+%    case (env,mod,pre,connectSets, scodeClass as SCode.CLASS(n,_,r,_))
+%      equation
+%        env1 = Env.openScope(env);
+%        (dae1,_,connectSets1,ciState1,tys) = instClassIn(env1,mod,prefix,
+%                                                         connectSets, scodeClass);
+%        dae2 = Connect.equations(connectSets1);
+%        dae  = listAppend(dae1,dae2);
+%        ty   = mktype(ciState1,tys);
+%     then (dae, {}, ty);
+%  end matchcontinue;
+%end instClass;
+%\end{lstlisting}
+%
+%\begin{lstlisting}[language=modelica]
+%function instElement  "Symbolic instantiation of an element of a class"
+%  input  Env               inEnv;
+%  input  Mod               inMod;
+%  input  Prefix            inPrefix;
+%  input  Connect.Sets      inConnectSets;
+%  input  Scode.Element     inScodeElement;
+%  output list<DAE.Element> outDAEelement;
+%  output Env               outEnv;
+%  output Connect.Sets      outConnectSets;
+%  output list<Types.Var>   outTypesVar;
+%algorithm
+%  (outDAE,outEnv,outdConnectSets,outdTypesVar) :=
+%  matchcontinue (inEnv,inMod,inPrefix,inConnectSets,inScodeElement)
+%    local
+%      Env env,env1;  Mod mods;  Prefix pre; 
+%      Connect.Sets csets,csets1;
+%       ...  n, final, prot, attr, t, m;
+%    ...
+%    case (env,mods,pre,csets, SCode.COMPONENT(n,final,prot,attr,t,m))
+%      equation
+%        vn = Prefix.prefixCref(pre,Exp.CREF_IDENT(n,{} ));
+%        (cl,classmod) = Lookup.lookupClass(env,t)	// Find the class definition
+%        mm = Mod.lookupModification(mods,n);
+%        mod = Mod.merge(classmod,mm);               // Merge the modifications
+%        mod1 = Mod.merge(mod,m);
+%        pre1 = Prefix.prefixAdd(n,[],pre);         // Extend the prefix
+%        (dae1,csets1,ty,st) =
+%              instClass(env,mod1,pre1,csets,cl)    //  Elaborate the variable
+%        eq = Mod.modEquation(mod1); //  If the variable is declared with a default equation,
+%        binding = makeBinding (env,attr,eq,cl); // add it to the environment
+%                                                // with the variable.
+%        env1 = Env.extendFrameFrame_v(env,          // Add the variable binding to the 
+%          Env.FRAMEVAR(n,attr,ty,binding));     // environment
+%        dae2 = instModEquation(env,pre,n,mod1); // Fetch the equation, if supplied
+%        dae = listAppendAppend(dae1, dae2);            // Concatenate the equation lists
+%      then (dae, env1,csets1, { (n,attr,ty) } )
+%     ...
+%  end matchcontinue;
+%end instElement;
+%\end{lstlisting}
+%    
+%\subsubsection{Output}
+%The equations, functions, and variables found during elaboration (symbolic
+%instantiation) are collected in a list of objects of type DAEcomp: 
+%\begin{lstlisting}[language=modelica]
+%uniontype DAEcomp
+%  record VAR  
+%    Exp.ComponentRef componentRef;  
+%    VarKind varKind;  
+%  end VAR;
+%  record EQUATION  
+%    Exp exp1;  
+%    Exp exp2; 
+%  end EQUATION;
+%end DAEcomp;
+%\end{lstlisting}
+%As the final stage of translation, functions, equations, and algorithm sections
+%in this list are converted to C code.
+
+\subsection{The back end}
+\subsection{Scripting MetaModelica}
+\label{sec:mm_scripting}
+Describes the Interactive module.

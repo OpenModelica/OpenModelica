@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="OpenModelica Development" company="OSMC" webLink="http://openmodelica.org" view-date="2012-05-13" view-index="1" gantt-divider-location="575" resource-divider-location="366" version="2.0">
+    <description><![CDATA[Development Managment for 
+ - FrontEnd
+ - BackEnd
+ - FMI]]></description>
+    <view zooming-state="default:6" id="gantt-chart"/>
+    <view id="resource-table">
+        <field id="0" name="Name" width="51" order="0"/>
+        <field id="1" name="Default role" width="48" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <calendar id="1" name="default">
+                <default-week sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+                <only-show-weekends value="false"/>
+                <overriden-day-types/>
+                <days/>
+            </calendar>
+        </day-types>
+    </calendars>
+    <tasks color="#8cb6ce">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="183" name="Frontend" color="#8cb6ce" meeting="false" start="2012-06-11" duration="20" complete="1" expand="true">
+            <task id="184" name="New Instantiation completion" color="#8cb6ce" meeting="false" start="2012-06-11" duration="20" complete="4" expand="false">
+                <task id="185" name="Prefixing/subscripting of expressions" color="#8cb6ce" meeting="false" start="2012-06-11" duration="7" complete="0" expand="true"/>
+                <task id="190" name="Instantiation/typing of equations" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true"/>
+                <task id="192" name="Instantiation/typing of algorithms" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="0" expand="true"/>
+                <task id="194" name="Instantiation/typing of functions" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="100" expand="false"/>
+                <task id="198" name="Connection handling, standard and expandable connections" color="#8cb6ce" meeting="false" start="2012-06-11" duration="20" complete="0" expand="true"/>
+                <task id="200" name="Connection handling, connection breaking with connection graph update" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true"/>
+                <task id="204" name="Function interpretation update for new instantiation and symbol table" color="#8cb6ce" meeting="false" start="2012-06-11" duration="10" complete="0" expand="true"/>
+                <task id="202" name="Improve datatype support (enumerations, records)" color="#8cb6ce" meeting="false" start="2012-06-11" duration="7" complete="0" expand="true"/>
+                <task id="206" name="Propagate variability information" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true"/>
+                <task id="209" name="Further expansion improvements" color="#8cb6ce" meeting="false" start="2012-06-11" duration="4" complete="0" expand="true">
+                    <notes><![CDATA[equations, algorithms, functs, ...
+phase before backend]]></notes>
+                </task>
+                <task id="211" name="Type checking and internal type casting" color="#8cb6ce" meeting="false" start="2012-06-11" duration="7" complete="0" expand="true"/>
+                <task id="227" name="Support Very-light Fluid subset from Kilian" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+                <task id="230" name="Full Support for Fluid library" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+            </task>
+            <task id="213" name="Finish Garbage collection (GC), Separate compilation, Updated MDT/OMDev" color="#8cb6ce" meeting="false" start="2012-06-11" duration="6" complete="0" expand="false">
+                <task id="217" name="Garbage collection (GC) with same performane as RML-based GC" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+                <task id="219" name="Separate compilation" color="#8cb6ce" meeting="false" start="2012-06-11" duration="6" complete="0" expand="true"/>
+                <task id="222" name="Deployment of GC and separate compilation in updated MDT/OMDEV" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="0" expand="true"/>
+                <task id="225" name="GC with higher performance than RML-based GC" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+            </task>
+        </task>
+        <task id="232" name="Backend" color="#8cb6ce" meeting="false" start="2012-06-11" duration="133" complete="0" expand="true">
+            <task id="0" name="Backend Design" color="#8cb6ce" meeting="false" start="2012-06-11" duration="33" complete="0" expand="true">
+                <notes><![CDATA[Improve the readabilty of the code by
+ - restrukturing
+ - documentation
+ - reimplement prototype implementations]]></notes>
+                <task id="2" name="Tech. Documentation (draft)" color="#8cb6ce" meeting="false" start="2012-06-11" duration="14" complete="0" expand="true">
+                    <notes><![CDATA[Creating a Tech. Documentation of the MetaModelica Backend with 
+ - visual illustration flow chart 
+ - and data flow]]></notes>
+                    <depend id="7" type="2" difference="0" hardness="Strong"/>
+                    <depend id="9" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="9" name="Tech. Documentation (final)" color="#8cb6ce" meeting="false" start="2012-06-29" duration="10" complete="0" expand="false">
+                    <notes><![CDATA[Creating a Tech. Documentation of the MetaModelica Backend with 
+ - visual illustration flow chart 
+ - and data flow]]></notes>
+                    <depend id="24" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="7" name="Create ideal flow and data chart" color="#8cb6ce" meeting="false" start="2012-06-29" duration="14" complete="0" expand="true">
+                    <notes><![CDATA[create or rather derive an ideal flow chart and  data flow]]></notes>
+                    <depend id="24" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="20" name="Tech. Doc. simulation c-runtime" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="0" expand="true">
+                    <depend id="24" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="22" name="Tech. Doc. simulation cpp-runtime" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="0" expand="false">
+                    <depend id="24" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="24" name="Design ideal flow and data document" color="#8cb6ce" meeting="false" start="2012-07-19" duration="5" complete="0" expand="true">
+                    <notes><![CDATA[search for potential improvements with created flow chart and data flow]]></notes>
+                    <depend id="76" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="29" name="Backend readability (Implmentation)" color="#8cb6ce" meeting="false" start="2012-06-11" duration="50" complete="0" expand="false">
+                <task id="31" name="Tearing as post-optim module" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true">
+                    <depend id="66" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="33" name="sparsity pattern as post-optim module" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true">
+                    <depend id="77" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="37" name="coloring as post-optim module" color="#8cb6ce" meeting="false" start="2012-06-11" duration="2" complete="0" expand="true">
+                    <depend id="77" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="39" name="Restruct SImCode.mo and SIMCODE" color="#8cb6ce" meeting="false" start="2012-06-11" duration="50" complete="0" priority="3" expand="true">
+                    <depend id="82" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="42" name="revise data-struct of the Incidence-Matrix" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="0" expand="true"/>
+                <task id="45" name="Merge differentiate Function" color="#8cb6ce" meeting="false" start="2012-06-11" duration="10" complete="0" expand="true">
+                    <notes><![CDATA[Merge MetaModelica code of Derive.mo and symbolic Jacobian calculation ]]></notes>
+                </task>
+            </task>
+            <task id="47" name="Backend robustness and library support" color="#8cb6ce" meeting="false" start="2012-06-11" duration="60" complete="0" expand="false">
+                <task id="48" name="MultiBody library simulation" color="#8cb6ce" meeting="false" start="2012-06-11" duration="15" complete="0" expand="true"/>
+                <task id="49" name="Figure out issues for simulate Media example" color="#8cb6ce" meeting="false" start="2012-06-11" duration="5" complete="0" expand="true">
+                    <depend id="50" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="50" name="Make the Media library simulate" color="#8cb6ce" meeting="false" start="2012-06-18" duration="15" complete="0" expand="true"/>
+                <task id="52" name="revise non-linear system handling" color="#8cb6ce" meeting="false" start="2012-06-11" duration="10" complete="0" expand="true"/>
+                <task id="55" name="Figure out ThermoSysLib simulation issues" color="#8cb6ce" meeting="false" start="2012-06-11" duration="3" complete="30" expand="true">
+                    <depend id="53" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="53" name="ThermoSysLib library simulation" color="#8cb6ce" meeting="false" start="2012-06-14" duration="5" complete="0" expand="true"/>
+                <task id="57" name="solving stategie for algebraic loop involving integer" color="#8cb6ce" meeting="false" start="2012-06-11" duration="60" complete="0" expand="true"/>
+                <task id="59" name="Make other MSL example model simulates" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+                <task id="60" name="Find initialize issues for ThermoSys simulation" color="#8cb6ce" meeting="false" start="2012-07-23" duration="25" complete="0" expand="true"/>
+                <task id="61" name="Find initialize issues for MultiBody simulation" color="#8cb6ce" meeting="false" start="2012-07-23" duration="10" complete="0" expand="false"/>
+            </task>
+            <task id="65" name="Backend performance" color="#8cb6ce" meeting="false" start="2012-06-11" duration="133" complete="4" expand="true">
+                <task id="66" name="Design and Implementation of a better tearing strategy" color="#8cb6ce" meeting="false" start="2012-06-13" duration="40" complete="0" expand="true"/>
+                <task id="68" name="Improvement and Robostness of initialization" color="#8cb6ce" meeting="false" start="2012-06-11" duration="30" complete="0" expand="true">
+                    <depend id="60" type="2" difference="0" hardness="Strong"/>
+                    <depend id="61" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="73" name="Implement of Homotopy operator" color="#8cb6ce" meeting="false" start="2012-06-11" duration="30" complete="0" expand="true"/>
+                <task id="74" name="Dynamic State Selection" color="#8cb6ce" meeting="false" start="2012-06-11" duration="1" complete="0" expand="true"/>
+                <task id="76" name="Non-Expanded arrays" color="#8cb6ce" meeting="false" start="2012-07-26" duration="100" complete="0" expand="true"/>
+                <task id="77" name="Compressed DASSL" color="#8cb6ce" meeting="false" start="2012-06-13" duration="5" complete="0" expand="true"/>
+                <task id="79" name="revise BackendDAEUtil.getSolvedSystem" color="#8cb6ce" meeting="false" start="2012-06-11" duration="10" complete="40" expand="true">
+                    <notes><![CDATA[functions expandDer, calculateValues, translateDAE, generateStatePartition,  are slow or not well implementet....]]></notes>
+                </task>
+                <task id="82" name="reduce compile time of runtime" color="#8cb6ce" meeting="false" start="2012-08-20" duration="5" complete="0" expand="true"/>
+            </task>
+            <task id="101" name="Other Things" color="#8cb6ce" meeting="false" start="2012-06-11" duration="30" complete="0" expand="true">
+                <task id="102" name="Finalize prototype uncertainty" color="#8cb6ce" meeting="false" start="2012-06-11" duration="10" complete="0" expand="true"/>
+                <task id="103" name="Extend Test suite" color="#8cb6ce" meeting="false" start="2012-06-11" duration="30" complete="0" expand="true"/>
+            </task>
+        </task>
+        <task id="84" name="FMI" color="#8cb6ce" meeting="false" start="2012-06-11" duration="55" complete="0" expand="true">
+            <task id="145" name="FMI Comman Functionality" color="#8cb6ce" meeting="false" start="2012-06-11" duration="15" complete="0" expand="true">
+                <task id="147" name="Common header files, functions, platform depended definitions." color="#8cb6ce" shape="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" meeting="false" start="2012-06-11" duration="5" complete="0" expand="true">
+                    <depend id="150" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="150" name="XML parser, loading and validating the dynamic link library (dll/so)." color="#8cb6ce" meeting="false" start="2012-06-18" duration="5" complete="0" expand="true">
+                    <depend id="157" type="2" difference="0" hardness="Strong"/>
+                </task>
+                <task id="157" name="FMU Instances creation, logging." color="#8cb6ce" meeting="false" start="2012-06-25" duration="5" complete="0" expand="true">
+                    <depend id="87" type="2" difference="0" hardness="Strong"/>
+                </task>
+            </task>
+            <task id="85" name="FMI-Unit for Co-Simulation" color="#8cb6ce" meeting="false" start="2012-06-11" duration="7" complete="0" expand="true">
+                <depend id="87" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="86" name="FMI 2.0 Implementation (partial prototype)" color="#8cb6ce" meeting="false" start="2012-06-11" duration="30" complete="0" expand="true"/>
+            <task id="87" name="FMI Master implementation (a)" color="#8cb6ce" meeting="false" start="2012-07-02" duration="15" complete="0" expand="true">
+                <notes><![CDATA[Creating, initializing, terminating and destructing the slaves.]]></notes>
+                <depend id="89" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="89" name="FMI Master implementation (b)" color="#8cb6ce" meeting="false" start="2012-07-23" duration="15" complete="0" expand="true">
+                <notes><![CDATA[Performing the step with the respective solvers of the slaves.]]></notes>
+                <depend id="99" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="97" name="FMI Re-Implement FMI-Import for FMI1.0 Co-Simulation and FMI2.0 usage" color="#8cb6ce" meeting="false" start="2012-06-11" duration="20" complete="0" expand="true"/>
+            <task id="99" name="FMI Implementing communication algorithm between master and slaves." color="#8cb6ce" meeting="false" start="2012-08-13" duration="10" complete="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources>
+        <resource id="13" name="PeterF" function="Default:1" contacts="" phone=""/>
+        <resource id="5" name="Bernhard" function="Default:1" contacts="" phone=""/>
+        <resource id="11" name="Adrain" function="SoftwareDevelopment:2" contacts="" phone=""/>
+        <resource id="14" name="Martin" function="SoftwareDevelopment:2" contacts="" phone=""/>
+        <resource id="12" name="Per" function="SoftwareDevelopment:2" contacts="" phone=""/>
+        <resource id="7" name="Adeel" function="Default:0" contacts="" phone=""/>
+        <resource id="0" name="Willi" function="SoftwareDevelopment:2" contacts="wbraun@fh-bielefeld.de" phone=""/>
+        <resource id="1" name="Jens" function="SoftwareDevelopment:2" contacts="Jens.Frenkel@tu-dresden.de" phone=""/>
+        <resource id="15" name="Mahder" function="SoftwareDevelopment:2" contacts="" phone=""/>
+        <resource id="2" name="Niklas" function="SoftwareDevelopment:2" contacts="" phone=""/>
+        <resource id="3" name="Lennart" function="SoftwareDevelopment:2" contacts="lochel@fh-bielefeld.de" phone=""/>
+        <resource id="8" name="Alachew" function="SoftwareDevelopment:4" contacts="" phone=""/>
+        <resource id="4" name="others" function="SoftwareDevelopment:4" contacts="" phone=""/>
+        <resource id="6" name="???" function="SoftwareDevelopment:2" contacts="" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="66" resource-id="5" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="192" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="200" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="206" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="209" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="50.0"/>
+        <allocation task-id="211" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="219" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="217" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="222" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="225" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="230" resource-id="11" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="202" resource-id="14" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="204" resource-id="14" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="222" resource-id="14" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="230" resource-id="14" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="185" resource-id="12" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="209" resource-id="12" function="SoftwareDevelopment:2" responsible="false" load="50.0"/>
+        <allocation task-id="227" resource-id="12" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="230" resource-id="12" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="86" resource-id="7" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="89" resource-id="7" function="SoftwareDevelopment:2" responsible="true" load="50.0"/>
+        <allocation task-id="99" resource-id="7" function="Default:0" responsible="true" load="45.0"/>
+        <allocation task-id="97" resource-id="7" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="147" resource-id="7" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="157" resource-id="7" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="87" resource-id="7" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="150" resource-id="7" function="Default:0" responsible="true" load="100.0"/>
+        <allocation task-id="2" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="9" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="20" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="24" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="33" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="37" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="39" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="77" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="82" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="85" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="86" resource-id="0" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="89" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="50.0"/>
+        <allocation task-id="99" resource-id="0" function="SoftwareDevelopment:2" responsible="false" load="10.0"/>
+        <allocation task-id="66" resource-id="0" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="79" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="50.0"/>
+        <allocation task-id="49" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="50" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="52" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="55" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="53" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="59" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="60" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="80.0"/>
+        <allocation task-id="61" resource-id="0" function="SoftwareDevelopment:2" responsible="true" load="80.0"/>
+        <allocation task-id="2" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="9" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="24" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="31" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="39" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="42" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="74" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="82" resource-id="1" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="66" resource-id="1" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="79" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="50.0"/>
+        <allocation task-id="48" resource-id="1" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="22" resource-id="2" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="24" resource-id="2" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="39" resource-id="2" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="24" resource-id="3" function="SoftwareDevelopment:2" responsible="false" load="100.0"/>
+        <allocation task-id="68" resource-id="3" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+        <allocation task-id="60" resource-id="3" function="SoftwareDevelopment:2" responsible="false" load="20.0"/>
+        <allocation task-id="61" resource-id="3" function="SoftwareDevelopment:2" responsible="false" load="20.0"/>
+        <allocation task-id="103" resource-id="8" function="SoftwareDevelopment:4" responsible="true" load="100.0"/>
+        <allocation task-id="24" resource-id="4" function="SoftwareDevelopment:4" responsible="false" load="100.0"/>
+        <allocation task-id="39" resource-id="4" function="SoftwareDevelopment:4" responsible="false" load="100.0"/>
+        <allocation task-id="99" resource-id="4" function="SoftwareDevelopment:4" responsible="false" load="45.0"/>
+        <allocation task-id="102" resource-id="4" function="SoftwareDevelopment:4" responsible="true" load="100.0"/>
+        <allocation task-id="57" resource-id="6" function="SoftwareDevelopment:2" responsible="true" load="100.0"/>
+    </allocations>
+    <vacations/>
+    <taskdisplaycolumns>
+        <displaycolumn property-id="tpd2" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd7" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd8" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd6" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd10" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd9" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd1" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd0" order="-1" width="75" visible="false"/>
+        <displaycolumn property-id="tpd3" order="0" width="312" visible="true"/>
+        <displaycolumn property-id="tpd4" order="1" width="111" visible="true"/>
+        <displaycolumn property-id="tpd5" order="2" width="148" visible="true"/>
+    </taskdisplaycolumns>
+    <previous/>
+    <roles roleset-name="Default"/>
+    <roles roleset-name="SoftwareDevelopment"/>
+</project>
