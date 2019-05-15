@@ -32,7 +32,7 @@ simulate(problem2); getErrorString();
 setCommandLineOptions("--simCodeTarget=omsic --removeSimpleEquations=none"); getErrorString();
 buildModelFMU(problem2); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator problem2.fmu --intervals=500 --resultFile=\"problem2_OMS_res.mat\" --suppressPath=true --tempDir=\"problem2-tmp\"", "problem2_systemCall.log"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator problem2.fmu --intervals=500 --tolerance=1e-6 --resultFile=\"problem2_OMS_res.mat\" --suppressPath=true --tempDir=\"problem2-tmp\"", "problem2_systemCall.log"); getErrorString();
 readFile("problem2_systemCall.log");
 
 // Compare results
@@ -63,8 +63,8 @@ compareSimulationResults("problem2_OMS_res.mat",
 // "info:    maximum step size for 'model.root': 0.100000
 // info:    Result file: problem2_OMS_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 30 NumRhsEvals  = 37 NumLinSolvSetups = 8
-//          NumNonlinSolvIters = 36 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+//          NumSteps = 48 NumRhsEvals  = 66 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 65 NumNonlinSolvConvFails = 0 NumErrTestFails = 3
 // "
 // {"Files Equal!"}
 // endResult
