@@ -4,13 +4,13 @@
 <context>
     <name>AboutOMEditDialog</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="4392"/>
+        <location filename="../../MainWindow.cpp" line="4390"/>
         <source>About %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4395"/>
-        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;%3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %4&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %5&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;br /&gt;Initially developed by &lt;b&gt;Adeel Asghar&lt;/b&gt; and &lt;b&gt;Sonia Tariq&lt;/b&gt; as part of their final master thesis.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Contributors:&lt;/b&gt;&lt;ul&gt;&lt;li&gt;Adeel Asghar - &lt;u&gt;&lt;a href=&quot;mailto:adeel.asghar@liu.se&quot;&gt;adeel.asghar@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Sonia Tariq&lt;/li&gt;&lt;li&gt;Martin Sjölund - &lt;u&gt;&lt;a href=&quot;mailto:martin.sjolund@liu.se&quot;&gt;martin.sjolund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Alachew Shitahun - &lt;u&gt;&lt;a href=&quot;mailto:alachew.mengist@liu.se&quot;&gt;alachew.mengist@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Jan Kokert - &lt;u&gt;&lt;a href=&quot;mailto:jan.kokert@imtek.uni-freiburg.de&quot;&gt;jan.kokert@imtek.uni-freiburg.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dr. Henning Kiel - &lt;u&gt;&lt;a href=&quot;mailto:henning.kiel@w-hs.de&quot;&gt;henning.kiel@w-hs.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Haris Kapidzic&lt;/li&gt;&lt;li&gt;Abhinn Kothari&lt;/li&gt;&lt;li&gt;Lennart Ochel - &lt;u&gt;&lt;a href=&quot;mailto:lennart.ochel@liu.se&quot;&gt;lennart.ochel@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Volker Waurich - &lt;u&gt;&lt;a href=&quot;mailto:volker.waurich@tu-dresden.de&quot;&gt;volker.waurich@tu-dresden.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Rüdiger Franke&lt;/li&gt;&lt;li&gt;Martin Flehmig&lt;/li&gt;&lt;li&gt;Robert Braun - &lt;u&gt;&lt;a href=&quot;mailto:robert.braun@liu.se&quot;&gt;robert.braun@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Per Östlund - &lt;u&gt;&lt;a href=&quot;mailto:per.ostlund@liu.se&quot;&gt;per.ostlund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dietmar Winkler&lt;/li&gt;&lt;li&gt;Anatoly Severin&lt;li&gt;&lt;li&gt;Adrian Pop - &lt;u&gt;&lt;a href=&quot;mailto:adrian.pop@liu.se&quot;&gt;adrian.pop@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;/ul&gt;</source>
+        <location filename="../../MainWindow.cpp" line="4393"/>
+        <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %4&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;br /&gt;Initially developed by &lt;b&gt;Adeel Asghar&lt;/b&gt; and &lt;b&gt;Sonia Tariq&lt;/b&gt; as part of their final master thesis.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Contributors:&lt;/b&gt;&lt;ul&gt;&lt;li&gt;Adeel Asghar - &lt;u&gt;&lt;a href=&quot;mailto:adeel.asghar@liu.se&quot;&gt;adeel.asghar@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Sonia Tariq&lt;/li&gt;&lt;li&gt;Martin Sjölund - &lt;u&gt;&lt;a href=&quot;mailto:martin.sjolund@liu.se&quot;&gt;martin.sjolund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Alachew Shitahun - &lt;u&gt;&lt;a href=&quot;mailto:alachew.mengist@liu.se&quot;&gt;alachew.mengist@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Jan Kokert - &lt;u&gt;&lt;a href=&quot;mailto:jan.kokert@imtek.uni-freiburg.de&quot;&gt;jan.kokert@imtek.uni-freiburg.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dr. Henning Kiel - &lt;u&gt;&lt;a href=&quot;mailto:henning.kiel@w-hs.de&quot;&gt;henning.kiel@w-hs.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Haris Kapidzic&lt;/li&gt;&lt;li&gt;Abhinn Kothari&lt;/li&gt;&lt;li&gt;Lennart Ochel - &lt;u&gt;&lt;a href=&quot;mailto:lennart.ochel@liu.se&quot;&gt;lennart.ochel@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Volker Waurich - &lt;u&gt;&lt;a href=&quot;mailto:volker.waurich@tu-dresden.de&quot;&gt;volker.waurich@tu-dresden.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Rüdiger Franke&lt;/li&gt;&lt;li&gt;Martin Flehmig&lt;/li&gt;&lt;li&gt;Robert Braun - &lt;u&gt;&lt;a href=&quot;mailto:robert.braun@liu.se&quot;&gt;robert.braun@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Per Östlund - &lt;u&gt;&lt;a href=&quot;mailto:per.ostlund@liu.se&quot;&gt;per.ostlund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dietmar Winkler&lt;/li&gt;&lt;li&gt;Anatoly Severin&lt;li&gt;&lt;li&gt;Adrian Pop - &lt;u&gt;&lt;a href=&quot;mailto:adrian.pop@liu.se&quot;&gt;adrian.pop@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;/ul&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -57,27 +57,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="309"/>
+        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="308"/>
         <source>Information about states could not be determined.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="316"/>
+        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="314"/>
         <source>Interactive Control needs an FMU ME 2.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="381"/>
+        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="379"/>
         <source>Unknown visualization type.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="388"/>
+        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="386"/>
         <source>Could not find the visual XML file %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="401"/>
+        <location filename="../../Animation/AbstractAnimationWindow.cpp" line="399"/>
         <source>Could not init %1 %2.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -130,7 +130,7 @@
 <context>
     <name>AddSystemLibraryDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2237"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2252"/>
         <source>Add System Library</source>
         <translation>Ajouter une Librairie Système</translation>
     </message>
@@ -161,12 +161,12 @@
 <context>
     <name>AddUserLibraryDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2347"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2362"/>
         <source>Add User Library</source>
         <translation>Ajouter une Librairie Utilisateur</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2419"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2434"/>
         <source>Please enter the file path.</source>
         <translation>Veuillez entrer le chemin du fichier.</translation>
     </message>
@@ -197,27 +197,27 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2061"/>
         <source>Shows the Find/Replace window</source>
-        <translation type="unfinished">Affiche la fenêtre Trouver/Remplacer</translation>
+        <translation>Affiche la fenêtre Trouver/Remplacer</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2065"/>
         <source>Clear Find/Replace Texts</source>
-        <translation type="unfinished">Nettoyer les Textes de Trouver/Remplacer</translation>
+        <translation>Nettoyer les Textes de Trouver/Remplacer</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2066"/>
         <source>Clears the Find/Replace text items</source>
-        <translation type="unfinished">Efface les résultats de Trouver/Remplacer</translation>
+        <translation>Efface les résultats de Trouver/Remplacer</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2069"/>
         <source>Go to Line</source>
-        <translation type="unfinished">Aller à la Ligne</translation>
+        <translation>Aller à la Ligne</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2070"/>
         <source>Shows the Go to Line Number window</source>
-        <translation type="unfinished">Affiche la fenêtre Aller la Ligne Numéro</translation>
+        <translation>Affiche la fenêtre Aller la Ligne Numéro</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2074"/>
@@ -237,7 +237,7 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2103"/>
         <source>Toggle Comment Selection</source>
-        <translation type="unfinished">Basculer la sélection en commentaire</translation>
+        <translation>Basculer la sélection en commentaire</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2114"/>
@@ -277,7 +277,7 @@
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2195"/>
         <source>Select All</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
 </context>
 <context>
@@ -384,12 +384,12 @@
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="33"/>
         <source>Select All</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="35"/>
         <source>Name</source>
-        <translation type="unfinished">Nom</translation>
+        <translation>Nom</translation>
     </message>
     <message>
         <location filename="../../Git/CleanDialog.cpp" line="44"/>
@@ -400,19 +400,19 @@
 <context>
     <name>CodeColorsWidget</name>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="370"/>
-        <source>Item Color:</source>
-        <translation type="unfinished">Couleur de l&apos;objet:</translation>
-    </message>
-    <message>
         <location filename="../../Util/Utilities.cpp" line="375"/>
-        <source>Items:</source>
-        <translation type="unfinished">Objets:</translation>
+        <source>Item Color:</source>
+        <translation>Couleur de l&apos;objet:</translation>
     </message>
     <message>
-        <location filename="../../Util/Utilities.cpp" line="384"/>
+        <location filename="../../Util/Utilities.cpp" line="380"/>
+        <source>Items:</source>
+        <translation>Objets:</translation>
+    </message>
+    <message>
+        <location filename="../../Util/Utilities.cpp" line="389"/>
         <source>Preview:</source>
-        <translation type="unfinished">Prévisualisation:</translation>
+        <translation>Prévisualisation:</translation>
     </message>
 </context>
 <context>
@@ -460,7 +460,7 @@
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="74"/>
         <source>Select All</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="77"/>
@@ -470,7 +470,7 @@
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="77"/>
         <source>File</source>
-        <translation type="unfinished">Fichier</translation>
+        <translation>Fichier</translation>
     </message>
     <message>
         <location filename="../../Git/CommitChangesDialog.cpp" line="87"/>
@@ -544,27 +544,27 @@
 <context>
     <name>ComponentAttributes</name>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1291"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1289"/>
         <source>Component Attributes</source>
         <translation>Attributs du composant</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1291"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1289"/>
         <source>%1 - %2 - %3 in %4</source>
         <translation>%1 - %2 - %3 dans %4</translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1315"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1313"/>
         <source>Dimensions:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1317"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1315"/>
         <source>Array of dimensions e.g [1, 5, 2]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1471"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1469"/>
         <source>A component name should not have spaces. Please choose another name.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -607,7 +607,7 @@
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="681"/>
         <source>Class</source>
-        <translation type="unfinished">Classe</translation>
+        <translation>Classe</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="767"/>
@@ -618,32 +618,32 @@
 <context>
     <name>CompositeModelConnectionAttributes</name>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1771"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1769"/>
         <source>From:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1774"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1772"/>
         <source>To:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1777"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1775"/>
         <source>Delay:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1779"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1777"/>
         <source>Zf:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1781"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1779"/>
         <source>Zfr:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1784"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1782"/>
         <source>Alpha:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -678,13 +678,13 @@
     <message>
         <location filename="../../Editors/CompositeModelEditor.cpp" line="1317"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation type="unfinished">&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
+        <translation>&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
     </message>
 </context>
 <context>
     <name>CompositeModelSimulationParamsDialog</name>
     <message>
-        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="452"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="451"/>
         <source>Saves the Co-Simulation experiment settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -692,32 +692,32 @@
 <context>
     <name>CompositeModelSubModelAttributes</name>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1549"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1547"/>
         <source>SubModel Attributes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1567"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1565"/>
         <source>Simulation Tool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1578"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1576"/>
         <source>Start Command:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1582"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1580"/>
         <source>Model File:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1586"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1584"/>
         <source>Exact Step</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Component/ComponentProperties.cpp" line="1588"/>
+        <location filename="../../Component/ComponentProperties.cpp" line="1586"/>
         <source>Geometry File:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -785,7 +785,7 @@
 <context>
     <name>CreateConnectionDialog</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="1747"/>
+        <location filename="../../Annotations/LineAnnotation.cpp" line="1749"/>
         <source>Specify the indexes below to connect to the parts of the connectors.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -890,62 +890,62 @@
 <context>
     <name>DebuggerPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4407"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4448"/>
         <source>GDB Path:</source>
         <translation>Chemin du GDB:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4418"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4459"/>
         <source>GDB Command Timeout:</source>
         <translation>Commande de Temps Mort du GDB:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4420"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4461"/>
         <source> seconds</source>
         <translation>secondes</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4425"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4466"/>
         <source>GDB Output Limit:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4427"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4468"/>
         <source> characters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4432"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4473"/>
         <source>Display C frames</source>
         <translation>Afficher les cadres C</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4435"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4476"/>
         <source>Display unknown frames</source>
         <translation>Afficher les cadres d&apos;inconnues</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4438"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4479"/>
         <source>Clear old output on a new run</source>
         <translation>Nettoyer l&apos;ancienne sortie lors d&apos;une nouvelle exécution</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4441"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4482"/>
         <source>Clear old log on a new run</source>
         <translation>Nettoyer l&apos;ancien log lors d&apos;une nouvelle exécution</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4450"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4491"/>
         <source>Default GDB path is used if above field is empty.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4462"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4503"/>
         <source>Always show %1 after compilation</source>
         <translation>Toujours afficher %1 après la compilation</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4463"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4504"/>
         <source>Generate Operations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1330,7 +1330,7 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1073"/>
         <source>Select Path</source>
-        <translation type="unfinished">Sélectionner un Chemin</translation>
+        <translation>Sélectionner un Chemin</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1112"/>
@@ -1389,7 +1389,7 @@
 <context>
     <name>ExpandableConnectorTreeModel</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="1491"/>
+        <location filename="../../Annotations/LineAnnotation.cpp" line="1493"/>
         <source>Connector</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1399,97 +1399,97 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1801"/>
         <source>Figaro Mode:</source>
-        <translation type="unfinished">Mode Figaro:</translation>
+        <translation>Mode Figaro:</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1842"/>
         <source>Exporting model as Figaro</source>
-        <translation type="unfinished">Exportation du Modèle en Figaro</translation>
+        <translation>Exportation du Modèle en Figaro</translation>
     </message>
 </context>
 <context>
     <name>FMIPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4531"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4572"/>
         <source>Export</source>
         <translation>Exporter</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4545"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4586"/>
         <source>Model Exchange</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4546"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4587"/>
         <source>Co-Simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4547"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4588"/>
         <source>Model Exchange and Co-Simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4557"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4598"/>
         <source>FMU Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4561"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4602"/>
         <source>Move FMU:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4563"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4604"/>
         <source>&lt;directory name or full file name with placeholders&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4568"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4609"/>
         <source>Placeholders:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4569"/>
-        <location filename="../../Options/OptionsDialog.cpp" line="4570"/>
-        <location filename="../../Options/OptionsDialog.cpp" line="4571"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4610"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4611"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4612"/>
         <source> i.e.,</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4584"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4625"/>
         <source>Platforms</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4585"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4626"/>
         <source>Note: The list of platforms is created by searching for programs in the PATH
 matching pattern &quot;*-*-*-*cc&quot;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4588"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4629"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4589"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4630"/>
         <source>Dynamic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4590"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4631"/>
         <source>Static</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4617"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4658"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4618"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4659"/>
         <source>Delete FMU directory and generated model when OMEdit is closed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1561,22 +1561,22 @@ matching pattern &quot;*-*-*-*cc&quot;.</source>
 <context>
     <name>FigaroPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4324"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4365"/>
         <source>Figaro Library:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4330"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4371"/>
         <source>Tree generation options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4336"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4377"/>
         <source>Figaro Processor:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4343"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4384"/>
         <source>Resets to default Figaro Processor path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1586,12 +1586,12 @@ matching pattern &quot;*-*-*-*cc&quot;.</source>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2452"/>
         <source>Find:</source>
-        <translation type="unfinished">Trouver:</translation>
+        <translation>Trouver:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2475"/>
         <source>Replace With:</source>
-        <translation type="unfinished">Remplacer avec:</translation>
+        <translation>Remplacer avec:</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2479"/>
@@ -1601,22 +1601,22 @@ matching pattern &quot;*-*-*-*cc&quot;.</source>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2480"/>
         <source>Whole Words</source>
-        <translation type="unfinished">Mots en entier</translation>
+        <translation>Mots en entier</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2481"/>
         <source>Regular Expressions</source>
-        <translation type="unfinished">Expressions</translation>
+        <translation>Expressions</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2483"/>
         <source>Replace</source>
-        <translation type="unfinished">Remplacer</translation>
+        <translation>Remplacer</translation>
     </message>
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="2485"/>
         <source>Replace All</source>
-        <translation type="unfinished">Remplacer tout</translation>
+        <translation>Remplacer tout</translation>
     </message>
 </context>
 <context>
@@ -1998,207 +1998,207 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>GeneralSettingsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1719"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1734"/>
         <source>Auto Detected</source>
         <translation>Détection automatique</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1722"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1737"/>
         <source>Chinese</source>
         <translation>Chinois</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1723"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1738"/>
         <source>English</source>
         <translation>Anglais</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1724"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1739"/>
         <source>French</source>
         <translation>Français</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1725"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1740"/>
         <source>German</source>
         <translation>Allemand</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1726"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1741"/>
         <source>Italian</source>
         <translation>Italien</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1727"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1742"/>
         <source>Japanese</source>
         <translation>Japonais</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1728"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1743"/>
         <source>Romanian</source>
         <translation>Roumain</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1729"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1744"/>
         <source>Russian</source>
         <translation>Russe</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1730"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1745"/>
         <source>Spanish</source>
         <translation>Espagnol</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1731"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1746"/>
         <source>Swedish</source>
         <translation>Suédois</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1745"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1760"/>
         <source>Toolbar Icon Size: *</source>
         <translation>Taille d&apos;Icône de la Barre d&apos;Outils: *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1750"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1765"/>
         <source>Preserve User&apos;s GUI Customizations</source>
         <translation>Conserver les Paramètres GUI de l&apos;Utilisateur</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1753"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1768"/>
         <source>Terminal Command:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1766"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1781"/>
         <source>Terminal Command Arguments:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1769"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1784"/>
         <source>Hide Variables Browser</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1770"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1785"/>
         <source>Hides the variable browser when switching away from plotting perspective.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1773"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1788"/>
         <source>Activate Access Annotations *</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1775"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1790"/>
         <source>Always</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1776"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1791"/>
         <source>When loading .mol file(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1777"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1792"/>
         <source>Never</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1779"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1794"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Options for handling of access annotations:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;i&gt;Always:&lt;/i&gt; Activates the access annotations even for the non-encrypted libraries.&lt;/li&gt;&lt;li&gt;&lt;i&gt;When loading .mol file(s):&lt;/i&gt; Activates the access annotations even if the .mol contains a non-encrypted library.&lt;/li&gt;&lt;li&gt;&lt;i&gt;Never:&lt;/i&gt; Deactivates access annotations except for encrypted libraries.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1806"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1821"/>
         <source>Libraries Browser</source>
         <translation>Navigateur de Librairies</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1813"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1828"/>
         <source>Max. Library Icon Text Length to Show: *</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1817"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1832"/>
         <source>Show Protected Classes</source>
         <translation>Afficher les Classes Protégées</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1819"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1834"/>
         <source>Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide))</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1849"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1864"/>
         <source>Default View</source>
         <translation>Vue par Défaut</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1850"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1865"/>
         <source>This settings will be used when no preferredView annotation is defined.</source>
         <translation>Ces réglages seront utilisés lorsque le paramètre pas de vue préférée est défini.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1873"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1888"/>
         <source>Enable Auto Save</source>
         <translation>Activer la Sauvegarde Automatique</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1877"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1892"/>
         <source>Auto Save Interval:</source>
         <translation>Intervalle de Sauvegarde Automatique:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1879"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1894"/>
         <source> seconds</source>
         <translation> secondes</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1895"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1910"/>
         <source>Welcome Page</source>
         <translation>Page d&apos;Accueil</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1896"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1911"/>
         <source>Horizontal View</source>
         <translation>Vue Horizontale</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1898"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1913"/>
         <source>Vertical View</source>
         <translation>Vue Verticale</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1907"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1922"/>
         <source>Show Latest News</source>
         <translation>Afficher les Dernières Nouvelles</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2055"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2070"/>
         <source>(%1 minute(s))</source>
         <translation>(%1 minute(s))</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1833"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1848"/>
         <source>Tabbed View</source>
         <translation>Vue en Onglets</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1717"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1732"/>
         <source>Language: *</source>
         <translation>Langue: *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1808"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1823"/>
         <source>Library Icon Size: *</source>
         <translation>Taille d&apos;Icône de la Librairie:*</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1832"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1847"/>
         <source>Default Modeling View Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1835"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1850"/>
         <source>SubWindow View</source>
         <translation>Vue en Fenêtres</translation>
     </message>
@@ -2227,12 +2227,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>GraphicalViewsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3294"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3309"/>
         <source>Icon View</source>
         <translation>Vue Icône</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3379"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3394"/>
         <source>Diagram View</source>
         <translation>Vue Diagramme</translation>
     </message>
@@ -2240,132 +2240,132 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1417"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1501"/>
         <source>Deletes the item</source>
         <translation>Supprime l&apos;objet</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="285"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="292"/>
         <source>The class &lt;b&gt;%1&lt;/b&gt; is not saved. You can only drag &amp; drop saved classes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="318"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="325"/>
         <source>You can only drag &amp; drop Modelica models.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1411"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1495"/>
         <source>Manhattanize</source>
-        <translation type="unfinished">Manhattaniser</translation>
+        <translation>Manhattaniser</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1412"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1496"/>
         <source>Manhattanize the lines</source>
-        <translation type="unfinished">Manhattaniser les lignes</translation>
+        <translation>Manhattaniser les lignes</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1428"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1512"/>
         <source>Bring to Front</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1429"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1513"/>
         <source>Brings the item to front</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1433"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1517"/>
         <source>Bring Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1434"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1518"/>
         <source>Brings the item one level forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1438"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1522"/>
         <source>Send to Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1439"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1523"/>
         <source>Sends the item to back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1443"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1527"/>
         <source>Send Backward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1444"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1528"/>
         <source>Sends the item one level backward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1448"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1532"/>
         <source>Rotate Clockwise</source>
         <translation>Pivoter en Sens Horaire</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1449"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1533"/>
         <source>Rotates the item clockwise</source>
         <translation>Pivote l&apos;objet en sens horaire</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1455"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1539"/>
         <source>Rotates the item anticlockwise</source>
         <translation>Pivote l&apos;objet en sens antihoraire</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1460"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1544"/>
         <source>Flip Horizontal</source>
         <translation>Retourner à l&apos;Horizontal</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1461"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1545"/>
         <source>Flips the item horizontally</source>
         <translation>Retourne l&apos;objet horizontalement</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1466"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1550"/>
         <source>Flip Vertical</source>
         <translation>Retourner à la Verticale</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1467"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1551"/>
         <source>Flips the item vertically</source>
         <translation>Retourne l&apos;objet verticalement</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1454"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1538"/>
         <source>Rotate Anticlockwise</source>
         <translation>Pivoter dans le Sens Antihoraire</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1472"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1556"/>
         <source>Set Initial State</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1473"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1557"/>
         <source>Sets the state as initial state</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1476"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1560"/>
         <source>Cancel Transition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1477"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1561"/>
         <source>Cancels the current transition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2143"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2227"/>
         <source>Error in class annotation </source>
         <translation>Erreur dans l&apos;annotation de la classe </translation>
     </message>
@@ -2603,7 +2603,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="425"/>
         <source>File</source>
-        <translation type="unfinished">Fichier</translation>
+        <translation>Fichier</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="426"/>
@@ -2613,7 +2613,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="430"/>
         <source>Reset</source>
-        <translation type="unfinished">Réinitialiser</translation>
+        <translation>Réinitialiser</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="431"/>
@@ -2633,12 +2633,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="440"/>
         <source>Save a file</source>
-        <translation type="unfinished">Sauvegarder un Fichier</translation>
+        <translation>Sauvegarder un Fichier</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="441"/>
         <source>Save As</source>
-        <translation type="unfinished">Sauvegarder Sous</translation>
+        <translation>Sauvegarder Sous</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="442"/>
@@ -2679,7 +2679,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="457"/>
         <source>Rename</source>
-        <translation type="unfinished">Renommer</translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="458"/>
@@ -2779,12 +2779,12 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="497"/>
         <source>Duplicate</source>
-        <translation type="unfinished">Dupliquer</translation>
+        <translation>Dupliquer</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="498"/>
         <source>Duplicates the item</source>
-        <translation type="unfinished">Duplique l&apos;objet</translation>
+        <translation>Duplique l&apos;objet</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="499"/>
@@ -2989,17 +2989,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="684"/>
         <source>Bold</source>
-        <translation type="unfinished">Gras</translation>
+        <translation>Gras</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="685"/>
         <source>Italic</source>
-        <translation type="unfinished">Italique</translation>
+        <translation>Italique</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="686"/>
         <source>Underline</source>
-        <translation type="unfinished">Soulignement</translation>
+        <translation>Soulignement</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="547"/>
@@ -3049,17 +3049,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="491"/>
         <source>Reset Zoom</source>
-        <translation type="unfinished">Réinitialiser le Zoom</translation>
+        <translation>Réinitialiser le Zoom</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="492"/>
         <source>Zoom In</source>
-        <translation type="unfinished">Zoomer</translation>
+        <translation>Zoomer</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="493"/>
         <source>Zoom Out</source>
-        <translation type="unfinished">Dézoomer</translation>
+        <translation>Dézoomer</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="501"/>
@@ -3429,17 +3429,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="633"/>
         <source>Version</source>
-        <translation type="unfinished">Version</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="634"/>
         <source>unlimited</source>
-        <translation type="unfinished">illimité</translation>
+        <translation>illimité</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="635"/>
         <source>Simulation Output</source>
-        <translation type="unfinished">Sortie de simulation</translation>
+        <translation>Sortie de simulation</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="636"/>
@@ -3634,7 +3634,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="687"/>
         <source>Condition:</source>
-        <translation type="unfinished">Condition:</translation>
+        <translation>Condition:</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="688"/>
@@ -3659,7 +3659,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="692"/>
         <source>Save contents in one file</source>
-        <translation type="unfinished">Sauvegarder le contenu dans un seul fichier</translation>
+        <translation>Sauvegarder le contenu dans un seul fichier</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="693"/>
@@ -3669,17 +3669,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="694"/>
         <source>DateTime</source>
-        <translation type="unfinished">DateHeure</translation>
+        <translation>DateHeure</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="695"/>
         <source>Start Time</source>
-        <translation type="unfinished">Temps de Départ</translation>
+        <translation>Temps de Départ</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="696"/>
         <source>Stop Time</source>
-        <translation type="unfinished">Temps de Fin</translation>
+        <translation>Temps de Fin</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="697"/>
@@ -3709,7 +3709,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Util/Helper.cpp" line="702"/>
         <source>Archived Simulations</source>
-        <translation type="unfinished">Simulations Enregistrées</translation>
+        <translation>Simulations Enregistrées</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="703"/>
@@ -3937,7 +3937,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="69"/>
         <source>Output Directory (Optional):</source>
-        <translation type="unfinished">Répertoire de Sortie (optionnel):</translation>
+        <translation>Répertoire de Sortie (optionnel):</translation>
     </message>
     <message>
         <location filename="../../FMI/ImportFMUModelDescriptionDialog.cpp" line="75"/>
@@ -3981,57 +3981,57 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>LibrariesPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2068"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2083"/>
         <source>System Libraries *</source>
         <translation>Librairies Systèmes *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2070"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2085"/>
         <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
         <translation>Les librairies systèmes sont lues à partir de MODELICAPATH et sont toujours en lecture seule.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2082"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2097"/>
         <source>Name</source>
         <translation>Nom</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2109"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2124"/>
         <source>Force loading of Modelica Standard Library</source>
         <translation>Forcer le chargement de la librairie standard Modelica</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2110"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2125"/>
         <source>This will make sure that Modelica and ModelicaReference will always load even if user has removed them from the list of system libraries.</source>
         <translation>Cela vous assurera que Modelica et ModelicaReference chargeront toujours même si l&apos;utilisateur les a supprimés de la liste des librairies systèmes.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2113"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2128"/>
         <source>Load OpenModelica library on startup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2116"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2131"/>
         <source>User Libraries *</source>
         <translation>Librairies Utilisateurs *</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2124"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2139"/>
         <source>Path</source>
         <translation>Chemin</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2124"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2139"/>
         <source>Encoding</source>
         <translation>Extension</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2184"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2199"/>
         <source>Edit System Library</source>
         <translation>Editer la Librairie Système</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2219"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2234"/>
         <source>Edit User Library</source>
         <translation>Editer la Librairie Utilisateur</translation>
     </message>
@@ -4039,8 +4039,8 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>LibraryTreeModel</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1895"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2086"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1899"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2090"/>
         <source> while deleting </source>
         <translation type="unfinished"></translation>
     </message>
@@ -4048,121 +4048,121 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>LibraryTreeView</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2979"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2986"/>
         <source>Opens the class information dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3004"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3011"/>
         <source>Moves the class one level up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3009"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3016"/>
         <source>Moves the class one level down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3012"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3019"/>
         <source>Move to Top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3014"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3021"/>
         <source>Moves the class to top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3017"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3024"/>
         <source>Move to Bottom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3019"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3026"/>
         <source>Moves the class to bottom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3022"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3029"/>
         <source>Order</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3086"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3090"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3093"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3097"/>
         <source>New File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3087"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3091"/>
-        <source>Creates a new file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3094"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3098"/>
+        <source>Creates a new file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3101"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3105"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3095"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3099"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3102"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3106"/>
         <source>Creates a new folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3107"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3114"/>
         <source>Deletes the file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3126"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3133"/>
         <source>Figaro</source>
-        <translation type="unfinished">Figaro</translation>
+        <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3130"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3137"/>
         <source>Update Bindings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3131"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3138"/>
         <source>updates the bindings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3134"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3141"/>
         <source>Generate Verification Scenarios</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3135"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3142"/>
         <source>Generates the verification scenarios</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3264"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3285"/>
         <source>Export</source>
-        <translation type="unfinished">Exporter</translation>
+        <translation>Exporter</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3328"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3349"/>
         <source>Deletes the Modelica class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3430"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3451"/>
         <source>Version : %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3431"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3452"/>
         <source>Version Date : %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3432"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3453"/>
         <source>Version Build : %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4170,44 +4170,44 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>LibraryWidget</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4416"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4437"/>
         <source>Error reading the xml file</source>
-        <translation type="unfinished">Erreur lors de la lecture du fichier xml</translation>
-    </message>
-    <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4551"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4628"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4752"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4841"/>
-        <source>Saving %1</source>
-        <translation type="unfinished">Sauvegarde %1</translation>
+        <translation>Erreur lors de la lecture du fichier xml</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4572"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4616"/>
-        <source>Unable to save the file, unknown library type.</source>
-        <translation type="unfinished">Impossible de sauvegarder le fichier, type de librairie inconnu.</translation>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4649"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4773"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4862"/>
+        <source>Saving %1</source>
+        <translation>Sauvegarde %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4756"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4593"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4637"/>
+        <source>Unable to save the file, unknown library type.</source>
+        <translation>Impossible de sauvegarder le fichier, type de librairie inconnu.</translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4777"/>
         <source>%1 - Save %2 %3 as Modelica File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4846"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4867"/>
         <source>%1 - Save %2 %3 as Modelica Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4943"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4978"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5041"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5059"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4964"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4999"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5062"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5080"/>
         <source>Save File</source>
-        <translation type="unfinished">Sauvegarder le fichier</translation>
+        <translation>Sauvegarder le fichier</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5155"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5176"/>
         <source>%1 - Save %2 %3 as Total File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4274,57 +4274,57 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation>Chargement des Widgets</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3149"/>
+        <location filename="../../MainWindow.cpp" line="3147"/>
         <source>Opens and converts the Modelica file(s) with encoding</source>
         <translation>Ouvre et Convertit le(s) fichier(s) Modelica avec l&apos;extension</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3152"/>
+        <location filename="../../MainWindow.cpp" line="3150"/>
         <source>Load Library</source>
         <translation>Charger une Librairie</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3153"/>
+        <location filename="../../MainWindow.cpp" line="3151"/>
         <source>Loads the Modelica library</source>
         <translation>Charge la Librairie Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3169"/>
+        <location filename="../../MainWindow.cpp" line="3167"/>
         <source>New Composite Model</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3170"/>
+        <location filename="../../MainWindow.cpp" line="3168"/>
         <source>Create New Composite Model file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3173"/>
+        <location filename="../../MainWindow.cpp" line="3171"/>
         <source>Open Composite Model(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3174"/>
+        <location filename="../../MainWindow.cpp" line="3172"/>
         <source>Opens the Composite Model file(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3178"/>
+        <location filename="../../MainWindow.cpp" line="3176"/>
         <source>Loads the External Model(s) for the TLM co-simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3203"/>
+        <location filename="../../MainWindow.cpp" line="3201"/>
         <source>Save All</source>
         <translation>Sauvegarder Tout</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3204"/>
+        <location filename="../../MainWindow.cpp" line="3202"/>
         <source>Save All Files</source>
         <translation>Sauvegarder Tous les Fichiers</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3297"/>
+        <location filename="../../MainWindow.cpp" line="3295"/>
         <source>Cut</source>
         <translation>Couper</translation>
     </message>
@@ -4339,157 +4339,157 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation>Tracé</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3308"/>
+        <location filename="../../MainWindow.cpp" line="3306"/>
         <source>Grid Lines</source>
         <translation>Lignes de Quadrillage</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3309"/>
+        <location filename="../../MainWindow.cpp" line="3307"/>
         <source>Show/Hide the grid lines</source>
         <translation>Afficher/Masquer les lignes du quadrillage</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3333"/>
+        <location filename="../../MainWindow.cpp" line="3331"/>
         <source>Close Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3334"/>
+        <location filename="../../MainWindow.cpp" line="3332"/>
         <source>Closes the active window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3337"/>
+        <location filename="../../MainWindow.cpp" line="3335"/>
         <source>Close All Windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3338"/>
+        <location filename="../../MainWindow.cpp" line="3336"/>
         <source>Closes all windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3341"/>
+        <location filename="../../MainWindow.cpp" line="3339"/>
         <source>Close All Windows But This</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3342"/>
+        <location filename="../../MainWindow.cpp" line="3340"/>
         <source>Closes all windows except active window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3349"/>
+        <location filename="../../MainWindow.cpp" line="3347"/>
         <source>Tile Windows Horizontally</source>
         <translation>Fenêtres en Tuile Horizontale</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3350"/>
+        <location filename="../../MainWindow.cpp" line="3348"/>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
         <translation>Arrange toutes les sous-fenêtres en tuile horizontale</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3353"/>
+        <location filename="../../MainWindow.cpp" line="3351"/>
         <source>Tile Windows Vertically</source>
         <translation>Mosaïque de Fenêtres Verticale</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3354"/>
+        <location filename="../../MainWindow.cpp" line="3352"/>
         <source>Arranges all child windows in a vertically tiled pattern</source>
         <translation>Arrange toutes les sous-fenêtres en tuile verticale</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3471"/>
+        <location filename="../../MainWindow.cpp" line="3469"/>
         <source>Shows the options window</source>
         <translation>Affiche la fenêtre des options</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3489"/>
+        <location filename="../../MainWindow.cpp" line="3487"/>
         <source>OpenModelica Scripting Documentation</source>
         <translation>Documentation Scripting d&apos;OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3490"/>
+        <location filename="../../MainWindow.cpp" line="3488"/>
         <source>Opens the OpenModelica Scripting Documentation</source>
         <translation>Ouvre la Documentation Scripting d&apos;OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3493"/>
+        <location filename="../../MainWindow.cpp" line="3491"/>
         <source>Modelica Documentation</source>
         <translation>Documentation Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3494"/>
+        <location filename="../../MainWindow.cpp" line="3492"/>
         <source>Opens the Modelica Documentation</source>
         <translation>Ouvre la Documentation Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3513"/>
+        <location filename="../../MainWindow.cpp" line="3511"/>
         <source>About OMEdit</source>
         <translation>A propos d&apos;OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3514"/>
+        <location filename="../../MainWindow.cpp" line="3512"/>
         <source>Information about OMEdit</source>
         <translation>Information à propos d&apos;OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3527"/>
+        <location filename="../../MainWindow.cpp" line="3525"/>
         <source>Polygon</source>
         <translation>Polygone</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3532"/>
+        <location filename="../../MainWindow.cpp" line="3530"/>
         <source>Rectangle</source>
         <translation>Rectangle</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3537"/>
+        <location filename="../../MainWindow.cpp" line="3535"/>
         <source>Ellipse</source>
         <translation>Ellipse</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3547"/>
+        <location filename="../../MainWindow.cpp" line="3545"/>
         <source>Bitmap</source>
         <translation>Bitmap</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3553"/>
+        <location filename="../../MainWindow.cpp" line="3551"/>
         <source>Changes to/from connect mode</source>
         <translation>Change le mode de connection</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3577"/>
+        <location filename="../../MainWindow.cpp" line="3575"/>
         <source>New Plot Window</source>
         <translation>Nouvelle Fenêtre Graphique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3578"/>
+        <location filename="../../MainWindow.cpp" line="3576"/>
         <source>Inserts new plot window</source>
         <translation>Insére une nouvelle fenêtre graphique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3629"/>
+        <location filename="../../MainWindow.cpp" line="3627"/>
         <source>Add/Edit Icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3630"/>
+        <location filename="../../MainWindow.cpp" line="3628"/>
         <source>Adds/Edits an icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3632"/>
+        <location filename="../../MainWindow.cpp" line="3630"/>
         <source>Delete Icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3633"/>
+        <location filename="../../MainWindow.cpp" line="3631"/>
         <source>Deletes an icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3669"/>
+        <location filename="../../MainWindow.cpp" line="3667"/>
         <source>&amp;File</source>
         <translation>&amp;Fichier</translation>
     </message>
@@ -4529,148 +4529,148 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation>Exportation du modèle en XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2077"/>
+        <location filename="../../MainWindow.cpp" line="2075"/>
         <source>instantiating</source>
         <translation>instantiation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2088"/>
-        <location filename="../../MainWindow.cpp" line="2099"/>
+        <location filename="../../MainWindow.cpp" line="2086"/>
+        <location filename="../../MainWindow.cpp" line="2097"/>
         <source>checking</source>
         <translation>vérification</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2173"/>
+        <location filename="../../MainWindow.cpp" line="2171"/>
         <source>making FMU</source>
         <translation>création du FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2220"/>
+        <location filename="../../MainWindow.cpp" line="2218"/>
         <source>making XML</source>
         <translation>création du XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2233"/>
+        <location filename="../../MainWindow.cpp" line="2231"/>
         <source>exporting to Figaro</source>
         <translation>exportation en Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2279"/>
+        <location filename="../../MainWindow.cpp" line="2277"/>
         <source>exporting to OMNotebook</source>
         <translation>exportation vers OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2296"/>
+        <location filename="../../MainWindow.cpp" line="2294"/>
         <source>Importing model(s) from OMNotebook</source>
         <translation>Importation du/des modèle(s) depuis OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2347"/>
+        <location filename="../../MainWindow.cpp" line="2345"/>
         <source>Importing ngspice netlist and converting to Modelica code</source>
         <translation>Importation de la netlist ngspice et conversion en code Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2427"/>
+        <location filename="../../MainWindow.cpp" line="2425"/>
         <source>exporting to Image</source>
         <translation>exportation en Image</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3145"/>
+        <location filename="../../MainWindow.cpp" line="3143"/>
         <source>Opens the Modelica file(s)</source>
         <translation>Ouvre le(s) fichier(s) Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3160"/>
+        <location filename="../../MainWindow.cpp" line="3158"/>
         <source>Open Result File(s)</source>
         <translation>Ouvrir le(s) Fichier(s) Résultat(s)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3162"/>
+        <location filename="../../MainWindow.cpp" line="3160"/>
         <source>Opens the OpenModelica Result file</source>
         <translation>Ouvre le Fichier de Résultat OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3165"/>
+        <location filename="../../MainWindow.cpp" line="3163"/>
         <source>Open Transformations File</source>
         <translation>Ouvrir le Fichier des Transformations</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3166"/>
+        <location filename="../../MainWindow.cpp" line="3164"/>
         <source>Opens the class transformations file</source>
         <translation>Ouvre le fichier de classe transformations</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3177"/>
+        <location filename="../../MainWindow.cpp" line="3175"/>
         <source>Load External Model(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3270"/>
+        <location filename="../../MainWindow.cpp" line="3268"/>
         <source>Clears the recent files list</source>
         <translation>Efface la liste des fichiers récents</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3273"/>
+        <location filename="../../MainWindow.cpp" line="3271"/>
         <source>Print...</source>
         <translation>Imprimer...</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3276"/>
+        <location filename="../../MainWindow.cpp" line="3274"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3277"/>
+        <location filename="../../MainWindow.cpp" line="3275"/>
         <source>Quit the </source>
         <translation>Fermer le </translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3304"/>
+        <location filename="../../MainWindow.cpp" line="3302"/>
         <source>Paste</source>
         <translation>Coller</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3362"/>
+        <location filename="../../MainWindow.cpp" line="3360"/>
         <source>Instantiate Model</source>
         <translation>Instancier le Modèle</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3363"/>
+        <location filename="../../MainWindow.cpp" line="3361"/>
         <source>Instantiates the modelica model</source>
         <translation>Instancie le modèle modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3497"/>
+        <location filename="../../MainWindow.cpp" line="3495"/>
         <source>Modelica By Example</source>
         <translation>Modelica Par l&apos;Exemple</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3498"/>
+        <location filename="../../MainWindow.cpp" line="3496"/>
         <source>Opens the Modelica By Example online book</source>
         <translation>Ouvre le livre en ligne Modelica Par l&apos;Exemple</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3501"/>
+        <location filename="../../MainWindow.cpp" line="3499"/>
         <source>Modelica Web Reference</source>
         <translation>Référence Web Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3502"/>
+        <location filename="../../MainWindow.cpp" line="3500"/>
         <source>Opens the Modelica Web Reference</source>
         <translation>Ouvre la Référece Web Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3581"/>
+        <location filename="../../MainWindow.cpp" line="3579"/>
         <source>New Parametric Plot Window</source>
         <translation>Nouvelle Fenêtre Graphique Paramétrique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3582"/>
+        <location filename="../../MainWindow.cpp" line="3580"/>
         <source>Inserts new parametric plot window</source>
         <translation>Insère une nouvelle fenêtre graphique paramètrique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3470"/>
+        <location filename="../../MainWindow.cpp" line="3468"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
@@ -4712,27 +4712,27 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../MainWindow.cpp" line="232"/>
         <source>Stack Frames Browser</source>
-        <translation type="unfinished">Navigateur des Structures de Pile</translation>
+        <translation>Navigateur des Structures de Pile</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="239"/>
         <source>BreakPoints Browser</source>
-        <translation type="unfinished">Navigateur de points de pause</translation>
+        <translation>Navigateur de points de pause</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="247"/>
         <source>Locals Browser</source>
-        <translation type="unfinished">Navigateur local</translation>
+        <translation>Navigateur local</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="254"/>
         <source>Output Browser</source>
-        <translation type="unfinished">Navigateur de sortie</translation>
+        <translation>Navigateur de sortie</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="261"/>
         <source>Debugger CLI</source>
-        <translation type="unfinished">Débuggeur CLI</translation>
+        <translation>Débuggeur CLI</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="298"/>
@@ -4765,468 +4765,468 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2189"/>
+        <location filename="../../MainWindow.cpp" line="2187"/>
         <source>making encrypted package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2206"/>
+        <location filename="../../MainWindow.cpp" line="2204"/>
         <source>making read-only package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2248"/>
+        <location filename="../../MainWindow.cpp" line="2246"/>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2535"/>
+        <location filename="../../MainWindow.cpp" line="2533"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3156"/>
+        <location filename="../../MainWindow.cpp" line="3154"/>
         <source>Load Encrypted Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3157"/>
+        <location filename="../../MainWindow.cpp" line="3155"/>
         <source>Loads the encrypted Modelica library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3182"/>
+        <location filename="../../MainWindow.cpp" line="3180"/>
         <source>Creates a new OMSimulator Model</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3186"/>
+        <location filename="../../MainWindow.cpp" line="3184"/>
         <source>Open OMSimulator Model(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3187"/>
+        <location filename="../../MainWindow.cpp" line="3185"/>
         <source>Opens the OMSimulator model file(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3190"/>
+        <location filename="../../MainWindow.cpp" line="3188"/>
         <source>Open Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3191"/>
+        <location filename="../../MainWindow.cpp" line="3189"/>
         <source>Opens the directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3215"/>
+        <location filename="../../MainWindow.cpp" line="3213"/>
         <source>FMU Model Description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3216"/>
+        <location filename="../../MainWindow.cpp" line="3214"/>
         <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3219"/>
+        <location filename="../../MainWindow.cpp" line="3217"/>
         <source>From OMNotebook</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3223"/>
+        <location filename="../../MainWindow.cpp" line="3221"/>
         <source>Ngspice netlist</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3227"/>
+        <location filename="../../MainWindow.cpp" line="3225"/>
         <source>To Clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3231"/>
+        <location filename="../../MainWindow.cpp" line="3229"/>
         <source>Image</source>
-        <translation type="unfinished">Image</translation>
+        <translation>Image</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3253"/>
+        <location filename="../../MainWindow.cpp" line="3251"/>
         <source>Figaro</source>
-        <translation type="unfinished">Figaro</translation>
+        <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3258"/>
+        <location filename="../../MainWindow.cpp" line="3256"/>
         <source>To OMNotebook</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3283"/>
+        <location filename="../../MainWindow.cpp" line="3281"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3288"/>
+        <location filename="../../MainWindow.cpp" line="3286"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3345"/>
+        <location filename="../../MainWindow.cpp" line="3343"/>
         <source>Cascade Windows</source>
         <translation>Fenêtres en Cascade</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3346"/>
+        <location filename="../../MainWindow.cpp" line="3344"/>
         <source>Arranges all the child windows in a cascade pattern</source>
         <translation>Arrange toutes les sous-fenêtres en cascade</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3357"/>
+        <location filename="../../MainWindow.cpp" line="3355"/>
         <source>Toggle Tab/Sub-window View</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3358"/>
+        <location filename="../../MainWindow.cpp" line="3356"/>
         <source>Toggle between tab or sub-window view mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4325"/>
+        <location filename="../../MainWindow.cpp" line="4323"/>
         <source>OMSimulator Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3449"/>
-        <location filename="../../MainWindow.cpp" line="3453"/>
+        <location filename="../../MainWindow.cpp" line="3447"/>
+        <location filename="../../MainWindow.cpp" line="3451"/>
         <source>Shows OpenModelica Compiler CLI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3452"/>
+        <location filename="../../MainWindow.cpp" line="3450"/>
         <source>OpenModelica Command Prompt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3457"/>
+        <location filename="../../MainWindow.cpp" line="3455"/>
         <source>OpenModelica Compiler Diff</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3458"/>
+        <location filename="../../MainWindow.cpp" line="3456"/>
         <source>Shows OpenModelica Compiler Diff</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3462"/>
+        <location filename="../../MainWindow.cpp" line="3460"/>
         <source>Open Working Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3463"/>
+        <location filename="../../MainWindow.cpp" line="3461"/>
         <source>Opens the current working directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3466"/>
+        <location filename="../../MainWindow.cpp" line="3464"/>
         <source>Open Terminal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3467"/>
+        <location filename="../../MainWindow.cpp" line="3465"/>
         <source>Opens the terminal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3476"/>
+        <location filename="../../MainWindow.cpp" line="3474"/>
         <source>OpenModelica Users Guide</source>
         <translation>Guide de l&apos;Utilisateur OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3477"/>
+        <location filename="../../MainWindow.cpp" line="3475"/>
         <source>Opens the OpenModelica Users Guide</source>
         <translation>Ouvre le Guide de l&apos;Utilisateur OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3481"/>
+        <location filename="../../MainWindow.cpp" line="3479"/>
         <source>OpenModelica Users Guide (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3482"/>
+        <location filename="../../MainWindow.cpp" line="3480"/>
         <source>Opens the OpenModelica Users Guide (PDF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3485"/>
+        <location filename="../../MainWindow.cpp" line="3483"/>
         <source>OpenModelica System Documentation</source>
         <translation>Documentation Système OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3486"/>
+        <location filename="../../MainWindow.cpp" line="3484"/>
         <source>Opens the OpenModelica System Documentation</source>
         <translation>Ouvre la Documentation du Système OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3505"/>
+        <location filename="../../MainWindow.cpp" line="3503"/>
         <source>OMSimulator Users Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3506"/>
+        <location filename="../../MainWindow.cpp" line="3504"/>
         <source>Opens the OMSimulator Users Guide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3509"/>
+        <location filename="../../MainWindow.cpp" line="3507"/>
         <source>OpenModelica TLM Simulator Documentation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3510"/>
+        <location filename="../../MainWindow.cpp" line="3508"/>
         <source>Opens the OpenModelica TLM Simulator Documentation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3523"/>
+        <location filename="../../MainWindow.cpp" line="3521"/>
         <source>Draws a line shape</source>
         <translation>Dessine une ligne</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3528"/>
+        <location filename="../../MainWindow.cpp" line="3526"/>
         <source>Draws a polygon shape</source>
         <translation>Dessine un polygone</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3533"/>
+        <location filename="../../MainWindow.cpp" line="3531"/>
         <source>Draws a rectangle shape</source>
         <translation>Dessine un rectangle</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3538"/>
+        <location filename="../../MainWindow.cpp" line="3536"/>
         <source>Draws an ellipse shape</source>
         <translation>Dessine une ellipse</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3542"/>
+        <location filename="../../MainWindow.cpp" line="3540"/>
         <source>Text</source>
         <translation>Texte</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3543"/>
+        <location filename="../../MainWindow.cpp" line="3541"/>
         <source>Draws a text shape</source>
         <translation>Dessine une zone de texte</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3548"/>
+        <location filename="../../MainWindow.cpp" line="3546"/>
         <source>Inserts a bitmap</source>
         <translation>Insére un bitmap</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3552"/>
+        <location filename="../../MainWindow.cpp" line="3550"/>
         <source>Connect/Unconnect Mode</source>
         <translation>Mode Connection/Déconnection</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3558"/>
+        <location filename="../../MainWindow.cpp" line="3556"/>
         <source>Transition Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3559"/>
+        <location filename="../../MainWindow.cpp" line="3557"/>
         <source>Changes to/from transition mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3585"/>
+        <location filename="../../MainWindow.cpp" line="3583"/>
         <source>New Array Plot Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3586"/>
+        <location filename="../../MainWindow.cpp" line="3584"/>
         <source>Inserts new array plot window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3589"/>
+        <location filename="../../MainWindow.cpp" line="3587"/>
         <source>New Array Parametric Plot Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3590"/>
+        <location filename="../../MainWindow.cpp" line="3588"/>
         <source>Inserts new array parametric plot window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3594"/>
+        <location filename="../../MainWindow.cpp" line="3592"/>
         <source>New Animation Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3595"/>
+        <location filename="../../MainWindow.cpp" line="3593"/>
         <source>Inserts new animation window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3599"/>
+        <location filename="../../MainWindow.cpp" line="3597"/>
         <source>Diagram Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3600"/>
+        <location filename="../../MainWindow.cpp" line="3598"/>
         <source>Inserts a diagram window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3604"/>
+        <location filename="../../MainWindow.cpp" line="3602"/>
         <source>Exports the plotted variables to a CSV file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3607"/>
+        <location filename="../../MainWindow.cpp" line="3605"/>
         <source>Clear Plot Window</source>
         <translation>Effacer la Fenêtre Graphique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3608"/>
+        <location filename="../../MainWindow.cpp" line="3606"/>
         <source>Clears all the curves from the plot window</source>
         <translation>Efface toutes les courbes de la fenêtre graphique</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3716"/>
+        <location filename="../../MainWindow.cpp" line="3714"/>
         <source>&amp;System Libraries</source>
         <translation>Librairies &amp;Système</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3734"/>
+        <location filename="../../MainWindow.cpp" line="3732"/>
         <source>Recent &amp;Files</source>
         <translation>&amp;Fichiers Récents</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3747"/>
+        <location filename="../../MainWindow.cpp" line="3745"/>
         <source>&amp;Edit</source>
         <translation>&amp;Edition</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3760"/>
+        <location filename="../../MainWindow.cpp" line="3758"/>
         <source>&amp;View</source>
         <translation>&amp;Affichage</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3764"/>
+        <location filename="../../MainWindow.cpp" line="3762"/>
         <source>Toolbars</source>
         <translation>Barres d&apos;Outils</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3768"/>
+        <location filename="../../MainWindow.cpp" line="3766"/>
         <source>Windows</source>
         <translation>Fenêtres</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3818"/>
+        <location filename="../../MainWindow.cpp" line="3816"/>
         <source>&amp;Simulation</source>
         <translation>&amp;Simulation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3834"/>
+        <location filename="../../MainWindow.cpp" line="3832"/>
         <source>&amp;Debug</source>
-        <translation type="unfinished">&amp;Débugger</translation>
+        <translation>&amp;Débugger</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3842"/>
+        <location filename="../../MainWindow.cpp" line="3840"/>
         <source>&amp;OMSimulator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3865"/>
+        <location filename="../../MainWindow.cpp" line="3863"/>
         <source>&amp;Git</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3868"/>
+        <location filename="../../MainWindow.cpp" line="3866"/>
         <source>TraceabilityMenu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3869"/>
+        <location filename="../../MainWindow.cpp" line="3867"/>
         <source>Traceability</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3888"/>
+        <location filename="../../MainWindow.cpp" line="3886"/>
         <source>&amp;Tools</source>
         <translation>&amp;Outils</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3906"/>
+        <location filename="../../MainWindow.cpp" line="3904"/>
         <source>&amp;Help</source>
         <translation>&amp;Aide</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4192"/>
+        <location filename="../../MainWindow.cpp" line="4190"/>
         <source>File Toolbar</source>
         <translation>Barre d&apos;Outils du Fichier</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4202"/>
+        <location filename="../../MainWindow.cpp" line="4200"/>
         <source>Edit Toolbar</source>
         <translation>Barre d&apos;Outils d&apos;Edition</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4212"/>
+        <location filename="../../MainWindow.cpp" line="4210"/>
         <source>View Toolbar</source>
         <translation>Barre d&apos;Outils d&apos;Affichage</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4222"/>
+        <location filename="../../MainWindow.cpp" line="4220"/>
         <source>Shapes Toolbar</source>
         <translation>Ajuste la Barre d&apos;Outils</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4254"/>
+        <location filename="../../MainWindow.cpp" line="4252"/>
         <source>Check Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4262"/>
+        <location filename="../../MainWindow.cpp" line="4260"/>
         <source>Simulation Toolbar</source>
         <translation>Barre d&apos;Outils de Simulation</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4237"/>
+        <location filename="../../MainWindow.cpp" line="4235"/>
         <source>ModelSwitcher Toolbar</source>
         <translation>Barre d&apos;Outils de l&apos;Echangeur de Modèle</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3692"/>
+        <location filename="../../MainWindow.cpp" line="3690"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3701"/>
+        <location filename="../../MainWindow.cpp" line="3699"/>
         <source>Export</source>
-        <translation type="unfinished">Exporter</translation>
+        <translation>Exporter</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4274"/>
+        <location filename="../../MainWindow.cpp" line="4272"/>
         <source>Re-simulation Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4282"/>
+        <location filename="../../MainWindow.cpp" line="4280"/>
         <source>Plot Toolbar</source>
         <translation>Barre d&apos;Outils du Graphique </translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4299"/>
+        <location filename="../../MainWindow.cpp" line="4297"/>
         <source>Debugger Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4307"/>
+        <location filename="../../MainWindow.cpp" line="4305"/>
         <source>Run the debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4314"/>
+        <location filename="../../MainWindow.cpp" line="4312"/>
         <source>TLM Simulation Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5236,17 +5236,17 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation>Exportation du modèle vers OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2314"/>
+        <location filename="../../MainWindow.cpp" line="2312"/>
         <source>Error reading the xml file</source>
         <translation>Erreur lors de la lecture du fichier xml</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2379"/>
+        <location filename="../../MainWindow.cpp" line="2377"/>
         <source>Exporting model as an Image</source>
         <translation>Exportation du modèle en tant qu&apos;Image</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2416"/>
+        <location filename="../../MainWindow.cpp" line="2414"/>
         <source>Error saving the image file</source>
         <translation>Erreur lors de la sauvegarde du fichier image</translation>
     </message>
@@ -5254,37 +5254,37 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>MessageWidget</name>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="128"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="150"/>
         <source>Select All</source>
-        <translation type="unfinished">Tout sélectionner</translation>
+        <translation>Tout sélectionner</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="130"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="152"/>
         <source>Selects all the Messages</source>
-        <translation type="unfinished"></translation>
+        <translation>Sélectionne tous les Messages</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="134"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="156"/>
         <source>Copy the Message</source>
-        <translation type="unfinished"></translation>
+        <translation>Copier le Message</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="136"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="158"/>
         <source>Clear This Tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="137"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="159"/>
         <source>clears the messages from this tab</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="139"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="161"/>
         <source>Clear All Tabs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="140"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="162"/>
         <source>clears the messages from all tabs</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5292,37 +5292,37 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>MessagesPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3729"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3770"/>
         <source>Output size:</source>
         <translation>Taille de sortie:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3730"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3771"/>
         <source>Specifies the maximum number of rows the Messages Browser may have. If there are more rows then the rows are removed from the beginning.</source>
         <translation>Spécifie le nombre maximal de lignes que le Navigateur de Messages peut avoir. S&apos;il y a plus de lignes alors les lignes sont supprimées en partant du début.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3738"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3779"/>
         <source>Reset messages number before checking, instantiation &amp;&amp; simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3741"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3782"/>
         <source>Clear messages browser before checking, instantiation &amp;&amp; simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3766"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3807"/>
         <source>Notification Color:</source>
         <translation>Couleur de Notification:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3773"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3814"/>
         <source>Warning Color:</source>
         <translation>Couleur d&apos;avertissement:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3780"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3821"/>
         <source>Error Color:</source>
         <translation>Couleur d&apos;erreur:</translation>
     </message>
@@ -5330,22 +5330,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>MessagesWidget</name>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="384"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="406"/>
         <source>All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="386"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="408"/>
         <source>Notifications</source>
-        <translation type="unfinished">Notifications</translation>
+        <translation>Notifications</translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="388"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="410"/>
         <source>Warnings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/MessagesWidget.cpp" line="390"/>
+        <location filename="../../Modeling/MessagesWidget.cpp" line="412"/>
         <source>Errors</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5353,43 +5353,43 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>ModelWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3685"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3766"/>
         <source>Connection declared in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3930"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4011"/>
         <source>Writable</source>
-        <translation type="unfinished">Modifiable</translation>
+        <translation>Modifiable</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3939"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4020"/>
         <source>Make writable</source>
         <translation>Permettre la modification</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3939"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6601"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4020"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6538"/>
         <source>File is writable</source>
         <translation>Le fichier est modifiable</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6010"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5970"/>
         <source>Unable to find ModelFile &lt;b&gt;%1&lt;/b&gt; for SubModel &lt;b&gt;%2&lt;/b&gt;. The file location should be &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6022"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5982"/>
         <source>Unable to find GeometryFile &lt;b&gt;%1&lt;/b&gt; for SubModel &lt;b&gt;%2&lt;/b&gt;. The file location should be &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6597"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6534"/>
         <source>Cannot Set Permissions</source>
         <translation>Impossible d&apos;établir les permissions</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6597"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6534"/>
         <source>Cannot set permissions to writable.</source>
         <translation>Impossible d&apos;établir la permission de modifier.</translation>
     </message>
@@ -5397,13 +5397,13 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>ModelWidgetContainer</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7322"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7260"/>
         <source>save as</source>
         <translation>sauvegarder sous</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7305"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7339"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7243"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7277"/>
         <source>saving</source>
         <translation>sauvegarde</translation>
     </message>
@@ -5456,23 +5456,23 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="324"/>
         <source>Start and End modifiers are different</source>
-        <translation type="unfinished">Les modificateurs de Début et de Fin sont différents</translation>
+        <translation>Les modificateurs de Début et de Fin sont différents</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="555"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a system library class. System libraries are always read-only. Your changes will not be saved.</source>
-        <translation type="unfinished">&lt;b&gt;Avertissement: &lt;/b&gt; Vous êtes en train de modifier une classe de la librairie système. Les librairies système sont toujours en lecture seule. Vos changements ne seront pas sauvegardés.</translation>
+        <translation>&lt;b&gt;Avertissement: &lt;/b&gt; Vous êtes en train de modifier une classe de la librairie système. Les librairies système sont toujours en lecture seule. Vos changements ne seront pas sauvegardés.</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="558"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation type="unfinished">&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
+        <translation>&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
     </message>
 </context>
 <context>
     <name>ModelicaEditorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2599"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2614"/>
         <source>Preserve Text Indentation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5508,42 +5508,42 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>NotificationsPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3877"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3918"/>
         <source>Notifications</source>
         <translation>Notifications</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3879"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3920"/>
         <source>Always quit without prompt</source>
         <translation>Toujours quitter sans demander</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3881"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3922"/>
         <source>Show item dropped on itself message</source>
         <translation>Afficher le message objet créé sur lui-même</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3884"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3925"/>
         <source>Show model is partial and component is added as replaceable message</source>
         <translation>Afficher le message le modèle est partial et le composant est ajouté en tant que replaceable</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3887"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3928"/>
         <source>Show component is declared as inner message</source>
         <translation>Afficher le message le composant est déclaré comme interne</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3890"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3931"/>
         <source>Show save model for bitmap insertion message</source>
         <translation>Afficher le message sauvegarder le modèle pour l&apos;insertion bitmap</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3893"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3934"/>
         <source>Always ask for the dragged component name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3896"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3937"/>
         <source>Always ask for what to do with the text editor error</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5576,22 +5576,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="445"/>
+        <location filename="../../OMC/OMCProxy.cpp" line="442"/>
         <source>Connection with the OpenModelica Compiler has been lost.</source>
         <translation>La connection avec le compilateur OpenModelica a été perdue.</translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="977"/>
+        <location filename="../../OMC/OMCProxy.cpp" line="974"/>
         <source>Unable to set the component modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1048"/>
+        <location filename="../../OMC/OMCProxy.cpp" line="1045"/>
         <source>Unable to set the extends modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../OMC/OMCProxy.cpp" line="1705"/>
+        <location filename="../../OMC/OMCProxy.cpp" line="1702"/>
         <source>Could not preserve the formatting of the original model when duplicating it. The duplicate model was created with internal pretty-printing algorithm.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5614,7 +5614,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="58"/>
         <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation type="unfinished">Simulation en cours de &lt;b&gt;%1&lt;/b&gt;. Veuillez attendre un instant.</translation>
+        <translation>Simulation en cours de &lt;b&gt;%1&lt;/b&gt;. Veuillez attendre un instant.</translation>
     </message>
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="97"/>
@@ -5652,23 +5652,23 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Editors/OMSimulatorEditor.cpp" line="140"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;You are changing a read-only class.</source>
-        <translation type="unfinished">&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
+        <translation>&lt;b&gt;Avertissement: &lt;/b&gt;Vous êtes en train de modifier une classe en lecture seule.</translation>
     </message>
 </context>
 <context>
     <name>OMSimulatorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4855"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4896"/>
         <source>Command Line Options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4857"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4898"/>
         <source>Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4865"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4906"/>
         <source>Logging Level:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5699,92 +5699,92 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>OptionsDialog</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1455"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1470"/>
         <source>* The changes will take effect after restart.</source>
         <translation>* Les changements prendront effet après redémarrage.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1487"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1502"/>
         <source>General</source>
         <translation>Général</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1508"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1523"/>
         <source>CompositeModel Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1496"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1511"/>
         <source>Text Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1500"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1515"/>
         <source>Modelica Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1504"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1519"/>
         <source>MetaModelica Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1512"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1527"/>
         <source>OMSimulator Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1516"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1531"/>
         <source>C/C++ Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1520"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1535"/>
         <source>HTML Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1524"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1539"/>
         <source>Graphical Views</source>
         <translation>Vues Graphiques</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1532"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1547"/>
         <source>Messages</source>
         <translation>Messages</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1536"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1551"/>
         <source>Notifications</source>
         <translation>Notifications</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1548"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1563"/>
         <source>Plotting</source>
-        <translation type="unfinished">Tracé</translation>
+        <translation>Tracé</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1556"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1571"/>
         <source>Debugger</source>
         <translation>Débuggeur</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1560"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1575"/>
         <source>FMI</source>
         <translation>FMI</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1564"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1579"/>
         <source>OMTLMSimulator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1568"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1583"/>
         <source>OMSimulator</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="1572"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="1587"/>
         <source>Traceability</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5794,7 +5794,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="406"/>
         <source>Save</source>
-        <translation type="unfinished">Sauvegarder</translation>
+        <translation>Sauvegarder</translation>
     </message>
     <message>
         <location filename="../../Component/ComponentProperties.cpp" line="416"/>
@@ -5822,7 +5822,7 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
     <message>
         <location filename="../../Editors/BaseEditor.cpp" line="1043"/>
         <source>&lt;b&gt;Information: &lt;/b&gt;Breakpoints are only allowed on saved classes.</source>
-        <translation type="unfinished">&lt;b&gt;Information: &lt;/b&gt;Les Points de Pause sont autorisés uniquement dans les classes sauvegardées.</translation>
+        <translation>&lt;b&gt;Information: &lt;/b&gt;Les Points de Pause sont autorisés uniquement dans les classes sauvegardées.</translation>
     </message>
 </context>
 <context>
@@ -5833,22 +5833,22 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="485"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="486"/>
         <source>No plot window is active for clearing curves.</source>
         <translation>Aucune fenêtre de tracé n&apos;est sélectionnée pour l&apos;effacement des courbes.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="508"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="509"/>
         <source>No plot window is active for exporting variables.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="513"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="514"/>
         <source>No variables are selected for exporting.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="551"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="552"/>
         <source>Exported variables in %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5856,48 +5856,48 @@ Vous pouvez choisir entre attendre plus longtemps ou annuler le débuggage.</num
 <context>
     <name>PlottingPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4179"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4220"/>
         <source>Auto Scale</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4180"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4221"/>
         <source>Auto scale the plot to fit in view when variable is plotted.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4186"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4227"/>
         <source>Default Plotting View Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4187"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4228"/>
         <source>Tabbed View</source>
-        <translation type="unfinished">Vue en Onglets</translation>
+        <translation>Vue en Onglets</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4189"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4230"/>
         <source>SubWindow View</source>
-        <translation type="unfinished">Vue en Fenêtres</translation>
+        <translation>Vue en Fenêtres</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4229"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4270"/>
         <source>Variable Filter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4230"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4271"/>
         <source>Adds a delay, specified as Filter Interval, in filtering the variables.
 Set the value to 0 if you don&apos;t want any delay.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4232"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4273"/>
         <source>Filter Interval:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4234"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4275"/>
         <source> seconds</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5918,28 +5918,130 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="363"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="365"/>
         <source>Path</source>
-        <translation type="unfinished">Chemin</translation>
+        <translation>Chemin</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="379"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="381"/>
         <source>FMU Kind</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="380"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="382"/>
         <source>FMI Version</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="390"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="392"/>
         <source>Causality</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Animation/FMUWrapper.cpp" line="228"/>
+        <location filename="../../Animation/FMUWrapper.cpp" line="178"/>
+        <location filename="../../Animation/FMUWrapper.cpp" line="388"/>
+        <source>Error parsing XML.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/FMUWrapper.cpp" line="183"/>
+        <location filename="../../Animation/FMUWrapper.cpp" line="393"/>
+        <source>Only Model-Exchange FMUs are supported right now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/FMUWrapper.cpp" line="191"/>
+        <location filename="../../Animation/FMUWrapper.cpp" line="399"/>
+        <source>Could not create the DLL loading mechanism(C-API test).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/FMUWrapper.cpp" line="224"/>
         <source>fmi1_import_get_state_value_references returned failure code</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/FMUWrapper.cpp" line="231"/>
+        <source>fmi1_import_instantiate_model failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/FMUWrapper.cpp" line="447"/>
+        <source>fmi2_import_instantiate_model failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/AnimationUtil.h" line="97"/>
+        <source>This file extension is not supported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/Visualizer.cpp" line="97"/>
+        <source>Could not find the visual XML file %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/Visualizer.cpp" line="135"/>
+        <source>The type of %1 is not supported right in the visxml file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/Visualizer.cpp" line="158"/>
+        <source>Could not find the file %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/Visualizer.cpp" line="385"/>
+        <source>There is nothing left to visualize. Initialize the model first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/Visualizer.cpp" line="549"/>
+        <source>Unknown type %1, we make a capsule.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerCSV.cpp" line="64"/>
+        <location filename="../../Animation/VisualizerMAT.cpp" line="67"/>
+        <source>Cannot load visualization attributes for time point &lt; 0.0.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerCSV.cpp" line="76"/>
+        <source>Could not find CSV file %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerCSV.cpp" line="83"/>
+        <source>Could not read CSV file %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerCSV.cpp" line="190"/>
+        <location filename="../../Animation/VisualizerCSV.cpp" line="199"/>
+        <location filename="../../Animation/VisualizerMAT.cpp" line="211"/>
+        <source>Did not get variable from result file. Variable name is %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerFMU.cpp" line="82"/>
+        <source>Unknown FMU version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerFMU.cpp" line="167"/>
+        <source>Something went wrong in OMVisualizer::setVarReferencesInVisAttributes. %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerFMU.cpp" line="317"/>
+        <source>Error in VisualizerFMU::updateVisAttributes at time point %1
+%2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Animation/VisualizerMAT.cpp" line="80"/>
+        <source>Could not find MAT file %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5966,7 +6068,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Git/RevertCommitsDialog.cpp" line="30"/>
         <source>Working Directory:</source>
-        <translation type="unfinished">Répertoire de Travail:</translation>
+        <translation>Répertoire de Travail:</translation>
     </message>
     <message>
         <location filename="../../Git/RevertCommitsDialog.cpp" line="34"/>
@@ -6068,7 +6170,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="86"/>
         <source>Clear All</source>
-        <translation type="unfinished">Tout nettoyer</translation>
+        <translation>Tout nettoyer</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="87"/>
@@ -6078,7 +6180,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="91"/>
         <source>Expand All</source>
-        <translation type="unfinished">Tout Développer</translation>
+        <translation>Tout Développer</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="92"/>
@@ -6088,7 +6190,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="96"/>
         <source>Collapse All</source>
-        <translation type="unfinished">Fermer Tout</translation>
+        <translation>Fermer Tout</translation>
     </message>
     <message>
         <location filename="../../Search/SearchWidget.cpp" line="97"/>
@@ -6109,17 +6211,17 @@ Set the value to 0 if you don&apos;t want any delay.</source>
 <context>
     <name>ShapeAnnotation</name>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="437"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="458"/>
         <source>Shows the shape properties</source>
         <translation>Affiche les propriétés de la forme</translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="445"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="466"/>
         <source>Shows the shape attributes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Annotations/ShapeAnnotation.cpp" line="449"/>
+        <location filename="../../Annotations/ShapeAnnotation.cpp" line="470"/>
         <source>Edits the transition</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6344,7 +6446,7 @@ Si vous voulez changer le chemin de sortie alors mettez à jour le répertoire d
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="226"/>
         <source>Interactive Simulation</source>
-        <translation type="unfinished">Simulation Interactive</translation>
+        <translation>Simulation Interactive</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="228"/>
@@ -6473,12 +6575,12 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1661"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1666"/>
         <source>Generated code for the target build &lt;b&gt;%1&lt;/b&gt; at %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1938"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1943"/>
         <source>Animation is only supported with mat result files.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6503,12 +6605,12 @@ Can cause high overhead but values will not be missed.</source>
         <translation>Classe</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1645"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1650"/>
         <source>Translating %1.</source>
         <translation>Traduction %1.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1672"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1677"/>
         <source>Generated code for the target language &lt;b&gt;%1&lt;/b&gt; at %2.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6581,58 +6683,63 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>SimulationOutputWidget</name>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="205"/>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="552"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="235"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="595"/>
         <source>Cancel Compilation</source>
         <translation>Annuler la Compilation</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="210"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="240"/>
         <source>Open Transformational Debugger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="242"/>
+        <source>Open Output File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="275"/>
         <source>Compilation</source>
         <translation>Compilation</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="549"/>
-        <source>Compiling &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation>Compilation &lt;b&gt;%1&lt;/b&gt;. Veuillez attendre un instant.</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="582"/>
-        <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
-        <translation>La compilation de &lt;b&gt;%1&lt;/b&gt; est terminée.</translation>
-    </message>
-    <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="609"/>
-        <source>Running interactive simulation of &lt;b&gt;%1&lt;/b&gt;.</source>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="592"/>
+        <source>Compiling %1. Please wait for a while.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="611"/>
-        <source>Running simulation of &lt;b&gt;%1&lt;/b&gt;. Please wait for a while.</source>
-        <translation>Simulation en cours de &lt;b&gt;%1&lt;/b&gt;. Veuillez attendre un instant.</translation>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="625"/>
+        <source>Compilation of %1 is finished.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="686"/>
-        <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is finished.</source>
-        <translation>La simulation de &lt;b&gt;%1&lt;/b&gt; est terminée.</translation>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="652"/>
+        <source>Running interactive simulation of %1.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="707"/>
-        <source>Compilation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation>La compilation de &lt;b&gt;%1&lt;/b&gt; est annulée.</translation>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="654"/>
+        <source>Running simulation of %1. Please wait for a while.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="715"/>
-        <source>Simulation of &lt;b&gt;%1&lt;/b&gt; is cancelled.</source>
-        <translation>La simulation de &lt;b&gt;%1&lt;/b&gt; est annulée.</translation>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="712"/>
+        <source>Simulation of %1 is finished.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="777"/>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="736"/>
+        <source>Compilation of %1 is cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="744"/>
+        <source>Simulation of %1 is cancelled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationOutputWidget.cpp" line="817"/>
         <source>Url is &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6640,84 +6747,89 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>SimulationPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3568"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3583"/>
         <source>Target Language:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3580"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3595"/>
         <source>Target Build:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3596"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3611"/>
         <source>C Compiler:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3606"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3621"/>
         <source>CXX Compiler:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3616"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3631"/>
         <source>Ignore __OpenModelica_commandLineOptions annotation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3618"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3633"/>
         <source>Ignore __OpenModelica_simulationFlags annotation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3620"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3635"/>
         <source>Save class before simulation</source>
         <translation>Sauvegarder la classe avant la simulation</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3621"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3636"/>
         <source>Disabling this will effect the debugger functionality.</source>
         <translation>Désactiver ceci affectera la fonctionnalité de débuggage.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3624"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3639"/>
         <source>Switch to plotting perspective after simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3627"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3642"/>
         <source>Close completed simulation output windows before simulation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3630"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3645"/>
         <source>Delete intermediate compilation files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3633"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3648"/>
         <source>Delete entire simulation directory of the model when OMEdit is closed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3636"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3651"/>
         <source>Structured</source>
         <translation>Structuré</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3637"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3652"/>
         <source>Shows the simulation output in the form of tree structure.</source>
         <translation>Affiche la sortie de simulation sous la forme de structure en arbre.</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3639"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3654"/>
         <source>Formatted Text</source>
         <translation>Texte Formaté</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="3640"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="3655"/>
         <source>Shows the simulation output in the form of formatted text.</source>
         <translation>Affiche la sortie de simulation sous la forme de texte formaté.</translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="3664"/>
+        <source>Display Limit:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6852,7 +6964,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="95"/>
         <source>Initial Step Size:</source>
-        <translation type="unfinished">Taille du Pas Initial:</translation>
+        <translation>Taille du Pas Initial:</translation>
     </message>
     <message>
         <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="99"/>
@@ -6862,7 +6974,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../OMS/SystemSimulationInformationDialog.cpp" line="103"/>
         <source>Maximum Step Size:</source>
-        <translation type="unfinished">Taille du Pas Maximale:</translation>
+        <translation>Taille du Pas Maximale:</translation>
     </message>
 </context>
 <context>
@@ -6949,7 +7061,7 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="316"/>
+        <location filename="../../TLM/TLMCoSimulationDialog.cpp" line="315"/>
         <source>Failed to get my hostname, check that name resolves, e.g. /etc/hosts has %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7075,22 +7187,22 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>TLMPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4713"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4754"/>
         <source>Path:</source>
-        <translation type="unfinished">Chemin:</translation>
+        <translation>Chemin:</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4720"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4761"/>
         <source>Manager Process:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4727"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4768"/>
         <source>Monitor Process:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4745"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4786"/>
         <source>* Default OMTLMSimulator paths are used if above field are empty.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7111,117 +7223,117 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>TextEditorPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2464"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2479"/>
         <source>Format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2466"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2481"/>
         <source>Line Ending:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2468"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2483"/>
         <source>Windows (CRLF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2469"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2484"/>
         <source>Unix (LF)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2474"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2489"/>
         <source>Byte Order Mark (BOM):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2476"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2491"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;i&gt;Always Add:&lt;/i&gt; always add a BOM when saving a file.&lt;/li&gt;&lt;li&gt;&lt;i&gt;Keep If Already Present:&lt;/i&gt; save the file with a BOM if it already had one when it was loaded.&lt;/li&gt;&lt;li&gt;&lt;i&gt;Always Delete:&lt;/i&gt; never write a BOM, possibly deleting a pre-existing one.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2482"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2497"/>
         <source>Always Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2483"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2498"/>
         <source>Keep If Already Present</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2484"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2499"/>
         <source>Always Delete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2495"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2510"/>
         <source>Tabs and Indentation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2497"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2512"/>
         <source>Tab Policy:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2499"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2514"/>
         <source>Spaces Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2500"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2515"/>
         <source>Tabs Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2502"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2517"/>
         <source>Tab Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2507"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2522"/>
         <source>Indent Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2522"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2537"/>
         <source>Syntax Highlight and Text Wrapping</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2524"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2539"/>
         <source>Enable Syntax Highlighting</source>
-        <translation type="unfinished">Activer le Surlignage Syntaxe</translation>
+        <translation>Activer le Surlignage Syntaxe</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2528"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2543"/>
         <source>Enable Code Folding</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2531"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2546"/>
         <source>Match Parentheses within Comments and Quotes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2538"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2553"/>
         <source>Enable Line Wrapping</source>
-        <translation type="unfinished">Activer le Retour à la Ligne</translation>
+        <translation>Activer le Retour à la Ligne</translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2546"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2561"/>
         <source>Autocomplete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2548"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2563"/>
         <source>Enable Autocomplete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="2554"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="2569"/>
         <source>Font</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7237,32 +7349,32 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>TraceabilityPage</name>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4907"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4948"/>
         <source>Traceability</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4911"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4952"/>
         <source>User Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4914"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4955"/>
         <source>Email:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4917"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4958"/>
         <source>Git Repository:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4923"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4964"/>
         <source>Traceability Daemon IP Adress:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Options/OptionsDialog.cpp" line="4926"/>
+        <location filename="../../Options/OptionsDialog.cpp" line="4967"/>
         <source>Traceability Daemon Port:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7352,12 +7464,12 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="52"/>
         <source>Matching Algorithm:</source>
-        <translation type="unfinished">Algorithme de Matching:</translation>
+        <translation>Algorithme de Matching:</translation>
     </message>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="64"/>
         <source>Index Reduction Method:</source>
-        <translation type="unfinished">Méthode de réduction d&apos;index:</translation>
+        <translation>Méthode de réduction d&apos;index:</translation>
     </message>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="75"/>
@@ -7420,7 +7532,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Util/Utilities.cpp" line="86"/>
         <source>Regular Expression</source>
-        <translation type="unfinished">Regular Expression</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="87"/>
@@ -7440,7 +7552,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Util/Utilities.cpp" line="90"/>
         <source>Fixed String</source>
-        <translation type="unfinished">Chaîne de caractères fixe</translation>
+        <translation>Chaîne de caractères fixe</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="91"/>
@@ -7466,26 +7578,26 @@ Can cause high overhead but values will not be missed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="528"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="531"/>
         <source>Interactive Simulation
 Port: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="530"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="533"/>
         <source>Simulation Result File: %1
 %2: %3/%4</source>
         <translation>Fichier résultat de simulation %1
 %2: %3/%4</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="714"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="706"/>
         <source>Variable: %1
 Variability: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="716"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="708"/>
         <source>File: %1/%2
 Variable: %3
 Variability: %4</source>
@@ -7495,92 +7607,92 @@ Variability: %4</source>
 <context>
     <name>VariablesWidget</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2214"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2189"/>
         <source>Delete Result</source>
         <translation>Supprimer le résultat</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2217"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2192"/>
         <source>Delete the result</source>
         <translation>Supprimer le résultat</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1436"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1407"/>
         <source>You must select a class to re-simulate.</source>
         <translation>Vous devez sélectionner une classe à resimuler. </translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1074"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1069"/>
         <source>Simulation Time Unit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1089"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1082"/>
         <source>Rewind</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1090"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1083"/>
         <source>Rewinds the visualization to the start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1094"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1087"/>
         <source>Play the visualization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1098"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1091"/>
         <source>Pause the visualization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1104"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1097"/>
         <source>Time:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1447"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1418"/>
         <source>You cannot re-simulate an interactive simulation.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1459"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1430"/>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Vous ne pouvez pas resimuler cette classe.&lt;br /&gt;Ceci est juste un fichier résultat chargé depuis le menu &lt;b&gt;Fichier-&gt;Ouvrir un ou des fichier(s) résultat(s))&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1482"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1453"/>
         <source>Unable to set the content of QDomDocument from file %1</source>
         <translation>Impossible de paramétrer le contenu de QDomDocument à partir du fichier %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1626"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1600"/>
         <source>No plot window is active for plotting. Please select a plot window or open a new.</source>
         <translation>Aucune fenêtre graphique n&apos;est active. Veuillez sélectionner une fenêtre graphique ou en ouvrir une nouvelle.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1639"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1613"/>
         <source>Can not be attached to a plot window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1726"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1700"/>
         <source>Can not be attached to a parametric plot window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1867"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1841"/>
         <source>Can not be attached to an interactive plot window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2221"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2196"/>
         <source>Set Active</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2223"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2198"/>
         <source>An active item is used for the visualization</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7658,32 +7770,32 @@ Variability: %4</source>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3138"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3222"/>
         <source>Recent Files</source>
         <translation>Fichiers récents</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3139"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3223"/>
         <source>No recent files found.</source>
         <translation>Aucun fichier récent n&apos;a été trouvé.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3150"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3234"/>
         <source>Clear Recent Files</source>
         <translation>Effacer les fichiers récents</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3171"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3255"/>
         <source>Latest News</source>
         <translation>Dernières nouvelles</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3185"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3269"/>
         <source>For more details visit our website &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</source>
         <translation>Pour plus de details visitez notre site web &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3302"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="3386"/>
         <source>Sorry, no internet no news items.</source>
         <translation>Désolé, pas d&apos;internet pas de nouvelles.</translation>
     </message>
