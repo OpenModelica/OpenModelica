@@ -63,7 +63,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
-  updateTextString();
+  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -96,7 +96,7 @@ TextAnnotation::TextAnnotation(Component *pParent)
   mExtents.replace(0, QPointF(-50, -50));
   mExtents.replace(1, QPointF(50, 50));
   setTextString("%name");
-  updateTextString();
+  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
 }
@@ -142,7 +142,7 @@ TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   mExtents.replace(0, QPointF(-100, 20));
   mExtents.replace(1, QPointF(100, -20));
   setTextString("%name");
-  updateTextString();
+  initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
   setShapeFlags(true);
@@ -186,7 +186,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
   }
   mTextString = mOriginalTextString;
-  updateTextString();
+  initUpdateTextString();
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
@@ -518,6 +518,16 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   GraphicItem::setDefaults(pShapeAnnotation);
   FilledShape::setDefaults(pShapeAnnotation);
   ShapeAnnotation::setDefaults(pShapeAnnotation);
+}
+
+void TextAnnotation::initUpdateTextString()
+{
+  if (mpComponent) {
+    if (mOriginalTextString.contains("%")) {
+      updateTextString();
+      connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
+    }
+  }
 }
 
 /*!
