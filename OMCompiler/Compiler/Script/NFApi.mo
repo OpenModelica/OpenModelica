@@ -64,6 +64,7 @@ import Array;
 import Config;
 import Error;
 import FBuiltin;
+import Flags;
 import Flatten = NFFlatten;
 import Global;
 import InstUtil = NFInstUtil;
@@ -342,8 +343,29 @@ algorithm
   end try;
 end filterAnnComp;
 
+
 public
 function evaluateAnnotations
+  "Instantiates the annotation class, gets the DAE and populates the annotation result"
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  input list<Absyn.Element> inElements;
+  output list<String> outStringLst = {};
+protected
+  Boolean b = false;
+algorithm
+  try
+    b := Flags.set(Flags.SCODE_INST, true);
+    outStringLst := evaluateAnnotations_dispatch(absynProgram, classPath, inElements);
+    Flags.set(Flags.SCODE_INST, b);
+  else
+    Flags.set(Flags.SCODE_INST, b);
+    fail();
+  end try;
+end evaluateAnnotations;
+
+protected
+function evaluateAnnotations_dispatch
   "Instantiates the annotation class, gets the DAE and populates the annotation result"
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
@@ -544,7 +566,7 @@ algorithm
   UnitCheck.checkUnits(dae, daeFuncs);
   */
 
-end evaluateAnnotations;
+end evaluateAnnotations_dispatch;
 
 
 protected
