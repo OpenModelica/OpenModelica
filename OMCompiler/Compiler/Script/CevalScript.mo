@@ -977,13 +977,13 @@ algorithm
 
     case (_,_,"setCommandLineOptions",{Values.STRING(str)},_)
       equation
-        new_inst = Flags.isSet(Flags.SCODE_INST);
+        new_inst = Flags.isSet(Flags.SCODE_INST) or Flags.isSet(Flags.NF_API);
         args = System.strtok(str, " ");
         {} = Flags.readArgs(args);
 
         // Invalidate the builtin cache if the newInst flag was toggled,
         // so we don't reuse the wrong builtin program.
-        if new_inst <> Flags.isSet(Flags.SCODE_INST) then
+        if new_inst <> (Flags.isSet(Flags.SCODE_INST) or Flags.isSet(Flags.NF_API)) then
           setGlobalRoot(Global.builtinIndex, {});
         end if;
       then
