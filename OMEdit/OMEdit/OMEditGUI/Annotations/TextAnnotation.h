@@ -68,6 +68,7 @@ public:
 private:
   Component *mpComponent;
 
+  void initUpdateTextString();
   void updateTextStringHelper(QRegExp regExp);
 public slots:
   void updateTextString();
