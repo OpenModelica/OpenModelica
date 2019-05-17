@@ -909,7 +909,7 @@ Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
 Compiler/runtime/revision.h \
 Parser/Makefile \
-SimulationRuntime/cpp/Makefile.env \
+SimulationRuntime/OMSICpp/Makefile.env \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/opc/ua/Makefile \
 SimulationRuntime/fmi/export/buildproject/Makefile \
@@ -920,8 +920,8 @@ Compiler/boot/Makefile \
 Compiler/Lexers/Makefile \
 "
 
-AC_CONFIG_SUBDIRS([SimulationRuntime/cpp])
-for dir_target in SimulationRuntime/cpp; do
+AC_CONFIG_SUBDIRS([SimulationRuntime/OMSICpp])
+for dir_target in SimulationRuntime/OMSICpp; do
   dir=`echo $dir_target | cut -d- -f1`
   if test ! -f "$dir/configure.ac"; then
     AC_MSG_NOTICE("Subproject $dir does not exist")

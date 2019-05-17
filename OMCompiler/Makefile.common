@@ -221,32 +221,20 @@ breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
-all-runtimeCPPinstall:  CMinpack sundials
-	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
+all-runtimeCPPinstall:  CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) fmil OMSI
+	$(MAKE) all OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-omc-and-runtimeCPPinstall:  CMinpack sundials
-	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
+omc-and-runtimeCPPinstall: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) fmil OMSI
+	$(MAKE) omc OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
 omcCAPIinstall:
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPinstall: runtimeCPP
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppEuler.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppNewton.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppSimulationSettings.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppSolver.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppSystem.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppEuler.dylib
 
 testlibrariemsl31cpp:
 	(cd testsuite/openmodelica/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
@@ -256,24 +244,31 @@ testlibrariemsl32cpp:
 	(cd testsuite/openmodelica/cppruntime/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-cpp-trace.txt 2>&1)
 	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt"
 
-runtimeCPPclean:
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
+# Build and install FMILibrary
 fmil: $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB)
 $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/build/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/build/libfmilib_shared$(SHREXT)
-	cp -pPR 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib_omc)
+	cp -pPR 3rdParty/FMIL/install/lib/$(LIBFMILIB) $(builddir_lib_omc)
+	@if [ "$(FMILIB_SHARED)" = "ON" ]; then\
+	    cp -v -pPR 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
+	fi
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	mkdir -p $(builddir_inc)/fmil/
 	cp -pPR 3rdParty/FMIL/install/include/* $(builddir_inc)/fmil/
+
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
 	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+
+# Install expat
+expat: fmil
+	cp -pPR 3rdParty/FMIL/build/ExpatEx/install/lib/libexpat$(STAEXT) $(builddir_lib_omc)
 
 qjson:
 	test -d 3rdParty/qjson-0.8.1
@@ -382,9 +377,9 @@ openblas-clean:
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
 ifeq ($(OMENCRYPTION),yes)
-clean: semla-clean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
+clean: semla-clean fmil-clean opencl_rt_clean gc-clean lis-clean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
 else
-clean: fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
+clean: fmil-clean opencl_rt_clean gc-clean lis-clean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
 endif
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
