@@ -1,0 +1,4 @@
+
+OMSUSimulation and OMSU library which implements the OpenModelica Simulation
+Interface (OMSI) to simulate an fmu/omsu.
+It is build whith the cpp simulation runtime, see SimulationRuntime/OMSICpp/README.

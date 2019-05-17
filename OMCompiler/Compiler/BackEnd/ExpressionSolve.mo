@@ -503,7 +503,7 @@ preprocessing for solve1,
      (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
      con := new_x or con;
      // TODO: use new defined function, which missing in the cpp runtime
-     if not stringEqual(Config.simCodeTarget(), "Cpp") then
+     if not (stringEqual(Config.simCodeTarget(), "Cpp") or stringEqual(Config.simCodeTarget(), "omsicpp"))then
        (x, y, new_x, eqnForNewVars, newVarsCrefs, depth) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs, depth);
        con := new_x or con;
      end if;

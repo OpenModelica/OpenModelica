@@ -1468,7 +1468,7 @@ import Util;
     list<CacheLineMap> cacheLineFloatMaps;
     array<tuple<Integer,Integer>> tmpScVarCLMapping;
   algorithm
-    if(stringEqual(Config.simCodeTarget(), "Cpp")) then
+    if((stringEqual(Config.simCodeTarget(), "Cpp") or stringEqual(Config.simCodeTarget(), "omsicpp"))) then
       (oCacheMap, oScVarCLMapping, oNumCL) := createCacheMapDefaultCppRuntime(iAllSCVars, iCacheLineSize, iSimCodeVars, iScVarTaskMapping, iSchedulerInfo, iSimCodeVarTypes);
     else
       oCacheMap := UNIFORM_CACHEMAP(iCacheLineSize,{},{});
