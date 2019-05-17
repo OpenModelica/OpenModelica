@@ -1,3 +1,4 @@
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 #OpenModelica Simulation Interface solver
 PROJECT(OMSISolver)
@@ -126,3 +127,4 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/solver/include/solver_api.h
   ${CMAKE_SOURCE_DIR}/solver/include/solver_helper.h
 DESTINATION include/omc/omsi/solver)
+

@@ -1,0 +1,46 @@
+// name: helloWorldOMSI
+// keywords: omsi omsicpp fmu fmi
+// status: correct
+// teardown_command: rm -rf OMCpphelloWorldOMSI* helloWorldOMSI* helloWorldOMSI_res.mat helloWorldOMSI_result_diff.log modelDescription.xml
+//
+// Tests generating and simulating an OMSICPP FMU
+//
+//
+
+
+loadString("
+model helloWorldOMSI
+  Real x(start=1);
+  parameter Real a = 2;
+equation
+  der(x) = a * x;
+end helloWorldOMSI;
+");
+getErrorString();
+
+
+setCommandLineOptions("--simCodeTarget=omsicpp");
+getErrorString();
+
+simulate(helloWorldOMSI);
+getErrorString();
+compareSimulationResults("helloWorldOMSI_res.mat",
+                         "helloWorldOMSI_ref_res.mat",
+                         "helloWorldOMSI_result_diff.log",
+                         vars = {"der(x)","x","a"}
+);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "helloWorldOMSI_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'helloWorldOMSI', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {"Files Equal!"}
+// endResult
