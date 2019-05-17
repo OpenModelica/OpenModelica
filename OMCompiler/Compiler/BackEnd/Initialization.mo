@@ -135,7 +135,7 @@ algorithm
     // If Cpp runtime is used set fixvars to emptyVars because otherwise Cpp testcases fail
     // This is wrong and leads to bigger initialization tearing sets than necessary!!!
     // To-Do: Fix the problems with the Cpp runtime
-    if stringEq(Config.simCodeTarget(), "Cpp") then
+    if (stringEq(Config.simCodeTarget(), "Cpp"))then
       fixvars := BackendVariable.emptyVars();
     else
       fixvars := BackendVariable.listVar(outAllPrimaryParameters);

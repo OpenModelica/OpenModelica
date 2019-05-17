@@ -417,6 +417,7 @@ if true then /* Suppress output */
     "../Template/CodegenOMSI_common.mo",
     "../Template/CodegenOMSIC.mo",
     "../Template/CodegenOMSIC_Equations.mo",
+    "../Template/CodegenOMSICpp.mo",
     "../Template/CodegenFMUCppHpcom.mo",
     "../Template/CodegenJava.mo",
     "../Template/CodegenJS.mo",

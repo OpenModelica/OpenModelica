@@ -293,7 +293,7 @@ algorithm
     dlow := inBackendDAE;
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
-    ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp") or stringEqual(Config.simCodeTarget(), "omsicpp"));
+    ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp"));
 
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
@@ -307,8 +307,7 @@ algorithm
     // initialization stuff
     // ********************
 
-    if not (Config.simCodeTarget() == "omsic" or
-            Config.simCodeTarget() == "omsicpp")
+    if not ((Config.simCodeTarget() == "omsic") or (Config.simCodeTarget() ==  "omsicpp"))
     then
       // generate equations for initDAE
       (initialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, uniqueEqIndex, {});
@@ -363,7 +362,9 @@ algorithm
       FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
     end if;
 
-    if not (Config.simCodeTarget() == "omsic" or Config.simCodeTarget() == "omsicpp") then
+
+    if not ((Config.simCodeTarget() == "omsic")or (Config.simCodeTarget() ==  "omsicpp"))
+    then
       (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
         equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
            createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
@@ -533,7 +534,7 @@ algorithm
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
     // collect fmi partial derivative
-    if FMI.isFMIVersion20(FMUVersion) or Config.simCodeTarget() ==  "omsicpp"  then
+    if FMI.isFMIVersion20(FMUVersion)   then
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
@@ -640,7 +641,8 @@ algorithm
     execStat("simCode: some other stuff during SimCode phase");
 
 
-    if (Config.simCodeTarget() <> "Cpp") and (Config.simCodeTarget() <> "omsicpp") then
+
+     if ((Config.simCodeTarget() <> "Cpp"))then
       reasonableSize := Util.nextPrime(10+integer(1.4*(BackendDAEUtil.equationArraySizeBDAE(inBackendDAE)+BackendDAEUtil.equationArraySizeBDAE(inInitDAE)+listLength(parameterEquations))));
       eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
 
@@ -661,11 +663,9 @@ algorithm
     end if;
 
     // Set fullPathPrefix for FMUs
-    if isFMU then
-      if Config.simCodeTarget()=="omsic" then
+	if isFMU then
+      if (Config.simCodeTarget()=="omsic")  or (Config.simCodeTarget() ==  "omsicpp")then
         fullPathPrefix := filenamePrefix+".fmutmp";
-      elseif Config.simCodeTarget()=="omsicpp" then
-        fullPathPrefix := inFileDir;
       else
         fullPathPrefix := filenamePrefix+".fmutmp/sources/";
       end if;
@@ -3382,7 +3382,7 @@ algorithm
       (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
       beqs = listReverse(beqs);
       simJac = List.map1(jac, jacToSimjac, inVars);
-      if (Config.simCodeTarget() == "Cpp" or Config.simCodeTarget() == "omsicpp") then
+      if (Config.simCodeTarget() == "Cpp" ) then
         simJac = List.sort(simJac,simJacCSRToCSC);
       end if;
 
@@ -7849,7 +7849,7 @@ algorithm
   sortSimvars(simVars);
   if debug then execStat("createVars: sortSimVars"); end if;
 
-   if (stringEqual(Config.simCodeTarget(), "Cpp") or (Config.simCodeTarget()=="omsicpp")) then
+   if (stringEqual(Config.simCodeTarget(), "Cpp")) then
     extendIncompleteArray(simVars);
     if debug then execStat("createVars: Cpp, extendIncompleteArray"); end if;
   end if;
@@ -8979,7 +8979,7 @@ protected function fixIndex
 protected
   Integer ix=0;
   list<SimCodeVar.SimVar> lst;
-  Boolean isCpp = (Config.simCodeTarget() == "Cpp" or Config.simCodeTarget() == "omsicpp");
+  Boolean isCpp = (Config.simCodeTarget() == "Cpp" );
 algorithm
   for i in SimVarsIndex.state : SimVarsIndex.realOptimizeFinalConstraints loop
     lst := Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i));
@@ -13660,7 +13660,7 @@ public function getStateSimVarIndexFromIndex
 protected
   SimCodeVar.SimVar stateVar;
 algorithm
-  stateVar := listGet(inStateVars, inIndex + 1 - (if (Config.simCodeTarget()=="Cpp" or Config.simCodeTarget()=="omsicpp") then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
+  stateVar := listGet(inStateVars, inIndex + 1 - (if (Config.simCodeTarget()=="Cpp" ) then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
   outVariableIndex := getVariableIndex(stateVar);
 end getStateSimVarIndexFromIndex;
 
@@ -13810,8 +13810,8 @@ algorithm
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
     case (_, _, _) guard(stringEqual(Config.simCodeTarget(), "Cpp")
-                         or stringEqual(Config.simCodeTarget(), "omsicpp")
-                         or stringEqual(Config.simCodeTarget(), "omsic"))
+                        or stringEqual(Config.simCodeTarget(), "omsic")
+						or stringEqual(Config.simCodeTarget(), "omsicpp"))
     algorithm
       // resolve aliases to get multi-dimensional arrays right
       // (this should possibly be done in getVarIndexByMapping?)

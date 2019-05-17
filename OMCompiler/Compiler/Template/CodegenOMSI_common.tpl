@@ -69,36 +69,19 @@ template generateEquationsCode (SimCode simCode, String FileNamePrefix)
 
     /* generate file for algebraic systems in simulation problem */
 
-    let modeNameOMSICpp = lastIdentOfPath(modelInfo.name)
-    let modelNamePrefix =  match Config.simCodeTarget()
-    case "omsic" then
-      modelNameOMSIC
-    case "omsicpp" then
-      modeNameOMSICpp
-    end match
+   
+    let modelNamePrefix =   modelNameOMSIC
+    
 
-    let omsi_equations = match  Config.simCodeTarget()
-    case "omsic" then
-        let content = generateOmsiFunctionCode(simulation, modelNamePrefix,"","sim_eqns")
-        let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_sim_eqns.c")
-        <<>>
-    case "omsicpp" then
-        let content = generateOmsiFunctionCode(simulation, modelNamePrefix,"evaluate","sim_eqns")
-        let () = textFile(content, 'OMCpp<%fileNamePrefix%>OMSIEquations.cpp')
-        <<>>
-    end match
+   
+    let content = generateOmsiFunctionCode(simulation, modelNamePrefix,"","sim_eqns")
+    let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_sim_eqns.c")
+    
 
 
-    let omsi_equations = match  Config.simCodeTarget()
-    case "omsic" then
-       let content = generateOmsiFunctionCode(initialization, modelNamePrefix,"", "init_eqns")
-       let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_init_eqns.c")
-        <<>>
-    case "omsicpp" then
-        let content = generateOmsiFunctionCode(initialization, modelNamePrefix+"Initialize","initialize" ,"init_eqns")
-        let () = textFile(content, 'OMCpp<%fileNamePrefix%>OMSIInitEquations.cpp')
-        <<>>
-    end match
+    let content = generateOmsiFunctionCode(initialization, modelNamePrefix,"", "init_eqns")
+    let () = textFile(content, fullPathPrefix+"/"+fileNamePrefix+"_init_eqns.c")
+    
 
   <<>>
 end generateEquationsCode;
@@ -119,49 +102,23 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
   let _ = generateOmsiFunctionCode_inner(omsiFunction, FileNamePrefix, modelFunctionnamePrefixStr,omsiName, &includes, &evaluationCode, &functionCall, "", &functionPrototypes, omsiName)
 
   // generate header file
-  let &functionPrototypes += match  Config.simCodeTarget()
-    case "omsic" then
-        <<omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* simulation, omsi_values* model_vars_and_params, void* data);<%\n%>>>
-    end match
+  let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* simulation, omsi_values* model_vars_and_params, void* data);<%\n%>'
+   
 
-  let headerFileName =     match  Config.simCodeTarget()
-    case "omsic" then
-         '<%fileNamePrefix%>_<%omsiName%>'
-    case "omsicpp" then
-        ""
-
-  let _ = match  Config.simCodeTarget()
-    case "omsic" then
-      let headerFileContent = generateCodeHeader(FileNamePrefix, &includes, headerFileName, &functionPrototypes)
-      let () = textFile(headerFileContent, fullPathPrefix+"/"+headerFileName+".h")
-      ""
-  end match
+  let headerFileName =     '<%fileNamePrefix%>_<%omsiName%>'
+    
+  
+  let headerFileContent = generateCodeHeader(FileNamePrefix, &includes, headerFileName, &functionPrototypes)
+  let () = textFile(headerFileContent, fullPathPrefix+"/"+headerFileName+".h")
+     
 
 
   match omsiFunction
     case SimCode.OMSI_FUNCTION(__) then
     <<
     <%insertCopyrightOpenModelica()%>
-    <%match  Config.simCodeTarget()
-      case "omsic" then
-      <<
       /* All Equations Code */
       #include "<%headerFileName%>.h"
-      >>
-      case "omsicpp" then
-      <<
-      //OpenModelica Simulation Interface
-      #include <omsi.h>
-      #include <omsi_callbacks.h>
-      #include <omsi_global.h>
-      #include <omsi_utils.h>
-      #include <omsi_input_sim_data.h>
-      #include <Core/System/IOMSI.h>
-
-      >>
-    end match%>
-
-
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -174,12 +131,8 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 
 
     /* Equations evaluation */
-    <%match  Config.simCodeTarget()
-      case "omsic" then
-        'omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){'
-      case "omsicpp" then
-        'omsi_status <%FileNamePrefix%>::omsi_<%modelFunctionnamePrefixStr%>All(omsi_function_t* <%omsiName%>, const omsi_values* model_vars_and_params, void* data){'
-     end match%>
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){
+    
 
       /* Variables */
       omsi_status status, new_status;
@@ -669,12 +622,7 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
   case func as OMSI_FUNCTION(__) then
     let &functionPrototypes += "omsi_status " + FileNamePrefix + "_" + omsiName + "_instantiate_" + functionName + "_OMSIFunc (omsi_function_t* omsi_function);\n"
 
-    let evaluationTarget = match  Config.simCodeTarget()
-    case "omsic" then
-        FileNamePrefix+"_"+omsiName+"_"+functionName
-    case "omsicpp" then
-         "&OMSICallBackWrapper::" +modelFunctionnamePrefixStr
-    end match
+    let evaluationTarget = FileNamePrefix+"_"+omsiName+"_"+functionName
     let algSystemInit = generateAlgebraicSystemInstantiation (FileNamePrefix, nAlgebraicSystems, equations, omsiName)
 
     let &includes +=
@@ -689,17 +637,10 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
 
     <<
 
-    <%match  Config.simCodeTarget()
-    case "omsic" then
-    <<
-     omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (omsi_function_t* omsi_function) {
-    >>
-    case "omsicpp" then
-    <<
-    omsi_status <%FileNamePrefix%>::initialize_omsi_<%modelFunctionnamePrefixStr%>_functions(omsi_function_t* omsi_function) {
-    >>
-    end match%>
-
+   
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (omsi_function_t* omsi_function) {
+    
+   
 
       filtered_base_logger(global_logCategories, log_all, omsi_ok,
           "fmi2Instantiate: Instantiate omsi_function <%functionName%>.");

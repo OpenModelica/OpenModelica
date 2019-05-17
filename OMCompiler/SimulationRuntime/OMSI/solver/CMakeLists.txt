@@ -1,3 +1,4 @@
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 #OpenModelica Simulation Interface solver
 PROJECT(OMSISolver)
@@ -34,7 +35,8 @@ IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
   SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
   SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
+  SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}  )
+  SET(BLAS_LIBRARIES    ${BLAS_MSVC_10} )
   MESSAGE(STATUS "Using manual set Lapack Libraries: ${LAPACK_LIBRARIES}")
 ENDIF(MSVC)
 
@@ -126,3 +128,4 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/solver/include/solver_api.h
   ${CMAKE_SOURCE_DIR}/solver/include/solver_helper.h
 DESTINATION include/omc/omsi/solver)
+

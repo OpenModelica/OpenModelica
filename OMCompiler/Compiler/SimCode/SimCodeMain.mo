@@ -65,6 +65,7 @@ import CodegenC;
 import CodegenEmbeddedC;
 import CodegenFMU;
 import CodegenFMUCpp;
+import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
 import CodegenAdevs;
 import CodegenSparseFMI;
@@ -107,7 +108,7 @@ import Testsuite;
 import Util;
 
 public
-
+constant Boolean debug=true;
 uniontype TranslateModelKind
   record NORMAL
   end NORMAL;
@@ -174,7 +175,7 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  if Config.simCodeTarget() ==  "omsic" then
+  if ((Config.simCodeTarget() ==  "omsic") or (Config.simCodeTarget() == "omsicpp")) then
     fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
   else
     fileDir := CevalScriptBackend.getFileDir(a_cref, p);
@@ -264,6 +265,8 @@ protected
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   list<tuple<String, String>> program;
   Integer numCheckpoints;
+  String fmuVersion;
+ 
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -277,7 +280,13 @@ algorithm
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
-  simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
+   if Config.simCodeTarget() ==  "omsicpp" then
+     fmuVersion:="2.0";
+     simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,isFMU=true, FMUVersion=fmuVersion,
+    fmuTargetName=listHead(AbsynUtil.pathToStringList(className)), inFMIDer=inFMIDer);
+   else
+    simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
+   end if;
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -505,6 +514,8 @@ algorithm
         end for;
       then ();
 
+   
+
     case "Adevs" equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
     then ();
@@ -665,6 +676,19 @@ algorithm
   end if;
 end callTargetTemplatesCPP;
 
+protected function callTargetTemplatesOMSICpp
+  input SimCode.SimCode iSimCode;
+  protected
+  String fmuVersion;
+  String fmuType;
+ 
+algorithm
+    fmuVersion:="2.0";
+    fmuType:="me";
+   Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
+   callTargetTemplatesFMU(iSimCode,"omsic",fmuVersion,fmuType);
+end callTargetTemplatesOMSICpp;
+
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
@@ -755,7 +779,7 @@ algorithm
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
       then ();
     case (_,"omsic")
-      algorithm
+       algorithm
         guid := System.getUUIDStr();
         fileprefix := simCode.fileNamePrefix;
 
@@ -767,7 +791,8 @@ algorithm
           end if;
         end if;
         if not System.createDirectory(simCode.fullPathPrefix) then
-          Error.addInternalError("Failed to create tmp folder", sourceInfo());
+          Error.addInternalError("Failed to create tmp folder "+simCode.fullPathPrefix, sourceInfo());
+          System.fflush();
           fail();
         end if;
 
@@ -782,6 +807,38 @@ algorithm
 
         runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
       then ();
+      case (_,"omsicpp")
+       algorithm
+        guid := System.getUUIDStr();
+        fileprefix := simCode.fileNamePrefix;
+
+        // create tmp directory for generated files, but first remove the old one!
+        if System.directoryExists(simCode.fullPathPrefix) then
+          if not System.removeDirectory(simCode.fullPathPrefix) then
+            Error.addInternalError("Failed to remove directory: " + simCode.fullPathPrefix, sourceInfo());
+            fail();
+          end if;
+        end if;
+        if not System.createDirectory(simCode.fullPathPrefix) then
+          Error.addInternalError("Failed to create tmp folder "+simCode.fullPathPrefix, sourceInfo());
+          System.fflush();
+          fail();
+        end if;
+
+        SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid);
+        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+
+        //runTplWriteFile(func = function CodegenFMU.fmuModelDescriptionFile(in_a_simCode=simCode, in_a_guid=guid, in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles={}), file=simCode.fullPathPrefix+"/"+"modelDescription.xml");
+        runTpl(func = function CodegenOMSI_common.generateFMUModelDescriptionFile(a_simCode=simCode, a_guid=guid, a_FMUVersion=FMUVersion, a_FMUType=FMUType, a_sourceFiles={}, a_fileName=simCode.fullPathPrefix+"/"+"modelDescription.xml"));
+        runTplWriteFile(func = function CodegenOMSIC.createMakefile(a_simCode=simCode, a_target=Config.simulationCodeTarget(), a_makeflieName=fileprefix+"_FMU.makefile"), file=simCode.fullPathPrefix+"/"+fileprefix+"_FMU.makefile");
+
+        runTplWriteFile(func = function CodegenOMSIC.generateOMSIC(a_simCode=simCode), file=simCode.fullPathPrefix+"/"+fileprefix+"_omsic.c");
+
+        runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
+        
+           runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
+      then ();
+    
     case (_,"Cpp")
       equation
         if(Flags.isSet(Flags.HPCOM)) then
@@ -915,13 +972,13 @@ algorithm
         else false;
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
-      strPreOptModules := if (isFMI2 or Config.simCodeTarget() ==  "omsicpp") then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
+      strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
 
       //BackendDump.printBackendDAE(dlow);
       (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
 
       // generate derivatives
-      if (isFMI2 or Config.simCodeTarget() == "omsicpp") and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
+      if (isFMI2) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
         (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);

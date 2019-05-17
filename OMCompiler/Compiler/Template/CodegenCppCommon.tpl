@@ -591,7 +591,14 @@ template crefStartValueType(ComponentRef cr)
     let typeShort = expTypeShort(identType)
     let typeString = if stringEq(typeShort, "double") then "Real"
       else if stringEq(typeShort, "int") then "Int"
-      else if stringEq(typeShort, "bool") then "Bool"
+      else if stringEq(typeShort, "bool") then
+      let booltype =  match  Config.simCodeTarget()
+      case "Cpp" then
+      "Bool"
+      case "omsicpp" then
+      "Int"
+      end match
+      booltype
       else if stringEq(typeShort, "string") then "String"
       else if stringEq(typeShort, "void*") then "ExternalObject"
       else 'ERROR:crefStartValueType <%typeShort%> '

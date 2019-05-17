@@ -91,7 +91,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, CodegenUtil.dotPath(modelInfo.name)),
                                          additionalHpcomDestructorBodyStatements(hpcomData.schedules),
-                                         stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
+                                         stateDerVectorName, false,numRealVars,numIntVars,numBoolVars,numStringVars,numPreVars), 'OMCpp<%fileNamePrefix%>.cpp')
 
       let() = textFile(CodegenCpp.simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
                       additionalHpcomIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
