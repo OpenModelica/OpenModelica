@@ -15,12 +15,9 @@ package initializationTests
 end initializationTests;
 "); getErrorString();
 
-OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
 simulate(initializationTests.bug_2566, startTime=0.0, stopTime=0.0); getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult

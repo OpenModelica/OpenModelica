@@ -73,6 +73,7 @@ protected
 
 import Config;
 import Global;
+import System;
 
 public
 uniontype Severity "severity of message"
@@ -1628,6 +1629,19 @@ algorithm
     addSourceMessage(INTERNAL_ERROR, {message}, info);
   end if;
 end addInternalError;
+
+public function terminateError
+  "Prints out a message and terminates the execution."
+  input String message;
+  input SourceInfo info;
+algorithm
+  ErrorExt.addSourceMessage(0, MessageType.TRANSLATION(), Severity.INTERNAL(),
+    info.lineNumberStart, info.columnNumberStart,
+    info.lineNumberEnd, info.columnNumberEnd, info.isReadOnly,
+    info.fileName, "%s", {message});
+  print(ErrorExt.printMessagesStr());
+  System.exit(-1);
+end terminateError;
 
 annotation(__OpenModelica_Interface="util");
 end Error;

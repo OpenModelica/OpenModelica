@@ -10,7 +10,6 @@
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 
-setDebugFlags({"pedantic"}); getErrorString();
 simulate(Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier, outputFormat="mat"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat",
@@ -23,8 +22,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Quas
 
 // Result:
 // true
-// ""
-// {true}
 // ""
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat",
