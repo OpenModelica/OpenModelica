@@ -71,12 +71,8 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
     case SES_ALGEBRAIC_SYSTEM(__) then
       "algSystFunction"
     else
-    match  Config.simCodeTarget()
-    case "omsic" then
-      "eqFunction"
-    case "omsicpp" then
-      "omsi_" + modelFunctionnamePrefixStr
-    end match
+        "eqFunction"
+ 
     )
 
   let funcArguments = (match eq
@@ -88,23 +84,17 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
       "omsi_function_t* this_function, const omsi_values* model_vars_and_params"
   )
 
-  let &functionPrototypes +=  match  Config.simCodeTarget()
-    case "omsic" then
-       <<void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>);<%\n%>>>
-    case "omsicpp" then
-       <<void <%funcName%>_<%ix%>(<%funcArguments%>);<%\n%>>>
-    end match
+  let &functionPrototypes +=  
+       'void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>);<%\n%>'
+   
 
   <<
   /*
   <%equationInfos%>
   */
-  <%match  Config.simCodeTarget()
-  case "omsic" then
-  'void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>){'
-  case "omsicpp" then
-   'void <%modelNamePrefixStr%>::<%funcName%>_<%ix%>(<%funcArguments%>){'
-   end match%>
+   void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>){
+
+  
     <%if not stringEq(varDecls, "") then
       <<
       /* Variables */
@@ -157,16 +147,11 @@ template equationCall(SimEqSystem eq, String modelNamePrefixStr,String modelFunc
   case SES_SIMPLE_ASSIGN(__)
   case SES_WHEN(__) then
     let i = index
-    match  Config.simCodeTarget()
-    case "omsic" then
+   
       <<
       <%CodegenUtil.symbolName(modelNamePrefixStr,"eqFunction")%>_<%i%>(<%input%>);
       >>
-    case "omsicpp" then
-      <<
-      omsi_<%modelFunctionnamePrefixStr%>_<%i%>(<%input%>);
-      >>
-    end match
+   
   case SES_RESIDUAL(__) then
     <<
     <%CodegenUtil.symbolName(modelNamePrefixStr,"resFunction")%>_<%index%>(<%input%>);

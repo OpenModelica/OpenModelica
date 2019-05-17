@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+   CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
@@ -54,8 +54,9 @@ SET(OMSISolverName ${LIBPREFIX}OMSISolver${LIBSUFFIX})
 
 include_directories ("${CMAKE_SOURCE_DIR}/include")
 # omsi base simulation runtime
-ADD_SUBDIRECTORY(base)
 ADD_SUBDIRECTORY(solver)
+ADD_SUBDIRECTORY(base)
+
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/include/omsi.h
@@ -67,6 +68,9 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_cs.h
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_me.h
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_wrapper.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2Functions.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2FunctionTypes.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2TypesPlatform.h
   DESTINATION include/omc/omsi/fmi2/)
 
 # uninstall target
@@ -79,7 +83,3 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
-
-
-
-

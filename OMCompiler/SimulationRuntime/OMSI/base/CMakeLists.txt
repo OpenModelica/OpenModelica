@@ -14,7 +14,7 @@ ELSE(MSVC)
 ENDIF(MSVC)
 
 include_directories ("${CMAKE_SOURCE_DIR}/base/include" "${CMAKE_SOURCE_DIR}/solver/include")
-add_library(${OSUBaseName}
+add_library( ${OSUBaseName} 
   src/omsi_event_helper.c
   src/omsi_getters_and_setters.c
   src/omsi_initialization.c

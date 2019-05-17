@@ -1520,7 +1520,26 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        if not Config.simCodeTarget() == "omsic" then
+        
+        if Config.simCodeTarget() == "omsicpp" then
+        
+         filenameprefix := AbsynUtil.pathString(className);
+          try
+             (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
+            if stringEmpty(str) then
+              fail();
+            end if;
+           b := true;
+          else
+            b := false;
+          end try;
+          
+          compileDir := System.pwd() + Autoconf.pathDelimiter;
+           executable := filenameprefix;
+          initfilename := filenameprefix + "_init_xml";
+		  simflags:="";
+		  resultValues:={};
+        elseif not Config.simCodeTarget() == "omsic" then
           (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
         else
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
@@ -1528,36 +1547,41 @@ algorithm
         end if;
 
         if b then
-          exeDir := compileDir;
-          (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
-          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
-          result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-          // result file might have been set by simflags (-r ...)
-          result_file := selectResultFile(result_file, simflags);
-          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
-          // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-          // we should really have different log files for simulation/compilation!
-          // as the buildModel log file will be deleted here and that gives less information to the user!
-          if System.regularFileExists(logFile) then
-            0 := System.removeFile(logFile);
-          end if;
-          sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI := System.systemCall(sim_call,logFile);
-          timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        else
-          result_file := "";
-          resI := 1;
-          timeSimulation := 0.0;
-        end if;
+           exeDir := compileDir;
+           (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
+           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+            // result file might have been set by simflags (-r ...)
+        
+			result_file := selectResultFile(result_file, simflags);
+		  
+			executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+            logFile := stringAppend(executable,".log");
+            // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+            // we should really have different log files for simulation/compilation!
+            // as the buildModel log file will be deleted here and that gives less information to the user!
+            if System.regularFileExists(logFile) then
+              0 := System.removeFile(logFile);
+            end if;
+            sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+            
+			resI := System.systemCall(sim_call,logFile);
+			
+            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+			
+         else
+           result_file := "";
+           resI := 1;
+           timeSimulation := 0.0;
+         end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+		
         (cache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
       then
         (cache,simValue);
-
     case (cache,_,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       equation
         Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -3145,6 +3169,12 @@ algorithm
        then ".bat";
     case ("Cpp","WIN64")
        then ".bat";
+    case ("omsicpp","WIN64")
+     then ".bat";
+    case ("omsicpp","WIN32")
+       then ".bat";
+    case ("omsicpp","Unix")
+       then ".sh";
     else Autoconf.exeExt;
   end match;
  end getSimulationExtension;
@@ -3789,7 +3819,7 @@ algorithm
     return;
   end if;
 
-  if not Config.simCodeTarget() == "omsic" then
+  if not ((Config.simCodeTarget() == "omsic") or (Config.simCodeTarget() == "omsicpp")) then
     CevalScript.compileModel(filenameprefix+"_FMU" , libs);
     ExecStat.execStat("buildModelFMU: Generate the FMI files");
   else

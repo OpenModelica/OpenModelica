@@ -77,7 +77,12 @@ protected
 algorithm
   try
   _ := match Config.simCodeTarget()
-    case "omsic" algorithm
+    case "omsic"
+	algorithm
+      File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
+      then();
+	case "omsicpp"
+	algorithm
       File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
       then();
     else algorithm

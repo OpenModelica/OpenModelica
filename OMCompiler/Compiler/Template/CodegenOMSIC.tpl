@@ -216,6 +216,15 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     <%\t%>cd <%fileNamePrefix%>.fmutmp; \
     <%\t%>zip<%makefileParams.exeext%> -r ../../<%fmuTargetName%>.fmu *;\
     <%\t%>cd ..;\
+    <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
+     match  Config.simCodeTarget()
+     case "omsicpp" then
+     <<
+       <%\t%>chmod +x ../<%fileNamePrefix%>.sh
+     >>
+     end match
+    %>
+    
 
     copyFiles: makeStructure
     <%\t%># Basic OMSI and OMSIC files
