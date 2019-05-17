@@ -4741,6 +4741,9 @@ bool LibraryWidget::saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryT
     if (result) {
       saveChildLibraryTreeItemsOneFile(pLibraryTreeItem);
     }
+    if (pLibraryTreeItem->parent() && pLibraryTreeItem->parent()->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+      saveModelicaLibraryTreeItemFolder(pLibraryTreeItem->parent());
+    }
   } else {
     result = saveModelicaLibraryTreeItemFolder(pLibraryTreeItem);
     if (result) {
@@ -4780,7 +4783,9 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
-  } else if (pLibraryTreeItem->isFilePathValid()) {
+  } else if (pLibraryTreeItem->isFilePathValid()
+             && pLibraryTreeItem->parent()
+             && pLibraryTreeItem->parent()->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
     fileName = pLibraryTreeItem->getFileName();
   } else {
     QFileInfo fileInfo(pLibraryTreeItem->parent()->getFileName());
@@ -4927,11 +4932,19 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       }
       if (!classExists) {
         if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
-          QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                        QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+            QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                          QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          } else {
+            Utilities::removeDirectoryRecursivly(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          }
         } else {
-          QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                        QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+            QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                          QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          } else {
+            QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          }
         }
       }
     }
