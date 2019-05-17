@@ -69,6 +69,7 @@ import CodegenEmbeddedC;
 import CodegenFMU2;
 import CodegenFMU;
 import CodegenFMUCpp;
+import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
 import CodegenAdevs;
 import CodegenSparseFMI;
@@ -510,6 +511,14 @@ algorithm
         end for;
       then ();
 
+    case "omsicpp"
+      algorithm
+        callTargetTemplatesOMSICpp(simCode);
+        for str in {"CalcHelperMain.o\n",".so\n"} loop
+          generatedObjects := AvlSetString.add(generatedObjects, "OMCpp" + simCode.fileNamePrefix + str);
+        end for;
+      then ();
+
     case "Adevs" equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
     then ();
@@ -669,6 +678,24 @@ algorithm
     Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
   end if;
 end callTargetTemplatesCPP;
+
+protected function callTargetTemplatesOMSICpp
+  input SimCode.SimCode iSimCode;
+  protected
+  String fmuVersion;
+  String fmuType;
+  String guid;
+  String fileprefix;
+algorithm
+    fmuVersion:="2.0";
+    fmuType:="me";
+    fileprefix := iSimCode.fileNamePrefix;
+    guid := System.getUUIDStr();
+    SerializeInitXML.simulationInitFileReturnBool(simCode=iSimCode, guid=guid);
+   runTpl(func = function CodegenOMSI_common.generateFMUModelDescriptionFile(a_simCode=iSimCode, a_guid=guid, a_FMUVersion=fmuVersion, a_FMUType=fmuType, a_sourceFiles={},a_fileName="modelDescription.xml"));
+   runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=iSimCode, a_FileNamePrefix=fileprefix));
+  Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
+end callTargetTemplatesOMSICpp;
 
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."

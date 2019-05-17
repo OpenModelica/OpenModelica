@@ -67,6 +67,9 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_cs.h
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_me.h
   ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_wrapper.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2Functions.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2FunctionTypes.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2TypesPlatform.h
   DESTINATION include/omc/omsi/fmi2/)
 
 # uninstall target
@@ -79,7 +82,3 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
-
-
-
-

@@ -6,9 +6,9 @@ PLATFORMS=static dynamic
 
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE)
 
-CMAKE_CALL=cmake -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) ..
+CMAKE_CALL= $(CMAKE) -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) ..
 
-.PHONY: OMSIBaseClean OMSICClean
+.PHONY: OMSIBaseClean OMSICClean OMSICPPclean
 
 
 #############################
@@ -16,8 +16,6 @@ CMAKE_CALL=cmake -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLA
 #############################
 
 OMSI: OMSIBaseInstall OMSICInstall
-
-
 
 OMSI-clean: OMSIBaseClean OMSICClean
 	cd $(OMBUILDDIR);                             \
@@ -29,7 +27,15 @@ OMSI-clean: OMSIBaseClean OMSICClean
 # Rules for OMSIBase library
 #############################
 
-OMSIBase: sundials fmil
+OMSIBaseInstall: OMSIBase
+	cd SimulationRuntime/OMSI; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);) \
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+
+OMSIBase: sundials $(LAPACK_TARGET) expat
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
@@ -73,14 +79,6 @@ OMSIBaseMSVC: getMSVCversion
 	cp -R --verbose Build_MSVC/tmp/* $(builddir_build)
 	cp -R --verbose Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
 
-OMSIBaseInstall: OMSIBase
-	cd SimulationRuntime/OMSI; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);) \
-
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
@@ -93,6 +91,11 @@ OMSIBaseClean:
 # Rules for OMSIC libraries
 #############################
 
+OMSICInstall: OMSIC
+	cd SimulationRuntime/OMSIC; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);)
+
 OMSIC: OMSIBaseInstall
 	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
@@ -101,14 +104,31 @@ OMSIC: OMSIBaseInstall
 		 $(CMAKE_CALL); \
 		 $(MAKE) ); )
 
-OMSICInstall: OMSIC
-	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);)
-
 OMSICClean:
 	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
 	  rm -R -f Build_$(PLATFORM); \
 	)
+
+#############################
+# Rules for OMSICpp libraries
+#############################
+
+OMSICPP:
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+
+OMSICPPinstall: copycppheader OMSICPP
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) OMC_LIB=$(LIB_OMC)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppDataExchange.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSimulationSettings.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
+
+OMSICPPclean:
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
