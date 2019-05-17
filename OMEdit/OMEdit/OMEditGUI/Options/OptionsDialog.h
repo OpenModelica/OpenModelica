@@ -228,6 +228,7 @@ public:
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
   QComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
+  QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   QSpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
@@ -262,6 +263,7 @@ private:
   QCheckBox *mpHideVariablesBrowserCheckBox;
   Label *mpActivateAccessAnnotationsLabel;
   QComboBox *mpActivateAccessAnnotationsComboBox;
+  QCheckBox *mpCreateBackupFileCheckbox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
