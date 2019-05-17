@@ -32,13 +32,10 @@ end initializationTests;
 // -------+--------------------------------------
 // 5      | 6
 
-OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
 simulate(initializationTests.bug_2263, startTime=0.0, stopTime=0.0, simflags="-iim=symbolic"); getErrorString();
 
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult

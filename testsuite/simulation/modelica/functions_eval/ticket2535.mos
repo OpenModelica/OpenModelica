@@ -23,14 +23,10 @@ package functionTests
 end functionTests;
 "); getErrorString();
 
-OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
-
 simulate(functionTests.ticket2535); getErrorString();
 val(y, 0.0); getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult
