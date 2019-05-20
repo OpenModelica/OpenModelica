@@ -52,7 +52,7 @@ import NFModifier.ModifierScope;
 import Operator = NFOperator;
 import Equation = NFEquation;
 import Statement = NFStatement;
-import Type = NFType;
+import NFType.Type;
 import Subscript = NFSubscript;
 import Connector = NFConnector;
 import Connection = NFConnection;
@@ -107,242 +107,167 @@ import NFInst;
 import DAEUtil;
 import ComponentReference;
 import NFCeval;
-
-public
-function evaluateAnnotationExpression
-  "Instantiates the annotation class, gets the DAE and populates the annotation result"
-  input Absyn.Program absynProgram;
-  input Absyn.Path classPath;
-  input String annName;
-  input Absyn.Info info;
-  input Absyn.Exp aexp;
-  output DAE.Exp daeExp = DAE.ICONST(0);
-protected
-  InstNode top, cls, inst_cls;
-  String name, clsName;
-  FlatModel flat_model;
-  FunctionTree funcs;
-  SCode.Program scode_builtin, program, graphicProgramSCode;
-  Absyn.Program placementProgram;
-  DAE.DAElist dae;
-  DAE.FunctionTree daeFuncs;
-algorithm
-  (_, scode_builtin) := FBuiltin.getInitialFunctions();
-  program := SCodeUtil.translateAbsyn2SCode(absynProgram);
-  program := listAppend(scode_builtin, program);
-  placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
-  graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-  program := listAppend(program, graphicProgramSCode);
-
-  clsName := annName + "_$tmp$_" + Absyn.pathString(classPath);
-
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-
-  // Create a root node from the given top-level classes.
-  top := NFInst.makeTopNode(program);
-  name := Absyn.pathString(classPath);
-
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
-  // Instantiate the class.
-  inst_cls := NFInst.instantiate(cls);
-  NFInst.insertGeneratedInners(inst_cls, top);
-  execStat("NFApi.instantiate("+ name +")");
-
-  // Instantiate expressions (i.e. anything that can contains crefs, like
-  // bindings, dimensions, etc). This is done as a separate step after
-  // instantiation to make sure that lookup is able to find the correct nodes.
-  NFInst.instExpressions(inst_cls);
-  execStat("NFApi.instExpressions("+ name +")");
-
-  // Mark structural parameters.
-  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFApi.updateImplicitVariability");
-
-  // Type the class.
-  Typing.typeClass(inst_cls, name);
-
-  // Flatten and simplify the model.
-  flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
-  flat_model := SimplifyModel.simplify(flat_model);
-  funcs := Flatten.collectFunctions(flat_model, name);
-
-  // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constant subscripts), and add them
-  // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
-
-  // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
-  else
-    // Remove empty arrays from variables
-    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
-  end if;
-
-  VerifyModel.verify(flat_model);
-
-  // Convert the flat model to a DAE.
-  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
-
-  // Do unit checking
-  UnitCheck.checkUnits(dae, daeFuncs);
-end evaluateAnnotationExpression;
-
+import Util;
 
 public
 function evaluateAnnotation
   "Instantiates the annotation class, gets the DAE and populates the annotation result"
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
-  input String annName;
-  input Absyn.Info info;
-  input SCode.Mod smod;
-  output DAE.DAElist dae;
+  input Absyn.Annotation inAnnotation;
+  output String outString = "";
 protected
-  InstNode top, cls, inst_cls;
-  String name, clsName, annCompName;
-  FlatModel flat_model;
-  FunctionTree funcs;
-  SCode.Program scode_builtin, program, graphicProgramSCode;
-  SCode.Element scls, sAnnComp;
-  Absyn.Program placementProgram;
-  DAE.FunctionTree daeFuncs;
-  Absyn.Path fullClassPath;
-  list<DAE.Element> daeEls;
-algorithm
-  (_, scode_builtin) := FBuiltin.getInitialFunctions();
-  program := SCodeUtil.translateAbsyn2SCode(absynProgram);
-  program := listAppend(scode_builtin, program);
-  placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
-  graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-  program := listAppend(program, graphicProgramSCode);
-
-  clsName := "$" + Absyn.pathString(classPath, delimiter = "_");
-  annCompName := "$$$" + annName;
-
-  sAnnComp :=
-    SCode.COMPONENT(annCompName, SCode.defaultPrefixes, SCode.defaultParamAttr, Absyn.pathToTypeSpec(Absyn.IDENT(annName)), smod, SCode.noComment, NONE(), info);
-
-  scls := SCode.CLASS(clsName,
-           SCode.defaultPrefixes,
-           SCode.NOT_ENCAPSULATED(),
-           SCode.NOT_PARTIAL(),
-           SCode.R_CLASS(),
-           SCode.PARTS(
-             {
-               SCode.EXTENDS(Absyn.makeFullyQualified(classPath), SCode.PUBLIC(), SCode.NOMOD(), NONE(), info),
-               sAnnComp
-             },
-             {}, {}, {}, {}, {}, {}, NONE()),
-           SCode.noComment, info);
-  program := scls :: program;
-
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-
-  // Create a root node from the given top-level classes.
-  top := NFInst.makeTopNode(program);
-  fullClassPath := Absyn.makeFullyQualified(Absyn.IDENT(clsName));
-  name := Absyn.pathString(fullClassPath);
-
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(fullClassPath, top, Absyn.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
-  // Instantiate the class.
-  inst_cls := NFInst.instantiate(cls);
-  NFInst.insertGeneratedInners(inst_cls, top);
-  execStat("NFApi.instantiate("+ name +")");
-
-  // Instantiate expressions (i.e. anything that can contains crefs, like
-  // bindings, dimensions, etc). This is done as a separate step after
-  // instantiation to make sure that lookup is able to find the correct nodes.
-  NFInst.instExpressions(inst_cls);
-  execStat("NFApi.instExpressions("+ name +")");
-
-  // Mark structural parameters.
-  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFApi.updateImplicitVariability");
-
-  // Type the class.
-  Typing.typeClass(inst_cls, name);
-
-  // Flatten and simplify the model.
-  flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
-  flat_model := SimplifyModel.simplify(flat_model);
-  funcs := Flatten.collectFunctions(flat_model, name);
-
-  // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constant subscripts), and add them
-  // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
-
-  // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
-  else
-    // Remove empty arrays from variables
-    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
-  end if;
-
-  VerifyModel.verify(flat_model);
-
-  // Convert the flat model to a DAE.
-  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
-
-  // Do unit checking
-  UnitCheck.checkUnits(dae, daeFuncs);
-
-  daeEls := DAEUtil.getElements(dae);
-
-  {DAE.COMP(dAElist = daeEls)} := daeEls;
-
-  dae := DAE.DAE(DAEUtil.getMatchingElements(daeEls, filterAnnComp));
-
-end evaluateAnnotation;
-
-
-protected
-function filterAnnComp
-    input DAE.Element e;
-    output Boolean b;
-protected
-    String str;
+  Boolean b = false;
 algorithm
   try
-    str := ComponentReference.crefFirstIdent(DAEUtil.varCref(e));
-    b := System.stringFind(str, "$$$") <> -1;
+    b := Flags.set(Flags.SCODE_INST, true);
+    outString := evaluateAnnotation_dispatch(absynProgram, classPath, inAnnotation);
+    Flags.set(Flags.SCODE_INST, b);
   else
-    b := false;
+    Flags.set(Flags.SCODE_INST, b);
+    fail();
   end try;
-end filterAnnComp;
+end evaluateAnnotation;
 
+protected
+function evaluateAnnotation_dispatch
+  "Instantiates the annotation class, gets the DAE and populates the annotation result"
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  input Absyn.Annotation inAnnotation;
+  output String outString = "";
+protected
+  InstNode top, cls, inst_cls, anncls, inst_anncls;
+  String name, clsName, annName, str;
+  FlatModel flat_model;
+  FunctionTree funcs;
+  SCode.Program program;
+  DAE.FunctionTree daeFuncs;
+  Absyn.Path fullClassPath;
+  list<Absyn.ElementArg> el = {};
+  list<String> stringLst = {};
+  Absyn.Exp absynExp;
+  Expression exp;
+  DAE.Exp dexp;
+  list<Absyn.ComponentItem> items;
+  Option<Absyn.ConstrainClass> cc;
+  SourceInfo info;
+  list<Absyn.ElementArg> mod, stripped_mod, graphics_mod;
+  Absyn.EqMod eqmod;
+  SCode.Mod smod;
+  DAE.DAElist dae;
+  Type ty;
+  Variability var;
+algorithm
+  stringLst := {};
+
+  Absyn.ANNOTATION(el) := inAnnotation;
+
+  for e in listReverse(el) loop
+    str := matchcontinue e
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(annName),
+          modification = SOME(Absyn.CLASSMOD({}, eqmod as Absyn.EQMOD(absynExp))),
+          info = info)
+        algorithm
+          // no need for the class if there are no crefs
+          if Absyn.onlyLiteralsInEqMod(eqmod) then
+            (program, top) := mkTop(absynProgram);
+            inst_cls := top;
+          else
+            // run the front-end front
+            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+          end if;
+
+          exp := NFInst.instExp(absynExp, inst_cls, info);
+          (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+          exp := NFCeval.evalExp(exp);
+          exp := SimplifyExp.simplify(exp);
+          str := Expression.toString(exp);
+        then
+          stringAppendList({annName, "=", str});
+
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(annName),
+          modification = SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())),
+          info = info)
+        algorithm
+          // no need for the class if there are no crefs
+          if Absyn.onlyLiteralsInAnnotationMod(mod) then
+            (program, top) := mkTop(absynProgram);
+            inst_cls := top;
+          else
+            // run the front-end front
+            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+          end if;
+
+          (stripped_mod, graphics_mod) := Absyn.stripGraphicsAndInteractionModification(mod);
+
+          smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+          inst_anncls := NFInst.expand(anncls);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
+
+          execStat("NFApi.instantiate("+ annName + SCodeDump.printModStr(smod) + ")");
+
+          // Instantiate expressions (i.e. anything that can contains crefs, like
+          // bindings, dimensions, etc). This is done as a separate step after
+          // instantiation to make sure that lookup is able to find the correct nodes.
+          NFInst.instExpressions(inst_anncls);
+          execStat("NFApi.instExpressions("+ annName + SCodeDump.printModStr(smod) + ")");
+
+          // Mark structural parameters.
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          execStat("NFApi.updateImplicitVariability");
+
+          dae := frontEndBack(inst_anncls, annName);
+          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+
+          if stringEq(annName, "Icon") or stringEq(annName, "Diagram") then
+            {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
+            exp := NFInst.instExp(absynExp, inst_cls, info);
+            (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+            exp := NFCeval.evalExp(exp);
+            exp := SimplifyExp.simplify(exp);
+            str := str + ", " + Expression.toString(exp);
+          end if;
+        then
+          str;
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
+        algorithm
+          (program, top) := mkTop(absynProgram);
+          inst_cls := top;
+
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+
+          inst_anncls := NFInst.instantiate(anncls);
+
+          execStat("NFApi.instantiate("+ annName +")");
+
+          // Instantiate expressions (i.e. anything that can contains crefs, like
+          // bindings, dimensions, etc). This is done as a separate step after
+          // instantiation to make sure that lookup is able to find the correct nodes.
+          NFInst.instExpressions(inst_anncls);
+          execStat("NFApi.instExpressions("+ annName +")");
+
+          // Mark structural parameters.
+          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
+          execStat("NFApi.updateImplicitVariability");
+
+          dae := frontEndBack(inst_anncls, annName);
+          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        then
+          str;
+
+    end matchcontinue;
+
+    stringLst := str :: stringLst;
+  end for;
+
+  outString := stringDelimitList(stringLst, ", ");
+
+end evaluateAnnotation_dispatch;
 
 public
 function evaluateAnnotations
@@ -376,9 +301,7 @@ protected
   String name, clsName, annName, str;
   FlatModel flat_model;
   FunctionTree funcs;
-  SCode.Program scode_builtin, program, graphicProgramSCode;
-  SCode.Element scls, sAnnCls;
-  Absyn.Program placementProgram;
+  SCode.Program program;
   DAE.FunctionTree daeFuncs;
   Absyn.Path fullClassPath;
   list<list<Absyn.ElementArg>> elArgs = {}, el = {};
@@ -390,52 +313,13 @@ protected
   Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
   list<Absyn.ElementArg> mod;
+  Absyn.EqMod eqmod;
   SCode.Mod smod;
   DAE.DAElist dae;
+  Type ty;
+  Variability var;
 algorithm
-  (_, scode_builtin) := FBuiltin.getInitialFunctions();
-  program := SCodeUtil.translateAbsyn2SCode(absynProgram);
-  program := listAppend(scode_builtin, program);
-  placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
-  graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-  program := listAppend(program, graphicProgramSCode);
-
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-
-  // Create a root node from the given top-level classes.
-  top := NFInst.makeTopNode(program);
-  name := Absyn.pathString(classPath);
-
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
-  // Instantiate the class.
-  inst_cls := NFInst.instantiate(cls);
-  NFInst.insertGeneratedInners(inst_cls, top);
-  execStat("NFApi.instantiate("+ name +")");
-
-  // Instantiate expressions (i.e. anything that can contains crefs, like
-  // bindings, dimensions, etc). This is done as a separate step after
-  // instantiation to make sure that lookup is able to find the correct nodes.
-  NFInst.instExpressions(inst_cls);
-  execStat("NFApi.instExpressions("+ name +")");
-
-  // Mark structural parameters.
-  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFApi.updateImplicitVariability");
-
+  // handle the annotations
   for i in inElements loop
    elArgs := matchcontinue i
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
@@ -459,10 +343,20 @@ algorithm
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(absynExp))),
+          modification = SOME(Absyn.CLASSMOD({}, eqmod as Absyn.EQMOD(absynExp))),
           info = info)
         algorithm
+          // no need for the class if there are no crefs
+          if Absyn.onlyLiteralsInEqMod(eqmod) then
+            (program, top) := mkTop(absynProgram);
+            inst_cls := top;
+          else
+            // run the front-end front
+            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+          end if;
+
           exp := NFInst.instExp(absynExp, inst_cls, info);
+          (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
           exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
@@ -474,8 +368,17 @@ algorithm
           modification = SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())),
           info = info)
         algorithm
+          // no need for the class if there are no crefs
+          if Absyn.onlyLiteralsInAnnotationMod(mod) then
+            (program, top) := mkTop(absynProgram);
+            inst_cls := top;
+          else
+            // run the front-end front
+            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+          end if;
+
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), cls, Absyn.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
 
@@ -503,7 +406,10 @@ algorithm
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), cls, Absyn.dummyInfo, checkAccessViolations = false);
+          (program, top) := mkTop(absynProgram);
+          inst_cls := top;
+
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
 
           inst_anncls := NFInst.instantiate(anncls);
 
@@ -534,40 +440,133 @@ algorithm
 
   end for;
 
-  /*
-  // Type the class.
-  Typing.typeClass(inst_cls, name);
-
-  // Flatten and simplify the model.
-  flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
-  flat_model := SimplifyModel.simplify(flat_model);
-  funcs := Flatten.collectFunctions(flat_model, name);
-
-  // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constant subscripts), and add them
-  // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
-
-  // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
-  else
-    // Remove empty arrays from variables
-    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
-  end if;
-
-  VerifyModel.verify(flat_model);
-
-  // Convert the flat model to a DAE.
-  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
-
-  // Do unit checking
-  UnitCheck.checkUnits(dae, daeFuncs);
-  */
-
 end evaluateAnnotations_dispatch;
 
+protected
+function frontEndFront
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output String name;
+  output InstNode top;
+  output InstNode inst_cls;
+protected
+  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode, InstNode>>> cache;
+algorithm
+  cache := getGlobalRoot(Global.instNFInstCacheIndex);
+  if not listEmpty(cache) then
+    for i in cache loop
+      if Absyn.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+        if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
+          (program, name, top, inst_cls) := Util.tuple22(i);
+          return;
+        end if;
+        // program changed, wipe the cache!
+        cache := {};
+        break;
+      end if;
+    end for;
+  end if;
+  (program, name, top, inst_cls) := frontEndFront_dispatch(absynProgram, classPath);
+  if listLength(cache) > 100 then
+    // trim it down, keep 10
+	  cache := List.firstN(cache, 10);
+  end if;
+
+  cache := ((absynProgram,classPath),(program, name, top, inst_cls))::cache;
+  setGlobalRoot(Global.instNFInstCacheIndex, cache);
+end frontEndFront;
+
+protected
+function mkTop
+  input Absyn.Program absynProgram;
+  output SCode.Program program;
+  output InstNode top;
+protected
+  SCode.Program scode_builtin, graphicProgramSCode;
+  Absyn.Program placementProgram;
+  InstNode cls;
+  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
+  Boolean update = true;
+algorithm
+  cache := getGlobalRoot(Global.instNFNodeCacheIndex);
+  if not listEmpty(cache) then
+    // if absyn is the same, all fine, reuse
+    if referenceEq(absynProgram, Util.tuple21(listHead(cache))) then
+      (program, top) := Util.tuple22(listHead(cache));
+      update := false;
+    else
+      update := true;
+    end if;
+  end if;
+
+  if update then
+    (_, scode_builtin) := FBuiltin.getInitialFunctions();
+    program := SCodeUtil.translateAbsyn2SCode(absynProgram);
+    program := listAppend(scode_builtin, program);
+    placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
+    program := listAppend(program, graphicProgramSCode);
+
+    // gather here all the flags to disable expansion
+    // and scalarization if -d=-nfScalarize is on
+    if not Flags.isSet(Flags.NF_SCALARIZE) then
+      // make sure we don't expand anything
+      Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
+      Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+    end if;
+
+    System.setUsesCardinality(false);
+
+    // Create a root node from the given top-level classes.
+    top := NFInst.makeTopNode(program);
+
+    cache := {(absynProgram, (program, top))};
+    setGlobalRoot(Global.instNFNodeCacheIndex, cache);
+  end if;
+end mkTop;
+
+protected
+function frontEndFront_dispatch
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output String name;
+  output InstNode top;
+  output InstNode inst_cls;
+protected
+  SCode.Program scode_builtin, graphicProgramSCode;
+  Absyn.Program placementProgram;
+  InstNode cls;
+  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
+  Boolean update = true;
+algorithm
+  (program, top) := mkTop(absynProgram);
+
+  name := Absyn.pathString(classPath);
+
+  // Look up the class to instantiate and mark it as the root class.
+  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
+  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+
+  // Initialize the storage for automatically generated inner elements.
+  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
+
+  // Instantiate the class.
+  inst_cls := NFInst.instantiate(cls);
+  NFInst.insertGeneratedInners(inst_cls, top);
+  execStat("NFApi.instantiate("+ name +")");
+
+  // Instantiate expressions (i.e. anything that can contains crefs, like
+  // bindings, dimensions, etc). This is done as a separate step after
+  // instantiation to make sure that lookup is able to find the correct nodes.
+  NFInst.instExpressions(inst_cls);
+  execStat("NFApi.instExpressions("+ name +")");
+
+  // Mark structural parameters.
+  NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
+  execStat("NFApi.updateImplicitVariability");
+end frontEndFront_dispatch;
 
 protected
 function frontEndBack

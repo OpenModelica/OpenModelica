@@ -62,6 +62,7 @@ import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import ClassInf;
 import ComponentRef = NFComponentRef;
+import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
 import Inst = NFInst;
@@ -830,7 +831,9 @@ algorithm
           checkBindingEach(c.binding);
           binding := typeBinding(binding, ExpOrigin.setFlag(origin, ExpOrigin.BINDING));
 
-          binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
+            binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          end if;
           comp_var := Component.variability(c);
           comp_eff_var := Prefixes.effectiveVariability(comp_var);
           bind_var := Binding.variability(binding);
@@ -857,6 +860,7 @@ algorithm
           if Binding.isBound(c.condition) then
             binding := Binding.INVALID_BINDING(binding, ErrorExt.getMessages());
           else
+            ErrorExt.delCheckpoint(getInstanceName());
             fail();
           end if;
         end try;
@@ -1663,10 +1667,12 @@ algorithm
     (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e);
     expl2 := exp::expl2;
     n := n-1;
-    if TypeCheck.isIncompatibleMatch(mk) then
-      Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
-      fail();
-    end if;
+    if not Config.getGraphicsExpMode() then // forget errors when handling annotations
+	    if TypeCheck.isIncompatibleMatch(mk) then
+	      Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+	      fail();
+	    end if;
+	  end if;
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));

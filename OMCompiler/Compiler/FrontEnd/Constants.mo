@@ -191,12 +191,12 @@ end CoordinateSystem;
 // i.e. a coordinate system with width 20 units and height 20 units.
 
 record Icon \"Representation of the icon layer\"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  parameter CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
   //GraphicItem[:] graphics;
 end Icon;
 
 record Diagram \"Representation of the diagram layer\"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  parameter CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
   //GraphicItem[:] graphics;
 end Diagram;
 
@@ -249,7 +249,7 @@ record Line
   Real rotation/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   // end GraphicItem
 
-  Real points[2,:]/*(each final unit=\"mm\")*/;
+  Real points[:, 2]/*(each final unit=\"mm\")*/;
   Integer color[3] = {0, 0, 0};
   LinePattern pattern = LinePattern.Solid;
   Real thickness/*(final unit=\"mm\")*/ = 0.25;
@@ -273,7 +273,7 @@ record Polygon
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
 
-  Real points[2,:]/*(each final unit=\"mm\")*/;
+  Real points[:,2]/*(each final unit=\"mm\")*/;
   Smooth smooth = Smooth.None \"Spline outline\";
 end Polygon;
 
@@ -336,8 +336,8 @@ record Text
   String textString;
   Real fontSize = 0 \"unit pt\";
   Integer textColor[3] = {-1, -1, -1} \"defaults to fillColor\";
-  String fontName;
-  TextStyle textStyle[:];
+  String fontName = \"\";
+  TextStyle textStyle[:] = fill(TextStyle.Bold, 0);
   TextAlignment horizontalAlignment = TextAlignment.Center;
 end Text;
 

@@ -46,6 +46,7 @@ import NFBinding.Binding;
 import NFPrefixes.Variability;
 
 protected
+import Config;
 import Debug;
 import DAEExpression = Expression;
 import Error;
@@ -3026,16 +3027,18 @@ algorithm
                              Type.arrayElementType(componentType),
                              Expression.EMPTY(bindingType), true);
 
-    if isValidAssignmentMatch(mk) then
-      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
-        {name, Binding.toString(binding),
-         Dimension.toStringList(Type.arrayDims(componentType)),
-         Dimension.toStringList(Type.arrayDims(bindingType))},
-        {binding_info, comp_info});
-    else
-      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-        {name, Binding.toString(binding), Type.toString(componentType),
-         Type.toString(bindingType)}, {binding_info, comp_info});
+    if not Config.getGraphicsExpMode() then // forget errors when handling annotations
+	    if isValidAssignmentMatch(mk) then
+	      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
+	        {name, Binding.toString(binding),
+	         Dimension.toStringList(Type.arrayDims(componentType)),
+	         Dimension.toStringList(Type.arrayDims(bindingType))},
+	        {binding_info, comp_info});
+	    else
+	      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+	        {name, Binding.toString(binding), Type.toString(componentType),
+	         Type.toString(bindingType)}, {binding_info, comp_info});
+	    end if;
     end if;
   end if;
 end printBindingTypeError;

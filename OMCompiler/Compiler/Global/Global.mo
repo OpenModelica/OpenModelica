@@ -50,6 +50,8 @@ constant Integer symbolTable = 3;
 
 // Global roots start at index=9
 constant Integer instHashIndex = 9;
+constant Integer instNFInstCacheIndex = 10;
+constant Integer instNFNodeCacheIndex = 11;
 constant Integer builtinIndex = 12;
 constant Integer builtinEnvIndex = 13;
 constant Integer profilerTime1Index = 14;
@@ -93,6 +95,8 @@ algorithm
   setGlobalRoot(inlineHashTable, NONE());
   setGlobalRoot(currentInstVar, NONE());
   setGlobalRoot(interactiveCache, NONE());
+  setGlobalRoot(instNFInstCacheIndex, {});
+  setGlobalRoot(instNFNodeCacheIndex, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");
