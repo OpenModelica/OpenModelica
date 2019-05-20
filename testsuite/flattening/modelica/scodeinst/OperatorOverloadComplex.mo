@@ -257,12 +257,6 @@ end OperatorOverloadComplex;
 //   c3 := Complex.'constructor'.fromReal((c1.re * c2.re + c1.im * c2.im) / (c2.re * c2.re + c2.im * c2.im), ((-c1.re * c2.im) + c1.im * c2.re) / (c2.re * c2.re + c2.im * c2.im));
 // end Complex.'/';
 //
-// function Complex.'0' "Inline before index reduction"
-//   output Complex c;
-// algorithm
-//   c := Complex.'constructor'.fromReal(0.0, 0.0);
-// end Complex.'0';
-//
 // function Complex.'==' "Test whether two complex numbers are identical"
 //   input Complex c1 "Complex number 1";
 //   input Complex c2 "Complex number 2";
@@ -371,7 +365,7 @@ end OperatorOverloadComplex;
 //   b2 = Complex.'=='(c4, Complex.'constructor'.fromReal(0.0, 0.0));
 //   c6 = Complex.'*'.multiply(c5, c4);
 //   c7 = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'*'.multiply(Complex.'/'(c6, c5), Complex.'^'(c4, c3)), Complex.'constructor'.fromReal(1.0, 0.0)), c2), c1);
-//   c8 = Complex.'0'();
+//   c8 = Complex(0.0, 0.0);
 //   ca1 = Complex.'-'.negateArr(ca2);
 //   c1 = Complex.'*'.scalarProduct(ca2, ca3);
 //   c1 = Complex.'-'.subtract(Complex.'constructor'.fromReal(1.0, 0.0), c2);

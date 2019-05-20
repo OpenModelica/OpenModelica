@@ -1600,6 +1600,12 @@ algorithm
   end match;
 end swap;
 
+function replace<T>
+  input T replaced;
+  input T arg;
+  output T outArg = arg;
+end replace;
+
 public function realRangeSize
   "Calculates the size of a Real range given the start, step and stop values."
   input Real inStart;
@@ -1917,6 +1923,24 @@ function profilertock2
 algorithm
    t := System.realtimeTock(ClockIndexes.RT_PROFILER2);
 end profilertock2;
+
+function applyTuple31<T1, T2, T3>
+  input tuple<T1, T2, T3> inTuple;
+  input FuncT func;
+  output tuple<T1, T2, T3> outTuple;
+
+  partial function FuncT
+    input output T1 e;
+  end FuncT;
+protected
+  T1 t1, t1_new;
+  T2 t2;
+  T3 t3;
+algorithm
+  (t1, t2, t3) := inTuple;
+  t1_new := func(t1);
+  outTuple := if referenceEq(t1, t1_new) then inTuple else (t1_new, t2, t3);
+end applyTuple31;
 
 annotation(__OpenModelica_Interface="util");
 end Util;

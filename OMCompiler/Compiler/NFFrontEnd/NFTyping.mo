@@ -89,6 +89,7 @@ import StringUtil;
 import NFOCConnectionGraph;
 import System;
 import ErrorExt;
+import OperatorOverloading = NFOperatorOverloading;
 
 public
 uniontype TypingError
@@ -272,6 +273,7 @@ algorithm
     case CachedData.FUNCTION(funcs = fnl, typed = false)
       algorithm
         fnl := list(Function.typeFunction(fn) for fn in fnl);
+        fnl := list(OperatorOverloading.patchOperatorRecordConstructorBinding(fn) for fn in fnl);
         InstNode.setFuncCache(node, CachedData.FUNCTION(fnl, true, cache.specialBuiltin));
       then
         ();

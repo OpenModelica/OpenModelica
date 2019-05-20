@@ -166,6 +166,16 @@ public
     end match;
   end isOperatorRecord;
 
+  function isOperator
+    input Restriction res;
+    output Boolean isOperator;
+  algorithm
+    isOperator := match res
+      case OPERATOR() then true;
+      else false;
+    end match;
+  end isOperator;
+
   function isType
     input Restriction res;
     output Boolean isType;

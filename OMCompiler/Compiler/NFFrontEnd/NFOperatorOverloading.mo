@@ -40,6 +40,10 @@ protected
   import ComponentRef = NFComponentRef;
   import NFClassTree.ClassTree;
   import NFClass.Class;
+  import NFComponent.Component;
+  import NFBinding.Binding;
+  import Expression = NFExpression;
+  import NFCall.Call;
 
 public
   function instConstructor
@@ -158,6 +162,41 @@ public
     end match;
   end lookupOperatorFunctionsInType;
 
+  function patchOperatorRecordConstructorBinding
+    "Patches operator record constructors to avoid recursive binding.
+
+     They often have outputs declared as:
+       output RecordType result = RecordType(args)
+
+     The binding in such cases causes a recursive definition of the constructor,
+     so to avoid that we rewrite any calls to the constructor in the binding as
+     record expressions."
+    input output Function fn;
+  protected
+    InstNode output_node;
+    Component output_comp;
+    Binding output_binding;
+  algorithm
+    // Due to how this function is used it might also be called on destructors,
+    // which we just ignore.
+    if listLength(fn.outputs) <> 1 then
+      return;
+    end if;
+
+    output_node := listHead(fn.outputs);
+    output_comp := InstNode.component(output_node);
+    output_binding := Component.getBinding(output_comp);
+
+    if not Binding.isBound(output_binding) then
+      return;
+    end if;
+
+    output_binding := Binding.mapExp(output_binding,
+      function patchOperatorRecordConstructorBinding_traverser(constructorFn = fn));
+    output_comp := Component.setBinding(output_binding, output_comp);
+    output_node := InstNode.updateComponent(output_comp, output_node);
+  end patchOperatorRecordConstructorBinding;
+
 protected
   function checkOperatorConstructorOutput
     input Function fn;
@@ -182,6 +221,24 @@ protected
       fail();
     end if;
   end checkOperatorConstructorOutput;
+
+  function patchOperatorRecordConstructorBinding_traverser
+    input Expression exp;
+    input Function constructorFn;
+    output Expression outExp;
+  protected
+    Function fn;
+    list<Expression> args;
+    Type ty;
+  algorithm
+    outExp := match exp
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn, ty = ty, arguments = args))
+        guard referenceEq(constructorFn.node, fn.node)
+        then Expression.RECORD(Function.name(constructorFn), ty, args);
+
+      else exp;
+    end match;
+  end patchOperatorRecordConstructorBinding_traverser;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFOperatorOverloading;

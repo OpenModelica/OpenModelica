@@ -1751,6 +1751,7 @@ public
       local
         Type ty;
         list<Values.Value> vals;
+        list<String> fields;
 
       case INTEGER() then Values.INTEGER(exp.value);
       case REAL() then Values.REAL(exp.value);
@@ -1764,6 +1765,9 @@ public
           vals := list(toDAEValue(e) for e in exp.elements);
         then
           ValuesUtil.makeArray(vals);
+
+      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = fields)))
+        then Values.RECORD(exp.path, list(toDAEValue(e) for e in exp.elements), fields, -1);
 
       else
         algorithm
@@ -2013,6 +2017,8 @@ public
         Type t;
         Variability v;
         list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -2077,8 +2083,10 @@ public
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
+          default_exp := mapOpt(call.defaultExp, func);
+          fold_exp := Util.applyTuple31(call.foldExp, function mapOpt(func = func));
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters);
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
 
     end match;
   end mapCall;
@@ -2312,6 +2320,23 @@ public
     end match;
   end mapShallow;
 
+  function mapShallowOpt
+    input Option<Expression> exp;
+    input MapFunc func;
+    output Option<Expression> outExp;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  protected
+    Expression e;
+  algorithm
+    if isSome(exp) then
+      SOME(e) := exp;
+      outExp := SOME(func(e));
+    end if;
+  end mapShallowOpt;
+
   function mapCrefShallow
     input ComponentRef cref;
     input MapFunc func;
@@ -2356,6 +2381,9 @@ public
         Expression e;
         Type t;
         Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -2416,8 +2444,12 @@ public
       case Call.TYPED_REDUCTION()
         algorithm
           e := func(call.exp);
+          iters := mapCallShallowIterators(call.iters, func);
+          default_exp := mapShallowOpt(call.defaultExp, func);
+          fold_exp := Util.applyTuple31(call.foldExp, function mapShallowOpt(func = func));
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, call.iters);
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+
     end match;
   end mapCallShallow;
 
@@ -2479,6 +2511,26 @@ public
     end for;
   end foldList;
 
+  function foldOpt<ArgT>
+    input Option<Expression> exp;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    result := match exp
+      local
+        Expression e;
+
+      case SOME(e) then func(e, arg);
+      else arg;
+    end match;
+  end foldOpt;
+
   function fold<ArgT>
     input Expression exp;
     input FoldFunc func;
@@ -2533,16 +2585,10 @@ public
         then
           result;
 
-      case RANGE(step = SOME(e))
-        algorithm
-          result := fold(exp.start, func, arg);
-          result := fold(e, func, result);
-        then
-          fold(exp.stop, func, result);
-
       case RANGE()
         algorithm
           result := fold(exp.start, func, arg);
+          result := foldOpt(exp.step, func, result);
         then
           fold(exp.stop, func, result);
 
@@ -2689,6 +2735,9 @@ public
           for i in call.iters loop
             foldArg := fold(Util.tuple22(i), func, foldArg);
           end for;
+
+          foldArg := foldOpt(call.defaultExp, func, foldArg);
+          foldArg := foldOpt(Util.tuple31(call.foldExp), func, foldArg);
         then
           ();
     end match;
@@ -2944,6 +2993,9 @@ public
           for i in call.iters loop
             apply(Util.tuple22(i), func);
           end for;
+
+          Util.applyOption(call.defaultExp, func);
+          Util.applyOption(Util.tuple31(call.foldExp), func);
         then
           ();
     end match;
@@ -3239,6 +3291,10 @@ public
         Expression e;
         Type t;
         Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> oe;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -3299,8 +3355,18 @@ public
       case Call.TYPED_REDUCTION()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
+          (iters, foldArg) := mapFoldCallIterators(call.iters, func, foldArg);
+          (default_exp, foldArg) := mapFoldOpt(call.defaultExp, func, foldArg);
+          oe := Util.tuple31(call.foldExp);
+
+          if isSome(oe) then
+            (oe, foldArg) := mapFoldOpt(oe, func, foldArg);
+            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
+          else
+            fold_exp := call.foldExp;
+          end if;
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, call.iters);
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
     end match;
   end mapFoldCall;
 
@@ -3620,6 +3686,9 @@ public
         Type t;
         Variability v;
         list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> oe;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -3684,8 +3753,17 @@ public
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
+          (default_exp, foldArg) := mapFoldOptShallow(call.defaultExp, func, foldArg);
+          oe := Util.tuple31(call.foldExp);
+
+          if isSome(oe) then
+            (oe, foldArg) := mapFoldOptShallow(oe, func, foldArg);
+            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
+          else
+            fold_exp := call.foldExp;
+          end if;
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters);
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
 
     end match;
   end mapFoldCallShallow;
@@ -4267,8 +4345,23 @@ public
                    List.fill(makeZero(Type.unliftArray(ty)),
                              Dimension.size(listHead(ty.dimensions))),
                    literal = true);
+      case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
     end match;
   end makeZero;
+
+  function makeOperatorRecordZero
+    input InstNode recordNode;
+    output Expression zeroExp;
+  protected
+    InstNode op_node;
+    Function.Function fn;
+  algorithm
+    op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
+    Function.Function.instFunctionNode(op_node);
+    {fn} := Function.Function.typeNodeCache(op_node);
+    zeroExp := Expression.CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
+    zeroExp := Ceval.evalExp(zeroExp);
+  end makeOperatorRecordZero;
 
   function makeOne
     input Type ty;

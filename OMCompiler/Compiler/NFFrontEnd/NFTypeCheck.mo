@@ -3076,7 +3076,8 @@ algorithm
         match Type.arrayElementType(ty)
           case Type.INTEGER() then "";
           case Type.REAL() then "";
-          else "Integer or Real";
+          case Type.COMPLEX() guard checkSumComplexType(ty, exp, info) then "";
+          else "Integer or Real, or operator record";
         end match;
 
     case Absyn.Path.IDENT("product")
@@ -3094,7 +3095,7 @@ algorithm
           case Type.REAL() then "";
           case Type.BOOLEAN() then "";
           case Type.ENUMERATION() then "";
-          else "scalar enumeration, Boolean, Integer or Real";
+          else "scalar enumeration, Boolean, Integer, or Real";
         end match;
 
     case Absyn.Path.IDENT("max")
@@ -3104,7 +3105,7 @@ algorithm
           case Type.REAL() then "";
           case Type.BOOLEAN() then "";
           case Type.ENUMERATION() then "";
-          else "scalar enumeration, Boolean, Integer or Real";
+          else "scalar enumeration, Boolean, Integer, or Real";
         end match;
 
     else "";
@@ -3115,6 +3116,27 @@ algorithm
       {Expression.toString(exp), Type.toString(ty), Absyn.pathString(name), err}, info);
   end if;
 end checkReductionType;
+
+function checkSumComplexType
+  input Type ty;
+  input Expression exp;
+  input SourceInfo info;
+  output Boolean valid = true;
+protected
+  InstNode cls_node, op_node;
+  Class cls;
+algorithm
+  Type.COMPLEX(cls = cls_node) := ty;
+  cls := InstNode.getClass(cls_node);
+
+  for op in {"'+'", "'0'"} loop
+    if not Class.hasOperator(op, cls) then
+      Error.addSourceMessage(Error.OPERATOR_RECORD_MISSING_OPERATOR,
+        {Type.toString(ty), Expression.toString(exp), "sum", op}, info);
+      valid := false;
+    end if;
+  end for;
+end checkSumComplexType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

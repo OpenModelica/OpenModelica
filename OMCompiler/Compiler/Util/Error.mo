@@ -842,6 +842,8 @@ public constant Message REDECLARE_ENUM_NON_SUBTYPE = MESSAGE(356, TRANSLATION(),
   Util.gettext("Redeclaration of enumeration ‘%s‘ is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration)."));
 public constant Message CONDITIONAL_COMPONENT_INVALID_CONTEXT = MESSAGE(357, TRANSLATION(), WARNING(),
   Util.gettext("Conditional component ‘%s‘ is used in a non-connect context."));
+public constant Message OPERATOR_RECORD_MISSING_OPERATOR = MESSAGE(358, TRANSLATION(), ERROR(),
+  Util.gettext("Type ‘%s‘ of expression ‘%s‘ in ‘%s‘ does not implement the required operator ‘%s‘"));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

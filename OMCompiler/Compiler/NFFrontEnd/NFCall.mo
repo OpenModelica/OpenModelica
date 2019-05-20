@@ -164,6 +164,8 @@ uniontype Call
     Variability var;
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
+    Option<Expression> defaultExp;
+    tuple<Option<Expression>, String, String> foldExp;
   end TYPED_REDUCTION;
 
   function instantiate
@@ -679,6 +681,7 @@ uniontype Call
     daeCall := match call
       local
         String fold_id, res_id;
+        Option<Expression> fold_exp;
 
       case TYPED_CALL()
         then DAE.CALL(
@@ -705,18 +708,17 @@ uniontype Call
 
       case TYPED_REDUCTION()
         algorithm
-          fold_id := Util.getTempVariableIndex();
-          res_id := Util.getTempVariableIndex();
+          (fold_exp, fold_id, res_id) := call.foldExp;
         then
           DAE.REDUCTION(
             DAE.REDUCTIONINFO(
               Function.name(call.fn),
               Absyn.COMBINE(),
               Type.toDAE(call.ty),
-              Expression.toDAEValueOpt(reductionDefaultValue(call)),
+              Expression.toDAEValueOpt(call.defaultExp),
               fold_id,
               res_id,
-              Expression.toDAEOpt(reductionFoldExpression(call.fn, call.ty, call.var, fold_id, res_id))),
+              Expression.toDAEOpt(fold_exp)),
             Expression.toDAE(call.exp),
             list(iteratorToDAE(iter) for iter in call.iters));
 
@@ -727,79 +729,6 @@ uniontype Call
           fail();
     end match;
   end toDAE;
-
-  function reductionDefaultValue
-    input Call call;
-    output Option<Expression> defaultValue;
-  protected
-    Function fn;
-    Type ty;
-  algorithm
-    TYPED_REDUCTION(fn = fn, ty = ty) := call;
-
-    if Type.isArray(ty) then
-      defaultValue := NONE();
-    else
-      defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
-        case "sum" then SOME(Expression.makeZero(ty));
-        case "product" then SOME(Expression.makeOne(ty));
-        case "min" then SOME(Expression.makeMaxValue(ty));
-        case "max" then SOME(Expression.makeMinValue(ty));
-        else
-          algorithm
-            Error.addSourceMessage(Error.INTERNAL_ERROR,
-              {getInstanceName() + " got unknown reduction name " + Absyn.pathFirstIdent(Function.name(fn))},
-              sourceInfo());
-          then
-            fail();
-      end match;
-    end if;
-  end reductionDefaultValue;
-
-  function reductionFoldExpression
-    input Function reductionFn;
-    input Type reductionType;
-    input Variability reductionVar;
-    input String foldId;
-    input String resultId;
-    output Option<Expression> foldExp;
-  protected
-    Type ty;
-  algorithm
-    foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
-      case "sum"
-        then SOME(Expression.BINARY(
-          reductionFoldIterator(resultId, reductionType),
-          Operator.makeAdd(reductionType),
-          reductionFoldIterator(foldId, reductionType)));
-
-      case "product"
-        then SOME(Expression.BINARY(
-          reductionFoldIterator(resultId, reductionType),
-          Operator.makeMul(reductionType),
-          reductionFoldIterator(foldId, reductionType)));
-
-      case "$array" then NONE();
-      case "array" then NONE();
-      case "list" then NONE();
-      case "listReverse" then NONE();
-
-      else
-        SOME(Expression.CALL(Call.makeTypedCall(reductionFn,
-          {reductionFoldIterator(foldId, reductionType),
-           reductionFoldIterator(resultId, reductionType)},
-          reductionVar, reductionType)));
-
-    end match;
-  end reductionFoldExpression;
-
-  function reductionFoldIterator
-    input String name;
-    input Type ty;
-    output Expression iterExp;
-  algorithm
-    iterExp := Expression.CREF(ty, ComponentRef.makeIterator(InstNode.NAME_NODE(name), ty));
-  end reductionFoldIterator;
 
   function isVectorizeable
     input Call call;
@@ -1082,11 +1011,14 @@ protected
           output Variability variability;
   protected
     Expression range, arg;
+    Option<Expression> default_exp, fold_exp;
     InstNode iter;
     Variability iter_var;
     list<tuple<InstNode, Expression>> iters = {};
     ExpOrigin.Type next_origin;
     Function fn;
+    String fold_id, res_id;
+    tuple<Option<Expression>, String, String> fold_tuple;
   algorithm
     (call, ty, variability) := match call
       case UNTYPED_REDUCTION()
@@ -1108,8 +1040,14 @@ protected
           (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
+
+          fold_id := Util.getTempVariableIndex();
+          res_id := Util.getTempVariableIndex();
+          default_exp := reductionDefaultValue(fn, ty);
+          fold_exp := reductionFoldExpression(fn, ty, variability, fold_id, res_id);
+          fold_tuple := (fold_exp, fold_id, res_id);
         then
-          (TYPED_REDUCTION(fn, ty, variability, arg, iters), ty, variability);
+          (TYPED_REDUCTION(fn, ty, variability, arg, iters, default_exp, fold_tuple), ty, variability);
 
       else
         algorithm
@@ -1118,6 +1056,94 @@ protected
           fail();
     end match;
   end typeReduction;
+
+  function reductionDefaultValue
+    input Function fn;
+    input Type ty;
+    output Option<Expression> defaultValue;
+  algorithm
+    if Type.isArray(ty) then
+      defaultValue := NONE();
+    else
+      defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
+        case "sum" then SOME(Expression.makeZero(ty));
+        case "product" then SOME(Expression.makeOne(ty));
+        case "min" then SOME(Expression.makeMaxValue(ty));
+        case "max" then SOME(Expression.makeMinValue(ty));
+        else
+          algorithm
+            Error.addSourceMessage(Error.INTERNAL_ERROR,
+              {getInstanceName() + " got unknown reduction name " + Absyn.pathFirstIdent(Function.name(fn))},
+              sourceInfo());
+          then
+            fail();
+      end match;
+    end if;
+  end reductionDefaultValue;
+
+  function reductionFoldExpression
+    input Function reductionFn;
+    input Type reductionType;
+    input Variability reductionVar;
+    input String foldId;
+    input String resultId;
+    output Option<Expression> foldExp;
+  protected
+    Type ty;
+    InstNode op_node;
+    Function fn;
+  algorithm
+    if Type.isComplex(reductionType) then
+      foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
+        case "sum"
+          algorithm
+            Type.COMPLEX(cls = op_node) := reductionType;
+            op_node := Class.lookupElement("'+'", InstNode.getClass(op_node));
+            Function.instFunctionNode(op_node);
+            {fn} := Function.typeNodeCache(op_node);
+          then
+            SOME(Expression.CALL(makeTypedCall(fn,
+              {reductionFoldIterator(resultId, reductionType),
+               reductionFoldIterator(foldId, reductionType)}, reductionVar)));
+
+        else NONE();
+      end match;
+    else
+      foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
+        case "sum"
+          then SOME(Expression.BINARY(
+            reductionFoldIterator(resultId, reductionType),
+            Operator.makeAdd(reductionType),
+            reductionFoldIterator(foldId, reductionType)));
+
+        case "product"
+          then SOME(Expression.BINARY(
+            reductionFoldIterator(resultId, reductionType),
+            Operator.makeMul(reductionType),
+            reductionFoldIterator(foldId, reductionType)));
+
+        case "$array" then NONE();
+        case "array" then NONE();
+        case "list" then NONE();
+        case "listReverse" then NONE();
+
+        else
+          SOME(Expression.CALL(Call.makeTypedCall(reductionFn,
+            {reductionFoldIterator(foldId, reductionType),
+             reductionFoldIterator(resultId, reductionType)},
+            reductionVar, reductionType)));
+
+      end match;
+    end if;
+  end reductionFoldExpression;
+
+  function reductionFoldIterator
+    input String name;
+    input Type ty;
+    output Expression iterExp;
+  algorithm
+    iterExp := Expression.CREF(ty, ComponentRef.makeIterator(InstNode.NAME_NODE(name), ty));
+  end reductionFoldIterator;
 
   function typeArgs
     input output Call call;

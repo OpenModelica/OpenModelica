@@ -670,6 +670,27 @@ uniontype Class
       else cmts;
     end match;
   end getDerivedComments;
+
+  function hasOperator
+    input String name;
+    input Class cls;
+    output Boolean hasOperator;
+  protected
+    InstNode op_node;
+    Class op_cls;
+  algorithm
+    if Restriction.isOperatorRecord(restriction(cls)) then
+      try
+        op_node := lookupElement(name, cls);
+        hasOperator := SCode.isOperator(InstNode.definition(op_node));
+      else
+        hasOperator := false;
+      end try;
+    else
+      hasOperator := false;
+    end if;
+  end hasOperator;
+
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

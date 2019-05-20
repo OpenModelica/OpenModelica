@@ -4,6 +4,7 @@ TESTFILES = \
 ATotal.mos \
 InOutRecord.mos \
 TestComplexSum1.mos \
+TestComplexSum2.mos \
 Ticket5134.mos
 
 # test that currently fail. Move up when fixed. 
