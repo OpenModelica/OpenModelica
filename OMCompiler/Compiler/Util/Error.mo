@@ -840,7 +840,7 @@ public constant Message REDECLARE_CLASS_NON_SUBTYPE = MESSAGE(355, TRANSLATION()
   Util.gettext("Redeclaration of %s ‘%s‘ is not a subtype of the redeclared element."));
 public constant Message REDECLARE_ENUM_NON_SUBTYPE = MESSAGE(356, TRANSLATION(), ERROR(),
   Util.gettext("Redeclaration of enumeration ‘%s‘ is not a subtype of the redeclared element (use enumeration(:) for a generic replaceable enumeration)."));
-public constant Message CONDITIONAL_COMPONENT_INVALID_CONTEXT = MESSAGE(357, TRANSLATION(), ERROR(),
+public constant Message CONDITIONAL_COMPONENT_INVALID_CONTEXT = MESSAGE(357, TRANSLATION(), WARNING(),
   Util.gettext("Conditional component ‘%s‘ is used in a non-connect context."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
@@ -1315,6 +1315,21 @@ algorithm
       then ();
   end match;
 end addSourceMessage;
+
+function addStrictMessage
+  input Message errorMsg;
+  input MessageTokens tokens;
+  input SourceInfo info;
+protected
+  Message msg = errorMsg;
+algorithm
+  if Flags.getConfigBool(Flags.STRICT) then
+    msg.severity := Severity.ERROR();
+    addSourceMessageAndFail(msg, tokens, info);
+  else
+    addSourceMessage(msg, tokens, info);
+  end if;
+end addStrictMessage;
 
 public function addSourceMessageAndFail
   "Same as addSourceMessage, but fails after adding the error."

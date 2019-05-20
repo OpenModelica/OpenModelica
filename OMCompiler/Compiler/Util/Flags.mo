@@ -1482,6 +1482,10 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(129, "initialStateSele
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Activates the state selection inside initialization to avoid singularities."));
 
+constant ConfigFlag STRICT = CONFIG_FLAG(130, "strict",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Enables stricter enforcement of Modelica language rules."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1615,7 +1619,8 @@ constant list<ConfigFlag> allConfigFlags = {
   EVAL_RECURSION_LIMIT,
   SINGLE_INSTANCE_AGLSOLVER,
   SHOW_STRUCTURAL_ANNOTATIONS,
-  INITIAL_STATE_SELECTION
+  INITIAL_STATE_SELECTION,
+  STRICT
 };
 
 public function new

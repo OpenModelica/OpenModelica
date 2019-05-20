@@ -1539,7 +1539,7 @@ algorithm
     // The Modelica specification forbids using stream outside connector
     // declarations, but has no such restriction for flow. To compromise we
     // print a warning for both flow and stream.
-    Error.addSourceMessage(Error.CONNECTOR_PREFIX_OUTSIDE_CONNECTOR,
+    Error.addStrictMessage(Error.CONNECTOR_PREFIX_OUTSIDE_CONNECTOR,
       {ConnectorType.toString(cty)}, InstNode.info(component));
 
     // Remove the erroneous flow/stream prefix and keep going.

@@ -192,7 +192,7 @@ protected
       // Give a warning if the derivative annotation doesn't specify a function name.
       case SCode.Mod.MOD()
         algorithm
-          Error.addSourceMessage(Error.MISSING_FUNCTION_DERIVATIVE_NAME,
+          Error.addStrictMessage(Error.MISSING_FUNCTION_DERIVATIVE_NAME,
             {Absyn.pathString(Function.name(fn))}, mod.info);
         then
           fnDers;
@@ -253,7 +253,7 @@ protected
 
         else
           algorithm
-            Error.addSourceMessage(Error.INVALID_FUNCTION_DERIVATIVE_ATTR,
+            Error.addStrictMessage(Error.INVALID_FUNCTION_DERIVATIVE_ATTR,
               {id + (if SCode.isEmptyMod(mod) then "" else " = " + SCodeDump.printModStr(mod))}, info);
           then
             ();
