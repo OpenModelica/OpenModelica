@@ -1187,6 +1187,7 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
         if (access >= 2) then // i.e., Access.icon
+          // ErrorExt.setCheckpoint("getIconAnnotation");
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           graphicsExpMode := Config.getGraphicsExpMode();
           Config.setEvaluateParametersInAnnotations(true);
@@ -1194,6 +1195,7 @@ algorithm
           outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           Config.setGraphicsExpMode(graphicsExpMode);
+          // ErrorExt.rollBack("getIconAnnotation");
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1208,9 +1210,12 @@ algorithm
         if (access >= 4) then // i.e., Access.diagram
           ErrorExt.setCheckpoint("getDiagramAnnotation");
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          graphicsExpMode := Config.getGraphicsExpMode();
           Config.setEvaluateParametersInAnnotations(true);
+          Config.setGraphicsExpMode(true);
           outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          Config.setGraphicsExpMode(graphicsExpMode);
           ErrorExt.rollBack("getDiagramAnnotation");
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -13608,6 +13613,12 @@ protected function getAnnotationString
   output String outString;
 protected
 algorithm
+
+  if Flags.isSet(Flags.NF_API) then
+    outString := NFApi.evaluateAnnotation(inFullProgram, inModelPath, inAnnotation);
+    return;
+  end if;
+
   outString := matchcontinue inAnnotation
     local
       String ann_name;
@@ -13633,7 +13644,7 @@ algorithm
         is_icon := ann_name == "Icon";
         is_diagram := ann_name == "Diagram";
 
-        (stripped_mod, graphic_mod) := stripGraphicsAndInteractionModification(mod);
+        (stripped_mod, graphic_mod) := Absyn.stripGraphicsAndInteractionModification(mod);
         ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
         try
         (cache, env, graphic_prog) :=
@@ -13687,53 +13698,6 @@ algorithm
     else Dump.unparseAnnotation(inAnnotation) + " ";
   end matchcontinue;
 end getAnnotationString;
-
-protected function stripGraphicsAndInteractionModification
-" This function strips out the `graphics\' modification from an ElementArg
-   list and return two lists, one with the other modifications and the
-   second with the `graphics\' modification"
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  output list<Absyn.ElementArg> outAbsynElementArgLst1;
-  output list<Absyn.ElementArg> outAbsynElementArgLst2;
-algorithm
-  (outAbsynElementArgLst1,outAbsynElementArgLst2) := matchcontinue (inAbsynElementArgLst)
-    local
-      Absyn.ElementArg mod;
-      list<Absyn.ElementArg> rest,l1,l2;
-
-    // handle empty
-    case ({}) then ({},{});
-
-    // adrpo: remove interaction annotations as we don't handle them currently
-    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction"))) :: rest))
-      equation
-         (l1,l2) = stripGraphicsAndInteractionModification(rest);
-      then
-        (l1,l2);
-
-    // adrpo: remove empty annotations, to handle bad Dymola annotations, for example: Diagram(graphics)
-    case (((Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics"))) :: rest))
-      equation
-         (l1,l2) = stripGraphicsAndInteractionModification(rest);
-      then
-        (l1,l2);
-
-    // add graphics to the second tuple
-    case (((mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics"))) :: rest))
-      equation
-        (l1,l2) = stripGraphicsAndInteractionModification(rest);
-      then
-        (l1,mod::l2);
-
-    // collect in the first tuple
-    case (((mod as Absyn.MODIFICATION()) :: rest))
-      equation
-        (l1,l2) = stripGraphicsAndInteractionModification(rest);
-      then
-        ((mod :: l1),l2);
-
-  end matchcontinue;
-end stripGraphicsAndInteractionModification;
 
 public function getComponentsInClass
 " Both public and protected lists are searched."

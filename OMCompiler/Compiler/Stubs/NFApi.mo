@@ -36,31 +36,13 @@ import SCode;
 import DAE;
 
 public
-function evaluateAnnotationExpression
-  "Instantiates the annotation class, gets the DAE and populates the annotation result"
-  input Absyn.Program absynProgram;
-  input Absyn.Path classPath;
-  input String annName;
-  input Absyn.Info info;
-  input Absyn.Exp aexp;
-  output DAE.Exp daeExp = DAE.ICONST(0);
-algorithm
-end evaluateAnnotationExpression;
-
-
-public
 function evaluateAnnotation
   "Instantiates the annotation class, gets the DAE and populates the annotation result"
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
-  input String annName;
-  input Absyn.Info info;
-  input SCode.Mod smod;
-  output DAE.DAElist dae;
-algorithm
-  dae := DAE.DAE({});
+  input Absyn.Annotation inAnnotation;
+  output String outString = "";
 end evaluateAnnotation;
-
 
 public
 function evaluateAnnotations

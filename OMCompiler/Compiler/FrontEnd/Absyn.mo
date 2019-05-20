@@ -5023,7 +5023,7 @@ algorithm
   end matchcontinue;
 end onlyLiteralsInAnnotationMod;
 
-protected function onlyLiteralsInEqMod
+public function onlyLiteralsInEqMod
 "@author: adrpo
   This function checks if an optional expression only contains literal expressions"
   input EqMod eqMod;
@@ -6949,6 +6949,53 @@ algorithm
     outLst := annotations :: outLst;
   end for;
 end getAnnotationsFromItems;
+
+public function stripGraphicsAndInteractionModification
+" This function strips out the `graphics\' modification from an ElementArg
+   list and return two lists, one with the other modifications and the
+   second with the `graphics\' modification"
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output list<Absyn.ElementArg> outAbsynElementArgLst1;
+  output list<Absyn.ElementArg> outAbsynElementArgLst2;
+algorithm
+  (outAbsynElementArgLst1,outAbsynElementArgLst2) := matchcontinue (inAbsynElementArgLst)
+    local
+      Absyn.ElementArg mod;
+      list<Absyn.ElementArg> rest,l1,l2;
+
+    // handle empty
+    case ({}) then ({},{});
+
+    // adrpo: remove interaction annotations as we don't handle them currently
+    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction"))) :: rest))
+      equation
+         (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        (l1,l2);
+
+    // adrpo: remove empty annotations, to handle bad Dymola annotations, for example: Diagram(graphics)
+    case (((Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics"))) :: rest))
+      equation
+         (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        (l1,l2);
+
+    // add graphics to the second tuple
+    case (((mod as Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics"))) :: rest))
+      equation
+        (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        (l1,mod::l2);
+
+    // collect in the first tuple
+    case (((mod as Absyn.MODIFICATION()) :: rest))
+      equation
+        (l1,l2) = stripGraphicsAndInteractionModification(rest);
+      then
+        ((mod :: l1),l2);
+
+  end matchcontinue;
+end stripGraphicsAndInteractionModification;
 
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;
