@@ -29,15 +29,11 @@ package initializationTests
 end initializationTests;
 "); getErrorString();
 
-OpenModelica.Scripting.setDebugFlags("pedantic"); getErrorString();
-
 simulate(initializationTests.parameterWithoutBinding); getErrorString();
 val(C, 0.0);
 val(R, 0.0);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // record SimulationResult
