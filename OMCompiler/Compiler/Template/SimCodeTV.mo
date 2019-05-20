@@ -238,6 +238,7 @@ package SimCodeVar
       list<SimVar> algebraicDAEVars;
       list<SimVar> sensitivityVars;
       list<SimVar> dataReconSetcVars;
+      list<SimVar> dataReconinputVars;
     end SIMVARS;
   end SimVars;
 
@@ -705,6 +706,7 @@ package SimCode
       Integer numOptimizeFinalConstraints;
       Integer numSensitivityParameters;
       Integer numSetcVars;
+      Integer numDataReconVars;
       end VARINFO;
   end VarInfo;
 

@@ -2173,14 +2173,14 @@ algorithm
     local
      list<SimCodeVar.SimVar> states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param,
                           intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-              seedVar,realOptConst,realOptFinalConst,sensVar,setcVar;
+              seedVar,realOptConst,realOptFinalConst,sensVar,setcVar,datareconinputvar;
      SimCodeVar.SimVar simVar_1,simVar_2;
      list<SimCodeVar.SimVar> param_1,param_2;
      Integer i,p;
      String name, name1, name2, indexStr;
     case (SimCodeVar.SIMVARS(states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param,
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-               seedVar,realOptConst,realOptFinalConst,sensVar,setcVar),p,i)
+               seedVar,realOptConst,realOptFinalConst,sensVar,setcVar,datareconinputvar),p,i)
 
       equation
         indexStr = intString(i);
@@ -2206,7 +2206,7 @@ algorithm
 
         (SimCodeVar.SIMVARS(states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param_2,
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-               seedVar,realOptConst,realOptFinalConst,sensVar,setcVar),name);
+               seedVar,realOptConst,realOptFinalConst,sensVar,setcVar,datareconinputvar),name);
 
   end matchcontinue;
 end createLabelVar;

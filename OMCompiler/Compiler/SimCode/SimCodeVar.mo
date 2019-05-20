@@ -70,6 +70,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> realOptimizeFinalConstraintsVars;
     list<SimVar> sensitivityVars; // variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates
     list<SimVar> dataReconSetcVars;
+    list<SimVar> dataReconinputVars;
   end SIMVARS;
 end SimVars;
 

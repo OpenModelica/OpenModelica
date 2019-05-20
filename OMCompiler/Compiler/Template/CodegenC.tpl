@@ -1057,6 +1057,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
 
     <%functionInput(simCode, modelInfo, modelNamePrefixStr)%>
+    
+    <%functionDataInput(modelInfo, modelNamePrefixStr)%>
 
     <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
@@ -1095,6 +1097,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"input_function")%>,
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
+       <%symbolName(modelNamePrefixStr,"data_function")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"setc_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
@@ -1314,6 +1317,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
+    data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
     >>
   end match
 end populateModelInfo;
@@ -1673,6 +1677,27 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
     >>
   end match
 end functionInput;
+
+template functionDataInput(ModelInfo modelInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+    <<
+    int <%symbolName(modelNamePrefix,"data_function")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      <%vars.dataReconinputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+        '<%cref(name)%> = data->simulationInfo->datainputVars[<%i0%>];'
+        ;separator="\n"
+      %>
+      TRACE_POP
+      return 0;
+    }
+   >>
+  end match
+end functionDataInput;
 
 template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."

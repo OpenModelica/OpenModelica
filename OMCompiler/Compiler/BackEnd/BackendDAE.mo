@@ -190,6 +190,7 @@ uniontype DataReconciliationData
   record DATA_RECON
     Jacobian symbolicJacobian "SET_S w.r.t ...";
     Variables setcVars "setc solved vars";
+    Variables datareconinputs;
     // ... maybe more DATA for the code generation
   end DATA_RECON;
 end DataReconciliationData;
