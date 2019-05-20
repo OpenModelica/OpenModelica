@@ -120,6 +120,9 @@ int (*functionLocalKnownVars)(DATA *data, threadData_t*);
 int (*input_function)(DATA*, threadData_t*);
 int (*input_function_init)(DATA*, threadData_t*);
 int (*input_function_updateStartValues)(DATA*, threadData_t*);
+/* functions for setting dataReconciliation inputs */
+int (*data_function)(DATA*, threadData_t*);
+
 int (*output_function)(DATA*, threadData_t*);
 
 /* functions for setc data_reconciliation */

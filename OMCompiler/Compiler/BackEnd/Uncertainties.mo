@@ -435,7 +435,7 @@ algorithm
 
         /* Prepare Torn systems for Jacobians */
         //create the Set-S equation to BackendDae innerequation structure
-        sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns);
+        sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns,inputvarlist);
         //sets_inner_equations={BackendDAE.INNEREQUATION(eqn = 56, vars = {48}), BackendDAE.INNEREQUATION(eqn = 3, vars = {70}), BackendDAE.INNEREQUATION(eqn = 6, vars = {77}),BackendDAE.INNEREQUATION(eqn = 23, vars = {55}), BackendDAE.INNEREQUATION(eqn = 20, vars = {42}), BackendDAE.INNEREQUATION(eqn = 50, vars = {20})};
         (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
         // Dump the torn systems
@@ -449,7 +449,7 @@ algorithm
         (simcodejacobian,shared)=SymbolicJacobian.getSymbolicJacobian(outDiffVars,outResidualEqns,outResidualVars,outOtherEqns,outOtherVars,shared,BackendVariable.listVar(List.map1r(extractedvars,BackendVariable.getVarAt,allVars)),"F",false);
         // put the jacobian also into shared object
         setcVars=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
-        shared.dataReconciliationData = SOME(BackendDAE.DATA_RECON(symbolicJacobian=simcodejacobian,setcVars=outResidualVars));
+        shared.dataReconciliationData = SOME(BackendDAE.DATA_RECON(symbolicJacobian=simcodejacobian,setcVars=outResidualVars,datareconinputs=outDiffVars));
         //BackendDump.dumpVariables(setcVars,"SET_C_SOLVEDVARS");
 
         // Prepare the final DAE System with Set-c equations as residual equations
@@ -496,16 +496,21 @@ public function createInnerEquations
    input list<tuple<Integer,Integer>> solvedeqvar;
    input list<Integer> sets;
    input list<Integer> knowns;
+   input list<Integer> inputlist;
    output BackendDAE.InnerEquations outequations={};
 protected
    Integer eqnumber,varnumber;
    Integer count=1;
+   Integer inpcount=1;
 algorithm
    for i in tempsets loop
       (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedeqvar);
       // map the tempsets with setS, to get the correct equation index for example (26/37) in ordered equation list
       if not listMember(varnumber,knowns) then
         outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{varnumber})::outequations;
+      else
+        outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{listGet(inputlist, inpcount)})::outequations;
+        inpcount:=inpcount+1;
       end if;
       count:=count+1;
    end for;

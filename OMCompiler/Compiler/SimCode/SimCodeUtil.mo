@@ -279,8 +279,8 @@ protected
   BackendDAE.Var dtVar;
   HashTableSimCodeEqCache.HashTable eqCache;
   BackendDAE.Jacobian dataReconJac;
-  BackendDAE.Variables setcVars;
-  list<SimCodeVar.SimVar> tmpsetcVars;
+  BackendDAE.Variables setcVars,datareconinputvars;
+  list<SimCodeVar.SimVar> tmpsetcVars,tmpdatareconinputvars;
   SimCode.JacobianMatrix dataReconSimJac;
   String fullPathPrefix;
 
@@ -525,7 +525,7 @@ algorithm
 
     // Generate jacobian code for DataReconciliation
     if Util.isSome(shared.dataReconciliationData) then
-      BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+      BackendDAE.DATA_RECON(dataReconJac,setcVars,datareconinputvars) := Util.getOption(shared.dataReconciliationData);
       (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
       (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
@@ -616,9 +616,17 @@ algorithm
         tmpsetcVars := rewriteIndex(tmpsetcVars, 0);
         tmpSimVars.dataReconSetcVars := tmpsetcVars;
         modelInfo.vars := tmpSimVars;
+                   
+        //add the input vars for dataReconciliation
+       ((tmpdatareconinputvars, _)) :=  BackendVariable.traverseBackendDAEVars(datareconinputvars, traversingdlowvarToSimvar, ({}, emptyVars));
+        tmpdatareconinputvars := rewriteIndex(listReverse(tmpdatareconinputvars), 0);
+        tmpSimVars.dataReconinputVars := tmpdatareconinputvars;
+        modelInfo.vars := tmpSimVars;  
+                   
         // set varInfo nsetcvars
         varInfo := modelInfo.varInfo;
         varInfo.numSetcVars := listLength(tmpsetcVars);
+        varInfo.numDataReconVars := listLength(tmpdatareconinputvars);
         modelInfo.varInfo := varInfo;
         //print("\n simcode gen setc:*****"+anyString(tmpsetcVars) + "\n lenght of vars :" +anyString(listLength(tmpsetcVars)));
     end if;
@@ -7247,7 +7255,7 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0,0);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0,0,0);
 end createVarInfo;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
@@ -7700,6 +7708,7 @@ protected type SimVarsIndex = enumeration(
 
   sensitivity,
   setcvars,
+  datareconinputvars,
   jacobian,
   seed
 );
@@ -7831,7 +7840,8 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars))
   );
   GC.free(simVars);
 end createVars;
@@ -10665,11 +10675,11 @@ algorithm
                    paramVars, intParamVars, boolParamVars, stringParamVars,
                    constVars, intConstVars, boolConstVars, stringConstVars,
                    sensitivityVars, extObjVars, jacobianVars, seedVars,
-                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars;
+                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars,datareconinputvars;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -10698,10 +10708,10 @@ algorithm
            (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
            (sensitivityVars, intpl) = List.mapFoldTuple(sensitivityVars, func, intpl);
            (setcVars, intpl) = List.mapFoldTuple(setcVars, func, intpl);
-
+           (datareconinputvars, intpl) = List.mapFoldTuple(datareconinputvars, func, intpl);
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;

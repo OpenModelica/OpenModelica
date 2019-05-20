@@ -772,9 +772,11 @@ inputData getInputDataFromStartAttribute(csvData Sx_result , DATA* data, threadD
 	data->callback->inputNames(data, knowns);
 	int headercount = Sx_result.headers.size();
 	/* Read data from input vars which has start attribute value set as input */
+
 	for (int h=0; h < headercount; h++)
 	{
 		tempx[h]=Sx_result.xdata[h];
+		/*
 		bool flag=false;
 		for (int in=0; in < data->modelData->nInputVars; in++)
 		{
@@ -792,7 +794,7 @@ inputData getInputDataFromStartAttribute(csvData Sx_result , DATA* data, threadD
 			logfile << "|  error   |   " << "Input Variable Not matched or not generated: "<< Sx_result.headers[h] << " , getInputDataFromStartAttribute failed()! \n";
 			logfile.close();
 			exit(1);
-		}
+		} */
 	}
 	inputData x_data ={Sx_result.rowcount,1,tempx,index};
 	free(knowns);
@@ -996,13 +998,24 @@ void checkInExpensiveMatrixInverse(ofstream & logfile)
 int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream& logfile)
 {
 	// set the inputs first
+    /*
 	for (int i=0; i< x.rows*x.column; i++)
 	{
 		data->simulationInfo->inputVars[x.index[i]]=x.data[i];
 		//logfile << "input data:" << x.data[i]<<"\n";
+	}*/
+
+	for (int i=0; i< x.rows*x.column; i++)
+	{
+		data->simulationInfo->datainputVars[i]=x.data[i];
+		//logfile << "input data:" << x.data[i]<<"\n";
 	}
-	//data->callback->input_function_updateStartValues(data, threadData);
-	data->callback->input_function(data, threadData);
+
+    /* set the inputs via this special function generated for dataReconciliation
+     * which also sets inputs for models not involving top level inputs
+     */
+    data->callback->data_function(data, threadData);
+	//data->callback->input_function(data, threadData);
 	data->callback->functionDAE(data,threadData);
 	//data->callback->functionODE(data,threadData);
 	data->callback->setc_function(data, threadData);
@@ -1394,6 +1407,7 @@ int dataReconciliation(DATA* data, threadData_t *threadData)
 	// Start the Algorithm
 	RunReconciliation(data,threadData,x,Sx,jacF,jacFt,atof(epselon),1,Sx_data,x_diag,tmpSx_diag,logfile);
 	logfile << "|  info    |   " << "DataReconciliation Completed! \n";
+	logfile.flush();
 	logfile.close();
 	free(Sx.data);
 	free(x.data);
