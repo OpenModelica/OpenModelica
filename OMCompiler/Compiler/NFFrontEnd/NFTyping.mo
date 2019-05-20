@@ -953,7 +953,7 @@ algorithm
       end if;
     end for;
 
-    Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
+    Error.addStrictMessage(Error.EACH_ON_NON_ARRAY,
       {InstNode.name(listHead(parents))}, Binding.getInfo(binding));
   end if;
 end checkBindingEach;
@@ -1477,9 +1477,8 @@ algorithm
         if Component.hasCondition(InstNode.component(cref.node)) and
            (ExpOrigin.flagNotSet(origin, ExpOrigin.CONNECT) or
             ExpOrigin.flagSet(origin, ExpOrigin.SUBSCRIPT)) then
-          Error.addSourceMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
+          Error.addStrictMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
             {InstNode.name(cref.node)}, info);
-          fail();
         end if;
 
         // The origin used when typing a component node depends on where the

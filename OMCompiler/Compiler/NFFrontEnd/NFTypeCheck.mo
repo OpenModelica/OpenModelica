@@ -1435,7 +1435,7 @@ algorithm
         // Print a warning for == or <> with Real operands in a model.
         o := operator.op;
         if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) and (o == Op.EQUAL or o == Op.NEQUAL) then
-          Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL,
+          Error.addStrictMessage(Error.WARNING_RELATION_ON_REAL,
             {Expression.toString(outExp), Operator.symbol(operator, "")}, info);
         end if;
       then
