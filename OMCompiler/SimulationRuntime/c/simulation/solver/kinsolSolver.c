@@ -179,33 +179,13 @@ void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData)
   kinsolData->countResCalls = 0;
 }
 
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolverMethod)
+static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
-  int i, flag, printLevel;
-
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) malloc(sizeof(NLS_KINSOL_DATA));
-
-  /* allocate system data */
-  nlsData->solverData = (void*)kinsolData;
-
-  kinsolData->size = size;
-  kinsolData->linearSolverMethod = linearSolverMethod;
-  kinsolData->solved = 0;
-
-  kinsolData->fnormtol  = newtonFTol;     /* function tolerance */
-  kinsolData->scsteptol = newtonXTol;     /* step tolerance */
-
-  kinsolData->maxstepfactor = maxStepFactor;     /* step tolerance */
-  kinsolData->nominalJac = 0;             /* calculate for scaling the scaled matrix */
-
-  kinsolData->initialGuess = N_VNew_Serial(size);
-  kinsolData->xScale = N_VNew_Serial(size);
-  kinsolData->fScale = N_VNew_Serial(size);
-  kinsolData->fRes = N_VNew_Serial(size);
-  kinsolData->fTmp = N_VNew_Serial(size);
-
+  int flag, size = kinsolData->size, printLevel;
+  if (kinsolData->kinsolMemory) {
+    KINFree((void*)&kinsolData->kinsolMemory);
+  }
   kinsolData->kinsolMemory = KINCreate();
-
   /* setup user defined functions */
   KINSetErrHandlerFn(kinsolData->kinsolMemory, nlsKinsolErrorPrint, kinsolData);
   KINSetInfoHandlerFn(kinsolData->kinsolMemory, nlsKinsolInfoPrint, kinsolData);
@@ -214,7 +194,6 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   if (checkReturnFlag(flag)){
     errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL solver!");
   }
-
   /* Specify linear solver and/or corresponding jacobian function*/
   if (kinsolData->linearSolverMethod == NLS_LS_KLU)
   {
@@ -272,6 +251,34 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
     printLevel = 0;
   }
   KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
+}
+
+int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolverMethod)
+{
+  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) malloc(sizeof(NLS_KINSOL_DATA));
+
+  /* allocate system data */
+  nlsData->solverData = (void*)kinsolData;
+
+  kinsolData->size = size;
+  kinsolData->linearSolverMethod = linearSolverMethod;
+  kinsolData->solved = 0;
+
+  kinsolData->fnormtol  = newtonFTol;     /* function tolerance */
+  kinsolData->scsteptol = newtonXTol;     /* step tolerance */
+
+  kinsolData->maxstepfactor = maxStepFactor;     /* step tolerance */
+  kinsolData->nominalJac = 0;             /* calculate for scaling the scaled matrix */
+
+  kinsolData->initialGuess = N_VNew_Serial(size);
+  kinsolData->xScale = N_VNew_Serial(size);
+  kinsolData->fScale = N_VNew_Serial(size);
+  kinsolData->fRes = N_VNew_Serial(size);
+  kinsolData->fTmp = N_VNew_Serial(size);
+
+  kinsolData->kinsolMemory = NULL;
+
+  resetKinsolMemory(kinsolData, nlsData);
 
   return 0;
 }
@@ -722,7 +729,9 @@ void nlsKinsolXScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
       }
       break;
     case SCALING_ONES:
-      _omc_fillVector(_omc_createVector(nlsData->size,xScaling), 1.);
+      for (i=0;i<nlsData->size;i++){
+        xScaling[i] = 1.0;
+      }
       break;
   }
 }
@@ -774,7 +783,9 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
       /* disable scaled jacobian */
       kinsolData->nominalJac = 0;
 
-      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1e-12);
+      for (i=0;i<nlsData->size;i++){
+        fScaling[i] = 1e-12;
+      }
       for(i=0; i<spJac->NNZ; ++i){
         if (fScaling[spJac->rowvals[i]] < fabs(spJac->data[i])){
           fScaling[spJac->rowvals[i]] = fabs(spJac->data[i]);
@@ -782,12 +793,15 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
       }
       N_VInv(kinsolData->fScale, kinsolData->fScale);
 
+      DestroySparseMat(spJac);
       N_VDestroy_Serial(tmp1);
       N_VDestroy_Serial(tmp2);
       break;
     }
     case SCALING_ONES:
-      _omc_fillVector(_omc_createVector(nlsData->size,fScaling), 1.);
+      for (i=0;i<nlsData->size;i++){
+        fScaling[i] = 1.0;
+      }
       break;
   }
 }
@@ -797,20 +811,26 @@ void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nl
 {
   int retValue;
   double fNorm;
-  double *xStart = NV_DATA_S(kinsolData->initialGuess);
-  double *xScaling = NV_DATA_S(kinsolData->xScale);
-  double *fScaling = NV_DATA_S(kinsolData->fScale);
   DATA* data = kinsolData->userData.data;
   int eqSystemNumber = nlsData->equationIndex;
+  _omc_vector vecStart, vecXScaling, vecFScaling;
+
+  if (!useStream[LOG_NLS_V]) {
+    return;
+  }
+
+  _omc_initVector(&vecStart, kinsolData->size, NV_DATA_S(kinsolData->initialGuess));
+  _omc_initVector(&vecXScaling, kinsolData->size, NV_DATA_S(kinsolData->xScale));
+  _omc_initVector(&vecFScaling, kinsolData->size, NV_DATA_S(kinsolData->fScale));
 
   infoStreamPrint(LOG_NLS_V, 1, "Kinsol Configuration");
-  _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, xStart),
+  _omc_printVectorWithEquationInfo(&vecStart,
       "Initial guess values", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
 
-  _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, xScaling),
+  _omc_printVectorWithEquationInfo(&vecXScaling,
       "xScaling", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
 
-  _omc_printVector(_omc_createVector(kinsolData->size, fScaling), "fScaling", LOG_NLS_V);
+  _omc_printVector(&vecFScaling, "fScaling", LOG_NLS_V);
 
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL F tolerance: %g", (*(KINMem)kinsolData->kinsolMemory).kin_fnormtol);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL minimal step size %g", (*(KINMem)kinsolData->kinsolMemory).kin_scsteptol);
@@ -971,30 +991,38 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   double *fScaling = NV_DATA_S(kinsolData->fScale);
   double fNormValue;
 
-
   /* set user data */
   kinsolData->userData.data = data;
   kinsolData->userData.threadData = threadData;
   kinsolData->userData.sysNumber = sysNumber;
 
-  /* reset configuration settings */
-  nlsKinsolConfigSetup(kinsolData);
-
   infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start Kinsol solver at time %g", data->localData[0]->timeValue);
-
-  nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
-
-  /* set x scaling */
-  nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
-
-  /* set f scaling */
-  nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
-
-  /* set maximum step size */
-  nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
 
   /*  */
   do{
+    {
+      /* It seems if we don't free KINSol on every iteration, it leaks memory.
+       * But if we reset KINSol, it takes an enormous amount of time...
+       */
+      if (0) { /* Save time; leak memory */
+        resetKinsolMemory(kinsolData, nlsData);
+      } else {
+        /* reset configuration settings */
+        nlsKinsolConfigSetup(kinsolData);
+      }
+    }
+
+    nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
+
+    /* set x scaling */
+    nlsKinsolXScaling(data, kinsolData, nlsData, SCALING_NOMINALSTART);
+
+    /* set f scaling */
+    nlsKinsolFScaling(data, kinsolData, nlsData, SCALING_JACOBIAN);
+
+    /* set maximum step size */
+    nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
+
     /* dump configuration */
     nlsKinsolConfigPrint(kinsolData, nlsData);
 

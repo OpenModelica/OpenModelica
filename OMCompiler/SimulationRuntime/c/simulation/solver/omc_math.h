@@ -60,6 +60,10 @@ typedef struct
 _omc_vector* _omc_allocateVectorData(const _omc_size size);
 void _omc_deallocateVectorData(_omc_vector* vec);
 _omc_vector* _omc_createVector(const _omc_size size, _omc_scalar* data);
+static inline void _omc_initVector(_omc_vector* vec, const _omc_size size, _omc_scalar* data) {
+  vec->size = size;
+  vec->data = data;
+}
 void _omc_destroyVector(_omc_vector* vec);
 void _omc_copyVector(_omc_vector* dest, const _omc_vector* src);
 
