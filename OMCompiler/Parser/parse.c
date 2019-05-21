@@ -180,7 +180,6 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_PARSER      parser;
-  pANTLR3_STRING      ttext;
   pANTLR3_EXCEPTION      ex;
   pANTLR3_COMMON_TOKEN   preToken,nextToken;
   pANTLR3_TOKEN_STREAM tokenStream;
@@ -195,7 +194,6 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
   // Retrieve some info for easy reading.
   ex      =    recognizer->state->exception;
-  ttext   =    (pANTLR3_STRING) NULL;
 
   switch  (recognizer->type)
   {
@@ -435,8 +433,17 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    * Workaround: ANTLR3 does not like 0-length files on Windows!
    * So we pass an empty string instead :)
    */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeFileNameLength = SystemImpl__stringToUnicodeSize(fileName);
+  wchar_t unicodeFileName[unicodeFileNameLength];
+  SystemImpl__stringToUnicode(fileName, unicodeFileName, unicodeFileNameLength);
+
+  struct _stat st;
+  _wstat(unicodeFileName, &st);
+#else
   struct stat st;
   stat(members.filename_C, &st);
+#endif
   members.timestamp = mmc_mk_rcon((double)st.st_mtime);
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
