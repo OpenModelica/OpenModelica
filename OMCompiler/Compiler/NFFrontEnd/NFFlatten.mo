@@ -429,12 +429,14 @@ algorithm
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
-  if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
-    name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
-    eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-      ElementSource.createElementSource(info));
-    sections := Sections.prependEquation(eq, sections);
-    binding := NFBinding.EMPTY_BINDING;
+  if not Flags.isSet(Flags.NF_API) then
+    if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
+      name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
+      eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
+        ElementSource.createElementSource(info));
+      sections := Sections.prependEquation(eq, sections);
+      binding := NFBinding.EMPTY_BINDING;
+    end if;
   end if;
 
   name := ComponentRef.prefixScope(comp_node, ty, {}, prefix);

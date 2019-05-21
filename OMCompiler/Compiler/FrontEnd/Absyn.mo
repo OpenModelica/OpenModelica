@@ -67,6 +67,7 @@ encapsulated package Absyn
 
 protected import Dump;
 protected import System;
+protected import Flags;
 
 public
 type Ident = String "An identifier, for example a variable name" ;
@@ -5037,17 +5038,11 @@ algorithm
 
     case (NOMOD()) then true;
 
-    // DynamicSelect returns true!
-    case (EQMOD(exp=CALL(function_ = CREF_IDENT(name = "DynamicSelect")))) then true;
-
     // search inside, some(exp)
     case (EQMOD(exp=exp))
       equation
          (_, lst::{}) = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, {}::{});
-         // if list is empty (no crefs were added)
          b = listEmpty(lst);
-         // debugging:
-         // print("Crefs in annotations: (" + stringDelimitList(List.map(lst, Dump.printExpStr), ", ") + ")\n");
       then
         b;
   end match;
@@ -5070,10 +5065,7 @@ algorithm
       list<Exp> lst;
       list<list<Exp>> rest;
       String name;
-
-    // first handle DynamicSelect (push a stack that we can pop and ignore later on)
-    case (CALL(function_ = CREF_IDENT(name = "DynamicSelect")), rest)
-      then (inExp, {}::rest);
+      FunctionArgs fargs;
 
     // first handle all graphic enumerations!
     // FillPattern.*, Smooth.*, TextAlignment.*, etc!
@@ -5092,6 +5084,7 @@ algorithm
 
     // crefs, add to list
     case (CREF(), lst::rest) then (inExp,(inExp::lst)::rest);
+
     // anything else, return the same!
     else (inExp,inLst);
 
@@ -5112,7 +5105,7 @@ algorithm
       list<list<Exp>> lst;
 
     // first handle DynamicSelect; pop the stack (ignore any crefs inside DynamicSelect)
-    case (CALL(function_ = CREF_IDENT(name = "DynamicSelect")), _::lst)
+    case (CALL(function_ = CREF_IDENT(name = "DynamicSelect")), lst)
       then (inExp, lst);
 
     // anything else, return the same!

@@ -115,7 +115,7 @@ protected uniontype AnnotationType
   record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
 end AnnotationType;
 
-protected uniontype GraphicEnvCache
+public uniontype GraphicEnvCache
   "Used by buildEnvForGraphicProgram to avoid excessive work."
   record GRAPHIC_ENV_NO_CACHE
     Absyn.Program program;
@@ -1187,7 +1187,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
         if (access >= 2) then // i.e., Access.icon
-          // ErrorExt.setCheckpoint("getIconAnnotation");
+          //if not Flags.isSet(Flags.NF_API_NOISE) then
+          //  ErrorExt.setCheckpoint("getIconAnnotation");
+          //end if;
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           graphicsExpMode := Config.getGraphicsExpMode();
           Config.setEvaluateParametersInAnnotations(true);
@@ -1195,7 +1197,9 @@ algorithm
           outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           Config.setGraphicsExpMode(graphicsExpMode);
-          // ErrorExt.rollBack("getIconAnnotation");
+          //if not Flags.isSet(Flags.NF_API_NOISE) then
+          //  ErrorExt.rollBack("getIconAnnotation");
+          //end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1208,7 +1212,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
         if (access >= 4) then // i.e., Access.diagram
-          ErrorExt.setCheckpoint("getDiagramAnnotation");
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getDiagramAnnotation");
+          end if;
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           graphicsExpMode := Config.getGraphicsExpMode();
           Config.setEvaluateParametersInAnnotations(true);
@@ -1216,7 +1222,9 @@ algorithm
           outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           Config.setGraphicsExpMode(graphicsExpMode);
-          ErrorExt.rollBack("getDiagramAnnotation");
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getDiagramAnnotation");
+          end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -3892,15 +3900,22 @@ public function getClassEnv
  It uses a LRU cache as to remember and speed things up"
   input Absyn.Program p;
   input Absyn.Path p_class;
-  output FCore.Graph env_2;
+  output GraphicEnvCache env_2;
 protected
-   Option<list<tuple<Absyn.Program, Absyn.Path, FCore.Graph>>> ocache;
-   list<tuple<Absyn.Program, Absyn.Path, FCore.Graph>> cache, lcache = {};
+   Option<list<tuple<Absyn.Program, Absyn.Path, GraphicEnvCache>>> ocache;
+   list<tuple<Absyn.Program, Absyn.Path, GraphicEnvCache>> cache, lcache = {};
    Absyn.Program po;
    Absyn.Path patho;
-   FCore.Graph envo;
+   GraphicEnvCache envo;
    Boolean invalidate = false;
+   FCore.Cache fcache;
+   FCore.Graph env;
 algorithm
+  if Flags.isSet(Flags.NF_API) then
+    env_2 := GRAPHIC_ENV_FULL_CACHE(p, p_class, FCore.emptyCache(), FGraph.empty());
+    return;
+  end if;
+
   // see if we have it already
   ocache := getGlobalRoot(Global.interactiveCache);
   if isSome(ocache) then
@@ -3931,7 +3946,9 @@ algorithm
 
   end if;
 
-  env_2 := getClassEnv_dispatch(p, p_class);
+  (fcache, env) := getClassEnv_dispatch(p, p_class);
+  env_2 := GRAPHIC_ENV_FULL_CACHE(p, p_class, fcache, env);
+
 
   // update cache
   ocache := getGlobalRoot(Global.interactiveCache);
@@ -3945,7 +3962,7 @@ end getClassEnv;
 
 function matchPath
   input Absyn.Path p;
-  input tuple<Absyn.Program, Absyn.Path, FCore.Graph> entry;
+  input tuple<Absyn.Program, Absyn.Path, GraphicEnvCache> entry;
   output Boolean matches;
 protected
   Absyn.Path po;
@@ -3960,6 +3977,7 @@ public function getClassEnv_dispatch
    by partially instantiating it."
   input Absyn.Program p;
   input Absyn.Path p_class;
+  output FCore.Cache cache;
   output FCore.Graph env_2;
 protected
   list<SCode.Element> p_1;
@@ -3969,7 +3987,6 @@ protected
   SCode.Encapsulated encflag;
   SCode.Restriction restr;
   ClassInf.State ci_state;
-  FCore.Cache cache;
 algorithm
   p_1 := SCodeUtil.translateAbsyn2SCode(p);
   (cache,env) := Inst.makeEnvFromProgram(p_1);
@@ -3988,7 +4005,7 @@ algorithm
       equation
         env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (_,env_2,_,_,_) =
+        (cache,env_2,_,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
@@ -4939,7 +4956,7 @@ algorithm
       Absyn.Path p_class,inherit_class;
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.Program newp,p;
 
     case (p_class,inherit_class,p as Absyn.PROGRAM())
@@ -4958,7 +4975,7 @@ end removeExtendsModifiers;
 protected function removeExtendsModifiersInClass
   input Absyn.Class inClass;
   input Absyn.Path inPath;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input Boolean keepRedeclares = false;
   output Absyn.Class outClass;
 algorithm
@@ -4972,7 +4989,7 @@ algorithm
       Option<String> cmt;
       SourceInfo file_info;
       Absyn.Path inherit_name;
-      FCore.Graph env;
+      GraphicEnvCache env;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -4980,7 +4997,7 @@ algorithm
     /* a class with parts */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
-          inherit_name,env)
+          inherit_name, env)
       equation
         parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
       then
@@ -4988,7 +5005,7 @@ algorithm
     /* adrpo: handle also model extends M end M; */
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
-          inherit_name,env)
+          inherit_name, env)
       equation
         parts_1 = removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
       then
@@ -4999,7 +5016,7 @@ end removeExtendsModifiersInClass;
 protected function removeExtendsModifiersInClassparts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.Path inPath;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input Boolean keepRedeclares;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
@@ -5009,26 +5026,26 @@ algorithm
       list<Absyn.ClassPart> res,rest;
       list<Absyn.ElementItem> elts_1,elts;
       Absyn.Path inherit;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.ClassPart elt;
 
     case ({},_,_,_) then {};
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,env,_)
+    case ((Absyn.PUBLIC(contents = elts) :: rest), inherit, env, _)
       equation
         res = removeExtendsModifiersInClassparts(rest, inherit, env, keepRedeclares);
         elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env, keepRedeclares);
       then
         (Absyn.PUBLIC(elts_1) :: res);
 
-    case ((Absyn.PROTECTED(contents = elts) :: rest),inherit,env,_)
+    case ((Absyn.PROTECTED(contents = elts) :: rest), inherit, env, _)
       equation
         res = removeExtendsModifiersInClassparts(rest, inherit, env, keepRedeclares);
         elts_1 = removeExtendsModifiersInElementitems(elts, inherit, env, keepRedeclares);
       then
         (Absyn.PROTECTED(elts_1) :: res);
 
-    case ((elt :: rest),inherit,env,_)
+    case ((elt :: rest), inherit, env, _)
       equation
         res = removeExtendsModifiersInClassparts(rest, inherit, env,  keepRedeclares);
       then
@@ -5040,7 +5057,7 @@ end removeExtendsModifiersInClassparts;
 protected function removeExtendsModifiersInElementitems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Path inPath;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input Boolean keepRedeclares;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
@@ -5050,7 +5067,7 @@ algorithm
       list<Absyn.ElementItem> res,rest;
       Absyn.Element elt_1,elt;
       Absyn.Path inherit;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.ElementItem elitem;
 
     case ({},_,_,_) then {};
@@ -5073,7 +5090,7 @@ end removeExtendsModifiersInElementitems;
 protected function removeExtendsModifiersInElement
   input Absyn.Element inElement;
   input Absyn.Path inPath;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input Boolean keepRedeclares;
   output Absyn.Element outElement;
 algorithm
@@ -5087,7 +5104,7 @@ algorithm
       list<Absyn.ElementArg> eargs,eargs_1;
       SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.Element elt;
       Option<Absyn.Annotation> annOpt;
 
@@ -5095,7 +5112,7 @@ algorithm
       specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
+        (_, path_1) = mkFullyQual(env, path);
         true = Absyn.pathEqual(inherit, path_1);
         eargs = if not keepRedeclares then {} else list(e for e guard(match e case Absyn.REDECLARATION() then true; else false; end match) in eargs);
       then
@@ -5103,6 +5120,25 @@ algorithm
     else inElement;
   end matchcontinue;
 end removeExtendsModifiersInElement;
+
+public function mkFullyQual
+  input GraphicEnvCache env;
+  input Absyn.Path ipath;
+  output FCore.Cache ocache;
+  output Absyn.Path opath;
+protected
+  Absyn.Path cpath;
+  Absyn.Program program;
+algorithm
+  if Flags.isSet(Flags.NF_API) then
+    ocache := cacheFromGraphicEnvCache(env);
+    (program, cpath) := cacheProgramAndPath(env);
+    opath := NFApi.mkFullyQual(program, cpath, ipath);
+  else
+    (ocache, opath) := Inst.makeFullyQualified(cacheFromGraphicEnvCache(env), envFromGraphicEnvCache(env), ipath);
+  end if;
+end mkFullyQual;
+
 
 protected function setExtendsModifierValue
 " This function sets the submodifier value of an
@@ -5129,7 +5165,7 @@ algorithm
       Absyn.Path p_class,inherit_class;
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,inheritclass,subident;
       Absyn.Modification mod;
@@ -5164,7 +5200,7 @@ protected function setExtendsSubmodifierInClass
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output Absyn.Class outClass;
 algorithm
   outClass:=
@@ -5179,7 +5215,7 @@ algorithm
       Absyn.Path inherit_name;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      FCore.Graph env;
+      GraphicEnvCache env;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -5215,7 +5251,7 @@ protected function setExtendsSubmodifierInClassparts
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
   outAbsynClassPartLst:=
@@ -5226,7 +5262,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.ClassPart elt;
 
     case ({},_,_,_,_) then {};
@@ -5266,7 +5302,7 @@ protected function setExtendsSubmodifierInElementitems
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
   outAbsynElementItemLst:=
@@ -5277,7 +5313,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.ElementItem elitem;
     case ({},_,_,_,_) then {};
     case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,submod,mod,env)
@@ -5306,7 +5342,7 @@ protected function setExtendsSubmodifierInElement
   input Absyn.Path inPath;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Modification inModification;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output Absyn.Element outElement;
 algorithm
   outElement:=
@@ -5320,7 +5356,7 @@ algorithm
       SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.ComponentRef submod;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Absyn.Modification mod;
       Absyn.Element elt;
       Option<Absyn.Annotation> annOpt;
@@ -5335,7 +5371,7 @@ algorithm
       specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
+        (_, path_1) = mkFullyQual(env, path);
         true = Absyn.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, Absyn.crefToPath(submod), mod);
       then
@@ -5363,7 +5399,7 @@ protected
   Absyn.Path cls_path, name;
   Absyn.Class cls;
   list<Absyn.ElementArg> args;
-  FCore.Graph env;
+  GraphicEnvCache env;
   list<Absyn.ElementSpec> exts;
 algorithm
   try
@@ -5400,7 +5436,7 @@ algorithm
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
-      FCore.Graph env;
+      GraphicEnvCache env;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Absyn.ElementArg> extmod;
       Absyn.Modification mod;
@@ -5462,7 +5498,7 @@ protected function makeExtendsFullyQualified
 " Makes an EXTENDS ElementSpec having a
    fully qualified extends path."
   input Absyn.ElementSpec inElementSpec;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output Absyn.ElementSpec outElementSpec;
 algorithm
   outElementSpec:=
@@ -5470,12 +5506,12 @@ algorithm
     local
       Absyn.Path path_1,path;
       list<Absyn.ElementArg> earg;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Option<Absyn.Annotation> annOpt;
 
     case (Absyn.EXTENDS(path = path,elementArg = earg,annotationOpt=annOpt),env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
+        (_, path_1) = mkFullyQual(env, path);
       then
         Absyn.EXTENDS(path_1,earg,annOpt);
   end match;
@@ -5503,7 +5539,7 @@ algorithm
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts,exts_1;
-      FCore.Graph env;
+      GraphicEnvCache env;
       list<Absyn.ElementArg> extmod;
       list<String> res,res1;
       String res_1,res_2;
@@ -13500,6 +13536,20 @@ algorithm
   end match;
 end cacheProgramAndPath;
 
+protected function envFromGraphicEnvCache
+  input GraphicEnvCache inEnvCache;
+  output FCore.Graph env;
+algorithm
+  GRAPHIC_ENV_FULL_CACHE(env = env) := inEnvCache;
+end envFromGraphicEnvCache;
+
+protected function cacheFromGraphicEnvCache
+  input GraphicEnvCache inEnvCache;
+  output FCore.Cache cache;
+algorithm
+  GRAPHIC_ENV_FULL_CACHE(cache = cache) := inEnvCache;
+end cacheFromGraphicEnvCache;
+
 protected function buildEnvForGraphicProgram
   "Builds an environment for instantiating graphical annotations. If the
    annotation modification only contains literals we only need to make an
@@ -13615,7 +13665,11 @@ protected
 algorithm
 
   if Flags.isSet(Flags.NF_API) then
-    outString := NFApi.evaluateAnnotation(inFullProgram, inModelPath, inAnnotation);
+    try
+      outString := NFApi.evaluateAnnotation(inFullProgram, inModelPath, inAnnotation);
+    else
+      outString := Dump.unparseAnnotation(inAnnotation) + " ";
+    end try;
     return;
   end if;
 

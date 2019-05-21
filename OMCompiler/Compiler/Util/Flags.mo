@@ -536,11 +536,15 @@ constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(180, "nfExpandOperations", 
   Util.gettext("Expand all unary/binary operations to scalar expressions in the new frontend."));
 constant DebugFlag NF_API = DEBUG_FLAG(181, "nfAPI", false,
   Util.gettext("Enables experimental new instantiation use in the OMC API."));
-constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(182, "disableFMIDependency", false,
+constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(182, "nfAPIDynamicSelect", false,
+  Util.gettext("Show DynamicSelect(static, dynamic) in annotations. Default to false and will select the first (static) expression"));
+constant DebugFlag NF_API_NOISE = DEBUG_FLAG(183, "nfAPINoise", false,
+  Util.gettext("Enables error display for the experimental new instantiation use in the OMC API."));
+constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(184, "disableFMIDependency", false,
   Util.gettext("Disables the dependency analysis and generation for FMI 2.0."));
-constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(183, "warnMinMax", true,
+constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(185, "warnMinMax", true,
   Util.gettext("Makes a warning assert from min/max variable attributes instead of error."));
-constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(184, "nfExpandFuncArgs", false,
+constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(186, "nfExpandFuncArgs", false,
   Util.gettext("Expand all function arguments in the new frontend."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -730,6 +734,8 @@ constant list<DebugFlag> allDebugFlags = {
   NF_EVAL_CONST_ARG_FUNCS,
   NF_EXPAND_OPERATIONS,
   NF_API,
+  NF_API_DYNAMIC_SELECT,
+  NF_API_NOISE,
   FMI20_DEPENDENCIES,
   WARNING_MINMAX_ATTRIBUTES,
   NF_EXPAND_FUNC_ARGS

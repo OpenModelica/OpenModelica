@@ -606,6 +606,16 @@ function size "Returns dimensions of an array"
 </html>"));
 end size;
 
+function DynamicSelect<T> "select static or dynamic expressions in the annotations"
+  input T static;
+  input T dynamic;
+  output T selected;
+  external "builtin";
+  annotation(__OpenModelica_UnboxArguments=true, __OpenModelica_Impure=true, Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Annotations.DynamicSelect\">DynamicSelect</a>
+</html>"));
+end DynamicSelect;
+
 function scalar<T,ScalarType> "Returns a one-element array as scalar"
   input T i;
   output ScalarType s;

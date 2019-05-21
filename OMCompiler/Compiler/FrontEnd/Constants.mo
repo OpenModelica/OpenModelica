@@ -191,12 +191,12 @@ end CoordinateSystem;
 // i.e. a coordinate system with width 20 units and height 20 units.
 
 record Icon \"Representation of the icon layer\"
-  parameter CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
   //GraphicItem[:] graphics;
 end Icon;
 
 record Diagram \"Representation of the diagram layer\"
-  parameter CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
   //GraphicItem[:] graphics;
 end Diagram;
 
@@ -227,9 +227,9 @@ record Transformation
 end Transformation;
 
 record Placement
-  parameter Boolean visible = true;
-  parameter Transformation transformation \"Placement in the dagram layer\";
-  parameter Transformation iconTransformation \"Placement in the icon layer\";
+  Boolean visible = true;
+  Transformation transformation \"Placement in the dagram layer\";
+  Transformation iconTransformation \"Placement in the icon layer\";
 end Placement;
 
 record IconMap

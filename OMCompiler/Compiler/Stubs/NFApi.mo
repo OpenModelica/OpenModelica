@@ -51,8 +51,15 @@ function evaluateAnnotations
   input Absyn.Path classPath;
   input list<Absyn.Element> inElements;
   output list<String> outStringLst = {};
-algorithm
 end evaluateAnnotations;
+
+public
+function mkFullyQual
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  input Absyn.Path pathToQualify;
+  output Absyn.Path qualPath = pathToQualify;
+end mkFullyQual;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

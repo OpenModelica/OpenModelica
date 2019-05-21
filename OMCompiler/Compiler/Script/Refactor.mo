@@ -83,7 +83,7 @@ algorithm
       Absyn.ClassDef d;
       SourceInfo file_info;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case (Absyn.CLASS(
       name = n,
@@ -126,7 +126,7 @@ protected function refactorGraphAnnInClassDef "Helper function to refactorGraphA
   input Absyn.ClassDef inDef;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ClassDef outDef;
 algorithm
   outDef := matchcontinue (inDef,inProgram,classPath,inClassEnv)
@@ -140,7 +140,7 @@ algorithm
       list<Absyn.ElementArg> args,annList,resAnnList;
       Absyn.TypeSpec ts;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
 
@@ -167,7 +167,7 @@ protected function refactorGraphAnnInClassParts "Helper function to refactorGrap
   input list<Absyn.ClassPart> inParts;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph env;
+  input Interactive.GraphicEnvCache env;
   output list<Absyn.ClassPart> outParts;
 algorithm
   outParts := match (inParts,inProgram,classPath,env)
@@ -191,7 +191,7 @@ protected function refactorGraphAnnInClassPart"Helper function to refactorGraphA
   input Absyn.ClassPart inPart;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ClassPart outPart;
 
 algorithm
@@ -205,7 +205,7 @@ algorithm
       list<Absyn.EquationItem> eqContent,resultEqContent;
       list<Absyn.AlgorithmItem> algContent,resultAlgContent;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(Absyn.PUBLIC(contents = elContent),p,cPath,env)
       equation
@@ -254,7 +254,7 @@ protected function refactorGraphAnnInContentList"Helper function to refactorGrap
   input refactorGraphAnnInContent refactorGraphAnnInItem;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output list<contentType> outList;
   public
   replaceable type contentType subtypeof Any;
@@ -262,7 +262,7 @@ protected function refactorGraphAnnInContentList"Helper function to refactorGrap
     input contentType inItem;
     input Absyn.Program inProgram;
     input Absyn.Path classPath;
-    input FCore.Graph inClassEnv;
+    input Interactive.GraphicEnvCache inClassEnv;
     output contentType outItem;
   end refactorGraphAnnInContent;
 algorithm
@@ -272,7 +272,7 @@ algorithm
       list<contentType> restList,resList;
       contentType firstItem,resultItem;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
     case({},_,_,_,_) then {};
     case(firstItem :: restList,_,p,cPath,env)
       equation
@@ -288,7 +288,7 @@ protected function refactorGraphAnnInElItem"Helper function to refactorGraphAnnI
   input Absyn.ElementItem inItem;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ElementItem outItem;
 algorithm
   outItem := match (inItem,inProgram,classPath,inClassEnv)
@@ -297,7 +297,7 @@ algorithm
       Absyn.Element el,resultElement;
       list<Absyn.ElementArg> annList;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(Absyn.ELEMENTITEM(element = el) ,p,cPath,env)
       equation
@@ -312,7 +312,7 @@ protected function refactorGraphAnnInEqItem"Helper function to refactorGraphAnnI
   input Absyn.EquationItem inItem;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.EquationItem outItem;
 
 algorithm
@@ -341,7 +341,7 @@ protected function refactorGraphAnnInAlgItem"Helper function to refactorGraphAnn
   input Absyn.AlgorithmItem inItem;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.AlgorithmItem outItem;
 algorithm
   outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
@@ -372,7 +372,7 @@ protected function refactorGraphAnnInElement"
   input Absyn.Element inElement;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.Element outElement;
 
 algorithm
@@ -389,7 +389,7 @@ algorithm
       SourceInfo i;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = rdk,
       innerOuter = io, specification = es, info = i, constrainClass = cc),p,cPath,env)
@@ -413,7 +413,7 @@ protected function refactorConstrainClass "
   input Option<Absyn.ConstrainClass> inCC;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Option<Absyn.ConstrainClass> outCC;
 
 algorithm
@@ -425,7 +425,8 @@ algorithm
       Absyn.ElementSpec es,resultSpec;
       Option<Absyn.Comment> com;
       Absyn.Path cPath;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
+
     case(SOME(Absyn.CONSTRAINCLASS(elementSpec = es, comment = com)),p,cPath,env)
 
       equation
@@ -445,7 +446,7 @@ protected function refactorGraphAnnInElSpec"
   input Absyn.ElementSpec inSpec;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ElementSpec outSpec;
 
 algorithm
@@ -462,7 +463,7 @@ algorithm
       list<Absyn.ComponentItem> restCompList,resCompList;
       Absyn.Class cl,cl1;
       Boolean r;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
       Option<Absyn.ArrayDim> z;
 
     case(Absyn.CLASSDEF(replaceable_ = r, class_ = cl),p,cPath,_)
@@ -500,7 +501,7 @@ protected function refactorGraphAnnInComponentItem"
   input Absyn.Path classPath;
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ComponentItem outCom;
 
 algorithm
@@ -516,7 +517,7 @@ algorithm
       list<Absyn.ElementArg> annList;
       Option<String> str;
       Option<Absyn.Comment> com;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(Absyn.COMPONENTITEM(component = comp, condition = con,
       comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)), comment = str))),
@@ -544,7 +545,7 @@ protected function transformComponentAnnList "
   input Absyn.Path classPath;
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output list<Absyn.ElementArg> outArgs;
 
 algorithm
@@ -562,7 +563,7 @@ algorithm
       Absyn.Each e;
       Option<String> com;
       Option<Real> rot;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
       SourceInfo info;
 
 
@@ -611,7 +612,7 @@ protected function getRestrictionFromPath"
   input Absyn.Path classPath;
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.Restriction outRestriction;
 algorithm
   outRestriction := matchcontinue(classPath,inPath,inProgram, inClassEnv)
@@ -620,7 +621,7 @@ algorithm
       Absyn.Program p;
       Absyn.Path fullPath,path,cPath;
       Absyn.Restriction restriction;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(cPath,path,p, _) // try directly first
       equation
@@ -633,7 +634,7 @@ algorithm
 
     case(_,path,p, env) // if it fails try the hard way
       equation
-        (_,fullPath) = Inst.makeFullyQualified(FCore.emptyCache(),env,path);
+        (_,fullPath) = Interactive.mkFullyQual(env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", Absyn.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
@@ -706,7 +707,7 @@ protected function getIconTransformation"
   input Absyn.Path classPath;
   input Absyn.Path inPath;
   input Absyn.Program inProg;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ElementArg iconTrans;
 
 algorithm
@@ -720,7 +721,7 @@ algorithm
       Absyn.Path path,cPath;
       Absyn.Program p;
       Absyn.Exp x1,x2,y1,y2;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(x1,y1,x2,y2,NONE(),cPath,path,p,env)
       equation
@@ -779,7 +780,7 @@ protected function getDiagramTransformation"
   input Absyn.Path classPath;
   input Absyn.Path inPath;
   input Absyn.Program inProg;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.ElementArg trans;
 
 algorithm
@@ -793,7 +794,7 @@ algorithm
       Absyn.Path path,cPath;
       Absyn.Program p;
       Absyn.Exp x1,x2,y1,y2;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(x1,y1,x2,y2,NONE(),cPath,path,p, env)
 
@@ -964,7 +965,7 @@ protected function getCoordsInPath"Helper function to transformComponentAnnList.
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Context contextToGetCoordsFrom;
-  input FCore.Graph inClassEnv;
+  input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.Exp posX1;
   output Absyn.Exp posY1;
   output Absyn.Exp posX2;
@@ -982,7 +983,7 @@ algorithm
       Context context;
 
 
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
 
     case(cPath,path,p,context, _) // try directly first
       equation
@@ -997,7 +998,7 @@ algorithm
       equation
         //  p_1 = SCodeUtil.translateAbsyn2SCode(p);
         //  (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache,p_1, Absyn.IDENT(""));
-        (_,fullPath) = Inst.makeFullyQualified(FCore.emptyCache(),env,path);
+        (_, fullPath) = Interactive.mkFullyQual(env, path);
         //  print("env:\n");print(FGraph.printGraphStr(env));
         //str = Absyn.pathString(cPath);
         //print("\npath = ");

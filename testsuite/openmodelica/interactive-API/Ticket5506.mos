@@ -1,0 +1,24 @@
+// name: Ticket5506.mos
+// keywords: test that -d=nfAPI works fine
+// status: correct
+// cflags: -d=nfAPI
+//
+// test for ticket:5506
+//
+
+
+loadString("
+model Test
+equation
+annotation(
+    Diagram(coordinateSystem(extent = {{-120, -80}, {120, 80}})),
+    version = \"\",uses);
+end Test;");
+
+getDiagramAnnotation(Test); getErrorString();
+
+// Result:
+// true
+// {-120.0,-80.0,120.0,80.0,true,0.1,2.0,2.0}
+// ""
+// endResult

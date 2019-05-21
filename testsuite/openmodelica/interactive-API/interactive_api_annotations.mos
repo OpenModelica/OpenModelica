@@ -9125,7 +9125,9 @@ getDocumentationAnnotation(Modelica.UsersGuide.Contact); getErrorString();
 // Evaluating: getIconAnnotation(Modelica.StateGraph.Examples.Utilities.Tank)
 // {-100.0,-100.0,100.0,100.0,true,0.1,1.0,1.0,{Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-122, -82}, {88, -42}}, "%name", 0, {-1, -1, -1}, "", {}, TextAlignment.Center), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.5, BorderPattern.None, {{-60, 60}, {80, -40}}, 0), Rectangle(true, {0.0, 0.0}, 0, {0, 0, 0}, {191, 0, 95}, LinePattern.Solid, FillPattern.HorizontalCylinder, 0.5, BorderPattern.None, {{-60, -40}, {-60, -40}}, 0)}}
 // Evaluating: getErrorString()
-// ""
+// "[Modelica 3.1/StateGraph.mo:1516:7-1518:38:writable] Warning: Component inflow1 in env: Modelica.StateGraph.Examples.Utilities.Tank has the same name as its type Modelica.StateGraph.Examples.Utilities.inflow1.
+// 	This is forbidden by Modelica specification and may lead to lookup errors.
+// "
 // Evaluating: getDiagramAnnotation(Modelica.StateGraph.Examples.Utilities.Tank)
 // {-100.0,-100.0,100.0,100.0,true,0.1,1.0,1.0}
 // Evaluating: getErrorString()
