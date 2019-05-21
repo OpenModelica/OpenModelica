@@ -825,11 +825,36 @@ extern const char* System_sprintff(const char *fmt, double d)
 
 extern const char* System_realpath(const char *path)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodePathLength = SystemImpl__stringToUnicodeSize(path);
+  wchar_t unicodePath[unicodePathLength];
+  SystemImpl__stringToUnicode(path, unicodePath, unicodePathLength);
+
+  DWORD bufLen = 0;
+  bufLen = GetFullPathNameW(unicodePath, bufLen, NULL, NULL);
+  if (!bufLen) {
+    fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
+    MMC_THROW();
+  }
+
+  WCHAR unicodeFullPath[bufLen];
+  if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
+    fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
+    MMC_THROW();
+  }
+
+  int bufferLength = SystemImpl__unicodeToStringSize(unicodeFullPath);
+  char buffer[bufferLength];
+  SystemImpl__unicodeToString(unicodeFullPath, buffer, bufferLength);
+  SystemImpl__toWindowsSeperators(buffer, bufferLength);
+  return omc_alloc_interface.malloc_strdup(buffer);
+#else
   char buf[PATH_MAX];
   if (realpath(path, buf) == NULL) {
     MMC_THROW();
   }
   return omc_alloc_interface.malloc_strdup(buf);
+#endif
 }
 
 extern int System_fileIsNewerThan(const char *file1, const char *file2)

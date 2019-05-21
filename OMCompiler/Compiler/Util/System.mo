@@ -365,7 +365,7 @@ end plotCallBack;
 public function cd
   input String inString;
   output Integer outInteger;
-  external "C" outInteger=chdir(inString) annotation(Library = "omcruntime");
+  external "C" outInteger=SystemImpl__chdir(inString) annotation(Library = "omcruntime");
 end cd;
 
 public function createDirectory

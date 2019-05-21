@@ -35,6 +35,9 @@
 #include <assert.h>
 #include <ctype.h>
 #include "read_matlab4.h"
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#endif
 
 extern const char *omc_mat_Aclass;
 
@@ -226,7 +229,15 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   int i;
   char binTrans = 1;
   memset(reader, 0, sizeof(ModelicaMatReader));
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+  wchar_t unicodeFilename[unicodeFilenameLength];
+  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
+
+  reader->file = _wfopen(unicodeFilename, L"rb");
+#else
   reader->file = fopen(filename, "rb");
+#endif
   if(!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);
   reader->readAll = 0;

@@ -34,6 +34,9 @@
 #include "read_csv.h"
 #include "read_matlab4.h"
 #include "libcsv.h"
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#endif
 
 #if defined(__cplusplus)
 #include <sstream>
@@ -102,7 +105,15 @@ int read_csv_dataset_size(const char* filename)
   struct cell_row_count count = {0};
   size_t offset=0;
   unsigned char delim = CSV_COMMA;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+  wchar_t unicodeFilename[unicodeFilenameLength];
+  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
+
+  f = _wfopen(unicodeFilename, L"r");
+#else
   f = fopen(filename,"r");
+#endif
   if (f == NULL) {
     return -1;
   }
@@ -215,7 +226,15 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   char **res;
   struct csv_parser p;
   struct csv_body body = {0};
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+  wchar_t unicodeFilename[unicodeFilenameLength];
+  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
+
+  FILE *fin = _wfopen(unicodeFilename, L"r");
+#else
   FILE *fin = fopen(filename, "r");
+#endif
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
   if (!fin) {
@@ -263,7 +282,15 @@ struct csv_data* read_csv(const char *filename)
   struct csv_data *res;
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+  wchar_t unicodeFilename[unicodeFilenameLength];
+  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
+
+  FILE *fin = _wfopen(unicodeFilename, L"r");
+#else
   FILE *fin = fopen(filename, "r");
+#endif
   if (!fin) {
     return NULL;
   }
