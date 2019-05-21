@@ -43,18 +43,7 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | pump.delta_head_init >= 0.0
 // assert            | warning | Variable violating min constraint: 0.0 <= pump.delta_head_init, has value: -2.0431
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// stdout            | warning | While solving non-linear system an assertion failed during initialization.
-// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
-// |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// assert            | debug   | Solving non-linear system 220 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | warning | Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!

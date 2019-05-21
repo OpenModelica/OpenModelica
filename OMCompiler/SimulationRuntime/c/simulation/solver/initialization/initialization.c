@@ -203,7 +203,15 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
   }
 #endif
-  adaptiveGlobal = data->callback->useHomotopy == 2;
+  /* useHomotopy=1: global homotopy (equidistant lambda) */
+  if ( (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1) && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] !=1 ) {
+      omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
+      init_lambda_steps = 2;
+      infoStreamPrint(LOG_INIT, 0, "Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. "
+                                   "To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".");
+  }
+
+  adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
   solveWithGlobalHomotopy = homotopySupport
                             && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || adaptiveGlobal);
 
@@ -236,7 +244,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
     } else {
       if (adaptiveGlobal)
-        data->callback->useHomotopy = 1;
+        data->callback->useHomotopy = 1;  /* global homotopy (equidistant lambda) */
       data->simulationInfo->lambda = 1.0;
       infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
@@ -248,7 +256,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal)
-      data->callback->useHomotopy = 2;
+      data->callback->useHomotopy = 2; /* new global homotopy approach (adaptive lambda) */
     if(solveWithGlobalHomotopy) {
       if (!kinsol)
         warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
