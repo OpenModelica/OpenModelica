@@ -9936,7 +9936,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
     case e as SES_FOR_LOOP(__)
       then
-        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
     else
       error(sourceInfo(),"NOT IMPLEMENTED EQUATION")
   end match
@@ -11544,10 +11544,13 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
 end equationLinearOrNonLinear;
 
 
-template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean assignToStartValues)
 ::=
   match eq
     case SES_FOR_LOOP(__) then
+      let startFixedExp = match cref2simvar(cref, simCode)
+        case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
+          'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
       let &preExp = buffer ""
       let iterExp = daeExp(iter, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
@@ -11555,6 +11558,7 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let crefPart = daeExp(crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       <<
+      <%if not assignToStartValues then '<%startFixedExp%>'%>
       for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
         <%preExp%>
         <%if isArrayType(crefTypeFull(cref)) then
