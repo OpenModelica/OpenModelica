@@ -244,7 +244,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
     } else {
       if (adaptiveGlobal)
-        data->callback->useHomotopy = 1;
+        data->callback->useHomotopy = 1;  /* global homotopy (equidistant lambda) */
       data->simulationInfo->lambda = 1.0;
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
@@ -256,7 +256,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal)
-      data->callback->useHomotopy = 2;
+      data->callback->useHomotopy = 2; /* new global homotopy approach (adaptive lambda) */
     if(solveWithGlobalHomotopy) {
       if (!kinsol)
         warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");

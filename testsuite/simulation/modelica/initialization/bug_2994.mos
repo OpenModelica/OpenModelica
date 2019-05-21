@@ -55,8 +55,13 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+<<<<<<< HEAD
 // LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_V        | info    | parameter values
+=======
+// LOG_INIT          | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT          | info    | parameter values
+>>>>>>> a96be8d9db... [C-Runtime] Initialize with homotopy solver for models with homotopy operator
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=2, fixed=true) = 2
 // |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 2
