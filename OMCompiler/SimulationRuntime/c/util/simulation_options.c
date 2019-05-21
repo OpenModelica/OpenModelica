@@ -56,6 +56,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_MAX_TRIES */           "homMaxTries",
   /* FLAG_HOMOTOPY_NEG_START_DIR */       "homNegStartDir",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        "homotopyOnFirstTry",
+  /* FLAG_NO_HOMOTOPY_ON_FIRST_TRY */     "noHomotopyOnFirstTry",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      "homTauDecFac",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ "homTauDecFacPredictor",
   /* FLAG_HOMOTOPY_TAU_INC_FACTOR */      "homTauIncFac",
@@ -171,6 +172,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_MAX_TRIES */           "[int (default 10)] maximum number of tries for one homotopy lambda step",
   /* FLAG_HOMOTOPY_NEG_START_DIR */       "start to run along the homotopy path in the negative direction",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        "directly use the homotopy method to solve the initialization problem",
+  /* FLAG_NO_HOMOTOPY_ON_FIRST_TRY */     "disable the use of the homotopy method to solve the initialization problem",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      "[double (default 10.0)] decrease homotopy step size tau by this factor if tau is too big in the homotopy corrector step",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ "[double (default 2.0)] decrease homotopy step size tau by this factor if tau is too big in the homotopy predictor step",
   /* FLAG_HOMOTOPY_TAU_INC_FACTOR */      "[double (default 2.0)] increase homotopy step size tau by this factor if tau is too small in the homotopy corrector step",
@@ -322,6 +324,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
   "  Without this flag, the solver first tries to solve the initialization problem without homotopy and only uses homotopy as fallback option.",
+  /* FLAG_NO_HOMOTOPY_ON_FIRST_TRY */
+  "  Disable the use of the homotopy method to solve the initialization problem.\n"
+  "  Without this flag, the solver tries to solve the initialization problem with homotopy if the model contains the homotopy-operator.",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */
   "  Decrease homotopy step size tau by this factor if tau is too big in the homotopy corrector step (default: 10.0).",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */
@@ -565,6 +570,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_HOMOTOPY_MAX_TRIES */           FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_NEG_START_DIR */       FLAG_TYPE_FLAG,
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        FLAG_TYPE_FLAG,
+  /* FLAG_NO_HOMOTOPY_ON_FIRST_TRY */     FLAG_TYPE_FLAG,
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_TAU_INC_FACTOR */      FLAG_TYPE_OPTION,
