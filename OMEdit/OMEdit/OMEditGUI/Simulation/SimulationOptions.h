@@ -75,7 +75,6 @@ public:
     setInitialization(true);
     setEvaluateAllParameters(false);
     setNLSanalyticJacobian(true);
-    setPedantic(false);
     setParmodauto(false);
     setNewInstantiation(false);
     setDataReconciliation(false);
@@ -172,8 +171,6 @@ public:
   bool getEvaluateAllParameters() const {return mEvaluateAllParameters;}
   void setNLSanalyticJacobian(bool nlsAnalyticJacobian) {mNLSanalyticJacobian = nlsAnalyticJacobian;}
   bool getNLSanalyticJacobian() const {return mNLSanalyticJacobian;}
-  void setPedantic(bool pedantic) {mPedantic = pedantic;}
-  bool getPedantic() const {return mPedantic;}
   void setParmodauto(bool parmodauto) {mParmodauto = parmodauto;}
   bool getParmodauto() const {return mParmodauto;}
   void setNewInstantiation(bool newInstantiation) {mNewInstantiation = newInstantiation;}
@@ -280,7 +277,6 @@ private:
   bool mInitialization;
   bool mEvaluateAllParameters;
   bool mNLSanalyticJacobian;
-  bool mPedantic;
   bool mParmodauto;
   bool mNewInstantiation;
   bool mDataReconciliation;
