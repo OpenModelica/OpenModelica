@@ -35,6 +35,7 @@ protected
   import Absyn;
   import List;
   import System;
+  import Flags;
 
   import Builtin = NFBuiltin;
   import BuiltinCall = NFBuiltinCall;
@@ -861,6 +862,11 @@ public
       case (INTEGER(), Type.REAL())
         then REAL(intReal(exp.value));
 
+      // Boolean can be cast to Real (only if -d=nfAPI is on)
+      // as there are annotations having expressions such as Boolean x > 0.5
+      case (BOOLEAN(), Type.REAL()) guard Flags.isSet(Flags.NF_API)
+        then REAL(if exp.value then 1.0 else 0.0);
+
       // Real doesn't need to be cast to Real, since we convert e.g. array with
       // a mix of Integers and Reals to only Reals.
       case (REAL(), Type.REAL()) then exp;
@@ -1546,7 +1552,9 @@ public
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case BOX() then "BOX(" + toString(exp.exp) + ")";
-      case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+      case CAST()
+        then
+          if Flags.isSet(Flags.NF_API) then toString(exp.exp) else "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";

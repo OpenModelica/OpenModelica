@@ -1468,6 +1468,8 @@ protected
         then Expression.typeOf(Expression.unbox(listHead(args)));
       case Absyn.IDENT("subSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("DynamicSelect")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
       else
         algorithm
           Error.assertion(false, getInstanceName() + ": unhandled case for " +

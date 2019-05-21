@@ -181,7 +181,7 @@ algorithm
 
           exp := NFInst.instExp(absynExp, inst_cls, info);
           (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
-          exp := NFCeval.evalExp(exp);
+          // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
         then
@@ -223,13 +223,17 @@ algorithm
           dae := frontEndBack(inst_anncls, annName);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
-          if stringEq(annName, "Icon") or stringEq(annName, "Diagram") then
-            {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
-            exp := NFInst.instExp(absynExp, inst_cls, info);
-            (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
-            exp := NFCeval.evalExp(exp);
-            exp := SimplifyExp.simplify(exp);
-            str := str + ", " + Expression.toString(exp);
+          if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
+            try
+              {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
+              exp := NFInst.instExp(absynExp, inst_cls, info);
+              (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+              // exp := NFCeval.evalExp(exp);
+              exp := SimplifyExp.simplify(exp);
+              str := str + ", " + Expression.toString(exp);
+            else
+              // just don't fail!
+            end try;
           end if;
         then
           str;
@@ -357,7 +361,7 @@ algorithm
 
           exp := NFInst.instExp(absynExp, inst_cls, info);
           (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
-          exp := NFCeval.evalExp(exp);
+          // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
         then
@@ -441,6 +445,23 @@ algorithm
   end for;
 
 end evaluateAnnotations_dispatch;
+
+public
+function mkFullyQual
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  input Absyn.Path pathToQualify;
+  output Absyn.Path qualPath;
+protected
+  InstNode top, inst_cls, cls;
+  SCode.Program program;
+  String name;
+algorithm
+  // run the front-end front
+  (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+  cls := Lookup.lookupClassName(pathToQualify, inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+  qualPath := InstNode.scopePath(cls, true);
+end mkFullyQual;
 
 protected
 function frontEndFront

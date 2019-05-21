@@ -1652,6 +1652,7 @@ algorithm
     case "realClock" then evalRealClock(args);
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
+    case "DynamicSelect" then evalBuiltinDynamicSelect(fn, args, target);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -3028,6 +3029,23 @@ algorithm
   Error.addInternalError(evalFunc + " got invalid arguments " +
     List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
 end printWrongArgsError;
+
+function evalBuiltinDynamicSelect
+  input Function fn;
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression s, d;
+algorithm
+  {s, d} := list(Expression.unbox(arg) for arg in args);
+  s := evalExp(s, target);
+  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
+    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
+  else
+    result := s;
+  end if;
+end evalBuiltinDynamicSelect;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

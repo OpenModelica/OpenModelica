@@ -141,6 +141,7 @@ public
       case "zeros" then typeZerosOnesCall("zeros", call, next_origin, info);
       case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_origin, info);
       case "sample" then typeSampleCall(call, next_origin, info);
+      case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_origin, info);
       /*
       case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_origin, info);
       case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_origin, info);
@@ -1843,6 +1844,52 @@ protected
 
     end match;
   end typeActualInStreamCall2;
+
+  function typeDynamicSelectCall
+    input String name;
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability variability = Variability.CONTINUOUS;
+  protected
+    ComponentRef fn_ref, arg_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg1, arg2;
+    Variability var1, var2;
+    Function fn;
+    InstNode arg_node;
+    Type ty1, ty2;
+    Expression expStatic, expDynamic;
+  algorithm
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    assertNoNamedParams(name, named_args, info);
+
+    if listLength(args) <> 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call), ComponentRef.toString(fn_ref) + "(static expression, dynamic expression)"}, info);
+    end if;
+
+    {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
+    (arg1, ty1, var1) := Typing.typeExp(expStatic, origin, info);
+    arg1 := ExpandExp.expand(arg1);
+    (arg2, ty2, var2) := Typing.typeExp(expDynamic, origin, info);
+    arg2 := ExpandExp.expand(arg2);
+    ty := ty1;
+    variability := var2;
+
+    {fn} := Function.typeRefCache(fn_ref);
+
+    if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
+      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, ty1));
+    else
+      variability := var1;
+      callExp := arg1;
+    end if;
+  end typeDynamicSelectCall;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

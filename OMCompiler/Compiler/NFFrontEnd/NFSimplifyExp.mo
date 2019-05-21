@@ -153,6 +153,14 @@ algorithm
           args := list(if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg) for arg in args);
         end if;
 
+        // HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
+        if Flags.isSet(Flags.NF_API) and not Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
+          if stringEq("DynamicSelect", Absyn.pathString(Function.nameConsiderBuiltin(call.fn))) then
+            callExp := simplify(listHead(args));
+            return;
+          end if;
+        end if;
+
         args := list(simplify(arg) for arg in args);
         call.arguments := args;
         builtin := Function.isBuiltin(call.fn);

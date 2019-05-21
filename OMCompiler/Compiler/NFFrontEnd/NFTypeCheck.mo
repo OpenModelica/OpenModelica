@@ -51,6 +51,7 @@ import Debug;
 import DAEExpression = Expression;
 import Error;
 import ExpressionDump;
+import Flags;
 import List;
 import Types;
 import Operator = NFOperator;
@@ -85,7 +86,7 @@ import System;
 public
 type MatchKind = enumeration(
   EXACT "Exact match",
-  CAST  "Matched by casting, e.g. Integer to real",
+  CAST  "Matched by casting, e.g. Integer to Real",
   UNKNOWN_EXPECTED "The expected type was unknown",
   UNKNOWN_ACTUAL   "The actual type was unknown",
   GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
@@ -2162,6 +2163,22 @@ algorithm
 
     case (Type.REAL(), Type.INTEGER())
       algorithm
+        exp2 := Expression.typeCast(exp2, type1);
+      then
+        (type1, MatchKind.CAST);
+
+    // Boolean can be cast to Real (only if -d=nfAPI is on)
+    // as there are annotations having expressions such as Boolean x > 0.5
+    case (Type.BOOLEAN(), Type.REAL()) guard Flags.isSet(Flags.NF_API)
+      algorithm
+        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp1) + " to Real.");
+        exp1 := Expression.typeCast(exp1, type2);
+      then
+        (type2, MatchKind.CAST);
+
+    case (Type.REAL(), Type.BOOLEAN()) guard Flags.isSet(Flags.NF_API)
+      algorithm
+        Error.addCompilerWarning("Allowing casting of boolean expression: " + Expression.toString(exp2) + " to Real.");
         exp2 := Expression.typeCast(exp2, type1);
       then
         (type1, MatchKind.CAST);
