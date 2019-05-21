@@ -75,7 +75,6 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpInitializationCheckBox = new QCheckBox(tr("Show additional information from the initialization process"));
   mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
-  mpPedanticCheckBox = new QCheckBox(tr("Enable pedantic debug-mode, to get much more feedback"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpNewInstantiationCheckBox = new QCheckBox(tr("Enable experimental new instantiation phase"));
   mpDataReconciliationCheckBox = new QCheckBox(tr("Enable data reconciliation"));
@@ -99,7 +98,6 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpInitializationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpEvaluateAllParametersCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpNLSanalyticJacobianCheckBox, row++, 0, 1, 3);
-  pMainLayout->addWidget(mpPedanticCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpNewInstantiationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpDataReconciliationCheckBox, row++, 0, 1, 3);
@@ -127,7 +125,6 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpInitializationCheckBox->setChecked(simulationOptions.getInitialization());
   mpEvaluateAllParametersCheckBox->setChecked(simulationOptions.getEvaluateAllParameters());
   mpNLSanalyticJacobianCheckBox->setChecked(simulationOptions.getNLSanalyticJacobian());
-  mpPedanticCheckBox->setChecked(simulationOptions.getPedantic());
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
   mpNewInstantiationCheckBox->setChecked(simulationOptions.getNewInstantiation());
   mpDataReconciliationCheckBox->setChecked(simulationOptions.getDataReconciliation());
@@ -146,7 +143,6 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setInitialization(mpInitializationCheckBox->isChecked());
   pSimulationOptions->setEvaluateAllParameters(mpEvaluateAllParametersCheckBox->isChecked());
   pSimulationOptions->setNLSanalyticJacobian(mpNLSanalyticJacobianCheckBox->isChecked());
-  pSimulationOptions->setPedantic(mpPedanticCheckBox->isChecked());
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
   pSimulationOptions->setNewInstantiation(mpNewInstantiationCheckBox->isChecked());
   pSimulationOptions->setDataReconciliation(mpDataReconciliationCheckBox->isChecked());
@@ -191,10 +187,6 @@ QString TranslationFlagsWidget::commandLineOptions()
   // NLS analytic jacobian
   if (mpNLSanalyticJacobianCheckBox->isChecked()) {
     debugFlags.append("NLSanalyticJacobian");
-  }
-  // pedantic mode
-  if (mpPedanticCheckBox->isChecked()) {
-    debugFlags.append("pedantic");
   }
   // parmodauto
   if (mpParmodautoCheckBox->isChecked()) {

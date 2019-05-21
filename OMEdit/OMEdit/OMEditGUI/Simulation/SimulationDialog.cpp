@@ -707,7 +707,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getInitializationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getInitializationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->isChecked());
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
-      mpTranslationFlagsWidget->getPedanticCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getPedanticCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
       mpTranslationFlagsWidget->getNewInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNewInstantiationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getDataReconciliationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getDataReconciliationCheckBox()->isChecked());
@@ -749,8 +748,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
                 mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("NLSanalyticJacobian") == 0) {
                 mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(true);
-              } else if (commandLineOptionValue.compare("pedantic") == 0) {
-                mpTranslationFlagsWidget->getPedanticCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("parmodauto") == 0) {
                 mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("newInst") == 0) {

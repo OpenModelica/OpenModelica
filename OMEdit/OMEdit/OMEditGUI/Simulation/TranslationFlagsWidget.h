@@ -52,7 +52,6 @@ public:
   QCheckBox *getInitializationCheckBox() const {return mpInitializationCheckBox;}
   QCheckBox *getEvaluateAllParametersCheckBox() const {return mpEvaluateAllParametersCheckBox;}
   QCheckBox *getNLSanalyticJacobianCheckBox() const {return mpNLSanalyticJacobianCheckBox;}
-  QCheckBox *getPedanticCheckBox() const {return mpPedanticCheckBox;}
   QCheckBox *getParmodautoCheckBox() const {return mpParmodautoCheckBox;}
   QCheckBox *getNewInstantiationCheckBox() const {return mpNewInstantiationCheckBox;}
   QCheckBox *getDataReconciliationCheckBox() const {return mpDataReconciliationCheckBox;}
@@ -70,7 +69,6 @@ private:
   QCheckBox *mpInitializationCheckBox;
   QCheckBox *mpEvaluateAllParametersCheckBox;
   QCheckBox *mpNLSanalyticJacobianCheckBox;
-  QCheckBox *mpPedanticCheckBox;
   QCheckBox *mpParmodautoCheckBox;
   QCheckBox *mpNewInstantiationCheckBox;
   QCheckBox *mpDataReconciliationCheckBox;

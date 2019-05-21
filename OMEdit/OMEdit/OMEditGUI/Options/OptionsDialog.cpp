@@ -569,10 +569,6 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/NLSanalyticJacobian")) {
     mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->setChecked(mpSettings->value("simulation/NLSanalyticJacobian").toBool());
   }
-  // save pedantic mode
-  if (mpSettings->contains("simulation/pedantic")) {
-    mpSimulationPage->getTranslationFlagsWidget()->getPedanticCheckBox()->setChecked(mpSettings->value("simulation/pedantic").toBool());
-  }
   // save parmodauto
   if (mpSettings->contains("simulation/parmodauto")) {
     mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->setChecked(mpSettings->value("simulation/parmodauto").toBool());
@@ -1192,8 +1188,6 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/evaluateAllParameters", mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked());
   // save NLS analytic jacobian
   mpSettings->setValue("simulation/NLSanalyticJacobian", mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked());
-  // save pedantic mode
-  mpSettings->setValue("simulation/pedantic", mpSimulationPage->getTranslationFlagsWidget()->getPedanticCheckBox()->isChecked());
   // save parmodauto
   mpSettings->setValue("simulation/parmodauto", mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked());
   // save new instantiation
