@@ -201,39 +201,30 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
       mLineColor = QColor (red, green, blue);
     }
   }
-  //Now comes the optional parameters; fontName and textStyle.
-  annotation = annotation.replace("{", "");
-  annotation = annotation.replace("}", "");
-  // parse the shape to get the list of attributes of Text Annotation.
-  list = StringHandler::getStrings(annotation);
-  int index = 22;
-  mTextStyles.clear();
-  while(index < list.size()) {
-    QString annotationValue = StringHandler::removeFirstLastQuotes(list.at(index));
-    // check textStyles enumeration.
-    if(annotationValue == "TextStyle.Bold") {
+  // 13th item of the list contains the font name.
+  QString fontName = StringHandler::removeFirstLastQuotes(list.at(12));
+  if (!fontName.isEmpty()) {
+    mFontName = fontName;
+  }
+  // 14th item of the list contains the text styles.
+  QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(13)));
+  foreach (QString textStyle, textStyles) {
+    if (textStyle == "TextStyle.Bold") {
       mTextStyles.append(StringHandler::TextStyleBold);
-      index++;
-    } else if(annotationValue == "TextStyle.Italic") {
+    } else if (textStyle == "TextStyle.Italic") {
       mTextStyles.append(StringHandler::TextStyleItalic);
-      index++;
-    } else if(annotationValue == "TextStyle.UnderLine") {
+    } else if (textStyle == "TextStyle.UnderLine") {
       mTextStyles.append(StringHandler::TextStyleUnderLine);
-      index++;
-    } else if(annotationValue == "TextAlignment.Left") {
-      // check textAlignment enumeration.
-      mHorizontalAlignment = StringHandler::TextAlignmentLeft;
-      index++;
-    } else if(annotationValue == "TextAlignment.Center") {
-      mHorizontalAlignment = StringHandler::TextAlignmentCenter;
-      index++;
-    } else if(annotationValue == "TextAlignment.Right") {
-      mHorizontalAlignment = StringHandler::TextAlignmentRight;
-      index++;
-    } else {
-      mFontName = annotationValue;
-      index++;
     }
+  }
+  // 15th item of the list contains the text alignment.
+  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(list.at(14));
+  if (horizontalAlignment == "TextAlignment.Left") {
+    mHorizontalAlignment = StringHandler::TextAlignmentLeft;
+  } else if (horizontalAlignment == "TextAlignment.Center") {
+    mHorizontalAlignment = StringHandler::TextAlignmentCenter;
+  } else if (horizontalAlignment == "TextAlignment.Right") {
+    mHorizontalAlignment = StringHandler::TextAlignmentRight;
   }
 }
 
