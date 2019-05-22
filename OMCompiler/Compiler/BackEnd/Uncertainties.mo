@@ -438,6 +438,8 @@ algorithm
         sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns,inputvarlist);
         //sets_inner_equations={BackendDAE.INNEREQUATION(eqn = 56, vars = {48}), BackendDAE.INNEREQUATION(eqn = 3, vars = {70}), BackendDAE.INNEREQUATION(eqn = 6, vars = {77}),BackendDAE.INNEREQUATION(eqn = 23, vars = {55}), BackendDAE.INNEREQUATION(eqn = 20, vars = {42}), BackendDAE.INNEREQUATION(eqn = 50, vars = {20})};
         (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
+        // set uncertain variables unreplaceable attributes to be true
+        outDiffVars=BackendVariable.listVar(List.map1(listReverse(BackendVariable.varList(outDiffVars)),BackendVariable.setVarUnreplaceable,true));
         // Dump the torn systems
         /*
         BackendDump.dumpVariables(outDiffVars,"Jacobian_knownVariables");
