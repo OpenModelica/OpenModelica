@@ -351,6 +351,7 @@ if true then /* Suppress output */
     "../MidCode/DAEToMid.mo",
     "../MidCode/MidToMid.mo",
     "../MidCode/HashTableMidVar.mo",
+    "../MidCode/MidCodeUtil.mo",
 
   // "NFFrontEnd";
     "../NFFrontEnd/NFAlgorithm.mo",
@@ -532,7 +533,20 @@ if true then /* Suppress output */
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };
-  files := cat(1, alwaysfiles, backendfiles);
+  // "LLVM"
+  llvmfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")=="" and OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_LLVM_JIT")=="Yes" then
+    {
+      "../LLVM/MidToLLVMUtil.mo",
+      "../LLVM/EXT_LLVM.mo",
+      "../LLVM/MidToLLVM.mo"
+    }
+  else
+    {
+      "../Stubs/EXT_LLVM.mo",
+      "../Stubs/MidToLLVM.mo"
+    }
+  ;
+  files := cat(1, alwaysfiles, backendfiles, llvmfiles);
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
     print("Failed to load compiler sources:\n");

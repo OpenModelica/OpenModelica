@@ -559,6 +559,13 @@ constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
 constant DebugFlag DUMP_BINDINGS = DEBUG_FLAG(194, "dumpBindings", false,
   Gettext.gettext("Dumps information about the equations created from bindings."));
+/* LLVM */
+constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(195, "jit_eval_func", false,
+ Util.gettext("Turns on/off JIT compilation"));
+constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(196, "jit_dump_ir", false,
+ Util.gettext("Dumps LLVM-IR before execution"));
+constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(197, "jit_no_opt", false,
+ Util.gettext("Generates LLVM-IR without optimization."));
 
 public
 // CONFIGURATION FLAGS

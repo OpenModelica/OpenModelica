@@ -28,36 +28,31 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 encapsulated package DAEToMid
-
-public
-import MidCode;
-import SimCodeFunction;
-
-function DAEFunctionsToMid
-  input list<SimCodeFunction.Function> simfuncs;
-  output list<MidCode.Function> midfuncs;
-algorithm
-  midfuncs := list(DAEFunctionToMid(simfunc) for simfunc in simfuncs);
-end DAEFunctionsToMid;
-
-protected
+import BaseHashTable;
+import ComponentReference;
 import DAE;
 import DAEDump;
-import MidToMid;
-import SimCode;
+import DAEUtil;
+import DoubleEnded;
 import Expression;
 import ExpressionDump;
-import ComponentReference;
-import System;
-import DoubleEnded;
-import Mutable;
-import BaseHashTable;
 import HashTableMidVar;
+import MidCode;
+import MidCodeUtil;
+import MidToMid;
+import Mutable;
+import SimCode;
+import SimCodeFunction;
+import System;
+import Types;
+protected
+import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+import ValuesUtil;
 import List;
 import Error;
 
+public
 uniontype State
   record STATE
     DoubleEnded.MutableList<MidCode.Var> locals;
@@ -90,6 +85,16 @@ algorithm
     case (x::xs_, y::ys_) then (x,y) :: listZip(xs_,ys_);
   end match;
 end listZip;
+
+function getSimCodeVarName
+  input SimCodeFunction.Variable simV;
+  output DAE.ComponentRef cref;
+algorithm
+  cref := match simV
+    case SimCodeFunction.VARIABLE(__) then simV.name;
+    else fail();
+  end match;
+end getSimCodeVarName;
 
 function GenTmpVar
   input DAE.Type ty;
@@ -139,9 +144,10 @@ algorithm
   id := System.tmpTickIndex(45);
 end GenBlockId;
 
-function ConvertSimCodeVars
+function ConvertSimCodeVars //Observe that variables can be in three places. Sometimes it seem that variables in outputs are duplicated in locals.
   input SimCodeFunction.Variable simcodevar;
   input State state;
+  input Boolean isLocalOrOutputVar = false "If the variable is either an output or local variable extra array logic is needed";
   output MidCode.Var var;
 algorithm
   var := match simcodevar
@@ -150,42 +156,101 @@ algorithm
     case SimCodeFunction.VARIABLE(__)
     algorithm
       midcodevar := CrefToMidVar(simcodevar.name, state);
+      if isLocalOrOutputVar and Types.isArray(midcodevar.ty) then //Special code need to be generated for Arrays
+        genAllocaLogicForArray(midcodevar,state);
+      end if;
       () := match simcodevar.value
         local
           DAE.Exp exp;
         case NONE() then ();
         case SOME(exp)
-        algorithm
-          stateAddStmt(MidCode.ASSIGN(midcodevar, ExpToMid(exp, state)), state);
-        then ();
+          algorithm
+            stateAddStmt(MidCode.ASSIGN(midcodevar, ExpToMid(exp, state)), state);
+          then ();
       end match;
     then midcodevar;
   end match;
 end ConvertSimCodeVars;
 
+function genAllocaLogicForArray
+  input MidCode.Var var;
+  input State state;
+protected
+  list<DAE.Exp> dims;
+  list<MidCode.Var> args;
+  MidCode.Var dimSize;
+algorithm
+  dims := List.map(MidCodeUtil.getDimensions(var.ty),Expression.dimensionSizeExpHandleUnkown);
+  dimSize := RValueToVar(ExpToMid(DAE.ICONST(listLength(dims)),state),state);
+  args := List.map1(List.map1(dims,ExpToMid,state),RValueToVar,state);
+  stateAddStmt(MidCode.ALLOCARRAY(getArrayAllocaCall(DAEUtil.expTypeElementType(var.ty))
+                                  ,var
+                                  ,dimSize
+                                  ,args), state);
+end genAllocaLogicForArray;
+
 function GetCrefIndexVar
+  "Returns a MidCode.Var with the value of a DAE index present in a component ref."
   input DAE.ComponentRef cref;
   input State state;
-  output Option<MidCode.Var> var;
+  output Option<MidCode.Var> var1;
+  output Option<MidCode.Var> var2;
 protected
   list<DAE.Subscript> subscripts;
 algorithm
   subscripts := ComponentReference.crefLastSubs(cref);
-
-  var := match subscripts
+  //print("CREFINDEXVAR:" + anyString(subscripts) + "\n");
+  (var1,var2) := match subscripts
     local
-      DAE.Subscript subscript;
-      MidCode.Var indexvar;
-    case {} then NONE();
-    case {subscript as DAE.INDEX(__)}
+      DAE.Subscript subscript1;
+      DAE.Subscript subscript2;
+      MidCode.Var indexvar1;
+      MidCode.Var indexvar2;
+    case {} then (NONE(),NONE());
+    case {subscript1 as DAE.INDEX(__)}
     algorithm
-      indexvar := RValueToVar(ExpToMid(subscript.exp, state), state);
-    then SOME(indexvar);
+      indexvar1 := RValueToVar(ExpToMid(subscript1.exp, state), state);
+    then (SOME(indexvar1),NONE());
+    case {subscript1 as DAE.INDEX(__),subscript2 as DAE.INDEX(__)}
+    algorithm
+      indexvar1 := RValueToVar(ExpToMid(subscript1.exp, state), state);
+      indexvar2 := RValueToVar(ExpToMid(subscript2.exp, state), state);
+    then (SOME(indexvar1),SOME(indexvar2));
   end match;
 end GetCrefIndexVar;
 
-function CrefToMidVar
-  //TODO: handle scopes better
+function CrefToMidVar //Cref is currently used before updating the different lists present in the state. A more sane approach to this might be to use a function parameter.
+  "Converts a DAE.ComponentReference to a MidVar.
+   Besides doing this conversion the hashtable for the variables
+   is updated."
+  //TODO: handle scopes better (From my understanding so far 2018-04-xx Scopes does not seem to be handled at all... -John)
+  input DAE.ComponentRef cref;
+  input State state;
+  output MidCode.Var var;
+protected
+  String ident;
+  DAE.Type ty;
+algorithm
+  if not BaseHashTable.hasKey(cref, Mutable.access(state.vars)) then
+    (ident, ty) := match cref
+    local
+      String ident_;
+      DAE.Type ty_;
+    case DAE.CREF_IDENT(ident_, ty_, _) then (ident_, ty_);
+    else
+    algorithm
+      Error.addInternalError("CrefToMidVar error", sourceInfo());
+      Error.addInternalError(anyString(cref) + "\n", sourceInfo());
+    then fail();
+    end match;
+    Mutable.update(state.vars, BaseHashTable.add((cref, MidCode.VAR(ident, Types.complicateType(ty), false)), Mutable.access(state.vars)));
+  end if;
+  var := BaseHashTable.get(cref, Mutable.access(state.vars));
+end CrefToMidVar;
+
+function CrefToMidVarAddToLocal
+  "Same operation as CrefToMidVar. However, it also adds creates a new local variable in state."
+  //TODO: handle scopes better (From my understanding so far 2018-04-xx Scopes does not seem to be handled at all...  -John)
   input DAE.ComponentRef cref;
   input State state;
   output MidCode.Var var;
@@ -207,9 +272,11 @@ algorithm
     Mutable.update(state.vars, BaseHashTable.add((cref, MidCode.VAR(ident, Types.complicateType(ty), false)), Mutable.access(state.vars)));
   end if;
   var := BaseHashTable.get(cref, Mutable.access(state.vars));
-end CrefToMidVar;
+  DoubleEnded.push_back(state.locals,var);
+end CrefToMidVarAddToLocal;
 
 function RValueType
+  "Returns the DAE type of an RValue."
   input MidCode.RValue rvalue;
   output DAE.Type ty;
 algorithm
@@ -227,7 +294,9 @@ algorithm
       end match;
     case MidCode.UNARYOP(MidCode.BOX(),_) then Types.boxIfUnboxedType(rvalue.src.ty);
     case MidCode.UNARYOP(MidCode.UNBOX(),_) then Types.unboxedType(rvalue.src.ty);
+    //TODO: move to separate BOX/UNBOX?
     //TODO: separate CAST? since has new type
+    //TODO: need to check and separate string etc. boxing vs. metaboxed
     case MidCode.UNARYOP(__) then rvalue.src.ty;
     case MidCode.LITERALINTEGER(__) then DAE.T_INTEGER_DEFAULT;
     case MidCode.LITERALREAL(__) then DAE.T_REAL_DEFAULT;
@@ -238,6 +307,8 @@ algorithm
     case MidCode.UNIONTYPEVARIANT(__) then DAE.T_INTEGER_DEFAULT;
     case MidCode.ISCONS(__) then DAE.T_BOOL_DEFAULT;
     case MidCode.ISSOME(__) then DAE.T_BOOL_DEFAULT;
+    case MidCode.LITERALARRAY(__) then rvalue.ty;
+    case MidCode.DEREFERENCE(__) then rvalue.ty;
     else
     algorithm
       Error.addInternalError("Could not find the correct type of an RValue.\n", sourceInfo());
@@ -262,6 +333,34 @@ var := match rvalue
 end match;
 end RValueToVar;
 
+/*Added by johti139 TODO: Refactor together with the method above in some way*/
+function RValueToVarCast
+  input MidCode.RValue rvalue;
+  input DAE.Type ty "The type we cast to.";
+  input State state;
+  output MidCode.Var var;
+algorithm
+var := match rvalue
+  local
+    MidCode.Var tmpvar;
+  case MidCode.VARIABLE(__)
+  //Create a variable with the casted type.
+  then MidCode.VAR(rvalue.src.name,ty/*Another type is specified*/,rvalue.src.volatile);
+  else
+  algorithm
+    tmpvar := GenTmpVar(ty,state);
+    DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(tmpvar, rvalue));
+  then tmpvar;
+end match;
+end RValueToVarCast;
+
+function DAEFunctionsToMid
+  input list<SimCodeFunction.Function> simfuncs;
+  output list<MidCode.Function> midfuncs;
+algorithm
+  midfuncs := list(DAEFunctionToMid(simfunc) for simfunc in simfuncs);
+end DAEFunctionsToMid;
+
 function DAEFunctionToMid
   input SimCodeFunction.Function simfunc;
   output MidCode.Function midfunc;
@@ -269,27 +368,35 @@ protected
   State state;
   DoubleEnded.MutableList<MidCode.Var> inputs;
   DoubleEnded.MutableList<MidCode.Var> outputs;
+  MidCode.Var tmpVar;
   MidCode.Block block_;
   Absyn.Path path;
   Integer labelFirst;
-
+  Integer labelNext;
 algorithm
+//  print(anyString(simfunc) + "\n");
   System.tmpTickReset(47); //jump buffers
   System.tmpTickReset(46); //variables
   System.tmpTickReset(45); //block ids
-
   () := match simfunc
   local
     Absyn.Path name;
     list<SimCodeFunction.Variable> outVars;
     list<SimCodeFunction.Variable> functionArguments;
     list<SimCodeFunction.Variable> variableDeclarations;
+    list<SimCodeFunction.Variable> inVars;
+    list<SimCodeFunction.Variable> biVars;
     list<DAE.Statement> body;
+    list<SimCodeFunction.SimExtArg> extArgs;
+    list<String> includes;
+    list<MidCode.Var> midOutVars;
     SCode.Visibility visibility;
     SourceInfo info;
+    String extName;
+    SimCodeFunction.SimExtArg extReturn;
 
-  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, _, _)
-  algorithm
+  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, visibility, info)
+    algorithm
     labelFirst := GenBlockId();
     path := name;
     inputs := DoubleEnded.fromList({});
@@ -303,37 +410,84 @@ algorithm
                    Mutable.create({}),
                    Mutable.create({}),
                    Mutable.create(HashTableMidVar.emptyHashTable()));
-    for simcodeVar in variableDeclarations loop
-      DoubleEnded.push_back(state.locals, ConvertSimCodeVars(simcodeVar, state));
-    end for;
     for simcodeVar in outVars loop
-      DoubleEnded.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
+      tmpVar := ConvertSimCodeVars(simcodeVar, state,true);
+      DoubleEnded.push_back(outputs,tmpVar);
+    end for;
+    for simcodeVar in variableDeclarations loop
+      tmpVar := ConvertSimCodeVars(simcodeVar, state,true);
+      DoubleEnded.push_back(state.locals, tmpVar);
     end for;
     for simcodeVar in functionArguments loop
       DoubleEnded.push_back(inputs, ConvertSimCodeVars(simcodeVar, state));
     end for;
-
     StmtsToMid(body, state);
+    stateTerminate(-1, MidCode.RETURN(), state);
+    midfunc := MidCode.FUNCTION(name=path,
+                                locals=DoubleEnded.toListAndClear(state.locals),
+                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
+                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
+                                inputs=DoubleEnded.toListAndClear(inputs),
+                                outputs=DoubleEnded.toListAndClear(outputs),
+                                body=DoubleEnded.toListAndClear(state.blocks),
+                                entryId=labelFirst,
+                                exitId=GenBlockId());
+    midfunc := MidToMid.longJmpGoto(midfunc);
   then ();
+  /*TODO: Not completed
+     Add more external languages and more options here. Needs to be completed.*/
+  case SimCodeFunction.EXTERNAL_FUNCTION(name,extName,functionArguments,extArgs,extReturn,inVars,outVars,biVars,includes,_,"C",_,_,_)
+  algorithm
+    /*TODO: This will be needed in more then one place, a function should be written.*/
+    labelFirst := GenBlockId();
+    path := name;
+    inputs := DoubleEnded.fromList({});
+    outputs := DoubleEnded.fromList({});
+    state := STATE(DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   Mutable.create(labelFirst),
+                   Mutable.create({}),
+                   Mutable.create({}),
+                   Mutable.create(HashTableMidVar.emptyHashTable()));
+    /*For now only functions with outputs are handled.*/
+    outputs := DoubleEnded.fromList({});
+    for simcodeVar in outVars loop
+      DoubleEnded.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
+    end for;
+    labelNext := GenBlockId();
+    midOutVars := DoubleEnded.toListAndClear(outputs);
+    /*TODO:For now call the external function.*/
+    stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(extName)
+                                          ,true
+                                          ,{}
+                                          ,List.map(midOutVars,varToOutVar)
+                                          ,labelNext
+                                          ,DAE.T_REAL_DEFAULT/*Should be output variable*/)
+                   ,state);
+    /*After call assign result to temporary variables*/
+    stateTerminate(-1, MidCode.RETURN(), state);
+    midfunc := MidCode.FUNCTION(name=path,
+                                locals=DoubleEnded.toListAndClear(state.locals),
+                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
+                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
+                                inputs=DoubleEnded.toListAndClear(inputs),
+                                outputs=midOutVars,
+                                body=DoubleEnded.toListAndClear(state.blocks),
+                                entryId=labelFirst,
+                                exitId=GenBlockId());
+    midfunc := MidToMid.longJmpGoto(midfunc);
+  then();
   else
   algorithm
     Error.addInternalError("Unsupported SimCodeFunction.Function type\n", sourceInfo());
+    Error.addInternalError("DAEToMidDump " + anyString(simfunc) + "\n", sourceInfo());
     fail();
   then ();
   end match;
 
-  stateTerminate(-1, MidCode.RETURN(), state);
-
-  midfunc := MidCode.FUNCTION(name=path,
-                              locals=DoubleEnded.toListAndClear(state.locals),
-                              localBufs=DoubleEnded.toListAndClear(state.localBufs),
-                              localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
-                              inputs=DoubleEnded.toListAndClear(inputs),
-                              outputs=DoubleEnded.toListAndClear(outputs),
-                              body=DoubleEnded.toListAndClear(state.blocks),
-                              entryId=labelFirst,
-                              exitId=GenBlockId());
-  midfunc := MidToMid.longJmpGoto(midfunc);
 end DAEFunctionToMid;
 
 function StmtsToMid
@@ -356,10 +510,11 @@ algorithm
         DAE.Pattern pattern;
         list<DAE.Statement> daestmtLst;
         list<DAE.Exp> expLst;
-        list<MidCode.Var> indexesLst;
+        list<MidCode.Var> args;
         MidCode.Var varCref;
         MidCode.Var varArray;
         MidCode.Var varIndex;
+        MidCode.Var varDim;
         MidCode.Var varValue;
         MidCode.Var varCondition;
         MidCode.Var varIter;
@@ -368,12 +523,14 @@ algorithm
         MidCode.Var varMessage;
         MidCode.Var varLevel;
         MidCode.Var varRHS;
+        MidCode.Var varTmp;
         MidCode.OutVar outvar;
         MidCode.Block block_;
         Integer labelBody;
         Integer labelNext;
         Integer labelCondition;
         Integer labelStep;
+        Integer dimSize;
         DAE.Else else_;
         DoubleEnded.MutableList<MidCode.OutVar> outvars;
         String iter;
@@ -381,15 +538,36 @@ algorithm
         list<DAE.Subscript> subscripts;
         MidCode.Stmt midstmt;
         MidCode.RValue rvalue;
-        array<list<MidCode.Stmt>> assignBlock;
-      case DAE.STMT_ASSIGN(_, exp1 as DAE.CREF(__), exp, _)
-      algorithm
-        cref := ComponentReference.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
-        varCref := CrefToMidVar(cref,state);
-
-        stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(exp, state)), state);
+       /*Note that regular arrays can occur as regular assignments. TODO write to multidim arrays.*/
+      case DAE.STMT_ASSIGN(ty, exp1 as DAE.CREF(__), exp, _)
+        algorithm
+         cref := ComponentReference.crefLastCref(exp1.componentRef);
+         () := match cref
+            local DAE.Type identType; list<DAE.Subscript> subscriptLst;
+            /*Generates code for indexing Modelica arrays!*/
+            case DAE.CREF_IDENT(_ ,DAE.T_ARRAY(__), subscriptLst)
+            algorithm
+              varArray := CrefToMidVar(cref,state);
+              args := List.map1(List.map1(subscriptLst,SubscriptToMid,state),RValueToVar,state);
+              varIndex := RValueToVar(ExpToMid(DAE.ICONST(listLength(args) - 1),state),state);
+              dimSize := listLength(args);
+              varTmp := GenTmpVar(ty,state);
+              varValue := GenTmpVar(cref.identType,state);
+              args := varArray :: varIndex :: args;
+              labelNext := GenBlockId();
+              stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(genArrayIxFunction(ty,dimSize)),true,args
+                                                    ,{MidCode.OUT_VAR(varValue)},labelNext,cref.identType), state);
+              stateAddStmt(MidCode.ASSIGN(varTmp, ExpToMid(exp, state)), state);
+              stateAddStmt(MidCode.ASSIGN(varValue, MidCode.VARIABLE(varTmp)), state);
+            then();
+            else //Assignment of other types, intent is primitive types for now (Boolean,String,Integer,Real)
+              algorithm
+                varCref := CrefToMidVar(cref,state);
+                stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(exp, state)), state);
+              then ();
+         end match;
       then ();
-      case DAE.STMT_ASSIGN(_, exp1 as DAE.ASUB(__), exp, _)
+      case DAE.STMT_ASSIGN(_, exp1 as DAE.ASUB(__), exp, _) //Will only occur for MModelica arrays it seems.
       algorithm
         varArray := RValueToVar(ExpToMid(exp1.exp, state), state);
         varIndex := match exp1.sub
@@ -400,9 +578,10 @@ algorithm
         varValue := RValueToVar(ExpToMid(exp, state), state);
 
         labelNext := GenBlockId();
-        stateTerminate(labelNext, MidCode.CALL(Absyn.IDENT("arrayUpdate"), true, {varArray, varIndex, varValue}, {}, labelNext), state);
+        stateTerminate(labelNext, MidCode.CALL(Absyn.IDENT("arrayUpdate"), true, {varArray, varIndex, varValue}, {}, labelNext,
+                                               DAE.T_METAARRAY(varArray.ty)), state);
       then ();
-      case DAE.STMT_ASSIGN(_, DAE.PATTERN(pattern), exp, _)
+      case DAE.STMT_ASSIGN(_, DAE.PATTERN(pattern), exp, _) //Seems to be incorrectly implemented for a couple of cases, ex: H::T := lst in alg sec.
       algorithm
         varRHS  := RValueToVar(ExpToMid(exp,state),state);
         patternToMidCode(matches={(varRHS,pattern)},labelNoMatch=1,state=state); // pattern match
@@ -517,14 +696,27 @@ algorithm
 
         stateTerminate(labelNext, MidCode.TERMINATE(varMessage), state);
       then ();
+      case DAE.STMT_ASSIGN_ARR(__) //Right side seem to be CREFS, LEFTSIDE seem to be SHARED_LITERAL, source can be ignored?.
+      algorithm
+//      print("Assign array\n");
+        varCref := CrefToMidVar(unpackCrefFromExp(stmt.lhs),state);
+//      print(anyString(stmt.exp) + "\n");
+        stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(stmt.exp/*rhs*/, state)), state);
+      then();
       else
       algorithm
+//      print(anyString(stmt) + "\n");
         Error.addInternalError("DAE.Statement to Mid conversion failed " + DAEDump.ppStatementStr(stmt), sourceInfo());
       then fail();
 
       end match;
 
       StmtsToMid(tail, state);
+      //tror inte WHEN eller REINIT behöver göras, troligtvis ej relevant för algorithm
+      //REINIT verkar dock ganska lätt att implementera
+      //WHEN verkar vara lite klurigare. Inte så mycket svårare än IF troligtvis
+        //endast i SIMULATION_CONTEXT, så kanske ej behövs
+        //STMT_FAILURE ej relevant för algorithm
     then ();
   end match;
 end StmtsToMid;
@@ -534,6 +726,7 @@ function ExpToMid
   input State state;
   output MidCode.RValue rval;
 algorithm
+//  print("\n Calling ExpToMid" + anyString(exp) + "\n\n\n");
   rval := match exp
   local
     MidCode.Var varExp;
@@ -542,6 +735,11 @@ algorithm
     MidCode.Var varCar;
     MidCode.Var varCdr;
     MidCode.Var varTmp;
+    MidCode.Var varArray;
+    MidCode.Var varIndex;
+    MidCode.Var varSize;
+    Option<MidCode.Var> optVarExp1;
+    Option<MidCode.Var> optVarExp2;
     MidCode.BinaryOp binop;
     MidCode.UnaryOp unop;
     DAE.Exp exp1;
@@ -566,11 +764,27 @@ algorithm
     DAE.CallAttributes callattrs;
     list<DAE.Subscript> subscripts;
     MidCode.RValue rvalue;
+    DoubleEnded.MutableList<MidCode.RValue> rValues;
+  case DAE.SIZE(exp1,SOME(exp2)) //To options for size operator. We only generate code for the one with the argument.
+    algorithm
+      varIndex := RValueToVar(ExpToMid(exp2,state),state);
+      varArray := RValueToVar(ExpToMid(exp1,state),state);
+      varSize := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
+      labelNext := GenBlockId();
+      stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT("size_of_dimension_base_array")
+                                            ,true
+                                            ,{varArray,varIndex}
+                                            ,{MidCode.OUT_VAR(varSize)}
+                                            ,labelNext
+                                            ,DAE.T_INTEGER_DEFAULT),state);
+    then MidCode.VARIABLE(varSize);
   case DAE.ICONST(__) then MidCode.LITERALINTEGER(exp.integer);
   case DAE.ENUM_LITERAL(__) then MidCode.LITERALINTEGER(exp.index);
   case DAE.RCONST(__) then MidCode.LITERALREAL(exp.real);
   case DAE.SCONST(__) then MidCode.LITERALSTRING(exp.string);
-  case DAE.SHARED_LITERAL(__) then ExpToMid(exp.exp, state); //don't bother with shared support yet
+  case DAE.SHARED_LITERAL(__) then ExpToMid(exp.exp, state);
+  case DAE.ARRAY(__)  then fail(); //Not supported
+  case DAE.MATRIX(__) then fail(); //Not supported
   case DAE.BOX(__)
   algorithm
     varExp := RValueToVar(ExpToMid(exp.exp, state), state);
@@ -610,38 +824,49 @@ algorithm
   case DAE.LIST(expLst)
   algorithm
     expLst := listReverse(expLst);
-
     varCdr := GenTmpVar(DAE.T_METALIST_DEFAULT,state);
     DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(varCdr, MidCode.LITERALMETATYPE({}, DAE.T_METALIST_DEFAULT)));
     for exp in expLst loop
       varCar := RValueToVar(ExpToMid(exp, state), state);
       varTmp := GenTmpVar(DAE.T_METALIST(Types.complicateType(varCar.ty)),state);
-      DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(varTmp, MidCode.LITERALMETATYPE({varCar, varCdr},  Types.complicateType(DAE.T_METALIST(varCar.ty)))));
+      DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(varTmp, MidCode.LITERALMETATYPE({varCar, varCdr}, Types.complicateType(DAE.T_METALIST(varCar.ty)))));
       varCdr := varTmp;
     end for;
   then MidCode.VARIABLE(varCdr);
-  case DAE.CREF(cref, _)
+  case DAE.CREF(cref, _) //Array indexing among other things.
   algorithm
     varCref := CrefToMidVar(cref, state);
-
-    rvalue := match GetCrefIndexVar(cref, state)
+    //TODO This seems to be a bug in the compiler an intermediate step is needed before matching on tuples.
+    (optVarExp1,optVarExp2) := GetCrefIndexVar(cref, state);
+    rvalue := match (optVarExp1,optVarExp2)
       local
-        MidCode.Var indexvar;
-      case NONE() then MidCode.VARIABLE(varCref);
-      case SOME(indexvar)
-      algorithm
+        MidCode.Var indexvar1,indexvar2,nDims;
+      case (NONE(),NONE()) then MidCode.VARIABLE(varCref);
+      case (SOME(indexvar1),NONE())
+        algorithm
         labelNext := GenBlockId();
-
-        varTmp := GenTmpVar(Types.complicateType(Expression.typeof(exp)),state);
-
-        stateTerminate(labelNext,
-          MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varCref,indexvar}, {MidCode.OUT_VAR(varTmp)}, labelNext),
-          state);
-      then MidCode.VARIABLE(varTmp);
+        varArray := GenTmpVar(varCref.ty,state);
+        varTmp := GenTmpVar(DAEUtil.expTypeElementType(varCref.ty),state);
+        nDims := RValueToVar(ExpToMid(DAE.ICONST(1),state),state);
+        stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(genArrayIxFunction1D(DAEUtil.expTypeElementType(varCref.ty))), true, {varCref,nDims,indexvar1},
+                                              {MidCode.OUT_VAR(varArray)}, labelNext,varCref.ty),state);
+        stateAddStmt(MidCode.ASSIGN(varTmp,MidCode.DEREFERENCE(varArray,varCref.ty)),state);
+        then MidCode.VARIABLE(varTmp);
+        case (SOME(indexvar1),SOME(indexvar2))
+        algorithm
+        labelNext := GenBlockId();
+        varArray := GenTmpVar(varCref.ty,state);
+        varTmp := GenTmpVar(DAEUtil.expTypeElementType(varCref.ty),state);
+        nDims := RValueToVar(ExpToMid(DAE.ICONST(2),state),state);
+        stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(genArrayIxFunction2D(DAEUtil.expTypeElementType(varCref.ty))), true, {varCref,nDims,indexvar1,indexvar2},
+                                              {MidCode.OUT_VAR(varArray)}, labelNext,varCref.ty),state);
+        stateAddStmt(MidCode.ASSIGN(varTmp,MidCode.DEREFERENCE(varArray,varCref.ty)),state);
+        then MidCode.VARIABLE(varTmp);
     end match;
   then rvalue;
-  case DAE.ASUB(exp1, expLst)
+  case DAE.ASUB(exp1, expLst) //Array subscripts are not supported.
   algorithm
+//  print("\n EXPRESSION IN ASUB:" + anyString(exp1) + "\n");
     varExp := RValueToVar(ExpToMid(exp1, state), state);
     varExp2 := match expLst
       local
@@ -654,7 +879,7 @@ algorithm
     labelNext := GenBlockId();
 
     stateTerminate(labelNext,
-      MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varExp, varExp2}, {MidCode.OUT_VAR(varTmp)}, labelNext),
+      MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varExp, varExp2}, {MidCode.OUT_VAR(varTmp)}, labelNext,DAE.T_ARRAY_INT_NODIM),
       state);
   then MidCode.VARIABLE(varTmp);
   case DAE.TSUB(exp1 as DAE.CALL(_,_,callattrs), 1, _)
@@ -687,9 +912,11 @@ algorithm
   then MidCode.METAFIELD(varExp, exp.ix, Types.complicateType(exp.ty));
   case DAE.CAST(_, exp1)
   algorithm
-    varExp := RValueToVar(ExpToMid(exp1, state), state);
-  then MidCode.UNARYOP(MidCode.MOVE(), varExp); //TODO: return type?
-  case DAE.LUNARY(_, exp1)
+    varExp := RValueToVar(ExpToMid(exp1,state),state); //Will the expression to cast.
+    varTmp := GenTmpVar(ty,state); //Tmp variable of the variable we want to cast the expression to.
+    stateAddStmt(MidCode.ASSIGN(varTmp,MidCode.UNARYOP(MidCode.MOVE(Expression.typeof(exp1)),varExp)),state); //Assign to variable
+  then MidCode.VARIABLE(varTmp);
+  case DAE.LUNARY(operator, exp1)
   algorithm
     varExp := RValueToVar(ExpToMid(exp1, state), state);
   then MidCode.UNARYOP(MidCode.NOT(), varExp);
@@ -732,8 +959,8 @@ algorithm
     case DAE.MUL(__) then MidCode.MUL();
     case DAE.DIV(__) then MidCode.DIV();
     case DAE.POW(__) then MidCode.POW();
+    else algorithm Error.addInternalError("Unsupported DAE.BINARY operation:" + anyString(operator) + "\n", sourceInfo()); then fail();
     end match;
-
     varExp := RValueToVar(ExpToMid(exp1, state), state);
     varExp2 := RValueToVar(ExpToMid(exp2, state), state);
   then MidCode.BINARYOP(binop, varExp, varExp2);
@@ -746,6 +973,7 @@ algorithm
       case DAE.GREATEREQ(__) then MidCode.GREATEREQ();
       case DAE.EQUAL(__)     then MidCode.EQUAL();
       case DAE.NEQUAL(__)    then MidCode.NEQUAL();
+      else algorithm Error.addInternalError("Unsupported DAE.RELATION operation:" + anyString(operator) + "\n", sourceInfo()); then fail();
     end match;
 
     varExp := RValueToVar(ExpToMid(exp1, state), state);
@@ -774,8 +1002,8 @@ algorithm
   algorithm
     varTmp := GenTmpVar(Types.complicateType(callattrs.ty),state);
     CallToMid(exp, {MidCode.OUT_VAR(varTmp)}, state);
-  then MidCode.VARIABLE(varTmp);
-  case DAE.MATCHEXPRESSION(et=ty)
+  then MidCode.VARIABLE(varTmp); //TODO: call-rvalue?
+  case DAE.MATCHEXPRESSION(et=ty) // TODO: matchtype
   algorithm
   varTmp := GenTmpVar(Types.complicateType(ty),state);
   () := match Types.complicateType(ty)
@@ -814,21 +1042,21 @@ algorithm
     labelNext := GenBlockId();
 
     inputs := DoubleEnded.fromList({});
+
     for exp1 in expLst loop
       var1 := RValueToVar(ExpToMid(exp1, state), state);
       DoubleEnded.push_back(inputs, var1);
     end for;
 
     stateTerminate(labelNext,
-                    MidCode.CALL(path,callattr.builtin,DoubleEnded.toListAndClear(inputs),outvars,labelNext),
+                    MidCode.CALL(path,callattr.builtin,DoubleEnded.toListAndClear(inputs),outvars,labelNext,callattr.ty),
                     state);
-
   then ();
   end match;
 end CallToMid;
 
 function ForToMid
-  input DAE.Type type_;
+  input DAE.Type type_; //skicka cref i stället, hämta typ därifrån?
   input String iter;
   input DAE.Exp range;
   input list<DAE.Statement> daestmtLst;
@@ -854,7 +1082,7 @@ algorithm
 
   varCondition := GenTmpVar(DAE.T_BOOL_DEFAULT,state);
 
-  () := match range
+  () := match range //TODO, add sum over real arrays.
     local
       DAE.Exp start;
       Option<DAE.Exp> step;
@@ -867,7 +1095,8 @@ algorithm
       Integer labelBody2;
       Integer labelCondition2;
       MidCode.RValue rvalueStep;
-    case DAE.RANGE(_, start, step, stop)
+      DAE.Type rangeTy;
+    case DAE.RANGE(rangeTy, start, step, stop) //TODO Only supports integer ranges, seem to be boolean ranges etc aswell...
     algorithm
       labelCondition2 := GenBlockId();
 
@@ -890,8 +1119,8 @@ algorithm
       stateAddStmt(MidCode.ASSIGN(varStep, rvalueStep), state);
       stateTerminate(labelCondition, MidCode.GOTO(labelCondition), state);
 
-      stateTerminate(labelCondition2,
-        MidCode.CALL(Absyn.IDENT("in_range_integer"), true, {varIter, varFirst, varLast}, {MidCode.OUT_VAR(varCondition)}, labelCondition2),
+      stateTerminate(labelCondition2, /*TODO Is it really an integer all the time?*/
+        MidCode.CALL(Absyn.IDENT("in_range_integer"), true, {varIter, varFirst, varLast}, {MidCode.OUT_VAR(varCondition)}, labelCondition2,DAE.T_BOOL({})),
         state);
 
       stateTerminate(labelBody, MidCode.BRANCH(varCondition, labelBody, labelNext), state);
@@ -911,10 +1140,9 @@ algorithm
         algorithm
           Error.addInternalError("metatype error", sourceInfo());
         then fail();
-        case DAE.T_METAARRAY(_)
+        case rangeTy as DAE.T_ARRAY(__)
         algorithm
           labelBody2 := GenBlockId();
-
           varIter := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
           varLast := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
           varStep := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
@@ -922,14 +1150,14 @@ algorithm
           stateAddStmt(MidCode.ASSIGN(varIter, MidCode.LITERALINTEGER(1)), state);
           stateAddStmt(MidCode.ASSIGN(varStep, MidCode.LITERALINTEGER(1)), state);
           stateTerminate(labelCondition,
-            MidCode.CALL(Absyn.IDENT("arrayLength"), true, {varRange}, {MidCode.OUT_VAR(varLast)}, labelCondition),
+            MidCode.CALL(Absyn.IDENT("arrayLength"), true, {varRange}, {MidCode.OUT_VAR(varLast)}, labelCondition, DAE.T_INTEGER_DEFAULT),
             state);
 
           stateAddStmt(MidCode.ASSIGN(varCondition, MidCode.BINARYOP(MidCode.LESSEQ(), varIter, varLast)), state);
           stateTerminate(labelBody, MidCode.BRANCH(varCondition, labelBody, labelNext), state);
 
           stateTerminate(labelBody2,
-            MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varRange, varIter}, {MidCode.OUT_VAR(varCref)}, labelBody2),
+            MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varRange, varIter}, {MidCode.OUT_VAR(varCref)}, labelBody2,rangeTy),
             state);
 
           StmtsToMid(daestmtLst, state);
@@ -938,7 +1166,36 @@ algorithm
           stateAddStmt(MidCode.ASSIGN(varIter, MidCode.BINARYOP(MidCode.ADD(), varIter, varStep)), state);
           stateTerminate(labelNext, MidCode.GOTO(labelCondition), state);
         then ();
-        case DAE.T_METALIST(_)
+
+
+        /*MetaArray will occur as Metaboxed, e.g when the intent is MetaArray*/
+        case rangeTy as DAE.T_METABOXED(__)
+        algorithm
+          labelBody2 := GenBlockId();
+          varIter := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
+          varLast := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
+          varStep := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
+
+          stateAddStmt(MidCode.ASSIGN(varIter, MidCode.LITERALINTEGER(1)), state);
+          stateAddStmt(MidCode.ASSIGN(varStep, MidCode.LITERALINTEGER(1)), state);
+          stateTerminate(labelCondition,
+            MidCode.CALL(Absyn.IDENT("arrayLength"), true, {varRange}, {MidCode.OUT_VAR(varLast)}, labelCondition, DAE.T_INTEGER_DEFAULT),
+            state);
+
+          stateAddStmt(MidCode.ASSIGN(varCondition, MidCode.BINARYOP(MidCode.LESSEQ(), varIter, varLast)), state);
+          stateTerminate(labelBody, MidCode.BRANCH(varCondition, labelBody, labelNext), state);
+
+          stateTerminate(labelBody2,
+            MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varRange, varIter}, {MidCode.OUT_VAR(varCref)}, labelBody2,rangeTy),
+            state);
+
+          StmtsToMid(daestmtLst, state);
+          stateTerminate(labelStep, MidCode.GOTO(labelStep), state);
+
+          stateAddStmt(MidCode.ASSIGN(varIter, MidCode.BINARYOP(MidCode.ADD(), varIter, varStep)), state);
+          stateTerminate(labelNext, MidCode.GOTO(labelCondition), state);
+        then ();
+        case rangeTy as DAE.T_METALIST(_)
         algorithm
           labelBody2 := GenBlockId();
 
@@ -949,19 +1206,19 @@ algorithm
           stateTerminate(labelBody, MidCode.BRANCH(varCondition, labelBody, labelNext), state);
 
           stateTerminate(labelBody2,
-            MidCode.CALL(Absyn.IDENT("listHead"), true, {varIter}, {MidCode.OUT_VAR(varCref)}, labelBody2),
+            MidCode.CALL(Absyn.IDENT("listHead"), true, {varIter}, {MidCode.OUT_VAR(varCref)}, labelBody2,rangeTy),
             state);
 
           StmtsToMid(daestmtLst, state);
           stateTerminate(labelStep, MidCode.GOTO(labelStep), state);
 
           stateTerminate(labelNext,
-            MidCode.CALL(Absyn.IDENT("listRest"), true, {varIter}, {MidCode.OUT_VAR(varIter)}, labelCondition),
+            MidCode.CALL(Absyn.IDENT("listRest"), true, {varIter}, {MidCode.OUT_VAR(varIter)}, labelCondition,rangeTy),
             state);
         then ();
         else
         algorithm
-          Error.addInternalError("unknown for type " + DAEDump.daeTypeStr(varRange.ty) + "\n", sourceInfo());
+          Error.addInternalError("Unknown type in for statement " + DAEDump.daeTypeStr(varRange.ty) + "\n", sourceInfo());
         then fail();
       end match;
     then ();
@@ -1036,6 +1293,9 @@ algorithm
 end stateAddStmt;
 
 function stateTerminate
+  "Called when a terminator is encountered.
+  clears the statement list in the state with all statments encountered so far.
+  A basic block containing said statements is created. The label for the next basic block is set."
   input Integer newLabel;
   input MidCode.Terminator terminator;
   input State state;
@@ -1045,7 +1305,7 @@ algorithm
   block_ := MidCode.BLOCK(stateGetCurrentLabel(state),
                           DoubleEnded.toListAndClear(state.stmts),
                           terminator);
-  DoubleEnded.push_back(state.blocks, block_);
+  DoubleEnded.push_back(state.blocks, block_); //Add the block to the list of blocks.
 
   stateSetCurrentLabel(newLabel, state);
 end stateTerminate;
@@ -1072,9 +1332,6 @@ algorithm
   end match;
 end unpackCrefFromExp;
 
-
-//TODO: stuff needs to be volatile for setjmp.
-//TODO: could handle match separately from matchcontinue and add more simplifications
 /*
 The term matchexpression is used to include both matchcontinue and match.
 */
@@ -1101,6 +1358,7 @@ protected
   list<MidCode.Var> inputsMidVar;
   DAE.Exp daeExp;
   list<Integer> caseLabelIterator;
+  list<DAE.Element> localDecls;
 algorithm
   /*
   I assume the Else case is a case with top level wild patterns (_,_,_).
@@ -1108,7 +1366,7 @@ algorithm
 
   // match just to get match elements
   () := match matchexpression
-  case DAE.MATCHEXPRESSION(matchType=matchType, cases=cases, inputs=inputsCref, aliases=aliases)
+  case DAE.MATCHEXPRESSION(matchType=matchType, cases=cases, inputs=inputsCref, aliases=aliases,localDecls=localDecls)
   algorithm
     labelInit := stateGetCurrentLabel(state);
     labelMux := GenBlockId();
@@ -1151,9 +1409,6 @@ algorithm
         stateAddStmt( MidCode.ASSIGN(aliasVar, MidCode.VARIABLE(srcVar) ), state );
       end for;
     end for;
-
-    // inputsMidVar := list(CrefToMidVar(unpackCrefFromExp(expCref),state) for expCref in inputsCref);
-
     /*
     init:
       state = 0
@@ -1161,6 +1416,8 @@ algorithm
         PUSHJMP(J_old,J_new)
       goto mux
     */
+    //JOHN: All local variables in the match expression must be added to the list of variables...
+    listOfElementsToMidCodeVars(localDecls,state); //Create variables for all local variables in the MATCHEXPRESSION
 
     muxState := GenTmpVarVolatile(DAE.T_INTEGER_DEFAULT,state); // volatile since we mutate it after setjmp
     stateAddStmt(MidCode.ASSIGN(muxState, MidCode.LITERALINTEGER(0)), state);
@@ -1198,11 +1455,11 @@ algorithm
       if state == nr_cases+1
         longjmp
       else
-        goto next
+        goto next;
     */
 
     /*
-    We make the label for the next thing we generate after the match expression.
+    We make the label for the next; thing we generate after the match expression.
     We replace this in the case loop as we add more cases.
     */
     labelFail := GenBlockId();
@@ -1245,11 +1502,11 @@ algorithm
           // first do checks and assignments
           // NOTE: If the guard fails we will have made pattern assignments for a failing case. This is how it was done before as far as I can tell.
           if matchContinue
-          then
-            patternToMidCode(state=state, matches=List.zip(inputsMidVar,patterns), labelNoMatch=labelMux);
+          then /*I think and I am pretty sure the patterns have to be reversed first because of the recursion - John*/
+            patternToMidCode(state=state, matches=List.zip(inputsMidVar,listReverse(patterns)), labelNoMatch=labelMux);
           else
-          patternToMidCode(state=state, matches=List.zip(inputsMidVar,patterns)
-                          ,labelNoMatch= if not listEmpty(caseLabelIterator) then listHead(caseLabelIterator) else labelFail);
+            patternToMidCode(state=state, matches=List.zip(inputsMidVar,listReverse(patterns)),
+                             labelNoMatch= if not listEmpty(caseLabelIterator) then listHead(caseLabelIterator) else labelFail);
           end if;
           // then guard
           () := match patternGuard
@@ -1331,7 +1588,7 @@ algorithm
             then ();
             case (NONE(), _)
             algorithm
-              Error.addInternalError("case fail", sourceInfo());
+              Error.addInternalError("Error generating the MatchExpression\n" + ExpressionDump.printExpStr(matchexpression) + "\n", sourceInfo());
             then fail();
           end match;
           // finally go to end
@@ -1355,7 +1612,7 @@ function patternToMidCode
   labelNoMatch. And nothing will be bound.
 
   For example in a match a failure means handling
-  the next case. Except for the last case where
+  the next; case. Except for the last case where
   failure is a longjmp.
   "
   input list<tuple<MidCode.Var,DAE.Pattern>> matches "List of variables and their corresponding patterns";
@@ -1364,21 +1621,22 @@ function patternToMidCode
   output array<list<MidCode.Stmt>> assignBlock "A block of assignments to perform for a pattern.";
 algorithm
   assignBlock := arrayCreate(1,{});
-
+  /*Yup...*/
   patternToMidCode2(state=state,matches=matches,labelNoMatch=labelNoMatch,assignBlock=assignBlock);
 
   for stmt in listReverse(arrayGet(assignBlock,1)) loop
     stateAddStmt(stmt,state);
   end for;
 end patternToMidCode;
-
+/*TODO: This function gives incorrect results when matching against MetaModelica tuples, I will not put more time
+  attempting to fix it. -John, e.g match (X,Y,Z) case (XX,YY,ZZ) then XX + YY + ZZ*/
 function patternToMidCode2
   "
   Recursive worker function for
   patternToMidCode handling.
   "
   input State state;
-  input list<tuple<MidCode.Var,DAE.Pattern>> matches;
+  input list<tuple<MidCode.Var,DAE.Pattern>> matches "List of variables and their corresponding patterns";
   input Integer labelNoMatch; /* where to go on a failed match*/
   input array<list<MidCode.Stmt>> assignBlock; /* A block of assignments to perform for a pattern. */
 protected
@@ -1401,11 +1659,8 @@ algorithm
     if not guard expression
       goto mux
     else goto body0
-
   guard and body is handled in the caller, not here
-
   */
-
   () := match matches
     local
       list<tuple<MidCode.Var,DAE.Pattern>> restMatches, moreMatches;
@@ -1419,12 +1674,10 @@ algorithm
       MidCode.Var scrutineeCompareVar;
       MidCode.Var patCompareVar;
       Option<DAE.Type> optType;
-
       Boolean bool;
       Integer integer;
       Real real;
       String string;
-
     case {}
     algorithm
       // All patterns have been matched. Fall through to what happens on succesful match.
@@ -1445,7 +1698,6 @@ algorithm
 
     case (scrutinee,DAE.PAT_AS(id=id,ty=SOME(ty),pat=pattern)) :: restMatches
     algorithm
-      // ty=SOME(_) means that the contained value needs unboxing
       midvar := MidCode.VAR(id, ty, false);
       arrayUpdate(assignBlock, 1, MidCode.ASSIGN(midvar, MidCode.UNARYOP(MidCode.UNBOX(),scrutinee))::arrayGet(assignBlock,1));
       patternToMidCode2(matches = (scrutinee, pattern) :: restMatches, state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
@@ -1525,7 +1777,7 @@ algorithm
 
       moreMatches := {};
       iterator := morePatterns;
-      fieldNr := 0;
+      fieldNr := 0; // TODO: Should probably be 1 after changing metafield code generation
       while not listEmpty(iterator) loop
         midvar := RValueToVar(MidCode.METAFIELD(scrutinee,fieldNr,listHead(listTypes)),state);
         moreMatches := (midvar, listHead(iterator)) :: moreMatches;
@@ -1559,7 +1811,10 @@ algorithm
         labelNoMatch=labelNoMatch
         );
     then ();
-
+    /*
+       This is incorretly implemented, work in match expression gives cycles and other errors when used in the context of regular assignments with
+       lists. E.g H::T := T and other variants such as true := a > 5, also gives issues //John.
+    */
     case (scrutinee,DAE.PAT_CONS(head=headPattern,tail=restPattern)) :: restMatches
     algorithm
       scrutineeCompareVar := RValueToVar(MidCode.ISCONS(scrutinee), state);
@@ -1567,7 +1822,6 @@ algorithm
       ok := GenTmpVar(DAE.T_BOOL_DEFAULT,state);
       stateAddStmt(MidCode.ASSIGN(ok, MidCode.BINARYOP(MidCode.EQUAL(),scrutineeCompareVar, patCompareVar )), state);
       stateAddBailOnFalse(ok, labelNoMatch, state);
-
       ty := match scrutinee.ty
         case DAE.T_METALIST(ty=DAE.T_UNKNOWN())
         algorithm Error.addInternalError("Found list of unknown in cons pattern: " + DAEDump.daeTypeStr(scrutinee.ty) +".\n", sourceInfo()); then fail();
@@ -1587,11 +1841,19 @@ algorithm
         );
 
     then ();
+    /*The case when we have uniontypes of records without content.*/
+    case (scrutinee,DAE.PAT_CALL(name,index,{},{},{},knownSingleton)) :: restMatches
+    algorithm /*TODO: We ignore the knowSingelton here*/
+      ok := GenTmpVar(DAE.T_BOOL_DEFAULT,state);
+      scrutineeCompareVar := RValueToVar(MidCode.UNIONTYPEVARIANT(scrutinee) , state);
+      patCompareVar := RValueToVar(MidCode.LITERALINTEGER(index) , state);
+      stateAddStmt(MidCode.ASSIGN(ok, MidCode.BINARYOP(MidCode.EQUAL(),scrutineeCompareVar, patCompareVar )), state);
+      stateAddBailOnFalse(ok, labelNoMatch, state);
+      patternToMidCode2(matches = restMatches, state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
+    then ();
 
     case (scrutinee,DAE.PAT_CALL(name,index,morePatterns,fields,typeVars,knownSingleton)) :: restMatches
     algorithm
-      // TODO: Is this correct usage of knownSingleton?
-
       if not knownSingleton
       then
         ok := GenTmpVar(DAE.T_BOOL_DEFAULT,state);
@@ -1600,9 +1862,7 @@ algorithm
         stateAddStmt(MidCode.ASSIGN(ok, MidCode.BINARYOP(MidCode.EQUAL(),scrutineeCompareVar, patCompareVar )), state);
         stateAddBailOnFalse(ok, labelNoMatch, state);
       end if;
-
       listTypes := list(v.ty for v in fields);
-
       moreMatches := {};
       iterator := morePatterns;
       fieldNr := 1;
@@ -1617,6 +1877,7 @@ algorithm
 
       patternToMidCode2(matches = listAppend(moreMatches, restMatches), state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
     then ();
+
 
     case (_,DAE.PAT_AS_FUNC_PTR())::_
     algorithm
@@ -1637,6 +1898,143 @@ algorithm
   end match;
 end patternToMidCode2;
 
-annotation(__OpenModelica_Interface="backend");
+//For debugging purposes.
+function genTypeStr
+  "Converts a DAE.Type to corresponding C representation"
+  input DAE.Type ty;
+  output String tyStr;
+  algorithm
+  tyStr := match ty
+    case DAE.T_INTEGER(__) then "modelica_integer";
+    case DAE.T_ENUMERATION(__) then "modelica_integer";
+    case DAE.T_BOOL(__) then "modelica_boolean";
+    case DAE.T_REAL(__) then "modelica_real";
+    case DAE.T_METABOXED(__) then "modelica_metatype";
+    case DAE.T_METARECORD(__) then "modelica_metatype";
+    case DAE.T_METATYPE(__) then "modelica_metatype";
+    case DAE.T_METAOPTION(__) then "modelica_metatype";
+    case DAE.T_METAARRAY(__) then "modelica_metatype";
+    case DAE.T_METATUPLE(__) then "modelica_metatype";
+    case DAE.T_METAUNIONTYPE(__) then "modelica_metatype";
+    case DAE.T_METALIST(__) then "modelica_metatype";
+    case DAE.T_ARRAY(__) then "modelica_metatype"; //Note not tested.. Arrays can be implemented by using void*
+    case DAE.T_UNKNOWN() then "unknown"; //TODO: fail?
+      //The other seemed redudant to have.
+    else "notimplemented";
+  end match;
+end genTypeStr;
 
+function DAEElementToVar
+  "Takes a DAE.Element and a DAEToMid.State.
+   Converts the element to a MidCode variable in the local state."
+  input DAE.Element element;
+  input State state;
+algorithm
+  () := match element
+    local
+      DAE.Element elemVar;
+      case elemVar as DAE.Element.VAR(__) algorithm CrefToMidVarAddToLocal(elemVar.componentRef,state); then();
+      else algorithm print("Error converting:"); DAEDump.dumpAlgorithm(element); Error.addInternalError("Element to MidCode.Var error",sourceInfo()); then();
+  end match;
+end DAEElementToVar;
+
+function listOfElementsToMidCodeVars
+  "Takes a List<DAE.Element>, for each element generate a MidCode variable in the local state"
+  input list<DAE.Element> elements;
+  input State state;
+protected
+  list<MidCode.Var> vars;
+algorithm
+  List.map1_0(elements,DAEElementToVar,state);
+end listOfElementsToMidCodeVars;
+
+function varToOutVar
+  "Converts a var to a outVar"
+  input MidCode.Var var;
+  output MidCode.OutVar ovar;
+algorithm
+ ovar := MidCode.OUT_VAR(var);
+end varToOutVar;
+
+function getIntLitFromExp
+  input DAE.Exp exp;
+  output Integer r;
+algorithm
+ r := match exp
+    case DAE.ICONST(_) then exp.integer;
+    else then fail();
+  end match;
+end getIntLitFromExp;
+
+function getArrayType //TODO rewrite these functions so they switch accordingly now only arrays are supported.
+  "Given an inty from an array returns the scalar type of the array."
+  input DAE.Type inty;
+  output DAE.Type outTy;
+algorithm
+  outTy := match inty
+    case DAE.T_ARRAY(__) then inty.ty;
+    case DAE.T_METAARRAY(__) then inty.ty;
+    else algorithm Error.addInternalError("Erranous parameter passed to getArrayType\n", sourceInfo()); then fail();
+  end match;
+end getArrayType;
+
+function genArrayIxFunction
+  input DAE.Type ty;
+  input Integer dimSize;
+  output String funcName;
+algorithm
+  //print("Size of dimension:" + intString(dimSize) + "\n");
+  if dimSize == 1 then
+    funcName := genArrayIxFunction1D(ty);
+  elseif dimSize == 2 then
+    funcName := genArrayIxFunction2D(ty);
+  else
+    print("Other dimSize in genArrayIxFunction Not supported\n");
+    fail();
+  end if;
+end genArrayIxFunction;
+
+function genArrayIxFunction1D
+  "Generates the appropriate string describing the adressing function for 1D operations"
+  input DAE.Type ty;
+  output String funcName;
+algorithm
+  funcName := match ty
+    case DAE.T_REAL(__) then "real_array_element_addr1";
+    else algorithm print("ixArrayErrorError"); then fail(); //For now, more options can be added.
+  end match;
+end genArrayIxFunction1D;
+
+function genArrayIxFunction2D
+  input DAE.Type ty;
+  output String funcName;
+algorithm
+  funcName := match ty
+    case DAE.T_REAL(__) then "real_array_element_addr2";
+    else algorithm print("ixArrayErrorError\n"); then fail();
+  end match;
+end genArrayIxFunction2D;
+
+function getArrayAllocaCall
+  input DAE.Type ty;
+  output String functionName;
+algorithm
+  functionName := match ty
+    case DAE.T_REAL(__) then "alloc_real_array";
+    else fail(); //TODO add more types.
+  end match;
+end getArrayAllocaCall;
+
+function SubscriptToMid
+  input DAE.Subscript subscript;
+  input State state;
+  output MidCode.RValue rVal;
+algorithm
+  rVal := match subscript
+      case DAE.INDEX(__) then ExpToMid(subscript.exp,state);
+      else algorithm print("sscript to mid fail" + anyString(subscript) + "\n"); then fail();
+  end match;
+end SubscriptToMid;
+
+annotation(__OpenModelica_Interface="backendInterface");
 end DAEToMid;

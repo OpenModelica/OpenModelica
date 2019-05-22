@@ -104,6 +104,10 @@ m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
 m4_include([common/m4/ombuilddir.m4])
 m4_include([m4/lapack.m4])
+m4_include([m4/llvm.m4])
+
+OMC_AC_LLVM_SUPPORT()
+FINAL_MESSAGES="$FINAL_MESSAGES\nLLVM: $HAVE_LLVM $LLVM_LIBS"
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST

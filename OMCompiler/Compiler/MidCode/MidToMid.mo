@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2018, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,38 +28,40 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 encapsulated package MidToMid
 
-public
 import MidCode;
+import SimCode;
+import SimCodeFunction;
+import DAE;
+import List;
+import MidCodeUtil;
+import Util;
 
 /*
-Longjmps are not allowed to land in the same function.
-This is handled in midtomid.
-Handling it here allows other tranformations to
-deal with goto instead of longjmp, which might enable
-further transformation.
+   Longjmps are not allowed to land in the same function.
+   This is handled in midtomid.
+   Handling it here allows other tranformations to
+   deal with goto instead of longjmp, which might enable
+   further transformation.
 
-pushpopjmp possible.
-can remove push-pop -jmp pairs if there is no possible longjmp in between.
+   pushpopjmp possible.
+   can remove push-pop -jmp pairs if there is no possible longjmp in between.
 
-Typechecking possible.
-Useful for correctness of midcode transformations.
+   Typechecking possible.
+   Useful for correctness of midcode transformations.
 
-Normalisation possble. (AKA canonicalisation)
-Probably essential to simplify other transformations.
-Remove greater than comparisons and similar.
+   Normalisation possble. (AKA canonicalisation)
+   Probably essential to simplify other transformations.
+   Remove greater than comparisons and similar.
 
-Inlining possible.
-Important catalyst for other optimisations.
+   Inlining possible.
+   Important catalyst for other optimisations.
 
-Common subexpression elimination possible.
-But requires some data flow and side effect analysis.
-Some SSA variables and purity marked functions perhaps.
-
+   Common subexpression elimination possible.
+   But requires some data flow and side effect analysis.
+   Some SSA variables and purity marked functions perhaps.
 */
-
 
 function longJmpGoto
   "
@@ -106,7 +108,7 @@ algorithm
 
   while not listEmpty(tasks) loop
     ((jumps,node) :: tasks) := tasks; // pop
-    oldBlock := lookupId(oldBody,node); // O(length(oldBody))
+    oldBlock := List.find1(oldBody,MidCodeUtil.blockWithId,node);// O(length(oldBody))
     newBlock := oldBlock; // don't change the block by defualt
     if isPushJmp(oldBlock.terminator) then
       jumps := (listHead(getSuccessors(oldBlock)) :: jumps); // push
@@ -138,24 +140,6 @@ algorithm
     );
 end longJmpGoto;
 
-function lookupId
-  input list<MidCode.Block> blocks;
-  input Integer id;
-  output MidCode.Block block_;
-protected
-  list<MidCode.Block> blocks_local;
-  MidCode.Block block_local;
-algorithm
-  block_ := match blocks
-    case (block_local :: _) guard (block_local.id == id) then block_local;
-    case (_ :: blocks_local) then lookupId(blocks_local, id);
-    //else listHead(blocks);
-  end match;
-end lookupId;
-
-protected
-import List;
-
 function getSuccessors
   input MidCode.Block block_;
   output list<Integer> neighbours;
@@ -168,19 +152,12 @@ algorithm
   case MidCode.BRANCH(_,l0,l1) then {l0,l1};
   case MidCode.CALL(_,_,_,_,l0) then {l0};
   case MidCode.RETURN() then {};
-  case MidCode.SWITCH(_,switchList) then list(tupleSnd(x) for x in switchList);
+  case MidCode.SWITCH(_,switchList) then list(Util.tuple22(x) for x in switchList);
   case MidCode.LONGJMP() then {};
   case MidCode.PUSHJMP(_,_,l0) then {l0};
   case MidCode.POPJMP(_,l0) then {l0};
   end match;
 end getSuccessors;
-
-function tupleSnd
-  input tuple<Integer, Integer> t;
-  output Integer i;
-algorithm
-  (_,i) := t;
-end tupleSnd;
 
 function isLongJmp
   input MidCode.Terminator t;
@@ -213,5 +190,4 @@ algorithm
 end isPopJmp;
 
 annotation(__OpenModelica_Interface="backend");
-
 end MidToMid;
