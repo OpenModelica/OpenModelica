@@ -1626,6 +1626,12 @@ protected function CSE1
   output BackendDAE.Shared outShared = inShared;
   output Integer outIndex;
 algorithm
+  if BackendDAEUtil.isClockedSyst(inSystem) then
+    outSystem := inSystem;
+    outIndex := inIndex;
+    return;
+  end if;
+
   (outSystem, outIndex) := matchcontinue(inSystem)
     local
       BackendDAE.Variables orderedVars;
@@ -1923,6 +1929,12 @@ protected function commonSubExpression
   output BackendDAE.EqSystem sysOut;
   output BackendDAE.Shared sharedOut;
 algorithm
+  if BackendDAEUtil.isClockedSyst(sysIn) then
+    sysOut := sysIn;
+    sharedOut := sharedIn;
+    return;
+  end if;
+
   (sysOut, sharedOut) := matchcontinue(sysIn, sharedIn)
     local
     DAE.FunctionTree functionTree;
