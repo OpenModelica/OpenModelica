@@ -63,6 +63,7 @@ import Values;
 
 // protected imports
 protected
+
 import Autoconf;
 import BaseHashSet;
 import CevalFunction;
@@ -73,11 +74,16 @@ import CodegenCFunctions;
 import ComponentReference;
 import Config;
 import Corba;
+import DAEToMid;
 import DAEUtil;
 import Debug;
 import Dump;
 import DynLoad;
+<<<<<<< 33817e1492614e3321226289f4c1de7c4cfe6625
 import Error;
+=======
+import EXT_LLVM;
+>>>>>>> Updated the LLVM backend with proper flags
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import Expression;
@@ -87,6 +93,7 @@ import FGraph;
 import Flags;
 import FlagsUtil;
 import FNode;
+import Flags;
 import GC;
 import GenerateAPIFunctionsTpl;
 import Global;
@@ -97,8 +104,11 @@ import InstFunction;
 import InteractiveUtil;
 import List;
 import Lookup;
+import MidCode;
+import MidToLLVM;
 import Mod;
 import Parser;
+import Prefix;
 import Print;
 import SCode;
 import SCodeDump;
@@ -115,7 +125,10 @@ import Types;
 import Unparsing;
 import Util;
 import ValuesUtil;
+<<<<<<< 33817e1492614e3321226289f4c1de7c4cfe6625
 
+=======
+>>>>>>> Updated the LLVM backend with proper flags
 public
 
 function ceval "
@@ -2508,10 +2521,55 @@ algorithm
       SCode.ClassDef cdef;
       String error_Str;
       DAE.Function func;
+      DAE.Function daeMainFunction;
+      SimCodeFunction.Function simMainFunction;
       SCode.Restriction res;
       Absyn.FunctionRestriction funcRest;
       DAE.Type ty;
-
+      list<DAE.Function> daeElements;
+      list<DAE.Type> metarecordTypes;
+      list<DAE.Exp> literals;
+      list<SimCodeFunction.Function> simfns;
+      list<SimCodeFunction.RecordDeclaration> recordDecls;
+      list<String> includes;
+      list<String> includeDirs;
+      list<String> libs;
+      list<String> libPaths;
+      /*MidCode specific*/
+      list<MidCode.Function> midFuncs;
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
+      guard Flags.isSet(Flags.JIT_EVAL_FUNC)
+      algorithm
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        /* Start measuring JIT compile time. */
+        execStatReset();
+        p := SymbolTable.getAbsyn();
+        name := generateFunctionName(funcpath);
+        (cache, daeMainFunction, daeElements, metarecordTypes) := collectDependencies(cache, env, funcpath);
+        /* Translate DAE to SimCode */
+        (daeElements, literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
+        (simMainFunction::simfns, recordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(p, daeElements, metarecordTypes, literals, {});
+        /* Generate MidCode IR */
+        midFuncs := DAEToMid.DAEFunctionsToMid(simMainFunction::simfns);
+        /*Cache result if we are running a model*/
+        //The cache is currently displayed due to changes in the API :((... - John 2019 Aug
+        //cache := MidCodeUtil.addMidCodeFunctions(midFuncs, cache);
+        /* Set up the neccessary data structures in the LLVM context. */
+        EXT_LLVM.initGen(name);
+        MidToLLVM.genRecordDecls(recordDecls);
+        /*Generate LLVM IR in memory*/
+        MidToLLVM.genProgram(MidCode.PROGRAM(name, midFuncs));
+        /*JIT compile. Return a newval.*/
+//        print("Before JIT COMPILE\n");
+        newval := match midFuncs
+          local MidCode.Function H; List<MidCode.Function> T = {};
+	  case H::T then MidToLLVM.JIT(H,vallst);
+          else algorithm
+            Error.addInternalError("Error occured when attempting JIT evaluation", sourceInfo());
+          then fail();
+        end match;
+//       print("END OF JIT!\n");
+       then (cache,newval);
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
       equation
