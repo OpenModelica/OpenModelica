@@ -231,10 +231,18 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   memset(reader, 0, sizeof(ModelicaMatReader));
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+#if defined(_MSC_VER)
+  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
+#else /* mingw supports array definition with sizes from the stack */
   wchar_t unicodeFilename[unicodeFilenameLength];
+#endif
   MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
 
   reader->file = _wfopen(unicodeFilename, L"rb");
+#if defined(_MSC_VER)
+  if (unicodeFilename) { free(unicodeFilename); }
+#endif
+
 #else
   reader->file = fopen(filename, "rb");
 #endif
