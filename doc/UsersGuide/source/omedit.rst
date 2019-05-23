@@ -141,6 +141,17 @@ The browser allows manipulation of changeable parameters for
 :ref:`omedit-resimulation`. It also displays the unit and
 description of the variable.
 
+The browser also contains the slider and animation buttons. These controls
+are used for variable graphics and schematic animation of models i.e.,
+DynamicSelect annotation. They are also used for debugging of state machines.
+Open the :ref:`omedit-diagram-window` for animation. It is only possible
+to animate one model at a time. This is achieved by marking the result
+file active in the Variables Browser. The animation only read the values
+from the active result file. It is possible to simulate several models.
+In that case, the user will see a list of result files in the Variables Browser.
+The user can switch between different result files by right clicking
+on the result file and selecting **Set Active** in the context menu.
+
 .. figure :: media/omedit-variables-browser.png
 
   Variables Browser.
@@ -682,6 +693,18 @@ on the y-axis.
 
 .. |array-parametric-plot-window| image:: media/omedit-icons/array-parametric-plot-window.*
   :alt: OMEdit New Array Parametric Plot Window Icon
+  :height: 14pt
+
+.. _omedit-diagram-window :
+
+Diagram Window
+^^^^^^^^^^^^^^
+
+Shows the active ModelWidget as a read only diagram. You can only have one
+Diagram Window. To show it click on Diagram Window toolbar button (|diagram-window|).
+
+.. |diagram-window| image:: ../../../OMEdit/OMEdit/OMEditGUI/Resources/icons/modeling.*
+  :alt: OMEdit Diagram Window Icon
   :height: 14pt
 
 .. _omedit-resimulation :
@@ -1535,20 +1558,20 @@ setting that flag in the *Tools > Options > Simulation* dialog.
   :name: omedit-state-machine-simulation-settings
 
   Ensure (at least) Modelica v3.3 support.
-  
+
 Using OMEdit as Text Editor
 ---------------------------
-OMEdit can be be used as a Text editor. Currently support for editing MetaModelica,Modelica and C/C++ 
-are available with syntax highlighting and autocompletion of keywords and types. Additionaly the Modelica 
-and MetaModelica files are provided with autocompletion of code-snippets along with keywords and types. 
-The users can load the directory from file menu *File > Open Directory*. which opens the Directory structure 
+OMEdit can be be used as a Text editor. Currently support for editing MetaModelica,Modelica and C/C++
+are available with syntax highlighting and autocompletion of keywords and types. Additionaly the Modelica
+and MetaModelica files are provided with autocompletion of code-snippets along with keywords and types.
+The users can load the directory from file menu *File > Open Directory*. which opens the Directory structure
 in the Libraries-browser.
 
 .. figure :: media/omedit-open-directory.png
    :name: omedit-open-directory
 
-   open-directory 
-  
+   open-directory
+
 After the directory is opened in the Libraries-browser, the users can expand the directory structure and click the file which
 opens in the texteditor.
 
@@ -1560,12 +1583,12 @@ opens in the texteditor.
 Advanced Search
 ~~~~~~~~~~~~~~~
 
-Support to search in OMEdit texteditor is available. The search browser can be enabled by selecting 
-View > Windows > Search browser or through shortcut keys (ctrl+h). 
+Support to search in OMEdit texteditor is available. The search browser can be enabled by selecting
+View > Windows > Search browser or through shortcut keys (ctrl+h).
 
 .. figure :: media/omedit-search.png
   :name: omedit-search
-  
+
   Enable omedit search browser
 
 The users can start the search by loading the directory they want to search and fill in the text to be searched for
@@ -1574,24 +1597,24 @@ and file pattern if needed and click the search button.
 
 .. figure :: media/omedit-start-search.png
   :name: omedit-start-search
-  
+
   Start search in search browser
 
 
 After the search is completed the results are presented to the users in a separate window, The search results contains
-the following 
+the following
 
-1) The name of the files where the searched word is matched 
+1) The name of the files where the searched word is matched
 2) The line number and text of the matched word.
 
-The users can click the line number or the matched text and it will automatically open the file in the texteditor and 
+The users can click the line number or the matched text and it will automatically open the file in the texteditor and
 move the cursor to matched line number of the text.
 
 .. figure :: media/omedit-search-results.png
   :name: omedit-search-results
-  
+
   Search Results
-  
+
 The users can perform multiple searches and go back to old search results using search histroy option.
 
 .. figure :: media/omedit-search-history.png
