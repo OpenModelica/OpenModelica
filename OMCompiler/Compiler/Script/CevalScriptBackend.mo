@@ -96,6 +96,7 @@ import Parser;
 import Print;
 import Refactor;
 import SCodeDump;
+import MMToJulia;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -3090,6 +3091,12 @@ algorithm
         end for;
         b := System.relocateFunctions(str, relocatableFunctionsTuple);
       then (cache,Values.BOOL(b));
+
+    case (cache,_,"toJulia",{},_)
+      algorithm
+        sp := SymbolTable.getSCode();
+        str := Tpl.tplString(MMToJulia.dumpProgram, sp);
+      then (cache,Values.STRING(str));
 
     case (cache,_,"relocateFunctions",_,_)
       then (cache,Values.BOOL(false));

@@ -23,6 +23,19 @@ package builtin
     input list<TypeVar> lst;
     output Integer result;
   end listLength;
+
+  uniontype SourceInfo "The Info attribute provides location information for elements and classes."
+    record SOURCEINFO
+      String fileName;
+      Boolean isReadOnly;
+      Integer lineNumberStart;
+      Integer columnNumberStart;
+      Integer lineNumberEnd;
+      Integer columnNumberEnd;
+      Real lastModification;
+    end SOURCEINFO;
+  end SourceInfo;
+
 end builtin;
 
 package Absyn
@@ -838,6 +851,11 @@ package Tpl
   function addTemplateError
     input String inErrMsg;
   end addTemplateError;
+  function addSourceTemplateError
+    "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
+    input String inErrMsg;
+    input builtin.SourceInfo inInfo;
+  end addSourceTemplateError;
 end Tpl;
 
 package Config
@@ -869,5 +887,12 @@ package Util
     output StatefulBoolean sb;
   end makeStatefulBoolean;
 end Util;
+
+package Error
+  function infoStr
+    input builtin.SourceInfo info;
+    output String str;
+  end infoStr;
+end Error;
 
 end SCodeTV;

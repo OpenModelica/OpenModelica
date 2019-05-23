@@ -122,6 +122,7 @@ Compiler/Template/GenerateAPIFunctionsTpl.mo
 Compiler/Template/GraphMLDumpTpl.mo
 Compiler/Template/GraphvizDump.mo
 Compiler/Template/Makefile
+Compiler/Template/MMToJulia.mo
 Compiler/Template/NFInstDumpTpl.mo
 Compiler/Template/SCodeDumpTpl.mo
 Compiler/Template/SimCodeDump.mo
