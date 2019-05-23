@@ -855,6 +855,10 @@ algorithm
              Binding.isCrefExp(binding) then
             attrs.variability := bind_var;
             c.attributes := attrs;
+          elseif bind_var == Variability.NON_STRUCTURAL_PARAMETER and
+                 comp_var == Variability.PARAMETER then
+            attrs.variability := bind_var;
+            c.attributes := attrs;
           end if;
         else
           if Binding.isBound(c.condition) then

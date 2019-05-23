@@ -273,6 +273,7 @@ type Variability = enumeration(
   CONSTANT,
   STRUCTURAL_PARAMETER,
   PARAMETER,
+  NON_STRUCTURAL_PARAMETER,
   DISCRETE,
   IMPLICITLY_DISCRETE,
   CONTINUOUS
@@ -381,10 +382,10 @@ function variabilityFromSCode
   output Variability var;
 algorithm
   var := match scodeVar
-    case SCode.Variability.CONST() then Variability.CONSTANT;
-    case SCode.Variability.PARAM() then Variability.PARAMETER;
+    case SCode.Variability.CONST()    then Variability.CONSTANT;
+    case SCode.Variability.PARAM()    then Variability.PARAMETER;
     case SCode.Variability.DISCRETE() then Variability.DISCRETE;
-    case SCode.Variability.VAR() then Variability.CONTINUOUS;
+    case SCode.Variability.VAR()      then Variability.CONTINUOUS;
   end match;
 end variabilityFromSCode;
 
@@ -393,10 +394,11 @@ function variabilityToSCode
   output SCode.Variability scodeVar;
 algorithm
   scodeVar := match var
-    case Variability.CONSTANT then SCode.Variability.CONST();
-    case Variability.STRUCTURAL_PARAMETER then SCode.Variability.PARAM();
-    case Variability.PARAMETER then SCode.Variability.PARAM();
-    case Variability.DISCRETE then SCode.Variability.DISCRETE();
+    case Variability.CONSTANT                 then SCode.Variability.CONST();
+    case Variability.STRUCTURAL_PARAMETER     then SCode.Variability.PARAM();
+    case Variability.PARAMETER                then SCode.Variability.PARAM();
+    case Variability.NON_STRUCTURAL_PARAMETER then SCode.Variability.PARAM();
+    case Variability.DISCRETE                 then SCode.Variability.DISCRETE();
     else SCode.Variability.VAR();
   end match;
 end variabilityToSCode;
@@ -406,10 +408,11 @@ function variabilityToDAE
   output DAE.VarKind varKind;
 algorithm
   varKind := match var
-    case Variability.CONSTANT then DAE.VarKind.CONST();
-    case Variability.STRUCTURAL_PARAMETER then DAE.VarKind.PARAM();
-    case Variability.PARAMETER then DAE.VarKind.PARAM();
-    case Variability.DISCRETE then DAE.VarKind.DISCRETE();
+    case Variability.CONSTANT                 then DAE.VarKind.CONST();
+    case Variability.STRUCTURAL_PARAMETER     then DAE.VarKind.PARAM();
+    case Variability.PARAMETER                then DAE.VarKind.PARAM();
+    case Variability.NON_STRUCTURAL_PARAMETER then DAE.VarKind.PARAM();
+    case Variability.DISCRETE                 then DAE.VarKind.DISCRETE();
     else DAE.VarKind.VARIABLE();
   end match;
 end variabilityToDAE;
@@ -419,9 +422,10 @@ function variabilityToDAEConst
   output DAE.Const const;
 algorithm
   const := match var
-    case Variability.CONSTANT then DAE.Const.C_CONST();
-    case Variability.STRUCTURAL_PARAMETER then DAE.Const.C_PARAM();
-    case Variability.PARAMETER then DAE.Const.C_PARAM();
+    case Variability.CONSTANT                 then DAE.Const.C_CONST();
+    case Variability.STRUCTURAL_PARAMETER     then DAE.Const.C_PARAM();
+    case Variability.PARAMETER                then DAE.Const.C_PARAM();
+    case Variability.NON_STRUCTURAL_PARAMETER then DAE.Const.C_PARAM();
     else DAE.Const.C_VAR();
   end match;
 end variabilityToDAEConst;
@@ -431,12 +435,13 @@ function variabilityString
   output String str;
 algorithm
   str := match var
-    case Variability.CONSTANT then "constant";
-    case Variability.STRUCTURAL_PARAMETER then "parameter";
-    case Variability.PARAMETER then "parameter";
-    case Variability.DISCRETE then "discrete";
-    case Variability.IMPLICITLY_DISCRETE then "discrete";
-    case Variability.CONTINUOUS then "continuous";
+    case Variability.CONSTANT                 then "constant";
+    case Variability.STRUCTURAL_PARAMETER     then "parameter";
+    case Variability.PARAMETER                then "parameter";
+    case Variability.NON_STRUCTURAL_PARAMETER then "parameter";
+    case Variability.DISCRETE                 then "discrete";
+    case Variability.IMPLICITLY_DISCRETE      then "discrete";
+    case Variability.CONTINUOUS               then "continuous";
   end match;
 end variabilityString;
 
@@ -446,10 +451,11 @@ function unparseVariability
   output String str;
 algorithm
   str := match var
-    case Variability.CONSTANT then "constant ";
-    case Variability.STRUCTURAL_PARAMETER then "parameter ";
-    case Variability.PARAMETER then "parameter ";
-    case Variability.DISCRETE then if Type.isDiscrete(ty) then "" else "discrete ";
+    case Variability.CONSTANT                 then "constant ";
+    case Variability.STRUCTURAL_PARAMETER     then "parameter ";
+    case Variability.PARAMETER                then "parameter ";
+    case Variability.NON_STRUCTURAL_PARAMETER then "parameter ";
+    case Variability.DISCRETE                 then if Type.isDiscrete(ty) then "" else "discrete ";
     else "";
   end match;
 end unparseVariability;
@@ -470,13 +476,12 @@ function effectiveVariability
   input Variability inVar;
   output Variability outVar;
 algorithm
-  if inVar == Variability.STRUCTURAL_PARAMETER then
-    outVar := Variability.PARAMETER;
-  elseif inVar == Variability.IMPLICITLY_DISCRETE then
-    outVar := Variability.DISCRETE;
-  else
-    outVar := inVar;
-  end if;
+  outVar := match inVar
+    case Variability.STRUCTURAL_PARAMETER     then Variability.PARAMETER;
+    case Variability.NON_STRUCTURAL_PARAMETER then Variability.PARAMETER;
+    case Variability.IMPLICITLY_DISCRETE      then Variability.DISCRETE;
+    else inVar;
+  end match;
 end effectiveVariability;
 
 function directionFromSCode
