@@ -189,7 +189,10 @@ IDENT;
 
 @includes {
   #include "ModelicaParserCommon.h"
+  #if !defined(OMJULIA)
   #include "errorext.h"
+  #else
+  #endif
 }
 
 T_ALGORITHM : 'algorithm';

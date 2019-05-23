@@ -2288,46 +2288,49 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
  */
 void SimulationDialog::simulate()
 {
-  if (validate()) {
-    // interactive simulation
-    if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
+  if (!validate()) {
+    return;
+  }
+  // interactive simulation
+  if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
+    performSimulation();
+  } else {
+    // if no option is selected then show error message to user
+    if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
+          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
+          mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
+          mpSimulateCheckBox->isChecked())) {
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                               GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
+      return;
+    }
+    if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+        mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
+    }
+    if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
+      saveExperimentAnnotation();
+    }
+    if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
+      saveTranslationFlagsAnnotation();
+    }
+    if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      saveSimulationFlagsAnnotation();
+    }
+    if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+        mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      mpLibraryTreeItem->getModelWidget()->endMacro();
+    }
+    if (mpSimulateCheckBox->isChecked()) {
       performSimulation();
-    } else {
-      // if no option is selected then show error message to user
-      if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
-            mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
-            mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
-            mpSimulateCheckBox->isChecked())) {
-        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
-        return;
-      }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
-      }
-      if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
-        saveExperimentAnnotation();
-      }
-      if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
-        saveTranslationFlagsAnnotation();
-      }
-      if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        saveSimulationFlagsAnnotation();
-      }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->endMacro();
-      }
-      if (mpSimulateCheckBox->isChecked()) {
-        performSimulation();
-      }
     }
     if (isVisible()) {
       saveDialogGeometry();
     }
     accept();
   }
+  saveDialogGeometry();
+  accept();
 }
 
 /*!

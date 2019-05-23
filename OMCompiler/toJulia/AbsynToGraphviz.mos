@@ -1,0 +1,62 @@
+//Translating Absyn, to generate a syntax tree
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Absyn.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Absyn.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Absyn);getErrorString();
+//We also need AbsynUtil
+//Translating AbsynUtil
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/AbsynUtil.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/AbsynUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(AbsynUtil);getErrorString();
+//We need Dump
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Dump);getErrorString();
+//We need Graphviz and dump Graphviz
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Graphviz.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Graphviz.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Graphviz);getErrorString();
+//We need dumpGraphviz
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/DumpGraphviz.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/DumpGraphviz.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(DumpGraphviz);getErrorString();
+
+//For Error
+loadFile("Compiler/Util/Error.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Error.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Error);getErrorString();
+
+
+
+//Util
+loadFile("Compiler/Util/Util.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Util.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Util);getErrorString();
+
+
+//Autoconf
+loadFile("Compiler/Util/Autoconf.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Autoconf.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Autoconf);getErrorString();
+
+
+//Clocks
+loadFile("Compiler/Util/ClockIndexes.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/ClockIndexes.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(ClockIndexes);getErrorString();
+
+
+
+//Corba
+loadFile("Compiler/Util/Corba.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/Corba.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Corba);getErrorString();
+
+//Zeromq
+loadFile("Compiler/Util/ZeroMQ.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToGraphvizOutput/ZeroMQ.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(ZeroMQ);getErrorString();

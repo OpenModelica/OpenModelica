@@ -1,0 +1,14 @@
+/*
+ The intention of this script is to automatically generate the different utility functions
+*/
+
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+
+loadFile("Compiler/Util/Array.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/Array.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Array);getErrorString();
+
+loadFile("Compiler/Util/List.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/List.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(List);getErrorString();
+
