@@ -9,6 +9,19 @@ pipeline {
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
   stages {
+    stage('abort running builds') {
+      /* If this is a change request, cancel previous builds if you push a new commit */
+      when {
+        changeRequest()
+      }
+      steps {
+        script {
+          def buildNumber = env.BUILD_NUMBER as int
+          if (buildNumber > 1) milestone(buildNumber - 1)
+          milestone(buildNumber)
+        }
+      }
+    }
     stage('setup') {
       parallel {
         stage('gcc') {
