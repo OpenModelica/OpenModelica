@@ -107,10 +107,18 @@ int read_csv_dataset_size(const char* filename)
   unsigned char delim = CSV_COMMA;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+#if defined(_MSC_VER)
+  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
+#else /* mingw supports array definition with sizes from the stack */
   wchar_t unicodeFilename[unicodeFilenameLength];
+#endif
   MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
 
   f = _wfopen(unicodeFilename, L"r");
+#if defined(_MSC_VER)
+  if (unicodeFilename) { free(unicodeFilename); }
+#endif
+
 #else
   f = fopen(filename,"r");
 #endif
@@ -228,10 +236,18 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   struct csv_body body = {0};
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+#if defined(_MSC_VER)
+  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
+#else /* mingw supports array definition with sizes from the stack */
   wchar_t unicodeFilename[unicodeFilenameLength];
+#endif
   MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
 
   FILE *fin = _wfopen(unicodeFilename, L"r");
+#if defined(_MSC_VER)
+  if (unicodeFilename) { free(unicodeFilename); }
+#endif
+
 #else
   FILE *fin = fopen(filename, "r");
 #endif
@@ -284,10 +300,19 @@ struct csv_data* read_csv(const char *filename)
   unsigned char delim = CSV_COMMA;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+
+#if defined(_MSC_VER)
+  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
+#else /* mingw supports array definition with sizes from the stack */
   wchar_t unicodeFilename[unicodeFilenameLength];
+#endif
   MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
 
   FILE *fin = _wfopen(unicodeFilename, L"r");
+#if defined(_MSC_VER)
+  if (unicodeFilename) { free(unicodeFilename); }
+#endif
+
 #else
   FILE *fin = fopen(filename, "r");
 #endif
