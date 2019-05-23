@@ -17,6 +17,7 @@ Modelica_Synchronous.Examples.Elementary.IntegerSignals.TimeBasedStep.mos \
 Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mos \
 DID.mos \
 TestClockParameterEvaluation.mos \
+Bug5404.mos
 
 
 # test that currently fail. Move up when fixed.
