@@ -373,9 +373,13 @@ uniontype Call
       ty := getSpecialReturnType(func, args);
     end if;
 
-    // Functions that return a discrete type, e.g. Integer, should probably be
-    // treated as implicitly discrete if the arguments are continuous.
-    if Type.isDiscrete(ty) and var == Variability.CONTINUOUS then
+    if var == Variability.PARAMETER and Function.isExternal(func) then
+      // Mark external functions with parameter expressions as non-structural,
+      // to avoid them being marked as structural unnecessarily.
+      var := Variability.NON_STRUCTURAL_PARAMETER;
+    elseif Type.isDiscrete(ty) and var == Variability.CONTINUOUS then
+      // Functions that return a discrete type, e.g. Integer, should probably be
+      // treated as implicitly discrete if the arguments are continuous.
       var := Variability.IMPLICITLY_DISCRETE;
     end if;
 
