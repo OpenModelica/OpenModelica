@@ -2676,6 +2676,7 @@ void MainWindow::openAboutOMEdit()
 
 void MainWindow::toggleShapesButton()
 {
+  setFocus();
   QAction *clickedAction = qobject_cast<QAction*>(const_cast<QObject*>(sender()));
   QList<QAction*> shapeActions = mpShapesActionGroup->actions();
   foreach (QAction *shapeAction, shapeActions) {

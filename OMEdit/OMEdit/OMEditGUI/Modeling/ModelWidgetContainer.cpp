@@ -2914,6 +2914,10 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
   if (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::CrossCursor) {
     QApplication::restoreOverrideCursor();
   }
+  /*If we get a focus out event while drawing. Stop drawing.*/
+  if (isCreatingShape()) {
+    finishDrawingGenericShape();
+  }
   QGraphicsView::focusOutEvent(event);
 }
 
