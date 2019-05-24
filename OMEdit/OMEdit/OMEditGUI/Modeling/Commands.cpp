@@ -1808,18 +1808,7 @@ void AddSystemCommand::redoInternal()
  */
 void AddSystemCommand::undo()
 {
-  // delete the connector
-  /*! @todo Add a function deleteSystem to delete the system from OMSimulator */
-  //mpGraphicsView->deleteSystem(mName);
-  // delete the LibraryTreeItem
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
-//  mpLibraryTreeItem = 0;
-//  // delete the Component
-//  mpGraphicsView->removeItem(mpComponent);
-//  mpGraphicsView->removeItem(mpComponent->getOriginItem());
-//  mpGraphicsView->deleteComponentFromList(mpComponent);
-//  mpComponent->deleteLater();
-//  mpComponent = 0;
+  qDebug() << "AddSystemCommand::undo() not implemented.";
 }
 
 /*!
@@ -1898,17 +1887,7 @@ void AddSubModelCommand::redoInternal()
 void AddSubModelCommand::undo()
 {
   qDebug() << "AddSubModelCommand::undo() not implemented.";
-//  // delete the submodel
-//  mpGraphicsView->deleteSubModel(mName);
-//  // delete the LibraryTreeItem
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
-//  mpLibraryTreeItem = 0;
-//  // delete the Component
-//  mpGraphicsView->removeItem(mpComponent);
-//  mpGraphicsView->removeItem(mpComponent->getOriginItem());
-//  mpGraphicsView->deleteComponentFromList(mpComponent);
-//  mpComponent->deleteLater();
-//  mpComponent = 0;
+
 }
 
 /*!
@@ -1935,17 +1914,6 @@ DeleteSubModelCommand::DeleteSubModelCommand(Component *pComponent, GraphicsView
 void DeleteSubModelCommand::redoInternal()
 {
   qDebug() << "DeleteSubModelCommand::redoInternal() not implemented.";
-//  // delete the submodel
-//  mpGraphicsView->deleteSubModel(mpComponent->getName());
-//  // delete the LibraryTreeItem
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpComponent->getLibraryTreeItem(), false);
-//  // delete the Component
-//  mpGraphicsView->removeItem(mpComponent);
-//  mpGraphicsView->removeItem(mpComponent->getOriginItem());
-//  mpGraphicsView->deleteComponentFromList(mpComponent);
-//  mpComponent->deleteLater();
-//  mpComponent = 0;
-//  mpGraphicsView->deleteComponentFromClass(mpComponent);
 }
 
 /*!
@@ -1955,24 +1923,6 @@ void DeleteSubModelCommand::redoInternal()
 void DeleteSubModelCommand::undo()
 {
   qDebug() << "DeleteSubModelCommand::undo() not implemented.";
-//  // add submodel
-//  mpGraphicsView->addSubModel(mName, mPath);
-//  // Create a LibraryTreeItem for FMU
-//  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-//  LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-//  LibraryTreeItem *pLibraryTreeItem;
-//  pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
-//                                                              .arg(mName), mPath, true, pParentLibraryTreeItem);
-//  // Create ModelWidget for FMU so that its input/output signals are fetched
-//  pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
-//  // add the FMU to view
-//  ComponentInfo *pComponentInfo = new ComponentInfo;
-//  pComponentInfo->setName(pLibraryTreeItem->getName());
-//  pComponentInfo->setClassName(pLibraryTreeItem->getNameStructure());
-//  mpComponent = new Component(mName, pLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
-//  mpGraphicsView->addItem(mpComponent);
-//  mpGraphicsView->addItem(mpComponent->getOriginItem());
-//  mpGraphicsView->addComponentToList(mpComponent);
 }
 
 /*!
@@ -2065,18 +2015,7 @@ void AddConnectorCommand::redoInternal()
  */
 void AddConnectorCommand::undo()
 {
-  // delete the connector
-  /*! @todo Add a function deleteConnector to delete the connector from OMSimulator */
-  //mpGraphicsView->deleteSubModel(mName);
-  // delete the LibraryTreeItem
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
-//  mpLibraryTreeItem = 0;
-//  // delete the Component
-//  mpGraphicsView->removeItem(mpComponent);
-//  mpGraphicsView->removeItem(mpComponent->getOriginItem());
-//  mpGraphicsView->deleteComponentFromList(mpComponent);
-//  mpComponent->deleteLater();
-//  mpComponent = 0;
+    qDebug() << "AddConnectorCommand::undo() not implemented.";
 }
 
 ElementPropertiesCommand::ElementPropertiesCommand(Component *pComponent, QString name, ElementProperties oldElementProperties,
@@ -2410,31 +2349,15 @@ OMSRenameCommand::OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString na
 void OMSRenameCommand::redoInternal()
 {
   qDebug() << "OMSRenameCommand::redoInternal() not implemented.";
-//  QString identOld = mpLibraryTreeItem->getNameStructure();
-//  QString identNew = mpLibraryTreeItem->parent()->getNameStructure().isEmpty() ? mNewName : mpLibraryTreeItem->parent()->getNameStructure() + "." + mNewName;
-//  OMSProxy::instance()->rename(identOld, identNew);
-//  mpLibraryTreeItem->setName(mNewName);
-//  mpLibraryTreeItem->setNameStructure(identNew);
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
-//  mpLibraryTreeItem->emitNameChanged();
-//  mpLibraryTreeItem->updateChildrenNameStructure();
 }
 
-/*!
+/*
  * \brief OMSRenameCommand::undo
  * Undo the OMSRenameCommand
  */
 void OMSRenameCommand::undo()
 {
   qDebug() << "OMSRenameCommand::undo() not implemented.";
-//  QString identOld = mpLibraryTreeItem->getNameStructure();
-//  QString identNew = mpLibraryTreeItem->parent()->getNameStructure().isEmpty() ? mOldName : mpLibraryTreeItem->parent()->getNameStructure() + "." + mOldName;
-//  OMSProxy::instance()->rename(identOld, identNew);
-//  mpLibraryTreeItem->setName(mOldName);
-//  mpLibraryTreeItem->setNameStructure(identNew);
-//  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
-//  mpLibraryTreeItem->emitNameChanged();
-//  mpLibraryTreeItem->updateChildrenNameStructure();
 }
 
 /*!
