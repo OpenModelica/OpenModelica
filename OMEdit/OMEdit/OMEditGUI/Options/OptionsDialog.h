@@ -85,7 +85,11 @@ private:
 
   static OptionsDialog *mpInstance;
 public:
-  static OptionsDialog* instance() {return mpInstance;}
+  static OptionsDialog* instance() {
+    create();
+    return mpInstance;
+  }
+  ~OptionsDialog() { mpInstance = nullptr; }
   void readSettings();
   void readGeneralSettings();
   void readLibrariesSettings();
@@ -173,6 +177,7 @@ public slots:
   void changePage(QListWidgetItem *current, QListWidgetItem *previous);
   void reject();
   void saveSettings();
+  void reset();
 private:
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
@@ -203,6 +208,7 @@ private:
   Label *mpChangesEffectLabel;
   QPushButton *mpCancelButton;
   QPushButton *mpOkButton;
+  QPushButton *mpResetButton;
   QDialogButtonBox *mpButtonBox;
 };
 
