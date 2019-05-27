@@ -1476,8 +1476,12 @@ void OptionsDialog::setUpDialog()
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  mpResetButton = new QPushButton(Helper::reset);
+  mpResetButton->setAutoDefault(false);
+  connect(mpResetButton, SIGNAL(clicked()), SLOT(reset()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpResetButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QHBoxLayout *horizontalLayout = new QHBoxLayout;
   horizontalLayout->addWidget(mpOptionsList);
@@ -1678,6 +1682,28 @@ void OptionsDialog::reject()
   readSettings();
   saveDialogGeometry();
   QDialog::reject();
+}
+
+void OptionsDialog::reset()
+{
+  const QString title = tr("Reset to default");
+  const QString text0 = tr("Are you sure that you want to reset OMEdit? This operation can not be undone. ");
+  const QString textWithLink = tr(("Please back up your settings "
+                                   + QString("<a href='%1'>file</a>").arg(mpSettings->fileName())
+                                   + " before proceeding, restart to have the changes take effect.").toUtf8().constData());
+  const QString text = text0 + textWithLink;
+  QMessageBox* pResetMessageBox = new QMessageBox();
+  pResetMessageBox->setTextFormat(Qt::RichText);
+  pResetMessageBox->setWindowTitle(title);
+  pResetMessageBox->setText(text);
+  const QMessageBox::StandardButton reply = pResetMessageBox->question(this, title, text, QMessageBox::Ok | QMessageBox::Cancel);
+  if (reply == QMessageBox::Ok) {
+    mpSettings->clear();
+    mpSettings->sync();
+    accept();
+    destroy();
+ }
+  delete pResetMessageBox;
 }
 
 //! Saves the settings to omedit.ini file.
