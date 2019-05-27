@@ -19,6 +19,7 @@ AC_SEARCH_LIBS([floor],[m])
 LIBS_BEFORE="$LIBS"
 ZLIB="Yes"
 STATIC_ZLIB="No"
+DUMMY_USERTAB=""
 AC_ARG_ENABLE(hdf5,
   [  --enable-hdf5[=yes]          Adds support for HDF5 and MAT7.3 formats],[test "xno" = x"$enableval" && HDF5="No"],[HDF5="Yes"])
 AC_ARG_ENABLE(zlib,
@@ -124,8 +125,15 @@ AC_TRY_LINK([
 [AC_MSG_RESULT([yes])],
 [AC_MSG_RESULT([no]); CPPFLAGS="$CPPFLAGS -DNO_PID"])
 
-CPPFLAGS="$CPPFLAGS -DDUMMY_FUNCTION_USERTAB"
-STATIC_CPPFLAGS="$CPPFLAGS -DDUMMY_FUNCTION_USERTAB"
+AC_ARG_ENABLE(dummy-usertab, [  --disable-dummy-usertab[=no] Skips generation of the dummy usertab function],[
+  if test "xyes" = x"$enableval"; then
+    DUMMY_USERTAB="yes"
+  fi
+],[DUMMY_USERTAB="yes"])
+if test "yes" = "$DUMMY_USERTAB"; then
+  CPPFLAGS="$CPPFLAGS -DDUMMY_FUNCTION_USERTAB=1"
+  STATIC_CPPFLAGS="$CPPFLAGS -DDUMMY_FUNCTION_USERTAB=1"
+fi
 if test "$ZLIB" = "Yes"; then
 CPPFLAGS="$CPPFLAGS -DHAVE_ZLIB=1"
 fi
