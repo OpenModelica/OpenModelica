@@ -1,6 +1,6 @@
 /* ModelicaStrings.c - External functions for Modelica.Functions.Strings
 
-   Copyright (C) 2002-2017, Modelica Association and DLR
+   Copyright (C) 2002-2019, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -12,6 +12,10 @@
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -285,8 +289,7 @@ void ModelicaStrings_scanInteger(_In_z_ const char* string,
             /* check if the scanned string is no Real number */
             int next = token_start + sign + number_length - 1;
             if ( string[next] == '\0' ||
-                (string[next] != '\0' && string[next] != '.'
-                                      && string[next] != 'e'
+                (string[next] != '.'  && string[next] != 'e'
                                       && string[next] != 'E') ) {
 #if defined(NO_LOCALE)
 #elif defined(_MSC_VER) && _MSC_VER >= 1400

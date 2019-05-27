@@ -120,11 +120,10 @@ opendir (const char *szPath)
     nd->dd_dir.d_namlen = 0;
     nd->dd_dir.d_name = nd->dd_dta.name;
 
-
     /* Start the search, in order that the user may still
        change the current directory afterwards
     */
-    nd->dd_handle = (long)_findfirst (nd->dd_name, &(nd->dd_dta));
+    nd->dd_handle = (find_t)_findfirst (nd->dd_name, &(nd->dd_dta));
     if (nd->dd_handle == -1) {
         /* Whoops! Seems there are no files in that
          * directory. */
@@ -135,7 +134,6 @@ opendir (const char *szPath)
 
     return nd;
 }
-
 
 /*
  * readdir
@@ -198,7 +196,6 @@ readdir (DIR * dirp)
 
     return (struct dirent *) 0;
 }
-
 
 /*
  * closedir

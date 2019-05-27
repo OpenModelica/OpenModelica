@@ -1,6 +1,6 @@
 /* ModelicaFFT.c - FFT functions
 
-   Copyright (C) 2015-2017, Modelica Association and DLR
+   Copyright (C) 2015-2019, Modelica Association and contributors
    Copyright (C) 2003-2010, Mark Borgerding
    All rights reserved.
 
@@ -14,9 +14,9 @@
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
 
-   3. Neither the author nor the names of any contributors may be used to
-      endorse or promote products derived from this software without specific
-      prior written permission.
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -355,7 +355,7 @@ static void kf_bfly_generic(
             int twidx=0;
             Fout[ k ] = scratch[0];
             for (q=1; q<p; ++q ) {
-                twidx += fstride * k;
+                twidx += (int)(fstride * k);
                 if (twidx>=Norig) twidx-=Norig;
                 C_MUL(t,scratch[q] , twiddles[twidx] );
                 C_ADDTO( Fout[ k ] ,t);
@@ -533,7 +533,7 @@ int ModelicaFFT_kiss_fftr(_In_ double* u, size_t nu, _In_ double* work, size_t n
 
     */
     int i;
-    int nu2 = nu / 2;
+    int nu2 = (int)(nu / 2);
     int nf  = nu2+1;
 
     struct mrkiss_fft_state  fft_obj;

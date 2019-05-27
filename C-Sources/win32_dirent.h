@@ -40,6 +40,12 @@ struct dirent
      *       finddata_t structure in the DIR. */
 };
 
+#if (defined(_MSC_VER) && _MSC_VER >= 1300) || defined(__MINGW32__)
+typedef intptr_t find_t;
+#else
+typedef long find_t;
+#endif
+
 /*
  * This is an internal data structure. Good programmers will not use it
  * except as an argument to one of the functions below.
@@ -55,7 +61,7 @@ typedef struct
     struct dirent dd_dir;
 
     /* _findnext handle */
-    long dd_handle;
+    find_t dd_handle;
 
     /*
      * Status of search:
@@ -68,7 +74,6 @@ typedef struct
     /* given path for dir with search pattern (struct is extended) */
     char dd_name[1];
 } DIR;
-
 
 DIR* opendir (const char*);
 struct dirent* readdir (DIR*);

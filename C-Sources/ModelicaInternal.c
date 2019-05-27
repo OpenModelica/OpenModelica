@@ -1,6 +1,6 @@
 /* ModelicaInternal.c - External functions for Modelica.Utilities
 
-   Copyright (C) 2002-2017, Modelica Association and DLR
+   Copyright (C) 2002-2019, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -12,6 +12,10 @@
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,16 +30,20 @@
 */
 
 /* Release Notes:
+      Jun. 28, 2018: by Hans Olsson, Dassault Systemes
+                     Proper error message when out of string memory
+                     in ModelicaInternal_readLine (ticket #2676)
+
+      Oct. 23, 2017: by Thomas Beutlich, ESI ITI GmbH
+                     Utilized non-fatal hash insertion, called by HASH_ADD_KEYPTR in
+                     function CacheFileForReading (ticket #2097)
+
       Apr. 09, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Fixed macOS support of ModelicaInternal_setenv
                      (ticket #2235)
 
       Mar. 27, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Replaced localtime by re-entrant function
-
-      Feb. 26, 2017: by Thomas Beutlich, ESI ITI GmbH
-                     Fixed definition of uthash_fatal, called by HASH_ADD_KEYPTR in
-                     function CacheFileForReading (ticket #2097)
 
       Jan. 31, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Fixed WIN32 support of a directory name with a trailing
@@ -180,8 +188,8 @@ void ModelicaInternal_setenv(_In_z_ const char* name,
     ModelicaNotExistError("ModelicaInternal_setenv"); }
 #else
 
+#define HASH_NONFATAL_OOM 1
 #include "uthash.h"
-#undef uthash_fatal /* Ensure that nowhere in this file uses uthash_fatal by accident */
 #include "gconstructor.h"
 
 #include <stdio.h>
@@ -302,7 +310,7 @@ static ModelicaFileType Internal_stat(_In_z_ const char* name) {
     int statReturn = _stat(name, &fileInfo);
     if (0 != statReturn) {
         /* For some reason _stat requires "a:\" and "a:\test1" but fails
-         * on "a:" and "a:\test1\", repectively. It could be handled in the
+         * on "a:" and "a:\test1\", respectively. It could be handled in the
          * Modelica code, but seems better to have it here.
          */
         const char* firstSlash = strpbrk(name, "/\\");
@@ -514,7 +522,7 @@ void ModelicaInternal_readDirectory(_In_z_ const char* directory, int nFiles,
              directory, iFiles, nFiles);
     }
     else if ( closedir(pdir) != 0 ) {
-        ModelicaFormatError("Not possible to get file names of \"%s\":\n",
+        ModelicaFormatError("Not possible to get file names of \"%s\":\n%s",
             directory, strerror(errno));
     }
 
@@ -634,7 +642,7 @@ typedef struct FileCache {
 } FileCache;
 
 static FileCache* fileCache = NULL;
-#if defined(_POSIX_)
+#if defined(_POSIX_) && !defined(NO_MUTEX)
 #include <pthread.h>
 #if defined(G_HAS_CONSTRUCTORS)
 static pthread_mutex_t m;
@@ -662,17 +670,17 @@ static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 #include <windows.h>
 static CRITICAL_SECTION cs;
 #ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
-#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(initializeCS)
+#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(ModelicaInternal_initializeCS)
 #endif
-G_DEFINE_CONSTRUCTOR(initializeCS)
-static void initializeCS(void) {
+G_DEFINE_CONSTRUCTOR(ModelicaInternal_initializeCS)
+static void ModelicaInternal_initializeCS(void) {
     InitializeCriticalSection(&cs);
 }
 #ifdef G_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
-#pragma G_DEFINE_DESTRUCTOR_PRAGMA_ARGS(deleteCS)
+#pragma G_DEFINE_DESTRUCTOR_PRAGMA_ARGS(ModelicaInternal_deleteCS)
 #endif
-G_DEFINE_DESTRUCTOR(deleteCS)
-static void deleteCS(void) {
+G_DEFINE_DESTRUCTOR(ModelicaInternal_deleteCS)
+static void ModelicaInternal_deleteCS(void) {
     DeleteCriticalSection(&cs);
 }
 #define MUTEX_LOCK() EnterCriticalSection(&cs)
@@ -683,13 +691,8 @@ static void deleteCS(void) {
 #endif
 
 static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
-#define uthash_fatal(msg) do { \
-    MUTEX_UNLOCK(); \
-    ModelicaFormatMessage("Error in uthash: %s\n" \
-        "Hash table for file cache may be left in corrupt state.\n", msg); \
-    return; \
-} while (0)
     FileCache* fv;
+    size_t len;
     if (fileName == NULL) {
         /* Do not add, close file */
         if (fp != NULL) {
@@ -697,8 +700,9 @@ static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
         }
         return;
     }
+    len = strlen(fileName);
     MUTEX_LOCK();
-    HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
+    HASH_FIND(hh, fileCache, fileName, (unsigned)len, fv);
     if (fv != NULL) {
         fv->fp = fp;
         fv->line = line;
@@ -706,13 +710,17 @@ static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
     else {
         fv = (FileCache*)malloc(sizeof(FileCache));
         if (fv != NULL) {
-            char* key = (char*)malloc((strlen(fileName) + 1)*sizeof(char));
+            char* key = (char*)malloc((len + 1)*sizeof(char));
             if (key != NULL) {
                 strcpy(key, fileName);
                 fv->fileName = key;
                 fv->fp = fp;
                 fv->line = line;
-                HASH_ADD_KEYPTR(hh, fileCache, key, (unsigned)strlen(key), fv);
+                HASH_ADD_KEYPTR(hh, fileCache, key, (unsigned)len, fv);
+                if (NULL == fv->hh.tbl) {
+                   free(key);
+                   free(fv);
+                }
             }
             else {
                 free(fv);
@@ -720,13 +728,13 @@ static void CacheFileForReading(FILE* fp, const char* fileName, int line) {
         }
     }
     MUTEX_UNLOCK();
-#undef uthash_fatal
 }
 
 static void CloseCachedFile(const char* fileName) {
     FileCache* fv;
+    size_t len = strlen(fileName);
     MUTEX_LOCK();
-    HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
+    HASH_FIND(hh, fileCache, fileName, (unsigned)len, fv);
     if (fv != NULL) {
         if (fv->fp != NULL) {
             fclose(fv->fp);
@@ -743,8 +751,9 @@ static FILE* ModelicaStreams_openFileForReading(const char* fileName, int line) 
     FILE* fp;
     int c = 1;
     FileCache* fv;
+    size_t len = strlen(fileName);
     MUTEX_LOCK();
-    HASH_FIND(hh, fileCache, fileName, (unsigned)strlen(fileName), fv);
+    HASH_FIND(hh, fileCache, fileName, (unsigned)len, fv);
     /* Open file */
     if (fv != NULL) {
         /* Cached value */
@@ -799,7 +808,7 @@ static FILE* ModelicaStreams_openFileForWriting(const char* fileName) {
     FILE* fp;
 
     /* Check fileName */
-    if ( strlen(fileName) == 0 ) {
+    if ( fileName[0] == '\0' ) {
         ModelicaError("fileName is an empty string.\n"
             "Opening of file is aborted\n");
     }
@@ -898,9 +907,9 @@ void ModelicaInternal_readFile(_In_z_ const char* fileName,
         line = ModelicaAllocateStringWithErrorReturn(lineLen);
         if ( line == NULL ) {
             fclose(fp);
-            ModelicaFormatError("Not enough memory to allocate string for reading line %i from file\n"
+            ModelicaFormatError("Not enough memory to allocate string for reading line %lu from file\n"
                 "\"%s\".\n"
-                "(this file contains %i lines)\n", iLines, fileName, nLines);
+                "(this file contains %lu lines)\n", (unsigned long)iLines, fileName, (unsigned long)nLines);
         }
 
         /* Read next line */
@@ -910,14 +919,14 @@ void ModelicaInternal_readFile(_In_z_ const char* fileName,
         else {
             if ( fseek(fp, offset, SEEK_SET != 0) ) {
                 fclose(fp);
-                ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n"
-                    "%s\n", iLines, fileName, strerror(errno));
+                ModelicaFormatError("Error when reading line %lu from file\n\"%s\":\n"
+                    "%s\n", (unsigned long)iLines, fileName, strerror(errno));
             }
             nc = ( iLines < nLines ? lineLen+1 : lineLen);
             if ( fread(line, sizeof(char), nc, fp) != nc ) {
                 fclose(fp);
-                ModelicaFormatError("Error when reading line %i from file\n\"%s\"\n",
-                    iLines, fileName);
+                ModelicaFormatError("Error when reading line %lu from file\n\"%s\"\n",
+                    (unsigned long)iLines, fileName);
             }
         }
         line[lineLen] = '\0';
@@ -964,6 +973,7 @@ _Ret_z_ const char* ModelicaInternal_readLine(_In_z_ const char* fileName,
     }
     line = ModelicaAllocateStringWithErrorReturn(lineLen);
     if ( line == NULL ) {
+        errno = 0; /* Erase previous error code, treated specially below */
         goto Modelica_ERROR3;
     }
 
@@ -996,7 +1006,7 @@ Modelica_ERROR3:
     fclose(fp);
     CloseCachedFile(fileName);
     ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n%s",
-        lineNumber, fileName, strerror(errno));
+        lineNumber, fileName, (errno == 0) ? "Not enough memory to allocate string for reading line." : strerror(errno));
     return "";
 }
 

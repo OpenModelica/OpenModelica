@@ -1,6 +1,6 @@
 /* ModelicaMatIO.h - MAT file I/O functions header
 
-   Copyright (C) 2013-2017, Christopher C. Hulbert, Modelica Association, and ESI ITI GmbH
+   Copyright (C) 2013-2019, Modelica Association and contributors
    Copyright (C) 2005-2013, Christopher C. Hulbert
    All rights reserved.
 
@@ -13,6 +13,10 @@
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -50,13 +54,13 @@
 #define MATIO_MINOR_VERSION 5
 
 /* Matio release level number */
-#define MATIO_RELEASE_LEVEL 10
+#define MATIO_RELEASE_LEVEL 15
 
 /* Matio version number */
-#define MATIO_VERSION 1510
+#define MATIO_VERSION 1515
 
 /* Matio version string */
-#define MATIO_VERSION_STR "1.5.10"
+#define MATIO_VERSION_STR "1.5.15"
 
 /* Default file format */
 #define MAT_FT_DEFAULT MAT_FT_MAT5
@@ -130,14 +134,37 @@ typedef uint8_t mat_uint8_t;
 #define mat_uint8_t unsigned char
 #endif
 
+/*
+  The following macros handle format attributes for type-checks against a
+  format string.
+*/
+
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define MATIO_FORMATATTR_PRINTF1 __attribute__((format(printf, 1, 2)))
+#define MATIO_FORMATATTR_VPRINTF __attribute__((format(printf, 1, 0)))
+#elif defined(__clang__)
+#if __has_attribute(format)
+#define MATIO_FORMATATTR_PRINTF1 __attribute__((format(printf, 1, 2)))
+#define MATIO_FORMATATTR_VPRINTF __attribute__((format(printf, 1, 0)))
+#else
+#define MATIO_FORMATATTR_PRINTF1
+#define MATIO_FORMATATTR_VPRINTF
+#endif
+#else
+#define MATIO_FORMATATTR_PRINTF1
+#define MATIO_FORMATATTR_VPRINTF
+#endif
+
 #endif /* MATIO_PUBCONF_H */
 
 #include <stdarg.h>
 
+#if !defined(MATIO_EXTERN)
 #if defined(__cplusplus)
 #define MATIO_EXTERN extern "C"
 #else
 #define MATIO_EXTERN
+#endif
 #endif
 
 /** @defgroup MAT Matlab MAT File I/O Library */
@@ -303,11 +330,11 @@ typedef struct matvar_t {
  */
 typedef struct mat_sparse_t {
     int nzmax;               /**< Maximum number of non-zero elements */
-    int *ir;                 /**< Array of size nzmax where ir[k] is the row of
+    mat_int32_t *ir;         /**< Array of size nzmax where ir[k] is the row of
                                *  data[k].  0 <= k <= nzmax
                                */
     int nir;                 /**< number of elements in ir */
-    int *jc;                 /**< Array size N+1 (N is number of columns) with
+    mat_int32_t *jc;         /**< Array size N+1 (N is number of columns) with
                                *  jc[k] being the index into ir/data of the
                                *  first non-zero element for row k.
                                */
@@ -320,10 +347,10 @@ typedef struct mat_sparse_t {
 MATIO_EXTERN void Mat_GetLibraryVersion(int *major,int *minor,int *release);
 
 /* io.c */
-MATIO_EXTERN char  *strdup_vprintf(const char *format, va_list ap);
-MATIO_EXTERN char  *strdup_printf(const char *format, ...);
-MATIO_EXTERN void   Mat_Critical( const char *format, ... );
-MATIO_EXTERN void   Mat_Warning( const char *format, ... );
+MATIO_EXTERN char  *strdup_vprintf(const char *format, va_list ap) MATIO_FORMATATTR_VPRINTF;
+MATIO_EXTERN char  *strdup_printf(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
+MATIO_EXTERN void   Mat_Critical(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
+MATIO_EXTERN void   Mat_Warning(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
 MATIO_EXTERN size_t Mat_SizeOf(enum matio_types data_type);
 MATIO_EXTERN size_t Mat_SizeOfClass(int class_type);
 
@@ -334,6 +361,7 @@ MATIO_EXTERN mat_t      *Mat_CreateVer(const char *matname,const char *hdr_str,
 MATIO_EXTERN int         Mat_Close(mat_t *mat);
 MATIO_EXTERN mat_t      *Mat_Open(const char *matname,int mode);
 MATIO_EXTERN const char *Mat_GetFilename(mat_t *mat);
+MATIO_EXTERN const char *Mat_GetHeader(mat_t *mat);
 MATIO_EXTERN enum mat_ft Mat_GetVersion(mat_t *mat);
 MATIO_EXTERN char      **Mat_GetDir(mat_t *mat, size_t *n);
 MATIO_EXTERN int         Mat_Rewind(mat_t *mat);
@@ -367,23 +395,25 @@ MATIO_EXTERN matvar_t  *Mat_VarGetStructs(matvar_t *matvar,int *start,int *strid
                             int *edge,int copy_fields);
 MATIO_EXTERN matvar_t  *Mat_VarGetStructsLinear(matvar_t *matvar,int start,int stride,
                             int edge,int copy_fields);
-MATIO_EXTERN void       Mat_VarPrint( matvar_t *matvar, int printdata );
-MATIO_EXTERN matvar_t  *Mat_VarRead(mat_t *mat, const char *name );
+MATIO_EXTERN void       Mat_VarPrint(matvar_t *matvar, int printdata);
+MATIO_EXTERN matvar_t  *Mat_VarRead(mat_t *mat, const char *name);
 MATIO_EXTERN int        Mat_VarReadData(mat_t *mat,matvar_t *matvar,void *data,
                             int *start,int *stride,int *edge);
 MATIO_EXTERN int        Mat_VarReadDataAll(mat_t *mat,matvar_t *matvar);
 MATIO_EXTERN int        Mat_VarReadDataLinear(mat_t *mat,matvar_t *matvar,void *data,
                             int start,int stride,int edge);
-MATIO_EXTERN matvar_t  *Mat_VarReadInfo( mat_t *mat, const char *name );
-MATIO_EXTERN matvar_t  *Mat_VarReadNext( mat_t *mat );
-MATIO_EXTERN matvar_t  *Mat_VarReadNextInfo( mat_t *mat );
+MATIO_EXTERN matvar_t  *Mat_VarReadInfo(mat_t *mat, const char *name);
+MATIO_EXTERN matvar_t  *Mat_VarReadNext(mat_t *mat);
+MATIO_EXTERN matvar_t  *Mat_VarReadNextInfo(mat_t *mat);
 MATIO_EXTERN matvar_t  *Mat_VarSetCell(matvar_t *matvar,int index,matvar_t *cell);
 MATIO_EXTERN matvar_t  *Mat_VarSetStructFieldByIndex(matvar_t *matvar,
                             size_t field_index,size_t index,matvar_t *field);
 MATIO_EXTERN matvar_t  *Mat_VarSetStructFieldByName(matvar_t *matvar,
                             const char *field_name,size_t index,matvar_t *field);
 MATIO_EXTERN int        Mat_VarWrite(mat_t *mat,matvar_t *matvar,
-                            enum matio_compression compress );
+                            enum matio_compression compress);
+MATIO_EXTERN int        Mat_VarWriteAppend(mat_t *mat,matvar_t *matvar,
+                            enum matio_compression compress,int dim);
 MATIO_EXTERN int        Mat_VarWriteInfo(mat_t *mat,matvar_t *matvar);
 MATIO_EXTERN int        Mat_VarWriteData(mat_t *mat,matvar_t *matvar,void *data,
                             int *start,int *stride,int *edge);

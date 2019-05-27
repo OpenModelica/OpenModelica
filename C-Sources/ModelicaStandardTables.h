@@ -1,7 +1,6 @@
 /* ModelicaStandardTables.h - External table functions header
 
-   Copyright (C) 2013-2017, Modelica Association, DLR, and ESI ITI GmbH
-   Copyright (C) 2008-2013, Modelica Association and DLR
+   Copyright (C) 2008-2019, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -13,6 +12,10 @@
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -29,6 +32,7 @@
 /* The following #define's are available.
 
    NO_FILE_SYSTEM        : A file system is not present (e.g. on dSPACE or xPC).
+   NO_MUTEX              : Pthread mutex is not present (e.g. on dSPACE)
    NO_TABLE_COPY         : Do not copy table data passed to _init functions
                            This is a potentially unsafe optimization (ticket #1143).
    TABLE_SHARE           : If NO_FILE_SYTEM is not defined then common/shared table

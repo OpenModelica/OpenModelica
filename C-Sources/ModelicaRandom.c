@@ -1,6 +1,6 @@
 /* ModelicaRandom.c - External functions for Modelica.Math.Random library
 
-   Copyright (C) 2015-2017, Modelica Association and DLR
+   Copyright (C) 2015-2019, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -12,6 +12,10 @@
    2. Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -122,17 +126,17 @@ static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
 #include <windows.h>
 static CRITICAL_SECTION cs;
 #ifdef G_DEFINE_CONSTRUCTOR_NEEDS_PRAGMA
-#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(initializeCS)
+#pragma G_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(ModelicaRandom_initializeCS)
 #endif
-G_DEFINE_CONSTRUCTOR(initializeCS)
-static void initializeCS(void) {
+G_DEFINE_CONSTRUCTOR(ModelicaRandom_initializeCS)
+static void ModelicaRandom_initializeCS(void) {
     InitializeCriticalSection(&cs);
 }
 #ifdef G_DEFINE_DESTRUCTOR_NEEDS_PRAGMA
-#pragma G_DEFINE_DESTRUCTOR_PRAGMA_ARGS(deleteCS)
+#pragma G_DEFINE_DESTRUCTOR_PRAGMA_ARGS(ModelicaRandom_deleteCS)
 #endif
-G_DEFINE_DESTRUCTOR(deleteCS)
-static void deleteCS(void) {
+G_DEFINE_DESTRUCTOR(ModelicaRandom_deleteCS)
+static void ModelicaRandom_deleteCS(void) {
     DeleteCriticalSection(&cs);
 }
 #define MUTEX_LOCK() EnterCriticalSection(&cs)
