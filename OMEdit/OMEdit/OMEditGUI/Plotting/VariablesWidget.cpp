@@ -575,9 +575,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   const char *msg[] = {""};
   if (fileName.endsWith(".mat")) {
     //Read in mat file
-    if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader))) {
+    if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toUtf8().constData(), &matReader))) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
+                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(filePath + "/" + fileName)
                                                             .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel));
     }
   }
@@ -880,7 +880,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
         ModelicaMatVariable_t *var;
-        if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str()))) {
+        if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData()))) {
           qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
         }
         double res;
@@ -1456,7 +1456,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     initFile.close();
     initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
     QTextStream textStream(&initFile);
-    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setCodec(Helper::utf8.toUtf8().constData());
     textStream.setGenerateByteOrderMark(false);
     textStream << initXmlDocument.toString();
     initFile.close();
@@ -1502,7 +1502,7 @@ double VariablesWidget::readVariableValue(QString variable, double time)
 {
   double value = 0.0;
   if (mModelicaMatReader.file) {
-    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toStdString().c_str());
+    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
     }
@@ -1511,7 +1511,7 @@ double VariablesWidget::readVariableValue(QString variable, double time)
     if (timeDataSet) {
       for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
         if (QString::number(timeDataSet[i]).compare(QString::number(time)) == 0) {
-          double *varDataSet = read_csv_dataset(mpCSVData, variable.toStdString().c_str());
+          double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
             break;
@@ -2074,12 +2074,12 @@ void VariablesWidget::openResultFile()
     QString errorString = "";
     if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".mat")) {
       const char *msg[] = {""};
-      if (0 != (msg[0] = omc_new_matlab4_reader(fileName.toStdString().c_str(), &mModelicaMatReader))) {
+      if (0 != (msg[0] = omc_new_matlab4_reader(fileName.toUtf8().constData(), &mModelicaMatReader))) {
         errorOpeningFile = true;
         errorString = msg[0];
       }
     } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".csv")) {
-      mpCSVData = read_csv(fileName.toStdString().c_str());
+      mpCSVData = read_csv(fileName.toUtf8().constData());
       if (!mpCSVData) {
         errorOpeningFile = true;
       }

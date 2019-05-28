@@ -119,7 +119,7 @@ QString StackFrameItem::cleanupFunction(const QString &function)
     if (function.startsWith("omc_")) {
       cleanFunction = function.mid(4);
     } else if (function.startsWith("_omcQuot_")) { /* if the names are converted to hex values */
-      char* hexString = omcHexToString(function.toStdString().c_str());
+      char* hexString = omcHexToString(function.toUtf8().constData());
       cleanFunction = QString(hexString);
       if (hexString) free(hexString);
     }

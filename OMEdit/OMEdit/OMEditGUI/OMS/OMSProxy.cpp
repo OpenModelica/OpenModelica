@@ -120,12 +120,16 @@ OMSProxy::OMSProxy()
 {
   /* create a file to write OMSimulator communication log */
   QString communicationLogFilePath = QString("%1omscommunication.log").arg(Utilities::tempDirectory());
-  mpCommunicationLogFile = fopen(communicationLogFilePath.toStdString().c_str(), "w");
+#ifdef Q_OS_WIN
+  mpCommunicationLogFile = _wfopen((wchar_t*)communicationLogFilePath.utf16(), L"w");
+#else
+  mpCommunicationLogFile = fopen(communicationLogFilePath.toUtf8().constData(), "w");
+#endif
   mTotalOMSCallsTime = 0.0;
   // OMSimulator global settings
   //setCommandLineOption("--suppressPath=true");
-  setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt").toStdString().c_str());
-  setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
+  setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt"));
+  setTempDirectory(Utilities::tempDirectory());
   setLoggingCallback();
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
@@ -148,7 +152,7 @@ void OMSProxy::logCommand(QTime *commandTime, QString command)
 {
   // write the log to communication log file
   if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
   }
 }
 
@@ -172,9 +176,9 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
 
   // write the log to communication log file
   if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(status).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(status).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
     mTotalOMSCallsTime += (double)responseTime->elapsed() / 1000;
-    fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMSCallsTime)).arg(firstLine).toStdString().c_str(),  mpCommunicationLogFile);
+    fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMSCallsTime)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
   }
 
   MainWindow::instance()->printStandardOutAndErrorFilesMessages();
@@ -344,7 +348,7 @@ bool OMSProxy::addBus(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addBus(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_addBus(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -362,7 +366,7 @@ bool OMSProxy::addConnection(QString crefA, QString crefB)
   QStringList args;
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
+  oms_status_enu_t status = oms_addConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -381,7 +385,7 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(causality) << QString::number(type);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnector(cref.toStdString().c_str(), causality, type);
+  oms_status_enu_t status = oms_addConnector(cref.toUtf8().constData(), causality, type);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -399,7 +403,7 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
   QStringList args;
   args << busCref << connectorCref;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnectorToBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  oms_status_enu_t status = oms_addConnectorToBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -418,8 +422,8 @@ bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QStr
   QStringList args;
   args << busCref << connectorCref << type;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnectorToTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str(),
-                                                     type.toStdString().c_str());
+  oms_status_enu_t status = oms_addConnectorToTLMBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData(),
+                                                     type.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -438,7 +442,7 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   QStringList args;
   args << "\"" + cref + "\"" << fmuPath;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addSubModel(cref.toStdString().c_str(), fmuPath.toStdString().c_str());
+  oms_status_enu_t status = oms_addSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -456,7 +460,7 @@ bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(type);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addSystem(cref.toStdString().c_str(), type);
+  oms_status_enu_t status = oms_addSystem(cref.toUtf8().constData(), type);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -476,7 +480,7 @@ bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, 
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addTLMBus(cref.toStdString().c_str(), domain, dimensions, interpolation);
+  oms_status_enu_t status = oms_addTLMBus(cref.toUtf8().constData(), domain, dimensions, interpolation);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -499,7 +503,7 @@ bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, doub
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << QString::number(delay) << QString::number(alpha)
        << QString::number(linearimpedance) << QString::number(angularimpedance);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
+  oms_status_enu_t status = oms_addTLMConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), delay, alpha,
                                                  linearimpedance, angularimpedance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
@@ -517,7 +521,7 @@ bool OMSProxy::cancelSimulation_asynchronous(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_cancelSimulation_asynchronous(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_cancelSimulation_asynchronous(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -535,7 +539,7 @@ bool OMSProxy::deleteConnection(QString crefA, QString crefB)
   QStringList args;
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
+  oms_status_enu_t status = oms_deleteConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -553,7 +557,7 @@ bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
   QStringList args;
   args << busCref << connectorCref;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnectorFromBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  oms_status_enu_t status = oms_deleteConnectorFromBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -571,7 +575,7 @@ bool OMSProxy::deleteConnectorFromTLMBus(QString busCref, QString connectorCref)
   QStringList args;
   args << busCref << connectorCref;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnectorFromTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  oms_status_enu_t status = oms_deleteConnectorFromTLMBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -589,7 +593,7 @@ bool OMSProxy::getBoolean(QString cref, bool *value)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getBoolean(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_getBoolean(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -607,7 +611,7 @@ bool OMSProxy::getBus(QString cref, oms_busconnector_t **pBusConnector)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getBus(cref.toStdString().c_str(), pBusConnector);
+  oms_status_enu_t status = oms_getBus(cref.toUtf8().constData(), pBusConnector);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -625,7 +629,7 @@ bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getComponentType(cref.toStdString().c_str(), pType);
+  oms_status_enu_t status = oms_getComponentType(cref.toUtf8().constData(), pType);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -643,7 +647,7 @@ bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getConnections(cref.toStdString().c_str(), pConnections);
+  oms_status_enu_t status = oms_getConnections(cref.toUtf8().constData(), pConnections);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -661,7 +665,7 @@ bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getConnector(cref.toStdString().c_str(), pConnector);
+  oms_status_enu_t status = oms_getConnector(cref.toUtf8().constData(), pConnector);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -679,7 +683,7 @@ bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getElement(cref.toStdString().c_str(), pElement);
+  oms_status_enu_t status = oms_getElement(cref.toUtf8().constData(), pElement);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -697,7 +701,7 @@ bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getElements(cref.toStdString().c_str(), pElements);
+  oms_status_enu_t status = oms_getElements(cref.toUtf8().constData(), pElements);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -715,7 +719,7 @@ bool OMSProxy::getFixedStepSize(QString cref, double *stepSize)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getFixedStepSize(cref.toStdString().c_str(), stepSize);
+  oms_status_enu_t status = oms_getFixedStepSize(cref.toUtf8().constData(), stepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -733,7 +737,7 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
+  oms_status_enu_t status = oms_getFMUInfo(cref.toUtf8().constData(), pFmuInfo);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -751,7 +755,7 @@ bool OMSProxy::getInteger(QString cref, int *value)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getInteger(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_getInteger(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -769,7 +773,7 @@ bool OMSProxy::getReal(QString cref, double *value)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getReal(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_getReal(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -787,7 +791,7 @@ bool OMSProxy::getSolver(QString cref, oms_solver_enu_t *solver)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSolver(cref.toStdString().c_str(), solver);
+  oms_status_enu_t status = oms_getSolver(cref.toUtf8().constData(), solver);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -805,7 +809,7 @@ bool OMSProxy::getStartTime(QString cref, double* startTime)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getStartTime(cref.toStdString().c_str(), startTime);
+  oms_status_enu_t status = oms_getStartTime(cref.toUtf8().constData(), startTime);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -823,7 +827,7 @@ bool OMSProxy::getStopTime(QString cref, double* stopTime)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getStopTime(cref.toStdString().c_str(), stopTime);
+  oms_status_enu_t status = oms_getStopTime(cref.toUtf8().constData(), stopTime);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -842,7 +846,7 @@ bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   char* path = NULL;
-  oms_status_enu_t status = oms_getSubModelPath(cref.toStdString().c_str(), &path);
+  oms_status_enu_t status = oms_getSubModelPath(cref.toUtf8().constData(), &path);
   *pPath = QString(path);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
@@ -861,7 +865,7 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSystemType(cref.toStdString().c_str(), pType);
+  oms_status_enu_t status = oms_getSystemType(cref.toUtf8().constData(), pType);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -879,7 +883,7 @@ bool OMSProxy::getTLMBus(QString cref, oms_tlmbusconnector_t **pTLMBusConnector)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTLMBus(cref.toStdString().c_str(), pTLMBusConnector);
+  oms_status_enu_t status = oms_getTLMBus(cref.toUtf8().constData(), pTLMBusConnector);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -920,7 +924,7 @@ bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *rel
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTolerance(cref.toStdString().c_str(), absoluteTolerance, relativeTolerance);
+  oms_status_enu_t status = oms_getTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -940,7 +944,7 @@ bool OMSProxy::getVariableStepSize(QString cref, double *initialStepSize, double
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getVariableStepSize(cref.toStdString().c_str(), initialStepSize, minimumStepSize, maximumStepSize);
+  oms_status_enu_t status = oms_getVariableStepSize(cref.toUtf8().constData(), initialStepSize, minimumStepSize, maximumStepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -957,7 +961,7 @@ bool OMSProxy::instantiate(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_instantiate(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_instantiate(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -974,7 +978,7 @@ bool OMSProxy::initialize(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_initialize(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_initialize(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -994,7 +998,7 @@ bool OMSProxy::list(QString cref, QString *pContents)
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   char* contents = NULL;
-  oms_status_enu_t status = oms_list(cref.toStdString().c_str(), &contents);
+  oms_status_enu_t status = oms_list(cref.toUtf8().constData(), &contents);
   if (contents) {
     *pContents = QString(contents);
     free(contents);
@@ -1017,7 +1021,7 @@ bool OMSProxy::loadModel(QString filename, QString* pModelName)
   args << filename;
   LOG_COMMAND(command, args);
   char* cref = NULL;
-  oms_status_enu_t status = oms_importFile(filename.toStdString().c_str(), &cref);
+  oms_status_enu_t status = oms_importFile(filename.toUtf8().constData(), &cref);
   *pModelName = QString(cref);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
@@ -1034,7 +1038,7 @@ bool OMSProxy::newModel(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_newModel(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_newModel(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1046,7 +1050,7 @@ bool OMSProxy::newModel(QString cref)
  */
 bool OMSProxy::omsDelete(QString cref)
 {
-  oms_status_enu_t status = oms_delete(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_delete(cref.toUtf8().constData());
   return statusToBool(status);
 }
 
@@ -1063,7 +1067,7 @@ bool OMSProxy::saveModel(QString cref, QString filename)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_export(cref.toStdString().c_str(), filename.toStdString().c_str());
+  oms_status_enu_t status = oms_export(cref.toUtf8().constData(), filename.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1081,7 +1085,7 @@ bool OMSProxy::setBoolean(QString cref, bool value)
   QStringList args;
   args << "\"" + cref + "\"" << (value ? "true" : "false");
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setBoolean(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_setBoolean(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1099,7 +1103,7 @@ bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeo
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setBusGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms_setBusGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1116,7 +1120,7 @@ bool OMSProxy::setCommandLineOption(QString cmd)
   QStringList args;
   args << cmd;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setCommandLineOption(cmd.toStdString().c_str());
+  oms_status_enu_t status = oms_setCommandLineOption(cmd.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1135,7 +1139,7 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_con
   QStringList args;
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setConnectionGeometry(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms_setConnectionGeometry(crefA.toUtf8().constData(), crefB.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1153,7 +1157,7 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setConnectorGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms_setConnectorGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1171,7 +1175,7 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1189,7 +1193,7 @@ bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(stepSize);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setFixedStepSize(cref.toStdString().c_str(), stepSize);
+  oms_status_enu_t status = oms_setFixedStepSize(cref.toUtf8().constData(), stepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1205,7 +1209,7 @@ void OMSProxy::setLogFile(QString filename)
   QStringList args;
   args << "\"" + filename + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setLogFile(filename.toStdString().c_str());
+  oms_status_enu_t status = oms_setLogFile(filename.toUtf8().constData());
   logResponse(command, status, &commandTime);
 }
 
@@ -1235,7 +1239,7 @@ bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(loggingInterval);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setLoggingInterval(cref.toStdString().c_str(), loggingInterval);
+  oms_status_enu_t status = oms_setLoggingInterval(cref.toUtf8().constData(), loggingInterval);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1268,7 +1272,7 @@ bool OMSProxy::setInteger(QString cref, int value)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(value);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setInteger(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_setInteger(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1286,7 +1290,7 @@ bool OMSProxy::setReal(QString cref, double value)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(value);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setReal(cref.toStdString().c_str(), value);
+  oms_status_enu_t status = oms_setReal(cref.toUtf8().constData(), value);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1305,7 +1309,7 @@ bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
   QStringList args;
   args << "\"" + cref + "\"" << "\"" + filename + "\"" << QString::number(bufferSize);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), bufferSize);
+  oms_status_enu_t status = oms_setResultFile(cref.toUtf8().constData(), filename.toUtf8().constData(), bufferSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1323,7 +1327,7 @@ bool OMSProxy::setSignalFilter(QString cref, QString regex)
   QStringList args;
   args << "\"" + cref + "\"" << "\"" + regex + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setSignalFilter(cref.toStdString().c_str(), regex.toStdString().c_str());
+  oms_status_enu_t status = oms_setSignalFilter(cref.toUtf8().constData(), regex.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1341,7 +1345,7 @@ bool OMSProxy::setSolver(QString cref, oms_solver_enu_t solver)
   QStringList args;
   args << "\"" + cref + "\"" << "\"" + QString::number(solver) + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setSolver(cref.toStdString().c_str(), solver);
+  oms_status_enu_t status = oms_setSolver(cref.toUtf8().constData(), solver);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1359,7 +1363,7 @@ bool OMSProxy::setStartTime(QString cref, double startTime)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(startTime);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setStartTime(cref.toStdString().c_str(), startTime);
+  oms_status_enu_t status = oms_setStartTime(cref.toUtf8().constData(), startTime);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1377,7 +1381,7 @@ bool OMSProxy::setStopTime(QString cref, double stopTime)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(stopTime);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setStopTime(cref.toStdString().c_str(), stopTime);
+  oms_status_enu_t status = oms_setStopTime(cref.toUtf8().constData(), stopTime);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1393,7 +1397,7 @@ void OMSProxy::setTempDirectory(QString path)
   QStringList args;
   args << "\"" + path + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTempDirectory(path.toStdString().c_str());
+  oms_status_enu_t status = oms_setTempDirectory(path.toUtf8().constData());
   logResponse(command, status, &commandTime);
 }
 
@@ -1410,7 +1414,7 @@ bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* p
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMBusGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms_setTLMBusGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1429,7 +1433,7 @@ bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const om
   QStringList args;
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMConnectionParameters(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pParameters);
+  oms_status_enu_t status = oms_setTLMConnectionParameters(crefA.toUtf8().constData(), crefB.toUtf8().constData(), pParameters);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1449,7 +1453,7 @@ bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, 
   QStringList args;
   args << "\"" + cref + "\"" << address << QString::number(managerPort) << QString::number(monitorPort);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMSocketData(cref.toStdString().c_str(), address.toStdString().c_str(), managerPort, monitorPort);
+  oms_status_enu_t status = oms_setTLMSocketData(cref.toUtf8().constData(), address.toUtf8().constData(), managerPort, monitorPort);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1467,7 +1471,7 @@ bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relat
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(absoluteTolerance) << QString::number(relativeTolerance);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), absoluteTolerance, relativeTolerance);
+  oms_status_enu_t status = oms_setTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1487,7 +1491,7 @@ bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double 
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(initialStepSize) << QString::number(minimumStepSize) << QString::number(maximumStepSize);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setVariableStepSize(cref.toStdString().c_str(), initialStepSize, minimumStepSize, maximumStepSize);
+  oms_status_enu_t status = oms_setVariableStepSize(cref.toUtf8().constData(), initialStepSize, minimumStepSize, maximumStepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1503,7 +1507,7 @@ void OMSProxy::setWorkingDirectory(QString path)
   QStringList args;
   args << "\"" + path + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setWorkingDirectory(path.toStdString().c_str());
+  oms_status_enu_t status = oms_setWorkingDirectory(path.toUtf8().constData());
   logResponse(command, status, &commandTime);
 }
 
@@ -1519,7 +1523,7 @@ bool OMSProxy::simulate_asynchronous(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_simulate_asynchronous(cref.toStdString().c_str(), simulateCallback);
+  oms_status_enu_t status = oms_simulate_asynchronous(cref.toUtf8().constData(), simulateCallback);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1536,7 +1540,7 @@ bool OMSProxy::terminate(QString cref)
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_terminate(cref.toStdString().c_str());
+  oms_status_enu_t status = oms_terminate(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1551,7 +1555,7 @@ bool OMSProxy::terminate(QString cref)
 bool OMSProxy::parseString(QString contents, QString *pModelName)
 {
   //  char* ident = NULL;
-  //  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
+  //  oms_status_enu_t status = oms2_parseString(contents.toUtf8().constData(), &ident);
   //  if (ident) {
   //    *pModelName = QString(ident);
   //    free(ident);
@@ -1570,7 +1574,7 @@ bool OMSProxy::parseString(QString contents, QString *pModelName)
 bool OMSProxy::loadString(QString contents, QString* pModelName)
 {
   //  char* ident = NULL;
-  //  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
+  //  oms_status_enu_t status = oms2_loadString(contents.toUtf8().constData(), &ident);
   //  *pModelName = QString(ident);
   //  return statusToBool(status);
   return false;

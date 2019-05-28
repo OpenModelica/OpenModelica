@@ -59,11 +59,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // set the stylesheet
   setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-  QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
-  QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
+  QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
+  QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif
 #ifndef WIN32
-  QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
+  QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
@@ -115,10 +115,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QStringList fileNames;
   if (arguments().size() > 1) {
     for (int i = 1; i < arguments().size(); i++) {
-      if (strncmp(arguments().at(i).toStdString().c_str(), "--Debug=",8) == 0) {
+      if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
-        if (0 == strcmp("true", debugArg.toStdString().c_str())) {
+        if (0 == strcmp("true", debugArg.toUtf8().constData())) {
           debug = true;
         } else {
           debug = false;
@@ -136,7 +136,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
-            printf("Invalid command line argument: %s %s\n", fileName.toStdString().c_str(), absoluteFileName.toStdString().c_str());
+            printf("Invalid command line argument: %s %s\n", fileName.toUtf8().constData(), absoluteFileName.toUtf8().constData());
           }
         }
       }

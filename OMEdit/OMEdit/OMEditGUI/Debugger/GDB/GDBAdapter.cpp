@@ -147,7 +147,7 @@ void GDBLoggerWidget::postCommand()
   if (mpCommandTextBox->text().isEmpty()) {
     return;
   }
-  GDBAdapter::instance()->postCommand(QByteArray(mpCommandTextBox->text().toStdString().c_str()));
+  GDBAdapter::instance()->postCommand(QByteArray(mpCommandTextBox->text().toUtf8().constData()));
 }
 
 /*!
@@ -701,7 +701,7 @@ void GDBAdapter::getMetaTypeElementCB(GDBMIResultRecord *pGDBMIResultRecord)
       QString trimmedValue = value.mid(beginIndex, endIndex - beginIndex);
       trimmedValue = trimmedValue.remove("\\");
       QString name, displayName, type;
-      GDBMIResponse *pGDBMIResponse = parseGDBOutput(trimmedValue.toStdString().c_str());
+      GDBMIResponse *pGDBMIResponse = parseGDBOutput(trimmedValue.toUtf8().constData());
       if (pGDBMIResponse) {
         if (pGDBMIResponse->type == GDBMIResponse::ResultRecordResponse) {
           GDBMIResult* pGDBMIResult = getGDBMIResult("omc_element", pGDBMIResponse->miResultRecord->miResultsList);
@@ -882,7 +882,7 @@ void GDBAdapter::handleGDBProcessStartedHelper()
   mDebuggerLogFile.setFileName(QString("%1omeditdebugger.log").arg(tmpPath));
   if (mDebuggerLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mDebuggerLogFileTextStream.setDevice(&mDebuggerLogFile);
-    mDebuggerLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
+    mDebuggerLogFileTextStream.setCodec(Helper::utf8.toUtf8().constData());
     mDebuggerLogFileTextStream.setGenerateByteOrderMark(false);
   }
   emit GDBProcessStarted();
@@ -988,8 +988,8 @@ void GDBAdapter::processGDBMIResponse(QString response)
   }
 
   mCurrentResponse = response;
-  GDBMIResponse *pGDBMIResponse = parseGDBOutput(response.toStdString().c_str());
-//  fprintf(stdout, "Read Line :: %s\n\n", response.toStdString().c_str());fflush(NULL);
+  GDBMIResponse *pGDBMIResponse = parseGDBOutput(response.toUtf8().constData());
+//  fprintf(stdout, "Read Line :: %s\n\n", response.toUtf8().constData());fflush(NULL);
 //  fprintf(stdout, "Parsed Line :: ");fflush(NULL);
 //  printGDBMIResponse(pGDBMIResponse);
 //  fprintf(stdout, "\n\n");fflush(NULL);

@@ -558,7 +558,7 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   mDocumentationFile.open(QIODevice::WriteOnly);
   QTextStream out(&mDocumentationFile);
-  out.setCodec(Helper::utf8.toStdString().data());
+  out.setCodec(Helper::utf8.toUtf8().constData());
   out << documentation;
   mDocumentationFile.close();
 }
@@ -1133,7 +1133,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-  settings()->setDefaultTextEncoding(Helper::utf8.toStdString().data());
+  settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
   // set DocumentationViewer web page policy
   page()->setContentEditable(isContentEditable);
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);

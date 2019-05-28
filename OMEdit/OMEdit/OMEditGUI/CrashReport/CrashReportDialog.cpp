@@ -213,7 +213,7 @@ void CrashReportDialog::createGDBBacktrace()
     stackTraceFile.setFileName(OMStackTraceFilePath);
     if (stackTraceFile.open(QIODevice::WriteOnly)) {
       QTextStream out(&stackTraceFile);
-      out.setCodec(Helper::utf8.toStdString().data());
+      out.setCodec(Helper::utf8.toUtf8().constData());
       out.setGenerateByteOrderMark(false);
       out << mStackTrace;
       out.flush();

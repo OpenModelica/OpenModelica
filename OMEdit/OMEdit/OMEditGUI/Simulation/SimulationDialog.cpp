@@ -1034,7 +1034,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
   // Output filename
   if (simulationOptions.getFileNamePrefix().startsWith("_omcQuot_")) {
-    mpFileNameTextBox->setText(QByteArray::fromHex(QByteArray(simulationOptions.getFileNamePrefix().toStdString().c_str())));
+    mpFileNameTextBox->setText(QByteArray::fromHex(simulationOptions.getFileNamePrefix().toUtf8()));
   } else {
     mpFileNameTextBox->setText(simulationOptions.getFileNamePrefix());
   }
@@ -1185,7 +1185,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpFileNameTextBox->text().isEmpty()) {
     simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
   } else if (mClassName.contains('\'')) {
-    simulationOptions.setFileNamePrefix("_omcQuot_" + QByteArray(mClassName.toStdString().c_str()).toHex());
+    simulationOptions.setFileNamePrefix("_omcQuot_" + mClassName.toUtf8().toHex());
   }
   // result file should not be generated if an interactive simulation is selected
   if (!mpInteractiveSimulationGroupBox->isChecked()) {
@@ -1628,7 +1628,7 @@ void SimulationDialog::performSimulation()
   if (!mpFileNameTextBox->text().isEmpty()) {
     simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
   } else if (mClassName.contains('\'')) {
-    simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(QByteArray(mClassName.toStdString().c_str()).toHex()).append("\"");
+    simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mClassName.toUtf8().toHex()).append("\"");
   }
   if (!mpVariableFilterTextBox->text().isEmpty()) {
     simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");

@@ -469,7 +469,7 @@ QSettings* Utilities::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-    pSettings->setIniCodec(Helper::utf8.toStdString().data());
+    pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
   }
   return pSettings;
 }

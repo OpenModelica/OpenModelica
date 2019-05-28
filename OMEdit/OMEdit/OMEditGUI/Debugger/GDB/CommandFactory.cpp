@@ -96,7 +96,7 @@ QByteArray CommandFactory::breakInsert(QString fileName, int line, bool isDisabl
     command.append(QString::number(ignoreCount));
   }
   command.append("\"\\\"" + fileName + "\\\":" + QString::number(line) + "\"");
-  return QByteArray(command.join(" ").toStdString().c_str());
+  return command.join(" ").toUtf8();
 }
 
 /*!
@@ -229,7 +229,7 @@ QByteArray CommandFactory::threadInfo()
 QByteArray CommandFactory::stackListFrames(int thread)
 {
   QString command = QString("-stack-list-frames --thread %1").arg(thread);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -246,7 +246,7 @@ QByteArray CommandFactory::stackListFrames(int thread)
 QByteArray CommandFactory::stackListVariables(int thread, int frame, QString printValues)
 {
   QString command = QString("-stack-list-variables --thread %1 --frame %2 %3").arg(thread).arg(frame).arg(printValues);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -272,7 +272,7 @@ QByteArray CommandFactory::createFullBacktrace()
 QByteArray CommandFactory::dataEvaluateExpression(int thread, int frame, QString expression)
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"%3\"").arg(thread).arg(frame).arg(expression);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -289,7 +289,7 @@ QByteArray CommandFactory::getTypeOfAny(int thread, int frame, QString expressio
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)getTypeOfAny(%3, %4)\"").arg(thread).arg(frame)
       .arg(expression).arg(inRecord ? "1" : "0");
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -309,7 +309,7 @@ QByteArray CommandFactory::anyString(int thread, int frame, QString expression)
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)anyString(%3)\"").arg(thread).arg(frame)
       .arg(expression);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -330,7 +330,7 @@ QByteArray CommandFactory::getMetaTypeElement(int thread, int frame, QString exp
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(char*)getMetaTypeElement(%3, %4, %5)\"").arg(thread)
       .arg(frame).arg(expression).arg(index).arg(mt);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -350,7 +350,7 @@ QByteArray CommandFactory::arrayLength(int thread, int frame, QString expression
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)mmc_gdb_arrayLength(%3)\"").arg(thread).arg(frame)
       .arg(expression);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -364,7 +364,7 @@ QByteArray CommandFactory::arrayLength(int thread, int frame, QString expression
 QByteArray CommandFactory::listLength(int thread, int frame, QString expression)
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)listLength(%3)\"").arg(thread).arg(frame).arg(expression);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
@@ -380,7 +380,7 @@ QByteArray CommandFactory::isOptionNone(int thread, int frame, QString expressio
 {
   QString command = QString("-data-evaluate-expression --thread %1 --frame %2 \"(int)isOptionNone(%3)\"").arg(thread).arg(frame)
       .arg(expression);
-  return QByteArray(command.toStdString().c_str());
+  return command.toUtf8();
 }
 
 /*!
