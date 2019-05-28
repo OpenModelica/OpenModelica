@@ -48,8 +48,7 @@ OMVisualBase::OMVisualBase(const std::string& modelFile, const std::string& path
   : _shapes(),
     _modelFile(modelFile),
     _path(path),
-    _xmlFileName(assembleXMLFileName(modelFile, path)),
-    _xmlDoc()
+    _xmlFileName(assembleXMLFileName(modelFile, path))
 {
 }
 
@@ -89,36 +88,30 @@ int OMVisualBase::getShapeObjectIndexByID(std::string shapeID)
   return -1;
 }
 
-void OMVisualBase::initXMLDoc()
+void OMVisualBase::initVisObjects()
 {
-  // Check if the XML file is available.
   if (!fileExists(_xmlFileName)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           QString(QObject::tr("Could not find the visual XML file %1."))
                                                           .arg(_xmlFileName.c_str()),
                                                           Helper::scriptingKind, Helper::errorLevel));
+    return;
   }
-  // read xml
-  osgDB::ifstream t;
-  // unused const char * titel = _xmlFileName.c_str();
-  t.open(_xmlFileName.c_str(), std::ios::binary);      // open input file
-  t.seekg(0, std::ios::end);    // go to the end
-  int length = t.tellg();       // report location (this is the length)
-  t.seekg(0, std::ios::beg);    // go back to the beginning
-  char* buffer = new char[length];    // allocate memory for a buffer of appropriate dimension
-  t.read(buffer, length);       // read the whole file into the buffer
-  t.close();
-  std::string buff = std::string(buffer);  // strings are good
-  std::string buff2 = buff.substr(0, buff.find("</visualization>"));  // remove the crappy ending
-  buff2.append("</visualization>");
-  char* buff3 = strdup(buff2.c_str());  // cast to char*
-  _xmlDoc.parse<0>(buff3);
 
-}
+  QFile file(QString::fromStdString(_xmlFileName));
+  if (!file.open(QIODevice::ReadOnly)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          QString(QObject::tr("Could not open the visual XML file %1."))
+                                                          .arg(_xmlFileName.c_str()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  QByteArray buffer = file.readAll();
+  file.close();
+  rapidxml::xml_document<> xmlDoc;
+  xmlDoc.parse<0>(buffer.data());
 
-void OMVisualBase::initVisObjects()
-{
-  rapidxml::xml_node<>* rootNode = _xmlDoc.first_node();
+  rapidxml::xml_node<>* rootNode = xmlDoc.first_node();
   ShapeObject shape;
   rapidxml::xml_node<>* expNode;
 
@@ -234,16 +227,6 @@ void OMVisualBase::initVisObjects()
   } // end for-loop
 }
 
-void OMVisualBase::clearXMLDoc()
-{
-  _xmlDoc.clear();
-}
-
-rapidxml::xml_node<>* OMVisualBase::getFirstXMLNode() const
-{
-  return _xmlDoc.first_node();
-}
-
 const std::string OMVisualBase::getModelFile() const
 {
   return _modelFile;
@@ -295,10 +278,6 @@ VisualizerAbstract::VisualizerAbstract(const std::string& modelFile, const std::
 
 void VisualizerAbstract::initData()
 {
-  // In case of reloading, we need to make sure, that we have empty members.
-  mpOMVisualBase->clearXMLDoc();
-  // Initialize XML file and get visAttributes.
-  mpOMVisualBase->initXMLDoc();
   mpOMVisualBase->initVisObjects();
 }
 
