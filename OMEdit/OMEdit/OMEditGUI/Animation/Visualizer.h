@@ -128,12 +128,9 @@ class OMVisualBase
   ~OMVisualBase() = default;
   OMVisualBase(const OMVisualBase& omvb) = delete;
   OMVisualBase& operator=(const OMVisualBase& omvb) = delete;
-  void initXMLDoc();
-  void clearXMLDoc();
   void initVisObjects();
   const std::string getModelFile() const;
   const std::string getPath() const;
-  rapidxml::xml_node<>* getFirstXMLNode() const;
   const std::string getXMLFileName() const;
   ShapeObject* getShapeObjectByID(std::string shapeID);
   int getShapeObjectIndexByID(std::string shapeID);
@@ -145,7 +142,6 @@ public:
   std::string _modelFile;
   std::string _path;
   std::string _xmlFileName;
-  rapidxml::xml_document<> _xmlDoc;
 };
 
 class VisualizerAbstract
