@@ -700,9 +700,9 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   simInfo->useStopTime = 1;
 
   /* if the given step size is too small redefine it */
-  if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
-    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, MINIMAL_STEP_SIZE);
-    simInfo->stepSize = MINIMAL_STEP_SIZE;
+  if ((simInfo->stepSize < simInfo->minStepSize) && (simInfo->stopTime > 0)){
+    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, simInfo->minStepSize);
+    simInfo->stepSize = simInfo->minStepSize;
     simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
   }
 #if !defined(OMC_EMCC)
