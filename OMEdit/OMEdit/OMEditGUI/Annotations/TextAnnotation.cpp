@@ -159,7 +159,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Text.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 12) {
+  if (list.size() < 15) {
     return;
   }
   // 9th item of the list contains the extent points
