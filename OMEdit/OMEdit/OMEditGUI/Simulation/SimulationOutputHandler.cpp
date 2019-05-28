@@ -261,7 +261,11 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mpSimulationMessage = 0;
   QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                   .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
-  mpSimulationLogFile = fopen(simulationLogFilePath.toStdString().c_str(), "w");
+#ifdef Q_OS_WIN
+  mpSimulationLogFile = _wfopen((wchar_t*)simulationLogFilePath.utf16(), L"w");
+#else
+  mpSimulationLogFile = fopen(simulationLogFilePath.toUtf8().constData(), "w");
+#endif
   if (mpSimulationOutputWidget->isOutputStructured()) {
     mpSimulationMessageModel = new SimulationMessageModel(mpSimulationOutputWidget);
   } else {
@@ -299,7 +303,7 @@ void SimulationOutputHandler::parseSimulationOutput(QString output)
 void SimulationOutputHandler::writeSimulationLog(const QString &text)
 {
   if (mpSimulationLogFile) {
-    fputs(text.toStdString().c_str(), mpSimulationLogFile);
+    fputs(text.toUtf8().constData(), mpSimulationLogFile);
   }
 }
 

@@ -221,7 +221,6 @@ static int read_double(int type, size_t n, FILE *file, double *val)
 /* Returns 0 on success; the error message on error */
 const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader)
 {
-  typedef const char *_string;
   const int nMatrix=6;
   static const char *matrixNames[6]={"Aclass","name","description","dataInfo","data_1","data_2"};
   static const char *matrixNamesMismatch[6]={"Matrix name mismatch: Aclass","Matrix name mismatch: name","Matrix name mismatch: description","Matrix name mismatch: dataInfo","Matrix name mismatch: data_1","Matrix name mismatch: data_2"};
@@ -497,7 +496,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     default:
       return "Implementation error: Unknown case";
     }
-  };
+  }
   return 0;
 }
 

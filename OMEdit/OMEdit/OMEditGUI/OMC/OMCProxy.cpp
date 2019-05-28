@@ -188,17 +188,25 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   QString& tmpPath = Utilities::tempDirectory();
   /* create a file to write OMEdit communication log */
   QString communicationLogFilePath = QString("%1omeditcommunication.log").arg(tmpPath);
-  mpCommunicationLogFile = fopen(communicationLogFilePath.toStdString().c_str(), "w");
+#ifdef Q_OS_WIN
+  mpCommunicationLogFile = _wfopen((wchar_t*)communicationLogFilePath.utf16(), L"w");
+#else
+  mpCommunicationLogFile = fopen(communicationLogFilePath.toUtf8().constData(), "w");
+#endif
   /* create a file to write OMEdit commands */
   QString commandsLogFilePath = QString("%1omeditcommands.mos").arg(tmpPath);
-  mpCommandsLogFile = fopen(commandsLogFilePath.toStdString().c_str(), "w");
+#ifdef Q_OS_WIN
+  mpCommandsLogFile = _wfopen((wchar_t*)commandsLogFilePath.utf16(), L"w");
+#else
+  mpCommandsLogFile = fopen(commandsLogFilePath.toUtf8().constData(), "w");
+#endif
   // read the locale
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
-  args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
+  args = mmc_mk_cons(mmc_mk_scon(locale.toUtf8().constData()), args);
   // initialize garbage collector
   omc_System_initGarbageCollector(NULL);
   MMC_TRY_TOP_INTERNAL()
@@ -217,7 +225,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath();
 #ifdef WIN32
   MMC_TRY_TOP_INTERNAL()
-  omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toStdString().c_str()));
+  omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));
   MMC_CATCH_TOP()
 #endif
   /* set the tmp directory as the working directory */
@@ -263,7 +271,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 
   MMC_TRY_STACK()
 
-  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), &reply_str)) {
+  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toUtf8().constData()), &reply_str)) {
     if (expression == "quit()") {
       return;
     }
@@ -325,14 +333,14 @@ void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistor
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
-      fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+      fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
     }
     // write commands mos file
     if (mpCommandsLogFile) {
       if (command.compare("quit()") == 0) {
-        fputs(QString("%1;\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
+        fputs(QString("%1;\n").arg(command).toUtf8().constData(), mpCommandsLogFile);
       } else {
-        fputs(QString("%1; getErrorString();\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
+        fputs(QString("%1; getErrorString();\n").arg(command).toUtf8().constData(), mpCommandsLogFile);
       }
     }
   }
@@ -364,9 +372,9 @@ void OMCProxy::logResponse(QString command, QString response, QTime *responseTim
     Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
     // write the log to communication log file
     if (mpCommunicationLogFile) {
-      fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+      fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
       mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).arg(firstLine).toStdString().c_str(),  mpCommunicationLogFile);
+      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
     }
   }
 }
@@ -652,7 +660,7 @@ void OMCProxy::loadUserLibraries()
   pSettings->endGroup();
   foreach (QString lib, libraries) {
     QString encoding = pSettings->value("userlibraries/" + lib).toString();
-    QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
+    QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toUtf8().constData()));
     QStringList classesList = parseFile(fileName, encoding);
     if (!classesList.isEmpty()) {
       /*

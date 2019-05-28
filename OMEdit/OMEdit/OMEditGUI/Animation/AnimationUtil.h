@@ -109,8 +109,8 @@ inline std::string assembleXMLFileName(const std::string& modelFile, const std::
 /*! \brief Checks if the file is accessible. */
 inline bool fileExists(const std::string& file)
 {
-  struct stat buffer;
-  return (stat(file.c_str(), &buffer) == 0);
+  QFileInfo fileInfo(file.c_str());
+  return fileInfo.exists();
 }
 
 /*!

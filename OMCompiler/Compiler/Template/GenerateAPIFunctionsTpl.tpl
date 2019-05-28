@@ -246,7 +246,7 @@ template getQtInArg(Text name, DAE.Type ty, Text &varDecl)
     case T_CODE(ty=C_TYPENAME(__))
     case T_STRING(__) then
       let &varDecl += 'QByteArray <%name%>_utf8 = <%name%>.toUtf8();<%\n%>'
-      'mmc_mk_scon(<%name%>_utf8.data())'
+      'mmc_mk_scon(<%name%>_utf8.constData())'
     case T_INTEGER(__)
     case T_BOOL(__)
     case T_REAL(__) then name

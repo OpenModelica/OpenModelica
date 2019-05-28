@@ -290,7 +290,7 @@ void OptionsDialog::readLibrariesSettings()
   QStringList userLibraries = mpSettings->childKeys();
   foreach (QString userLibrary, userLibraries) {
     QStringList values;
-    values << QUrl::fromPercentEncoding(QByteArray(userLibrary.toStdString().c_str())) << mpSettings->value(userLibrary).toString();
+    values << QUrl::fromPercentEncoding(userLibrary.toUtf8()) << mpSettings->value(userLibrary).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   mpSettings->endGroup();

@@ -4793,7 +4793,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream resultFile(&file);
     // set to UTF-8
-    resultFile.setCodec(Helper::utf8.toStdString().data());
+    resultFile.setCodec(Helper::utf8.toUtf8().constData());
     resultFile.setGenerateByteOrderMark(false);
     // write result file header
     resultFile << "\"" << "time\",";
@@ -4936,7 +4936,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream visualFile(&file);
     // set to UTF-8
-    visualFile.setCodec(Helper::utf8.toStdString().data());
+    visualFile.setCodec(Helper::utf8.toUtf8().constData());
     visualFile.setGenerateByteOrderMark(false);
 
     visualFile << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n";

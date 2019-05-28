@@ -130,11 +130,19 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 {
   // Reopen the standard output stream.
   QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
-  freopen(outputFileName.toStdString().c_str(), "w", stdout);
+#ifdef Q_OS_WIN
+  _wfreopen((wchar_t*)outputFileName.utf16(), L"w", stdout);
+#else
+  freopen(outputFileName.toUtf8().constData(), "w", stdout);
+#endif
   setbuf(stdout, NULL); // used non-buffered stdout
   // Reopen the standard error stream.
   QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
-  freopen(errorFileName.toStdString().c_str(), "w", stderr);
+#ifdef Q_OS_WIN
+  _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
+#else
+  freopen(outputFileName.toUtf8().constData(), "w", stderr);
+#endif
   setbuf(stderr, NULL); // used non-buffered stderr
   SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
@@ -1164,7 +1172,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   QFile omnotebookFile(omnotebookFileName);
   omnotebookFile.open(QIODevice::WriteOnly);
   QTextStream textStream(&omnotebookFile);
-  textStream.setCodec(Helper::utf8.toStdString().data());
+  textStream.setCodec(Helper::utf8.toUtf8().constData());
   textStream.setGenerateByteOrderMark(false);
   textStream << xmlDocument.toString();
   omnotebookFile.close();

@@ -469,7 +469,7 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
-  out.setCodec(Helper::utf8.toStdString().data());
+  out.setCodec(Helper::utf8.toUtf8().constData());
   out.setGenerateByteOrderMark(false);
   out << fileData;
   file.close();
@@ -536,7 +536,7 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
   */
 void OpenModelicaFile::convertModelicaFiles()
 {
-  QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString().toStdString().data());
+  QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString().toUtf8().constData());
   if (pCodec != NULL)
   {
     MainWindow::instance()->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
