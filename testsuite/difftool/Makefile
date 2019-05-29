@@ -11,3 +11,5 @@ lex.yy.c: omc-diff.l
 	flex omc-diff.l
 $(OMBUILDDIR)/bin:
 	mkdir -p "$@"
+clean:
+	rm -f $(OMBUILDDIR)/bin/omc-diff$(EXT) lex.yy.c lex.yy.o
