@@ -1,0 +1,58 @@
+def common
+
+pipeline {
+  agent none
+  environment {
+    LC_ALL = 'C.UTF-8'
+  }
+  stages {
+    stage('abort running builds') {
+      /* If this is a change request, cancel previous builds if you push a new commit */
+      steps {
+        script {
+          def buildNumber = env.BUILD_NUMBER as int
+          if (buildNumber > 1) milestone(buildNumber - 1)
+          milestone(buildNumber)
+        }
+      }
+    }
+    stage('clang-analyzer') {
+      agent {
+        dockerfile {
+          additionalBuildArgs '--pull'
+          dir '.CI/clang-tools'
+          label 'linux'
+        }
+      }
+      steps {
+        script {
+          common = load("${env.workspace}/.CI/common.groovy")
+          common.buildOMC('clang', 'clang++', '')
+          def numCPU = common.numLogicalCPU()
+          def tagName = common.tagName()
+          sh "test ! -z ${tagName}"
+          sh """
+          mv build .build.save
+          # Save&restore 3rdParty so we do not analyze these sources
+          rm -rf OMCompiler/3rdParty.save
+          cp -a OMCompiler/3rdParty OMCompiler/3rdParty.save
+          make -j${numCPU} clean
+          rm -rf OMCompiler/3rdParty
+          mv OMCompiler/3rdParty.save OMCompiler/3rdParty
+          # Skips bootstrapping
+          cp -a .build.save build
+          export OMC="`pwd`/.build.save/bin/omc"
+          test -f "\$OMC"
+          scan-build ./configure --with-omniORB --disable-modelica3d CFLAGS='-O2 -march=native' --with-omc="\$OMC" "CXXFLAGS=-std=c++11" --without-omlibrary
+          mkdir -p html
+          """
+          sh "scan-build -o html make -j${numCPU}"
+          sshPublisher(publishers: [sshPublisherDesc(configName: 'OMC-scan-build', transfers: [
+            sshTransfer(remoteDirectory: ".tmp/${tagName}", removePrefix: "html", sourceFiles: 'html/**'),
+            sshTransfer(execCommand: "rm -rf '/var/www/scan-build/${tagName}' && mv '/var/www/scan-build/.tmp/${tagName}' '/var/www/scan-build/${tagName}'")
+          ])])
+        }
+      }
+    }
+  }
+}
