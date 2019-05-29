@@ -1,0 +1,29 @@
+def common
+pipeline {
+  agent none
+  environment {
+    LC_ALL = 'C.UTF-8'
+  }
+  stages {
+    stage('MacOS') {
+      agent {
+        node {
+          label 'osx'
+        }
+      }
+      environment {
+        RUNTESTDB = "/Users/hudson/jenkins-cache/runtest/"
+        LIBRARIES = "/Users/hudson/jenkins-cache/omlibrary"
+      }
+      steps {
+        script {
+          common = load("${env.workspace}/.CI/common.groovy")
+        }
+        common.buildOMC('cc', 'c++', '')
+        common.buildGUI('')
+        common.makeLibsAndCache()
+        common.partest()
+      }
+    }
+  }
+}
