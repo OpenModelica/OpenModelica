@@ -1,27 +1,22 @@
-// name: MixedTearing1-omc
-// keywords: tearing, mixed system
-// status: correct
-// cflags:
-// teardown_command: rm -rf tearingTests.mixedTest1* _tearingTests.mixedTest1* output.log
-//
-// Tearing with discrete variables inside loop.
+// name:      MixedTearing2-minimal
+// keywords:  minimal tearing
+// status:    correct
 
 loadString("
-within ;
-model mixedTest1
+model mixedTest2
   Real a(start=0);
-  Integer b;
-  Boolean c;
+  Integer b annotation(tearingSelect = always);
+  Boolean c annotation(tearingSelect = never);
 equation
   a = b * time;
   c = a > 0;
   b = if c then integer(time*10) else -integer(time*10);
-end mixedTest1;
+end mixedTest2;
 "); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setTearingMethod("omcTearing --preOptModules-=comSubExp"); getErrorString();
-simulate(mixedTest1); getErrorString();
+setTearingMethod("minimalTearing"); getErrorString();
+simulate(mixedTest2); getErrorString();
 
 // Result:
 // true
@@ -31,8 +26,8 @@ simulate(mixedTest1); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "mixedTest1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mixedTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "mixedTest2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mixedTest2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -40,6 +35,7 @@ simulate(mixedTest1); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 3
 //  * Number of variables: 3
+// Warning: Minimal Tearing is ignoring tearingSelect annotation for discrete variables.
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -59,6 +55,7 @@ simulate(mixedTest1); getErrorString();
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {1 2}
+// Warning: Minimal Tearing is ignoring tearingSelect annotation for discrete variables.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)

@@ -1,0 +1,35 @@
+// name:              minimalTearing
+// keywords:          minimal tearing, discrete variables, loops
+// status:            correct
+// teardown_command:  rm -f Modelica.Electrical.Analog.Examples.Rectifier*
+//
+// Solve example with discrete variables inside loops.
+// Will fail with tearingMethod=noTearing
+
+loadModel(Modelica); getErrorString();
+
+setTearingMethod("minimalTearing"); getErrorString();
+
+simulate(Modelica.Electrical.Analog.Examples.Rectifier); getErrorString();
+
+diffSimulationResults(actualFile = "Modelica.Electrical.Analog.Examples.Rectifier_res.mat",
+expectedFile = "../../../ReferenceFiles/msl32/Modelica.Electrical.Analog.Examples.Rectifier.mat",
+diffPrefix = "diff", vars = {"Inductor3.i","Capacitor1.v","Capacitor2.v"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.Analog.Examples.Rectifier_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Minimal Tearing is ignoring tearingSelect annotation for discrete variables.
+// "
+// (true,{})
+// ""
+// endResult

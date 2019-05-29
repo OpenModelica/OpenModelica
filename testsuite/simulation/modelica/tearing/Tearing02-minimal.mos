@@ -1,0 +1,26 @@
+// name:      Tearing02-minimal
+// keywords:  Tearing
+// status:    correct
+// cflags:    +d=backenddaeinfo
+
+
+loadFile("Tearing2.mo"); getErrorString();
+
+setDebugFlags("backenddaeinfo"); getErrorString();
+setTearingMethod("minimalTearing"); getErrorString();
+simulate(Tearing2); getErrorString();
+
+val(u0,0.0); getErrorString();
+val(u1,0.0); getErrorString();
+val(u2,0.0); getErrorString();
+val(uL,0.0); getErrorString();
+val(uC,0.0); getErrorString();
+val(i0,0.0); getErrorString();
+val(i1,0.0); getErrorString();
+val(i2,0.0); getErrorString();
+val(iL,0.0); getErrorString();
+val(iC,0.0); getErrorString();
+val(v0,0.0); getErrorString();
+val(v1,0.0); getErrorString();
+val(v2,0.0); getErrorString();
+

@@ -1,27 +1,21 @@
-// name: MixedTearing1-omc
-// keywords: tearing, mixed system
-// status: correct
-// cflags:
-// teardown_command: rm -rf tearingTests.mixedTest1* _tearingTests.mixedTest1* output.log
-//
-// Tearing with discrete variables inside loop.
+// name:      Tearing18-minimal
+// keywords:  minimal tearing
+// status:    correct
+// teardown_command:  rm -f Tearing18
 
-loadString("
-within ;
-model mixedTest1
-  Real a(start=0);
-  Integer b;
-  Boolean c;
-equation
-  a = b * time;
-  c = a > 0;
-  b = if c then integer(time*10) else -integer(time*10);
-end mixedTest1;
-"); getErrorString();
+loadFile("Tearing18.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setTearingMethod("omcTearing --preOptModules-=comSubExp"); getErrorString();
-simulate(mixedTest1); getErrorString();
+setTearingMethod("minimalTearing"); getErrorString();
+simulate(Tearing18); getErrorString();
+
+val(x0,1.0); getErrorString();
+val(x3,1.0); getErrorString();
+val(x4,1.0); getErrorString();
+val(x5,1.0); getErrorString();
+val(x6,1.0); getErrorString();
+val(x7,1.0); getErrorString();
+val(x8,1.0); getErrorString();
 
 // Result:
 // true
@@ -31,23 +25,24 @@ simulate(mixedTest1); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "mixedTest1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mixedTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "Tearing18_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
-//  * Number of equations: 3
-//  * Number of variables: 3
+//  * Number of equations: 7
+//  * Number of variables: 7
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (1):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for initialization (2):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -58,15 +53,15 @@ simulate(mixedTest1); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 1 {6 0}
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for simulation (5):
+//  * Single equations (assignments): 4
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -77,6 +72,20 @@ simulate(mixedTest1); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 1 {6 0}
 // "
+// -0.9589242746631385
+// ""
+// 1.489535057843215
+// ""
+// -0.2944762573660787
+// ""
+// -1.018493952318733
+// ""
+// 0.1102524957021608
+// ""
+// 3.489535057843215
+// ""
+// 0.3409642336578839
+// ""
 // endResult
