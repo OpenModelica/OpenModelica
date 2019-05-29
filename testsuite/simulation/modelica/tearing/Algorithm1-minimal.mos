@@ -1,27 +1,22 @@
-// name: MixedTearing1-omc
-// keywords: tearing, mixed system
-// status: correct
-// cflags:
-// teardown_command: rm -rf tearingTests.mixedTest1* _tearingTests.mixedTest1* output.log
-//
-// Tearing with discrete variables inside loop.
+// name:      Algorithm1-minimal
+// keywords:  minimal tearing, algorithm
+// status:    correct
 
-loadString("
-within ;
-model mixedTest1
-  Real a(start=0);
-  Integer b;
-  Boolean c;
-equation
-  a = b * time;
-  c = a > 0;
-  b = if c then integer(time*10) else -integer(time*10);
-end mixedTest1;
-"); getErrorString();
+loadFile("Algorithm1.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setTearingMethod("omcTearing --preOptModules-=comSubExp"); getErrorString();
-simulate(mixedTest1); getErrorString();
+setTearingMethod("minimalTearing"); getErrorString();
+simulate(Algorithm1); getErrorString();
+
+val(x0,0.5); getErrorString();
+val(x[1],0.5); getErrorString();
+val(x[2],0.5); getErrorString();
+val(y,0.5); getErrorString();
+val(z,0.5); getErrorString();
+val(a,0.5); getErrorString();
+val(b,0.5); getErrorString();
+val(c,0.5); getErrorString();
+
 
 // Result:
 // true
@@ -31,19 +26,19 @@ simulate(mixedTest1); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "mixedTest1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'mixedTest1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "Algorithm1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Algorithm1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
-//  * Number of equations: 3
-//  * Number of variables: 3
+//  * Number of equations: 8
+//  * Number of variables: 8
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (1):
@@ -58,15 +53,15 @@ simulate(mixedTest1); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 1 {8 0}
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 2 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for simulation (2):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -77,6 +72,22 @@ simulate(mixedTest1); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems: 0
-//  * Non-linear torn systems: 1 {1 2}
+//  * Non-linear torn systems: 1 {8 0}
 // "
+// -0.4599783239709822
+// ""
+// -0.08004335205803548
+// ""
+// 1.259869943825893
+// ""
+// 0.8399132958839289
+// ""
+// -0.4199566479419645
+// ""
+// -0.4199566479419645
+// ""
+// -0.839913295883929
+// ""
+// -0.9594364232455381
+// ""
 // endResult

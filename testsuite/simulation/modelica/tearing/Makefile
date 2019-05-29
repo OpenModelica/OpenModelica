@@ -82,8 +82,29 @@ userDefinedTearing1.mos \
 userDefinedTearing2.mos \
 testTearingStrictness.mos \
 testParamDivision.mos \
-
-
+minimalTearing.mos \
+Algorithm1-minimal.mos \
+Algorithm2-minimal.mos \
+MixedTearing1-minimal.mos \
+MixedTearing2-minimal.mos \
+tearingSelect-minimal.mos \
+Tearing1-minimal.mos \
+Tearing2-minimal.mos \
+Tearing3-minimal.mos \
+Tearing4-minimal.mos \
+Tearing5-minimal.mos \
+Tearing6-minimal.mos \
+Tearing7-minimal.mos \
+Tearing8-minimal.mos \
+Tearing9-minimal.mos \
+Tearing10-minimal.mos \
+Tearing11-minimal.mos \
+Tearing12-minimal.mos \
+Tearing13-minimal.mos \
+Tearing14-minimal.mos \
+Tearing15-minimal.mos \
+Tearing16-minimal.mos \
+Tearing18-minimal.mos \
 
 
 # test that currently fail. Move up when fixed. 
