@@ -110,7 +110,7 @@ import ValuesUtil;
 import MetaModelica.Dangerous;
 // import NFInst;
 
-protected uniontype AnnotationType
+public uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;
   record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
 end AnnotationType;
@@ -928,6 +928,7 @@ protected
   Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
   Boolean addFunctions, graphicsExpMode;
   FCore.Graph env;
+  GraphicEnvCache genv;
   Absyn.Exp exp;
   list<Absyn.Exp> dimensions;
 algorithm
@@ -1523,8 +1524,13 @@ algorithm
         path := Absyn.crefToPath(cr);
         cls := getPathedClassInProgram(path, p);
         env := SymbolTable.buildEnv();
+        if Flags.isSet(Flags.NF_API) then
+          genv := GRAPHIC_ENV_FULL_CACHE(p, path, FCore.emptyCache(), FGraph.empty());
+        else
+          genv := GRAPHIC_ENV_FULL_CACHE(p, path, FCore.emptyCache(), env);
+        end if;
       then
-        getLocalVariables(cls, useQuotes(nargs), env);
+        InteractiveUtil.getLocalVariables(cls, useQuotes(nargs), genv);
 
     // adrpo added 2006-10-16
     // - i think this function is needed here!
@@ -9776,7 +9782,7 @@ algorithm
       Absyn.Path modelpath;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      FCore.Graph env,env_1,env2,env_2;
+      FCore.Graph env,env_1,env2;
       SCode.Element c;
       String id,s1,s2,str,res;
       SCode.Encapsulated encflag;
@@ -9787,26 +9793,32 @@ algorithm
       Absyn.Program p;
       FCore.Cache cache;
       Boolean b, permissive;
+      GraphicEnvCache genv;
 
     case (model_,b)
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         p_1 = SymbolTable.getSCode();
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        permissive = Flags.getConfigBool(Flags.PERMISSIVE);
-        Flags.setConfigBool(Flags.PERMISSIVE, true);
-        (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-            Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-        Flags.setConfigBool(Flags.PERMISSIVE, permissive);
+        if Flags.isSet(Flags.NF_API) then
+          genv = GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, FCore.emptyCache(), FGraph.emptyGraph);
+        else
+          (cache,env) = Inst.makeEnvFromProgram(p_1);
+          (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache, env, modelpath);
+          env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
+          ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
+          permissive = Flags.getConfigBool(Flags.PERMISSIVE);
+          Flags.setConfigBool(Flags.PERMISSIVE, true);
+          (_,env2,_,_,_) =
+            Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
+              Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          Flags.setConfigBool(Flags.PERMISSIVE, permissive);
+          genv = GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, cache, env2);
+        end if;
         comps1 = getPublicComponentsInClass(cdef);
-        s1 = getComponentsInfo(comps1, b, "\"public\"", env_2);
+        s1 = getComponentsInfo(comps1, b, "\"public\"", genv);
         comps2 = getProtectedComponentsInClass(cdef);
-        s2 = getComponentsInfo(comps2, b, "\"protected\"", env_2);
+        s2 = getComponentsInfo(comps2, b, "\"protected\"", genv);
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
       then res;
@@ -14139,13 +14151,13 @@ protected function getComponentInfo
   input Absyn.Element inElement;
   input Boolean inQuoteNames;
   input String inVisibility;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst := match inElement
     local
       Absyn.ElementAttributes attr;
-      Absyn.Path p, env_path, pkg_path, tp_path;
+      Absyn.Path p, env_path, pkg_path, tp_path, qpath;
       list<Absyn.ComponentItem> comps;
       FCore.Graph env;
       list<String> names, dims;
@@ -14156,7 +14168,12 @@ algorithm
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
       algorithm
-        typename := InteractiveUtil.qualifyType(inEnv, p);
+        if Flags.isSet(Flags.NF_API) then
+          (_, qpath) := mkFullyQual(inEnv, p);
+          typename := Absyn.pathString(qpath);
+        else
+          typename := InteractiveUtil.qualifyType(envFromGraphicEnvCache(inEnv), p);
+        end if;
 
         names := getComponentItemsNameAndComment(comps, inQuoteNames);
         dims := getComponentitemsDimension(comps);
@@ -14222,7 +14239,7 @@ public function getComponentsInfo
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output String outString;
 algorithm
   outString:=
@@ -14231,7 +14248,7 @@ algorithm
       list<String> lst;
       String lst_1,res,access;
       list<Absyn.Element> elts;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
     case (elts,_,access,env)
       equation
@@ -14251,7 +14268,7 @@ protected function getComponentsInfo2
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input list<String> acc;
   output list<String> outStringLst;
 algorithm
@@ -14261,7 +14278,7 @@ algorithm
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
     case ({},_,_,_,_) then listReverse(acc);
     case ((elt :: rest),b,access,env,_)
@@ -17202,112 +17219,6 @@ algorithm
 
   end match;
 end getDefinitions;
-
-protected function getLocalVariables
-"Returns the string list of local varibales defined with in the algorithm."
-  input Absyn.Class inClass;
-  input Boolean inBoolean;
-  input FCore.Graph inEnv;
-  output String outList;
-algorithm
-  outList := match(inClass, inBoolean, inEnv)
-    local
-      String strList;
-      FCore.Graph env;
-      Boolean b;
-      list<Absyn.ClassPart> parts;
-      case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), b, env)
-      equation
-        strList = getLocalVariablesInClassParts(parts, b, env);
-      then
-        strList;
-    // check also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)), b, env)
-      equation
-        strList = getLocalVariablesInClassParts(parts, b, env);
-      then
-        strList;
-  end match;
-end getLocalVariables;
-
-protected function getLocalVariablesInClassParts
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Boolean inBoolean;
-  input FCore.Graph inEnv;
-  output String outList;
-algorithm
-  outList := matchcontinue (inAbsynClassPartLst, inBoolean, inEnv)
-    local
-      FCore.Graph env;
-      Boolean b;
-      list<Absyn.AlgorithmItem> algs;
-      list<Absyn.ClassPart> xs;
-      String strList, strList1, strList2;
-    case (Absyn.ALGORITHMS(contents = algs) :: xs, b, env)
-      equation
-        strList1 = getLocalVariablesInAlgorithmsItems(algs, b, env);
-        strList = getLocalVariablesInClassParts(xs, b, env);
-        strList2 = if strList == "" then strList1 else stringAppendList({strList1, ",", strList});
-      then
-        strList2;
-    case ((_ :: xs), b, env)
-      equation
-        strList = getLocalVariablesInClassParts(xs, b, env);
-      then
-        strList;
-    case ({}, _, _) then "";
-  end matchcontinue;
-end getLocalVariablesInClassParts;
-
-protected function getLocalVariablesInAlgorithmsItems
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input Boolean inBoolean;
-  input FCore.Graph inEnv;
-  output String outList;
-algorithm
-  outList := matchcontinue (inAbsynAlgorithmItemLst, inBoolean, inEnv)
-    local
-      FCore.Graph env;
-      Boolean b;
-      String strList;
-      list<Absyn.AlgorithmItem> xs;
-      Absyn.Algorithm alg;
-    case (Absyn.ALGORITHMITEM(algorithm_ = alg) :: _, b, env)
-      equation
-        strList = getLocalVariablesInAlgorithmItem(alg, b, env);
-      then
-        strList;
-    case ((_ :: xs), b, env)
-      equation
-        strList = getLocalVariablesInAlgorithmsItems(xs, b, env);
-      then
-        strList;
-    case ({}, _, _) then "";
-  end matchcontinue;
-end getLocalVariablesInAlgorithmsItems;
-
-protected function getLocalVariablesInAlgorithmItem
-  input Absyn.Algorithm inAbsynAlgorithmItem;
-  input Boolean inBoolean;
-  input FCore.Graph inEnv;
-  output String outList;
-algorithm
-  outList := match (inAbsynAlgorithmItem, inBoolean, inEnv)
-    local
-      FCore.Graph env;
-      Boolean b;
-      String strList;
-      list<Absyn.ElementItem> elsItems;
-      list<Absyn.Element> els;
-    case (Absyn.ALG_ASSIGN(value = Absyn.MATCHEXP(localDecls = elsItems)), b, env)
-      equation
-        els = getComponentsInElementitems(elsItems);
-        strList = getComponentsInfo(els, b, "public", env);
-      then
-        strList;
-    case (_, _, _) then "";
-  end match;
-end getLocalVariablesInAlgorithmItem;
 
 protected function printWithNewline
   input String s;
