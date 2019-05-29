@@ -49,6 +49,7 @@ import SCode;
 import SCodeUtil;
 import Settings;
 import Values;
+import Interactive;
 
 // protected imports
 protected
@@ -80,7 +81,6 @@ import InnerOuter;
 import Inst;
 import InstUtil;
 import InstTypes;
-import InteractiveUtil.mo;
 import List;
 import Lookup;
 import MetaUtil;
@@ -101,30 +101,9 @@ import Util;
 import ValuesUtil;
 import MetaModelica.Dangerous;
 
-protected uniontype AnnotationType
-  record ICON_ANNOTATION end ICON_ANNOTATION;
-  record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
-end AnnotationType;
-
-protected uniontype GraphicEnvCache
-  "Used by buildEnvForGraphicProgram to avoid excessive work."
-  record GRAPHIC_ENV_NO_CACHE
-    Absyn.Program program;
-    Absyn.Path modelPath;
-  end GRAPHIC_ENV_NO_CACHE;
-
-  record GRAPHIC_ENV_PARTIAL_CACHE
-    Absyn.Program program;
-    Absyn.Path modelPath;
-    FCore.Cache cache;
-    FCore.Graph env;
-  end GRAPHIC_ENV_PARTIAL_CACHE;
-
-  record GRAPHIC_ENV_FULL_CACHE
-    FCore.Cache cache;
-    FCore.Graph env;
-  end GRAPHIC_ENV_FULL_CACHE;
-end GraphicEnvCache;
+public
+type GraphicEnvCache = Interactive.GraphicEnvCache;
+type AnnotationType = Interactive.AnnotationType;
 
 public function getTypeOfVariable
 "Return the type of an interactive variable,
@@ -215,10 +194,10 @@ algorithm
 
     case(_,_,_,_)
       equation
-        ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
+        ErrorExt.setCheckpoint("InteractiveUtil.extractAllComponentreplacements");
         comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
         // rollback errors if we succeed
-        ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
+        ErrorExt.rollBack("InteractiveUtil.extractAllComponentreplacements");
         false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
         class_path = Absyn.crefToPath(class_);
         comp_repsrules = GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
@@ -228,7 +207,7 @@ algorithm
     else
       equation
         // keep errors if we fail!
-        ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
+        ErrorExt.delCheckpoint("InteractiveUtil.extractAllComponentreplacements");
       then
         fail();
   end matchcontinue;
@@ -687,7 +666,7 @@ algorithm
         (comp :: res_1);
     else
       equation
-        print("-Interactive.renameComponentInComponentitems failed\n");
+        print("-InteractiveUtil.renameComponentInComponentitems failed\n");
       then
         fail();
   end matchcontinue;
@@ -6951,7 +6930,7 @@ algorithm
 
     case (path,inmodel,p as Absyn.PROGRAM())
       equation
-        //fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
@@ -6962,7 +6941,7 @@ algorithm
 
     case (path,inmodel,p) /* Then look inside next level */
       equation
-        //fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         innewpath = Absyn.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
@@ -6970,7 +6949,7 @@ algorithm
 
     case (path,_,p)
       equation
-        //fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
@@ -6995,7 +6974,7 @@ algorithm
 
     case (path,inmodel,_)
       equation
-        //fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         s1 = Absyn.pathString(path);
         s2 = Absyn.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
@@ -9356,7 +9335,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
+        str = getAnnotationInClass(cdef, Interactive.DIAGRAM_ANNOTATION(), p, modelpath);
       then
         str;
     else "{}";
@@ -9504,7 +9483,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
+        str = getAnnotationInClass(cdef, Interactive.ICON_ANNOTATION(), p, modelpath);
       then
         str;
     else "{}";
@@ -10171,8 +10150,8 @@ protected function isAnnotationType
   input AnnotationType annotationType;
 algorithm
   _ := match(annotationStr, annotationType)
-    case ("Icon", ICON_ANNOTATION()) then ();
-    case ("Diagram", DIAGRAM_ANNOTATION()) then ();
+    case ("Icon", Interactive.ICON_ANNOTATION()) then ();
+    case ("Diagram", Interactive.DIAGRAM_ANNOTATION()) then ();
   end match;
 end isAnnotationType;
 
@@ -11134,7 +11113,7 @@ algorithm
   placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
   graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
   (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
-  cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
+  cache := Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
   res := getComponentitemsAnnotations(comps, env, inClass, cache);
   resStr := stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
@@ -11492,11 +11471,11 @@ algorithm
       SCode.Program scode_program;
 
     // Class already fully instantiated, return cached data.
-    case GRAPHIC_ENV_FULL_CACHE()
+    case Interactive.GRAPHIC_ENV_FULL_CACHE()
       then (inCache.cache, inCache.env, Absyn.dummyProgram, inCache);
 
     // Partial cache, instantiate class to make full cache if needed.
-    case GRAPHIC_ENV_PARTIAL_CACHE()
+    case Interactive.GRAPHIC_ENV_PARTIAL_CACHE()
       algorithm
         if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outCache := inCache.cache;
@@ -11506,24 +11485,24 @@ algorithm
         else
           (outCache, outEnv, outGraphicProgram) :=
             buildEnvForGraphicProgramFull(inCache.program, inCache.modelPath);
-          outGraphicEnvCache := GRAPHIC_ENV_FULL_CACHE(outCache, outEnv);
+          outGraphicEnvCache := Interactive.GRAPHIC_ENV_FULL_CACHE(inCache.program, inCache.modelPath, outCache, outEnv);
         end if;
       then
         (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
     // No cache, make partial or full cache as needed.
-    case GRAPHIC_ENV_NO_CACHE()
+    case Interactive.GRAPHIC_ENV_NO_CACHE()
       algorithm
         if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
           scode_program := SCodeUtil.translateAbsyn2SCode(outGraphicProgram);
           (outCache, outEnv) := Inst.makeEnvFromProgram(scode_program);
           outGraphicEnvCache :=
-            GRAPHIC_ENV_PARTIAL_CACHE(inCache.program, inCache.modelPath, outCache, outEnv);
+            Interactive.GRAPHIC_ENV_PARTIAL_CACHE(inCache.program, inCache.modelPath, outCache, outEnv);
         else
           (outCache, outEnv, outGraphicProgram) :=
             buildEnvForGraphicProgramFull(inCache.program, inCache.modelPath);
-          outGraphicEnvCache := GRAPHIC_ENV_FULL_CACHE(outCache, outEnv);
+          outGraphicEnvCache := Interactive.GRAPHIC_ENV_FULL_CACHE(inCache.program, inCache.modelPath, outCache, outEnv);
         end if;
       then
         (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
@@ -11607,12 +11586,12 @@ algorithm
         ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
         try
         (cache, env, graphic_prog) :=
-          buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+          buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
           ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
           // Fallback to only the graphical primitives left in the program
-          (cache, env, graphic_prog) := buildEnvForGraphicProgram(GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
+          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
 
         smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
@@ -13087,7 +13066,7 @@ algorithm
     case (c as Absyn.CLASS(),name)
       equation
         handle = Print.saveAndClearBuf();
-        Print.printBuf("Interactive.getInnerClass failed, c:");
+        Print.printBuf("InteractiveUtil.getInnerClass failed, c:");
         Dump.dump(Absyn.PROGRAM({c},Absyn.TOP()));
         Print.printBuf("name :");
         Print.printBuf(name);
@@ -14047,7 +14026,7 @@ algorithm
         res;
     else
       equation
-        Print.printBuf("Interactive.recordConstructorToModification failed, exp=");
+        Print.printBuf("InteractiveUtil.recordConstructorToModification failed, exp=");
         Dump.printExp(inExp);
         Print.printBuf("\n");
       then
@@ -14082,7 +14061,7 @@ algorithm
         res;
     else
       equation
-        Print.printBuf("- Interactive.namedargToModification failed\n");
+        Print.printBuf("- InteractiveUtil.namedargToModification failed\n");
       then
         fail();
   end matchcontinue;
@@ -14295,7 +14274,7 @@ algorithm
 
     else
       equation
-        print("Interactive.transformFlatClass failed\n");
+        print("InteractiveUtil.transformFlatClass failed\n");
       then fail();
   end matchcontinue;
 end transformFlatClass;
@@ -14337,7 +14316,7 @@ algorithm
         partsTransformed = List.map(parts,transformFlatPart);
       then
         Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed, ann);
-    else equation print("Interactive.transformFlatClassDef failed\n");
+    else equation print("InteractiveUtil.transformFlatClassDef failed\n");
       then fail();
   end matchcontinue;
 end transformFlatClassDef;
@@ -14378,7 +14357,7 @@ algorithm
       then Absyn.INITIALALGORITHMS(algitems1);
     case(Absyn.EXTERNAL(_,_)) then part;
     else
-      equation print("Interactive.transformFlatPart failed\n");
+      equation print("InteractiveUtil.transformFlatPart failed\n");
       then fail();
   end matchcontinue;
 end transformFlatPart;
@@ -14886,17 +14865,17 @@ algorithm
   end match;
 end getDefinitions;
 
-protected function getLocalVariables
+public function getLocalVariables
 "Returns the string list of local varibales defined with in the algorithm."
   input Absyn.Class inClass;
   input Boolean inBoolean;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output String outList;
 algorithm
   outList := match(inClass, inBoolean, inEnv)
     local
       String strList;
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
       list<Absyn.ClassPart> parts;
       case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), b, env)
@@ -14916,12 +14895,12 @@ end getLocalVariables;
 protected function getLocalVariablesInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Boolean inBoolean;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output String outList;
 algorithm
   outList := matchcontinue (inAbsynClassPartLst, inBoolean, inEnv)
     local
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -14945,12 +14924,12 @@ end getLocalVariablesInClassParts;
 protected function getLocalVariablesInAlgorithmsItems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input Boolean inBoolean;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output String outList;
 algorithm
   outList := matchcontinue (inAbsynAlgorithmItemLst, inBoolean, inEnv)
     local
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
       String strList;
       list<Absyn.AlgorithmItem> xs;
@@ -14972,12 +14951,12 @@ end getLocalVariablesInAlgorithmsItems;
 protected function getLocalVariablesInAlgorithmItem
   input Absyn.Algorithm inAbsynAlgorithmItem;
   input Boolean inBoolean;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output String outList;
 algorithm
   outList := match (inAbsynAlgorithmItem, inBoolean, inEnv)
     local
-      FCore.Graph env;
+      GraphicEnvCache env;
       Boolean b;
       String strList;
       list<Absyn.ElementItem> elsItems;
