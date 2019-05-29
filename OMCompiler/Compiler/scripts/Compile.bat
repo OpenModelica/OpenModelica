@@ -22,7 +22,7 @@ REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\msys\%OM_PLATFORM%
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
 REM echo MINGW = %MINGW% >>%1.log 2>&1
-set CURRENT_DIR="%CD%"
+call :CONVERT_TO_SHORT_PATH_NAME "%CD%"
 
 if %LOGGING%==1 (goto :SET_PATH_LOG) else (goto :SET_PATH)
 
@@ -106,7 +106,7 @@ goto :Final
 :MINGW
 REM echo "MINGW"
 if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 (%MinGW%\bin\mingw32-make -f %1.makefile %ADDITIONAL_ARGS%  >> %1.log 2>&1) else (%MinGW%\bin\mingw32-make -f %1.makefile %ADDITIONAL_ARGS%)
+if %LOGGING%==1 (%MinGW%\bin\mingw32-make -w -f %1.makefile %ADDITIONAL_ARGS%  >> %1.log 2>&1) else (%MinGW%\bin\mingw32-make -w -f %1.makefile %ADDITIONAL_ARGS%)
 set RESULT=%ERRORLEVEL%
 if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
@@ -115,3 +115,6 @@ goto :Final
 set PATH=%OLD_PATH%
 set OLD_PATH=
 @%COMSPEC% /C exit %RESULT%
+
+:CONVERT_TO_SHORT_PATH_NAME
+set CURRENT_DIR=%~s1
