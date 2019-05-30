@@ -94,14 +94,14 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 omc-bootstrapped:
-	$(MAKE) bootstrap-dependencies interactive sim-dependencies
+	$(MAKE) interactive sim-dependencies
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)
 	test ! `uname` = Darwin || ( ! otool -L "$(builddir_lib_omc)"/*.dylib | egrep "$(OMBUILDDIR)|`pwd`" | grep -v : || ( echo All dylibs should be linked using @rpath ; false ) )
 
 omc-no-sim:
-	$(MAKE) bootstrap-dependencies interactive-short
+	$(MAKE) bootstrap-dependencies
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 
 lis: lis-configure
