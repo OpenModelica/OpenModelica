@@ -1918,13 +1918,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
    * If the result size is zero then don't switch to the plotting view.
    */
   bool resultFileNonZeroSize = MainWindow::instance()->getOMCProxy()->readSimulationResultSize(resultFileInfo.absoluteFilePath()) > 0;
-
-  if (resultFileKnown && resultFileExists && resultFileNewer && resultFileNonZeroSize) {
+  if (resultFileKnown && resultFileExists && resultFileNewer) {
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     if (list.size() > 0) {
-      if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+      if (resultFileNonZeroSize && OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
         // if simulated with animation then open the animation directly.
@@ -2175,44 +2174,45 @@ void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
  */
 void SimulationDialog::simulate()
 {
-  if (validate()) {
-    // interactive simulation
-    if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
-      performSimulation();
-    } else {
-      // if no option is selected then show error message to user
-      if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
-            mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
-            mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
-            mpSimulateCheckBox->isChecked())) {
-        QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
-        return;
-      }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
-      }
-      if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
-        saveExperimentAnnotation();
-      }
-      if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
-        saveTranslationFlagsAnnotation();
-      }
-      if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        saveSimulationFlagsAnnotation();
-      }
-      if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
-          mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
-        mpLibraryTreeItem->getModelWidget()->endMacro();
-      }
-      if (mpSimulateCheckBox->isChecked()) {
-        performSimulation();
-      }
-    }
-    saveDialogGeometry();
-    accept();
+  if (!validate()) {
+    return;
   }
+  // if no option is selected then show error message to user
+  if (!(mpSaveExperimentAnnotationCheckBox->isChecked() ||
+        mpSaveTranslationFlagsAnnotationCheckBox->isChecked() ||
+        mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
+        mpSimulateCheckBox->isChecked())) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
+    return;
+  }
+  // interactive simulation
+  if (mpInteractiveSimulationGroupBox->isChecked() || mIsReSimulate) {
+    performSimulation();
+  } else {
+    if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+        mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      mpLibraryTreeItem->getModelWidget()->beginMacro("Simulation settings");
+    }
+    if (mpSaveExperimentAnnotationCheckBox->isChecked()) {
+      saveExperimentAnnotation();
+    }
+    if (mpSaveTranslationFlagsAnnotationCheckBox->isChecked()) {
+      saveTranslationFlagsAnnotation();
+    }
+    if (mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      saveSimulationFlagsAnnotation();
+    }
+    if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
+        mpSaveTranslationFlagsAnnotationCheckBox->isChecked() || mpSaveSimulationFlagsAnnotationCheckBox->isChecked()) {
+      mpLibraryTreeItem->getModelWidget()->endMacro();
+    }
+    if (mpSimulateCheckBox->isChecked()) {
+      performSimulation();
+    }
+  }
+  saveDialogGeometry();
+  accept();
 }
 
 /*!
