@@ -187,8 +187,7 @@ function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
 algorithm
-  node := partialInstClass(node);
-  node := expandClass(node);
+  node := expand(node);
   node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
 end instantiate;
 
