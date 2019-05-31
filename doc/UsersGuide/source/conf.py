@@ -284,6 +284,7 @@ latex_elements = {
 'preamble': """
 \usepackage{bookmark}
 """,
+'fontenc': r'\usepackage[LGR,T1]{fontenc}'
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
