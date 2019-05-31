@@ -565,9 +565,11 @@ algorithm
   (program, top) := mkTop(absynProgram);
 
   name := Absyn.pathString(classPath);
+  execStat("NFApi.mkTop("+ name +")");
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
+  execStat("NFApi.lookup("+ name +")");
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
