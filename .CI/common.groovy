@@ -68,7 +68,7 @@ void makeLibsAndCache(libs='core') {
   sh "find libraries"
   sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
   generateTemplates()
-  def cmd = "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
+  def cmd = "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles omc-diff"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
