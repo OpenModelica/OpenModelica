@@ -165,6 +165,7 @@ void OMSProxy::logCommand(QTime *commandTime, QString command)
  */
 void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *responseTime)
 {
+  double elapsed = (double)responseTime->elapsed() / 1000.0;
   QString firstLine("");
   for (int i = 0; i < command.length(); i++) {
     if (command[i] != '\n') {
@@ -176,9 +177,9 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
 
   // write the log to communication log file
   if (mpCommunicationLogFile) {
+    mTotalOMSCallsTime += elapsed;
     fputs(QString("%1 %2\n").arg(status).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
-    mTotalOMSCallsTime += (double)responseTime->elapsed() / 1000;
-    fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMSCallsTime)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
+    fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMSCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
   }
 
   MainWindow::instance()->printStandardOutAndErrorFilesMessages();

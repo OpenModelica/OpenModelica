@@ -355,6 +355,7 @@ void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistor
  */
 void OMCProxy::logResponse(QString command, QString response, QTime *responseTime)
 {
+  double elapsed = (double)responseTime->elapsed() / 1000.0;
   QString firstLine("");
   for (int i = 0; i < command.length(); i++)
     if (command[i] != '\n')
@@ -372,9 +373,9 @@ void OMCProxy::logResponse(QString command, QString response, QTime *responseTim
     Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
     // write the log to communication log file
     if (mpCommunicationLogFile) {
+      mTotalOMCCallsTime += elapsed;
       fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
-      mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
+      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMCCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
     }
   }
 }

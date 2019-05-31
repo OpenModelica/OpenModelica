@@ -332,8 +332,8 @@ record Text
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
 
-  Real extent[2,2]/*(each final unit=\"mm\")*/;
-  String textString;
+  Real extent[2,2]/*(each final unit=\"mm\")*/ = {{-10, -10}, {10, 10}};
+  String textString = \"\";
   Real fontSize = 0 \"unit pt\";
   Integer textColor[3] = {-1, -1, -1} \"defaults to fillColor\";
   String fontName = \"\";
