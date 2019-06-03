@@ -1,0 +1,5 @@
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Graphviz.mo");getErrorString();
+writeFile("toJulia/Graphviz.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+system("sed -i '/^ *$/d' toJulia/Graphviz.jl");
+system("julia-1.0.0 toJulia/Clean.jl toJulia/Graphviz.jl");
