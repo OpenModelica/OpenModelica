@@ -21,7 +21,7 @@ end IfConnect1;
 
 // Result:
 // class IfConnect1
-//   parameter Boolean b = true;
+//   final parameter Boolean b = true;
 //   Real c1.e;
 //   Real c1.f;
 //   Real c2.e;

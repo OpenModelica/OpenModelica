@@ -1,4 +1,4 @@
-// name: ActualStreamVariability1
+// name: InStreamReduction1
 // keywords: stream actualStream connector
 // status: correct
 // cflags: -d=newInst
@@ -10,15 +10,15 @@ connector C
   stream Real s;
 end C;
 
-model ActualStreamVariability1
+model InStreamReduction1
   parameter Integer n = 3;
   C c[n];
   Real as = sum(inStream(c[i].s) for i in 1:n);
-end ActualStreamVariability1;
+end InStreamReduction1;
 
 // Result:
-// class ActualStreamVariability1
-//   parameter Integer n = 3;
+// class InStreamReduction1
+//   final parameter Integer n = 3;
 //   Real c[1].r;
 //   Real c[1].f;
 //   Real c[1].s;
@@ -33,5 +33,5 @@ end ActualStreamVariability1;
 //   c[1].f = 0.0;
 //   c[2].f = 0.0;
 //   c[3].f = 0.0;
-// end ActualStreamVariability1;
+// end InStreamReduction1;
 // endResult

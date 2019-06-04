@@ -13,7 +13,7 @@ end EvaluateAllParams;
 
 // Result:
 // class EvaluateAllParams
-//   parameter Real p = 10.0;
+//   final parameter Real p = 10.0;
 //   Real x;
 // equation
 //   x = time * 10.0;

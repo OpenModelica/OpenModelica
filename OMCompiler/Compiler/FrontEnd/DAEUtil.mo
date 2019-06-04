@@ -5440,15 +5440,23 @@ algorithm
   // Transform Modelica state machines to flat data-flow equations
   dAElist := StateMachineFlatten.stateMachineToDataFlow(cache, env, inDAElist);
 
-  DAE.DAE(elts) := dAElist;
+  if Flags.isSet(Flags.SCODE_INST) then
+    // This is stupid, but `outDAElist := dAElist` causes crashes for some reason. GC bug?
+    DAE.DAE(elts) := dAElist;
+    outDAElist := DAE.DAE(elts);
+  else
+    DAE.DAE(elts) := dAElist;
 
-  ht := FCore.getEvaluatedParams(cache);
-  elts := List.map1(elts, makeEvaluatedParamFinal, ht);
+    ht := FCore.getEvaluatedParams(cache);
+    elts := List.map1(elts, makeEvaluatedParamFinal, ht);
 
-  if Flags.isSet(Flags.PRINT_STRUCTURAL) then
-    transformationsBeforeBackendNotification(ht);
+    if Flags.isSet(Flags.PRINT_STRUCTURAL) then
+      transformationsBeforeBackendNotification(ht);
+    end if;
+
+    outDAElist := DAE.DAE(elts);
   end if;
-  outDAElist := DAE.DAE(elts);
+
   // Don't even run the function to try and do this; it doesn't work very well
   // outDAElist := transformDerInline(outDAElist);
 end transformationsBeforeBackend;

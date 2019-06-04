@@ -41,6 +41,6 @@ end RedeclareMod6;
 
 // Result:
 // class RedeclareMod6
-//   parameter Integer grid.nLinks = 1;
+//   final parameter Integer grid.nLinks = 1;
 // end RedeclareMod6;
 // endResult

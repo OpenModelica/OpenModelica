@@ -9,7 +9,7 @@ end A;
 
 // Result:
 // class A
-//   parameter Integer n = 3;
+//   final parameter Integer n = 3;
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];

@@ -16,7 +16,7 @@ end B;
 
 // Result:
 // class B
-//   parameter Integer n = 3;
+//   final parameter Integer n = 3;
 //   parameter Real x[1];
 //   parameter Real x[2];
 //   parameter Real x[3];

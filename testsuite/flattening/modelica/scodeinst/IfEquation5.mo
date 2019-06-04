@@ -20,8 +20,8 @@ end IfEquation5;
 // class IfEquation5
 //   Real x[1];
 //   Real x[2];
-//   parameter Boolean p[1] = false;
-//   parameter Boolean p[2] = true;
+//   final parameter Boolean p[1] = false;
+//   final parameter Boolean p[2] = true;
 // equation
 //   x[1] = 1.0;
 //   x[2] = 2.0;

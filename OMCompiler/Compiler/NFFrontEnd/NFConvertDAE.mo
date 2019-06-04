@@ -64,6 +64,7 @@ import Variable = NFVariable;
 import ComponentReference;
 import Algorithm = NFAlgorithm;
 import NFPrefixes.ConnectorType;
+import NFPrefixes.Variability;
 
 public
 function convert
@@ -233,23 +234,27 @@ function convertVarAttributes
   input Component.Attributes compAttrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
-  Option<Boolean> is_final;
+  Boolean is_final;
+  Option<Boolean> is_final_opt;
   Type elTy;
   Boolean is_array = false;
 algorithm
-  if listEmpty(attrs) and not compAttrs.isFinal then
+  is_final := compAttrs.isFinal or
+              compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
+
+  if listEmpty(attrs) and not is_final then
     attributes := NONE();
     return;
   end if;
 
-  is_final := SOME(compAttrs.isFinal);
+  is_final_opt := SOME(is_final);
 
   attributes := match Type.arrayElementType(ty)
-    case Type.REAL() then convertRealVarAttributes(attrs, is_final);
-    case Type.INTEGER() then convertIntVarAttributes(attrs, is_final);
-    case Type.BOOLEAN() then convertBoolVarAttributes(attrs, is_final);
-    case Type.STRING() then convertStringVarAttributes(attrs, is_final);
-    case Type.ENUMERATION() then convertEnumVarAttributes(attrs, is_final);
+    case Type.REAL() then convertRealVarAttributes(attrs, is_final_opt);
+    case Type.INTEGER() then convertIntVarAttributes(attrs, is_final_opt);
+    case Type.BOOLEAN() then convertBoolVarAttributes(attrs, is_final_opt);
+    case Type.STRING() then convertStringVarAttributes(attrs, is_final_opt);
+    case Type.ENUMERATION() then convertEnumVarAttributes(attrs, is_final_opt);
     else NONE();
   end match;
 end convertVarAttributes;

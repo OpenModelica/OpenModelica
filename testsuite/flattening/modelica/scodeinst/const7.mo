@@ -12,7 +12,7 @@ end M;
 
 // Result:
 // class M
-//   parameter Real A[1,1];
-//   parameter Integer n = 1;
+//   final parameter Real A[1,1];
+//   final parameter Integer n = 1;
 // end M;
 // endResult

@@ -20,8 +20,8 @@ end Condition3;
 
 // Result:
 // class Condition3
-//   parameter Boolean b1 = true;
-//   parameter Boolean b2 = false;
+//   final parameter Boolean b1 = true;
+//   final parameter Boolean b2 = false;
 //   Real x = 2.0;
 // end Condition3;
 // endResult
