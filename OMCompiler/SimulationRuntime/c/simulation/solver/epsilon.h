@@ -35,33 +35,27 @@
  * used in events.c in function checkForSampleEvent and handleEvents
  * to detect sample time.
  */
-static
-const double SAMPLE_EPS = 1e-14;
+static const double SAMPLE_EPS = 1e-14;
 
-static
-const double SYNC_EPS = 1e-14;
+static const double SYNC_EPS = 1e-14;
 
 /*
  * used in dassl.c for function dasrt_step
  * to prevent dassl errors, because of too small step size.
  */
-static
-const double DASSL_STEP_EPS = 1e-13;
+static const double DASSL_STEP_EPS = 1e-13;
 
 /*
  * used in solver_main.c for function initializeSolverData
  * defines the minimal step size
  */
-static
-const double MINIMAL_STEP_SIZE = 1e-12;
+static const double MINIMAL_STEP_SIZE = 1e-12;
 
 /*
  * used in model_help.c for function setZCtol
  * defines a threshold for relation hysteresis,
  * in multiplied by minimum(tolerance, step-size)
- *
  */
-static
-const double TOL_HYSTERESIS_ZEROCROSSINGS = 1e-4;
+static const double TOL_HYSTERESIS_ZEROCROSSINGS = 1e-4;
 
 #endif

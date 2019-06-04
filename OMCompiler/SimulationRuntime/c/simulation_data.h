@@ -578,6 +578,7 @@ typedef struct SIMULATION_INFO
   int useStopTime;
   modelica_integer numSteps;
   modelica_real stepSize;
+  modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;
   const char *outputFormat;
