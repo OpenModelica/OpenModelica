@@ -85,7 +85,7 @@ libomcruntime-boot.dylib : $(OMC_OBJ_BOOT)
 
 libomcruntime.so : $(OMC_OBJ)
 	rm -f $@
-	$(CXX) -shared $(RPATH) -o $@ $(OMC_OBJ) $(LDFLAGS)
+	$(CXX) -shared $(RPATH) $(RPATH_BOOT_STAGE_1) -o $@ $(OMC_OBJ) $(LDFLAGS)
 
 libomcruntime-boot.so : $(OMC_OBJ_BOOT)
 	rm -f $@

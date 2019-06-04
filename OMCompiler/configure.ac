@@ -210,11 +210,7 @@ if echo $CC | grep -v ccc-analyzer; then # ccc-analyzer calls gcc first and then
   # GCC 7.x issues:
   # - RUNPATH instead of RPATH, disable that via -Wl,--disable-new-dtags
   # - sqrt from libcolamd is not found in -lm if -Wl,--no-as-needed is not specified
-  if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^7"; then
-    TRY_FLAGS="$TRY_FLAGS -Wl,--no-as-needed"
-    RPATH_EXTRA="-Wl,--disable-new-dtags"
-  fi
-
+  TRY_FLAGS_LD="$TRY_FLAGS_LD -Wl,--no-as-needed -Wl,--disable-new-dtags"
 fi
 
 AC_MSG_CHECKING([for flags to append to CFLAGS ($TRY_FLAGS)])
@@ -224,6 +220,15 @@ for flag in $TRY_FLAGS; do
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
 AC_MSG_RESULT([$CFLAGS])
+
+AC_MSG_CHECKING([for flags to append to LDFLAGS ($TRY_FLAGS_LD)])
+for flag in $TRY_FLAGS_LD; do
+  OLD_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$flag -Werror"
+  AC_TRY_LINK([], [return 0;], [LDFLAGS="$OLD_LDFLAGS $flag"],[LDFLAGS="$OLD_LDFLAGS"])
+done
+AC_MSG_RESULT([$LDFLAGS])
+
 OLD_CFLAGS="$CFLAGS"
 for flag in -Wno-parentheses-equality -Wno-unused-variable; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
@@ -610,12 +615,16 @@ fi
 
 AC_ARG_WITH(hwloc,  [  --without-hwloc        (default to looking for it)],[
   LIBS=""
-  AC_CHECK_HEADERS(hwloc.h,
-    [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
-      [WITH_HWLOC="1";OMC_LIBS="$OMC_LIBS -lhwloc"],
-      [WITH_HWLOC="0"])],
-    [WITH_HWLOC="0"]
-  )
+  if ! test "$withval" = "no"; then
+    AC_CHECK_HEADERS(hwloc.h,
+      [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
+        [WITH_HWLOC="1";OMC_LIBS="$OMC_LIBS -lhwloc"],
+        [WITH_HWLOC="0"])],
+      [WITH_HWLOC="0"]
+    )
+  else
+    WITH_HWLOC="0"
+  fi
 ],[
   WITH_HWLOC="0"
 ])
@@ -778,8 +787,8 @@ else
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lzmq $LIBUUID"
-  RPATH="$RPATH_EXTRA -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
-  RPATH_QMAKE="$RPATH_EXTRA -Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
+  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
+  RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
