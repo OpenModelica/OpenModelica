@@ -39,6 +39,7 @@
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/options.h"
 #include "../../simulation/solver/model_help.h"
+#include "../../util/omc_file.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, const double preSimTime);
@@ -248,7 +249,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   FILE * pFile = NULL;
 
   *exTimeGrid = 0;
-  pFile = fopen(filename,"r");
+  pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
     warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
     fclose(pFile);
@@ -275,7 +276,7 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   const int np1 = np - 1;
   double t;
   FILE * pFile = NULL;
-  pFile = fopen(filename,"r");
+  pFile = omc_fopen(filename,"r");
 
   fscanf(pFile, "%lf", &t);
   time->t0 = t;
@@ -923,7 +924,8 @@ static inline void pickUpStates(OptData* optData){
 
   if(cflags){
     FILE * pFile = NULL;
-    pFile = fopen(cflags,"r");
+    pFile = omc_fopen(cflags,"r");
+
     if(pFile == NULL){
       warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
     }else{

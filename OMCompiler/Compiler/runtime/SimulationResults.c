@@ -8,6 +8,7 @@
 #include "read_csv.h"
 #include <math.h>
 #include <gc.h>
+#include "omc_file.h"
 #include "omc_msvc.h" /* For INFINITY and NAN */
 #include <time.h>
 #include <sys/types.h>
@@ -64,10 +65,6 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   int len = strlen(filename);
   const char *msg[] = {"",""};
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(filename);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(filename, unicodeFilename, unicodeFilenameLength);
-
   struct _stat buf;
 #else
   struct stat buf = {0} /* Zero this or valgrind complains */;
@@ -75,11 +72,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
 
   if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) {
     /* Also check that the file was not modified */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    if (_wstat(unicodeFilename, &buf)==0 && difftime(buf.st_mtime,simresglob->mtime)==0.0) {
-#else
-    if (stat(filename, &buf)==0 && difftime(buf.st_mtime,simresglob->mtime)==0.0) {
-#endif
+    if (omc_stat(filename, &buf)==0 && difftime(buf.st_mtime,simresglob->mtime)==0.0) {
       return simresglob->curFormat; // Super cache :)
     }
   }
@@ -104,11 +97,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   case PLT:
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    simresglob->pltReader = _wfopen(unicodeFilename, L"r");
-#else
-    simresglob->pltReader = fopen(filename, "r");
-#endif
+    simresglob->pltReader = omc_fopen(filename, "r");
     if (simresglob->pltReader==NULL) {
       msg[1] = filename;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);

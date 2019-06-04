@@ -45,6 +45,7 @@
 
 #include "errorext.h"
 #include "systemimpl.h"
+#include "omc_file.h"
 
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;
@@ -434,16 +435,11 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    * So we pass an empty string instead :)
    */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFileNameLength = SystemImpl__stringToUnicodeSize(fileName);
-  wchar_t unicodeFileName[unicodeFileNameLength];
-  SystemImpl__stringToUnicode(fileName, unicodeFileName, unicodeFileNameLength);
-
   struct _stat st;
-  _wstat(unicodeFileName, &st);
 #else
   struct stat st;
-  stat(members.filename_C, &st);
 #endif
+  omc_stat(members.filename_C, &st);
   members.timestamp = mmc_mk_rcon((double)st.st_mtime);
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 

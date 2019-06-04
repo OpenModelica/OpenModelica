@@ -32,6 +32,7 @@
 
 #include "omc_mmap.h"
 #include "omc_error.h"
+#include "omc_file.h"
 #include <string.h>
 #include <errno.h>
 
@@ -102,7 +103,7 @@ void omc_mmap_close_write_unix(omc_mmap_write_unix map)
 
 static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *size, char **data)
 {
-  FILE *file = fopen(fileName, mode);
+  FILE *file = omc_fopen(fileName, mode);
   size_t fileSize;
   if (!file) {
     throwStreamPrint(NULL, "Failed to open file %s for reading: %s\n", fileName, strerror(errno));

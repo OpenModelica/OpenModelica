@@ -87,10 +87,6 @@ extern int SystemImpl__setCXXCompiler(const char *str);
 extern int SystemImpl__setLinker(const char *str);
 extern int SystemImpl__setCFlags(const char *str);
 extern int SystemImpl__setLDFlags(const char *str);
-#if defined(__MINGW32__) || defined(_MSC_VER)
-extern int SystemImpl__stringToUnicodeSize(const char* str);
-extern int SystemImpl__stringToUnicode(const char* str, wchar_t* unicode, int size);
-#endif
 extern char* SystemImpl__pwd(void);
 extern int SystemImpl__regularFileExists(const char* str);
 extern int SystemImpl__removeFile(const char* filename);

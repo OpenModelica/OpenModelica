@@ -34,9 +34,7 @@
 #include "read_csv.h"
 #include "read_matlab4.h"
 #include "libcsv.h"
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
-#endif
+#include "omc_file.h"
 
 #if defined(__cplusplus)
 #include <sstream>
@@ -105,23 +103,7 @@ int read_csv_dataset_size(const char* filename)
   struct cell_row_count count = {0};
   size_t offset=0;
   unsigned char delim = CSV_COMMA;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-#if defined(_MSC_VER)
-  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
-#else /* mingw supports array definition with sizes from the stack */
-  wchar_t unicodeFilename[unicodeFilenameLength];
-#endif
-  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
-
-  f = _wfopen(unicodeFilename, L"r");
-#if defined(_MSC_VER)
-  if (unicodeFilename) { free(unicodeFilename); }
-#endif
-
-#else
-  f = fopen(filename,"r");
-#endif
+  f = omc_fopen(filename,"r");
   if (f == NULL) {
     return -1;
   }
@@ -234,23 +216,7 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   char **res;
   struct csv_parser p;
   struct csv_body body = {0};
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-#if defined(_MSC_VER)
-  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
-#else /* mingw supports array definition with sizes from the stack */
-  wchar_t unicodeFilename[unicodeFilenameLength];
-#endif
-  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
-
-  FILE *fin = _wfopen(unicodeFilename, L"r");
-#if defined(_MSC_VER)
-  if (unicodeFilename) { free(unicodeFilename); }
-#endif
-
-#else
-  FILE *fin = fopen(filename, "r");
-#endif
+  FILE *fin = omc_fopen(filename, "r");
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
   if (!fin) {
@@ -298,24 +264,7 @@ struct csv_data* read_csv(const char *filename)
   struct csv_data *res;
   size_t offset = 0;
   unsigned char delim = CSV_COMMA;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-
-#if defined(_MSC_VER)
-  wchar_t *unicodeFilename = (wchar_t)malloc(unicodeFilenameLength*sizeof(wchar_t));
-#else /* mingw supports array definition with sizes from the stack */
-  wchar_t unicodeFilename[unicodeFilenameLength];
-#endif
-  MultiByteToWideChar(CP_UTF8, 0, filename, -1, unicodeFilename, unicodeFilenameLength);
-
-  FILE *fin = _wfopen(unicodeFilename, L"r");
-#if defined(_MSC_VER)
-  if (unicodeFilename) { free(unicodeFilename); }
-#endif
-
-#else
-  FILE *fin = fopen(filename, "r");
-#endif
+  FILE *fin = omc_fopen(filename, "r");
   if (!fin) {
     return NULL;
   }
