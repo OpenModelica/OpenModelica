@@ -5,36 +5,46 @@ void standardSetup() {
 }
 
 def numPhysicalCPU() {
+  if (env.JENKINS_NUM_PHYSICAL_CPU) {
+    return env.JENKINS_NUM_PHYSICAL_CPU
+  }
   def uname = sh script: 'uname', returnStdout: true
   if (uname.startsWith("Darwin")) {
-    return sh (
+    env.JENKINS_NUM_PHYSICAL_CPU = sh (
       script: 'sysctl hw.physicalcpu_max | cut -d" " -f2',
       returnStdout: true
     ).trim().toInteger() ?: 1
   } else {
-    return sh (
+    env.JENKINS_NUM_PHYSICAL_CPU = sh (
       script: 'lscpu -p | egrep -v "^#" | sort -u -t, -k 2,4 | wc -l',
       returnStdout: true
     ).trim().toInteger() ?: 1
   }
+  return env.JENKINS_NUM_PHYSICAL_CPU
 }
 
 def numLogicalCPU() {
+  if (env.JENKINS_NUM_LOGICAL_CPU) {
+    return env.JENKINS_NUM_LOGICAL_CPU
+  }
   def uname = sh script: 'uname', returnStdout: true
   if (uname.startsWith("Darwin")) {
-    return sh (
+    env.JENKINS_NUM_LOGICAL_CPU = sh (
       script: 'sysctl hw.logicalcpu_max | cut -d" " -f2',
       returnStdout: true
     ).trim().toInteger() ?: 1
   } else {
-    return sh (
+    env.JENKINS_NUM_LOGICAL_CPU = sh (
       script: 'lscpu -p | egrep -v "^#" | wc -l',
       returnStdout: true
     ).trim().toInteger() ?: 1
   }
+  return env.JENKINS_NUM_LOGICAL_CPU
 }
 
 void partest(cache=true, extraArgs='') {
+  sh "rm -f omc-diff.skip && make -C testsuite/difftool clean && make --output-sync -C testsuite/difftool"
+  sh 'build/bin/omc-diff -v1.4'
   sh ("""#!/bin/bash -x
   ulimit -t 1500
   ulimit -v 6291456 # Max 6GB per process
