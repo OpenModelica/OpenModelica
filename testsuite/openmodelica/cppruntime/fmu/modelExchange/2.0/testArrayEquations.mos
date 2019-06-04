@@ -1124,9 +1124,9 @@ readFile("modelDescription.tmp.xml");
 //     name=\"n\"
 //     valueReference=\"0\"
 //     variability=\"fixed\"
-//     causality=\"parameter\"
-//     initial=\"exact\">
-//     <Integer start=\"10\"/>
+//     causality=\"calculatedParameter\"
+//     initial=\"calculated\">
+//     <Integer/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>

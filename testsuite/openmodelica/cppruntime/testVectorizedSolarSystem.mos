@@ -70,9 +70,9 @@ val(grid.P_grid, 0.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
-// 1: n:PARAM()  = 1000  type: Integer 
+// 1: n:PARAM(final = true )  = 1000  type: Integer
 // 2: plant.eta:PARAM()  = 0.9  "Efficiency" type: Real[1000]  [1000]
-// 3: grid.n:PARAM()  = 1000  type: Integer 
+// 3: grid.n:PARAM(final = true )  = 1000  type: Integer
 // 4: grid.V:PARAM(unit = "V" )  = 1000.0  type: Real 
 //
 //
@@ -139,9 +139,9 @@ val(grid.P_grid, 0.0);
 // Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
 // 1: grid.V:PARAM(unit = "V" )  = 1000.0  type: Real 
-// 2: grid.n:PARAM()  = 1000  type: Integer 
+// 2: grid.n:PARAM(final = true )  = 1000  type: Integer
 // 3: plant.eta:PARAM()  = 0.9  "Efficiency" type: Real[1000]  [1000]
-// 4: n:PARAM()  = 1000  type: Integer 
+// 4: n:PARAM(final = true )  = 1000  type: Integer
 //
 //
 // record SimulationResult

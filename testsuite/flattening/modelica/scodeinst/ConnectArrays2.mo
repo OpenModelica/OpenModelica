@@ -17,7 +17,7 @@ end ConnectArrays2;
 
 // Result:
 // class ConnectArrays2
-//   parameter Integer p = 3;
+//   final parameter Integer p = 3;
 //   input Real x[1];
 //   input Real x[2];
 //   input Real x[3];

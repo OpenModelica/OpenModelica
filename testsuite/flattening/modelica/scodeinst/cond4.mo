@@ -16,8 +16,8 @@ end B;
 
 // Result:
 // class B
-//   parameter Boolean b = true;
-//   parameter Boolean a.b = true;
+//   final parameter Boolean b = true;
+//   final parameter Boolean a.b = true;
 //   Real a.x;
 // end B;
 // endResult

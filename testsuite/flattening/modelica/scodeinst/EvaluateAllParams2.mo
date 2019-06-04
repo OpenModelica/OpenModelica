@@ -16,7 +16,7 @@ end EvaluateAllParams2;
 // class EvaluateAllParams2
 //   parameter Real p(fixed = false);
 //   parameter Real q = 2.0 * p;
-//   parameter Real r = 2.0;
+//   final parameter Real r = 2.0;
 // initial equation
 //   p - 2.0 = 0.0;
 // end EvaluateAllParams2;

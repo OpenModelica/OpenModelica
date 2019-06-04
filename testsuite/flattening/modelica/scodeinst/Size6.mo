@@ -28,6 +28,6 @@ end Size6;
 //   Real a.x[2];
 //   Real a.x[3];
 //   Real a.x[4];
-//   parameter Integer n = 4;
+//   final parameter Integer n = 4;
 // end Size6;
 // endResult

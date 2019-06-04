@@ -28,7 +28,7 @@ end RedeclareMod5;
 
 // Result:
 // class RedeclareMod5
-//   parameter Integer grid.nLinks = 1;
+//   final parameter Integer grid.nLinks = 1;
 //   parameter Real grid.l[1,1] = 200.0;
 //   parameter Real lines[1].l = 1.0;
 // end RedeclareMod5;

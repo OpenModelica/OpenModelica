@@ -16,7 +16,7 @@ end IfEquation4;
 
 // Result:
 // class IfEquation4
-//   parameter enumeration(one, two, three) e = E.one;
+//   final parameter enumeration(one, two, three) e = E.one;
 //   Real x = 1.0;
 // end IfEquation4;
 // endResult

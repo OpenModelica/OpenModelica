@@ -13,10 +13,10 @@ end A;
 
 // Result:
 // class A
-//   parameter Integer n[1] = 1;
-//   parameter Integer n[2] = 2;
-//   parameter Integer n[3] = 3;
-//   parameter Integer m = 2;
+//   final parameter Integer n[1] = 1;
+//   final parameter Integer n[2] = 2;
+//   final parameter Integer n[3] = 3;
+//   final parameter Integer m = 2;
 //   Real x[1];
 //   Real x[2];
 // end A;

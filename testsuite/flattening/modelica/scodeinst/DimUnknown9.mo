@@ -12,7 +12,7 @@ end DimUnknown9;
 
 // Result:
 // class DimUnknown9
-//   parameter Integer n = 3;
+//   final parameter Integer n = 3;
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];
