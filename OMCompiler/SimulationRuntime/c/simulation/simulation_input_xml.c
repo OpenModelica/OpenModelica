@@ -39,18 +39,17 @@
 
 
 #include "simulation_input_xml.h"
-
+#include "simulation_runtime.h"
+#include "options.h"
+#include "../util/omc_error.h"
 #include "../meta/meta_modelica.h"
 #include "../util/modelica_string.h"
-#include "../util/omc_error.h"
+
+#include <limits.h>
 #include "../util/uthash.h"
-#include "options.h"
-#include "simulation_runtime.h"
-#include "solver/epsilon.h"
+#include <string.h>
 #include <ctype.h>
 #include <expat.h>
-#include <limits.h>
-#include <string.h>
 
 typedef struct hash_string_string
 {
@@ -538,9 +537,6 @@ void read_input_xml(MODEL_DATA* modelData,
 
   read_value_real(findHashStringString(mi.de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   infoStreamPrint(LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
-
-  read_value_real(findHashStringString(mi.de,"minStepSize"), &(simulationInfo->minStepSize), 1e-4 * fmin(MINIMAL_STEP_SIZE, simulationInfo->stopTime - simulationInfo->startTime));
-  infoStreamPrint(LOG_SIMULATION, 0, "minStepSize = %g", simulationInfo->minStepSize);
 
   read_value_real(findHashStringString(mi.de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);

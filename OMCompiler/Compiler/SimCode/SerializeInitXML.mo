@@ -231,10 +231,6 @@ algorithm
   File.writeReal(file, s.stepSize);
   File.write(file, "\"\n");
 
-  File.write(file, "    minStepSize    = \"");
-  File.writeReal(file, 1e-4 * min(1e-12, s.stopTime-s.startTime));
-  File.write(file, "\"\n");
-
   File.write(file, "    tolerance      = \"");
   File.writeReal(file, s.tolerance);
   File.write(file, "\"\n");
