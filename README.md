@@ -2,7 +2,7 @@
 
 [OpenModelica](https://openmodelica.org) is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
-## Dependencies (Linux/OSX)
+## Dependencies (Linux/OSX) 
 
 Many software packages are included inside the repositories.
 To get everything running, you will need a few extras:
