@@ -1,0 +1,30 @@
+def common
+pipeline {
+  agent none
+  environment {
+    LC_ALL = 'C.UTF-8'
+  }
+  stages {
+    stage('Windows-MinGW') {
+      agent {
+        node {
+          label 'windows.openmodelica.org'
+        }
+      }
+      environment {
+	    PATH="c:\Program Files\TortoiseSVN\bin;c:\bin\jdk\bin;c:\bin\nsis\;$PATH;c:\bin\git\bin"
+        RUNTESTDB = "c:/dev/"
+        LIBRARIES = "c:/dev/jenkins-cache/omlibrary"
+      }
+      steps {
+        script {
+          common = load("${env.workspace}/.CI/mingw.groovy")
+        }
+        common.buildOMC('gcc', 'g++', '')
+        common.buildGUI('')
+        common.makeLibsAndCache()
+        common.partest()
+      }
+    }
+  }
+}

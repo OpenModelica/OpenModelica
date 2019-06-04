@@ -1,3 +1,9 @@
+
+def isWindows
+{
+  return !isUnix()
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
   // Jenkins cleans with -fdx; --ffdx is needed to remove git repositories
