@@ -29,6 +29,7 @@
  */
 
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
 #include "simulation/solver/external_input.h"
@@ -604,8 +605,7 @@ int linearize(DATA* data, threadData_t *threadData)
     }
 #endif
 
-
-    FILE *fout = fopen(filename.c_str(),"wb");
+    FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
     if(do_data_recovery > 0){
         fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());

@@ -46,6 +46,7 @@ extern "C"
 #include <limits.h>
 #include <stdlib.h>
 #include "omc_msvc.h"
+#include "omc_file.h"
 #include "openmodelica.h"
 #include "meta_modelica.h"
 #include "ModelicaUtilities.h"
@@ -826,9 +827,8 @@ extern const char* System_sprintff(const char *fmt, double d)
 extern const char* System_realpath(const char *path)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodePathLength = SystemImpl__stringToUnicodeSize(path);
-  wchar_t unicodePath[unicodePathLength];
-  SystemImpl__stringToUnicode(path, unicodePath, unicodePathLength);
+  MULTIBYTE_TO_WIDECHAR_LENGTH(path, unicodePathLength);
+  MULTIBYTE_TO_WIDECHAR_VAR(path, unicodePath, unicodePathLength);
 
   DWORD bufLen = 0;
   bufLen = GetFullPathNameW(unicodePath, bufLen, NULL, NULL);
@@ -839,15 +839,18 @@ extern const char* System_realpath(const char *path)
 
   WCHAR unicodeFullPath[bufLen];
   if (!GetFullPathNameW(unicodePath, bufLen, unicodeFullPath, NULL)) {
+    MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
     fprintf(stderr, "GetFullPathNameW failed. %lu\n", GetLastError());
     MMC_THROW();
   }
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
 
-  int bufferLength = SystemImpl__unicodeToStringSize(unicodeFullPath);
-  char buffer[bufferLength];
-  SystemImpl__unicodeToString(unicodeFullPath, buffer, bufferLength);
+  WIDECHAR_TO_MULTIBYTE_LENGTH(unicodeFullPath, bufferLength);
+  WIDECHAR_TO_MULTIBYTE_VAR(unicodeFullPath, buffer, bufferLength);
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
-  return omc_alloc_interface.malloc_strdup(buffer);
+  char *res = omc_alloc_interface.malloc_strdup(buffer);
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  return res;
 #else
   char buf[PATH_MAX];
   if (realpath(path, buf) == NULL) {

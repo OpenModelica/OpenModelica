@@ -42,6 +42,7 @@
 #include "dae_mode.h"
 
 #include "../../util/omc_error.h"
+#include "../../util/omc_file.h"
 #include "external_input.h"
 #include "../options.h"
 #include <math.h>
@@ -186,13 +187,13 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
     char* filename = (char*) malloc((len+15) * sizeof(char));
     strncpy(filename,fullFileName,len);
     strncpy(&filename[len],"_prof.realdata",15);
-    mt->fmtReal = fopen(filename, "wb");
+    mt->fmtReal = omc_fopen(filename, "wb");
     if(!mt->fmtReal)
     {
       warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
     }
     strncpy(&filename[len],"_prof.intdata",14);
-    mt->fmtInt = fopen(filename, "wb");
+    mt->fmtInt = omc_fopen(filename, "wb");
     if(!mt->fmtInt)
     {
       warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));

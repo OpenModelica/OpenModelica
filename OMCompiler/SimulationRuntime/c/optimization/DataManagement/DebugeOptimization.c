@@ -33,6 +33,7 @@
 
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
+#include "../../util/omc_file.h"
 
 
 /*!
@@ -58,7 +59,7 @@ void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda){
   double tmp;
 
   sprintf(buffer, "%s_%d.csv", optData->ipop.csvOstep,optData->dim.iter);
-  pFile = fopen(buffer, "wt");
+  pFile = omc_fopen(buffer, "wt");
 
   fprintf(pFile, "%s", "\"time\"");
   for(i = 0; i < nx; ++i){
@@ -127,7 +128,7 @@ void debugeJac(OptData * optData, Number* vopt){
 
   sJ = optData->s.JderCon;
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
-  pFile = fopen(buffer, "wt");
+  pFile = omc_fopen(buffer, "wt");
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -191,8 +192,8 @@ void debugeJac(OptData * optData, Number* vopt){
 
   optData->index = 1;
 #undef DF_STEP
- sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
-  pFile = fopen(buffer, "wt");
+  sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
+  pFile = omc_fopen(buffer, "wt");
 
   fprintf(pFile,"name;time;");
   for(j = 0; j < nx; ++j)
@@ -218,7 +219,7 @@ void debugeJac(OptData * optData, Number* vopt){
   optData2ModelData(optData, vopt, optData->index);
 
   if(optData->iter_ < 2){
-    pFile = fopen("omc_check_jac.py", "wt");
+    pFile = omc_fopen("omc_check_jac.py", "wt");
     fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\n\n");
     fprintf(pFile,"  Input i:\n");
     for(j = 0; j < nx; ++j)

@@ -2198,6 +2198,7 @@ void SetupDialog::applySetup()
   mpPlotWindow->getPlot()->replot();
 }
 
+#include "util/omc_file.c"
 #include "util/read_matlab4.c"
 #include "util/libcsv.c"
 #include "util/read_csv.c"

@@ -30,6 +30,7 @@
 
 #include "MatVer4.h"
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "util/rtclock.h"
 #include "simulation/options.h"
 #include "simulation_result_mat4.h"
@@ -78,7 +79,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   matData->type = omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE;
 
-  matData->pFile = fopen(self->filename, "wb+");
+  matData->pFile = omc_fopen(self->filename, "wb+");
   if (!matData->pFile)
   {
     throwStreamPrint(threadData, "Cannot open file %s for writing", self->filename);

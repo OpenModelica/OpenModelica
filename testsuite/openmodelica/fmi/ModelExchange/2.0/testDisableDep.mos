@@ -82,6 +82,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
 //       <File name=\"./util/omc_error.c\" />
+//       <File name=\"./util/omc_file.c\" />
 //       <File name=\"./util/division.c\" />
 //       <File name=\"./util/generic_array.c\" />
 //       <File name=\"./util/index_spec.c\" />

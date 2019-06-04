@@ -39,6 +39,7 @@
  */
 
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "simulation_result_csv.h"
 #include "util/rtclock.h"
 
@@ -117,7 +118,7 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
   const MODEL_DATA *mData = data->modelData;
 
   const char* format = ",\"%s\"";
-  FILE *fout = fopen(self->filename, "w");
+  FILE *fout = omc_fopen(self->filename, "w");
 
   assertStreamPrint(threadData, 0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 

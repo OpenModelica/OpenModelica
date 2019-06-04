@@ -34,6 +34,8 @@
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 
+#include "../../util/omc_file.h"
+
 #include "simulation/solver/dassl.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
@@ -62,8 +64,8 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
   optData->ipop.csvOstep = (char*)(omc_flagValue[FLAG_CSV_OSTEP]);
   optData->ipop.debugeJ = (char*)omc_flagValue[FLAG_OPTDEBUGEJAC];
 
+  optData->pFile = omc_fopen("optimizeInput.csv", "wt");
 
-  optData->pFile = fopen("optimizeInput.csv", "wt");
   fprintf(optData->pFile, "%s ", "time");
   for(i=0; i < nu; ++i){
     sprintf(buffer, "%s", optData->dim.inputName[i]);

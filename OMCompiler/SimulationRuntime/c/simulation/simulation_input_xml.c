@@ -42,6 +42,7 @@
 #include "simulation_runtime.h"
 #include "options.h"
 #include "../util/omc_error.h"
+#include "../util/omc_file.h"
 #include "../meta/meta_modelica.h"
 #include "../util/modelica_string.h"
 
@@ -456,7 +457,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
 
     /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
-    file = fopen(filename, "r");
+    file = omc_fopen(filename, "r");
     if(!file) {
       throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.",filename);
     }

@@ -45,6 +45,7 @@
 #include "../options.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_error.h"
+#include "../../util/omc_file.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
 #include "../../meta/meta_modelica.h"
@@ -1675,7 +1676,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     {
       sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
-      pFile = fopen(buffer, "wt");
+      pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<n; ++i)
         fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&solverData->data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);

@@ -36,6 +36,7 @@
 
 #include "../../util/simulation_options.h"
 #include "../../util/omc_error.h"
+#include "../../util/omc_file.h"
 #include "nonlinearSystem.h"
 #include "nonlinearValuesList.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1076,7 +1077,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     {
       sprintf(buffer, "%s_nonlinsys%d_equidistant_local_homotopy.csv", data->modelData->modelFilePrefix, sysNumber);
       infoStreamPrint(LOG_INIT, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
-      pFile = fopen(buffer, "wt");
+      pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(j=0; j<nonlinsys->size; ++j)
         fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex).vars[j]);

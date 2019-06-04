@@ -36,6 +36,7 @@
 #include "simulation_data.h"
 
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "gc/omc_gc.h"
 #include "util/read_csv.h"
 #include "util/libcsv.h"
@@ -62,11 +63,11 @@ int externalInputallocate(DATA* data)
     cflags = (char*)omc_flagValue[FLAG_INPUT_FILE];
     useLibCsvH = 0;
     if(cflags){
-      pFile = fopen(cflags,"r");
+      pFile = omc_fopen(cflags,"r");
       if(pFile == NULL)
         warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
     }else{
-      pFile = fopen("externalInput.csv","r");
+      pFile = omc_fopen("externalInput.csv","r");
     }
   }
 

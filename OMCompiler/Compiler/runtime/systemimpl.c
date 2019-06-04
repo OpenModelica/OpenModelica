@@ -51,8 +51,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <time.h>
 #include <math.h>
 
@@ -262,26 +260,6 @@ extern int SystemImpl__setLDFlags(const char *str)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-extern int SystemImpl__stringToUnicodeSize(const char* str)
-{
-  return MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
-}
-
-extern int SystemImpl__stringToUnicode(const char* str, wchar_t* unicode, int size)
-{
-  return MultiByteToWideChar(CP_UTF8, 0, str, -1, unicode, size);
-}
-
-int SystemImpl__unicodeToStringSize(const wchar_t* unicode)
-{
-  return WideCharToMultiByte(CP_UTF8, 0, unicode, -1, NULL, 0, NULL, NULL);
-}
-
-int SystemImpl__unicodeToString(const wchar_t* unicode, char* str, int size)
-{
-  return WideCharToMultiByte(CP_UTF8, 0, unicode, -1, str, size, NULL, NULL);
-}
-
 /* Make sure windows paths use frontslash and not backslash */
 void SystemImpl__toWindowsSeperators(char* buffer, int bufferLength)
 {
@@ -295,14 +273,15 @@ void SystemImpl__toWindowsSeperators(char* buffer, int bufferLength)
 int SystemImpl__chdir(const char* path)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodePathLength = SystemImpl__stringToUnicodeSize(path);
-  wchar_t unicodePath[unicodePathLength];
-  SystemImpl__stringToUnicode(path, unicodePath, unicodePathLength);
+  MULTIBYTE_TO_WIDECHAR_LENGTH(path, unicodePathLength);
+  MULTIBYTE_TO_WIDECHAR_VAR(path, unicodePath, unicodePathLength);
 
   if (!SetCurrentDirectoryW(unicodePath)) {
+    MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("SetCurrentDirectoryW failed."),NULL,0);
     return -1;
   }
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodePath);
   return 0;
 #else
   if (chdir(path) != 0) {
@@ -328,11 +307,12 @@ extern char* SystemImpl__pwd(void)
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("GetCurrentDirectoryW failed."),NULL,0);
     return NULL;
   }
-  int bufferLength = SystemImpl__unicodeToStringSize(unicodePath);
-  char buffer[bufferLength];
-  SystemImpl__unicodeToString(unicodePath, buffer, bufferLength);
+  WIDECHAR_TO_MULTIBYTE_LENGTH(unicodePath, bufferLength);
+  WIDECHAR_TO_MULTIBYTE_VAR(unicodePath, buffer, bufferLength);
   SystemImpl__toWindowsSeperators(buffer, bufferLength);
-  return omc_alloc_interface.malloc_strdup(buffer);
+  char *res = omc_alloc_interface.malloc_strdup(buffer);
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(buffer);
+  return res;
 #else
   char buf[MAXPATHLEN];
   if (NULL == getcwd(buf,MAXPATHLEN)) {
@@ -349,11 +329,12 @@ extern int SystemImpl__regularFileExists(const char* str)
   WIN32_FIND_DATAW FileData;
   HANDLE sh;
 
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(str);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(str, unicodeFilename, unicodeFilenameLength);
+  MULTIBYTE_TO_WIDECHAR_LENGTH(str, unicodeFilenameLength);
+  MULTIBYTE_TO_WIDECHAR_VAR(str, unicodeFilename, unicodeFilenameLength);
 
   sh = FindFirstFileW(unicodeFilename, &FileData);
+
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
 
   if (sh == INVALID_HANDLE_VALUE) {
     if (strlen(str) >= MAXPATHLEN)
@@ -383,15 +364,7 @@ extern int SystemImpl__regularFileWritable(const char* str)
   FILE *f;
   if (!SystemImpl__regularFileExists(str))
     return 0;
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(str);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(str, unicodeFilename, unicodeFilenameLength);
-
-  f = _wfopen(unicodeFilename, L"a");
-#else
-  f = fopen(str, "a");
-#endif
+  f = omc_fopen(str, "a");
   if (f == NULL)
     return 0;
   fclose(f);
@@ -404,16 +377,11 @@ static char* SystemImpl__readFile(const char* filename)
   int res;
   FILE * file = NULL;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(filename);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(filename, unicodeFilename, unicodeFilenameLength);
-
   struct _stat statstr;
-  res = _wstat(unicodeFilename, &statstr);
 #else
   struct stat statstr;
-  res = stat(filename, &statstr);
 #endif
+  res = omc_stat(filename, &statstr);
 
   if (res != 0) {
     const char *c_tokens[2]={strerror(errno),filename};
@@ -440,11 +408,7 @@ static char* SystemImpl__readFile(const char* filename)
   }
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  file = _wfopen(unicodeFilename, L"rb");
-#else
-  file = fopen(filename,"rb");
-#endif
+  file = omc_fopen(filename,"rb");
   if (file == NULL) {
     const char *c_tokens[2]={strerror(errno),filename};
     c_add_message(NULL, 85, /* ERROR_OPENING_FILE */
@@ -476,15 +440,7 @@ static char* SystemImpl__readFile(const char* filename)
 /* returns 0 on success */
 int SystemImpl__removeFile(const char* filename)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(filename);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(filename, unicodeFilename, unicodeFilenameLength);
-
-  return _wunlink(unicodeFilename);
-#else /* unix */
-  return unlink(filename);
-#endif
+  return omc_unlink(filename);
 }
 
 /* returns 0 on success */
@@ -492,14 +448,6 @@ int SystemImpl__writeFile(const char* filename, const char* data)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
-
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(filename);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(filename, unicodeFilename, unicodeFilenameLength);
-
-  int unicodeFileOpenModeLength = SystemImpl__stringToUnicodeSize(fileOpenMode);
-  wchar_t unicodeFileOpenMode[unicodeFileOpenModeLength];
-  SystemImpl__stringToUnicode(fileOpenMode, unicodeFileOpenMode, unicodeFileOpenModeLength);
 #else
   const char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
 #endif
@@ -509,11 +457,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   SystemImpl__removeFile(filename);
 #endif
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  file = _wfopen(unicodeFilename, unicodeFileOpenMode);
-#else
-  file = fopen(filename,fileOpenMode);
-#endif
+  file = omc_fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(NULL,21, /* WRITING_FILE_ERROR */
@@ -658,9 +602,8 @@ int runProcess(const char* cmd)
 
   /* fprintf(stderr, "%s\n", command); fflush(NULL); */
 
-  int unicodeCommandLength = SystemImpl__stringToUnicodeSize(command);
-  wchar_t unicodeCommand[unicodeCommandLength];
-  SystemImpl__stringToUnicode(command, unicodeCommand, unicodeCommandLength);
+  MULTIBYTE_TO_WIDECHAR_LENGTH(command, unicodeCommandLength);
+  MULTIBYTE_TO_WIDECHAR_VAR(command, unicodeCommand, unicodeCommandLength);
 
   if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
   {
@@ -670,6 +613,7 @@ int runProcess(const char* cmd)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
   }
+  MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeCommand);
   GC_free(command);
   return (int)exitCode;
 }
@@ -1278,16 +1222,11 @@ extern const char* SystemImpl__readFileNoNumeric(const char* filename)
   int res,numCount;
   FILE * file = NULL;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int unicodeFilenameLength = SystemImpl__stringToUnicodeSize(filename);
-  wchar_t unicodeFilename[unicodeFilenameLength];
-  SystemImpl__stringToUnicode(filename, unicodeFilename, unicodeFilenameLength);
-
   struct _stat statstr;
-  res = _wstat(unicodeFilename, &statstr);
 #else
   struct stat statstr;
-  res = stat(filename, &statstr);
 #endif
+  res = omc_stat(filename, &statstr);
 
   if(res!=0) {
     const char *c_tokens[1]={filename};
@@ -1300,11 +1239,7 @@ extern const char* SystemImpl__readFileNoNumeric(const char* filename)
     return "No such file";
   }
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  file = _wfopen(unicodeFilename, L"rb");
-#else
-  file = fopen(filename,"rb");
-#endif
+  file = omc_fopen(filename,"rb");
   buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
   bufRes = (char*) omc_alloc_interface.malloc_atomic((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {

@@ -60,6 +60,7 @@
 #endif
 
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
 #include "meta/meta_modelica.h"
@@ -1015,26 +1016,39 @@ void communicateMsg(char id, unsigned int size, const char *data)
 
 int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
 {
-  int retVal = -1;
-  MMC_TRY_INTERNAL(globalJumpBuffer)
-    if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
-      return 1;
-
-    /* sighandler_t oldhandler = different type on all platforms... */
-#ifdef SIGUSR1
-    SimulationRuntime_printStatus_data = data; /* Global, but at least we get something back; doesn't matter which simulation run */
-    signal(SIGUSR1, SimulationRuntime_printStatus);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* Support for non-ASCII characters
+   * Read the unicode command line arguments and replace the normal arguments with it.
+   */
+  wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
+  for (int i = 0; i < argc; i++) {
+    WIDECHAR_TO_MULTIBYTE_LENGTH(wargv[i], len);
+    WIDECHAR_TO_MULTIBYTE_VAR(wargv[i], buf, len);
+    strcpy(argv[i], buf);
+    MULTIBYTE_OR_WIDECHAR_VAR_FREE(buf);
+  }
 #endif
 
-    retVal = startNonInteractiveSimulation(argc, argv, data, threadData);
+  int retVal = -1;
+  MMC_TRY_INTERNAL(globalJumpBuffer)
+  if (initRuntimeAndSimulation(argc, argv, data, threadData)) //initRuntimeAndSimulation returns 1 if an error occurs
+    return 1;
 
-    freeMixedSystems(data, threadData);        /* free mixed system data */
-    freeLinearSystems(data, threadData);       /* free linear system data */
-    freeNonlinearSystems(data, threadData);    /* free nonlinear system data */
+  /* sighandler_t oldhandler = different type on all platforms... */
+#ifdef SIGUSR1
+  SimulationRuntime_printStatus_data = data; /* Global, but at least we get something back; doesn't matter which simulation run */
+  signal(SIGUSR1, SimulationRuntime_printStatus);
+#endif
 
-    data->callback->callExternalObjectDestructors(data, threadData);
-    deInitializeDataStruc(data);
-    fflush(NULL);
+  retVal = startNonInteractiveSimulation(argc, argv, data, threadData);
+
+  freeMixedSystems(data, threadData);        /* free mixed system data */
+  freeLinearSystems(data, threadData);       /* free linear system data */
+  freeNonlinearSystems(data, threadData);    /* free nonlinear system data */
+
+  data->callback->callExternalObjectDestructors(data, threadData);
+  deInitializeDataStruc(data);
+  fflush(NULL);
   MMC_CATCH_INTERNAL(globalJumpBuffer)
 
 #ifndef NO_INTERACTIVE_DEPENDENCY

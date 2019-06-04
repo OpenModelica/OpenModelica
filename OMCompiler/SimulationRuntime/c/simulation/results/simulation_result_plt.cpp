@@ -39,6 +39,7 @@
  */
 
 #include "util/omc_error.h"
+#include "util/omc_file.h"
 #include "simulation_result_plt.h"
 #include "util/rtclock.h"
 
@@ -246,7 +247,7 @@ void plt_free(simulation_result *self,DATA *data, threadData_t *threadData)
 
   rt_tick(SIM_TIMER_OUTPUT);
 
-  f = fopen(self->filename, "w");
+  f = omc_fopen(self->filename, "w");
   if(!f)
   {
     deallocResult(pltData);

@@ -40,6 +40,7 @@
 #include "../omc_simulation_settings.h"
 #include "omc_gc.h"
 #include "../util/omc_error.h"
+#include "../util/omc_file.h"
 #include "../util/omc_init.h"
 
 static mmc_GC_state_type x_mmc_GC_state = {0};
@@ -67,7 +68,7 @@ static void print_words()
   pid_t pid = getpid();
   char str[50];
   sprintf(str, "omc-memory.%d.txt", pid);
-  FILE *fout = fopen(str, "w");
+  FILE *fout = omc_fopen(str, "w");
   HASH_ITER(hh, table, entry, tmp) {
     fprintf(fout, "%ld: %s\n", (long) entry->count, entry->pos);
   }
