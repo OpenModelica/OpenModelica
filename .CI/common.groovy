@@ -56,7 +56,7 @@ void partest(cache=true, extraArgs='') {
 
 void patchConfigStatus() {
   // Running on nodes with different paths for the workspace
-  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status OMCompiler/config.status'
+  sh 'sed -i.bak "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status OMCompiler/config.status'
 }
 
 void makeLibsAndCache(libs='core') {
@@ -68,7 +68,7 @@ void makeLibsAndCache(libs='core') {
   sh "find libraries"
   sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
   generateTemplates()
-  def cmd = "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles omc-diff"
+  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles omc-diff"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
@@ -84,26 +84,28 @@ void buildOMC(CC, CXX, extraFlags) {
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
-  sh "HOME='${env.WORKSPACE}' make -j${numPhysicalCPU()} --output-sync omc omc-diff omsimulator"
+  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} --output-sync omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
 }
 
 void buildGUI(stash) {
-  standardSetup()
   if (stash) {
+    standardSetup()
     unstash stash
   }
   sh 'autoconf'
-  patchConfigStatus()
+  if (stash) {
+    patchConfigStatus()
+  }
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
-  sh 'touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && make -q omc omc-diff ReferenceFiles omsimulator' // Pretend we already built omc since we already did so
-  sh "make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
+  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
 }
 
 void generateTemplates() {
   patchConfigStatus()
   // Runs Susan again, for bootstrapping tests, etc
-  sh 'make -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=$PWD/build/bin/omc'
+  sh "${makeCommand()} -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=\$PWD/build/bin/omc"
   sh 'cd OMCompiler && ./config.status'
   sh './config.status'
 }
@@ -136,6 +138,11 @@ def cacheBranch() {
 def tagName() {
   def name = env.TAG_NAME ?: cacheBranch()
   return name == "master" ? "latest" : name
+}
+
+def makeCommand() {
+  // OSX uses gmake as the GNU make program
+  return env.GMAKE ?: "make"
 }
 
 return this
