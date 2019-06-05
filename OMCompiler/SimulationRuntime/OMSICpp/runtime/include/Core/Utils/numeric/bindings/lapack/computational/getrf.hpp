@@ -40,22 +40,25 @@
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end LAPACK-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end LAPACK-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_LAPACK_CLAPACK
-//
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * float value-type.
 //
 template< typename Order >
 inline std::ptrdiff_t getrf( Order, const int m, const int n, float* a,
@@ -65,9 +68,9 @@ inline std::ptrdiff_t getrf( Order, const int m, const int n, float* a,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * double value-type.
 //
 template< typename Order >
 inline std::ptrdiff_t getrf( Order, const int m, const int n, double* a,
@@ -77,9 +80,9 @@ inline std::ptrdiff_t getrf( Order, const int m, const int n, double* a,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order >
 inline std::ptrdiff_t getrf( Order, const int m, const int n,
@@ -89,9 +92,9 @@ inline std::ptrdiff_t getrf( Order, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order >
 inline std::ptrdiff_t getrf( Order, const int m, const int n,
@@ -101,128 +104,132 @@ inline std::ptrdiff_t getrf( Order, const int m, const int n,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * float value-type.
-//
-template< typename Order >
-inline std::ptrdiff_t getrf( Order, const fortran_int_t m,
-        const fortran_int_t n, float* a, const fortran_int_t lda,
-        fortran_int_t* ipiv ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_SGETRF( &m, &n, a, &lda, ipiv, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order>
+                    inline std::ptrdiff_t getrf(Order, const fortran_int_t m,
+                                                const fortran_int_t n, float* a, const fortran_int_t lda,
+                                                fortran_int_t* ipiv)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_SGETRF(&m, &n, a, &lda, ipiv, &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * double value-type.
-//
-template< typename Order >
-inline std::ptrdiff_t getrf( Order, const fortran_int_t m,
-        const fortran_int_t n, double* a, const fortran_int_t lda,
-        fortran_int_t* ipiv ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_DGETRF( &m, &n, a, &lda, ipiv, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order>
+                    inline std::ptrdiff_t getrf(Order, const fortran_int_t m,
+                                                const fortran_int_t n, double* a, const fortran_int_t lda,
+                                                fortran_int_t* ipiv)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_DGETRF(&m, &n, a, &lda, ipiv, &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order >
-inline std::ptrdiff_t getrf( Order, const fortran_int_t m,
-        const fortran_int_t n, std::complex<float>* a,
-        const fortran_int_t lda, fortran_int_t* ipiv ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_CGETRF( &m, &n, a, &lda, ipiv, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order>
+                    inline std::ptrdiff_t getrf(Order, const fortran_int_t m,
+                                                const fortran_int_t n, std::complex<float>* a,
+                                                const fortran_int_t lda, fortran_int_t* ipiv)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_CGETRF(&m, &n, a, &lda, ipiv, &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order >
-inline std::ptrdiff_t getrf( Order, const fortran_int_t m,
-        const fortran_int_t n, std::complex<double>* a,
-        const fortran_int_t lda, fortran_int_t* ipiv ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_ZGETRF( &m, &n, a, &lda, ipiv, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order>
+                    inline std::ptrdiff_t getrf(Order, const fortran_int_t m,
+                                                const fortran_int_t n, std::complex<double>* a,
+                                                const fortran_int_t lda, fortran_int_t* ipiv)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_ZGETRF(&m, &n, a, &lda, ipiv, &info);
+                        return info;
+                    }
 
 #endif
-} // namespace detail
+                } // namespace detail
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to getrf.
-//
-template< typename Value >
-struct getrf_impl {
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to getrf.
+                //
+                template <typename Value>
+                struct getrf_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-
-    //
-    // Static member function, that
-    // * Deduces the required arguments for dispatching to LAPACK, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixA, typename VectorIPIV >
-    static std::ptrdiff_t invoke( MatrixA& a, VectorIPIV& ipiv ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::data_order< MatrixA >::type order;
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixA >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorIPIV >::value) );
-        BOOST_ASSERT( bindings::size(ipiv) >= std::min<
-                std::ptrdiff_t >(bindings::size_row(a),
-                bindings::size_column(a)) );
-        BOOST_ASSERT( bindings::size_column(a) >= 0 );
-        BOOST_ASSERT( bindings::size_minor(a) == 1 ||
-                bindings::stride_minor(a) == 1 );
-        BOOST_ASSERT( bindings::size_row(a) >= 0 );
-        BOOST_ASSERT( bindings::stride_major(a) >= std::max< std::ptrdiff_t >(1,
-                bindings::size_row(a)) );
-        return detail::getrf( order(), bindings::size_row(a),
-                bindings::size_column(a), bindings::begin_value(a),
-                bindings::stride_major(a), bindings::begin_value(ipiv) );
-    }
-
-};
+                    //
+                    // Static member function, that
+                    // * Deduces the required arguments for dispatching to LAPACK, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixA, typename VectorIPIV>
+                    static std::ptrdiff_t invoke(MatrixA& a, VectorIPIV& ipiv)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::data_order<MatrixA>::type order;
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixA>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorIPIV>::value));
+                        BOOST_ASSERT(bindings::size(ipiv) >= std::min<
+                            std::ptrdiff_t>(bindings::size_row(a),
+                                            bindings::size_column(a)));
+                        BOOST_ASSERT(bindings::size_column(a) >= 0);
+                        BOOST_ASSERT(bindings::size_minor(a) == 1 ||
+                            bindings::stride_minor(a) == 1);
+                        BOOST_ASSERT(bindings::size_row(a) >= 0);
+                        BOOST_ASSERT(bindings::stride_major(a) >= std::max<std::ptrdiff_t>(1,
+                                                                                           bindings::size_row(a)));
+                        return detail::getrf(order(), bindings::size_row(a),
+                                             bindings::size_column(a), bindings::begin_value(a),
+                                             bindings::stride_major(a), bindings::begin_value(ipiv));
+                    }
+                };
 
 
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. In
-// addition, if applicable, they are overloaded for user-defined workspaces.
-// Calls to these functions are passed to the getrf_impl classes. In the
-// documentation, most overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. In
+                // addition, if applicable, they are overloaded for user-defined workspaces.
+                // Calls to these functions are passed to the getrf_impl classes. In the
+                // documentation, most overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-//
-// Overloaded function for getrf. Its overload differs for
-//
-template< typename MatrixA, typename VectorIPIV >
-inline std::ptrdiff_t getrf( MatrixA& a, VectorIPIV& ipiv ) {
-    return getrf_impl< typename bindings::value_type<
-            MatrixA >::type >::invoke( a, ipiv );
-}
-
-} // namespace lapack
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for getrf. Its overload differs for
+                //
+                template <typename MatrixA, typename VectorIPIV>
+                inline std::ptrdiff_t getrf(MatrixA& a, VectorIPIV& ipiv)
+                {
+                    return getrf_impl<typename bindings::value_type<
+                        MatrixA>::type>::invoke(a, ipiv);
+                }
+            } // namespace lapack
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

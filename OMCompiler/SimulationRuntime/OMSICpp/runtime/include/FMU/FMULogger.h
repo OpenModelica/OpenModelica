@@ -14,15 +14,16 @@
 #include "fmiModelFunctions.h"
 
 class BOOST_EXTENSION_EXPORT_DECL FMULogger : Logger
-{
+    {
   public:
-    FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName);
+        FMULogger(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName);
     virtual ~FMULogger();
 
     static void initialize(fmiCallbackLogger callbackLogger, fmiComponent component, fmiString instanceName)
-    {
-      _instance = new FMULogger(callbackLogger, component, instanceName);
-    }
+        {
+            _instance = new FMULogger(callbackLogger, component, instanceName);
+    
+        }
 
   protected:
     virtual void writeInternal(std::string errorMsg, LogCategory cat, LogLevel lvl, LogStructure ls);
@@ -30,6 +31,7 @@ class BOOST_EXTENSION_EXPORT_DECL FMULogger : Logger
     fmiCallbackLogger callbackLogger;
     fmiComponent component;
     fmiString instanceName;
-};
+
+    };
 
 #endif /* FMULOGGER_H_ */

@@ -47,22 +47,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -75,9 +78,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -90,9 +93,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -107,9 +110,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -124,10 +127,10 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -140,9 +143,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -155,9 +158,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -172,9 +175,9 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo, typename Trans >
 inline void syr2k( const Order, const UpLo, const Trans, const int n,
@@ -189,150 +192,154 @@ inline void syr2k( const Order, const UpLo, const Trans, const int n,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename UpLo, typename Trans >
-inline void syr2k( const Order, const UpLo, const Trans,
-        const fortran_int_t n, const fortran_int_t k, const float alpha,
-        const float* a, const fortran_int_t lda, const float* b,
-        const fortran_int_t ldb, const float beta, float* c,
-        const fortran_int_t ldc ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_SSYR2K( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans>
+                    inline void syr2k(const Order, const UpLo, const Trans,
+                                      const fortran_int_t n, const fortran_int_t k, const float alpha,
+                                      const float* a, const fortran_int_t lda, const float* b,
+                                      const fortran_int_t ldb, const float beta, float* c,
+                                      const fortran_int_t ldc)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_SSYR2K(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                    &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename UpLo, typename Trans >
-inline void syr2k( const Order, const UpLo, const Trans,
-        const fortran_int_t n, const fortran_int_t k, const double alpha,
-        const double* a, const fortran_int_t lda, const double* b,
-        const fortran_int_t ldb, const double beta, double* c,
-        const fortran_int_t ldc ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_DSYR2K( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans>
+                    inline void syr2k(const Order, const UpLo, const Trans,
+                                      const fortran_int_t n, const fortran_int_t k, const double alpha,
+                                      const double* a, const fortran_int_t lda, const double* b,
+                                      const fortran_int_t ldb, const double beta, double* c,
+                                      const fortran_int_t ldc)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_DSYR2K(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                    &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order, typename UpLo, typename Trans >
-inline void syr2k( const Order, const UpLo, const Trans,
-        const fortran_int_t n, const fortran_int_t k,
-        const std::complex<float> alpha, const std::complex<float>* a,
-        const fortran_int_t lda, const std::complex<float>* b,
-        const fortran_int_t ldb, const std::complex<float> beta,
-        std::complex<float>* c, const fortran_int_t ldc ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_CSYR2K( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans>
+                    inline void syr2k(const Order, const UpLo, const Trans,
+                                      const fortran_int_t n, const fortran_int_t k,
+                                      const std::complex<float> alpha, const std::complex<float>* a,
+                                      const fortran_int_t lda, const std::complex<float>* b,
+                                      const fortran_int_t ldb, const std::complex<float> beta,
+                                      std::complex<float>* c, const fortran_int_t ldc)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_CSYR2K(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                    &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order, typename UpLo, typename Trans >
-inline void syr2k( const Order, const UpLo, const Trans,
-        const fortran_int_t n, const fortran_int_t k,
-        const std::complex<double> alpha, const std::complex<double>* a,
-        const fortran_int_t lda, const std::complex<double>* b,
-        const fortran_int_t ldb, const std::complex<double> beta,
-        std::complex<double>* c, const fortran_int_t ldc ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_ZSYR2K( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans>
+                    inline void syr2k(const Order, const UpLo, const Trans,
+                                      const fortran_int_t n, const fortran_int_t k,
+                                      const std::complex<double> alpha, const std::complex<double>* a,
+                                      const fortran_int_t lda, const std::complex<double>* b,
+                                      const fortran_int_t ldb, const std::complex<double> beta,
+                                      std::complex<double>* c, const fortran_int_t ldc)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_ZSYR2K(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                    &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to syr2k.
+                //
+                template <typename Value>
+                struct syr2k_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to syr2k.
-//
-template< typename Value >
-struct syr2k_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixA, typename MatrixB, typename MatrixC>
+                    static result_type invoke(const value_type alpha, const MatrixA& a,
+                                              const MatrixB& b, const value_type beta, MatrixC& c)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::data_order<MatrixB>::type order;
+                        typedef typename result_of::trans_tag<MatrixA, order>::type trans;
+                        typedef typename result_of::uplo_tag<MatrixC>::type uplo;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixA>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         MatrixB>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixA>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         MatrixC>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<MatrixA>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<MatrixB>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<MatrixC>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixC>::value));
+                        BOOST_ASSERT(bindings::size_minor(a) == 1 ||
+                            bindings::stride_minor(a) == 1);
+                        BOOST_ASSERT(bindings::size_minor(b) == 1 ||
+                            bindings::stride_minor(b) == 1);
+                        BOOST_ASSERT(bindings::size_minor(c) == 1 ||
+                            bindings::stride_minor(c) == 1);
+                        detail::syr2k(order(), uplo(), trans(),
+                                      bindings::size_column(c), bindings::size_column(a), alpha,
+                                      bindings::begin_value(a), bindings::stride_major(a),
+                                      bindings::begin_value(b), bindings::stride_major(b), beta,
+                                      bindings::begin_value(c), bindings::stride_major(c));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the syr2k_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixA, typename MatrixB, typename MatrixC >
-    static result_type invoke( const value_type alpha, const MatrixA& a,
-            const MatrixB& b, const value_type beta, MatrixC& c ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::data_order< MatrixB >::type order;
-        typedef typename result_of::trans_tag< MatrixA, order >::type trans;
-        typedef typename result_of::uplo_tag< MatrixC >::type uplo;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixA >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                MatrixB >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixA >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                MatrixC >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< MatrixA >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< MatrixB >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< MatrixC >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixC >::value) );
-        BOOST_ASSERT( bindings::size_minor(a) == 1 ||
-                bindings::stride_minor(a) == 1 );
-        BOOST_ASSERT( bindings::size_minor(b) == 1 ||
-                bindings::stride_minor(b) == 1 );
-        BOOST_ASSERT( bindings::size_minor(c) == 1 ||
-                bindings::stride_minor(c) == 1 );
-        detail::syr2k( order(), uplo(), trans(),
-                bindings::size_column(c), bindings::size_column(a), alpha,
-                bindings::begin_value(a), bindings::stride_major(a),
-                bindings::begin_value(b), bindings::stride_major(b), beta,
-                bindings::begin_value(c), bindings::stride_major(c) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the syr2k_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for syr2k. Its overload differs for
-//
-template< typename MatrixA, typename MatrixB, typename MatrixC >
-inline typename syr2k_impl< typename bindings::value_type<
-        MatrixA >::type >::result_type
-syr2k( const typename bindings::value_type< MatrixA >::type alpha,
-        const MatrixA& a, const MatrixB& b,
-        const typename bindings::value_type< MatrixA >::type beta,
-        MatrixC& c ) {
-    syr2k_impl< typename bindings::value_type<
-            MatrixA >::type >::invoke( alpha, a, b, beta, c );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for syr2k. Its overload differs for
+                //
+                template <typename MatrixA, typename MatrixB, typename MatrixC>
+                inline typename syr2k_impl<typename bindings::value_type<
+                    MatrixA>::type>::result_type
+                syr2k(const typename bindings::value_type<MatrixA>::type alpha,
+                      const MatrixA& a, const MatrixB& b,
+                      const typename bindings::value_type<MatrixA>::type beta,
+                      MatrixC& c)
+                {
+                    syr2k_impl<typename bindings::value_type<
+                        MatrixA>::type>::invoke(alpha, a, b, beta, c);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

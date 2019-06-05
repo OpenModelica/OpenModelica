@@ -41,11 +41,11 @@ where A is an n-by-n matrix and y and B are n-by-n(right hand side) matrices.
 /*****************************************************************************
 OSMS(c) 2008
 *****************************************************************************/
-class Broyden : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
+class Broyden : public INonLinearAlgLoopSolver, public AlgLoopSolverDefaultImplementation
 {
 public:
 
-    Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
+    Broyden(INonLinSolverSettings* settings, shared_ptr<INonLinearAlgLoop> algLoop = shared_ptr<INonLinearAlgLoop>());
 
     virtual ~Broyden();
 
@@ -56,7 +56,7 @@ public:
     /// Solution of a (non-)linear system of equations
     virtual void solve();
     //solve for a single instance call
-    virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false);
+    virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop, bool first_solve = false);
 
 
     /// Returns the status of iteration
@@ -65,7 +65,7 @@ public:
     virtual void restoreOldValues();
     virtual void restoreNewValues();
 
-	virtual bool* getConditionsWorkArray();
+    virtual bool* getConditionsWorkArray();
     virtual bool* getConditions2WorkArray();
     virtual double* getVariableWorkArray();
 private:
@@ -78,62 +78,61 @@ private:
     // Member variables
     //---------------------------------------------------------------
     INonLinSolverSettings
-        *_BroydenSettings;            ///< Settings for the solver
+    * _BroydenSettings; ///< Settings for the solver
 
-    shared_ptr<INonLinearAlgLoop> _algLoop;                    ///< Algebraic loop to be solved
+    shared_ptr<INonLinearAlgLoop> _algLoop; ///< Algebraic loop to be solved
 
     ITERATIONSTATUS
-        _iterationStatus;            ///< Output        - Denotes the status of iteration
+    _iterationStatus; ///< Output        - Denotes the status of iteration
 
     long int
 
-		_lwork,
-		_iONE;
+        _lwork,
+        _iONE;
 
     bool
-        _firstCall;                    ///< Temp        - Denotes the first call to the solver, init() is called
+    _firstCall; ///< Temp        - Denotes the first call to the solver, init() is called
 
     double
-        *_y,                        ///< Temp        - Unknowns
-		*_yHelp,
-        *_fnew,                        ///< Temp        - Residuals
-		*_fold,                        ///< Temp        - Residuals
-		*_fHelp,
-        *_delta_s,                    ///< Temp        - Auxillary variables
-		*_delta_b,                    ///< Temp        - Auxillary variables
-        *_jac,                        ///< Temp        - Jacobian
+        *_y, ///< Temp        - Unknowns
+        *_yHelp,
+        *_fnew, ///< Temp        - Residuals
+        *_fold, ///< Temp        - Residuals
+        *_fHelp,
+        *_delta_s, ///< Temp        - Auxillary variables
+        *_delta_b, ///< Temp        - Auxillary variables
+        *_jac, ///< Temp        - Jacobian
         *_jacHelpMat1,
         *_jacHelpMat2,
-		*_jacHelpVec1,
-		*_jacHelpVec2,
-		*_work;
+        *_jacHelpVec1,
+        *_jacHelpVec2,
+        *_work;
 
-	int
-		_broydenMethod;
+    int
+    _broydenMethod;
 
-	double _fNormTol,
-		_dONE,
-		_dZERO,
-		_dMINUSONE;
-
-
-  long int *_iHelp;
-
-  char
-	  _N,
-	  _T;
-
-  bool _sparse;
+    double _fNormTol,
+           _dONE,
+           _dZERO,
+           _dMINUSONE;
 
 
-  int _dim;
-  long int* _ihelpArray;
-  double * 	_zeroVec;
-  double *	 _f ;
+    long int* _iHelp;
+
+    char
+        _N,
+        _T;
+
+    bool _sparse;
 
 
+    int _dim;
+    long int* _ihelpArray;
+    double* _zeroVec;
+    double* _f;
 
 
-  double* _identity;
+    double* _identity;
 };
+
 /** @} */ // end of solverBroyden

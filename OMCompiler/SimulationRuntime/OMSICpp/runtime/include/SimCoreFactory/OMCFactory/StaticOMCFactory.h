@@ -16,18 +16,27 @@ shared_ptr<ISimController> createSim(PATH library_path, PATH modelicasystem_path
  */
 class StaticOMCFactory : public OMCFactory
 {
-  public:
+public:
     StaticOMCFactory()
-      : OMCFactory() {}
+        : OMCFactory()
+    {
+    }
+
     StaticOMCFactory(PATH library_path, PATH modelicasystem_path)
-      : OMCFactory(library_path, modelicasystem_path) {}
+        : OMCFactory(library_path, modelicasystem_path)
+    {
+    }
+
     virtual shared_ptr<ISimController> createSimController()
     {
-      return createSim("", "");
+        return createSim("", "");
     }
+
     virtual shared_ptr<ISimController> loadSimControllerLib(PATH simcontroller_path, type_map simcontroller_type_map)
     {
-      return createSim(_library_path, _modelicasystem_path);//(new SimController(_library_path,_modelicasystem_path));
+        return createSim(_library_path, _modelicasystem_path);
+        //(new SimController(_library_path,_modelicasystem_path));
     }
 };
+
 /** @} */ // end of simcorefactoryOMCFactory

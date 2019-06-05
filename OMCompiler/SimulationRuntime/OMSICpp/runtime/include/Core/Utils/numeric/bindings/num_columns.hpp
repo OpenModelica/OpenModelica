@@ -11,25 +11,28 @@
 
 #include <Core/Utils/numeric/bindings/size.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace result_of {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace result_of
+            {
+                template <typename T>
+                struct num_columns
+                {
+                    typedef typename result_of::size2<T>::type type;
+                };
+            } // namespace result_of
 
-template< typename T >
-struct num_columns {
-    typedef typename result_of::size2<T>::type type;
-};
-
-} // namespace result_of
-
-template< typename T >
-inline typename result_of::num_columns<T>::type num_columns( const T& t ) {
-    return size2( t );
-}
-
-} // bindings
-} // numeric
+            template <typename T>
+            inline typename result_of::num_columns<T>::type num_columns(const T& t)
+            {
+                return size2(t);
+            }
+        } // bindings
+    } // numeric
 } // boost
 
 #endif

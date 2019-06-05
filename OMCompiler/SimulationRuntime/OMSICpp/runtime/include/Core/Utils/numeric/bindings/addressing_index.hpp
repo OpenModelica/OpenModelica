@@ -14,61 +14,82 @@
 #include <Core/Utils/numeric/bindings/rank.hpp>
 #include <Core/Utils/numeric/bindings/is_column_major.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct addressing_index_minor
+            {
+                typedef typename mpl::if_<
+                    is_column_major<T>,
+                    tag::addressing_index < 1>
+                ,
+                tag::addressing_index<
+                    mpl::max<tag::matrix, rank<T>>::type::value
+                >
+                >
+                ::type type;
+            };
 
-template< typename T >
-struct addressing_index_minor {
-    typedef typename mpl::if_<
-        is_column_major< T >,
-        tag::addressing_index<1>,
-        tag::addressing_index<
-            mpl::max< tag::matrix, rank< T > >::type::value
-        >
-    >::type type;
-};
-
-template< typename T >
-struct addressing_index_major {
-    typedef typename mpl::if_<
-        is_column_major< T >,
-        tag::addressing_index<
-            mpl::max< tag::matrix, rank< T > >::type::value
-        >,
-        tag::addressing_index<1>
-    >::type type;
-};
+            template <typename T>
+            struct addressing_index_major
+            {
+                typedef typename mpl::if_<
+                    is_column_major<T>,
+                    tag::addressing_index<
+                        mpl::max<tag::matrix, rank<T>>::type::value
+                    >,
+                    tag::addressing_index<1>
+                >::type type;
+            };
 
 
-template< typename AddressingIndex, typename TransTag >
-struct addressing_index_trans {
-    typedef AddressingIndex type;
-};
+            template <typename AddressingIndex, typename TransTag>
+            struct addressing_index_trans
+            {
+                typedef AddressingIndex type;
+            };
 
-template<>
-struct addressing_index_trans< tag::addressing_index<1>, tag::transpose > {
+            template <>
+            struct addressing_index_trans<tag::addressing_index < 1>
+            ,
+            tag::transpose
+            >
+ {
     typedef tag::addressing_index<2> type;
 };
 
-template<>
-struct addressing_index_trans< tag::addressing_index<1>, tag::conjugate > {
+            template <>
+            struct addressing_index_trans<tag::addressing_index < 1>
+            ,
+            tag::conjugate
+            >
+ {
     typedef tag::addressing_index<2> type;
 };
 
-template<>
-struct addressing_index_trans< tag::addressing_index<2>, tag::transpose > {
+            template <>
+            struct addressing_index_trans<tag::addressing_index < 2>
+            ,
+            tag::transpose
+            >
+ {
     typedef tag::addressing_index<1> type;
 };
 
-template<>
-struct addressing_index_trans< tag::addressing_index<2>, tag::conjugate > {
+            template <>
+            struct addressing_index_trans<tag::addressing_index < 2>
+            ,
+            tag::conjugate
+            >
+ {
     typedef tag::addressing_index<1> type;
 };
-
-
-} // namespace bindings
-} // namespace numeric
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

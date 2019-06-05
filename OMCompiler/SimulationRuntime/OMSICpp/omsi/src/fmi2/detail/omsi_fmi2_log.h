@@ -20,39 +20,38 @@
     (w)->callbackLogger((w)->componentEnvironment(), (w)->instanceName(), \
                         status, (w)->LogCategoryFMUName(category), __VA_ARGS__)
 
-enum LogCategoryFMU {
-  logEvents = 0,
-  logSingularLinearSystems,
-  logNonlinearSystems,
-  logDynamicStateSelection,
-  logStatusWarning,
-  logStatusDiscard,
-  logStatusError,
-  logStatusFatal,
-  logStatusPending,
-  logFmi2Call
+enum LogCategoryFMU
+{
+    logEvents = 0,
+    logSingularLinearSystems,
+    logNonlinearSystems,
+    logDynamicStateSelection,
+    logStatusWarning,
+    logStatusDiscard,
+    logStatusError,
+    logStatusFatal,
+    logStatusPending,
+    logFmi2Call
 };
-
-
 
 
 /**
  * Forward Logger messages to FMI callback function
  */
 class OSU;
-class FMU2Logger: public Logger
+
+class FMU2Logger : public Logger
 {
- public:
-  static void initialize(OSU *wrapper, LogSettings &logSettings, bool enabled);
+public:
+    static void initialize(OSU* wrapper, LogSettings& logSettings, bool enabled);
 
- protected:
-  FMU2Logger(OSU *wrapper, LogSettings &logSettings, bool enabled);
+protected:
+    FMU2Logger(OSU* wrapper, LogSettings& logSettings, bool enabled);
 
-  virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
-                             LogStructure ls);
-  OSU *_wrapper;
+    virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
+                               LogStructure ls);
+    OSU* _wrapper;
 };
-
 
 
 #endif

@@ -10,7 +10,9 @@
 
 #include <Core/Utils/extension/measure_time.hpp>
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesScoreP : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesScoreP : 
+public
+MeasureTimeValues
 {
 public:
   MeasureTimeValuesScoreP();
@@ -27,7 +29,9 @@ public:
   virtual void reset();
 };
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeScoreP : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeScoreP : 
+public
+MeasureTime
 {
  protected:
   MeasureTimeScoreP();

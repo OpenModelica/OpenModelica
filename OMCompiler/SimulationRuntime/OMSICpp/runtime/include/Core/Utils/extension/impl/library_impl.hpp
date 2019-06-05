@@ -32,24 +32,34 @@
 #endif
 
 #include <windows.h>
-namespace boost {
-namespace extensions {
-namespace impl {
-  typedef HMODULE library_handle;
-  typedef FARPROC generic_function_ptr;
-  inline library_handle load_shared_library(const char* library_name) {
-    return LoadLibraryA(library_name);
-  }
-  inline generic_function_ptr get_function(library_handle handle,
-                                           const char* function_name) {
-    return GetProcAddress(handle, function_name);
-  }
-  inline bool close_shared_library(library_handle handle) {
-    return FreeLibrary(handle) != 0;
-  }
-}  // namespace impl
-}  // namespace extensions
-}  // namespace boost
+
+namespace boost
+{
+    namespace extensions
+    {
+        namespace impl
+        {
+            typedef HMODULE library_handle;
+            typedef FARPROC generic_function_ptr;
+
+            inline library_handle load_shared_library(const char* library_name)
+            {
+                return LoadLibraryA(library_name);
+            }
+
+            inline generic_function_ptr get_function(library_handle handle,
+                                                     const char* function_name)
+            {
+                return GetProcAddress(handle, function_name);
+            }
+
+            inline bool close_shared_library(library_handle handle)
+            {
+                return FreeLibrary(handle) != 0;
+            }
+        } // namespace impl
+    } // namespace extensions
+} // namespace boost
 
 #   pragma comment(lib, "kernel32.lib")
 #else

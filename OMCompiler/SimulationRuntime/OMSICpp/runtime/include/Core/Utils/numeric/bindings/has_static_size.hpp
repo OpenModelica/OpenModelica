@@ -14,39 +14,53 @@
 #include <boost/mpl/count_if.hpp>
 #include <boost/mpl/equal_to.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename T>
+                struct is_static_size_property : mpl::false_
+                {
+                };
 
-template< typename T >
-struct is_static_size_property: mpl::false_ {};
+                template <int N, int M>
+                struct is_static_size_property<mpl::pair < tag::size_type < N>
+                ,
+                mpl::int_<M>
+                >
+                >
+                :
+                mpl::true_
+{};
+            } // namespace detail
 
-template< int N, int M >
-struct is_static_size_property< mpl::pair< tag::size_type<N>, mpl::int_<M> > >: mpl::true_ {};
+            template <typename T, typename Enable = void>
+            struct has_static_size : mpl::false_
+            {
+            };
 
-} // namespace detail
+            template <typename T>
+            struct has_static_size<
+                    T,
+                    typename boost::enable_if<detail::is_adaptable<T>>::type> :
 
-template< typename T, typename Enable = void >
-struct has_static_size: mpl::false_ {};
-
-template< typename T >
-struct has_static_size<
-        T,
-        typename boost::enable_if< detail::is_adaptable<T> >::type >:
-
-    // count the number of static size properties,
-    // should be equal to the rank of the object
-    mpl::equal_to<
-        mpl::count_if<
-            typename detail::property_map_of< T >::type,
-            detail::is_static_size_property< mpl::_ >
-        >,
-        typename detail::property_at< T, tag::entity >::type
-    >::type {};
-
-} // namespace bindings
-} // namespace numeric
+                // count the number of static size properties,
+                // should be equal to the rank of the object
+                mpl::equal_to<
+                    mpl::count_if<
+                        typename detail::property_map_of<T>::type,
+                        detail::is_static_size_property<mpl::_>
+                    >,
+                    typename detail::property_at<T, tag::entity>::type
+                >::type
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

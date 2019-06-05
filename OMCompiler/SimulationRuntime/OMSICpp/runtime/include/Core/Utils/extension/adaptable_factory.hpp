@@ -23,94 +23,106 @@
 #include <boost/function.hpp>
 #include <boost/extension/parameter_map.hpp>
 
-namespace boost {
-namespace extensions {
-namespace impl {
+namespace boost
+{
+    namespace extensions
+    {
+        namespace impl
+        {
 #ifndef BOOST_EXTENSION_DOXYGEN_INVOKED
 # define BOOST_PP_ITERATION_LIMITS \
   (0, BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
 # define BOOST_PP_FILENAME_1 <boost/extension/impl/adaptable_factory_free_functions.hpp>
 # include BOOST_PP_ITERATE()
 #endif  // BOOST_EXTENSION_DOXYGEN_INVOKED
-}  // namespace impl
+        } // namespace impl
 
-/** This class is a function object that returns
-  * new instances of type Interface, using factories that
-  * take parameters described in the variable length
-  * list Params...
-  */
-template <class Interface, class Info = std::string,
-          class TypeInfo = default_type_info>
-class adaptable_factory {
-public:
-  /** \brief Default constructor.
-    * On creation, this adaptable_factory is empty.
-    */
-  adaptable_factory() : functor_func_(0), func_(0), check_func_(0) {}
+        /** This class is a function object that returns
+          * new instances of type Interface, using factories that
+          * take parameters described in the variable length
+          * list Params...
+          */
+        template <class Interface, class Info = std::string,
+                  class TypeInfo = default_type_info>
+        class adaptable_factory
+        {
+        public:
+            /** \brief Default constructor.
+              * On creation, this adaptable_factory is empty.
+              */
+            adaptable_factory() : functor_func_(0), func_(0), check_func_(0)
+            {
+            }
 
-  /** \brief Standard copy constructor.
-    */
-  adaptable_factory(adaptable_factory<Interface> const& first) : func_(first.func_) {}
+            /** \brief Standard copy constructor.
+              */
+            adaptable_factory(adaptable_factory<Interface> const& first) : func_(first.func_)
+            {
+            }
 
-  /** \brief Standard assignment operator.
-    */
-  adaptable_factory& operator=(adaptable_factory<Interface> const& first) {
-    this->func_ = first->func_;
-    return *this;
-  }
+            /** \brief Standard assignment operator.
+              */
+            adaptable_factory& operator=(adaptable_factory<Interface> const& first)
+            {
+                this->func_ = first->func_;
+                return *this;
+            }
 
-  /** Returns an instance of Interface (but does NOT retain ownership of the instance).
-    * \param map A parameter map to search for the parameters for this function.
-    * \return An instance of Interface, if all of the needed parameters are found in map.
-    * Otherwise, it returns NULL.
-    * \pre is_valid() == true.
-    * \post None.
-    */
-  Interface* create(boost::extensions::parameter_map& map) const {
-    return (*func_)(map, parameter_names_);
-  }
+            /** Returns an instance of Interface (but does NOT retain ownership of the instance).
+              * \param map A parameter map to search for the parameters for this function.
+              * \return An instance of Interface, if all of the needed parameters are found in map.
+              * Otherwise, it returns NULL.
+              * \pre is_valid() == true.
+              * \post None.
+              */
+            Interface* create(boost::extensions::parameter_map& map) const
+            {
+                return (*func_)(map, parameter_names_);
+            }
 
-  /** Generate a `boost::function` object that can be reused to create
-    * instances of `Interface` based on the data in the _parameter_map_.
-    * If the _parameter_map_ does not contain all of the needed parameters,
-    * then calling `empty()` on the returned function object will return
-    * true.
-    * \return An instance of Interface, if all of the needed parameters are found in map.
-    * Otherwise, it returns NULL.
-    * \pre is_valid() == true.
-    * \post None.
-    */
-  function<Interface* ()> get_function(
-      boost::extensions::parameter_map& map) const {
-    return (*functor_func_)(map, parameter_names_);
-  }
+            /** Generate a `boost::function` object that can be reused to create
+              * instances of `Interface` based on the data in the _parameter_map_.
+              * If the _parameter_map_ does not contain all of the needed parameters,
+              * then calling `empty()` on the returned function object will return
+              * true.
+              * \return An instance of Interface, if all of the needed parameters are found in map.
+              * Otherwise, it returns NULL.
+              * \pre is_valid() == true.
+              * \post None.
+              */
+            function<Interface*()> get_function(
+                boost::extensions::parameter_map& map) const
+            {
+                return (*functor_func_)(map, parameter_names_);
+            }
 
-  /** Returns a map of the TypeInfo/Info pairs describing any parameters still
-    * needed before this function can be called.
-    * \param map A parameter map to search for the parameters for this function.
-    * \return TypeInfo/Info pairs for any missing parameters.
-    * \pre is_valid() == true.
-    * \post None.
-    */
-  std::vector<std::pair<TypeInfo, Info> > get_missing_params(
-      const boost::extensions::parameter_map& map) const {
-    return (*check_func_)(map, parameter_names_);
-  }
+            /** Returns a map of the TypeInfo/Info pairs describing any parameters still
+              * needed before this function can be called.
+              * \param map A parameter map to search for the parameters for this function.
+              * \return TypeInfo/Info pairs for any missing parameters.
+              * \pre is_valid() == true.
+              * \post None.
+              */
+            std::vector<std::pair<TypeInfo, Info>> get_missing_params(
+                const boost::extensions::parameter_map& map) const
+            {
+                return (*check_func_)(map, parameter_names_);
+            }
 
-  /** \brief Returns true if set has been called.
-    *
-    * Until set is called, a adaptable_factory cannot be used. This
-    * function can be used to determine if set has been called.
-    * \pre None.
-    * \post None.
-    * \return True if the adaptable_factory is initialized (ie, set has been called).
-    */
-  bool is_valid() const { return this->func_ != 0; }
+            /** \brief Returns true if set has been called.
+              *
+              * Until set is called, a adaptable_factory cannot be used. This
+              * function can be used to determine if set has been called.
+              * \pre None.
+              * \post None.
+              * \return True if the adaptable_factory is initialized (ie, set has been called).
+              */
+            bool is_valid() const { return this->func_ != 0; }
 
-/* For Doxygen, and for easier readability by users, a
- * simplified version of this class's set function is provided, but never
- * compiled.
- */
+            /* For Doxygen, and for easier readability by users, a
+             * simplified version of this class's set function is provided, but never
+             * compiled.
+             */
 #ifdef BOOST_EXTENSION_DOXYGEN_INVOKED
 
   /** \brief Set the factory function for this adaptable_factory.
@@ -137,20 +149,20 @@ public:
   (0, BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
 # define BOOST_PP_FILENAME_1 <boost/extension/impl/adaptable_factory_set.hpp>
 # include BOOST_PP_ITERATE()
-private:
-  function<Interface* ()> (*functor_func_)(
-    boost::extensions::basic_parameter_map<Info>& map,
-    const std::vector<Info>& names);
-  Interface* (*func_)(
-    boost::extensions::basic_parameter_map<Info>& map,
-    const std::vector<Info>& names);
-  std::vector<std::pair<TypeInfo, Info> >  (*check_func_)(
-    const boost::extensions::basic_parameter_map<Info>& map,
-    const std::vector<Info>& names);
-  std::vector<Info> parameter_names_;
+        private:
+            function<Interface*()> (*functor_func_)(
+                boost::extensions::basic_parameter_map<Info>& map,
+                const std::vector<Info>& names);
+            Interface* (*func_)(
+                boost::extensions::basic_parameter_map<Info>& map,
+                const std::vector<Info>& names);
+            std::vector<std::pair<TypeInfo, Info>> (*check_func_)(
+                const boost::extensions::basic_parameter_map<Info>& map,
+                const std::vector<Info>& names);
+            std::vector<Info> parameter_names_;
 #endif  // BOOST_EXTENSION_DOXYGEN_INVOKED
-};
-}  // namespace extensions
-}  // namespace boost
+        };
+    } // namespace extensions
+} // namespace boost
 
 #endif  // BOOST_EXTENSION_FACTORY_HPP

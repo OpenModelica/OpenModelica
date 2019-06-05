@@ -3,7 +3,9 @@
 
 #include <Core/Utils/extension/measure_time.hpp>
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesRDTSC : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesRDTSC : 
+public
+MeasureTimeValues
 {
 public:
   unsigned long long _time;
@@ -23,7 +25,9 @@ public:
   virtual void reset();
 };
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : 
+public
+MeasureTime
 {
  protected:
   MeasureTimeRDTSC();

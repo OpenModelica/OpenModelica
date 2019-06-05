@@ -44,22 +44,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 inline void rot( const int n, float* x, const int incx, float* y,
         const int incy, const float c, const float s ) {
@@ -67,9 +70,9 @@ inline void rot( const int n, float* x, const int incx, float* y,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 inline void rot( const int n, double* x, const int incx, double* y,
         const int incy, const double c, const double s ) {
@@ -77,9 +80,9 @@ inline void rot( const int n, double* x, const int incx, double* y,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 inline void rot( const int n, std::complex<float>* x, const int incx,
         std::complex<float>* y, const int incy, const float c,
@@ -88,9 +91,9 @@ inline void rot( const int n, std::complex<float>* x, const int incx,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 inline void rot( const int n, std::complex<double>* x, const int incx,
         std::complex<double>* y, const int incy, const double c,
@@ -99,10 +102,10 @@ inline void rot( const int n, std::complex<double>* x, const int incx,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 inline void rot( const int n, float* x, const int incx, float* y,
         const int incy, const float c, const float s ) {
@@ -110,9 +113,9 @@ inline void rot( const int n, float* x, const int incx, float* y,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 inline void rot( const int n, double* x, const int incx, double* y,
         const int incy, const double c, const double s ) {
@@ -120,9 +123,9 @@ inline void rot( const int n, double* x, const int incx, double* y,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 inline void rot( const int n, std::complex<float>* x, const int incx,
         std::complex<float>* y, const int incy, const float c,
@@ -131,9 +134,9 @@ inline void rot( const int n, std::complex<float>* x, const int incx,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 inline void rot( const int n, std::complex<double>* x, const int incx,
         std::complex<double>* y, const int incy, const double c,
@@ -142,109 +145,113 @@ inline void rot( const int n, std::complex<double>* x, const int incx,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-inline void rot( const fortran_int_t n, float* x, const fortran_int_t incx,
-        float* y, const fortran_int_t incy, const float c, const float s ) {
-    BLAS_SROT( &n, x, &incx, y, &incy, &c, &s );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    inline void rot(const fortran_int_t n, float* x, const fortran_int_t incx,
+                                    float* y, const fortran_int_t incy, const float c, const float s)
+                    {
+                        BLAS_SROT(&n, x, &incx, y, &incy, &c, &s);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-inline void rot( const fortran_int_t n, double* x, const fortran_int_t incx,
-        double* y, const fortran_int_t incy, const double c, const double s ) {
-    BLAS_DROT( &n, x, &incx, y, &incy, &c, &s );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    inline void rot(const fortran_int_t n, double* x, const fortran_int_t incx,
+                                    double* y, const fortran_int_t incy, const double c, const double s)
+                    {
+                        BLAS_DROT(&n, x, &incx, y, &incy, &c, &s);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-inline void rot( const fortran_int_t n, std::complex<float>* x,
-        const fortran_int_t incx, std::complex<float>* y,
-        const fortran_int_t incy, const float c, const float s ) {
-    BLAS_CSROT( &n, x, &incx, y, &incy, &c, &s );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    inline void rot(const fortran_int_t n, std::complex<float>* x,
+                                    const fortran_int_t incx, std::complex<float>* y,
+                                    const fortran_int_t incy, const float c, const float s)
+                    {
+                        BLAS_CSROT(&n, x, &incx, y, &incy, &c, &s);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-inline void rot( const fortran_int_t n, std::complex<double>* x,
-        const fortran_int_t incx, std::complex<double>* y,
-        const fortran_int_t incy, const double c, const double s ) {
-    BLAS_ZDROT( &n, x, &incx, y, &incy, &c, &s );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    inline void rot(const fortran_int_t n, std::complex<double>* x,
+                                    const fortran_int_t incx, std::complex<double>* y,
+                                    const fortran_int_t incy, const double c, const double s)
+                    {
+                        BLAS_ZDROT(&n, x, &incx, y, &incy, &c, &s);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to rot.
+                //
+                template <typename Value>
+                struct rot_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to rot.
-//
-template< typename Value >
-struct rot_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename VectorX, typename VectorY>
+                    static result_type invoke(VectorX& x, VectorY& y, const real_type c,
+                                              const real_type s)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<VectorX>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        detail::rot(bindings::size(x), bindings::begin_value(x),
+                                    bindings::stride(x), bindings::begin_value(y),
+                                    bindings::stride(y), c, s);
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the rot_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename VectorX, typename VectorY >
-    static result_type invoke( VectorX& x, VectorY& y, const real_type c,
-            const real_type s ) {
-        namespace bindings = ::boost::numeric::bindings;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< VectorX >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        detail::rot( bindings::size(x), bindings::begin_value(x),
-                bindings::stride(x), bindings::begin_value(y),
-                bindings::stride(y), c, s );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the rot_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for rot. Its overload differs for
-//
-template< typename VectorX, typename VectorY >
-inline typename rot_impl< typename bindings::value_type<
-        VectorX >::type >::result_type
-rot( VectorX& x, VectorY& y, const typename remove_imaginary<
-        typename bindings::value_type< VectorX >::type >::type c,
-        const typename remove_imaginary< typename bindings::value_type<
-        VectorX >::type >::type s ) {
-    rot_impl< typename bindings::value_type<
-            VectorX >::type >::invoke( x, y, c, s );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for rot. Its overload differs for
+                //
+                template <typename VectorX, typename VectorY>
+                inline typename rot_impl<typename bindings::value_type<
+                    VectorX>::type>::result_type
+                rot(VectorX& x, VectorY& y, const typename remove_imaginary<
+                        typename bindings::value_type<VectorX>::type>::type c,
+                    const typename remove_imaginary<typename bindings::value_type<
+                        VectorX>::type>::type s)
+                {
+                    rot_impl<typename bindings::value_type<
+                        VectorX>::type>::invoke(x, y, c, s);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

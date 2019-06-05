@@ -94,5 +94,6 @@ shared_ptr<ISimData>  createSimDataFunction()
 }
 
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif

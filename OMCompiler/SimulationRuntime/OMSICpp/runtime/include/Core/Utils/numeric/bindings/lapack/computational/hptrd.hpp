@@ -35,192 +35,200 @@
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack.h>
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack_option.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end LAPACK-routine.
+                //
+                namespace detail
+                {
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename UpLo>
+                    inline std::ptrdiff_t hptrd(const UpLo, const fortran_int_t n, float* ap,
+                                                float* d, float* e, float* tau)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_SSPTRD(&lapack_option<UpLo>::value, &n, ap, d, e, tau, &info);
+                        return info;
+                    }
 
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end LAPACK-routine.
-//
-namespace detail {
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename UpLo>
+                    inline std::ptrdiff_t hptrd(const UpLo, const fortran_int_t n, double* ap,
+                                                double* d, double* e, double* tau)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_DSPTRD(&lapack_option<UpLo>::value, &n, ap, d, e, tau, &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * float value-type.
-//
-template< typename UpLo >
-inline std::ptrdiff_t hptrd( const UpLo, const fortran_int_t n, float* ap,
-        float* d, float* e, float* tau ) {
-    fortran_int_t info(0);
-    LAPACK_SSPTRD( &lapack_option< UpLo >::value, &n, ap, d, e, tau, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename UpLo>
+                    inline std::ptrdiff_t hptrd(const UpLo, const fortran_int_t n,
+                                                std::complex<float>* ap, float* d, float* e,
+                                                std::complex<float>* tau)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_CHPTRD(&lapack_option<UpLo>::value, &n, ap, d, e, tau, &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * double value-type.
-//
-template< typename UpLo >
-inline std::ptrdiff_t hptrd( const UpLo, const fortran_int_t n, double* ap,
-        double* d, double* e, double* tau ) {
-    fortran_int_t info(0);
-    LAPACK_DSPTRD( &lapack_option< UpLo >::value, &n, ap, d, e, tau, &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename UpLo>
+                    inline std::ptrdiff_t hptrd(const UpLo, const fortran_int_t n,
+                                                std::complex<double>* ap, double* d, double* e,
+                                                std::complex<double>* tau)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_ZHPTRD(&lapack_option<UpLo>::value, &n, ap, d, e, tau, &info);
+                        return info;
+                    }
+                } // namespace detail
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<float> value-type.
-//
-template< typename UpLo >
-inline std::ptrdiff_t hptrd( const UpLo, const fortran_int_t n,
-        std::complex<float>* ap, float* d, float* e,
-        std::complex<float>* tau ) {
-    fortran_int_t info(0);
-    LAPACK_CHPTRD( &lapack_option< UpLo >::value, &n, ap, d, e, tau, &info );
-    return info;
-}
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to hptrd.
+                //
+                template <typename Value, typename Enable = void>
+                struct hptrd_impl
+                {
+                };
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<double> value-type.
-//
-template< typename UpLo >
-inline std::ptrdiff_t hptrd( const UpLo, const fortran_int_t n,
-        std::complex<double>* ap, double* d, double* e,
-        std::complex<double>* tau ) {
-    fortran_int_t info(0);
-    LAPACK_ZHPTRD( &lapack_option< UpLo >::value, &n, ap, d, e, tau, &info );
-    return info;
-}
+                //
+                // This implementation is enabled if Value is a real type.
+                //
+                template <typename Value>
+                struct hptrd_impl<Value, typename boost::enable_if<is_real<Value>>::type>
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
 
-} // namespace detail
+                    //
+                    // Static member function, that
+                    // * Deduces the required arguments for dispatching to LAPACK, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixAP, typename VectorD, typename VectorE,
+                              typename VectorTAU>
+                    static std::ptrdiff_t invoke(MatrixAP& ap, VectorD& d, VectorE& e,
+                                                 VectorTAU& tau)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::uplo_tag<MatrixAP>::type uplo;
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<MatrixAP>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                VectorD>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<MatrixAP>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                VectorE>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<MatrixAP>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                VectorTAU>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixAP>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorD>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorE>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorTAU>::value));
+                        BOOST_ASSERT(bindings::size(d) >= bindings::size_column(ap));
+                        BOOST_ASSERT(bindings::size(tau) >= bindings::size_column(ap) - 1);
+                        BOOST_ASSERT(bindings::size_column(ap) >= 0);
+                        return detail::hptrd(uplo(), bindings::size_column(ap),
+                                             bindings::begin_value(ap), bindings::begin_value(d),
+                                             bindings::begin_value(e), bindings::begin_value(tau));
+                    }
+                };
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to hptrd.
-//
-template< typename Value, typename Enable = void >
-struct hptrd_impl {};
+                //
+                // This implementation is enabled if Value is a complex type.
+                //
+                template <typename Value>
+                struct hptrd_impl<Value, typename boost::enable_if<is_complex<Value>>::type>
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
 
-//
-// This implementation is enabled if Value is a real type.
-//
-template< typename Value >
-struct hptrd_impl< Value, typename boost::enable_if< is_real< Value > >::type > {
-
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-
-    //
-    // Static member function, that
-    // * Deduces the required arguments for dispatching to LAPACK, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixAP, typename VectorD, typename VectorE,
-            typename VectorTAU >
-    static std::ptrdiff_t invoke( MatrixAP& ap, VectorD& d, VectorE& e,
-            VectorTAU& tau ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::uplo_tag< MatrixAP >::type uplo;
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorD >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorE >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorTAU >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixAP >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorD >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorE >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorTAU >::value) );
-        BOOST_ASSERT( bindings::size(d) >= bindings::size_column(ap) );
-        BOOST_ASSERT( bindings::size(tau) >= bindings::size_column(ap)-1 );
-        BOOST_ASSERT( bindings::size_column(ap) >= 0 );
-        return detail::hptrd( uplo(), bindings::size_column(ap),
-                bindings::begin_value(ap), bindings::begin_value(d),
-                bindings::begin_value(e), bindings::begin_value(tau) );
-    }
-
-};
-
-//
-// This implementation is enabled if Value is a complex type.
-//
-template< typename Value >
-struct hptrd_impl< Value, typename boost::enable_if< is_complex< Value > >::type > {
-
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-
-    //
-    // Static member function, that
-    // * Deduces the required arguments for dispatching to LAPACK, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixAP, typename VectorD, typename VectorE,
-            typename VectorTAU >
-    static std::ptrdiff_t invoke( MatrixAP& ap, VectorD& d, VectorE& e,
-            VectorTAU& tau ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::uplo_tag< MatrixAP >::type uplo;
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< VectorD >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorE >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorTAU >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixAP >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorD >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorE >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorTAU >::value) );
-        BOOST_ASSERT( bindings::size(d) >= bindings::size_column(ap) );
-        BOOST_ASSERT( bindings::size(tau) >= bindings::size_column(ap)-1 );
-        BOOST_ASSERT( bindings::size_column(ap) >= 0 );
-        return detail::hptrd( uplo(), bindings::size_column(ap),
-                bindings::begin_value(ap), bindings::begin_value(d),
-                bindings::begin_value(e), bindings::begin_value(tau) );
-    }
-
-};
+                    //
+                    // Static member function, that
+                    // * Deduces the required arguments for dispatching to LAPACK, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixAP, typename VectorD, typename VectorE,
+                              typename VectorTAU>
+                    static std::ptrdiff_t invoke(MatrixAP& ap, VectorD& d, VectorE& e,
+                                                 VectorTAU& tau)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::uplo_tag<MatrixAP>::type uplo;
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<VectorD>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                VectorE>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<MatrixAP>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                VectorTAU>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixAP>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorD>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorE>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorTAU>::value));
+                        BOOST_ASSERT(bindings::size(d) >= bindings::size_column(ap));
+                        BOOST_ASSERT(bindings::size(tau) >= bindings::size_column(ap) - 1);
+                        BOOST_ASSERT(bindings::size_column(ap) >= 0);
+                        return detail::hptrd(uplo(), bindings::size_column(ap),
+                                             bindings::begin_value(ap), bindings::begin_value(d),
+                                             bindings::begin_value(e), bindings::begin_value(tau));
+                    }
+                };
 
 
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. In
-// addition, if applicable, they are overloaded for user-defined workspaces.
-// Calls to these functions are passed to the hptrd_impl classes. In the
-// documentation, most overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. In
+                // addition, if applicable, they are overloaded for user-defined workspaces.
+                // Calls to these functions are passed to the hptrd_impl classes. In the
+                // documentation, most overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-//
-// Overloaded function for hptrd. Its overload differs for
-//
-template< typename MatrixAP, typename VectorD, typename VectorE,
-        typename VectorTAU >
-inline std::ptrdiff_t hptrd( MatrixAP& ap, VectorD& d, VectorE& e,
-        VectorTAU& tau ) {
-    return hptrd_impl< typename bindings::value_type<
-            MatrixAP >::type >::invoke( ap, d, e, tau );
-}
-
-} // namespace lapack
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for hptrd. Its overload differs for
+                //
+                template <typename MatrixAP, typename VectorD, typename VectorE,
+                          typename VectorTAU>
+                inline std::ptrdiff_t hptrd(MatrixAP& ap, VectorD& d, VectorE& e,
+                                            VectorTAU& tau)
+                {
+                    return hptrd_impl<typename bindings::value_type<
+                        MatrixAP>::type>::invoke(ap, d, e, tau);
+                }
+            } // namespace lapack
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

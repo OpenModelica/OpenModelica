@@ -35,5 +35,6 @@ shared_ptr<ILinearAlgLoopSolver> createLinearSolver(shared_ptr<ILinSolverSetting
 }
 
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif

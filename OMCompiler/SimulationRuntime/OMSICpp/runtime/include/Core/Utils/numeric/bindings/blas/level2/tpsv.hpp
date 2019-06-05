@@ -49,22 +49,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -75,9 +78,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -88,9 +91,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -102,9 +105,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -116,10 +119,10 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -130,9 +133,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -143,9 +146,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -157,9 +160,9 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo, typename Trans, typename Diag >
 inline void tpsv( const Order, const UpLo, const Trans, const Diag,
@@ -171,126 +174,130 @@ inline void tpsv( const Order, const UpLo, const Trans, const Diag,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename UpLo, typename Trans, typename Diag >
-inline void tpsv( const Order, const UpLo, const Trans, const Diag,
-        const fortran_int_t n, const float* ap, float* x,
-        const fortran_int_t incx ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_STPSV( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &blas_option< Diag >::value, &n, ap, x, &incx );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans, typename Diag>
+                    inline void tpsv(const Order, const UpLo, const Trans, const Diag,
+                                     const fortran_int_t n, const float* ap, float* x,
+                                     const fortran_int_t incx)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_STPSV(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                   &blas_option<Diag>::value, &n, ap, x, &incx);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename UpLo, typename Trans, typename Diag >
-inline void tpsv( const Order, const UpLo, const Trans, const Diag,
-        const fortran_int_t n, const double* ap, double* x,
-        const fortran_int_t incx ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_DTPSV( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &blas_option< Diag >::value, &n, ap, x, &incx );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans, typename Diag>
+                    inline void tpsv(const Order, const UpLo, const Trans, const Diag,
+                                     const fortran_int_t n, const double* ap, double* x,
+                                     const fortran_int_t incx)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_DTPSV(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                   &blas_option<Diag>::value, &n, ap, x, &incx);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order, typename UpLo, typename Trans, typename Diag >
-inline void tpsv( const Order, const UpLo, const Trans, const Diag,
-        const fortran_int_t n, const std::complex<float>* ap,
-        std::complex<float>* x, const fortran_int_t incx ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_CTPSV( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &blas_option< Diag >::value, &n, ap, x, &incx );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans, typename Diag>
+                    inline void tpsv(const Order, const UpLo, const Trans, const Diag,
+                                     const fortran_int_t n, const std::complex<float>* ap,
+                                     std::complex<float>* x, const fortran_int_t incx)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_CTPSV(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                   &blas_option<Diag>::value, &n, ap, x, &incx);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order, typename UpLo, typename Trans, typename Diag >
-inline void tpsv( const Order, const UpLo, const Trans, const Diag,
-        const fortran_int_t n, const std::complex<double>* ap,
-        std::complex<double>* x, const fortran_int_t incx ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_ZTPSV( &blas_option< UpLo >::value, &blas_option< Trans >::value,
-            &blas_option< Diag >::value, &n, ap, x, &incx );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order, typename UpLo, typename Trans, typename Diag>
+                    inline void tpsv(const Order, const UpLo, const Trans, const Diag,
+                                     const fortran_int_t n, const std::complex<double>* ap,
+                                     std::complex<double>* x, const fortran_int_t incx)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_ZTPSV(&blas_option<UpLo>::value, &blas_option<Trans>::value,
+                                   &blas_option<Diag>::value, &n, ap, x, &incx);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to tpsv.
+                //
+                template <typename Value>
+                struct tpsv_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to tpsv.
-//
-template< typename Value >
-struct tpsv_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixAP, typename VectorX>
+                    static result_type invoke(const MatrixAP& ap, VectorX& x)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename detail::default_order<MatrixAP>::type order;
+                        typedef typename result_of::trans_tag<MatrixAP, order>::type trans;
+                        typedef typename result_of::uplo_tag<MatrixAP, trans>::type uplo;
+                        typedef typename result_of::diag_tag<MatrixAP>::type diag;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixAP>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorX>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_triangular_array<
+                            MatrixAP>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorX>::value));
+                        detail::tpsv(order(), uplo(), trans(), diag(),
+                                     bindings::size_column_op(ap, trans()),
+                                     bindings::begin_value(ap), bindings::begin_value(x),
+                                     bindings::stride(x));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the tpsv_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixAP, typename VectorX >
-    static result_type invoke( const MatrixAP& ap, VectorX& x ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename detail::default_order< MatrixAP >::type order;
-        typedef typename result_of::trans_tag< MatrixAP, order >::type trans;
-        typedef typename result_of::uplo_tag< MatrixAP, trans >::type uplo;
-        typedef typename result_of::diag_tag< MatrixAP >::type diag;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorX >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_triangular_array<
-                MatrixAP >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorX >::value) );
-        detail::tpsv( order(), uplo(), trans(), diag(),
-                bindings::size_column_op(ap, trans()),
-                bindings::begin_value(ap), bindings::begin_value(x),
-                bindings::stride(x) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the tpsv_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for tpsv. Its overload differs for
-//
-template< typename MatrixAP, typename VectorX >
-inline typename tpsv_impl< typename bindings::value_type<
-        MatrixAP >::type >::result_type
-tpsv( const MatrixAP& ap, VectorX& x ) {
-    tpsv_impl< typename bindings::value_type<
-            MatrixAP >::type >::invoke( ap, x );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for tpsv. Its overload differs for
+                //
+                template <typename MatrixAP, typename VectorX>
+                inline typename tpsv_impl<typename bindings::value_type<
+                    MatrixAP>::type>::result_type
+                tpsv(const MatrixAP& ap, VectorX& x)
+                {
+                    tpsv_impl<typename bindings::value_type<
+                        MatrixAP>::type>::invoke(ap, x);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

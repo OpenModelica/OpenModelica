@@ -13,8 +13,8 @@
 class BOOST_EXTENSION_STATESELECT_DECL SystemStateSelection
 {
 public:
-  SystemStateSelection(IMixedSystem* system);
-  ~SystemStateSelection();
+    SystemStateSelection(IMixedSystem * system);
+    ~SystemStateSelection();
 
   bool stateSelection(int switchStates);
   void initialize();
@@ -23,8 +23,8 @@ private:
   void setAMatrix(int* newEnable, unsigned int index);
   int comparePivot(int* oldPivot, int* newPivot, int switchStates, unsigned int index);
 
-  IMixedSystem* _system;
-  IStateSelection* _state_selection;
+    IMixedSystem * _system;
+    IStateSelection * _state_selection;
   vector<boost::shared_array<int> > _rowPivot;
   vector<boost::shared_array<int> > _colPivot;
   unsigned int _dimStateSets;
@@ -33,5 +33,6 @@ private:
   vector<unsigned int> _dimStateCanditates;
   bool _initialized;
 
+
 };
- /** @} */ // end of coreSolver
+/** @} */ // end of coreSolver

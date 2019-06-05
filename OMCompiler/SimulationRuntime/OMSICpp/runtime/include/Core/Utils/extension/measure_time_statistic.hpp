@@ -3,7 +3,9 @@
 
 #include <Core/Utils/extension/measure_time_rdtsc.hpp>
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesStatistic : public MeasureTimeValuesRDTSC
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesStatistic : 
+public
+MeasureTimeValuesRDTSC
 {
 public:
   unsigned long long _minTime;
@@ -30,7 +32,9 @@ private:
 
 };
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeStatistic : public MeasureTimeRDTSC
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeStatistic : 
+public
+MeasureTimeRDTSC
 {
 protected:
   MeasureTimeStatistic();

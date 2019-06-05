@@ -12,16 +12,19 @@
 #include <Core/Utils/numeric/bindings/detail/property_map.hpp>
 #include <Core/Utils/numeric/bindings/tag.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-
-template< typename T >
-struct has_triangular_array:
-        detail::is_same_at< T, tag::data_structure, tag::triangular_array > {};
-
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct has_triangular_array :
+                detail::is_same_at<T, tag::data_structure, tag::triangular_array>
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

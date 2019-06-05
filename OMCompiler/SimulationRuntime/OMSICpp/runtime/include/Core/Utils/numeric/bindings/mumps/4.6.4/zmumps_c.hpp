@@ -53,18 +53,22 @@
 // This file is modified by Karl Meerbergen for C++ users
 
 /* Complex datatypes */
-typedef struct {double r,i;} mumps_double_complex;
+typedef struct
+{
+    double r, i;
+} mumps_double_complex;
 
 /* Next line defines ZMUMPS_INT, ZMUMPS_DOUBLE and ZMUMPS_DOUBLE2 */
 #include "zmumps_prec.h"
+
 /*
  * Definition of the (simplified)
  * MUMPS C structure
  */
 typedef struct
-  {
+{
     ZMUMPS_INT sym, par, job;
-    ZMUMPS_INT comm_fortran;    /* Fortran communicator */
+    ZMUMPS_INT comm_fortran; /* Fortran communicator */
     ZMUMPS_INT icntl[40];
     ZMUMPS_DOUBLE2 cntl[5];
     ZMUMPS_INT n;
@@ -73,46 +77,59 @@ typedef struct
                        we free + malloc when we have large variation */
 
     /* Assembled entry */
-    ZMUMPS_INT nz; ZMUMPS_INT *irn; ZMUMPS_INT *jcn; ZMUMPS_DOUBLE *a;
+    ZMUMPS_INT nz;
+    ZMUMPS_INT* irn;
+    ZMUMPS_INT* jcn;
+    ZMUMPS_DOUBLE* a;
     /* Distributed entry */
-    ZMUMPS_INT nz_loc; ZMUMPS_INT *irn_loc; ZMUMPS_INT *jcn_loc; ZMUMPS_DOUBLE *a_loc;
+    ZMUMPS_INT nz_loc;
+    ZMUMPS_INT* irn_loc;
+    ZMUMPS_INT* jcn_loc;
+    ZMUMPS_DOUBLE* a_loc;
     /* Element entry */
-    ZMUMPS_INT nelt; ZMUMPS_INT *eltptr; ZMUMPS_INT *eltvar; ZMUMPS_DOUBLE *a_elt;
+    ZMUMPS_INT nelt;
+    ZMUMPS_INT* eltptr;
+    ZMUMPS_INT* eltvar;
+    ZMUMPS_DOUBLE* a_elt;
 
     /* Ordering, if given by user */
-    ZMUMPS_INT *perm_in;
+    ZMUMPS_INT* perm_in;
 
     /* Orderings returned to user */
     /* symmetric permutation */
-    ZMUMPS_INT *sym_perm;
+    ZMUMPS_INT* sym_perm;
     /* column permutation */
-    ZMUMPS_INT *uns_perm;
+    ZMUMPS_INT* uns_perm;
 
     /* Scaling (input only in this version) */
-    ZMUMPS_DOUBLE *colsca; ZMUMPS_DOUBLE *rowsca;
+    ZMUMPS_DOUBLE* colsca;
+    ZMUMPS_DOUBLE* rowsca;
     /* RHS, solution, ouptput data and statistics */
     ZMUMPS_DOUBLE *rhs, *rhs_sparse, *sol_loc;
     ZMUMPS_INT *irhs_sparse, *irhs_ptr, *isol_loc;
     ZMUMPS_INT nrhs, lrhs, nz_rhs, lsol_loc;
-  ZMUMPS_INT schur_mloc, schur_nloc, schur_lld;
-  ZMUMPS_INT mblock, nblock, nprow, npcol;
-    ZMUMPS_INT info[40],infog[40];
+    ZMUMPS_INT schur_mloc, schur_nloc, schur_lld;
+    ZMUMPS_INT mblock, nblock, nprow, npcol;
+    ZMUMPS_INT info[40], infog[40];
     ZMUMPS_DOUBLE2 rinfo[20], rinfog[20];
     /* Null space */
-    ZMUMPS_INT deficiency; ZMUMPS_DOUBLE * nullspace; ZMUMPS_INT * mapping;
+    ZMUMPS_INT deficiency;
+    ZMUMPS_DOUBLE* nullspace;
+    ZMUMPS_INT* mapping;
     /* Schur */
-    ZMUMPS_INT size_schur; ZMUMPS_INT *listvar_schur; ZMUMPS_DOUBLE *schur;
+    ZMUMPS_INT size_schur;
+    ZMUMPS_INT* listvar_schur;
+    ZMUMPS_DOUBLE* schur;
     /* Internal parameters */
     ZMUMPS_INT instance_number;
     /* For out-of-core */
     char ooc_tmpdir[151];
     char ooc_prefix[151];
-  } ZMUMPS_STRUC_C;
+} ZMUMPS_STRUC_C;
 
 
 extern "C" {
-void zmumps_c(ZMUMPS_STRUC_C * zmumps_par);
+void zmumps_c(ZMUMPS_STRUC_C* zmumps_par);
 }
 
 #endif
-

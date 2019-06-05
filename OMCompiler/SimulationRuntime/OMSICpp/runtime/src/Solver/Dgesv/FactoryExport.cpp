@@ -24,5 +24,6 @@ shared_ptr<ILinearAlgLoopSolver> createDgesvSolver(shared_ptr<ILinSolverSettings
 }
 
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif

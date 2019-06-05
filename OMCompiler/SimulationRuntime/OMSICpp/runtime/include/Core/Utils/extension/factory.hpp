@@ -20,12 +20,14 @@
 #include <boost/type_traits/is_class.hpp>
 #include <boost/type_traits/is_const.hpp>
 
-namespace boost {
-namespace extensions {
-/* For Doxygen, and for easier readability by users, a
- * simplified version of this class is provided, but never
- * compiled. The actual class definition is in impl/factory.hpp.
- */
+namespace boost
+{
+    namespace extensions
+    {
+        /* For Doxygen, and for easier readability by users, a
+         * simplified version of this class is provided, but never
+         * compiled. The actual class definition is in impl/factory.hpp.
+         */
 #ifdef BOOST_EXTENSION_DOXYGEN_INVOKED
 /** This class is a function object that returns
   * new instances of type T, using factories that
@@ -94,21 +96,21 @@ public:
 
 #define N BOOST_EXTENSION_MAX_FUNCTOR_PARAMS
 
-template <class T
-          BOOST_PP_COMMA_IF(N)
-          BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT(
-              BOOST_PP_INC(N), class Param, void) >
-class factory;
+        template <class T
+                  BOOST_PP_COMMA_IF(N)
+                  BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT(
+                      BOOST_PP_INC(N), class Param, void) >
+        class factory;
 
 #undef N
 
-// generate specializations of factory
+        // generate specializations of factory
 # define BOOST_PP_ITERATION_LIMITS \
   (0, BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
 # define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/factory.hpp"
 # include BOOST_PP_ITERATE()
 #endif
-}  // namespace extensions
-}  // namespace boost
+    } // namespace extensions
+} // namespace boost
 
 #endif  // BOOST_EXTENSION_FACTORY_HPP

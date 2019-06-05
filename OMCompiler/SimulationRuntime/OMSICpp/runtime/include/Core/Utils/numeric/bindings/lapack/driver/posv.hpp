@@ -42,22 +42,25 @@
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end LAPACK-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end LAPACK-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_LAPACK_CLAPACK
-//
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo >
 inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
@@ -67,9 +70,9 @@ inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo >
 inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
@@ -79,9 +82,9 @@ inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo >
 inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
@@ -92,9 +95,9 @@ inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
 }
 
 //
-// Overloaded function for dispatching to
-// * ATLAS's CLAPACK backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * ATLAS's CLAPACK backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo >
 inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
@@ -105,142 +108,146 @@ inline std::ptrdiff_t posv( Order, const UpLo, const int n, const int nrhs,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename UpLo >
-inline std::ptrdiff_t posv( Order, const UpLo, const fortran_int_t n,
-        const fortran_int_t nrhs, float* a, const fortran_int_t lda, float* b,
-        const fortran_int_t ldb ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_SPOSV( &lapack_option< UpLo >::value, &n, &nrhs, a, &lda, b, &ldb,
-            &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline std::ptrdiff_t posv(Order, const UpLo, const fortran_int_t n,
+                                               const fortran_int_t nrhs, float* a, const fortran_int_t lda, float* b,
+                                               const fortran_int_t ldb)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_SPOSV(&lapack_option<UpLo>::value, &n, &nrhs, a, &lda, b, &ldb,
+                                     &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename UpLo >
-inline std::ptrdiff_t posv( Order, const UpLo, const fortran_int_t n,
-        const fortran_int_t nrhs, double* a, const fortran_int_t lda,
-        double* b, const fortran_int_t ldb ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_DPOSV( &lapack_option< UpLo >::value, &n, &nrhs, a, &lda, b, &ldb,
-            &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline std::ptrdiff_t posv(Order, const UpLo, const fortran_int_t n,
+                                               const fortran_int_t nrhs, double* a, const fortran_int_t lda,
+                                               double* b, const fortran_int_t ldb)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_DPOSV(&lapack_option<UpLo>::value, &n, &nrhs, a, &lda, b, &ldb,
+                                     &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order, typename UpLo >
-inline std::ptrdiff_t posv( Order, const UpLo, const fortran_int_t n,
-        const fortran_int_t nrhs, std::complex<float>* a,
-        const fortran_int_t lda, std::complex<float>* b,
-        const fortran_int_t ldb ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_CPOSV( &lapack_option< UpLo >::value, &n, &nrhs, a, &lda, b, &ldb,
-            &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline std::ptrdiff_t posv(Order, const UpLo, const fortran_int_t n,
+                                               const fortran_int_t nrhs, std::complex<float>* a,
+                                               const fortran_int_t lda, std::complex<float>* b,
+                                               const fortran_int_t ldb)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_CPOSV(&lapack_option<UpLo>::value, &n, &nrhs, a, &lda, b, &ldb,
+                                     &info);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order, typename UpLo >
-inline std::ptrdiff_t posv( Order, const UpLo, const fortran_int_t n,
-        const fortran_int_t nrhs, std::complex<double>* a,
-        const fortran_int_t lda, std::complex<double>* b,
-        const fortran_int_t ldb ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    fortran_int_t info(0);
-    LAPACK_ZPOSV( &lapack_option< UpLo >::value, &n, &nrhs, a, &lda, b, &ldb,
-            &info );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline std::ptrdiff_t posv(Order, const UpLo, const fortran_int_t n,
+                                               const fortran_int_t nrhs, std::complex<double>* a,
+                                               const fortran_int_t lda, std::complex<double>* b,
+                                               const fortran_int_t ldb)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        fortran_int_t info(0);
+                        LAPACK_ZPOSV(&lapack_option<UpLo>::value, &n, &nrhs, a, &lda, b, &ldb,
+                                     &info);
+                        return info;
+                    }
 
 #endif
-} // namespace detail
+                } // namespace detail
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to posv.
-//
-template< typename Value >
-struct posv_impl {
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to posv.
+                //
+                template <typename Value>
+                struct posv_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-
-    //
-    // Static member function, that
-    // * Deduces the required arguments for dispatching to LAPACK, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixA, typename MatrixB >
-    static std::ptrdiff_t invoke( MatrixA& a, MatrixB& b ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::data_order< MatrixA >::type order;
-        typedef typename result_of::uplo_tag< MatrixA >::type uplo;
-        BOOST_STATIC_ASSERT( (bindings::is_column_major< MatrixB >::value) );
-        BOOST_STATIC_ASSERT( (boost::is_same< typename remove_const<
-                typename bindings::value_type< MatrixA >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                MatrixB >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixA >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixB >::value) );
-        BOOST_ASSERT( bindings::size_column(a) >= 0 );
-        BOOST_ASSERT( bindings::size_column(b) >= 0 );
-        BOOST_ASSERT( bindings::size_minor(a) == 1 ||
-                bindings::stride_minor(a) == 1 );
-        BOOST_ASSERT( bindings::size_minor(b) == 1 ||
-                bindings::stride_minor(b) == 1 );
-        BOOST_ASSERT( bindings::stride_major(a) >= std::max< std::ptrdiff_t >(1,
-                bindings::size_column(a)) );
-        BOOST_ASSERT( bindings::stride_major(b) >= std::max< std::ptrdiff_t >(1,
-                bindings::size_column(a)) );
-        return detail::posv( order(), uplo(), bindings::size_column(a),
-                bindings::size_column(b), bindings::begin_value(a),
-                bindings::stride_major(a), bindings::begin_value(b),
-                bindings::stride_major(b) );
-    }
-
-};
+                    //
+                    // Static member function, that
+                    // * Deduces the required arguments for dispatching to LAPACK, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixA, typename MatrixB>
+                    static std::ptrdiff_t invoke(MatrixA& a, MatrixB& b)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::data_order<MatrixA>::type order;
+                        typedef typename result_of::uplo_tag<MatrixA>::type uplo;
+                        BOOST_STATIC_ASSERT((bindings::is_column_major<MatrixB>::value));
+                        BOOST_STATIC_ASSERT((boost::is_same<typename remove_const<
+                                                                typename bindings::value_type<MatrixA>::type>::type,
+                                                            typename remove_const<typename bindings::value_type<
+                                                                MatrixB>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixA>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixB>::value));
+                        BOOST_ASSERT(bindings::size_column(a) >= 0);
+                        BOOST_ASSERT(bindings::size_column(b) >= 0);
+                        BOOST_ASSERT(bindings::size_minor(a) == 1 ||
+                            bindings::stride_minor(a) == 1);
+                        BOOST_ASSERT(bindings::size_minor(b) == 1 ||
+                            bindings::stride_minor(b) == 1);
+                        BOOST_ASSERT(bindings::stride_major(a) >= std::max<std::ptrdiff_t>(1,
+                                                                                           bindings::size_column(a)));
+                        BOOST_ASSERT(bindings::stride_major(b) >= std::max<std::ptrdiff_t>(1,
+                                                                                           bindings::size_column(a)));
+                        return detail::posv(order(), uplo(), bindings::size_column(a),
+                                            bindings::size_column(b), bindings::begin_value(a),
+                                            bindings::stride_major(a), bindings::begin_value(b),
+                                            bindings::stride_major(b));
+                    }
+                };
 
 
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. In
-// addition, if applicable, they are overloaded for user-defined workspaces.
-// Calls to these functions are passed to the posv_impl classes. In the
-// documentation, most overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. In
+                // addition, if applicable, they are overloaded for user-defined workspaces.
+                // Calls to these functions are passed to the posv_impl classes. In the
+                // documentation, most overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-//
-// Overloaded function for posv. Its overload differs for
-//
-template< typename MatrixA, typename MatrixB >
-inline std::ptrdiff_t posv( MatrixA& a, MatrixB& b ) {
-    return posv_impl< typename bindings::value_type<
-            MatrixA >::type >::invoke( a, b );
-}
-
-} // namespace lapack
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for posv. Its overload differs for
+                //
+                template <typename MatrixA, typename MatrixB>
+                inline std::ptrdiff_t posv(MatrixA& a, MatrixB& b)
+                {
+                    return posv_impl<typename bindings::value_type<
+                        MatrixA>::type>::invoke(a, b);
+                }
+            } // namespace lapack
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

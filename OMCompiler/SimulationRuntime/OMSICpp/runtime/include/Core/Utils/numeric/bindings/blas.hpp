@@ -14,4 +14,3 @@
 #include <Core/Utils/numeric/bindings/blas/level3.hpp>
 
 #endif
-

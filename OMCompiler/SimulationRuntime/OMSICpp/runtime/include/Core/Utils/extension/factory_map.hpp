@@ -17,28 +17,32 @@
 #include <Core/Utils/extension/factory.hpp>
 #include <Core/Utils/extension/impl/typeinfo.hpp>
 
-namespace boost {
-namespace extensions {
+namespace boost
+{
+    namespace extensions
+    {
+        /** \brief A collection of factories of various types.
+          * \tparam TypeInfo The type used for TypeInfo. By default,
+          *         RTTI is used, but users can define their own TypeInfo.
+          *         See impl/typeinfo.hpp.
+          */
+        template <class TypeInfo>
+        class basic_factory_map
+        {
+        public:
+            ~basic_factory_map()
+            {
+                for (typename std::map<TypeInfo, generic_map_holder*>::iterator
+                     it = maps_.begin(); it != maps_.end(); ++it)
+                {
+                    delete it->second;
+                }
+            }
 
-/** \brief A collection of factories of various types.
-  * \tparam TypeInfo The type used for TypeInfo. By default,
-  *         RTTI is used, but users can define their own TypeInfo.
-  *         See impl/typeinfo.hpp.
-  */
-template <class TypeInfo>
-class basic_factory_map {
-public:
-  ~basic_factory_map() {
-    for (typename std::map<TypeInfo, generic_map_holder*>::iterator
-         it =maps_.begin(); it != maps_.end(); ++it) {
-      delete it->second;
-    }
-  }
-
-/* Include simplified versions of the get and conversion member
- * functions for Doxygen, and to make it easier for readers of
- * this file.
- */
+            /* Include simplified versions of the get and conversion member
+             * functions for Doxygen, and to make it easier for readers of
+             * this file.
+             */
 #ifdef BOOST_EXTENSION_DOXYGEN_INVOKED
   /** \brief Return a map of the factories that match the given interface.
     * \tparam Interface The type of the interface returned by factories in
@@ -73,31 +77,36 @@ public:
   }
 
 #else
-  // generate get and conversion template member functions from the
-  // specification in impl/
+            // generate get and conversion template member functions from the
+            // specification in impl/
 # define BOOST_PP_ITERATION_LIMITS (0, \
     BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
 # define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/factory_map.hpp"
 # include BOOST_PP_ITERATE()
 
-private:
+        private:
 
-  struct generic_map_holder {
-    virtual ~generic_map_holder() {}
-  };
+            struct generic_map_holder
+            {
+                virtual ~generic_map_holder()
+                {
+                }
+            };
 
-  template <class T>
-  struct map_holder : generic_map_holder, T {};
+            template <class T>
+            struct map_holder : generic_map_holder, T
+            {
+            };
 
-  std::map<TypeInfo, generic_map_holder*> maps_;
+            std::map<TypeInfo, generic_map_holder*> maps_;
 #endif
-};
-/** A typedef for convenience - provides the most common
-  * type of basic_factory_map.
-  */
-typedef basic_factory_map<default_type_info> factory_map;
+        };
 
-} // namespace extensions
+        /** A typedef for convenience - provides the most common
+          * type of basic_factory_map.
+          */
+        typedef basic_factory_map<default_type_info> factory_map;
+    } // namespace extensions
 } // namespace boost
 
 #endif  // BOOST_EXTENSION_FACTORY_MAP_HPP

@@ -7,7 +7,6 @@
 #if defined(__vxworks) || defined(__TRICORE__)
 
 
-
 #elif defined(OMC_BUILD)
 
 
@@ -40,7 +39,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_solver(boost::exten
 }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
- /** @} */ // end of coreSolver
+/** @} */ // end of coreSolver

@@ -56,14 +56,15 @@
 
 /* Next line defines SMUMPS_INT, SMUMPS_DOUBLE and SMUMPS_DOUBLE2 */
 #include <smumps_prec.h>
+
 /*
  * Definition of the (simplified)
  * MUMPS C structure
  */
 typedef struct
-  {
+{
     SMUMPS_INT sym, par, job;
-    SMUMPS_INT comm_fortran;    /* Fortran communicator */
+    SMUMPS_INT comm_fortran; /* Fortran communicator */
     SMUMPS_INT icntl[40];
     SMUMPS_DOUBLE2 cntl[5];
     SMUMPS_INT n;
@@ -72,46 +73,59 @@ typedef struct
                        we free + malloc when we have large variation */
 
     /* Assembled entry */
-    SMUMPS_INT nz; SMUMPS_INT *irn; SMUMPS_INT *jcn; SMUMPS_DOUBLE *a;
+    SMUMPS_INT nz;
+    SMUMPS_INT* irn;
+    SMUMPS_INT* jcn;
+    SMUMPS_DOUBLE* a;
     /* Distributed entry */
-    SMUMPS_INT nz_loc; SMUMPS_INT *irn_loc; SMUMPS_INT *jcn_loc; SMUMPS_DOUBLE *a_loc;
+    SMUMPS_INT nz_loc;
+    SMUMPS_INT* irn_loc;
+    SMUMPS_INT* jcn_loc;
+    SMUMPS_DOUBLE* a_loc;
     /* Element entry */
-    SMUMPS_INT nelt; SMUMPS_INT *eltptr; SMUMPS_INT *eltvar; SMUMPS_DOUBLE *a_elt;
+    SMUMPS_INT nelt;
+    SMUMPS_INT* eltptr;
+    SMUMPS_INT* eltvar;
+    SMUMPS_DOUBLE* a_elt;
 
     /* Ordering, if given by user */
-    SMUMPS_INT *perm_in;
+    SMUMPS_INT* perm_in;
 
     /* Orderings returned to user */
     /* symmetric permutation */
-    SMUMPS_INT *sym_perm;
+    SMUMPS_INT* sym_perm;
     /* column permutation */
-    SMUMPS_INT *uns_perm;
+    SMUMPS_INT* uns_perm;
 
     /* Scaling (input only in this version) */
-    SMUMPS_DOUBLE *colsca; SMUMPS_DOUBLE *rowsca;
+    SMUMPS_DOUBLE* colsca;
+    SMUMPS_DOUBLE* rowsca;
     /* RHS, solution, ouptput data and statistics */
     SMUMPS_DOUBLE *rhs, *rhs_sparse, *sol_loc;
     SMUMPS_INT *irhs_sparse, *irhs_ptr, *isol_loc;
     SMUMPS_INT nrhs, lrhs, nz_rhs, lsol_loc;
-  SMUMPS_INT schur_mloc, schur_nloc, schur_lld;
-  SMUMPS_INT mblock, nblock, nprow, npcol;
-    SMUMPS_INT info[40],infog[40];
+    SMUMPS_INT schur_mloc, schur_nloc, schur_lld;
+    SMUMPS_INT mblock, nblock, nprow, npcol;
+    SMUMPS_INT info[40], infog[40];
     SMUMPS_DOUBLE2 rinfo[20], rinfog[20];
     /* Null space */
-    SMUMPS_INT deficiency; SMUMPS_DOUBLE * nullspace; SMUMPS_INT * mapping;
+    SMUMPS_INT deficiency;
+    SMUMPS_DOUBLE* nullspace;
+    SMUMPS_INT* mapping;
     /* Schur */
-    SMUMPS_INT size_schur; SMUMPS_INT *listvar_schur; SMUMPS_DOUBLE *schur;
+    SMUMPS_INT size_schur;
+    SMUMPS_INT* listvar_schur;
+    SMUMPS_DOUBLE* schur;
     /* Internal parameters */
     SMUMPS_INT instance_number;
     /* For out-of-core */
     char ooc_tmpdir[151];
     char ooc_prefix[151];
-  } SMUMPS_STRUC_C;
+} SMUMPS_STRUC_C;
 
 
 extern "C" {
-void smumps_c(SMUMPS_STRUC_C * smumps_par);
+void smumps_c(SMUMPS_STRUC_C* smumps_par);
 }
 
 #endif
-

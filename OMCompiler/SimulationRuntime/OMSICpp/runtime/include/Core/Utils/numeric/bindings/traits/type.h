@@ -22,8 +22,8 @@ typedef _Complex float  fcomplex_t ;
 typedef _Complex double dcomplex_t ;
 #else
 #include <complex>
-typedef std::complex<float>  fcomplex_t ;
-typedef std::complex<double> dcomplex_t ;
+typedef std::complex<float> fcomplex_t;
+typedef std::complex<double> dcomplex_t;
 #endif
 
 #else

@@ -27,7 +27,9 @@ Provision of member variables used by all solvers.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
-class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation : public SimulationMonitor
+class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation : 
+public
+SimulationMonitor
 {
 public:
   void updateEventState();
@@ -120,9 +122,9 @@ private:
       return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
   }
 
-  #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
   std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
   MeasureTimeValues *writeFunctionStartValues, *writeFunctionEndValues;
-  #endif
+#endif
 };
- /** @} */ // end of coreSolver
+/** @} */ // end of coreSolver
