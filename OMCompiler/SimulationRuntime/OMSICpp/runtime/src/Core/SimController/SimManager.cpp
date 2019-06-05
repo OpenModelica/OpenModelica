@@ -11,30 +11,31 @@
 #include <sstream>
 
 SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
-  : _mixed_system      (system)
-  , _config            (config)
-  , _tStops            ()
-  , _dimtimeevent      (0)
-  , _dimZeroFunc       (0)
-  , _timeEventCounter  (NULL)
-  , _events            (NULL)
-  , _sampleCycles      (NULL)
-  , _cycleCounter      (0)
-  , _resetCycle        (0)
-  , _solverTask        (ISolver::UNDEF_CALL)
-  , _H                 (0)
-  , _dbgId             (0)
-  , _tStart            (0)
-  , _tEnd              (0)
-  , _lastCycleTime     (0)
-  , _continueSimulation(false)
-  , _writeFinalState   (false)
-  ,_checkTimeout(false)
+    : _mixed_system(system)
+      , _config(config)
+      , _tStops()
+      , _dimtimeevent(0)
+      , _dimZeroFunc(0)
+      , _timeEventCounter(NULL)
+      , _events(NULL)
+      , _sampleCycles(NULL)
+      , _cycleCounter(0)
+      , _resetCycle(0)
+      , _solverTask(ISolver::UNDEF_CALL)
+      , _H(0)
+      , _dbgId(0)
+      , _tStart(0)
+      , _tEnd(0)
+      , _lastCycleTime(0)
+      , _continueSimulation(false)
+      , _writeFinalState(false)
+      , _checkTimeout(false)
 {
     _solver = _config->createSelectedSolver(system.get());
-    _initialization = shared_ptr<Initialization>(new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
+    _initialization = shared_ptr<Initialization>(
+        new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
 
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
         measureTimeFunctionsArray = new std::vector<MeasureTimeData*>(2, NULL); //0 runSimulation, initializeSimulation
@@ -56,7 +57,7 @@ SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
         runSimStartValues = NULL;
         runSimEndValues = NULL;
     }
-    #endif
+#endif
 }
 
 SimManager::~SimManager()
@@ -68,7 +69,7 @@ SimManager::~SimManager()
     if (_sampleCycles)
         delete[] _sampleCycles;
 
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     if(initSimStartValues)
         delete initSimStartValues;
     if(initSimEndValues)
@@ -77,18 +78,18 @@ SimManager::~SimManager()
         delete runSimStartValues;
     if(runSimEndValues)
         delete runSimEndValues;
-    #endif
+#endif
 }
 
 void SimManager::initialize()
 {
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     MEASURETIME_REGION_DEFINE(initSimHandler, "initializeSimulation");
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_START(initSimStartValues, initSimHandler, "initializeSimulation");
     }
-    #endif
+#endif
 
     _cont_system = dynamic_pointer_cast<IContinuous>(_mixed_system);
     _timeevent_system = dynamic_pointer_cast<ITime>(_mixed_system);
@@ -98,25 +99,25 @@ void SimManager::initialize()
     // Check dynamic casts
     if (!_event_system)
     {
-      throw ModelicaSimulationError(SIMMANAGER,"Could not get event system.");
+        throw ModelicaSimulationError(SIMMANAGER, "Could not get event system.");
     }
     if (!_cont_system)
     {
-      throw ModelicaSimulationError(SIMMANAGER,"Could not get continuous-event system.");
+        throw ModelicaSimulationError(SIMMANAGER, "Could not get continuous-event system.");
     }
     if (!_timeevent_system)
     {
-      throw ModelicaSimulationError(SIMMANAGER,"Could not get time-event system.");
+        throw ModelicaSimulationError(SIMMANAGER, "Could not get time-event system.");
     }
     if (!_step_event_system)
     {
-      throw ModelicaSimulationError(SIMMANAGER,"Could not get step-event system.");
+        throw ModelicaSimulationError(SIMMANAGER, "Could not get step-event system.");
     }
 
     _tStart = _config->getGlobalSettings()->getStartTime();
     _tEnd = _config->getGlobalSettings()->getEndTime();
 
-    LOGGER_WRITE("SimManager: Start initialization",LC_INIT,LL_DEBUG);
+    LOGGER_WRITE("SimManager: Start initialization", LC_INIT, LL_DEBUG);
     LOGGER_STATUS_STARTING(_tStart, _tEnd);
 
     // Reset debug ID
@@ -158,11 +159,11 @@ void SimManager::initialize()
     // Set flag for endless simulation (if solver returns)
     _continueSimulation = _tEnd > _tStart;
 
-        if(_checkTimeout)
-        {
+    if (_checkTimeout)
+    {
         //being uncomment for labeling reduction
         _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
-        }
+    }
     _dimZeroFunc = _event_system->getDimZeroFunc();
     _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
     if (_dimZeroFunc == _event_system->getDimZeroFunc())
@@ -173,8 +174,8 @@ void SimManager::initialize()
         memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
 
-    LOGGER_WRITE("SimManager: Assemble completed",LC_INIT,LL_DEBUG);
-//#if defined(__TRICORE__) || defined(__vxworks)
+    LOGGER_WRITE("SimManager: Assemble completed", LC_INIT, LL_DEBUG);
+    //#if defined(__TRICORE__) || defined(__vxworks)
     // Initialization for RT simulation
     if (_config->getGlobalSettings()->useEndlessSim())
     {
@@ -183,30 +184,36 @@ void SimManager::initialize()
         for (int i = 1; i < _dimtimeevent; i++)
             _resetCycle *= _sampleCycles[i];
         // All Events are updated every cycle. In order to have a change in timeEventCounter, the reset is set to two
-        if(_resetCycle == 1)
-          _resetCycle++;
+        if (_resetCycle == 1)
+            _resetCycle++;
         _solver->initialize();
     }
-//#endif
-    #ifdef RUNTIME_PROFILING
+    //#endif
+#ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_END(initSimStartValues, initSimEndValues, (*measureTimeFunctionsArray)[0], initSimHandler);
     }
-    #endif
+#endif
 }
 
 void SimManager::runSingleStep()
 {
     // Increase time event counter
-  double cycletime = _config->getGlobalSettings()->gethOutput();
-    if (_dimtimeevent && cycletime > 0.0)
+    double cycletime = _config->getGlobalSettings()->gethOutput();
+    if (_dimtimeevent&& cycletime
+    >
+    0.0
+    )
     {
-
-      if (_lastCycleTime && cycletime != _lastCycleTime)
-            throw ModelicaSimulationError(SIMMANAGER,"Cycle time can not be changed, if time events (samples) are present!");
+        if (_lastCycleTime&& cycletime
+        !=
+        _lastCycleTime
+        )
+        throw ModelicaSimulationError(
+            SIMMANAGER, "Cycle time can not be changed, if time events (samples) are present!");
         else
-            _lastCycleTime = cycletime;
+        _lastCycleTime = cycletime;
 
         for (int i = 0; i < _dimtimeevent; i++)
         {
@@ -227,38 +234,38 @@ void SimManager::runSingleStep()
     // Reset everything to prevent overflows
     if (_cycleCounter == _resetCycle + 1)
     {
-      _cycleCounter = 1;
+        _cycleCounter = 1;
         for (int i = 0; i < _dimtimeevent; i++)
-          _timeEventCounter[i] = 0;
+            _timeEventCounter[i] = 0;
     }
 }
 
 void SimManager::computeSampleCycles()
 {
     int counter = 0;
-    time_event_type timeEventPairs;                        ///< - Contains start times and time spans
+    time_event_type timeEventPairs; ///< - Contains start times and time spans
 
     _timeevent_system->initTimeEventData();
-    std::vector<std::pair<double, double> >::iterator iter;
+    std::vector<std::pair<double, double>>::iterator iter;
     iter = timeEventPairs.begin();
     for (; iter != timeEventPairs.end(); ++iter)
     {
         if (iter->first != 0.0 || iter->second == 0.0)
         {
-            throw ModelicaSimulationError(SIMMANAGER,"Time event not starting at t=0.0 or not cyclic!");
+            throw ModelicaSimulationError(SIMMANAGER, "Time event not starting at t=0.0 or not cyclic!");
         }
         else
         {
             // Check if sample time is a multiple of the cycle time (with a tolerance)
-            if ((iter->second / _config->getGlobalSettings()->gethOutput()) - int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
+            if ((iter->second / _config->getGlobalSettings()->gethOutput()) - int(
+                (iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
             {
                 _sampleCycles[counter] = int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5);
             }
             else
             {
-                throw ModelicaSimulationError(SIMMANAGER,"Sample time is not a multiple of the cycle time!");
+                throw ModelicaSimulationError(SIMMANAGER, "Sample time is not a multiple of the cycle time!");
             }
-
         }
         counter++;
     }
@@ -266,13 +273,13 @@ void SimManager::computeSampleCycles()
 
 void SimManager::runSimulation()
 {
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     MEASURETIME_REGION_DEFINE(runSimHandler, "runSimulation");
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_START(runSimStartValues, runSimHandler, "runSimulation");
     }
-    #endif
+#endif
     try
     {
         LOGGER_WRITE("SimManager: Start simulation at t = " + to_string(_tStart), LC_SOLVER, LL_INFO);
@@ -285,7 +292,7 @@ void SimManager::runSimulation()
             writeProperties();
         }
     }
-    catch (std::exception & ex)
+    catch (std::exception& ex)
     {
         LOGGER_WRITE("SimManager: Simulation stopped with errors before t = " +
                      to_string(_tEnd), LC_SOLVER, LL_ERROR);
@@ -295,12 +302,12 @@ void SimManager::runSimulation()
         throw ModelicaSimulationError(SIMMANAGER, "Simulation stopped with errors before t = " + to_string(_tEnd),
                                       string(ex.what()), LOGGER_IS_SET(LC_SOLVER, LL_ERROR));
     }
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_END(runSimStartValues, runSimEndValues, (*measureTimeFunctionsArray)[1], runSimHandler);
     }
-    #endif
+#endif
 }
 
 void SimManager::stopSimulation()
@@ -311,150 +318,150 @@ void SimManager::stopSimulation()
 
 void SimManager::SetCheckTimeout(bool checkTimeout)
 {
-    _checkTimeout=checkTimeout;
+    _checkTimeout = checkTimeout;
 }
 
 void SimManager::writeProperties()
 {
-  // declaration for Logging
-  std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLVER, LL_INFO);
+    // declaration for Logging
+    std::pair<LogCategory, LogLevel> logM = Logger::getLogMode(LC_SOLVER, LL_INFO);
 
-  LOGGER_WRITE_TUPLE("SimManager: Simulation stop time: " + to_string(_tEnd), logM);
-  //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
+    LOGGER_WRITE_TUPLE("SimManager: Simulation stop time: " + to_string(_tEnd), logM);
+    //LOGGER_WRITE("Rechenzeit in Sekunden:                 " + to_string>(_tClockEnd-_tClockStart), logM);
 
-  LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLVER, LL_INFO);
-  _solver->writeSimulationInfo();
-  LOGGER_WRITE_END(LC_SOLVER, LL_INFO);
-/*
-     // Zeit
-    if(_settings->_globalSettings->bEndlessSim)
-    {
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: endlos"),logM);
-     //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(config->getSimControllerSettings()->dTendTol),logM);
-  }
-    else
-    {
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: ") + boost::lexical_cast<std::string>(_tEnd),logM);
-      //_infoStream << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
-      //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(_config->getSimControllerSettings()->dTendTol),logM);
-     }
+    LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLVER, LL_INFO);
+    _solver->writeSimulationInfo();
+    LOGGER_WRITE_END(LC_SOLVER, LL_INFO);
+    /*
+         // Zeit
+        if(_settings->_globalSettings->bEndlessSim)
+        {
+         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: endlos"),logM);
+         //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
+         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(config->getSimControllerSettings()->dTendTol),logM);
+      }
+        else
+        {
+          LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: ") + boost::lexical_cast<std::string>(_tEnd),logM);
+          //_infoStream << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
+          //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(_config->getSimControllerSettings()->dTendTol),logM);
+         }
 
-     if(_settings->_globalSettings->bRealtimeSim)
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Echtzeit Simulationszeit aktiv:"),logM);
-       log->wirte(boost::lexical_cast<std::string>("Faktor:                 ") + boost::lexical_cast<std::string>(_settings->_globalSettings->dRealtimeFactor),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Aktive Rechenzeit (Pause Zeit):           ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart-_dataPool->getPauseDelay())
-            + boost::lexical_cast<std::string>("(") + boost::lexical_cast<std::string>(_dataPool->getPauseDelay()) + boost::lexical_cast<std::string>(")"),logM);
-     }
-     if(_dimSolver == 1)
-     {
-       if(!(_solver->getSolverStatus() & ISolver::ERROR_STOP))
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation erfolgreich."),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation!"),logM);
+         if(_settings->_globalSettings->bRealtimeSim)
+         {
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Echtzeit Simulationszeit aktiv:"),logM);
+           log->wirte(boost::lexical_cast<std::string>("Faktor:                 ") + boost::lexical_cast<std::string>(_settings->_globalSettings->dRealtimeFactor),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Aktive Rechenzeit (Pause Zeit):           ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart-_dataPool->getPauseDelay())
+                + boost::lexical_cast<std::string>("(") + boost::lexical_cast<std::string>(_dataPool->getPauseDelay()) + boost::lexical_cast<std::string>(")"),logM);
+         }
+         if(_dimSolver == 1)
+         {
+           if(!(_solver->getSolverStatus() & ISolver::ERROR_STOP))
+             LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation erfolgreich."),logM);
+           else
+             LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation!"),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt des Solvers:   ") + boost::lexical_cast<std::string>(_totStps.at(0)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte des Solvers: ") + boost::lexical_cast<std::string>(_accStps.at(0)),logM);
-       log->wrtie(boost::lexical_cast<std::string>("Verworfene Schritte  des Solvers: ") + boost::lexical_cast<std::string>(_rejStps.at(0)),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt des Solvers:   ") + boost::lexical_cast<std::string>(_totStps.at(0)),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte des Solvers: ") + boost::lexical_cast<std::string>(_accStps.at(0)),logM);
+           log->wrtie(boost::lexical_cast<std::string>("Verworfene Schritte  des Solvers: ") + boost::lexical_cast<std::string>(_rejStps.at(0)),logM);
 
-       if(Logger::getInstance()->isOutput(logM)
-        _solver->writeSimulationInfo();
+           if(Logger::getInstance()->isOutput(logM)
+            _solver->writeSimulationInfo();
 
-     }
-     else
-     {
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Solver: ") + boost::lexical_cast<std::string>(_dimSolver),logM) ;
+         }
+         else
+         {
+         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Solver: ") + boost::lexical_cast<std::string>(_dimSolver),logM) ;
 
-     if(_completelyDecoupledSystems || !(_settings->bDynCouplingStepSize))
-     {
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung: fix "),logM);
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:          ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHcpl), logM);
+         if(_completelyDecoupledSystems || !(_settings->bDynCouplingStepSize))
+         {
+          LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung: fix "),logM);
+          LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:          ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
+          LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHcpl), logM);
 
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte: ") + boost::lexical_cast<std::string>(_totCouplStps),logM) ;
+          LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte: ") + boost::lexical_cast<std::string>(_totCouplStps),logM) ;
 
-      if(abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND)
-        LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId), logM);
-      else
-        LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error. "),logM);
+          if(abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND)
+            LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId), logM);
+          else
+            LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error. "),logM);
 
-     }
-     else
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung:            dynamisch"),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:                     ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
+         }
+         else
+         {
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung:            dynamisch"),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:                     ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite für nächsten Schritt: ") + boost::lexical_cast<std::string>(_H),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Maximal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmax),logM) ;
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Minimal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmin),logM) ;
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite für nächsten Schritt: ") + boost::lexical_cast<std::string>(_H),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Maximal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmax),logM) ;
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Minimal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmin),logM) ;
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Obere Grenze für Schrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHuplim),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Untere Grenze für Schrittweite:          ") + boost::lexical_cast<std::string>(_settings->dHlowlim),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("k-Faktor für Schrittweite:               ") + boost::lexical_cast<std::string>(_settings->dK),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Savety-Faktor:                           ") + boost::lexical_cast<std::string>(_settings->dC),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Upscale-Faktor:                          ") + boost::lexical_cast<std::string>(_settings->dCmax),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Downscale-Faktor:                        ") + boost::lexical_cast<std::string>(_settings->dCmin),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz:                          ") + boost::lexical_cast<std::string>(_settings->dErrTol),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz für Single Step:          ") + boost::lexical_cast<std::string>(_settings->dSingleStepTol),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Obere Grenze für Schrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHuplim),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Untere Grenze für Schrittweite:          ") + boost::lexical_cast<std::string>(_settings->dHlowlim),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("k-Faktor für Schrittweite:               ") + boost::lexical_cast<std::string>(_settings->dK),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Savety-Faktor:                           ") + boost::lexical_cast<std::string>(_settings->dC),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Upscale-Faktor:                          ") + boost::lexical_cast<std::string>(_settings->dCmax),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Downscale-Faktor:                        ") + boost::lexical_cast<std::string>(_settings->dCmin),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz:                          ") + boost::lexical_cast<std::string>(_settings->dErrTol),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz für Single Step:          ") + boost::lexical_cast<std::string>(_settings->dSingleStepTol),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte insgesamt:         ") + boost::lexical_cast<std::string>(_totCouplStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Einfach-Schritte:                 ") + boost::lexical_cast<std::string>(_singleStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon akzeptierte Schritte:              ") + boost::lexical_cast<std::string>(_accCouplStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon verworfene Schritte:               ") + boost::lexical_cast<std::string>(_rejCouplStps),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte insgesamt:         ") + boost::lexical_cast<std::string>(_totCouplStps),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Einfach-Schritte:                 ") + boost::lexical_cast<std::string>(_singleStps),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon akzeptierte Schritte:              ") + boost::lexical_cast<std::string>(_accCouplStps),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon verworfene Schritte:               ") + boost::lexical_cast<std::string>(_rejCouplStps),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verwerfbare Schritte:  ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verworfene Schritte:   ") + boost::lexical_cast<std::string>(_rejCouplStpsRow),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Zeitpunkt meiste verworfene Schritte:    ") + boost::lexical_cast<std::string>(_tRejCouplStpsRow),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verwerfbare Schritte:  ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verworfene Schritte:   ") + boost::lexical_cast<std::string>(_rejCouplStpsRow),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Zeitpunkt meiste verworfene Schritte:    ") + boost::lexical_cast<std::string>(_tRejCouplStpsRow),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anfangsschrittweite:                     ") + boost::lexical_cast<std::string>(_Hinit),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("bei einem Fehler:                        ") + boost::lexical_cast<std::string>(_simmgr_errorInit),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("nach verworfenen Schritten:              ") + boost::lexical_cast<std::string>(_rejCouplStpsInit),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anfangsschrittweite:                     ") + boost::lexical_cast<std::string>(_Hinit),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("bei einem Fehler:                        ") + boost::lexical_cast<std::string>(_simmgr_errorInit),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("nach verworfenen Schritten:              ") + boost::lexical_cast<std::string>(_rejCouplStpsInit),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Wenn Fehler knapp unter 1+ErrTol bei 0 verworf. Schritte, dann war Anfangsschrittweite gut gewählt.\n\n"),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Wenn Fehler knapp unter 1+ErrTol bei 0 verworf. Schritte, dann war Anfangsschrittweite gut gewählt.\n\n"),logM);
 
-       if(_dbgId == 0 && (abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND))
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId) + boost::lexical_cast<std::string>("\n\n"),logM);
-       else if(_dbgId == -1)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Fehlerbetrag zu groß (ev. Kopplung zu starr?). IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else if(_dbgId == -2)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Mehr als ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps)
-              + boost::lexical_cast<std::string>(" dirket nacheinander verworfenen Schritte. IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else if(_dbgId == -3)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Koppelschrittweite kleiner als ") + boost::lexical_cast<std::string>(_settings->dHlowlim)
-               + boost::lexical_cast<std::string>(". IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error"),logM);
+           if(_dbgId == 0 && (abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND))
+             LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId) + boost::lexical_cast<std::string>("\n\n"),logM);
+           else if(_dbgId == -1)
+             LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Fehlerbetrag zu groß (ev. Kopplung zu starr?). IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
+           else if(_dbgId == -2)
+             LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Mehr als ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps)
+                  + boost::lexical_cast<std::string>(" dirket nacheinander verworfenen Schritte. IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
+           else if(_dbgId == -3)
+             LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Koppelschrittweite kleiner als ") + boost::lexical_cast<std::string>(_settings->dHlowlim)
+                   + boost::lexical_cast<std::string>(". IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
+           else
+             LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error"),logM);
 
-     }
+         }
 
-     // Schritte der Solver
-     for(int i=0; i<_dimSolver; ++i)
-     {
-       if(!(_solver[i]->getSolverStatus() & ISolver::ERROR_STOP))
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation mit Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("] erfolgreich."),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation in Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]!"),logM);
+         // Schritte der Solver
+         for(int i=0; i<_dimSolver; ++i)
+         {
+           if(!(_solver[i]->getSolverStatus() & ISolver::ERROR_STOP))
+             LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation mit Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("] erfolgreich."),logM);
+           else
+             LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation in Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]!"),logM);
 
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]:   ") + boost::lexical_cast<std::string>(_totStps.at(i)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_accStps.at(i)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Verworfene Schritte  Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_rejStps.at(i)),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]:   ") + boost::lexical_cast<std::string>(_totStps.at(i)),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_accStps.at(i)),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Verworfene Schritte  Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_rejStps.at(i)),logM);
 
-     }
+         }
 
-       // Solver-Properties
-     for(int i=0; i<_dimSolver; ++i)
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("-----------------------------------------"),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("simmgr_info Ausgabe Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]"),logM);
+           // Solver-Properties
+         for(int i=0; i<_dimSolver; ++i)
+         {
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("-----------------------------------------"),logM);
+           LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("simmgr_info Ausgabe Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]"),logM);
 
-       if(Logger::getInstance()->isOutput(logM))
-         _solver[i]->writeSimulationInfo(os);
-     }
-     }
+           if(Logger::getInstance()->isOutput(logM))
+             _solver[i]->writeSimulationInfo(os);
+         }
+         }
 
-     */
+         */
 }
 
 void SimManager::runSingleProcess()
@@ -476,20 +483,20 @@ void SimManager::runSingleProcess()
     _timeevent_system->initTimeEventData();
     closestTimeEvent = _timeevent_system->computeNextTimeEvents(_tStart);
 
-  /* Logs temporarily disabled
-     BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
+    /* Logs temporarily disabled
+       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
     LOGGER_WRITE("SimManager: Run single process", LC_SOLVER, LL_DEBUG);
 
     memset(_timeEventCounter, 0, _dimtimeevent * sizeof(int));
     dimZeroF = _event_system->getDimZeroFunc();
     zeroVal_new = new double[dimZeroF];
     _timeevent_system->setTime(_tStart);
-    if (closestTimeEvent<_tEnd)
+    if (closestTimeEvent < _tEnd)
     {
         _writeFinalState = true;
         _timeevent_system->computeTimeEventConditions(_tStart);
     }
-   // _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
+    // _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
     _event_system->getZeroFunc(zeroVal_new);
 
     for (int i = 0; i < _dimZeroFunc; i++)
@@ -503,7 +510,7 @@ void SimManager::runSingleProcess()
     // Reset the time-events after the evaluation of handleSystemEvents()
     if (_dimtimeevent)
     {
-      _timeevent_system->resetTimeConditions();
+        _timeevent_system->resetTimeConditions();
     }
 
     _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
@@ -524,13 +531,13 @@ void SimManager::runSingleProcess()
         while (closestTimeEvent <= _tEnd)
         {
             // Set start time, end time, initial step size
-            endTime = closestTimeEvent;//endTime = iter->first;
+            endTime = closestTimeEvent; //endTime = iter->first;
             _solver->setStartTime(startTime);
             _solver->setEndTime(endTime);
             _solver->setInitStepSize(_config->getGlobalSettings()->gethOutput());
             _solver->solve(_solverTask);
 
-            if (_solverTask & ISolver::FIRST_CALL)
+            if (_solverTask& ISolver::FIRST_CALL)
             {
                 _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::FIRST_CALL);
                 _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
@@ -538,27 +545,27 @@ void SimManager::runSingleProcess()
             //prepare next step, starting from last endTime
             startTime = endTime;
 
-		    // Find all time events at the current time and compute next one
-		    closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
-		    _timeevent_system->computeTimeEventConditions(startTime);
-		    _event_system->getZeroFunc(zeroVal_new);
-		    for (int i = 0; i < _dimZeroFunc; i++)
-		    {
-	          _events[i] = bool(zeroVal_new[i]);
-		    }
-		    //handleSystemEvents calls evaluateAll() at some point and evaluates the sampler conditions
-		    _mixed_system->handleSystemEvents(_events);
-		    // Reset time-events after the evaluation in handleSystemEvents
-		    _timeevent_system->resetTimeConditions();
+            // Find all time events at the current time and compute next one
+            closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
+            _timeevent_system->computeTimeEventConditions(startTime);
+            _event_system->getZeroFunc(zeroVal_new);
+            for (int i = 0; i < _dimZeroFunc; i++)
+            {
+                _events[i] = bool(zeroVal_new[i]);
+            }
+            //handleSystemEvents calls evaluateAll() at some point and evaluates the sampler conditions
+            _mixed_system->handleSystemEvents(_events);
+            // Reset time-events after the evaluation in handleSystemEvents
+            _timeevent_system->resetTimeConditions();
 
-		    //evaluate all to finish the step
-		    _cont_system->evaluateAll(IContinuous::CONTINUOUS);
-		    _event_system->saveAll();
+            //evaluate all to finish the step
+            _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+            _event_system->saveAll();
 
             user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
             if (user_stop)
-              break;
-        }  // end for time events
+                break;
+        } // end for time events
 
         if (abs(_tEnd - endTime) > _config->getSimControllerSettings()->dTendTol && !user_stop)
         {
@@ -568,16 +575,16 @@ void SimManager::runSingleProcess()
             _solver->setInitStepSize(_config->getGlobalSettings()->gethOutput());
             _solver->solve(_solverTask);
             // In _solverTask FIRST_CALL Bit löschen und RECALL Bit setzen
-            if (_solverTask & ISolver::FIRST_CALL)
+            if (_solverTask& ISolver::FIRST_CALL)
             {
                 _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::FIRST_CALL);
                 _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
             }
             if (user_stop)
                 break;
-        }  // end if weiter nach Time Events
+        } // end if weiter nach Time Events
 
-        else  // Event am Schluss recorden.
+        else // Event am Schluss recorden.
         {
             //Final Solver Call
             if (_writeFinalState)
@@ -588,12 +595,13 @@ void SimManager::runSingleProcess()
         }
 
         // Finish Simulation
-        if ((!(_config->getGlobalSettings()->useEndlessSim())) || (_solver->getSolverStatus() & ISolver::SOLVERERROR) || (_solver->getSolverStatus() & ISolver::USER_STOP))
+        if ((!(_config->getGlobalSettings()->useEndlessSim())) || (_solver->getSolverStatus() & ISolver::SOLVERERROR) ||
+            (_solver->getSolverStatus() & ISolver::USER_STOP))
         {
             _continueSimulation = false;
         }
 
-        // Endless simulation
+            // Endless simulation
         else
         {
             // increase time intervall
@@ -604,28 +612,28 @@ void SimManager::runSingleProcess()
             {
                 if (zeroVal_new)
                 {
-                  closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
-                  _timeevent_system->computeTimeEventConditions(_tEnd);
-                  _cont_system->evaluateAll(IContinuous::CONTINUOUS);   // vxworksupdate
-                  _event_system->getZeroFunc(zeroVal_new);
-                  for (int i = 0; i < _dimZeroFunc; i++)
-                  {
-                    _events[i] = bool(zeroVal_new[i]);
-                  }
-                  //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
-                  //reset time-events
-                  _timeevent_system->resetTimeConditions();
-                  _cont_system->evaluateAll(IContinuous::CONTINUOUS);
-                  _event_system->saveAll();
+                    closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
+                    _timeevent_system->computeTimeEventConditions(_tEnd);
+                    _cont_system->evaluateAll(IContinuous::CONTINUOUS); // vxworksupdate
+                    _event_system->getZeroFunc(zeroVal_new);
+                    for (int i = 0; i < _dimZeroFunc; i++)
+                    {
+                        _events[i] = bool(zeroVal_new[i]);
+                    }
+                    //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
+                    //reset time-events
+                    _timeevent_system->resetTimeConditions();
+                    _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+                    _event_system->saveAll();
                 }
             }
         }
-
-    }  // end while continue
+    } // end while continue
     _step_event_system->setTerminal(true);
-    _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
+    _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+    //Is this really necessary? The solver should have already calculated the "final time point"
     LOGGER_STATUS("Finished", endTime, 0.0);
     if (zeroVal_new)
         delete[] zeroVal_new;
-}  // end singleprocess
+} // end singleprocess
 /** @} */ // end of coreSimcontroller

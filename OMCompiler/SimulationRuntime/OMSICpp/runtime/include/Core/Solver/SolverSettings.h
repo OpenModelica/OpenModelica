@@ -17,7 +17,9 @@ Encapsulation of general solver settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSettings
+class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings :
+public
+ISolverSettings
 {
 public:
   SolverSettings(IGlobalSettings* globalSettings);
@@ -62,4 +64,4 @@ private:
   bool
     _denseOutput;
 };
- /** @} */ // end of coreSolver
+/** @} */ // end of coreSolver

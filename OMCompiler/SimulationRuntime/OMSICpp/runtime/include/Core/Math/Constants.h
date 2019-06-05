@@ -1,7 +1,6 @@
 #pragma once
 
 
-
 #include <algorithm>        ///< use of min, max, etc.
 #include <limits>
 #include <math.h>      ///< mathematical expressions
@@ -44,4 +43,3 @@ Copyright (c) 2008, OSMC
 
 /// Degrees to Radians
 #define RAD2DEG    57.295779513082320876798154814105
-

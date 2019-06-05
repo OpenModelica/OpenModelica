@@ -17,6 +17,7 @@
 #define BOOST_EXTENSION_LOGGER_DECL BOOST_EXTENSION_IMPORT_DECL
 #define BOOST_EXTENSION_XML_READER_DECL BOOST_EXTENSION_EXPORT_DECL
 #else
-    error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */

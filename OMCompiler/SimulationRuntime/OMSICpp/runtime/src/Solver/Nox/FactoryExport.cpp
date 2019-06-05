@@ -25,7 +25,8 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #include <Solver/Nox/Nox.h>
 #include <Solver/Nox/NoxSettings.h>
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 #if defined(OMC_BUILD)  && defined(RUNTIME_STATIC_LINKING)

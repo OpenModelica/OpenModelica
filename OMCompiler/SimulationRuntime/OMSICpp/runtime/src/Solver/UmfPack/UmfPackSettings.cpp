@@ -2,19 +2,22 @@
 #include <Core/Modelica.h>
 #include <Solver/UmfPack/UmfPackSettings.h>
 
-UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(true) {
-
+UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(true)
+{
 }
 
-UmfPackSettings::~UmfPackSettings() {
+UmfPackSettings::~UmfPackSettings()
+{
 }
 
-bool UmfPackSettings::getUseSparseFormat() {
-  return useSparse;
+bool UmfPackSettings::getUseSparseFormat()
+{
+    return useSparse;
 }
 
-void UmfPackSettings::setUseSparseFormat(bool value) {
-  useSparse = value;
+void UmfPackSettings::setUseSparseFormat(bool value)
+{
+    useSparse = value;
 }
 
 void UmfPackSettings::load(std::string allocator)

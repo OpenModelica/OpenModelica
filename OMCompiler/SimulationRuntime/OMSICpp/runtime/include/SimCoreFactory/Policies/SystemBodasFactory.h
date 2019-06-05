@@ -22,7 +22,8 @@ public:
 
     shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
     {
-        shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = ObjectFactory<CreationPolicy>::_factory->LoadAlgLoopSolverFactory(globalSettings);
+        shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = ObjectFactory<CreationPolicy>::_factory->
+            LoadAlgLoopSolverFactory(globalSettings);
         return algloopsolverfactory;
     }
 
@@ -32,9 +33,11 @@ public:
         return simData;
     }
 
-    shared_ptr<IMixedSystem> createSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings,shared_ptr<ISimObjects> simObjects)
+    shared_ptr<IMixedSystem> createSystem(string modelLib, string modelKey, IGlobalSettings* globalSettings,
+                                          shared_ptr<ISimObjects> simObjects)
     {
-        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(globalSettings,simObjects);
+        shared_ptr<IMixedSystem> system = ObjectFactory<CreationPolicy>::_factory->LoadSystem(
+            globalSettings, simObjects);
         return system;
     }
 
@@ -46,4 +49,5 @@ public:
 
     bool _use_modelica_compiler;
 };
+
 /** @} */ // end of simcorefactoriesPolicies

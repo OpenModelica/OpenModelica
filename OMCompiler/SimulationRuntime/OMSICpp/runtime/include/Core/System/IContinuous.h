@@ -23,16 +23,18 @@ public:
     /// Enumeration to control the evaluation of equations within the system
     enum UPDATETYPE
     {
-        UNDEF_UPDATE    = 0x00000000,
-        ACROSS        = 0x00000001,
-        THROUGH        = 0x00000002,
-        ALL            = 0x00000003,
-        DISCRETE       = 0x00000004,
-        CONTINUOUS    = 0x00000008,
-        RANKING        = 0x00000016      ///< Ranking Method
+        UNDEF_UPDATE = 0x00000000,
+        ACROSS = 0x00000001,
+        THROUGH = 0x00000002,
+        ALL = 0x00000003,
+        DISCRETE = 0x00000004,
+        CONTINUOUS = 0x00000008,
+        RANKING = 0x00000016 ///< Ranking Method
     };
 
-    virtual ~IContinuous()  {};
+    virtual ~IContinuous()
+    {
+    };
 
     /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const = 0;
@@ -59,7 +61,7 @@ public:
 
     /// Provide boolean variables
     virtual void getContinuousStates(double* z) = 0;
-    virtual void getNominalStates(double* z) = 0 ;
+    virtual void getNominalStates(double* z) = 0;
     /// Provide integer variables
     virtual void getInteger(int* z) = 0;
 
@@ -90,27 +92,26 @@ public:
     /// Provide the right hand side
     virtual void setStateDerivatives(const double* f) = 0;
     ///Restores all algloop variables for a output step
-     virtual void restoreOldValues() = 0;
-     ///Restores all algloop variables for last output step
-     virtual void restoreNewValues() = 0;
+    virtual void restoreOldValues() = 0;
+    ///Restores all algloop variables for last output step
+    virtual void restoreNewValues() = 0;
     /// Update transfer behavior of the system of equations according to command given by solver
 
-    virtual bool evaluateAll(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
-    virtual void evaluateODE(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
+    virtual bool evaluateAll(const UPDATETYPE command = UNDEF_UPDATE) = 0; // vxworks
+    virtual void evaluateODE(const UPDATETYPE command = UNDEF_UPDATE) = 0; // vxworks
     virtual void evaluateZeroFuncs(const UPDATETYPE command = UNDEF_UPDATE) = 0;
     virtual bool evaluateConditions(const UPDATETYPE command = UNDEF_UPDATE) = 0;
     virtual void evaluateDAE(const UPDATETYPE command = UNDEF_UPDATE) =0;
-
 
 
     virtual double& getRealStartValue(double& var) = 0;
     virtual bool& getBoolStartValue(bool& var) = 0;
     virtual int& getIntStartValue(int& var) = 0;
     virtual string& getStringStartValue(string& var) = 0;
-    virtual void setRealStartValue(double& var,double val) = 0;
-    virtual void setBoolStartValue(bool& var,bool val) = 0;
-    virtual void setIntStartValue(int& var,int val) = 0;
-    virtual void setStringStartValue(string& var,string val) = 0;
+    virtual void setRealStartValue(double& var, double val) = 0;
+    virtual void setBoolStartValue(bool& var, bool val) = 0;
+    virtual void setIntStartValue(int& var, int val) = 0;
+    virtual void setStringStartValue(string& var, string val) = 0;
 
     //in case of solver-based activation of system equations
     virtual void setNumPartitions(int numPartitions) = 0;
@@ -118,9 +119,8 @@ public:
     virtual void setPartitionActivation(bool* partitions) = 0;
     virtual void getPartitionActivation(bool* partitions) = 0;
     virtual int getActivator(int state) = 0;
-
-
 };
+
 /** @} */ // end of coreSystem
 /*
 /// Enumeration with variable- and differentiation-index to sort state vector and vector of right hand side

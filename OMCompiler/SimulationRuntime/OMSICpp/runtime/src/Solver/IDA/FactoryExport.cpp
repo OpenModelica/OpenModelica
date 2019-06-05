@@ -1,4 +1,3 @@
-
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
@@ -34,7 +33,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
 #include <Solver/IDA/IDA.h>
 #include <Solver/IDA/IDASettings.h>
 
-  #ifdef ENABLE_SUNDIALS_STATIC
+#ifdef ENABLE_SUNDIALS_STATIC
     shared_ptr<ISolver> createIda(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
         shared_ptr<ISolver> ida = shared_ptr<ISolver>(new Ida(system,solver_settings.get()));
@@ -45,7 +44,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
          shared_ptr<ISolverSettings> ida_settings = shared_ptr<ISolverSettings>(new IDASettings(globalSettings.get()));
          return ida_settings;
     }
-  #else
+#else
     shared_ptr<ISolver> createIda(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
       throw ModelicaSimulationError(SOLVER,"IDA was disabled during build");
@@ -54,12 +53,10 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_ida(boost::extensio
     {
       throw ModelicaSimulationError(SOLVER,"IDA was disabled during build");
     }
-  #endif //ENABLE_SUNDIALS_STATIC
+#endif //ENABLE_SUNDIALS_STATIC
 
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
-
-
-

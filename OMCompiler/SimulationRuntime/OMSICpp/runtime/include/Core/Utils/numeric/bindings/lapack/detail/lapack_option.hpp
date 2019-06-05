@@ -11,22 +11,29 @@
 
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                namespace detail
+                {
+                    template <typename Tag>
+                    struct lapack_option : bindings::blas::detail::blas_option<Tag>
+                    {
+                    };
 
-template< typename Tag >
-struct lapack_option: bindings::blas::detail::blas_option< Tag > {};
-
-template<>
-struct lapack_option< tag::both >: mpl::char_< 'B' > {};
-
-} // namespace detail
-} // namespace lapack
-} // namespace bindings
-} // namespace numeric
+                    template <>
+                    struct lapack_option<tag::both> : mpl::char_<'B'>
+                    {
+                    };
+                } // namespace detail
+            } // namespace lapack
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

@@ -16,7 +16,9 @@
 #include <papi.h>
 #endif
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesPAPI : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesPAPI :
+public
+MeasureTimeValues
 {
 public:
   unsigned long long _time;
@@ -39,7 +41,9 @@ public:
   virtual void reset();
 };
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI :
+public
+MeasureTime
 {
  protected:
   MeasureTimePAPI(unsigned long int (*threadHandle)());
@@ -59,7 +63,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI : public MeasureTime
 
   void initializeDirty()
   {
-    #ifdef USE_PAPI
+#ifdef USE_PAPI
     if (PAPI_create_eventset(&_eventSet) != PAPI_OK)
     {
       std::cerr << "PAPI create eventset failed!" << " Error: " << PAPI_create_eventset(&_eventSet) << std::endl;
@@ -78,7 +82,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI : public MeasureTime
       throw ModelicaSimulationError(UTILITY,"PAPI_start_counters - FAILED");
 
     }
-    #endif
+#endif
     _instance->benchOverhead();
   }
 

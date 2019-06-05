@@ -21,8 +21,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of solverHybrj
-
-

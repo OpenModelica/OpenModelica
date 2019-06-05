@@ -53,18 +53,22 @@
 // This file is modified by Karl Meerbergen for C++ users
 
 /* Complex datatypes */
-typedef struct {float r,i;} mumps_complex;
+typedef struct
+{
+    float r, i;
+} mumps_complex;
 
 /* Next line defines CMUMPS_INT, CMUMPS_DOUBLE and CMUMPS_DOUBLE2 */
 #include "cmumps_prec.h"
+
 /*
  * Definition of the (simplified)
  * MUMPS C structure
  */
 typedef struct
-  {
+{
     CMUMPS_INT sym, par, job;
-    CMUMPS_INT comm_fortran;    /* Fortran communicator */
+    CMUMPS_INT comm_fortran; /* Fortran communicator */
     CMUMPS_INT icntl[40];
     CMUMPS_DOUBLE2 cntl[5];
     CMUMPS_INT n;
@@ -73,46 +77,59 @@ typedef struct
                        we free + malloc when we have large variation */
 
     /* Assembled entry */
-    CMUMPS_INT nz; CMUMPS_INT *irn; CMUMPS_INT *jcn; CMUMPS_DOUBLE *a;
+    CMUMPS_INT nz;
+    CMUMPS_INT* irn;
+    CMUMPS_INT* jcn;
+    CMUMPS_DOUBLE* a;
     /* Distributed entry */
-    CMUMPS_INT nz_loc; CMUMPS_INT *irn_loc; CMUMPS_INT *jcn_loc; CMUMPS_DOUBLE *a_loc;
+    CMUMPS_INT nz_loc;
+    CMUMPS_INT* irn_loc;
+    CMUMPS_INT* jcn_loc;
+    CMUMPS_DOUBLE* a_loc;
     /* Element entry */
-    CMUMPS_INT nelt; CMUMPS_INT *eltptr; CMUMPS_INT *eltvar; CMUMPS_DOUBLE *a_elt;
+    CMUMPS_INT nelt;
+    CMUMPS_INT* eltptr;
+    CMUMPS_INT* eltvar;
+    CMUMPS_DOUBLE* a_elt;
 
     /* Ordering, if given by user */
-    CMUMPS_INT *perm_in;
+    CMUMPS_INT* perm_in;
 
     /* Orderings returned to user */
     /* symmetric permutation */
-    CMUMPS_INT *sym_perm;
+    CMUMPS_INT* sym_perm;
     /* column permutation */
-    CMUMPS_INT *uns_perm;
+    CMUMPS_INT* uns_perm;
 
     /* Scaling (input only in this version) */
-    CMUMPS_DOUBLE *colsca; CMUMPS_DOUBLE *rowsca;
+    CMUMPS_DOUBLE* colsca;
+    CMUMPS_DOUBLE* rowsca;
     /* RHS, solution, ouptput data and statistics */
     CMUMPS_DOUBLE *rhs, *rhs_sparse, *sol_loc;
     CMUMPS_INT *irhs_sparse, *irhs_ptr, *isol_loc;
     CMUMPS_INT nrhs, lrhs, nz_rhs, lsol_loc;
-  CMUMPS_INT schur_mloc, schur_nloc, schur_lld;
-  CMUMPS_INT mblock, nblock, nprow, npcol;
-    CMUMPS_INT info[40],infog[40];
+    CMUMPS_INT schur_mloc, schur_nloc, schur_lld;
+    CMUMPS_INT mblock, nblock, nprow, npcol;
+    CMUMPS_INT info[40], infog[40];
     CMUMPS_DOUBLE2 rinfo[20], rinfog[20];
     /* Null space */
-    CMUMPS_INT deficiency; CMUMPS_DOUBLE * nullspace; CMUMPS_INT * mapping;
+    CMUMPS_INT deficiency;
+    CMUMPS_DOUBLE* nullspace;
+    CMUMPS_INT* mapping;
     /* Schur */
-    CMUMPS_INT size_schur; CMUMPS_INT *listvar_schur; CMUMPS_DOUBLE *schur;
+    CMUMPS_INT size_schur;
+    CMUMPS_INT* listvar_schur;
+    CMUMPS_DOUBLE* schur;
     /* Internal parameters */
     CMUMPS_INT instance_number;
     /* For out-of-core */
     char ooc_tmpdir[151];
     char ooc_prefix[151];
-  } CMUMPS_STRUC_C;
+} CMUMPS_STRUC_C;
 
 
 extern "C" {
-  void cmumps_c(CMUMPS_STRUC_C * cmumps_par);
+void cmumps_c(CMUMPS_STRUC_C* cmumps_par);
 }
 
 #endif
-

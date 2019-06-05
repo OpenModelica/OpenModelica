@@ -11,9 +11,9 @@
   #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) SCOREP_USER_REGION_END( handlerName )
   #include <scorep/SCOREP_User.h>
 #else
-  #define MEASURETIME_REGION_DEFINE(handlerName, regionName)
-  #define MEASURETIME_START(valStart, handlerName, regionName) MeasureTime::getTimeValuesStart(valStart)
-  #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes->_sumMeasuredValues->add(valEnd); ++(valRes->_sumMeasuredValues->_numCalcs); }
+#define MEASURETIME_REGION_DEFINE(handlerName, regionName)
+#define MEASURETIME_START(valStart, handlerName, regionName) MeasureTime::getTimeValuesStart(valStart)
+#define MEASURETIME_END(valStart, valEnd, valRes, handlerName) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes->_sumMeasuredValues->add(valEnd); ++(valRes->_sumMeasuredValues->_numCalcs); }
 #endif
 
 #include <fstream>
@@ -29,19 +29,22 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
  public:
   unsigned int _numCalcs;
 
-  MeasureTimeValues();
+    MeasureTimeValues();
   virtual ~MeasureTimeValues();
 
-  virtual std::string serializeToJson() const = 0;
+  virtual std::string serializeToJson() const= 0;
 
-  virtual void add(MeasureTimeValues *values) = 0;
-  virtual void sub(MeasureTimeValues *values) = 0;
+  virtual void add(MeasureTimeValues * values) = 0;
+  virtual void sub(MeasureTimeValues * values) = 0;
   virtual void div(int counter) = 0;
-  virtual MeasureTimeValues* clone() const = 0;
+  virtual MeasureTimeValues * clone() const= 0;
   virtual void reset();
+
 };
 
-class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesSolver : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesSolver :
+public
+MeasureTimeValues
 {
   public:
     MeasureTimeValuesSolver();
@@ -66,16 +69,17 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
 {
  public:
   std::string _id;
-  MeasureTimeValues *_sumMeasuredValues;
+    MeasureTimeValues * _sumMeasuredValues;
 
-  MeasureTimeData();
-  MeasureTimeData(const MeasureTimeData &data);
-  MeasureTimeData(std::string id);
+    MeasureTimeData();
+    MeasureTimeData(const MeasureTimeData & data);
+    MeasureTimeData(std::string id);
   virtual ~MeasureTimeData();
 
   std::string serializeToJson() const;
 
-  void addValuesToSum(MeasureTimeValues *values);
+  void addValuesToSum(MeasureTimeValues * values);
+
 };
 
 class BOOST_EXTENSION_EXPORT_DECL MeasureTime
@@ -86,31 +90,33 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 
   virtual ~MeasureTime();
 
-  static MeasureTime* getInstance();
+  static MeasureTime * getInstance();
 
-  static MeasureTimeValues* getOverhead();
+  static MeasureTimeValues * getOverhead();
 
-  /**
-   * Applied overhead minimization:
-   *  - stick thread to core 1 -> no effect
-   *  - always inline -> effect
-   *  - measure overhead and sub the values -> effect
-   */
-  static inline void getTimeValuesStart(MeasureTimeValues *res)
-  {
-    getInstance()->getTimeValuesStartP(res);
-  }
+    /**
+     * Applied overhead minimization:
+     *  - stick thread to core 1 -> no effect
+     *  - always inline -> effect
+     *  - measure overhead and sub the values -> effect
+     */
+  static inline void getTimeValuesStart(MeasureTimeValues * res)
+    {
+        getInstance()->getTimeValuesStartP(res);
 
-  static inline void getTimeValuesEnd(MeasureTimeValues *res)
-  {
-    getInstance()->getTimeValuesEndP(res);
-  }
+    }
 
-  static MeasureTimeValues* getZeroValues();
+  static inline void getTimeValuesEnd(MeasureTimeValues * res)
+    {
+        getInstance()->getTimeValuesEndP(res);
+
+    }
+
+  static MeasureTimeValues * getZeroValues();
 
   static void deinitialize();
 
-  static void addResultContentBlock(std::string modelName, std::string blockName, std::vector<MeasureTimeData*> *data);
+  static void addResultContentBlock(std::string modelName, std::string blockName, std::vector<MeasureTimeData*> * data);
 
   static void writeToJson();
 
@@ -125,14 +131,15 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
   static MeasureTime * _instance;
   static file_map _valuesToWrite;
 
-  MeasureTimeValues * _measuredOverhead;
+    MeasureTimeValues * _measuredOverhead;
 
-  MeasureTime();
+    MeasureTime();
 
-  virtual MeasureTimeValues* getZeroValuesP() const = 0;
+  virtual MeasureTimeValues * getZeroValuesP() const= 0;
 
-  virtual void getTimeValuesStartP(MeasureTimeValues *res) const = 0;
-  virtual void getTimeValuesEndP(MeasureTimeValues *res) const = 0;
+  virtual void getTimeValuesStartP(MeasureTimeValues * res) const= 0;
+  virtual void getTimeValuesEndP(MeasureTimeValues * res) const= 0;
+
 };
 
 #endif // MEASURE_TIME_HPP

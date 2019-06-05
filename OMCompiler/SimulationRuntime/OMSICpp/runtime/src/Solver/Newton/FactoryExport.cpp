@@ -37,6 +37,7 @@ shared_ptr<INonLinearAlgLoopSolver> createNewtonSolver(shared_ptr<INonLinSolverS
 }
 
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of solverNewton

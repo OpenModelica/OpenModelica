@@ -119,7 +119,7 @@ class busywaiting_barrier
         while(counterValue.load(memory_order_relaxed) > 0)
         {
             //int val = counterValue.load(memory_order_seq_cst );
-            //std::cerr << "waiting because counter value is " << val << " (counterValueMax: " << counterValueMax << ")" << std::endl;
+//std::cerr << "waiting because counter value is " << val << " (counterValueMax: " << counterValueMax << ")" << std::endl;
             //sleep(1);
         }
 

@@ -1,4 +1,3 @@
-
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(__vxworks)
@@ -32,8 +31,6 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cppdassl(boost::ext
     }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
-
-
-

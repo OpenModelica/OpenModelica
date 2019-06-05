@@ -11,19 +11,24 @@
 
 #include <Core/Utils/numeric/bindings/blas/detail/cblas_option.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
-namespace detail {
-
-template< typename Tag >
-struct clapack_option: blas::detail::cblas_option< Tag > {};
-
-} // namespace detail
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                namespace detail
+                {
+                    template <typename Tag>
+                    struct clapack_option : blas::detail::cblas_option<Tag>
+                    {
+                    };
+                } // namespace detail
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

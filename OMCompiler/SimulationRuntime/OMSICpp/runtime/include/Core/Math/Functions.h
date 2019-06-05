@@ -4,8 +4,6 @@
 */
 
 
-
-
 #include <math.h>                        ///< mathematical expressions
 #include <stdlib.h>
 #include <limits>
@@ -32,36 +30,37 @@ Copyright (c) 2008, OSMC
 #endif
 
 /// Definition of Signum function
-inline static int sgn (const double &c)
+inline static int sgn(const double& c)
 {
     return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
 }
 
 /// Definition of Signum function
-double BOOST_EXTENSION_EXPORT_DECL division (const double &a,const double &b, bool throwEx,const char * text);
+double BOOST_EXTENSION_EXPORT_DECL division(const double& a, const double& b, bool throwEx, const char* text);
 
 inline static int modelica_mod_int(int v1, int v2)
 {
     return v1 % v2;
 }
 
-inline static double semiLinear(double x,double positiveSlope,double negativeSlope)
+inline static double semiLinear(double x, double positiveSlope, double negativeSlope)
 {
- if(x>=0)
-    return positiveSlope*x;
- else
-    return negativeSlope*x;
+    if (x >= 0)
+        return positiveSlope * x;
+    else
+        return negativeSlope * x;
 }
+
 /// Provides the maximum Norm
 inline static double maxNorm(const int& length, const double* vector)
 {
     double value = 0.0;
 
-    for (int i=0; i<length; ++i)
-        if(fabs(vector[i]) > value)
+    for (int i = 0; i < length; ++i)
+        if (fabs(vector[i]) > value)
             value = fabs(vector[i]);
 
-    return(value);
+    return (value);
 }
 
 
@@ -70,10 +69,10 @@ inline static double euclidNorm(const int& length, const double* vector)
 {
     double value = 0.0;
 
-    for (int i=0; i<length; ++i)
+    for (int i = 0; i < length; ++i)
         value = value + (vector[i] * vector[i]);
 
-    return(sqrt(value));
+    return (sqrt(value));
 }
 
 /// Provides the Euclidean norm of an integer array
@@ -81,21 +80,21 @@ inline static double euclidNorm(const int& length, const int* vector)
 {
     int value = 0;
 
-    for (int i=0; i<length; ++i)
+    for (int i = 0; i < length; ++i)
         value = value + (vector[i] * vector[i]);
 
-    return(sqrt((double)value));
+    return (sqrt((double)value));
 }
 
 /// Provides the scaled  errornorm (see Hairer, Norsett und Wanner; Section II.4 )
-inline static double scaledErrNorm(const int& length, const double* vector, const double *tol)
+inline static double scaledErrNorm(const int& length, const double* vector, const double* tol)
 {
     double value = 0.0;
 
-    for (int i=0; i<length; ++i)
-        value = value + ((vector[i]/tol[i]) * (vector[i]/tol[i]));
+    for (int i = 0; i < length; ++i)
+        value = value + ((vector[i] / tol[i]) * (vector[i] / tol[i]));
 
-    return(sqrt(value / length));
+    return (sqrt(value / length));
 }
 
 ///  Exponent(0 und negative exponents (Basis != 0) permitted)
@@ -103,74 +102,73 @@ inline static double Power(const double& basis, const int& exponent)
 {
     double value = 1.0;
 
-    for (int i=0; i<abs(exponent); i++)
+    for (int i = 0; i < abs(exponent); i++)
         value *= basis;
 
     if (exponent >= 0)
         return value;
     else
-        return (1.0/value);
+        return (1.0 / value);
 }
 
 /// Binominialcoefficients
 inline static int binom(const int n, const int k)
 {
-    int kfak = 1, nfak = 1, nkfak =1;
+    int kfak = 1, nfak = 1, nkfak = 1;
 
-    for(int i=0; i < n; ++i )
-        nfak = nfak*(i+1);
-    for(int i=0; i < k; ++i )
-        kfak = kfak*(i+1);
+    for (int i = 0; i < n; ++i)
+        nfak = nfak * (i + 1);
+    for (int i = 0; i < k; ++i)
+        kfak = kfak * (i + 1);
 
-    if(n-k>0)
+    if (n - k > 0)
     {
-        for(int i=0; i < n-k; ++i )
-            nkfak = nkfak*(i+1);
+        for (int i = 0; i < n - k; ++i)
+            nkfak = nkfak * (i + 1);
     }
     else
         return 0;
 
-    nkfak = nfak/(kfak*nkfak);
+    nkfak = nfak / (kfak * nkfak);
     return nkfak;
 }
 
 
 /// Rounding function
-inline static int round (const double &n)
+inline static int round(const double& n)
 {
-    return (fabs(n)-floor(fabs(n)) < 0.5) ? (int)(sgn(n)*floor(fabs(n))) : (int)(sgn(n)*ceil(fabs(n)));
+    return (fabs(n) - floor(fabs(n)) < 0.5) ? (int)(sgn(n) * floor(fabs(n))) : (int)(sgn(n) * ceil(fabs(n)));
 }
 
 /// Modelica integer function
-inline static int integer (const double &n)
+inline static int integer(const double& n)
 {
     return floor(n);
 }
 
 /// Horner-Schema (William George Horner)
-inline double Phorner(double &x, int degree_P, double* P)
+inline double Phorner(double& x, int degree_P, double* P)
 {
     double h;
 
-    if(degree_P > 0)
-        h = Phorner(x,degree_P-1,P);
+    if (degree_P > 0)
+        h = Phorner(x, degree_P - 1, P);
     else
         return P[degree_P];
 
-    return h*x + P[degree_P];
+    return h * x + P[degree_P];
 }
 
-template<class T >
-inline bool in_range(T i,T start,T stop)
+template <class T>
+inline bool in_range(T i, T start, T stop)
 {
-  if (start <= stop) if ((i >= start) && (i <= stop)) return true;
-  if (start > stop) if ((i >= stop) && (i <= start)) return true;
-  return false;
+    if (start <= stop) if ((i >= start) && (i <= stop)) return true;
+    if (start > stop) if ((i >= stop) && (i <= start)) return true;
+    return false;
 }
 
 
-
-int BOOST_EXTENSION_EXPORT_DECL pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd );
+int BOOST_EXTENSION_EXPORT_DECL pivot(double* A, int n_rows, int n_cols, int* rowInd, int* colInd);
 
 
 //  (C) Copyright Gennadiy Rozental 2001-2002.
@@ -187,46 +185,52 @@ int BOOST_EXTENSION_EXPORT_DECL pivot( double *A, int n_rows, int n_cols, int *r
 //
 //  Description : defines algoirthms for comparing 2 floating point values
 // ***************************************************************************
-template<typename FPT>
+template <typename FPT>
 inline FPT
-fpt_abs( FPT arg )
+fpt_abs(FPT arg)
 {
     return arg < 0 ? -arg : arg;
 }
 
 // both f1 and f2 are unsigned here
-template<typename FPT>
+template <typename FPT>
 inline FPT
-safe_fpt_division( FPT uf1, FPT uf2 )
+safe_fpt_division(FPT uf1, FPT uf2)
 {
-   #undef max
-  #undef min
-  return  ( uf1 < 1 && uf1 > uf2 * std::numeric_limits<FPT>::max())
-    ? std::numeric_limits<FPT>::max() :
-  (((uf2 > 1 && uf1 < uf2 * std::numeric_limits<FPT>::min()) ||
-    uf1 == 0)                                               ? 0                               :
-    uf1/uf2 );
+#undef max
+#undef min
+    return (uf1 < 1 && uf1 > uf2 * std::numeric_limits<FPT>::max())
+               ? std::numeric_limits<FPT>::max()
+               : (((uf2 > 1 && uf1 < uf2 * std::numeric_limits<FPT>::min()) ||
+                      uf1 == 0)
+                      ? 0
+                      : uf1 / uf2);
 }
 
-template<typename FPT>
+template <typename FPT>
 class close_at_tolerance
 {
 public:
-    explicit close_at_tolerance( FPT tolerance, bool strong_or_weak = true )
-        : p_tolerance( tolerance ),m_strong_or_weak( strong_or_weak ) { };
-
-    explicit    close_at_tolerance( int number_of_rounding_errors, bool strong_or_weak = true )
-        : p_tolerance( std::numeric_limits<FPT>::epsilon() * number_of_rounding_errors/2 ),
-        m_strong_or_weak( strong_or_weak ) {}
-
-    bool        operator()( FPT left, FPT right ) const
+    explicit close_at_tolerance(FPT tolerance, bool strong_or_weak = true)
+        : p_tolerance(tolerance), m_strong_or_weak(strong_or_weak)
     {
-        FPT diff = fpt_abs( left - right );
-        FPT d1   = safe_fpt_division( diff, fpt_abs( right ) );
-        FPT d2   = safe_fpt_division( diff, fpt_abs( left ) );
+    };
 
-        return m_strong_or_weak ? (d1 <= p_tolerance.get() && d2 <= p_tolerance.get())
-            : (d1 <= p_tolerance.get() || d2 <= p_tolerance.get());
+    explicit close_at_tolerance(int number_of_rounding_errors, bool strong_or_weak = true)
+        : p_tolerance(std::numeric_limits<FPT>::epsilon() * number_of_rounding_errors / 2),
+          m_strong_or_weak(strong_or_weak)
+    {
+    }
+
+    bool operator()(FPT left, FPT right) const
+    {
+        FPT diff = fpt_abs(left - right);
+        FPT d1 = safe_fpt_division(diff, fpt_abs(right));
+        FPT d2 = safe_fpt_division(diff, fpt_abs(left));
+
+        return m_strong_or_weak
+                   ? (d1 <= p_tolerance.get() && d2 <= p_tolerance.get())
+                   : (d1 <= p_tolerance.get() || d2 <= p_tolerance.get());
     }
 
     // Data members
@@ -235,19 +239,22 @@ public:
     private:
         FPT f;
     public:
-        p_tolerance_class(FPT _f=0):f(_f){};
-        FPT  get() const{    return f;};
+        p_tolerance_class(FPT _f = 0): f(_f)
+        {
+        };
+        FPT get() const { return f; };
     };
+
     p_tolerance_class p_tolerance;
 private:
-    bool        m_strong_or_weak;
+    bool m_strong_or_weak;
 };
 
 template <typename T>
 inline bool IsEqual(T x, T y, T t)
 {
-    close_at_tolerance<T> comp( t /*std::numeric_limits<T>::epsilon()/2*10*/);
-    return comp(fpt_abs(x),fpt_abs(y));
+    close_at_tolerance<T> comp(t /*std::numeric_limits<T>::epsilon()/2*10*/);
+    return comp(fpt_abs(x), fpt_abs(y));
 };
 
 template <typename T>
@@ -273,19 +280,22 @@ inline bool IsEqual(std::string x, const char* y)
     return x.compare(y) == 0;
 };
 
-template < typename T >
-struct floatCompare {
-
+template <typename T>
+struct floatCompare
+{
     T val;
     T tol;
-    floatCompare ( T const & t ,T const& tollerance)
-        : val ( t ), tol(tollerance)
-    {}
 
-    template < typename Pair >
-    bool operator() ( Pair const & p ) const {
-        return ( IsEqual<T>(val,p.first,tol) );
+    floatCompare(T const& t, T const& tollerance)
+        : val(t), tol(tollerance)
+    {
     }
 
+    template <typename Pair>
+    bool operator()(Pair const& p) const
+    {
+        return (IsEqual<T>(val, p.first, tol));
+    }
 };
+
 /** @} */ // end of math

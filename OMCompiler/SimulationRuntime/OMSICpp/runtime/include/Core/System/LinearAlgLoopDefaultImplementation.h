@@ -21,17 +21,17 @@ Copyright (c) 2008, OSMC
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL LinearAlgLoopDefaultImplementation
 {
 public:
-  LinearAlgLoopDefaultImplementation();
+    LinearAlgLoopDefaultImplementation();
 
-  ~LinearAlgLoopDefaultImplementation();
+    ~LinearAlgLoopDefaultImplementation();
 
-  /// Provide number (dimension) of variables according to data type
+    /// Provide number (dimension) of variables according to data type
   int getDimReal() const;
   virtual int getDimZeroFunc() const;
-  /// (Re-) initialize the system of equations
+    /// (Re-) initialize the system of equations
   void initialize();
 
-  /// Provide the right hand side (residuals)
+    /// Provide the right hand side (residuals)
   void getb(double* res) const;
 
   bool getUseSparseFormat();
@@ -39,12 +39,13 @@ public:
   void setUseSparseFormat(bool value);
   virtual void getRealStartValues(double* vars) const;
 
-  //void getSparseAdata(double* data, int nonzeros);
+    //void getSparseAdata(double* data, int nonzeros);
 
-  // Member variables
-  //---------------------------------------------------------------
+    // Member variables
+    //---------------------------------------------------------------
 protected:
-  int _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+  int _dimAEq
+;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
   int _dimZeroFunc;
   double* _b;
   double* _x0;
@@ -53,6 +54,7 @@ protected:
   double* _Ax;
   bool _useSparseFormat;
   bool _firstcall;
+
 
 };
 /** @} */ // end of coreSystem

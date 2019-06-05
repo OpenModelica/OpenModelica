@@ -17,14 +17,18 @@
 *  system of equations A * X = B.
 ********************************/
 
-extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
-extern "C" void dgetrf_(long int *m, long int *n, double *a, long int *lda, long int *ipiv, long int *info);
-extern "C" void dgetrs_(char *trans, long int *n, long int *nrhs, double *a, long int *lda, long int *ipiv, double *b, long int *ldb, long int *info);
-extern "C" void dgetri_(long int *n, double *a, long int *lda, long int *ipiv, double *work, long int *lwork, long int *info);
-extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, long int *pivot,double *b, long int *ldb, long int *idid);
-extern "C" void dgetc2_(long int *n, double *J, long int *ldj, long int *ipivot, long int *jpivot, long int *idid);
-extern "C" void dgesc2_(long int *n, double *J, long int *ldj, double* f, long int *ipivot, long int *jpivot, double *scale);
-
+extern "C" void dgesv_(long int* n, long int* nrhs, double* J, long int* ldj, long int* pivot, double* b, long int* ldb,
+                       long int* idid);
+extern "C" void dgetrf_(long int* m, long int* n, double* a, long int* lda, long int* ipiv, long int* info);
+extern "C" void dgetrs_(char* trans, long int* n, long int* nrhs, double* a, long int* lda, long int* ipiv, double* b,
+                        long int* ldb, long int* info);
+extern "C" void dgetri_(long int* n, double* a, long int* lda, long int* ipiv, double* work, long int* lwork,
+                        long int* info);
+extern "C" void dgesv_(long int* n, long int* nrhs, double* J, long int* ldj, long int* pivot, double* b, long int* ldb,
+                       long int* idid);
+extern "C" void dgetc2_(long int* n, double* J, long int* ldj, long int* ipivot, long int* jpivot, long int* idid);
+extern "C" void dgesc2_(long int* n, double* J, long int* ldj, double* f, long int* ipivot, long int* jpivot,
+                        double* scale);
 
 
 /********************************
@@ -76,13 +80,12 @@ extern "C" void dgesc2_(long int *n, double *J, long int *ldj, double* f, long i
 *     that it solves the original system before equilibration.
 
 ********************************/
-extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs,
-                       double *J, long int *ldj, double *Jscal, long int *ldjscal,
-                       double *pivot, char *equilibriate, double *r, double *c,
-                       double *b, long int *ldb, double *x, long int *ldx,
-                       double* rcond, double *forwerr, double *backerr,
-                       double* work, long int *iwork, long int *idid);
-
+extern "C" void DGESVX(char* fact, char* trans, long int* n, long int* nrhs,
+                       double* J, long int* ldj, double* Jscal, long int* ldjscal,
+                       double* pivot, char* equilibriate, double* r, double* c,
+                       double* b, long int* ldb, double* x, long int* ldx,
+                       double* rcond, double* forwerr, double* backerr,
+                       double* work, long int* iwork, long int* idid);
 
 
 /********************************
@@ -102,11 +105,9 @@ extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs,
 *  Note that the routine returns V**T, not V.
 ********************************/
 
-extern "C" void DGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA,
-            double *S, double *U, long int *LDU, double *VT, long int *LDVT,
-            double *WORK, long int *LWORK, long int *INFO);
-
-
+extern "C" void DGESVD(char* JOBU, char* JOBVT, long int* M, long int* N, double* A, long int* LDA,
+                       double* S, double* U, long int* LDU, double* VT, long int* LDVT,
+                       double* WORK, long int* LWORK, long int* INFO);
 
 
 /********************************
@@ -117,11 +118,9 @@ Minimize 2-norm(| b - A*x |)
 using the singular value decomposition (SVD) of A. A is an M-by-N
 matrix which may be rank-deficient.
 ********************************/
-extern "C" void DGELSS(long int *M, long int *N, long int *NRHS, double *A, long int *LDA,
-            double *B, long int *LDB, double *S, double *RCOND, long int *RANK,
-            double *WORK, long int *LWORK, long int *INFO);
-
-
+extern "C" void DGELSS(long int* M, long int* N, long int* NRHS, double* A, long int* LDA,
+                       double* B, long int* LDB, double* S, double* RCOND, long int* RANK,
+                       double* WORK, long int* LWORK, long int* INFO);
 
 
 /********************************
@@ -139,12 +138,9 @@ where u(j)**H denotes the conjugate transpose of u(j).
 The computed eigenvectors are normalized to have Euclidean norm
 equal to 1 and largest component real.
 ********************************/
-extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int *LDA,
-           double *WR, double *WI, double *VL, long int *LDVL, double *VR, long int *LDVR,
-           double *WORK, long int *LWORK, long int *INFO);
-
-
-
+extern "C" void DGEEV(char* JOBVL, char* JOBVR, long int* N, double* A, long int* LDA,
+                      double* WR, double* WI, double* VL, long int* LDVL, double* VR, long int* LDVR,
+                      double* WORK, long int* LWORK, long int* INFO);
 
 
 /********************************
@@ -163,10 +159,9 @@ extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int
 *
 *  Note that the routine returns V**T, not V.
 ********************************/
-extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA,
-            double *S, double *U, long int *LDU, double *VT, long int *LDVT,
-            double *WORK, long int *LWORK, long int *INFO);
-
+extern "C" void SGESVD(char* JOBU, char* JOBVT, long int* M, long int* N, double* A, long int* LDA,
+                       double* S, double* U, long int* LDU, double* VT, long int* LDVT,
+                       double* WORK, long int* LWORK, long int* INFO);
 
 
 /********************************
@@ -193,5 +188,7 @@ extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, doubl
 *  where u(j)**H is the conjugate-transpose of u(j).
 ********************************/
 
-extern "C" void DGGEV(char *JOBVL, char *JOBVR,  long int *N, double* A, long int* LDA, double *B, long int *LDB, double *ALPHAR, double *ALPHAI, double *BETA, double* VL, long int* LDVL, double *VR, long int* LDVR, double* WORK, long int* LWORK, long int *INFO);
+extern "C" void DGGEV(char* JOBVL, char* JOBVR, long int* N, double* A, long int* LDA, double* B, long int* LDB,
+                      double* ALPHAR, double* ALPHAI, double* BETA, double* VL, long int* LDVL, double* VR,
+                      long int* LDVR, double* WORK, long int* LWORK, long int* INFO);
 /** @} */ // end of math

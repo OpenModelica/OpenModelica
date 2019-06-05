@@ -50,15 +50,15 @@ using std::runtime_error;
 namespace ublas = boost::numeric::ublas;
 
 #if !defined(USE_CPP_03) && !defined(__vxworks)
-  #include <array>
-  #include <tuple>
-  #include <memory>
-  #include <unordered_map>
-  #include <unordered_set>
-  #include <chrono>
-   using namespace std::chrono;
-  #define USE_CHRONO
-  #if defined(USE_THREAD)
+#include <array>
+#include <tuple>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
+#include <chrono>
+using namespace std::chrono;
+#define USE_CHRONO
+#if defined(USE_THREAD)
     #include <thread>
     #include <atomic>
     #include <mutex>
@@ -70,57 +70,59 @@ namespace ublas = boost::numeric::ublas;
     using std::memory_order_relaxed;
     using std::condition_variable;
     using std::unique_lock;
-  #endif //USE_THREAD
+#endif //USE_THREAD
 
-  // builtin range based for loop
-  #define FOREACH(element, range) for(element : range)
+// builtin range based for loop
+#define FOREACH(element, range) for(element : range)
 
-  // builtin list initializers
-  #define LIST_OF {
-  #define LIST_SEP ,
-  #define LIST_END }
-  #define MAP_LIST_OF {{
-  #define MAP_LIST_SEP },{
-  #define MAP_LIST_END }}
-  #define TUPLE_LIST_OF {std::make_tuple(
-  #define TUPLE_LIST_SEP ),std::make_tuple(
-  #define TUPLE_LIST_END )}
+// builtin list initializers
+#define LIST_OF {
+#define LIST_SEP ,
+#define LIST_END }
+#define MAP_LIST_OF {{
+#define MAP_LIST_SEP },{
+#define MAP_LIST_END }}
+#define TUPLE_LIST_OF {std::make_tuple(
+#define TUPLE_LIST_SEP ),std::make_tuple(
+#define TUPLE_LIST_END )}
 
-  /** namespace for generated code to avoid name clashes */
-  namespace omcpp {
+/** namespace for generated code to avoid name clashes */
+namespace omcpp
+{
     using std::ref;
     using std::trunc;
     using std::to_string;
-  }
-  using std::bind;
-  using std::function;
-  using std::make_tuple;
-  using std::array;
-  using std::isfinite;
-  using std::minmax_element;
-  using std::get;
-  using std::tuple;
-  using std::unordered_map;
-  using std::unordered_set;
-  using std::shared_ptr;
-  using std::weak_ptr;
-  using std::dynamic_pointer_cast;
-  using std::to_string;
+}
+
+using std::bind;
+using std::function;
+using std::make_tuple;
+using std::array;
+using std::isfinite;
+using std::minmax_element;
+using std::get;
+using std::tuple;
+using std::unordered_map;
+using std::unordered_set;
+using std::shared_ptr;
+using std::weak_ptr;
+using std::dynamic_pointer_cast;
+using std::to_string;
 #else
-  #if defined(_MSC_VER)
+#if defined(_MSC_VER)
     #include <tuple>
     using std::get;
     using std::tuple;
     using std::make_tuple;
     using std::minmax_element;
-  #else
+#else
     #include <boost/tuple/tuple.hpp>
     #include <boost/algorithm/minmax_element.hpp>
     using boost::get;
     using boost::tuple;
     using boost::make_tuple;
     using boost::minmax_element;
-  #endif
+#endif
   #include <boost/foreach.hpp>
   #include <boost/lexical_cast.hpp>
   #include <boost/assign/list_of.hpp>
@@ -133,7 +135,7 @@ namespace ublas = boost::numeric::ublas;
   #include <boost/shared_ptr.hpp>
   #include <boost/weak_ptr.hpp>
 
-  #if defined(USE_THREAD)
+#if defined(USE_THREAD)
     #include <boost/thread.hpp>
     #include <boost/atomic.hpp>
     #include <boost/thread/mutex.hpp>
@@ -147,7 +149,7 @@ namespace ublas = boost::numeric::ublas;
     using boost::memory_order_relaxed;
     using boost::condition_variable;
     using boost::unique_lock;
-  #endif //USE_THREAD
+#endif //USE_THREAD
 
   // boost range based for loop
   #define FOREACH BOOST_FOREACH
@@ -190,11 +192,12 @@ namespace ublas = boost::numeric::ublas;
 
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
-typedef ublas::matrix<double,  ublas::column_major,adaptor_t> shared_matrix_t;
+typedef ublas::matrix<double, ublas::column_major, adaptor_t> shared_matrix_t;
 
 //typedef boost::function<bool (unsigned int)> getCondition_type;
 //typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
-typedef ublas::compressed_matrix<double, ublas::column_major, 0, ublas::unbounded_array<int>, ublas::unbounded_array<double> > sparsematrix_t;
+typedef ublas::compressed_matrix<double, ublas::column_major, 0, ublas::unbounded_array<int>, ublas::unbounded_array<
+                                     double>> sparsematrix_t;
 typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/SimulationSettings/IGlobalSettings.h>
 #include <Core/Solver/ISolverSettings.h>

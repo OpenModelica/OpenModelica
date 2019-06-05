@@ -11,15 +11,18 @@
 
 #include <boost/type_traits/is_complex.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-
-template< typename T >
-struct is_complex: boost::is_complex<T> {};
-
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct is_complex : boost::is_complex<T>
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

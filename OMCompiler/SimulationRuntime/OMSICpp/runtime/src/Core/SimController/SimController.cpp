@@ -15,11 +15,9 @@
 #endif
 
 
-
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimController/Configuration.h>
-
 
 
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
@@ -29,12 +27,12 @@
 
 SimController::SimController(PATH library_path, PATH modelicasystem_path)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
-    , _initialized(false)
+      , _initialized(false)
 {
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
 
 
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     measuredFunctionStartValues = NULL;
     measuredFunctionEndValues = NULL;
 
@@ -51,25 +49,24 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path)
     {
       measureTimeFunctionsArray = new std::vector<MeasureTimeData*>();
     }
-    #endif
+#endif
 }
 
 SimController::~SimController()
 {
-    #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
     if(measuredFunctionStartValues)
       delete measuredFunctionStartValues;
     if(measuredFunctionEndValues)
       delete measuredFunctionEndValues;
-    #endif
+#endif
 }
 
-weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
+weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib, string modelKey)
 {
-
     //if the model is already loaded
-    std::map<string,shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelKey);
-    if(iter != _systems.end())
+    std::map<string, shared_ptr<IMixedSystem>>::iterator iter = _systems.find(modelKey);
+    if (iter != _systems.end())
     {
         shared_ptr<ISimObjects> simObjects = iter->second->getSimObjects();
         simObjects->eraseSimData(modelKey);
@@ -77,17 +74,17 @@ weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey
         //destroy system
         _systems.erase(iter);
     }
-     //create system
-     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings());
+    //create system
+    shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings());
     _systems[modelKey] = system;
     return system;
 }
-weak_ptr<IMixedSystem>  SimController::LoadOSUSystem(string osu_name,string osu_key)
-{
 
-     //if the model is already loaded
-    std::map<string,shared_ptr<IMixedSystem> >::iterator iter = _systems.find(osu_key);
-    if(iter != _systems.end())
+weak_ptr<IMixedSystem> SimController::LoadOSUSystem(string osu_name, string osu_key)
+{
+    //if the model is already loaded
+    std::map<string, shared_ptr<IMixedSystem>>::iterator iter = _systems.find(osu_key);
+    if (iter != _systems.end())
     {
         shared_ptr<ISimObjects> simObjects = iter->second->getSimObjects();
         simObjects->eraseSimData(osu_key);
@@ -95,47 +92,44 @@ weak_ptr<IMixedSystem>  SimController::LoadOSUSystem(string osu_name,string osu_
         //destroy system
         _systems.erase(iter);
     }
-     //create system
-     shared_ptr<IMixedSystem> system = createOSUSystem(osu_name, _config->getGlobalSettings());
+    //create system
+    shared_ptr<IMixedSystem> system = createOSUSystem(osu_name, _config->getGlobalSettings());
     _systems[osu_key] = system;
     return system;
-
-
 }
-
-
 
 
 shared_ptr<IMixedSystem> SimController::getSystem(string modelname)
 {
-    std::map<string,shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelname);
-    if(iter!=_systems.end())
+    std::map<string, shared_ptr<IMixedSystem>>::iterator iter = _systems.find(modelname);
+    if (iter != _systems.end())
     {
         return iter->second;
     }
     else
     {
         string error = string("Simulation data was not found for model: ") + modelname;
-        throw ModelicaSimulationError(SIMMANAGER,error);
+        throw ModelicaSimulationError(SIMMANAGER, error);
     }
 }
 
- void SimController::runReducedSimulation()
- {
-     _simMgr->runSimulation();
- }
+void SimController::runReducedSimulation()
+{
+    _simMgr->runSimulation();
+}
+
 void SimController::Start(SimSettings simsettings, string modelKey)
 {
     try
     {
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
         MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
         }
-        #endif
+#endif
         shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
 
         shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
@@ -157,7 +151,8 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setInputPath(simsettings.inputPath);
         global_settings->setOutputPath(simsettings.outputPath);
         global_settings->setInitfilePath(simsettings.initFile);
-        /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
+        /*shared_ptr<SimManager>*/
+        _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -165,7 +160,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
@@ -173,70 +168,72 @@ void SimController::Start(SimSettings simsettings, string modelKey)
             measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
-        #endif
+#endif
 
         _simMgr->initialize();
 
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
             MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
         }
-        #endif
+#endif
 
         _simMgr->runSimulation();
 
-		if(global_settings->getOutputFormat() == BUFFER)
-		{
-			shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
+        if (global_settings->getOutputFormat() == BUFFER)
+        {
+            shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
 
-			 shared_ptr<ISimObjects> simObjects =mixedsystem->getSimObjects();
+            shared_ptr<ISimObjects> simObjects = mixedsystem->getSimObjects();
             shared_ptr<ISimData> simData = simObjects->getSimData(modelKey);
-			simData->clearResults();
-			//get history object to query simulation results
-			IHistory* history = writeoutput_system->getHistory();
-			//simulation results (output variables)
-			ublas::matrix<double> Ro;
-			//query simulation result outputs
-			history->getOutputResults(Ro);
-			vector<string> output_names;
-			history->getOutputNames(output_names);
-			int j=0;
+            simData->clearResults();
+            //get history object to query simulation results
+            IHistory* history = writeoutput_system->getHistory();
+            //simulation results (output variables)
+            ublas::matrix<double> Ro;
+            //query simulation result outputs
+            history->getOutputResults(Ro);
+            vector<string> output_names;
+            history->getOutputNames(output_names);
+            int j = 0;
 
-			FOREACH(string& name, output_names)
-			{
-				ublas::vector<double> o_j;
-				o_j = ublas::row(Ro,j);
-				simData->addOutputResults(name,o_j);
-				j++;
-			}
+            FOREACH(string & name, output_names)
+            {
+                ublas::vector<double> o_j;
+                o_j = ublas::row(Ro, j);
+                simData->addOutputResults(name, o_j);
+                j++;
+            }
 
-			vector<double> time_values = history->getTimeEntries();
-			simData->addTimeEntries(time_values);
-		}
+            vector<double> time_values = history->getTimeEntries();
+            simData->addTimeEntries(time_values);
+        }
     }
-    catch(ModelicaSimulationError & ex)
+    catch (ModelicaSimulationError& ex)
     {
-        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
+        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name, ex.what(),
+                                      ex.getErrorID());
         throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
 }
 
-void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage)
+void SimController::StartReduceDAE(SimSettings simsettings, string modelPath, string modelKey, bool loadMSL,
+                                   bool loadPackage)
 {
-    #ifdef USE_REDUCE_DAE
+#ifdef USE_REDUCE_DAE
     try
     {
 
-         #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
         MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
         }
-        #endif
+#endif
         shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
 
         shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
@@ -264,7 +261,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
@@ -272,63 +269,63 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
             measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
-        #endif
+#endif
          //read reduced settings
         ReduceDAESettings reduce_settings(global_settings.get());
-		reduce_settings.load("ReduceDAESettings.xml");
+        reduce_settings.load("ReduceDAESettings.xml");
         Ranking ranking(mixedsystem,&reduce_settings);
         Reduction reduction(mixedsystem,&reduce_settings);
-        #ifdef USE_CHRONO
+#ifdef USE_CHRONO
         auto startSim1 = high_resolution_clock::now();
-        #endif
+#endif
         _simMgr->initialize();
         _simMgr->SetCheckTimeout(true);
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
             MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
         }
-        #endif
+#endif
 
 
-		_simMgr->runSimulation();
-        #ifdef USE_CHRONO
+        _simMgr->runSimulation();
+#ifdef USE_CHRONO
          auto endSim1 = high_resolution_clock::now();
          double timeout= duration_cast<std::chrono::duration<double>>(endSim1-startSim1).count();
          std::cout <<" time of first simulation: "<< timeout << " seconds" << std::endl;
-        #endif
+#endif
         IReduceDAE* reduce_dae = dynamic_cast<IReduceDAE*>(mixedsystem.get());
         if(reduce_dae==NULL)
-		{
-			throw std::runtime_error("Modelica System is not of type IReduceDAE!!!");
-		}
+        {
+            throw std::runtime_error("Modelica System is not of type IReduceDAE!!!");
+        }
 
 
 
-		//get history object to query simulation results
-		IHistory* history = reduce_dae->getHistory();
+        //get history object to query simulation results
+        IHistory* history = reduce_dae->getHistory();
         vector<double> time_values = history->getTimeEntries();
          cout << "time_values: " << time_values.size() << std::endl;
 
-		//simulation results (algebraic and state variables)
-		ublas::matrix<double> R;
-		//simulation results (derivative variables)
-		ublas::matrix<double> dR;
-		//simulation results (residues)
-		ublas::matrix<double> Re;
-		//simulation results (output variables)
-		ublas::matrix<double> Ro;
-		//query simulation results
-		history->getSimResults(R,dR,Re);
+        //simulation results (algebraic and state variables)
+        ublas::matrix<double> R;
+        //simulation results (derivative variables)
+        ublas::matrix<double> dR;
+        //simulation results (residues)
+        ublas::matrix<double> Re;
+        //simulation results (output variables)
+        ublas::matrix<double> Ro;
+        //query simulation results
+        history->getSimResults(R,dR,Re);
 
          cout << "number of derivatives: " << dR.size1() << std::endl;
         cout << "number of variables: " << R.size1() << std::endl;
         cout << "number of residual: " << Re.size1() << std::endl;
-		history->getOutputResults(Ro);
+        history->getOutputResults(Ro);
        cout << "number of output " << Ro.size1() << std::endl;
         vector<string> output_names;
-		 history->getOutputNames(output_names);
+         history->getOutputNames(output_names);
 
 
         label_list_type labels;
@@ -340,29 +337,29 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
 
         if(reduce_settings.getRankingMethod()==IReduceDAESettings::RESIDUEN)
         {
-         #ifdef USE_CHRONO
+#ifdef USE_CHRONO
          auto start = high_resolution_clock::now();
-         #endif
+#endif
          //start  residue ranking
          labels =ranking.residuenRanking(R,dR,Re,time_values);
-         #ifdef USE_CHRONO
+#ifdef USE_CHRONO
          auto end = high_resolution_clock::now();
          std::cout <<" time of residual ranking: "<< std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << " milliseconds" << std::endl;
-         #endif
+#endif
         }
 
 
         else if(reduce_settings.getRankingMethod()==IReduceDAESettings::PERFECT)
         {
-         #ifdef USE_CHRONO
+#ifdef USE_CHRONO
           //start  perfect ranking
            auto start = high_resolution_clock::now();
-         #endif
+#endif
          labels = ranking.perfectRanking(Ro,mixedsystem,&reduce_settings,simsettings,modelKey,output_names,timeout,this);
-         #ifdef USE_CHRONO
+#ifdef USE_CHRONO
          auto end =  high_resolution_clock::now();
          std::cout <<" time of perfect ranking: "<< std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count() << " milliseconds" << std::endl;
-         #endif
+#endif
         }
 
 
@@ -375,7 +372,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
 
         std::cout<<"sorted labels: "<<"\n";
         FOREACH(label_type  label, labels)
-		{
+        {
             std::cout<<"label "<< get<0>(label)<<"\n";
 
         }
@@ -384,7 +381,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
 
          //----------------------------------------------------------------------------------------------------------------
          //start reduction
-		std::vector<unsigned int> terms = reduction.cancelTerms(labels,Ro,mixedsystem,&reduce_settings,simsettings,modelKey,output_names,timeout,this);
+        std::vector<unsigned int> terms = reduction.cancelTerms(labels,Ro,mixedsystem,&reduce_settings,simsettings,modelKey,output_names,timeout,this);
 
         if(terms.size()>0)
         {
@@ -398,13 +395,13 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
 
         if (found != std::string::npos && found!=0)
             packageName=modelPath.substr(0, found-1);
-		else
+        else
             packageName="";
         std::cout << "package name "<< packageName<< std::endl;
          string fileName = modelKey;
          ModelicaCompiler* compiler;
          // when a model from MSL is used, then LoadFile doesn't need to be called
-         // still there is problem with calling reducedTerms with model from MSL, because
+    // still there is problem with calling reducedTerms with model from MSL, because
          // for example for Modelica.Electrical.Analog.Examples.CauerLowPassSC, the modelPath only gives Modelica.CauerLowPassSC
         compiler =new ModelicaCompiler(modelKey,fileName,packageName,!loadMSL,loadPackage);
         compiler->reduceTerms(terms,simsettings.start_time,simsettings.end_time);
@@ -426,25 +423,24 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
         string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
         throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
-    #else
-        throw ModelicaSimulationError(SIMMANAGER,"The reduction algorithm is no supported for used compiler");
-    #endif
+#else
+    throw ModelicaSimulationError(SIMMANAGER, "The reduction algorithm is no supported for used compiler");
+#endif
 }
-
 
 
 void SimController::initialize(SimSettings simsettings, string modelKey, double timeout)
 {
     try
     {
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
         MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
         }
-        #endif
+#endif
         shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
 
         shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
@@ -457,7 +453,7 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
-       // global_settings->setAlarmTime(simsettings.timeOut);
+        // global_settings->setAlarmTime(simsettings.timeOut);
 
         global_settings->setAlarmTime(timeout);
         global_settings->setOutputPointType(simsettings.outputPointType);
@@ -465,7 +461,8 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         global_settings->setEmitResults(simsettings.emitResults);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
-        /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
+        /*shared_ptr<SimManager>*/
+        _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -473,7 +470,7 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
@@ -481,31 +478,30 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
             measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
-        #endif
+#endif
 
         _simMgr->initialize();
 
-        #ifdef RUNTIME_PROFILING
+#ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
             MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
         }
-        #endif
-
-
-
+#endif
     }
-    catch(ModelicaSimulationError & ex)
+    catch (ModelicaSimulationError& ex)
     {
-        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
+        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name, ex.what(),
+                                      ex.getErrorID());
         throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
 }
 
 void SimController::Stop()
 {
-    if(_simMgr)
-    _simMgr->stopSimulation();
+    if (_simMgr)
+        _simMgr->stopSimulation();
 }
+
 /** @} */ // end of coreSimcontroller

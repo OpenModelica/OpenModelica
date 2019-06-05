@@ -19,8 +19,8 @@
   #define BOOST_EXTENSION_SIMVARS_DECL BOOST_EXTENSION_EXPORT_DECL
   #define BOOST_EXTENSION_XML_READER_DECL BOOST_EXTENSION_IMPORT_DECL
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 /** @} */ // end of coreSystem
-

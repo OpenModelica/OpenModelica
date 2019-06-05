@@ -1,22 +1,24 @@
 //#pragma once
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Solver/Peer/PeerSettings.h>
 
 PeerSettings::PeerSettings(IGlobalSettings* globalSettings)
-  : SolverSettings    (globalSettings)
-  ,_denseOutput(true)
+    : SolverSettings(globalSettings)
+      , _denseOutput(true)
 {
 };
- PeerSettings::~PeerSettings()
- {
 
- }
+PeerSettings::~PeerSettings()
+{
+}
+
 bool PeerSettings::getDenseOutput()
 {
-  return _denseOutput;
+    return _denseOutput;
 }
+
 void PeerSettings::setDenseOutput(bool dense)
 {
-  _denseOutput = dense;
+    _denseOutput = dense;
 }

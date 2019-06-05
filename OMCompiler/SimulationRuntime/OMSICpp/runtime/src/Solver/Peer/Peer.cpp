@@ -350,7 +350,6 @@ void Peer::solve(const SOLVERCALL action)
 #endif
 
 
-
 //    std::cerr << "Finished init at rank  " << _rank<<std::endl;
 // Solution phase
     t+=_h;
