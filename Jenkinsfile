@@ -9,6 +9,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
+    booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -81,6 +82,28 @@ pipeline {
               // Qt5 is MacOS 10.12+...
               env.QTDIR="${env.MACPORTS}/libexec/qt4"
               common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include")
+              common.makeLibsAndCache()
+              common.buildGUI('')
+            }
+          }
+        }
+        stage('Win/MinGW') {
+          agent {
+            node {
+              label 'windows.openmodelica.org'
+            }
+          }
+          when {
+            expression { params.BUILD_MINGW }
+          }
+          environment {
+            RUNTESTDB = '/c/dev/'
+            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+          }
+          steps {
+            script {
+              env.PATH="C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"
+              common.buildOMC('cc', 'c++', "")
               common.makeLibsAndCache()
               common.buildGUI('')
             }

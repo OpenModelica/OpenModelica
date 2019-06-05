@@ -197,6 +197,8 @@ simulationruntimecmsvc:
 runtimeCPPmsvcinstall:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
 
+runtimeCPPinstall: OMSICPPinstall
+
 OMSICPPinstall:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) OMSICPPinstall
 
