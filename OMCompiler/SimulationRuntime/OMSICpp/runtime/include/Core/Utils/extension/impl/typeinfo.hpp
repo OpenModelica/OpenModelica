@@ -14,39 +14,57 @@
 #ifndef BOOST_EXTENSION_TYPEINFO_HPP
 #define BOOST_EXTENSION_TYPEINFO_HPP
 #include <typeinfo>
-namespace boost { namespace extensions {
-template <class TypeInfo, class ClassType>
-struct type_info_handler {
-  static TypeInfo get_class_type();
-};
 
-class default_type_info {
-public:
-  default_type_info() : type_(&typeid(void)) {
-  }
-  default_type_info(const std::type_info& new_type) : type_(&new_type) {
-  }
-  default_type_info(const default_type_info& first) : type_(first.type_) {
-  }
-  const std::type_info& type() const {
-    return *type_;
-  }
-  default_type_info& operator=(const default_type_info& first) {
-    type_ = first.type_;
-    return *this;
-  }
-private:
-  const std::type_info* type_;
-};
-template <class ClassType>
-struct type_info_handler<default_type_info, ClassType>
+namespace boost
 {
-  static default_type_info get_class_type() {
-    return default_type_info(typeid(ClassType));
-  }
-};
-}}
+    namespace extensions
+    {
+        template <class TypeInfo, class ClassType>
+        struct type_info_handler
+        {
+            static TypeInfo get_class_type();
+        };
 
+        class default_type_info
+        {
+        public:
+            default_type_info() : type_(&typeid(void))
+            {
+            }
+
+            default_type_info(const std::type_info& new_type) : type_(&new_type)
+            {
+            }
+
+            default_type_info(const default_type_info& first) : type_(first.type_)
+            {
+            }
+
+            const std::type_info& type() const
+            {
+                return *type_;
+            }
+
+            default_type_info& operator=(const default_type_info& first)
+            {
+                type_ = first.type_;
+                return *this;
+            }
+
+        private:
+            const std::type_info* type_;
+        };
+
+        template <class ClassType>
+        struct type_info_handler<default_type_info, ClassType>
+        {
+            static default_type_info get_class_type()
+            {
+                return default_type_info(typeid(ClassType));
+            }
+        };
+    }
+}
 
 
 #if defined(__MINGW32__) || defined(__GNUC__)
@@ -92,23 +110,30 @@ inline bool operator>(const default_type_info& first,
 #else
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include <string>
-namespace boost { namespace extensions {
-inline bool operator<(const default_type_info& first,
-               const default_type_info& second) {
-  return std::strcmp(first.type().raw_name(), second.type().raw_name()) < 0;
-}
 
-inline bool operator==(const default_type_info& first,
-               const default_type_info& second) {
-  return std::strcmp(first.type().raw_name(), second.type().raw_name()) == 0;
-}
+namespace boost
+{
+    namespace extensions
+    {
+        inline bool operator<(const default_type_info& first,
+                              const default_type_info& second)
+        {
+            return std::strcmp(first.type().raw_name(), second.type().raw_name()) < 0;
+        }
 
-inline bool operator>(const default_type_info& first,
-               const default_type_info& second) {
-  return std::strcmp(first.type().raw_name(), second.type().raw_name()) > 0;
-}
-}  // namespace extensions
-}  // namespace boost
+        inline bool operator==(const default_type_info& first,
+                               const default_type_info& second)
+        {
+            return std::strcmp(first.type().raw_name(), second.type().raw_name()) == 0;
+        }
+
+        inline bool operator>(const default_type_info& first,
+                              const default_type_info& second)
+        {
+            return std::strcmp(first.type().raw_name(), second.type().raw_name()) > 0;
+        }
+    } // namespace extensions
+} // namespace boost
 #else  // OTHER OS
 #include <string>
 namespace boost { namespace extensions {

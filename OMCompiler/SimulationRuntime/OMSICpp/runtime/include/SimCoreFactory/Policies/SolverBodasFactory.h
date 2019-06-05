@@ -26,38 +26,41 @@ public:
         return settings_factory;
     }
 
-    shared_ptr<ISolver> createSolver(IMixedSystem* system, string solver_name, shared_ptr<ISolverSettings> solver_settings)
+    shared_ptr<ISolver> createSolver(IMixedSystem* system, string solver_name,
+                                     shared_ptr<ISolverSettings> solver_settings)
     {
         string solver_key;
-        if(solver_name.compare("Euler") == 0)
+        if (solver_name.compare("Euler") == 0)
         {
             solver_key.assign("createEuler");
         }
-        else if(solver_name.compare("RTEuler") == 0)
+        else if (solver_name.compare("RTEuler") == 0)
         {
             solver_key.assign("createRTEuler");
         }
-        else if(solver_name.compare("RTRK")==0)
+        else if (solver_name.compare("RTRK") == 0)
         {
             solver_key.assign("createRTRK");
         }
-        else if(solver_name.compare("Idas") == 0)
+        else if (solver_name.compare("Idas") == 0)
         {
             solver_key.assign("extension_export_idas");
         }
-        else if(solver_name.compare("Ida") == 0)
+        else if (solver_name.compare("Ida") == 0)
         {
             solver_key.assign("extension_export_ida");
         }
-        else if(solver_name.compare("CVode") == 0)
+        else if (solver_name.compare("CVode") == 0)
         {
             solver_key.assign("extension_export_cvode");
         }
         else
             throw std::invalid_argument("Selected Solver is not available");
 
-        shared_ptr<ISolver> solver = ObjectFactory<CreationPolicy>::_factory->LoadSolver(system, solver_key, solver_settings);
+        shared_ptr<ISolver> solver = ObjectFactory<CreationPolicy>::_factory->LoadSolver(
+            system, solver_key, solver_settings);
         return solver;
     }
 };
+
 /** @} */ // end of simcorefactoriesPolicies

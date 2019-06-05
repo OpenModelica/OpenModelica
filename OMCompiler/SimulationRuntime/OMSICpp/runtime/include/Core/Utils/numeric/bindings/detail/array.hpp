@@ -37,91 +37,113 @@
  So I can check whether array::storage == 0 and return appropriate error
  in `info'.*/
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename T>
+                class array : private noncopyable
+                {
+                public:
+                    typedef std::ptrdiff_t size_type;
 
-template <typename T>
-class array : private noncopyable {
-public:
-    typedef std::ptrdiff_t size_type ;
+                    array(size_type n)
+                    {
+                        stg = new(std::nothrow) T[n];
+                        sz = (stg != 0) ? n : 0;
+                    }
 
-    array (size_type n) {
-        stg = new (std::nothrow) T[n];
-        sz = (stg != 0) ? n : 0;
-    }
+                    ~array()
+                    {
+                        delete[] stg;
+                    }
 
-    ~array() {
-        delete[] stg;
-    }
+                    size_type size() const
+                    {
+                        return sz;
+                    }
 
-    size_type size() const {
-        return sz;
-    }
+                    bool valid() const
+                    {
+                        return stg != 0;
+                    }
 
-    bool valid() const {
-        return stg != 0;
-    }
+                    void resize(int n)
+                    {
+                        delete[] stg;
+                        stg = new(std::nothrow) T[n];
+                        sz = (stg != 0) ? n : 0;
+                    }
 
-    void resize (int n) {
-        delete[] stg;
-        stg = new (std::nothrow) T[n];
-        sz = (stg != 0) ? n : 0;
-    }
+                    T* storage()
+                    {
+                        return stg;
+                    }
 
-    T* storage() {
-        return stg;
-    }
+                    T const* storage() const
+                    {
+                        return stg;
+                    }
 
-    T const* storage() const {
-        return stg;
-    }
+                    T& operator[](int i)
+                    {
+                        return stg[i];
+                    }
 
-    T& operator[] (int i) {
-        return stg[i];
-    }
+                    T const& operator[](int i) const
+                    {
+                        return stg[i];
+                    }
 
-    T const& operator[] (int i) const {
-        return stg[i];
-    }
-
-private:
-    size_type sz;
-    T*        stg;
-};
-
-
-template< typename T, typename Id, typename Enable >
-struct adaptor< array< T >, Id, Enable > {
-
-    typedef typename copy_const< Id, T >::type value_type;
-    typedef mpl::map<
-        mpl::pair< tag::value_type, value_type >,
-        mpl::pair< tag::entity, tag::vector >,
-        mpl::pair< tag::size_type<1>, std::ptrdiff_t >,
-        mpl::pair< tag::data_structure, tag::linear_array >,
-        mpl::pair< tag::stride_type<1>, tag::contiguous >
-    > property_map;
-
-    static std::ptrdiff_t size1( const Id& t ) {
-        return t.size();
-    }
-
-    static value_type* begin_value( Id& t ) {
-        return t.storage();
-    }
-
-    static value_type* end_value( Id& t ) {
-        return t.storage() + t.size();
-    }
-
-};
+                private:
+                    size_type sz;
+                    T* stg;
+                };
 
 
-} // namespace detail
-} // namespace bindings
-} // namespace numeric
+                template <typename T, typename Id, typename Enable>
+                struct adaptor<array<T>, Id, Enable>
+                {
+                    typedef typename copy_const<Id, T>::type value_type;
+                    typedef mpl::map<
+                        mpl::pair<tag::value_type, value_type>,
+                        mpl::pair<tag::entity, tag::vector>,
+                        mpl::pair < tag::size_type < 1>
+                    ,
+                    std::ptrdiff_t
+                    >
+                    ,
+                    mpl::pair<tag::data_structure, tag::linear_array>
+                    ,
+                    mpl::pair<tag::stride_type < 1>
+                    ,
+                    tag::contiguous
+                    >
+                    >
+                    property_map;
+
+                    static std::ptrdiff_t size1(const Id& t)
+                    {
+                        return t.size();
+                    }
+
+                    static value_type* begin_value(Id& t)
+                    {
+                        return t.storage();
+                    }
+
+                    static value_type* end_value(Id& t)
+                    {
+                        return t.storage() + t.size();
+                    }
+                };
+            } // namespace detail
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

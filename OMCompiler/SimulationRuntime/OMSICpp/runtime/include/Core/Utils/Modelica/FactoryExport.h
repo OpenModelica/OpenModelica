@@ -7,6 +7,7 @@
   #define BOOST_EXTENSION_EXPORT_DECL
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #else
-    error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of coreUtils

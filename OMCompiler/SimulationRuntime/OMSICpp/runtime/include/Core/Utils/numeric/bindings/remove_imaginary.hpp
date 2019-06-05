@@ -11,27 +11,31 @@
 
 #include <complex>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct remove_imaginary
+            {
+                typedef T type;
+            };
 
-template< typename T >
-struct remove_imaginary {
-    typedef T type;
-};
+            template <typename T>
+            struct remove_imaginary<std::complex<T>>
+            {
+                typedef T type;
+            };
 
-template< typename T >
-struct remove_imaginary< std::complex<T> > {
-    typedef T type;
-};
-
-template< typename T >
-struct remove_imaginary< const std::complex<T> > {
-    typedef const T type;
-};
-
-} // namespace bindings
-} // namespace numeric
+            template <typename T>
+            struct remove_imaginary<const std::complex<T>>
+            {
+                typedef const T type;
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

@@ -26,23 +26,23 @@ using std::ios;
 
 class MatFileWriter : public ContainerManager
 {
- public:
+public:
     MatFileWriter(unsigned long size, string output_path, string file_name)
-            : ContainerManager(),
-              _dataHdrPos(),
-              _dataEofPos(),
-              _curser_position(0),
-              _uiValueCount(0),
-		      _output_path(output_path),
-              _file_name(file_name),
-              _doubleMatrixData1(NULL),
-              _doubleMatrixData2(NULL),
-              _stringMatrix(NULL),
-              _pacString(NULL),
-              _intMatrix(NULL)
+        : ContainerManager(),
+          _dataHdrPos(),
+          _dataEofPos(),
+          _curser_position(0),
+          _uiValueCount(0),
+          _output_path(output_path),
+          _file_name(file_name),
+          _doubleMatrixData1(NULL),
+          _doubleMatrixData2(NULL),
+          _stringMatrix(NULL),
+          _pacString(NULL),
+          _intMatrix(NULL)
     {
-
     }
+
     ~MatFileWriter()
     {
         // free memory and initialize pointer
@@ -82,7 +82,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    static inline void vFixVarName(char *pcStr, size_t uiLength)
+    static inline void vFixVarName(char* pcStr, size_t uiLength)
     {
         char* pcDot;
 
@@ -91,7 +91,7 @@ class MatFileWriter : public ContainerManager
 
         while (strncmp(pcStr, "der(", 4) == 0 && (pcDot = strrchr(pcStr, '.')) != NULL)
         {
-            size_t uiPos = (size_t) (pcDot - pcStr) + 1;
+            size_t uiPos = (size_t)(pcDot - pcStr) + 1;
 
             for (size_t uiIndex = 4; uiIndex < uiPos; ++uiIndex)
                 pcStr[uiIndex - 4] = pcStr[uiIndex];
@@ -127,7 +127,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    void writeMatVer4MatrixHeader(const char *name, int rows, int cols, unsigned int size)
+    void writeMatVer4MatrixHeader(const char* name, int rows, int cols, unsigned int size)
     {
         // matrix header struct
         typedef struct MHeader
@@ -143,13 +143,13 @@ class MatFileWriter : public ContainerManager
 
         // every data type has an own type value
         int type = 0;
-        if (size == 1)  //char
+        if (size == 1) //char
             type = 51;
-        if (size == 4)  //int32
+        if (size == 4) //int32
             type = 20;
 
         // initializing header
-        hdr.type = 1000 * ((*(char*) &endian_test) == 0) + type;
+        hdr.type = 1000 * ((*(char*)&endian_test) == 0) + type;
         hdr.mrows = rows;
         hdr.ncols = cols;
         hdr.imagf = 0;
@@ -160,13 +160,13 @@ class MatFileWriter : public ContainerManager
         {
             _dataEofPos = _output_stream.tellp();
             _output_stream.seekp(_dataHdrPos);
-            _output_stream.write((char*) &hdr, sizeof(MHeader_t));
+            _output_stream.write((char*)&hdr, sizeof(MHeader_t));
             _output_stream.write(name, sizeof(char) * hdr.namelen);
             _output_stream.seekp(_dataEofPos);
         }
-        else  // standard routine for header
+        else // standard routine for header
         {
-            _output_stream.write((char*) &hdr, sizeof(MHeader_t));
+            _output_stream.write((char*)&hdr, sizeof(MHeader_t));
             _output_stream.write(name, sizeof(char) * hdr.namelen);
         }
     }
@@ -202,7 +202,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    void writeMatVer4Matrix(const char *name, int rows, int cols, const void *matrixData, unsigned int size)
+    void writeMatVer4Matrix(const char* name, int rows, int cols, const void* matrixData, unsigned int size)
     {
         // first matrix header has to be written
         writeMatVer4MatrixHeader(name, rows, cols, size);
@@ -210,12 +210,12 @@ class MatFileWriter : public ContainerManager
         // special treatment for "data_2" matrix. cols = 1
         if (strcmp(name, "data_2") == 0)
         {
-            _output_stream.write((const char*) matrixData, (size) * rows * 1);
+            _output_stream.write((const char*)matrixData, (size) * rows * 1);
             //dataDummy = _output_stream.tellp(); // workaround: because with gcc compiled, sporadicaly the last simulation data is not written to file
         }
-        else  // standard write routine
+        else // standard write routine
         {
-            _output_stream.write((const char*) matrixData, (size) * rows * cols);
+            _output_stream.write((const char*)matrixData, (size) * rows * cols);
         }
     }
 
@@ -236,18 +236,18 @@ class MatFileWriter : public ContainerManager
     /*========================================================================================{end}==*/
     void init(std::string output_path, std::string file_name, size_t dim)
     {
-        const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";  // special header string
+        const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   "; // special header string
 
         _file_name = file_name;
-		_output_path = output_path;
+        _output_path = output_path;
         if (_output_stream.is_open())
             _output_stream.close();
 
 
         // open new file
-		_output_stream.open(file_name.c_str(), ios::binary | ios::trunc);
+        _output_stream.open(file_name.c_str(), ios::binary | ios::trunc);
         if (_output_stream.fail())
-          throw ModelicaSimulationError(DATASTORAGE, string("Failed to open results file ") + file_name);
+            throw ModelicaSimulationError(DATASTORAGE, string("Failed to open results file ") + file_name);
 
         // write header matrix
         writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(char));
@@ -293,8 +293,9 @@ class MatFileWriter : public ContainerManager
     /*========================================================================================{end}==*/
     virtual void write(const all_vars_t& v_list, double start_time, double end_time)
     {
-        unsigned int uiParCount = get<0>(v_list).size() +get<1>(v_list).size()+get<2>(v_list).size()+ 1;  // all variables + time
-        double *doubleHelpMatrix = NULL;
+        unsigned int uiParCount = get < 0 > (v_list).size() + get < 1 > (v_list).size() + get < 2 > (v_list).size() + 1;
+        // all variables + time
+        double* doubleHelpMatrix = NULL;
 
         // get memory and reset to zero
         _doubleMatrixData1 = new double[2 * uiParCount];
@@ -307,21 +308,21 @@ class MatFileWriter : public ContainerManager
         doubleHelpMatrix++;
 
         // ...then the other real variables
-        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
+        for (real_vars_t::const_iterator it = get < 0 > (v_list).begin(); it != get < 0 > (v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
             *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
         }
         // ...then the other int variables
-        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
+        for (int_vars_t::const_iterator it = get < 1 > (v_list).begin(); it != get < 1 > (v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
             *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
         }
         // ...then the other bool variables
-        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
+        for (bool_vars_t::const_iterator it = get < 2 > (v_list).begin(); it != get < 2 > (v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
             *(doubleHelpMatrix + uiParCount) = *(*it);
@@ -366,88 +367,100 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    virtual void write(const all_names_t& s_list, const all_description_t& s_desc_list,const all_names_t& s_parameter_list, const all_description_t& s_desc_parameter_list)
+    virtual void write(const all_names_t& s_list, const all_description_t& s_desc_list,
+                       const all_names_t& s_parameter_list, const all_description_t& s_desc_parameter_list)
     {
-        unsigned int uilongest = 12;  // help variable for temp buffer size
-        unsigned int uilongestName = 5;    // because of "Time"
-        unsigned int uilongestDesc = 12;  // because of "Time in [s]"
-        unsigned int uiVarCount = get<0>(s_list).size() +get<1>(s_list).size() +get<2>(s_list).size()  + get<0>(s_parameter_list).size() + get<1>(s_parameter_list).size() + get<2>(s_parameter_list).size()+ 1;  // all variables, all parameters + time
+        unsigned int uilongest = 12; // help variable for temp buffer size
+        unsigned int uilongestName = 5; // because of "Time"
+        unsigned int uilongestDesc = 12; // because of "Time in [s]"
+        unsigned int uiVarCount = get < 0 > (s_list).size() + get < 1 > (s_list).size() + get < 2 > (s_list).size() +
+            get < 0 > (s_parameter_list).size() + get < 1 > (s_parameter_list).size() + get < 2 > (s_parameter_list).
+            size() + 1; // all variables, all parameters + time
         unsigned int uiIndex = 2;
         int iCols = 0;
-        char *stringHelpMatrix = NULL;
-        int *intHelpMatrix = NULL;
-        char *pacHelpString = NULL;
+        char* stringHelpMatrix = NULL;
+        int* intHelpMatrix = NULL;
+        char* pacHelpString = NULL;
 
         // get longest string of the variable names
-        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it !=  get<0>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_list).begin(); it != get < 0 > (s_list).end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
-        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it !=  get<1>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_list).begin(); it != get < 1 > (s_list).end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
-        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it !=  get<2>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_list).begin(); it != get < 2 > (s_list).end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
 
         // get longest string of the parameter names
-        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_parameter_list).begin(); it != get < 0 > (s_parameter_list).
+             end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
         // get longest string of the parameter names
-        for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_parameter_list).begin(); it != get < 1 > (s_parameter_list).
+             end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
         // get longest string of the parameter names
-        for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_parameter_list).begin(); it != get < 2 > (s_parameter_list).
+             end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1;  // +1 because of string end
+                uilongestName = it->size() + 1; // +1 because of string end
         }
 
         // get longest string of the variable descriptions
-        for (var_names_t::const_iterator it = get<0>(s_desc_list).begin(); it != get<0>(s_desc_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_desc_list).begin(); it != get < 0 > (s_desc_list).end(); ++it
+        )
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
-         // get longest string of the variable descriptions
-        for (var_names_t::const_iterator it = get<1>(s_desc_list).begin(); it != get<1>(s_desc_list).end(); ++it)
+        // get longest string of the variable descriptions
+        for (var_names_t::const_iterator it = get < 1 > (s_desc_list).begin(); it != get < 1 > (s_desc_list).end(); ++it
+        )
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
-         // get longest string of the variable descriptions
-        for (var_names_t::const_iterator it = get<2>(s_desc_list).begin(); it != get<2>(s_desc_list).end(); ++it)
+        // get longest string of the variable descriptions
+        for (var_names_t::const_iterator it = get < 2 > (s_desc_list).begin(); it != get < 2 > (s_desc_list).end(); ++it
+        )
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
 
         // get longest string of the parameter descriptions
-        for (var_names_t::const_iterator it = get<0>(s_desc_parameter_list).begin(); it != get<0>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_desc_parameter_list).begin(); it != get < 0 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
-        for (var_names_t::const_iterator it = get<1>(s_desc_parameter_list).begin(); it != get<1>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_desc_parameter_list).begin(); it != get < 1 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
-        for (var_names_t::const_iterator it = get<2>(s_desc_parameter_list).begin(); it != get<2>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_desc_parameter_list).begin(); it != get < 2 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1;  // +1 because of string end
+                uilongestDesc = it->size() + 1; // +1 because of string end
         }
 
         // get longest string. is needed for temp buffer
@@ -466,21 +479,21 @@ class MatFileWriter : public ContainerManager
         stringHelpMatrix += uilongestName;
 
         // ...followed by variable names...
-        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_list).begin(); it != get < 0 > (s_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestName);
             stringHelpMatrix += uilongestName;
         }
-        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_list).begin(); it != get < 1 > (s_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestName);
             stringHelpMatrix += uilongestName;
         }
-        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_list).begin(); it != get < 2 > (s_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
@@ -489,21 +502,24 @@ class MatFileWriter : public ContainerManager
         }
 
         // ...followed by parameter names
-        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_parameter_list).begin(); it != get < 0 > (s_parameter_list).
+             end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestName);
             stringHelpMatrix += uilongestName;
         }
-         for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_parameter_list).begin(); it != get < 1 > (s_parameter_list).
+             end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestName);
             stringHelpMatrix += uilongestName;
         }
-         for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_parameter_list).begin(); it != get < 2 > (s_parameter_list).
+             end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestName);
             vFixVarName(pacHelpString, it->size());
@@ -512,7 +528,7 @@ class MatFileWriter : public ContainerManager
         }
 
         // write matrix to file
-        writeMatVer4Matrix("name", (int) uilongestName, (int) uiVarCount, _stringMatrix, sizeof(char));
+        writeMatVer4Matrix("name", (int)uilongestName, (int)uiVarCount, _stringMatrix, sizeof(char));
 
         // initialize pointer and reset to zero
         memset(_stringMatrix, 0, sizeof(char) * uiVarCount * uilongest);
@@ -525,21 +541,24 @@ class MatFileWriter : public ContainerManager
         stringHelpMatrix += uilongestDesc;
 
         // ...followed by variable descriptions...
-        for (var_names_t::const_iterator it = get<0>(s_desc_list).begin(); it != get<0>(s_desc_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_desc_list).begin(); it != get < 0 > (s_desc_list).end(); ++it
+        )
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
             stringHelpMatrix += uilongestDesc;
         }
-        for (var_names_t::const_iterator it = get<1>(s_desc_list).begin(); it != get<1>(s_desc_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_desc_list).begin(); it != get < 1 > (s_desc_list).end(); ++it
+        )
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
             stringHelpMatrix += uilongestDesc;
         }
-        for (var_names_t::const_iterator it = get<2>(s_desc_list).begin(); it != get<2>(s_desc_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_desc_list).begin(); it != get < 2 > (s_desc_list).end(); ++it
+        )
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
@@ -548,21 +567,24 @@ class MatFileWriter : public ContainerManager
         }
 
         // ...followed by parameter descriptions...
-        for (var_names_t::const_iterator it = get<0>(s_desc_parameter_list).begin(); it != get<0>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_desc_parameter_list).begin(); it != get < 0 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
             stringHelpMatrix += uilongestDesc;
         }
-        for (var_names_t::const_iterator it = get<1>(s_desc_parameter_list).begin(); it != get<1>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_desc_parameter_list).begin(); it != get < 1 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
             strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
             stringHelpMatrix += uilongestDesc;
         }
-        for (var_names_t::const_iterator it = get<2>(s_desc_parameter_list).begin(); it != get<2>(s_desc_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_desc_parameter_list).begin(); it != get < 2 > (
+                 s_desc_parameter_list).end(); ++it)
         {
             strncpy(pacHelpString, it->c_str(), uilongestDesc);
             vFixVarName(pacHelpString, it->size());
@@ -571,7 +593,7 @@ class MatFileWriter : public ContainerManager
         }
 
         // write matrix to file
-        writeMatVer4Matrix("description", (int) uilongestDesc, (int) uiVarCount, _stringMatrix, sizeof(char));
+        writeMatVer4Matrix("description", (int)uilongestDesc, (int)uiVarCount, _stringMatrix, sizeof(char));
 
         // initialize pointer
         stringHelpMatrix = NULL;
@@ -617,30 +639,31 @@ class MatFileWriter : public ContainerManager
          * = 1: Linear interpolation through first/last two points outside
          * of time range.
          */
-         /*==========================================================================================================*/
+        /*==========================================================================================================*/
 
         // time
-        *intHelpMatrix++ = 2;   // according to Dymola-Spec the value should be 0. But in the Matlab export method of the C-Runtime the value is 2.
+        *intHelpMatrix++ = 2;
+        // according to Dymola-Spec the value should be 0. But in the Matlab export method of the C-Runtime the value is 2.
         *intHelpMatrix++ = 1;
         *intHelpMatrix++ = 0;
         *intHelpMatrix++ = -1;
 
         // dataInfo-code for all variables
-        for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_list).begin(); it != get < 0 > (s_list).end(); ++it)
         {
             *intHelpMatrix++ = 2;
             *intHelpMatrix++ = uiIndex++;
             *intHelpMatrix++ = 0;
             *intHelpMatrix++ = -1;
         }
-        for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_list).begin(); it != get < 1 > (s_list).end(); ++it)
         {
             *intHelpMatrix++ = 2;
             *intHelpMatrix++ = uiIndex++;
             *intHelpMatrix++ = 0;
             *intHelpMatrix++ = -1;
         }
-        for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_list).begin(); it != get < 2 > (s_list).end(); ++it)
         {
             *intHelpMatrix++ = 2;
             *intHelpMatrix++ = uiIndex++;
@@ -651,21 +674,24 @@ class MatFileWriter : public ContainerManager
         uiIndex = 2;
 
         // dataInfo-code for all parameters
-        for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 0 > (s_parameter_list).begin(); it != get < 0 > (s_parameter_list).
+             end(); ++it)
         {
             *intHelpMatrix++ = 1;
             *intHelpMatrix++ = uiIndex++;
             *intHelpMatrix++ = 0;
             *intHelpMatrix++ = 0;
         }
-        for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 1 > (s_parameter_list).begin(); it != get < 1 > (s_parameter_list).
+             end(); ++it)
         {
             *intHelpMatrix++ = 1;
             *intHelpMatrix++ = uiIndex++;
             *intHelpMatrix++ = 0;
             *intHelpMatrix++ = 0;
         }
-        for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
+        for (var_names_t::const_iterator it = get < 2 > (s_parameter_list).begin(); it != get < 2 > (s_parameter_list).
+             end(); ++it)
         {
             *intHelpMatrix++ = 1;
             *intHelpMatrix++ = uiIndex++;
@@ -703,10 +729,11 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
+    virtual void write(const all_vars_time_t& v_list, const neg_all_vars_t& neg_v_list)
     {
-        unsigned int uiVarCount = get<0>(v_list).size() + get<1>(v_list).size() + get<2>(v_list).size() + 1;  // alle Variablen, alle abgeleiteten Variablen und die Zeit
-        double *doubleHelpMatrix = NULL;
+        unsigned int uiVarCount = get < 0 > (v_list).size() + get < 1 > (v_list).size() + get < 2 > (v_list).size() + 1;
+        // alle Variablen, alle abgeleiteten Variablen und die Zeit
+        double* doubleHelpMatrix = NULL;
 
         _uiValueCount++;
 
@@ -715,7 +742,7 @@ class MatFileWriter : public ContainerManager
         doubleHelpMatrix = _doubleMatrixData2;
 
         // first time ist written to "data_2" matrix...
-        *doubleHelpMatrix = get<3>(v_list);
+        *doubleHelpMatrix = get < 3 > (v_list);
         doubleHelpMatrix++;
 
         // ...followed by real variable values...
@@ -725,8 +752,8 @@ class MatFileWriter : public ContainerManager
             doubleHelpMatrix++;
         }*/
 
-        std::transform(get<0>(v_list).begin(), get<0>(v_list).end(), get<0>(neg_v_list).begin(),
-            doubleHelpMatrix, WriteOutputVar<double>());
+        std::transform(get < 0 > (v_list).begin(), get < 0 > (v_list).end(), get < 0 > (neg_v_list).begin(),
+                       doubleHelpMatrix, WriteOutputVar<double>());
 
 
         // ...followed by int variable values.
@@ -735,9 +762,9 @@ class MatFileWriter : public ContainerManager
             *doubleHelpMatrix = *(*it);
             doubleHelpMatrix++;
         }*/
-            size_t nReal = get<0>(v_list).size();
-        std::transform(get<1>(v_list).begin(), get<1>(v_list).end(), get<1>(neg_v_list).begin(),
-            doubleHelpMatrix + nReal, WriteOutputVar<int>());
+        size_t nReal = get < 0 > (v_list).size();
+        std::transform(get < 1 > (v_list).begin(), get < 1 > (v_list).end(), get < 1 > (neg_v_list).begin(),
+                       doubleHelpMatrix + nReal, WriteOutputVar<int>());
         // ...followed by bool variable values.
         /*for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
         {
@@ -745,9 +772,9 @@ class MatFileWriter : public ContainerManager
             doubleHelpMatrix++;
         }
         */
-             size_t nInt = get<1>(v_list).size();
-        std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
-            doubleHelpMatrix+nReal+nInt, WriteOutputVar<bool>());
+        size_t nInt = get < 1 > (v_list).size();
+        std::transform(get < 2 > (v_list).begin(), get < 2 > (v_list).end(), get < 2 > (neg_v_list).begin(),
+                       doubleHelpMatrix + nReal + nInt, WriteOutputVar<bool>());
 
         // write matrix to file
         writeMatVer4Matrix("data_2", uiVarCount, _uiValueCount, _doubleMatrixData2, sizeof(double));
@@ -763,7 +790,6 @@ class MatFileWriter : public ContainerManager
     /*=================================================================================*/
     void write(const char c)
     {
-
     }
 
     void read(ublas::matrix<double>& R, ublas::matrix<double>& dR)
@@ -803,19 +829,20 @@ class MatFileWriter : public ContainerManager
         //_output_stream.seekp(_curser_position);
     }
 
- protected:
+protected:
     std::ofstream _output_stream;
     std::ofstream::pos_type _dataHdrPos;
     std::ofstream::pos_type _dataEofPos;
     unsigned int _curser_position;
     unsigned int _uiValueCount;
     std::string _file_name;
-    double *_doubleMatrixData1;
-    double *_doubleMatrixData2;
-    char *_stringMatrix;
-    char *_pacString;
-    int *_intMatrix;
+    double* _doubleMatrixData1;
+    double* _doubleMatrixData2;
+    char* _stringMatrix;
+    char* _pacString;
+    int* _intMatrix;
     vector<string> _var_outputs;
-	std::string _output_path;
+    std::string _output_path;
 };
+
 /** @} */ // end of dataexchangePolicies

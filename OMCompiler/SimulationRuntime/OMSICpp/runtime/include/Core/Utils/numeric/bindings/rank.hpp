@@ -11,15 +11,18 @@
 
 #include <Core/Utils/numeric/bindings/detail/adaptor.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-
-template< typename T >
-struct rank: mpl::int_< detail::property_at< T, tag::entity >::type::value > {};
-
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct rank : mpl::int_<detail::property_at<T, tag::entity>::type::value>
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

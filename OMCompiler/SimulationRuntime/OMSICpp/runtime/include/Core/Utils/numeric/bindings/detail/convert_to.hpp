@@ -9,17 +9,21 @@
 #ifndef BOOST_NUMERIC_BINDINGS_DETAIL_CONVERT_TO_HPP
 #define BOOST_NUMERIC_BINDINGS_DETAIL_CONVERT_TO_HPP
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
-
-template< typename Target, typename Source >
-struct convert_to {};
-
-} // namespace detail
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename Target, typename Source>
+                struct convert_to
+                {
+                };
+            } // namespace detail
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

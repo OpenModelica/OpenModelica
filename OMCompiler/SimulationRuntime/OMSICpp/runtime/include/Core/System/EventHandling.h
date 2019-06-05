@@ -17,21 +17,22 @@ class DiscreteEvents;
 class EventHandling
 #else*/
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
-/*#endif*/
-{
+    /*#endif*/
+    {
 public:
-  EventHandling();
-  EventHandling(EventHandling& instance);
+        EventHandling();
+        EventHandling(EventHandling & instance);
   virtual ~EventHandling(void);
-  //Inits the event variables
-   shared_ptr<DiscreteEvents> initialize(IEvent* system,shared_ptr<ISimVars> sim_vars);
+        //Inits the event variables
+   shared_ptr<DiscreteEvents > initialize(IEvent * system, shared_ptr<ISimVars> sim_vars);
 
 
-  //saves a variable in _pre_vars vector
+        //saves a variable in _pre_vars vector
   bool startEventIteration(bool& state_vars_reinitialized);
 
 private:
-shared_ptr<ContinuousEvents> _continuousEvents;
+shared_ptr<ContinuousEvents > _continuousEvents;
 
-};
+
+    };
 /** @} */ // end of coreSystem

@@ -47,22 +47,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n, const float alpha,
@@ -73,9 +76,9 @@ inline void hpr2( const Order, const UpLo, const int n, const float alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n, const double alpha,
@@ -86,9 +89,9 @@ inline void hpr2( const Order, const UpLo, const int n, const double alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n,
@@ -100,9 +103,9 @@ inline void hpr2( const Order, const UpLo, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n,
@@ -114,10 +117,10 @@ inline void hpr2( const Order, const UpLo, const int n,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n, const float alpha,
@@ -128,9 +131,9 @@ inline void hpr2( const Order, const UpLo, const int n, const float alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n, const double alpha,
@@ -141,9 +144,9 @@ inline void hpr2( const Order, const UpLo, const int n, const double alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n,
@@ -155,9 +158,9 @@ inline void hpr2( const Order, const UpLo, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename UpLo >
 inline void hpr2( const Order, const UpLo, const int n,
@@ -169,133 +172,137 @@ inline void hpr2( const Order, const UpLo, const int n,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename UpLo >
-inline void hpr2( const Order, const UpLo, const fortran_int_t n,
-        const float alpha, const float* x, const fortran_int_t incx,
-        const float* y, const fortran_int_t incy, float* ap ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_SSPR2( &blas_option< UpLo >::value, &n, &alpha, x, &incx, y, &incy,
-            ap );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void hpr2(const Order, const UpLo, const fortran_int_t n,
+                                     const float alpha, const float* x, const fortran_int_t incx,
+                                     const float* y, const fortran_int_t incy, float* ap)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_SSPR2(&blas_option<UpLo>::value, &n, &alpha, x, &incx, y, &incy,
+                                   ap);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename UpLo >
-inline void hpr2( const Order, const UpLo, const fortran_int_t n,
-        const double alpha, const double* x, const fortran_int_t incx,
-        const double* y, const fortran_int_t incy, double* ap ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_DSPR2( &blas_option< UpLo >::value, &n, &alpha, x, &incx, y, &incy,
-            ap );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void hpr2(const Order, const UpLo, const fortran_int_t n,
+                                     const double alpha, const double* x, const fortran_int_t incx,
+                                     const double* y, const fortran_int_t incy, double* ap)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_DSPR2(&blas_option<UpLo>::value, &n, &alpha, x, &incx, y, &incy,
+                                   ap);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order, typename UpLo >
-inline void hpr2( const Order, const UpLo, const fortran_int_t n,
-        const std::complex<float> alpha, const std::complex<float>* x,
-        const fortran_int_t incx, const std::complex<float>* y,
-        const fortran_int_t incy, std::complex<float>* ap ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_CHPR2( &blas_option< UpLo >::value, &n, &alpha, x, &incx, y, &incy,
-            ap );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void hpr2(const Order, const UpLo, const fortran_int_t n,
+                                     const std::complex<float> alpha, const std::complex<float>* x,
+                                     const fortran_int_t incx, const std::complex<float>* y,
+                                     const fortran_int_t incy, std::complex<float>* ap)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_CHPR2(&blas_option<UpLo>::value, &n, &alpha, x, &incx, y, &incy,
+                                   ap);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order, typename UpLo >
-inline void hpr2( const Order, const UpLo, const fortran_int_t n,
-        const std::complex<double> alpha, const std::complex<double>* x,
-        const fortran_int_t incx, const std::complex<double>* y,
-        const fortran_int_t incy, std::complex<double>* ap ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_ZHPR2( &blas_option< UpLo >::value, &n, &alpha, x, &incx, y, &incy,
-            ap );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void hpr2(const Order, const UpLo, const fortran_int_t n,
+                                     const std::complex<double> alpha, const std::complex<double>* x,
+                                     const fortran_int_t incx, const std::complex<double>* y,
+                                     const fortran_int_t incy, std::complex<double>* ap)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_ZHPR2(&blas_option<UpLo>::value, &n, &alpha, x, &incx, y, &incy,
+                                   ap);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to hpr2.
+                //
+                template <typename Value>
+                struct hpr2_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to hpr2.
-//
-template< typename Value >
-struct hpr2_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename VectorX, typename VectorY, typename MatrixAP>
+                    static result_type invoke(const value_type alpha, const VectorX& x,
+                                              const VectorY& y, MatrixAP& ap)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::data_order<MatrixAP>::type order;
+                        typedef typename result_of::uplo_tag<MatrixAP>::type uplo;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<VectorX>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<VectorX>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         MatrixAP>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_triangular_array<
+                            MatrixAP>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<MatrixAP>::value));
+                        detail::hpr2(order(), uplo(), bindings::size_column(ap), alpha,
+                                     bindings::begin_value(x), bindings::stride(x),
+                                     bindings::begin_value(y), bindings::stride(y),
+                                     bindings::begin_value(ap));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the hpr2_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename VectorX, typename VectorY, typename MatrixAP >
-    static result_type invoke( const value_type alpha, const VectorX& x,
-            const VectorY& y, MatrixAP& ap ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::data_order< MatrixAP >::type order;
-        typedef typename result_of::uplo_tag< MatrixAP >::type uplo;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< VectorX >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< VectorX >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                MatrixAP >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_triangular_array<
-                MatrixAP >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< MatrixAP >::value) );
-        detail::hpr2( order(), uplo(), bindings::size_column(ap), alpha,
-                bindings::begin_value(x), bindings::stride(x),
-                bindings::begin_value(y), bindings::stride(y),
-                bindings::begin_value(ap) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the hpr2_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for hpr2. Its overload differs for
-//
-template< typename VectorX, typename VectorY, typename MatrixAP >
-inline typename hpr2_impl< typename bindings::value_type<
-        VectorX >::type >::result_type
-hpr2( const typename bindings::value_type< VectorX >::type alpha,
-        const VectorX& x, const VectorY& y, MatrixAP& ap ) {
-    hpr2_impl< typename bindings::value_type<
-            VectorX >::type >::invoke( alpha, x, y, ap );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for hpr2. Its overload differs for
+                //
+                template <typename VectorX, typename VectorY, typename MatrixAP>
+                inline typename hpr2_impl<typename bindings::value_type<
+                    VectorX>::type>::result_type
+                hpr2(const typename bindings::value_type<VectorX>::type alpha,
+                     const VectorX& x, const VectorY& y, MatrixAP& ap)
+                {
+                    hpr2_impl<typename bindings::value_type<
+                        VectorX>::type>::invoke(alpha, x, y, ap);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

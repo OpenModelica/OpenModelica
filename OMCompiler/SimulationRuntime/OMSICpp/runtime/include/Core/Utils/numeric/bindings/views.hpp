@@ -23,4 +23,3 @@
 #include <Core/Utils/numeric/bindings/vector_view.hpp>
 
 #endif
-

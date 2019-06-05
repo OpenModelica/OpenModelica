@@ -16,10 +16,13 @@ werden.
 class ILinSolverSettings
 {
 public:
-  virtual ~ILinSolverSettings(){};
+    virtual ~ILinSolverSettings()
+    {
+    };
 
-  virtual bool getUseSparseFormat() = 0;
-  virtual void setUseSparseFormat(bool value) = 0;
-  virtual void load(std::string) = 0;
+    virtual bool getUseSparseFormat() = 0;
+    virtual void setUseSparseFormat(bool value) = 0;
+    virtual void load(std::string) = 0;
 };
- /** @} */ // end of coreSolver
+
+/** @} */ // end of coreSolver

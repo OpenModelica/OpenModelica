@@ -44,22 +44,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 inline void axpy( const int n, const float a, const float* x, const int incx,
         float* y, const int incy ) {
@@ -67,9 +70,9 @@ inline void axpy( const int n, const float a, const float* x, const int incx,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 inline void axpy( const int n, const double a, const double* x,
         const int incx, double* y, const int incy ) {
@@ -77,9 +80,9 @@ inline void axpy( const int n, const double a, const double* x,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 inline void axpy( const int n, const std::complex<float> a,
         const std::complex<float>* x, const int incx, std::complex<float>* y,
@@ -88,9 +91,9 @@ inline void axpy( const int n, const std::complex<float> a,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 inline void axpy( const int n, const std::complex<double> a,
         const std::complex<double>* x, const int incx,
@@ -99,10 +102,10 @@ inline void axpy( const int n, const std::complex<double> a,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 inline void axpy( const int n, const float a, const float* x, const int incx,
         float* y, const int incy ) {
@@ -110,9 +113,9 @@ inline void axpy( const int n, const float a, const float* x, const int incx,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 inline void axpy( const int n, const double a, const double* x,
         const int incx, double* y, const int incy ) {
@@ -120,9 +123,9 @@ inline void axpy( const int n, const double a, const double* x,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 inline void axpy( const int n, const std::complex<float> a,
         const std::complex<float>* x, const int incx, std::complex<float>* y,
@@ -131,9 +134,9 @@ inline void axpy( const int n, const std::complex<float> a,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 inline void axpy( const int n, const std::complex<double> a,
         const std::complex<double>* x, const int incx,
@@ -142,108 +145,112 @@ inline void axpy( const int n, const std::complex<double> a,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-inline void axpy( const fortran_int_t n, const float a, const float* x,
-        const fortran_int_t incx, float* y, const fortran_int_t incy ) {
-    BLAS_SAXPY( &n, &a, x, &incx, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    inline void axpy(const fortran_int_t n, const float a, const float* x,
+                                     const fortran_int_t incx, float* y, const fortran_int_t incy)
+                    {
+                        BLAS_SAXPY(&n, &a, x, &incx, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-inline void axpy( const fortran_int_t n, const double a, const double* x,
-        const fortran_int_t incx, double* y, const fortran_int_t incy ) {
-    BLAS_DAXPY( &n, &a, x, &incx, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    inline void axpy(const fortran_int_t n, const double a, const double* x,
+                                     const fortran_int_t incx, double* y, const fortran_int_t incy)
+                    {
+                        BLAS_DAXPY(&n, &a, x, &incx, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-inline void axpy( const fortran_int_t n, const std::complex<float> a,
-        const std::complex<float>* x, const fortran_int_t incx,
-        std::complex<float>* y, const fortran_int_t incy ) {
-    BLAS_CAXPY( &n, &a, x, &incx, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    inline void axpy(const fortran_int_t n, const std::complex<float> a,
+                                     const std::complex<float>* x, const fortran_int_t incx,
+                                     std::complex<float>* y, const fortran_int_t incy)
+                    {
+                        BLAS_CAXPY(&n, &a, x, &incx, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-inline void axpy( const fortran_int_t n, const std::complex<double> a,
-        const std::complex<double>* x, const fortran_int_t incx,
-        std::complex<double>* y, const fortran_int_t incy ) {
-    BLAS_ZAXPY( &n, &a, x, &incx, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    inline void axpy(const fortran_int_t n, const std::complex<double> a,
+                                     const std::complex<double>* x, const fortran_int_t incx,
+                                     std::complex<double>* y, const fortran_int_t incy)
+                    {
+                        BLAS_ZAXPY(&n, &a, x, &incx, y, &incy);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to axpy.
+                //
+                template <typename Value>
+                struct axpy_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to axpy.
-//
-template< typename Value >
-struct axpy_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename VectorX, typename VectorY>
+                    static result_type invoke(const value_type a, const VectorX& x,
+                                              VectorY& y)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<VectorX>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorY>::value));
+                        detail::axpy(bindings::size(x), a, bindings::begin_value(x),
+                                     bindings::stride(x), bindings::begin_value(y),
+                                     bindings::stride(y));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the axpy_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename VectorX, typename VectorY >
-    static result_type invoke( const value_type a, const VectorX& x,
-            VectorY& y ) {
-        namespace bindings = ::boost::numeric::bindings;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< VectorX >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorY >::value) );
-        detail::axpy( bindings::size(x), a, bindings::begin_value(x),
-                bindings::stride(x), bindings::begin_value(y),
-                bindings::stride(y) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the axpy_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for axpy. Its overload differs for
-//
-template< typename VectorX, typename VectorY >
-inline typename axpy_impl< typename bindings::value_type<
-        VectorX >::type >::result_type
-axpy( const typename bindings::value_type< VectorX >::type a,
-        const VectorX& x, VectorY& y ) {
-    axpy_impl< typename bindings::value_type<
-            VectorX >::type >::invoke( a, x, y );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for axpy. Its overload differs for
+                //
+                template <typename VectorX, typename VectorY>
+                inline typename axpy_impl<typename bindings::value_type<
+                    VectorX>::type>::result_type
+                axpy(const typename bindings::value_type<VectorX>::type a,
+                     const VectorX& x, VectorY& y)
+                {
+                    axpy_impl<typename bindings::value_type<
+                        VectorX>::type>::invoke(a, x, y);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

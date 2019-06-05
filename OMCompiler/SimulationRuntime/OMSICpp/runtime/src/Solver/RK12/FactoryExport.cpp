@@ -51,8 +51,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
     }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 /** @} */ // end of solverEuler
-

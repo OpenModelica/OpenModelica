@@ -18,64 +18,72 @@
 #include <Core/Utils/numeric/bindings/stride.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename T, typename Id, typename Enable>
+                struct adaptor<ublas::vector_range<T>, Id, Enable>
+                {
+                    typedef typename copy_const<Id, T>::type adapted_type;
+                    typedef typename property_map_of<adapted_type>::type property_map;
 
-template< typename T, typename Id, typename Enable >
-struct adaptor< ublas::vector_range< T >, Id, Enable > {
+                    static std::ptrdiff_t size1(const Id& id)
+                    {
+                        return id.size();
+                    }
 
-    typedef typename copy_const< Id, T >::type adapted_type;
-    typedef typename property_map_of< adapted_type >::type property_map;
+                    static typename result_of::begin_value<adapted_type>::type begin_value(Id& id)
+                    {
+                        return bindings::begin_value(id.data()) + id.start() * stride1(id);
+                    }
 
-    static std::ptrdiff_t size1( const Id& id ) {
-        return id.size();
-    }
+                    static typename result_of::end_value<adapted_type>::type end_value(Id& id)
+                    {
+                        return bindings::begin_value(id.data()) + id.size() * stride1(id);
+                    }
 
-    static typename result_of::begin_value< adapted_type >::type begin_value( Id& id ) {
-        return bindings::begin_value( id.data() ) + id.start() * stride1( id );
-    }
+                    static std::ptrdiff_t stride1(const Id& id)
+                    {
+                        return bindings::stride1(id.data());
+                    }
+                };
 
-    static typename result_of::end_value< adapted_type >::type end_value( Id& id ) {
-        return bindings::begin_value( id.data() ) + id.size() * stride1( id );
-    }
+                template <typename T, typename Id, typename Enable>
+                struct adaptor<ublas::vector_slice<T>, Id, Enable>
+                {
+                    typedef typename copy_const<Id, T>::type adapted_type;
+                    typedef typename property_map_of<adapted_type>::type property_map;
 
-    static std::ptrdiff_t stride1( const Id& id ) {
-        return bindings::stride1( id.data() );
-    }
+                    static std::ptrdiff_t size1(const Id& id)
+                    {
+                        return id.size();
+                    }
 
-};
+                    static typename result_of::begin_value<adapted_type>::type begin_value(Id& id)
+                    {
+                        return bindings::begin_value(id.data()) +
+                            offset(id, id.start());
+                    }
 
-template< typename T, typename Id, typename Enable >
-struct adaptor< ublas::vector_slice< T >, Id, Enable > {
+                    static typename result_of::end_value<adapted_type>::type end_value(Id& id)
+                    {
+                        return bindings::begin_value(id.data()) +
+                            offset(id, id.start() + id.size());
+                    }
 
-    typedef typename copy_const< Id, T >::type adapted_type;
-    typedef typename property_map_of< adapted_type >::type property_map;
-
-    static std::ptrdiff_t size1( const Id& id ) {
-        return id.size();
-    }
-
-    static typename result_of::begin_value< adapted_type >::type begin_value( Id& id ) {
-        return bindings::begin_value( id.data() ) +
-               offset( id, id.start() );
-    }
-
-    static typename result_of::end_value< adapted_type >::type end_value( Id& id ) {
-        return bindings::begin_value( id.data() ) +
-               offset( id, id.start() + id.size() );
-    }
-
-    static std::ptrdiff_t stride1( const Id& id ) {
-        return bindings::stride1( id.data() );
-    }
-
-};
-
-} // namespace detail
-} // namespace bindings
-} // namespace numeric
+                    static std::ptrdiff_t stride1(const Id& id)
+                    {
+                        return bindings::stride1(id.data());
+                    }
+                };
+            } // namespace detail
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

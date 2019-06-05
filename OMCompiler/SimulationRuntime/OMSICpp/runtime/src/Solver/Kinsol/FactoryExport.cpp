@@ -49,11 +49,12 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 #if defined(OMC_BUILD)  && defined(RUNTIME_STATIC_LINKING)
-  #if defined(ENABLE_SUNDIALS_STATIC)
+#if defined(ENABLE_SUNDIALS_STATIC)
    shared_ptr<INonLinSolverSettings> createKinsolSettings()
    {
        shared_ptr<INonLinSolverSettings> settings = shared_ptr<INonLinSolverSettings>(new KinsolSettings());
@@ -64,7 +65,7 @@ error "operating system not supported"
        shared_ptr<INonLinearAlgLoopSolver> solver = shared_ptr<INonLinearAlgLoopSolver>(new Kinsol(solver_settings.get(),algLoop));
           return solver;
    }
-  #else
+#else
    shared_ptr<INonLinSolverSettings> createKinsolSettings()
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
@@ -73,6 +74,6 @@ error "operating system not supported"
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }
-  #endif //ENABLE_SUNDIALS_STATIC
+#endif //ENABLE_SUNDIALS_STATIC
 #endif
 /** @} */ // end of solverKinsol

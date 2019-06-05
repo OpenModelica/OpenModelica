@@ -11,15 +11,18 @@
 
 #include <boost/type_traits/is_floating_point.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-
-template< typename T >
-struct is_real: boost::is_floating_point<T> {};
-
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            struct is_real : boost::is_floating_point<T>
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

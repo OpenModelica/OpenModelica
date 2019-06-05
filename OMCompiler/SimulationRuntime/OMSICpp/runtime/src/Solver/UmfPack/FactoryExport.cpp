@@ -1,4 +1,3 @@
-
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #if defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
@@ -32,8 +31,6 @@ shared_ptr<ILinearAlgLoopSolver> createUmfpackSolver(shared_ptr<ILinSolverSettin
 }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
-
-
-

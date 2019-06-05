@@ -12,22 +12,23 @@ class SimulationMonitor
 #else
 */
 class BOOST_EXTENSION_MONITOR_DECL SimulationMonitor
-/*#endif*/
-{
+    /*#endif*/
+    {
 public:
-  SimulationMonitor();
-  ~SimulationMonitor();
+        SimulationMonitor();
+        ~SimulationMonitor();
   void initialize();
-  ///sets time out in seconds
+        ///sets time out in seconds
   void setTimeOut(unsigned int time_out);
   void stop();
   void checkTimeout();
 
 protected:
-  #ifdef USE_CHRONO
+#ifdef USE_CHRONO
    seconds _time_out;
    bool _interrupt;
    high_resolution_clock::time_point _t_s;
-  #endif
-};
- /** @} */ // end of coreSolver
+#endif
+
+    };
+/** @} */ // end of coreSolver

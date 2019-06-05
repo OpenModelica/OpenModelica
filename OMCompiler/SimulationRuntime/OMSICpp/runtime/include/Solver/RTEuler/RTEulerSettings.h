@@ -22,13 +22,11 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 class RTEulerSettings : public SolverSettings
 {
-
 public:
     RTEulerSettings(IGlobalSettings* globalSettings);
 
-     virtual void load(std::string xml_file);
+    virtual void load(std::string xml_file);
 private:
-
-
 };
+
 /** @} */ // end of solverRteuler

@@ -17,8 +17,8 @@
 #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #define BOOST_EXTENSION_MONITOR_DECL BOOST_EXTENSION_EXPORT_DECL
 #else
-    error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
- /** @} */ // end of coreSolver
-
+/** @} */ // end of coreSolver

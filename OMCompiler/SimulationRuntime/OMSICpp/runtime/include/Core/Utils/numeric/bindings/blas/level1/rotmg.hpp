@@ -43,22 +43,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 inline void rotmg( float& d1, float& d2, float& x1, const float y1,
         float* sparam ) {
@@ -66,9 +69,9 @@ inline void rotmg( float& d1, float& d2, float& x1, const float y1,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 inline void rotmg( double& d1, double& d2, double& x1, const double y1,
         double* dparam ) {
@@ -76,10 +79,10 @@ inline void rotmg( double& d1, double& d2, double& x1, const double y1,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 inline void rotmg( float& d1, float& d2, float& x1, const float y1,
         float* sparam ) {
@@ -87,9 +90,9 @@ inline void rotmg( float& d1, float& d2, float& x1, const float y1,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 inline void rotmg( double& d1, double& d2, double& x1, const double y1,
         double* dparam ) {
@@ -97,83 +100,85 @@ inline void rotmg( double& d1, double& d2, double& x1, const double y1,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-inline void rotmg( float& d1, float& d2, float& x1, const float y1,
-        float* sparam ) {
-    BLAS_SROTMG( &d1, &d2, &x1, &y1, sparam );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    inline void rotmg(float& d1, float& d2, float& x1, const float y1,
+                                      float* sparam)
+                    {
+                        BLAS_SROTMG(&d1, &d2, &x1, &y1, sparam);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-inline void rotmg( double& d1, double& d2, double& x1, const double y1,
-        double* dparam ) {
-    BLAS_DROTMG( &d1, &d2, &x1, &y1, dparam );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    inline void rotmg(double& d1, double& d2, double& x1, const double y1,
+                                      double* dparam)
+                    {
+                        BLAS_DROTMG(&d1, &d2, &x1, &y1, dparam);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to rotmg.
+                //
+                template <typename Value>
+                struct rotmg_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to rotmg.
-//
-template< typename Value >
-struct rotmg_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename VectorDPARAM>
+                    static result_type invoke(real_type& d1, real_type& d2, real_type& x1,
+                                              const real_type y1, VectorDPARAM& dparam)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorDPARAM>::value));
+                        detail::rotmg(d1, d2, x1, y1, bindings::begin_value(dparam));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the rotmg_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename VectorDPARAM >
-    static result_type invoke( real_type& d1, real_type& d2, real_type& x1,
-            const real_type y1, VectorDPARAM& dparam ) {
-        namespace bindings = ::boost::numeric::bindings;
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorDPARAM >::value) );
-        detail::rotmg( d1, d2, x1, y1, bindings::begin_value(dparam) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the rotmg_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for rotmg. Its overload differs for
-//
-template< typename VectorDPARAM >
-inline typename rotmg_impl< typename bindings::value_type<
-        VectorDPARAM >::type >::result_type
-rotmg( typename remove_imaginary< typename bindings::value_type<
-        VectorDPARAM >::type >::type& d1, typename remove_imaginary<
-        typename bindings::value_type< VectorDPARAM >::type >::type& d2,
-        typename remove_imaginary< typename bindings::value_type<
-        VectorDPARAM >::type >::type& x1, const typename remove_imaginary<
-        typename bindings::value_type< VectorDPARAM >::type >::type y1,
-        VectorDPARAM& dparam ) {
-    rotmg_impl< typename bindings::value_type<
-            VectorDPARAM >::type >::invoke( d1, d2, x1, y1, dparam );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for rotmg. Its overload differs for
+                //
+                template <typename VectorDPARAM>
+                inline typename rotmg_impl<typename bindings::value_type<
+                    VectorDPARAM>::type>::result_type
+                rotmg(typename remove_imaginary<typename bindings::value_type<
+                          VectorDPARAM>::type>::type& d1, typename remove_imaginary<
+                          typename bindings::value_type<VectorDPARAM>::type>::type& d2,
+                      typename remove_imaginary<typename bindings::value_type<
+                          VectorDPARAM>::type>::type& x1, const typename remove_imaginary<
+                          typename bindings::value_type<VectorDPARAM>::type>::type y1,
+                      VectorDPARAM& dparam)
+                {
+                    rotmg_impl<typename bindings::value_type<
+                        VectorDPARAM>::type>::invoke(d1, d2, x1, y1, dparam);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

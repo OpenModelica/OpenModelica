@@ -27,6 +27,7 @@ shared_ptr<ISimController> createSim(PATH library_path, PATH modelicasystem_path
   return shared_ptr<ISimController>(new SimController(library_path, modelicasystem_path));
 }
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of coreSimcontroller

@@ -14,13 +14,12 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_math(boost::extensi
 #elif defined(OMC_BUILD)
 
 
-
-
 /*OMC factory*/
 using boost::extensions::factory;
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
