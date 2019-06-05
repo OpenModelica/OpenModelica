@@ -9,7 +9,8 @@
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
   #define BOOST_EXTENSION_LOGGER_DECL BOOST_EXTENSION_EXPORT_DECL
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 /** @} */ // end of coreSystem

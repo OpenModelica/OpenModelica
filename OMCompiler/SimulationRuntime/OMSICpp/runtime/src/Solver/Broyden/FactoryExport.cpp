@@ -32,9 +32,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
         return solver;
  }
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of solverBroyden
-
-
-

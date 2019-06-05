@@ -11,7 +11,8 @@
   #define BOOST_EXTENSION_LOGGER_DECL BOOST_EXTENSION_IMPORT_DECL
 
 #else
-  error "operating system not supported"
+error
+"operating system not supported"
 #endif
 
 /** @} */ // end of coreSystem

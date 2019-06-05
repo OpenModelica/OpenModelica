@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "FactoryExport.h"
@@ -28,13 +27,13 @@ public:
   virtual ~CppDASSL();
 
   // geerbt von Object (in SolverDefaultImplementation)
-  //---------------------------------------
+//---------------------------------------
   /// Spezielle Solvereinstellungen setzten (default oder user defined)
   virtual void initialize();
 
 
   // geerbt von ISolver
-  //---------------------------------------
+//---------------------------------------
   /// Setzen der Startzeit für die numerische Lösung
   virtual void setStartTime(const double& time)
   {
@@ -137,44 +136,53 @@ private:
 class CppDASSL : public ISolver, public SolverDefaultImplementation
 {
 public:
-	CppDASSL(IMixedSystem* system, ISolverSettings* settings) : ISolver(), SolverDefaultImplementation(system, settings)
-	{
-		throw std::runtime_error("CppDASSL solver is not available.");
-	}
+    CppDASSL(IMixedSystem* system, ISolverSettings* settings) : ISolver(), SolverDefaultImplementation(system, settings)
+    {
+        throw std::runtime_error("CppDASSL solver is not available.");
+    }
 
-	virtual void setStartTime(const double& time)
-	{}
+    virtual void setStartTime(const double& time)
+    {
+    }
 
-	virtual void setEndTime(const double& time)
-	{}
+    virtual void setEndTime(const double& time)
+    {
+    }
 
-	virtual void setInitStepSize(const double& stepSize)
-	{}
+    virtual void setInitStepSize(const double& stepSize)
+    {
+    }
 
-	virtual void initialize()
-	{}
+    virtual void initialize()
+    {
+    }
 
-	virtual bool stateSelection()
-	{
-		throw std::runtime_error("Peer solver is not available.");
-	}
+    virtual bool stateSelection()
+    {
+        throw std::runtime_error("Peer solver is not available.");
+    }
 
-	virtual void solve(const SOLVERCALL command = UNDEF_CALL)
-	{}
+    virtual void solve(const SOLVERCALL command = UNDEF_CALL)
+    {
+    }
 
-	virtual SOLVERSTATUS getSolverStatus()
-	{ return UNDEF_STATUS; }
+    virtual SOLVERSTATUS getSolverStatus()
+    {
+        return UNDEF_STATUS;
+    }
 
-	/* virtual void setTimeOut(unsigned int time_out)
-	{} */
+    /* virtual void setTimeOut(unsigned int time_out)
+    {} */
     virtual void setTimeOut(double time_out)
-	{}
+    {
+    }
 
-	virtual void stop()
-	{}
+    virtual void stop()
+    {
+    }
 
-	virtual void writeSimulationInfo()
-	{}
-
+    virtual void writeSimulationInfo()
+    {
+    }
 };
 #endif

@@ -36,6 +36,7 @@
 #include <math.h>
 
 #define smooth(P,EXP)    (EXP)
+
 /** @addtogroup math
  *   @{
 */
@@ -45,12 +46,12 @@
  * we need to define our own mod. */
 static inline double modelica_mod_double(double x, double y)
 {
-  return (x - (floor(x/y) * y));
+    return (x - (floor(x / y) * y));
 }
 
 static inline int modelica_mod_integer(int x, int y)
 {
-  return x % y;
+    return x % y;
 }
 
 

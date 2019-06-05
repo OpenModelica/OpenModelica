@@ -12,49 +12,60 @@
 
 # define N BOOST_PP_ITERATION()
 
-public:
+public
+:
 template <class Interface, class Derived
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, class Param)>
 
-private:
+
+private
+:
 template <class Interface, class Derived
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, class Param)>
-static Interface* create_func() {
-
-
+static Interface* create_func()
+{
 }
 
 template <class Interface, class Derived
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, class Param)>
-static void check_func() {
-
+static void check_func()
+{
 }
 
 
-template <class T BOOST_PP_COMMA_IF(N)  BOOST_PP_ENUM_PARAMS(N, class Param) >
-class factory<T BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, Param) >
+template <class T BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, class Param) >
+class factory<T BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, Param)>
 {
 public:
 
-  template <class D>
-  void set() {
-    this->func = &impl::create_function<
-        T, D BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N,Param)
-      >::create;
-  }
+    template <class D>
+    void set()
+    {
+        this->func = &impl::create_function<
+            T, D BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, Param)
+        >::create;
+    }
 
-  factory() : func(0) {}
+    factory() : func(0)
+    {
+    }
 
-  factory(factory<T> const& first) : func(first.func) {}
+    factory(factory<T> const& first) : func(first.func)
+    {
+    }
 
-  factory& operator=(factory<T> const& first) {
-    this->func = first->func;
-    return *this;
-  }
+    factory& operator=(factory<T> const& first)
+    {
+        this->func = first->func;
+        return *this;
+    }
 
-  bool is_valid() const { return this->func != 0; }
+    bool is_valid() const { return this->func != 0; }
 
-  T* create(BOOST_PP_ENUM_BINARY_PARAMS(N, Param, p)) const {
+    T* create(BOOST_PP_ENUM_BINARY_PARAMS (N, Param, p)
+    )
+    const
+ {
     if (this->func) {
       return this->func(BOOST_PP_ENUM_PARAMS(N, p));
     }
@@ -64,9 +75,9 @@ public:
   }
 
 private:
-  typedef T* (*func_ptr_type)(BOOST_PP_ENUM_PARAMS(N, Param));
-  func_ptr_type func;
+    typedef T* (*func_ptr_type)(BOOST_PP_ENUM_PARAMS (N, Param)
+    );
+    func_ptr_type func;
 };
 
 #undef N
-

@@ -12,16 +12,16 @@ Copyright (c) 2008, OSMC
 class BOOST_EXTENSION_SOLVER_DECL AlgLoopSolverDefaultImplementation
 {
   public:
-	AlgLoopSolverDefaultImplementation();
-	~AlgLoopSolverDefaultImplementation();
- /// (Re-) initialize the solver
-  virtual void initialize(int dimZeroFunc,int dimSys);
+    AlgLoopSolverDefaultImplementation();
+    ~AlgLoopSolverDefaultImplementation();
+    /// (Re-) initialize the solver
+  virtual void initialize(int dimZeroFunc, int dimSys);
  virtual bool* getConditionsWorkArray();
   virtual bool* getConditions2WorkArray();
   virtual double* getVariableWorkArray();
 protected:
   long int _dimZeroFunc;
-  long int    _dimSys;              ///< Number of unknowns (=dimension of system of equations)
+  long int _dimSys;              ///< Number of unknowns (=dimension of system of equations)
   long int _max_dimSys;
   long int _max_dimZeroFunc;
   bool _single_instance;
@@ -31,5 +31,6 @@ private:
  bool* _conditions1;
 
 
+
 };
- /** @} */ // end of coreSolver
+/** @} */ // end of coreSolver

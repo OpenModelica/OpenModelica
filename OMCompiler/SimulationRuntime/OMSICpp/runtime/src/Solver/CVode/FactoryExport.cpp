@@ -10,8 +10,6 @@
 #elif defined(SIMSTER_BUILD)
 
 
-
-
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extensions::factory_map & fm)
 {
@@ -39,7 +37,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
 #include <Solver/IDA/IDASettings.h>
 #include <Solver/IDA/IDA.h>
 
-  #ifdef ENABLE_SUNDIALS_STATIC
+#ifdef ENABLE_SUNDIALS_STATIC
     shared_ptr<ISolver> createCVode(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
         shared_ptr<ISolver> cvode = shared_ptr<ISolver>(new Cvode(system,solver_settings.get()));
@@ -50,7 +48,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
          shared_ptr<ISolverSettings> cvode_settings = shared_ptr<ISolverSettings>(new CVodeSettings(globalSettings.get()));
          return cvode_settings;
     }
-  #else
+#else
     shared_ptr<ISolver> createCVode(IMixedSystem* system, shared_ptr<ISolverSettings> solver_settings)
     {
       throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
@@ -59,10 +57,10 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
     {
       throw ModelicaSimulationError(SOLVER,"CVode was disabled during build");
     }
-  #endif //ENABLE_SUNDIALS_STATIC
+#endif //ENABLE_SUNDIALS_STATIC
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of solverCvode
-

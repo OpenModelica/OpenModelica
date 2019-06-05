@@ -17,7 +17,8 @@
 namespace fs = boost::filesystem;
 
 //osu helper struct
-struct omsi_me {
+struct omsi_me
+{
     jm_callbacks callbacks;
     fmi_import_context_t* context;
     fmi2_callback_functions_t callback_functions;
@@ -36,7 +37,8 @@ void importFMU2logger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_
 
 
 /* Logger function used by the FMU internally */
-void fmi2logger(fmi2_component_environment_t env, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...)
+void fmi2logger(fmi2_component_environment_t env, fmi2_string_t instanceName, fmi2_status_t status,
+                fmi2_string_t category, fmi2_string_t message, ...)
 {
     int len;
     char msg[256];
@@ -44,23 +46,23 @@ void fmi2logger(fmi2_component_environment_t env, fmi2_string_t instanceName, fm
     va_start(argp, message);
     len = vsnprintf(msg, 256, message, argp);
     va_end(argp);
-    std::cout << fmi2_status_to_string((fmi2_status_t)status) << " " << instanceName << " " << category << " " << msg << std::endl;
+    std::cout << fmi2_status_to_string((fmi2_status_t)status) << " " << instanceName << " " << category << " " << msg <<
+        std::endl;
 }
-
 
 
 /**
  *   Constructor for osu system
  */
 OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name)
-    :SystemDefaultImplementation(globalSettings)
-    , _osu_name(osu_name)
-    , _osu_me(NULL)
-    , _instantiated(false)
-    , _zeroVal(NULL)
+    : SystemDefaultImplementation(globalSettings)
+      , _osu_name(osu_name)
+      , _osu_me(NULL)
+      , _instantiated(false)
+      , _zeroVal(NULL)
 {
     /*get temp dir, for working directory, unzip fmu*/
-    fs::path  temp_path = fs::temp_directory_path();
+    fs::path temp_path = fs::temp_directory_path();
     _osu_working_dir = temp_path.string();
     //fs::path current_path = fs::current_path();
     fmi_version_enu_t version;
@@ -102,12 +104,14 @@ OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name
     _osu_me->debug_logging = 0;
     jm_status_enu_t status, instantiateModelStatus;
     /* Load the binary (dll/so) */
-    status = fmi2_import_create_dllfmu(_osu_me->instance, fmi2_import_get_fmu_kind(_osu_me->instance), &_osu_me->callback_functions);
+    status = fmi2_import_create_dllfmu(_osu_me->instance, fmi2_import_get_fmu_kind(_osu_me->instance),
+                                       &_osu_me->callback_functions);
     if (status == jm_status_error)
     {
         _osu_me->solving_mode = omsi_none_mode;
         const char* log_str = jm_log_level_to_string((jm_log_level_enu_t)status);
-        std::string error = std::string("Loading of FMU dynamic link library failed with status ") + std::string(log_str);
+        std::string error = std::string("Loading of FMU dynamic link library failed with status ") + std::
+            string(log_str);
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
     }
 
@@ -118,15 +122,18 @@ OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name
         int i;
         size_t categoriesSize = 0;
         fmi2_status_t debugLoggingStatus;
-        fmi2_string_t *categories;
+        fmi2_string_t* categories;
         /* Read the log categories size */
         categoriesSize = fmi2_import_get_log_categories_num(_osu_me->instance);
-        categories = (fmi2_string_t*)malloc(categoriesSize*sizeof(fmi2_string_t));
-        for (i = 0; i < categoriesSize; i++) {
+        categories = (fmi2_string_t*)malloc(categoriesSize * sizeof(fmi2_string_t));
+        for (i = 0; i < categoriesSize; i++)
+        {
             categories[i] = fmi2_import_get_log_category(_osu_me->instance, i);
         }
-        debugLoggingStatus = fmi2_import_set_debug_logging(_osu_me->instance, _osu_me->debug_logging, categoriesSize, categories);
-        if (debugLoggingStatus != fmi2_status_ok && debugLoggingStatus != fmi2_status_warning) {
+        debugLoggingStatus = fmi2_import_set_debug_logging(_osu_me->instance, _osu_me->debug_logging, categoriesSize,
+                                                           categories);
+        if (debugLoggingStatus != fmi2_status_ok && debugLoggingStatus != fmi2_status_warning)
+        {
             const char* log_str = fmi2_status_to_string((fmi2_status_t)debugLoggingStatus);
             std::string error = std::string("fmi2SetDebugLogging failed with status :") + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
@@ -134,9 +141,9 @@ OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name
     }
 }
 
-OSUSystem::OSUSystem(OSUSystem &instance) : SystemDefaultImplementation(instance)
+OSUSystem::OSUSystem(OSUSystem& instance) : SystemDefaultImplementation(instance)
 {
-  throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "copy of osu system is not implemented yet");
+    throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "copy of osu system is not implemented yet");
 }
 
 /**
@@ -158,40 +165,40 @@ OSUSystem::~OSUSystem()
     {
         delete[] _zeroVal;
     }
-
 }
+
 /**
  *  Initializes osu
  */
-void  OSUSystem::initialize()
+void OSUSystem::initialize()
 {
     fs::path resources_foler("resources");
     fs::path resource_location = fs::path(_osu_working_dir);
     resource_location /= resources_foler;
     jm_status_enu_t instantiateModelStatus = fmi2_import_instantiate(
-            _osu_me->instance, _osu_name.c_str(), fmi2_model_exchange,
-            resource_location.string().c_str(), fmi2_false);
+        _osu_me->instance, _osu_name.c_str(), fmi2_model_exchange,
+        resource_location.string().c_str(), fmi2_false);
     if (instantiateModelStatus == jm_status_error)
     {
         _osu_me->solving_mode = omsi_none_mode;
         const char* log_str = jm_log_level_to_string(
-                (jm_log_level_enu_t) instantiateModelStatus);
+            (jm_log_level_enu_t)instantiateModelStatus);
         std::string error = std::string(
                 "fmi2InstantiateModel failed with status :")
-                + std::string(log_str);
+            + std::string(log_str);
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
     }
     /* allocate event info*/
-    _osu_me->event_info = (fmi2_event_info_t*) malloc(
-            sizeof(fmi2_event_info_t));
+    _osu_me->event_info = (fmi2_event_info_t*)malloc(
+        sizeof(fmi2_event_info_t));
     _osu_me->solving_mode = omsi_instantiated_mode;
 
     //get variable dimensions
     _dimContinuousStates = fmi2_import_get_number_of_continuous_states(
-            _osu_me->instance);
+        _osu_me->instance);
     _dimRHS = _dimContinuousStates;
     _dimZeroFunc = fmi2_import_get_number_of_event_indicators(
-            _osu_me->instance);
+        _osu_me->instance);
     _modelName = fmi2_import_get_model_identifier_ME(_osu_me->instance);
     //string init_file_path = fmi_import_get_dll_path(_osu_working_dir.c_str(), _modelName.c_str() ,&_osu_me->callbacks);
 
@@ -200,16 +207,16 @@ void  OSUSystem::initialize()
     _zeroVal = new double[_dimZeroFunc];
 
     fmi2_import_setup_experiment(_osu_me->instance, false, 0.0, 0.0, false,
-            0.0);
+                                 0.0);
     _osu_me->solving_mode = omsi_instantiated_mode;
     fmi2_status_t status = fmi2_import_enter_initialization_mode(
-            _osu_me->instance);
+        _osu_me->instance);
     if (status != fmi2_status_ok && status != fmi2_status_warning)
     {
-        const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+        const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
         std::string error = std::string(
                 "fmi2EnterInitializationMode failed with status :")
-                + std::string(log_str);
+            + std::string(log_str);
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
     }
     _osu_me->solving_mode = omsi_initialization_mode;
@@ -223,45 +230,45 @@ void  OSUSystem::initialize()
     _osu_me->solving_mode = omsi_event_mode;
     if (status != fmi2_status_ok && status != fmi2_status_warning)
     {
-        const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+        const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
         std::string error = std::string(
                 "ffmi2ExitInitializationMode failed with status  :")
-                + std::string(log_str);
+            + std::string(log_str);
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
     }
     _instantiated = true;
 
     _osu_me->solving_mode = omsi_event_mode;
 
-    fmi2_event_info_t *eventInfo = _osu_me->event_info;
+    fmi2_event_info_t* eventInfo = _osu_me->event_info;
     eventInfo->newDiscreteStatesNeeded = fmi2_true;
     eventInfo->terminateSimulation = fmi2_false;
     unsigned int iter = 0;
 
     while (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation
-            && !(iter++ > 100))
+        && !(iter++ > 100))
     {
         status = fmi2_import_new_discrete_states(_osu_me->instance, eventInfo);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2EnterEventMode failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
     if (eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation)
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
-                "eventFMUUpdate failed: Number of event iterations exeeded");
+                                      "eventFMUUpdate failed: Number of event iterations exeeded");
 
     status = fmi2_import_enter_continuous_time_mode(_osu_me->instance);
     if (status != fmi2_status_ok && status != fmi2_status_warning)
     {
-        const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+        const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
         std::string error = std::string(
                 "fmi2EnterEventMode failed with status  :")
-                + std::string(log_str);
+            + std::string(log_str);
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
     }
 
@@ -279,18 +286,17 @@ void  OSUSystem::initialize()
     if (getGlobalSettings()->getOutputPointType() != OPT_NONE)
     {
         _writeOutput = getSimObjects()->LoadWriter(
-                _dimReal + _dimInteger + _dimBoolean).lock();
+            _dimReal + _dimInteger + _dimBoolean).lock();
         _writeOutput->init();
         _writeOutput->clear();
     }
 }
 
-void  OSUSystem::initEquations()
+void OSUSystem::initEquations()
 {
-
 }
 
-void  OSUSystem::setInitial(bool status)
+void OSUSystem::setInitial(bool status)
 {
     _initial = status;
     if (_initial)
@@ -299,7 +305,7 @@ void  OSUSystem::setInitial(bool status)
         _callType = IContinuous::CONTINUOUS;
 }
 
-bool  OSUSystem::initial()
+bool OSUSystem::initial()
 {
     return _initial;
 }
@@ -314,14 +320,14 @@ bool  OSUSystem::initial()
  *   Creates a SimVars object which holds memory for all simulation variables
  *   Therefore it parses ModelDescription to get the model variable information
  */
-void  OSUSystem::initializeMemory()
+void OSUSystem::initializeMemory()
 {
     size_t nv, i;
     bool isParameter;
     fmi2_base_type_enu_t bt;
     fmi2_causality_enu_t causality;
     fmi2_import_variable_list_t* vl = fmi2_import_get_variable_list(
-            _osu_me->instance, 0);
+        _osu_me->instance, 0);
     const fmi2_value_reference_t* vrl = fmi2_import_get_value_referece_list(vl);
     nv = fmi2_import_get_variable_list_size(vl);
     for (i = 0; i < nv; i++)
@@ -334,40 +340,40 @@ void  OSUSystem::initializeMemory()
             if (bt == fmi2_base_type_real)
             {
                 isParameter = addValueReference(var, _real_out_vars_vr,
-                        _real_param_vars_vr, _dimReal);
+                                                _real_param_vars_vr, _dimReal);
                 _dimReal++;
             }
             else if (bt == fmi2_base_type_int)
             {
                 isParameter = addValueReference(var, _int_out_vars_vr,
-                        _int_param_vars_vr, _dimInteger);
+                                                _int_param_vars_vr, _dimInteger);
                 _dimInteger++;
             }
             else if (bt == fmi2_base_type_bool)
             {
                 isParameter = addValueReference(var, _bool_out_vars_vr,
-                        _bool_param_vars_vr, _dimBoolean);
+                                                _bool_param_vars_vr, _dimBoolean);
                 _dimBoolean++;
             }
             else if (bt == fmi2_base_type_str)
             {
                 isParameter = addValueReference(var, _string_out_vars_vr,
-                        _string_param_vars_vr, _dimString);
+                                                _string_param_vars_vr, _dimString);
                 _dimString++;
             }
         }
         else
         {
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
-                    "Intialisation of value references failed");
+                                          "Intialisation of value references failed");
         }
     }
 
     fmi2_import_free_variable_list(vl);
     _simVars = _simObjects->LoadSimVars(_modelName, _dimReal, _dimInteger,
-            _dimBoolean, _dimString,
-            _dimReal + _dimInteger + _dimBoolean + _dimString,
-            _dimContinuousStates, -1).lock();
+                                        _dimBoolean, _dimString,
+                                        _dimReal + _dimInteger + _dimBoolean + _dimString,
+                                        _dimContinuousStates, -1).lock();
     initializeResultOutputVars();
 }
 
@@ -382,14 +388,14 @@ void  OSUSystem::initializeMemory()
  *  \details Details
  */
 bool OSUSystem::addValueReference(fmi2_import_variable_t* v,
-        out_vars_vr_t& output_value_references,
-        out_vars_vr_t& param_value_references,
-        unsigned int var_idx)
+                                  out_vars_vr_t& output_value_references,
+                                  out_vars_vr_t& param_value_references,
+                                  unsigned int var_idx)
 {
     fmi2_causality_enu_t causality = fmi2_import_get_causality(v);
     size_t vr = fmi2_import_get_variable_vr(v);
     if ((causality == fmi2_causality_enu_parameter)
-            || (causality == fmi2_causality_enu_calculated_parameter))
+        || (causality == fmi2_causality_enu_calculated_parameter))
     {
         param_value_references.push_back(make_tuple(vr, var_idx));
         return true;
@@ -405,10 +411,10 @@ void OSUSystem::initializeResultOutputVars()
 {
     //add real output variables to writeoutput structure
     for (out_vars_vr_t::iterator iter = _real_out_vars_vr.begin();
-            iter != _real_out_vars_vr.end(); iter++)
+         iter != _real_out_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_real, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_real, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -420,10 +426,10 @@ void OSUSystem::initializeResultOutputVars()
     }
     //add real parameter to write output structure
     for (out_vars_vr_t::iterator iter = _real_param_vars_vr.begin();
-            iter != _real_param_vars_vr.end(); iter++)
+         iter != _real_param_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_real, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_real, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -436,10 +442,10 @@ void OSUSystem::initializeResultOutputVars()
 
     //add boolean output variables to write output structure
     for (out_vars_vr_t::iterator iter = _bool_out_vars_vr.begin();
-            iter != _bool_out_vars_vr.end(); iter++)
+         iter != _bool_out_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_bool, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_bool, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -451,10 +457,10 @@ void OSUSystem::initializeResultOutputVars()
     }
     //add boolean parameter to write output structure
     for (out_vars_vr_t::iterator iter = _bool_param_vars_vr.begin();
-            iter != _bool_param_vars_vr.end(); iter++)
+         iter != _bool_param_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_bool, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_bool, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -467,10 +473,10 @@ void OSUSystem::initializeResultOutputVars()
 
     //add integer output variables to write output structure
     for (out_vars_vr_t::iterator iter = _int_out_vars_vr.begin();
-            iter != _int_out_vars_vr.end(); iter++)
+         iter != _int_out_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_int, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_int, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -482,10 +488,10 @@ void OSUSystem::initializeResultOutputVars()
     }
     //add integer parameter to write output structure
     for (out_vars_vr_t::iterator iter = _int_param_vars_vr.begin();
-            iter != _int_param_vars_vr.end(); iter++)
+         iter != _int_param_vars_vr.end(); iter++)
     {
         fmi2_import_variable_t* v = fmi2_import_get_variable_by_vr(
-                _osu_me->instance, fmi2_base_type_int, get < 0 > (*iter));
+            _osu_me->instance, fmi2_base_type_int, get < 0 > (*iter));
         string name = string(fmi2_import_get_variable_name(v));
         const char* descripton_cstr = fmi2_import_get_variable_description(v);
         string descripton;
@@ -497,19 +503,17 @@ void OSUSystem::initializeResultOutputVars()
     }
 }
 
-void  OSUSystem::initializeFreeVariables()
+void OSUSystem::initializeFreeVariables()
 {
     _simTime = 0.0;
 }
 
-void  OSUSystem::initializeBoundVariables()
+void OSUSystem::initializeBoundVariables()
 {
-
 }
 
-void  OSUSystem::saveAll()
+void OSUSystem::saveAll()
 {
-
 }
 
 string OSUSystem::getModelName()
@@ -522,14 +526,14 @@ bool OSUSystem::handleSystemEvents(bool* events)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode))
     {
-        fmi2_event_info_t *eventInfo = _osu_me->event_info;
+        fmi2_event_info_t* eventInfo = _osu_me->event_info;
         fmi2_status_t status = fmi2_import_enter_event_mode(_osu_me->instance);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2EnterEventMode failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
         _osu_me->solving_mode = omsi_event_mode;
@@ -537,45 +541,45 @@ bool OSUSystem::handleSystemEvents(bool* events)
         eventInfo->terminateSimulation = fmi2_false;
         unsigned int iter = 0;
         while (eventInfo->newDiscreteStatesNeeded
-                && !eventInfo->terminateSimulation && !(iter++ > 100))
+            && !eventInfo->terminateSimulation && !(iter++ > 100))
         {
             status = fmi2_import_new_discrete_states(_osu_me->instance,
-                    eventInfo);
+                                                     eventInfo);
             if (status != fmi2_status_ok && status != fmi2_status_warning)
             {
                 const char* log_str = fmi2_status_to_string(
-                        (fmi2_status_t) status);
+                    (fmi2_status_t)status);
                 std::string error = std::string(
                         "fmi2EnterEventMode failed with status  :")
-                        + std::string(log_str);
+                    + std::string(log_str);
                 throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
             }
         }
         if (eventInfo->newDiscreteStatesNeeded
-                && !eventInfo->terminateSimulation)
+            && !eventInfo->terminateSimulation)
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
-                    "eventFMUUpdate failed: Number of event iterations exeeded");
+                                          "eventFMUUpdate failed: Number of event iterations exeeded");
 
         status = fmi2_import_enter_continuous_time_mode(_osu_me->instance);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2EnterEventMode failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
         _osu_me->solving_mode = omsi_continuousTime_mode;
 
         status = fmi2_import_get_event_indicators(_osu_me->instance,
-                (fmi2_real_t*) _zeroVal, _dimZeroFunc);
+                                                  (fmi2_real_t*)_zeroVal, _dimZeroFunc);
         if ((status != fmi2_status_ok) && (status != fmi2_status_warning)
-                && (status != fmi2_status_discard))
+            && (status != fmi2_status_discard))
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2GetEventIndicators failed with status ::")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
 
@@ -587,7 +591,7 @@ bool OSUSystem::handleSystemEvents(bool* events)
                 _conditions[i] = false;
         }
     }
-  return true;
+    return true;
 }
 
 IMixedSystem* OSUSystem::clone()
@@ -604,7 +608,7 @@ bool OSUSystem::evaluateAll(const UPDATETYPE command)
 void OSUSystem::evaluateODE(const UPDATETYPE command)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
-            || (_osu_me->solving_mode == omsi_event_mode))
+        || (_osu_me->solving_mode == omsi_event_mode))
     {
         //write inputs
         //read outputs
@@ -615,13 +619,13 @@ void OSUSystem::evaluateODE(const UPDATETYPE command)
 void OSUSystem::evaluateDAE(const UPDATETYPE command)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "evaluateAll is for osu system not supported");
+                                  "evaluateAll is for osu system not supported");
 }
 
 void OSUSystem::evaluateZeroFuncs(const UPDATETYPE command)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
-            || (_osu_me->solving_mode == omsi_event_mode))
+        || (_osu_me->solving_mode == omsi_event_mode))
     {
         //write inputs
         //read outputs
@@ -649,9 +653,9 @@ void OSUSystem::setTime(const double& t)
         fmi2_status_t status = fmi2_import_set_time(_osu_me->instance, t);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string("fmi2SetTime failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
@@ -665,9 +669,9 @@ double OSUSystem::getTime()
 // Computes the conditions of time event samplers for the current time
 double OSUSystem::computeNextTimeEvents(double currTime)
 {
-    fmi2_event_info_t *eventInfo = _osu_me->event_info;
+    fmi2_event_info_t* eventInfo = _osu_me->event_info;
     fmi2_status_t status = fmi2_import_new_discrete_states(_osu_me->instance,
-            eventInfo);
+                                                           eventInfo);
     fmi2_real_t nextTimeEvent = eventInfo->nextEventTime;
     return nextTimeEvent; //SystemDefaultImplementation::computeNextTimeEvents(currTime, getTimeEventData());
 }
@@ -694,6 +698,7 @@ int OSUSystem::getDimAE() const
 {
     return (SystemDefaultImplementation::getDimAE());
 }
+
 // Provide number (dimension) of variables according to the index
 int OSUSystem::getDimBoolean() const
 {
@@ -727,17 +732,16 @@ int OSUSystem::getDimRHS() const
 void OSUSystem::getContinuousStates(double* z)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
-            || (_osu_me->solving_mode == omsi_event_mode))
+        || (_osu_me->solving_mode == omsi_event_mode))
     {
-
         fmi2_status_t status = fmi2_import_get_continuous_states(
-                _osu_me->instance, (fmi2_real_t*) z, _dimContinuousStates);
+            _osu_me->instance, (fmi2_real_t*)z, _dimContinuousStates);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2GetContinuousStates failed with status :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
@@ -748,13 +752,13 @@ void OSUSystem::getNominalStates(double* z)
     if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
         fmi2_status_t status = fmi2_import_get_nominals_of_continuous_states(
-                _osu_me->instance, (fmi2_real_t*) z, _dimContinuousStates);
+            _osu_me->instance, (fmi2_real_t*)z, _dimContinuousStates);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2SetContinuousStates failed with status :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
@@ -765,13 +769,13 @@ void OSUSystem::setContinuousStates(const double* z)
     if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
         fmi2_status_t status = fmi2_import_set_continuous_states(
-                _osu_me->instance, (fmi2_real_t*) z, _dimContinuousStates);
+            _osu_me->instance, (fmi2_real_t*)z, _dimContinuousStates);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2SetContinuousStates failed with status :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
@@ -819,21 +823,19 @@ void OSUSystem::setStringStartValue(string& var, string val)
 
 void OSUSystem::setNumPartitions(int numPartitions)
 {
-
 }
 
 int OSUSystem::getNumPartitions()
 {
     return 0;
 }
+
 void OSUSystem::setPartitionActivation(bool* partitions)
 {
-
 }
 
 void OSUSystem::getPartitionActivation(bool* partitions)
 {
-
 }
 
 int OSUSystem::getActivator(int state)
@@ -845,16 +847,16 @@ int OSUSystem::getActivator(int state)
 void OSUSystem::getRHS(double* f)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
-            || (_osu_me->solving_mode == omsi_event_mode))
+        || (_osu_me->solving_mode == omsi_event_mode))
     {
         fmi2_status_t status = fmi2_import_get_derivatives(_osu_me->instance,
-                (fmi2_real_t*) f, _dimRHS);
+                                                           (fmi2_real_t*)f, _dimRHS);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2GetDerivatives failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
     }
@@ -863,7 +865,7 @@ void OSUSystem::getRHS(double* f)
 void OSUSystem::setStateDerivatives(const double* f)
 {
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
-            "setStateDerivatives is not yet implemented");
+                                  "setStateDerivatives is not yet implemented");
 }
 
 bool OSUSystem::stepCompleted(double time)
@@ -873,14 +875,14 @@ bool OSUSystem::stepCompleted(double time)
         fmi2_boolean_t callEventUpdate = fmi2_false;
         fmi2_boolean_t terminateSimulation = fmi2_false;
         fmi2_status_t status = fmi2_import_completed_integrator_step(
-                _osu_me->instance, fmi2_true, &callEventUpdate,
-                &terminateSimulation);
+            _osu_me->instance, fmi2_true, &callEventUpdate,
+            &terminateSimulation);
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2CompletedIntegratorStep failed with status :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
         return callEventUpdate;
@@ -906,7 +908,7 @@ bool OSUSystem::isAlgebraic()
 bool OSUSystem::provideSymbolicJacobian()
 {
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
-            "provideSymbolicJacobian is not yet implemented");
+                                  "provideSymbolicJacobian is not yet implemented");
 }
 
 void OSUSystem::handleEvent(const bool* events)
@@ -921,17 +923,17 @@ bool OSUSystem::checkForDiscreteEvents()
 void OSUSystem::getZeroFunc(double* f)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
-            || (_osu_me->solving_mode == omsi_event_mode))
+        || (_osu_me->solving_mode == omsi_event_mode))
     {
         fmi2_status_t status = fmi2_import_get_event_indicators(
-                _osu_me->instance, (fmi2_real_t*) _zeroVal, _dimZeroFunc);
+            _osu_me->instance, (fmi2_real_t*)_zeroVal, _dimZeroFunc);
         if ((status != fmi2_status_ok) && (status != fmi2_status_warning)
-                && (status != fmi2_status_discard))
+            && (status != fmi2_status_discard))
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string(
                     "fmi2GetEventIndicators failed with status ::")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
         for (int i = 0; i < _dimZeroFunc; i++)
@@ -985,7 +987,6 @@ std::pair<double, double>* OSUSystem::getTimeEventData() const
 
 void OSUSystem::initTimeEventData()
 {
-
 }
 
 bool OSUSystem::isODE()
@@ -1038,40 +1039,40 @@ void OSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
     if (command & IWriteOutput::HEAD_LINE)
     {
         const all_names_t outputVarNames = make_tuple(_real_vars.ourputVarNames,
-                _int_vars.ourputVarNames, _bool_vars.ourputVarNames,
-                _der_vars.ourputVarNames, _res_vars.ourputVarNames);
+                                                      _int_vars.ourputVarNames, _bool_vars.ourputVarNames,
+                                                      _der_vars.ourputVarNames, _res_vars.ourputVarNames);
         const all_description_t outputVarDescription = make_tuple(
-                _real_vars.ourputVarDescription, _int_vars.ourputVarDescription,
-                _bool_vars.ourputVarDescription, _der_vars.ourputVarDescription,
-                _res_vars.ourputVarDescription);
+            _real_vars.ourputVarDescription, _int_vars.ourputVarDescription,
+            _bool_vars.ourputVarDescription, _der_vars.ourputVarDescription,
+            _res_vars.ourputVarDescription);
         const all_names_t parameterVarNames = make_tuple(
-                _real_vars.parameterNames, _int_vars.parameterNames,
-                _bool_vars.parameterNames, _der_vars.ourputVarNames,
-                _res_vars.ourputVarNames);
+            _real_vars.parameterNames, _int_vars.parameterNames,
+            _bool_vars.parameterNames, _der_vars.ourputVarNames,
+            _res_vars.ourputVarNames);
         const all_description_t parameterVarDescription = make_tuple(
-                _real_vars.parameterDescription, _int_vars.parameterDescription,
-                _bool_vars.parameterDescription, _der_vars.ourputVarDescription,
-                _res_vars.ourputVarDescription);
+            _real_vars.parameterDescription, _int_vars.parameterDescription,
+            _bool_vars.parameterDescription, _der_vars.ourputVarDescription,
+            _res_vars.ourputVarDescription);
         _writeOutput->write(outputVarNames, outputVarDescription,
-                parameterVarNames, parameterVarDescription);
+                            parameterVarNames, parameterVarDescription);
         const all_vars_t params = make_tuple(_real_vars.outputParams,
-                _int_vars.outputParams, _bool_vars.outputParams,
-                _der_vars.outputParams, _res_vars.outputParams);
+                                             _int_vars.outputParams, _bool_vars.outputParams,
+                                             _der_vars.outputParams, _res_vars.outputParams);
         _writeOutput->write(params, _global_settings->getStartTime(),
-                _global_settings->getEndTime());
+                            _global_settings->getEndTime());
     }
-    //Write the current values
+        //Write the current values
     else
     {
         write_data_t& container = _writeOutput->getFreeContainer();
         all_vars_time_t all_vars = make_tuple(_real_vars.outputVars,
-                _int_vars.outputVars, _bool_vars.outputVars, _simTime,
-                _der_vars.outputVars, _res_vars.outputVars);
+                                              _int_vars.outputVars, _bool_vars.outputVars, _simTime,
+                                              _der_vars.outputVars, _res_vars.outputVars);
         neg_all_vars_t neg_all_vars = make_tuple(_real_vars.negateOutputVars,
-                _int_vars.negateOutputVars, _bool_vars.negateOutputVars,
-                _der_vars.negateOutputVars, _res_vars.negateOutputVars);
+                                                 _int_vars.negateOutputVars, _bool_vars.negateOutputVars,
+                                                 _der_vars.negateOutputVars, _res_vars.negateOutputVars);
         _writeOutput->addContainerToWriteQueue(
-                make_tuple(all_vars, neg_all_vars));
+            make_tuple(all_vars, neg_all_vars));
     }
 }
 
@@ -1080,16 +1081,16 @@ void OSUSystem::getReal(double* z)
     if (_real_out_vars_vr.size() > 0)
     {
         fmi2_value_reference_t* value_reference_list = &(get < 0
-                > (_real_out_vars_vr[0]));
+            > (_real_out_vars_vr[0]));
         fmi2_status_t status = fmi2_import_get_real(_osu_me->instance,
-                value_reference_list, _real_out_vars_vr.size(),
-                (fmi2_real_t*) z);
+                                                    value_reference_list, _real_out_vars_vr.size(),
+                                                    (fmi2_real_t*)z);
 
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string("getReal failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw std::runtime_error(error);
         }
     }
@@ -1097,7 +1098,6 @@ void OSUSystem::getReal(double* z)
 
 void OSUSystem::setReal(const double* z)
 {
-
 }
 
 void OSUSystem::getInteger(int* z)
@@ -1105,16 +1105,16 @@ void OSUSystem::getInteger(int* z)
     if (_int_out_vars_vr.size() > 0)
     {
         fmi2_value_reference_t* value_reference_list = &(get < 0
-                > (_int_out_vars_vr[0]));
+            > (_int_out_vars_vr[0]));
         fmi2_status_t status = fmi2_import_get_integer(_osu_me->instance,
-                value_reference_list, _int_out_vars_vr.size(),
-                (fmi2_integer_t*) z);
+                                                       value_reference_list, _int_out_vars_vr.size(),
+                                                       (fmi2_integer_t*)z);
 
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string("getInteger failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw std::runtime_error(error);
         }
     }
@@ -1125,16 +1125,16 @@ void OSUSystem::getBoolean(bool* z)
     if (_bool_out_vars_vr.size() > 0)
     {
         fmi2_value_reference_t* value_reference_list = &(get < 0
-                > (_bool_out_vars_vr[0]));
+            > (_bool_out_vars_vr[0]));
         fmi2_status_t status = fmi2_import_get_boolean(_osu_me->instance,
-                value_reference_list, _bool_out_vars_vr.size(),
-                (fmi2_boolean_t*) z);
+                                                       value_reference_list, _bool_out_vars_vr.size(),
+                                                       (fmi2_boolean_t*)z);
 
         if (status != fmi2_status_ok && status != fmi2_status_warning)
         {
-            const char* log_str = fmi2_status_to_string((fmi2_status_t) status);
+            const char* log_str = fmi2_status_to_string((fmi2_status_t)status);
             std::string error = std::string("getBoolean failed with status  :")
-                    + std::string(log_str);
+                + std::string(log_str);
             throw std::runtime_error(error);
         }
     }
@@ -1146,12 +1146,10 @@ void OSUSystem::getString(string* z)
 
 void OSUSystem::setInteger(const int* z)
 {
-
 }
 
 void OSUSystem::setBoolean(const bool* z)
 {
-
 }
 
 void OSUSystem::setString(const string* z)
@@ -1190,12 +1188,12 @@ void OSUSystem::getStateCanditates(unsigned int index, double* z)
 {
 }
 
-bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim2<int> & A)
+bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim2<int>& A)
 {
     return false;
 }
 
-bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim1<int> & A)
+bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim1<int>& A)
 {
     return false;
 }
@@ -1211,75 +1209,75 @@ void OSUSystem::setAMatrix(unsigned int index, DynArrayDim1<int>& A)
 bool OSUSystem::isJacobianSparse()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "isJacobianSparse is for osu system not supported");
+                                  "isJacobianSparse is for osu system not supported");
 }
 
 /* DAE residuals is empty */
 void OSUSystem::getResidual(double* f)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getResidual is for osu system not supported");
+                                  "getResidual is for osu system not supported");
 }
 
 void OSUSystem::setAlgebraicDAEVars(const double* y)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "setAlgebraicDAEVars is for osu system not supported");
+                                  "setAlgebraicDAEVars is for osu system not supported");
 }
 
 /* get algebraic variables */
 void OSUSystem::getAlgebraicDAEVars(double* y)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getAlgebraicDAEVars is for osu system not supported");
+                                  "getAlgebraicDAEVars is for osu system not supported");
 }
 
 bool OSUSystem::isAnalyticJacobianGenerated()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "isAnalyticJacobianGenerated is for osu system not supported");
+                                  "isAnalyticJacobianGenerated is for osu system not supported");
 }
 
 const matrix_t& OSUSystem::getJacobian()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getJacobian is for osu system not supported");
+                                  "getJacobian is for osu system not supported");
 }
 
 const matrix_t& OSUSystem::getJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getJacobian is for osu system not supported");
+                                  "getJacobian is for osu system not supported");
 }
 
 sparsematrix_t& OSUSystem::getSparseJacobian()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getSparseJacobian is for osu system not supported");
+                                  "getSparseJacobian is for osu system not supported");
 }
 
 sparsematrix_t& OSUSystem::getSparseJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getSparseJacobian is for osu system not supported");
+                                  "getSparseJacobian is for osu system not supported");
 }
 
 const matrix_t& OSUSystem::getStateSetJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getStateSetJacobian is for osu system not supported");
+                                  "getStateSetJacobian is for osu system not supported");
 }
 
 sparsematrix_t& OSUSystem::getStateSetSparseJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getStateSetSparseJacobian is for osu system not supported");
+                                  "getStateSetSparseJacobian is for osu system not supported");
 }
 
 void OSUSystem::getAColorOfColumn(int* aSparsePatternColorCols, int size)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
-            "getAColorOfColumn is for osu system not supported");
+                                  "getAColorOfColumn is for osu system not supported");
 }
 
 int OSUSystem::getAMaxColors()

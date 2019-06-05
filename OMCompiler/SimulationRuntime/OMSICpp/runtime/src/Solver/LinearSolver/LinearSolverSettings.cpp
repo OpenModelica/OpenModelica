@@ -8,22 +8,23 @@
 #include <Solver/LinearSolver/LinearSolverSettings.h>
 
 LinearSolverSettings::LinearSolverSettings()
-  : _UseSparseFormat  (false)
+    : _UseSparseFormat(false)
 {
 }
 
 bool LinearSolverSettings::getUseSparseFormat()
 {
-  return _UseSparseFormat;
+    return _UseSparseFormat;
 }
 
 void LinearSolverSettings::setUseSparseFormat(bool value)
 {
-  _UseSparseFormat = value;
+    _UseSparseFormat = value;
 }
 
 void LinearSolverSettings::load(std::string)
 {
-  //keine ahnung ob das so stimmt, aber die load funktion macht auch in kinsol nix.
+    //keine ahnung ob das so stimmt, aber die load funktion macht auch in kinsol nix.
 }
+
 /** @} */ // end of solverKinsol

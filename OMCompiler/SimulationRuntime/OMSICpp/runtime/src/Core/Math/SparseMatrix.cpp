@@ -1,5 +1,5 @@
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Core/Math/matrix_t.h>
 #ifdef USE_UMFPACK
 #include "umfpack.h"
@@ -46,12 +46,14 @@ int sparse_matrix::solve(const double* b, double * x) {
     return status;
 }
 #else
-void sparse_matrix::build(sparse_inserter& ins) {
-        throw ModelicaSimulationError(MATH_FUNCTION,"no umfpack");
-    }
+void sparse_matrix::build(sparse_inserter& ins)
+{
+    throw ModelicaSimulationError(MATH_FUNCTION, "no umfpack");
+}
 
-int sparse_matrix::solve(const double* b, double * x) {
-        throw ModelicaSimulationError(MATH_FUNCTION,"no umfpack");
+int sparse_matrix::solve(const double* b, double* x)
+{
+    throw ModelicaSimulationError(MATH_FUNCTION, "no umfpack");
 }
 
 #endif

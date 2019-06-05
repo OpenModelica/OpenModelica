@@ -34,69 +34,67 @@
 /*****************************************************************************
  * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  *****************************************************************************/
-class Newton : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
+class Newton : public INonLinearAlgLoopSolver, public AlgLoopSolverDefaultImplementation
 {
- public:
-  Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
+public:
+    Newton(INonLinSolverSettings* settings, shared_ptr<INonLinearAlgLoop> algLoop = shared_ptr<INonLinearAlgLoop>());
 
-  virtual ~Newton();
+    virtual ~Newton();
 
-  /// (Re-) initialize the solver
-  virtual void initialize();
+    /// (Re-) initialize the solver
+    virtual void initialize();
 
-   /// Solution of a (non-)linear system of equations
-   virtual void solve();
-   //solve for a single instance call
-   virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false);
+    /// Solution of a (non-)linear system of equations
+    virtual void solve();
+    //solve for a single instance call
+    virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop, bool first_solve = false);
 
-  /// Returns the status of iteration
-  virtual ITERATIONSTATUS getIterationStatus();
-  virtual void stepCompleted(double time);
-  virtual void restoreOldValues();
-  virtual void restoreNewValues();
+    /// Returns the status of iteration
+    virtual ITERATIONSTATUS getIterationStatus();
+    virtual void stepCompleted(double time);
+    virtual void restoreOldValues();
+    virtual void restoreNewValues();
 
-  virtual bool* getConditionsWorkArray();
-  virtual bool* getConditions2WorkArray();
-  virtual double* getVariableWorkArray();
-
-
- private:
-  /// Encapsulation of determination of residuals to given unknowns
-  void calcFunction(const double* y, double* residual);
-
-  /// Encapsulation of determination of Jacobian
-  void calcJacobian(double *jac, double *fNominal);
-
-  // Member variables
-  //---------------------------------------------------------------
-  INonLinSolverSettings
-    *_newtonSettings;           ///< Settings for the solver
-
-   shared_ptr<INonLinearAlgLoop> _algLoop;                  ///< Algebraic loop to be solved
-
-  ITERATIONSTATUS
-    _iterationStatus;           ///< Output      - Denotes the status of iteration
+    virtual bool* getConditionsWorkArray();
+    virtual bool* getConditions2WorkArray();
+    virtual double* getVariableWorkArray();
 
 
+private:
+    /// Encapsulation of determination of residuals to given unknowns
+    void calcFunction(const double* y, double* residual);
 
-  bool
-    _firstCall;                 ///< Temp        - Denotes the first call to the solver, init() is called
+    /// Encapsulation of determination of Jacobian
+    void calcJacobian(double* jac, double* fNominal);
 
-  const char*
-    *_yNames;                  ///< Names of variables
-  double
-    *_yNominal,
-    *_yMin,
-    *_yMax,
-    *_y,                        ///< Temp        - Unknowns
-    *_fNominal,
-    *_f,                        ///< Temp        - Residuals
-    *_yHelp,                    ///< Temp        - Auxillary variables
-    *_fHelp,                    ///< Temp        - Auxillary variables
-    *_yTest,                    ///< Temp        - Auxillary variables
-    *_fTest,                    ///< Temp        - Auxillary variables
-    *_jac;                      ///< Temp        - Jacobian
-  long int *_iHelp;
-  LogCategory _lc;              ///< LC_NLS or LC_LS
+    // Member variables
+    //---------------------------------------------------------------
+    INonLinSolverSettings
+    * _newtonSettings; ///< Settings for the solver
 
+    shared_ptr<INonLinearAlgLoop> _algLoop; ///< Algebraic loop to be solved
+
+    ITERATIONSTATUS
+    _iterationStatus; ///< Output      - Denotes the status of iteration
+
+
+    bool
+    _firstCall; ///< Temp        - Denotes the first call to the solver, init() is called
+
+    const char*
+    * _yNames; ///< Names of variables
+    double
+        *_yNominal,
+        *_yMin,
+        *_yMax,
+        *_y, ///< Temp        - Unknowns
+        *_fNominal,
+        *_f, ///< Temp        - Residuals
+        *_yHelp, ///< Temp        - Auxillary variables
+        *_fHelp, ///< Temp        - Auxillary variables
+        *_yTest, ///< Temp        - Auxillary variables
+        *_fTest, ///< Temp        - Auxillary variables
+        *_jac; ///< Temp        - Jacobian
+    long int* _iHelp;
+    LogCategory _lc; ///< LC_NLS or LC_LS
 };/** @} */ // end of solverNewton

@@ -37,202 +37,213 @@
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack.h>
 #include <Core/Utils/numeric/bindings/lapack/detail/lapack_option.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace lapack {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace lapack
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end LAPACK-routine.
+                //
+                namespace detail
+                {
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Diag>
+                    inline std::ptrdiff_t lantb(const char norm, const char uplo, const Diag,
+                                                const fortran_int_t n, const fortran_int_t k, const float* ab,
+                                                const fortran_int_t ldab, float* work)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_SLANTB(&norm, &uplo, &lapack_option<Diag>::value, &n, &k, ab,
+                                      &ldab, work);
+                        return info;
+                    }
 
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end LAPACK-routine.
-//
-namespace detail {
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Diag>
+                    inline std::ptrdiff_t lantb(const char norm, const char uplo, const Diag,
+                                                const fortran_int_t n, const fortran_int_t k, const double* ab,
+                                                const fortran_int_t ldab, double* work)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_DLANTB(&norm, &uplo, &lapack_option<Diag>::value, &n, &k, ab,
+                                      &ldab, work);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * float value-type.
-//
-template< typename Diag >
-inline std::ptrdiff_t lantb( const char norm, const char uplo, const Diag,
-        const fortran_int_t n, const fortran_int_t k, const float* ab,
-        const fortran_int_t ldab, float* work ) {
-    fortran_int_t info(0);
-    LAPACK_SLANTB( &norm, &uplo, &lapack_option< Diag >::value, &n, &k, ab,
-            &ldab, work );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Diag>
+                    inline std::ptrdiff_t lantb(const char norm, const char uplo, const Diag,
+                                                const fortran_int_t n, const fortran_int_t k,
+                                                const std::complex<float>* ab, const fortran_int_t ldab,
+                                                float* work)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_CLANTB(&norm, &uplo, &lapack_option<Diag>::value, &n, &k, ab,
+                                      &ldab, work);
+                        return info;
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * double value-type.
-//
-template< typename Diag >
-inline std::ptrdiff_t lantb( const char norm, const char uplo, const Diag,
-        const fortran_int_t n, const fortran_int_t k, const double* ab,
-        const fortran_int_t ldab, double* work ) {
-    fortran_int_t info(0);
-    LAPACK_DLANTB( &norm, &uplo, &lapack_option< Diag >::value, &n, &k, ab,
-            &ldab, work );
-    return info;
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible LAPACK backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Diag>
+                    inline std::ptrdiff_t lantb(const char norm, const char uplo, const Diag,
+                                                const fortran_int_t n, const fortran_int_t k,
+                                                const std::complex<double>* ab, const fortran_int_t ldab,
+                                                double* work)
+                    {
+                        fortran_int_t info(0);
+                        LAPACK_ZLANTB(&norm, &uplo, &lapack_option<Diag>::value, &n, &k, ab,
+                                      &ldab, work);
+                        return info;
+                    }
+                } // namespace detail
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Diag >
-inline std::ptrdiff_t lantb( const char norm, const char uplo, const Diag,
-        const fortran_int_t n, const fortran_int_t k,
-        const std::complex<float>* ab, const fortran_int_t ldab,
-        float* work ) {
-    fortran_int_t info(0);
-    LAPACK_CLANTB( &norm, &uplo, &lapack_option< Diag >::value, &n, &k, ab,
-            &ldab, work );
-    return info;
-}
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to lantb.
+                //
+                template <typename Value>
+                struct lantb_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible LAPACK backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Diag >
-inline std::ptrdiff_t lantb( const char norm, const char uplo, const Diag,
-        const fortran_int_t n, const fortran_int_t k,
-        const std::complex<double>* ab, const fortran_int_t ldab,
-        double* work ) {
-    fortran_int_t info(0);
-    LAPACK_ZLANTB( &norm, &uplo, &lapack_option< Diag >::value, &n, &k, ab,
-            &ldab, work );
-    return info;
-}
+                    //
+                    // Static member function for user-defined workspaces, that
+                    // * Deduces the required arguments for dispatching to LAPACK, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixAB, typename WORK>
+                    static std::ptrdiff_t invoke(const char norm, const char uplo,
+                                                 const fortran_int_t k, const MatrixAB& ab, detail::workspace1<
+                                                     WORK> work)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::diag_tag<MatrixAB>::type diag;
+                        BOOST_STATIC_ASSERT((bindings::is_column_major<MatrixAB>::value));
+                        BOOST_ASSERT(bindings::size(work.select(real_type())) >=
+                            min_size_work(norm, bindings::size_column(ab)));
+                        BOOST_ASSERT(bindings::size_column(ab) >= 0);
+                        BOOST_ASSERT(bindings::size_minor(ab) == 1 ||
+                            bindings::stride_minor(ab) == 1);
+                        BOOST_ASSERT(bindings::stride_major(ab) >= k + 1);
+                        BOOST_ASSERT(k >= 0);
+                        return detail::lantb(norm, uplo, diag(), bindings::size_column(ab),
+                                             k, bindings::begin_value(ab), bindings::stride_major(ab),
+                                             bindings::begin_value(work.select(real_type())));
+                    }
 
-} // namespace detail
+                    //
+                    // Static member function that
+                    // * Figures out the minimal workspace requirements, and passes
+                    //   the results to the user-defined workspace overload of the
+                    //   invoke static member function
+                    // * Enables the unblocked algorithm (BLAS level 2)
+                    //
+                    template <typename MatrixAB>
+                    static std::ptrdiff_t invoke(const char norm, const char uplo,
+                                                 const fortran_int_t k, const MatrixAB& ab,
+                                                 minimal_workspace)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::diag_tag<MatrixAB>::type diag;
+                        bindings::detail::array<real_type> tmp_work(min_size_work(norm,
+                                                                                  bindings::size_column(ab)));
+                        return invoke(norm, uplo, k, ab, workspace(tmp_work));
+                    }
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to lantb.
-//
-template< typename Value >
-struct lantb_impl {
+                    //
+                    // Static member function that
+                    // * Figures out the optimal workspace requirements, and passes
+                    //   the results to the user-defined workspace overload of the
+                    //   invoke static member
+                    // * Enables the blocked algorithm (BLAS level 3)
+                    //
+                    template <typename MatrixAB>
+                    static std::ptrdiff_t invoke(const char norm, const char uplo,
+                                                 const fortran_int_t k, const MatrixAB& ab,
+                                                 optimal_workspace)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::diag_tag<MatrixAB>::type diag;
+                        return invoke(norm, uplo, k, ab, minimal_workspace());
+                    }
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-
-    //
-    // Static member function for user-defined workspaces, that
-    // * Deduces the required arguments for dispatching to LAPACK, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixAB, typename WORK >
-    static std::ptrdiff_t invoke( const char norm, const char uplo,
-            const fortran_int_t k, const MatrixAB& ab, detail::workspace1<
-            WORK > work ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::diag_tag< MatrixAB >::type diag;
-        BOOST_STATIC_ASSERT( (bindings::is_column_major< MatrixAB >::value) );
-        BOOST_ASSERT( bindings::size(work.select(real_type())) >=
-                min_size_work( norm, bindings::size_column(ab) ));
-        BOOST_ASSERT( bindings::size_column(ab) >= 0 );
-        BOOST_ASSERT( bindings::size_minor(ab) == 1 ||
-                bindings::stride_minor(ab) == 1 );
-        BOOST_ASSERT( bindings::stride_major(ab) >= k+1 );
-        BOOST_ASSERT( k >= 0 );
-        return detail::lantb( norm, uplo, diag(), bindings::size_column(ab),
-                k, bindings::begin_value(ab), bindings::stride_major(ab),
-                bindings::begin_value(work.select(real_type())) );
-    }
-
-    //
-    // Static member function that
-    // * Figures out the minimal workspace requirements, and passes
-    //   the results to the user-defined workspace overload of the
-    //   invoke static member function
-    // * Enables the unblocked algorithm (BLAS level 2)
-    //
-    template< typename MatrixAB >
-    static std::ptrdiff_t invoke( const char norm, const char uplo,
-            const fortran_int_t k, const MatrixAB& ab,
-            minimal_workspace ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::diag_tag< MatrixAB >::type diag;
-        bindings::detail::array< real_type > tmp_work( min_size_work( norm,
-                bindings::size_column(ab) ) );
-        return invoke( norm, uplo, k, ab, workspace( tmp_work ) );
-    }
-
-    //
-    // Static member function that
-    // * Figures out the optimal workspace requirements, and passes
-    //   the results to the user-defined workspace overload of the
-    //   invoke static member
-    // * Enables the blocked algorithm (BLAS level 3)
-    //
-    template< typename MatrixAB >
-    static std::ptrdiff_t invoke( const char norm, const char uplo,
-            const fortran_int_t k, const MatrixAB& ab,
-            optimal_workspace ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::diag_tag< MatrixAB >::type diag;
-        return invoke( norm, uplo, k, ab, minimal_workspace() );
-    }
-
-    //
-    // Static member function that returns the minimum size of
-    // workspace-array work.
-    //
-    static std::ptrdiff_t min_size_work( const char norm,
-            const std::ptrdiff_t n ) {
-        if ( norm == 'I' )
-            return std::max< std::ptrdiff_t >( 1, n );
-        else
-            return 1;
-    }
-};
+                    //
+                    // Static member function that returns the minimum size of
+                    // workspace-array work.
+                    //
+                    static std::ptrdiff_t min_size_work(const char norm,
+                                                        const std::ptrdiff_t n)
+                    {
+                        if (norm == 'I')
+                            return std::max<std::ptrdiff_t>(1, n);
+                        else
+                            return 1;
+                    }
+                };
 
 
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. In
-// addition, if applicable, they are overloaded for user-defined workspaces.
-// Calls to these functions are passed to the lantb_impl classes. In the
-// documentation, most overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. In
+                // addition, if applicable, they are overloaded for user-defined workspaces.
+                // Calls to these functions are passed to the lantb_impl classes. In the
+                // documentation, most overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-//
-// Overloaded function for lantb. Its overload differs for
-// * User-defined workspace
-//
-template< typename MatrixAB, typename Workspace >
-inline typename boost::enable_if< detail::is_workspace< Workspace >,
-        std::ptrdiff_t >::type
-lantb( const char norm, const char uplo, const fortran_int_t k,
-        const MatrixAB& ab, Workspace work ) {
-    return lantb_impl< typename bindings::value_type<
-            MatrixAB >::type >::invoke( norm, uplo, k, ab, work );
-}
+                //
+                // Overloaded function for lantb. Its overload differs for
+                // * User-defined workspace
+                //
+                template <typename MatrixAB, typename Workspace>
+                inline typename boost::enable_if<detail::is_workspace<Workspace>,
+                                                 std::ptrdiff_t>::type
+                lantb(const char norm, const char uplo, const fortran_int_t k,
+                      const MatrixAB& ab, Workspace work)
+                {
+                    return lantb_impl<typename bindings::value_type<
+                        MatrixAB>::type>::invoke(norm, uplo, k, ab, work);
+                }
 
-//
-// Overloaded function for lantb. Its overload differs for
-// * Default workspace-type (optimal)
-//
-template< typename MatrixAB >
-inline typename boost::disable_if< detail::is_workspace< MatrixAB >,
-        std::ptrdiff_t >::type
-lantb( const char norm, const char uplo, const fortran_int_t k,
-        const MatrixAB& ab ) {
-    return lantb_impl< typename bindings::value_type<
-            MatrixAB >::type >::invoke( norm, uplo, k, ab,
-            optimal_workspace() );
-}
-
-} // namespace lapack
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for lantb. Its overload differs for
+                // * Default workspace-type (optimal)
+                //
+                template <typename MatrixAB>
+                inline typename boost::disable_if<detail::is_workspace<MatrixAB>,
+                                                  std::ptrdiff_t>::type
+                lantb(const char norm, const char uplo, const fortran_int_t k,
+                      const MatrixAB& ab)
+                {
+                    return lantb_impl<typename bindings::value_type<
+                        MatrixAB>::type>::invoke(norm, uplo, k, ab,
+                                                 optimal_workspace());
+                }
+            } // namespace lapack
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

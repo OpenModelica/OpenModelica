@@ -16,8 +16,6 @@
   #define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_IMPORT_DECL
   #define BOOST_EXTENSION_MONITOR_DECL BOOST_EXTENSION_IMPORT_DECL
 #else
-    error "operating system not supported"
+error
+"operating system not supported"
 #endif
-
-
-

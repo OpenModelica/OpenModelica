@@ -41,11 +41,11 @@
 #include <Core/SimController/ISimController.h>
 
 
-shared_ptr<IMixedSystem> createOSUSystem(shared_ptr<OMSIGlobalSettings> globalSettings,string instanceName,omsi_t* omsu)
+shared_ptr<IMixedSystem> createOSUSystem(shared_ptr<OMSIGlobalSettings> globalSettings, string instanceName,
+                                         omsi_t* omsu)
 {
-
     //instantiate osu system
-    shared_ptr<IMixedSystem> osu  = createOSU(dynamic_pointer_cast<IGlobalSettings>(globalSettings), omsu);
+    shared_ptr<IMixedSystem> osu = createOSU(dynamic_pointer_cast<IGlobalSettings>(globalSettings), omsu);
 
     return osu;
 }

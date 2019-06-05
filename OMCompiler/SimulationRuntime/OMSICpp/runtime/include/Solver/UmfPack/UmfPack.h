@@ -8,18 +8,18 @@
 #include <Solver/UmfPack/UmfPackSettings.h>
 
 
-class UmfPack : public ILinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
+class UmfPack : public ILinearAlgLoopSolver, public AlgLoopSolverDefaultImplementation
 {
 public:
-  UmfPack(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop=shared_ptr<ILinearAlgLoop>());
-  virtual ~UmfPack();
+    UmfPack(ILinSolverSettings* settings, shared_ptr<ILinearAlgLoop> algLoop = shared_ptr<ILinearAlgLoop>());
+    virtual ~UmfPack();
 
     virtual void initialize();
 
     /// Solution of a (non-)linear system of equations
     virtual void solve();
     //solve for a single instance call
-    virtual void solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve = false);
+    virtual void solve(shared_ptr<ILinearAlgLoop> algLoop, bool first_solve = false);
 
 
     /// Returns the status of iteration
@@ -29,17 +29,17 @@ public:
     virtual void restoreNewValues();
 
 
-	virtual bool* getConditionsWorkArray();
+    virtual bool* getConditionsWorkArray();
     virtual bool* getConditions2WorkArray();
     virtual double* getVariableWorkArray();
 private:
     ITERATIONSTATUS _iterationStatus;
-    ILinSolverSettings *_umfpackSettings;
+    ILinSolverSettings* _umfpackSettings;
     shared_ptr<ILinearAlgLoop> _algLoop;
 
-    double * _jacd;
-    double * _rhs;
-    double * _x,
+    double* _jacd;
+    double* _rhs;
+    double *_x,
            *_x_old,
            *_x_new;
     bool _firstuse;

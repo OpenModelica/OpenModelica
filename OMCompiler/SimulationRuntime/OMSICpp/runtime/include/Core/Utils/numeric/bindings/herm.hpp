@@ -12,33 +12,37 @@
 #include <Core/Utils/numeric/bindings/detail/basic_wrapper.hpp>
 #include <Core/Utils/numeric/bindings/tag.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace result_of {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace result_of
+            {
+                template <typename T>
+                struct herm
+                {
+                    typedef detail::basic_wrapper<
+                        T,
+                        mpl::pair<tag::matrix_type, tag::hermitian>
+                    > type;
+                };
+            } // namespace result_of
 
-template< typename T >
-struct herm {
-    typedef detail::basic_wrapper<
-        T,
-        mpl::pair< tag::matrix_type, tag::hermitian >
-    > type;
-};
+            template <typename T>
+            typename result_of::herm<T>::type const herm(T& underlying)
+            {
+                return typename result_of::herm<T>::type(underlying);
+            }
 
-} // namespace result_of
-
-template< typename T >
-typename result_of::herm< T >::type const herm( T& underlying ) {
-    return typename result_of::herm< T >::type( underlying );
-}
-
-template< typename T >
-typename result_of::herm< const T >::type const herm( const T& underlying ) {
-    return typename result_of::herm< const T >::type( underlying );
-}
-
-} // namespace bindings
-} // namespace numeric
+            template <typename T>
+            typename result_of::herm<const T>::type const herm(const T& underlying)
+            {
+                return typename result_of::herm<const T>::type(underlying);
+            }
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

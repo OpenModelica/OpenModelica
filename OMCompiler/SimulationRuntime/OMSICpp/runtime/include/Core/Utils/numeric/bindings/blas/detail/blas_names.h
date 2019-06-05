@@ -270,6 +270,4 @@
 #define BLAS_ZTRSM FORTRAN_ID2( ztrsm, ZTRSM )
 
 
-
 #endif
-

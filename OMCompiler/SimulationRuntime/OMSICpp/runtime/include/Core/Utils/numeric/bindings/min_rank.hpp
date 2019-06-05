@@ -11,16 +11,18 @@
 
 #include <Core/Utils/numeric/bindings/detail/adaptor.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-
-template< typename T >
-int min_rank( T const& t ) {
-}
-
-} // namespace bindings
-} // namespace numeric
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T>
+            int min_rank(T const& t)
+            {
+            }
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

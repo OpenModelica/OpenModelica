@@ -13,24 +13,28 @@
 #include <Core/Utils/numeric/bindings/tag.hpp>
 #include <boost/numeric/mtl/utility/tag.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <>
+                struct convert_to<bindings::tag::data_order, mtl::tag::row_major>
+                {
+                    typedef bindings::tag::row_major type;
+                };
 
-template<>
-struct convert_to< bindings::tag::data_order, mtl::tag::row_major > {
-    typedef bindings::tag::row_major type;
-};
-
-template<>
-struct convert_to< bindings::tag::data_order, mtl::tag::col_major > {
-    typedef bindings::tag::column_major type;
-};
-
-} // namespace detail
-} // namespace bindings
-} // namespace numeric
+                template <>
+                struct convert_to<bindings::tag::data_order, mtl::tag::col_major>
+                {
+                    typedef bindings::tag::column_major type;
+                };
+            } // namespace detail
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

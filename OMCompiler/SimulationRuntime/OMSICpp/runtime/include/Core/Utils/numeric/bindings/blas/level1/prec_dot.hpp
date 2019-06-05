@@ -44,22 +44,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 inline double prec_dot( const int n, const float* x, const int incx,
         const float* y, const int incy ) {
@@ -67,10 +70,10 @@ inline double prec_dot( const int n, const float* x, const int incx,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 inline double prec_dot( const int n, const float* x, const int incx,
         const float* y, const int incy ) {
@@ -78,73 +81,74 @@ inline double prec_dot( const int n, const float* x, const int incx,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-inline double prec_dot( const fortran_int_t n, const float* x,
-        const fortran_int_t incx, const float* y, const fortran_int_t incy ) {
-    return BLAS_DSDOT( &n, x, &incx, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    inline double prec_dot(const fortran_int_t n, const float* x,
+                                           const fortran_int_t incx, const float* y, const fortran_int_t incy)
+                    {
+                        return BLAS_DSDOT(&n, x, &incx, y, &incy);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to prec_dot.
+                //
+                template <typename Value>
+                struct prec_dot_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef double result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to prec_dot.
-//
-template< typename Value >
-struct prec_dot_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename VectorX, typename VectorY>
+                    static result_type invoke(const VectorX& x, const VectorY& y)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<VectorX>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        return detail::prec_dot(bindings::size(x),
+                                                bindings::begin_value(x), bindings::stride(x),
+                                                bindings::begin_value(y), bindings::stride(y));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef double result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the prec_dot_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename VectorX, typename VectorY >
-    static result_type invoke( const VectorX& x, const VectorY& y ) {
-        namespace bindings = ::boost::numeric::bindings;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< VectorX >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        return detail::prec_dot( bindings::size(x),
-                bindings::begin_value(x), bindings::stride(x),
-                bindings::begin_value(y), bindings::stride(y) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the prec_dot_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for prec_dot. Its overload differs for
-//
-template< typename VectorX, typename VectorY >
-inline typename prec_dot_impl< typename bindings::value_type<
-        VectorX >::type >::result_type
-prec_dot( const VectorX& x, const VectorY& y ) {
-    return prec_dot_impl< typename bindings::value_type<
-            VectorX >::type >::invoke( x, y );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for prec_dot. Its overload differs for
+                //
+                template <typename VectorX, typename VectorY>
+                inline typename prec_dot_impl<typename bindings::value_type<
+                    VectorX>::type>::result_type
+                prec_dot(const VectorX& x, const VectorY& y)
+                {
+                    return prec_dot_impl<typename bindings::value_type<
+                        VectorX>::type>::invoke(x, y);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

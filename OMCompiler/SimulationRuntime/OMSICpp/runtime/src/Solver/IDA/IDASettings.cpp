@@ -1,22 +1,24 @@
 //#pragma once
 #include <Core/ModelicaDefine.h>
- #include <Core/Modelica.h>
+#include <Core/Modelica.h>
 #include <Solver/IDA/IDASettings.h>
 
 IDASettings::IDASettings(IGlobalSettings* globalSettings)
-  : SolverSettings    (globalSettings)
-  ,_denseOutput(true)
+    : SolverSettings(globalSettings)
+      , _denseOutput(true)
 {
 };
- IDASettings::~IDASettings()
- {
 
- }
+IDASettings::~IDASettings()
+{
+}
+
 bool IDASettings::getDenseOutput()
 {
-  return _denseOutput;
+    return _denseOutput;
 }
+
 void IDASettings::setDenseOutput(bool dense)
 {
-  _denseOutput = dense;
+    _denseOutput = dense;
 }

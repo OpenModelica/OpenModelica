@@ -13,49 +13,54 @@
 #include <Core/Utils/numeric/bindings/detail/basic_unwrapper.hpp>
 #include <boost/ref.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename T>
+                struct noop_wrapper :
+                    adaptable_type<noop_wrapper<T>>,
+                    reference_wrapper<T>
+                {
+                    noop_wrapper(T& t): reference_wrapper<T>(t)
+                    {
+                    }
+                };
 
-template< typename T >
-struct noop_wrapper:
-        adaptable_type< noop_wrapper<T> >,
-        reference_wrapper<T> {
-    noop_wrapper( T& t ): reference_wrapper<T>( t ) {}
-};
+                template <typename T, typename Id, typename Enable>
+                struct adaptor<noop_wrapper<T>, Id, Enable> :
+                    basic_unwrapper<T, Id>
+                {
+                    typedef typename property_map_of<T>::type property_map;
+                };
+            } // namespace detail
 
-template< typename T, typename Id, typename Enable >
-struct adaptor< noop_wrapper<T>, Id, Enable >:
-        basic_unwrapper< T, Id > {
+            namespace result_of
+            {
+                template <typename T>
+                struct noop
+                {
+                    typedef detail::noop_wrapper<T> type;
+                };
+            } // namespace result_of
 
-    typedef typename property_map_of< T >::type property_map;
+            template <typename T>
+            detail::noop_wrapper<T> const noop(T& underlying)
+            {
+                return detail::noop_wrapper<T>(underlying);
+            }
 
-};
-
-} // namespace detail
-
-namespace result_of {
-
-template< typename T >
-struct noop {
-    typedef detail::noop_wrapper<T> type;
-};
-
-} // namespace result_of
-
-template< typename T >
-detail::noop_wrapper<T> const noop( T& underlying ) {
-    return detail::noop_wrapper<T>( underlying );
-}
-
-template< typename T >
-detail::noop_wrapper<const T> const noop( const T& underlying ) {
-    return detail::noop_wrapper<const T>( underlying );
-}
-
-} // namespace bindings
-} // namespace numeric
+            template <typename T>
+            detail::noop_wrapper<const T> const noop(const T& underlying)
+            {
+                return detail::noop_wrapper<const T>(underlying);
+            }
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

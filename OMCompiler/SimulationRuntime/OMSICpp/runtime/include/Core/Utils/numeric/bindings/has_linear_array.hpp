@@ -12,21 +12,26 @@
 #include <Core/Utils/numeric/bindings/detail/property_map.hpp>
 #include <Core/Utils/numeric/bindings/tag.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            template <typename T, typename Enable = void>
+            struct has_linear_array : mpl::false_
+            {
+            };
 
-template< typename T, typename Enable = void >
-struct has_linear_array: mpl::false_ {};
-
-template< typename T >
-struct has_linear_array<
-        T,
-        typename boost::enable_if< detail::is_adaptable<T> >::type >:
-    detail::is_same_at< T, tag::data_structure, tag::linear_array > {};
-
-} // namespace bindings
-} // namespace numeric
+            template <typename T>
+            struct has_linear_array<
+                    T,
+                    typename boost::enable_if<detail::is_adaptable<T>>::type> :
+                detail::is_same_at<T, tag::data_structure, tag::linear_array>
+            {
+            };
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

@@ -47,22 +47,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo >
 inline void spmv( const Order, const UpLo, const int n, const float alpha,
@@ -73,9 +76,9 @@ inline void spmv( const Order, const UpLo, const int n, const float alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo >
 inline void spmv( const Order, const UpLo, const int n, const double alpha,
@@ -86,10 +89,10 @@ inline void spmv( const Order, const UpLo, const int n, const double alpha,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename UpLo >
 inline void spmv( const Order, const UpLo, const int n, const float alpha,
@@ -101,9 +104,9 @@ inline void spmv( const Order, const UpLo, const int n, const float alpha,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename UpLo >
 inline void spmv( const Order, const UpLo, const int n, const double alpha,
@@ -115,107 +118,109 @@ inline void spmv( const Order, const UpLo, const int n, const double alpha,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename UpLo >
-inline void spmv( const Order, const UpLo, const fortran_int_t n,
-        const float alpha, const float* ap, const float* x,
-        const fortran_int_t incx, const float beta, float* y,
-        const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_SSPMV( &blas_option< UpLo >::value, &n, &alpha, ap, x, &incx, &beta,
-            y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void spmv(const Order, const UpLo, const fortran_int_t n,
+                                     const float alpha, const float* ap, const float* x,
+                                     const fortran_int_t incx, const float beta, float* y,
+                                     const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_SSPMV(&blas_option<UpLo>::value, &n, &alpha, ap, x, &incx, &beta,
+                                   y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename UpLo >
-inline void spmv( const Order, const UpLo, const fortran_int_t n,
-        const double alpha, const double* ap, const double* x,
-        const fortran_int_t incx, const double beta, double* y,
-        const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_DSPMV( &blas_option< UpLo >::value, &n, &alpha, ap, x, &incx, &beta,
-            y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename UpLo>
+                    inline void spmv(const Order, const UpLo, const fortran_int_t n,
+                                     const double alpha, const double* ap, const double* x,
+                                     const fortran_int_t incx, const double beta, double* y,
+                                     const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_DSPMV(&blas_option<UpLo>::value, &n, &alpha, ap, x, &incx, &beta,
+                                   y, &incy);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to spmv.
+                //
+                template <typename Value>
+                struct spmv_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to spmv.
-//
-template< typename Value >
-struct spmv_impl {
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixAP, typename VectorX, typename VectorY>
+                    static result_type invoke(const real_type alpha, const MatrixAP& ap,
+                                              const VectorX& x, const real_type beta, VectorY& y)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename result_of::data_order<MatrixAP>::type order;
+                        typedef typename result_of::uplo_tag<MatrixAP>::type uplo;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixAP>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorX>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixAP>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_triangular_array<
+                            MatrixAP>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorY>::value));
+                        detail::spmv(order(), uplo(), bindings::size_column(ap), alpha,
+                                     bindings::begin_value(ap), bindings::begin_value(x),
+                                     bindings::stride(x), beta, bindings::begin_value(y),
+                                     bindings::stride(y));
+                    }
+                };
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the spmv_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixAP, typename VectorX, typename VectorY >
-    static result_type invoke( const real_type alpha, const MatrixAP& ap,
-            const VectorX& x, const real_type beta, VectorY& y ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename result_of::data_order< MatrixAP >::type order;
-        typedef typename result_of::uplo_tag< MatrixAP >::type uplo;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorX >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixAP >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_triangular_array<
-                MatrixAP >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorY >::value) );
-        detail::spmv( order(), uplo(), bindings::size_column(ap), alpha,
-                bindings::begin_value(ap), bindings::begin_value(x),
-                bindings::stride(x), beta, bindings::begin_value(y),
-                bindings::stride(y) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the spmv_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for spmv. Its overload differs for
-//
-template< typename MatrixAP, typename VectorX, typename VectorY >
-inline typename spmv_impl< typename bindings::value_type<
-        MatrixAP >::type >::result_type
-spmv( const typename remove_imaginary< typename bindings::value_type<
-        MatrixAP >::type >::type alpha, const MatrixAP& ap, const VectorX& x,
-        const typename remove_imaginary< typename bindings::value_type<
-        MatrixAP >::type >::type beta, VectorY& y ) {
-    spmv_impl< typename bindings::value_type<
-            MatrixAP >::type >::invoke( alpha, ap, x, beta, y );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for spmv. Its overload differs for
+                //
+                template <typename MatrixAP, typename VectorX, typename VectorY>
+                inline typename spmv_impl<typename bindings::value_type<
+                    MatrixAP>::type>::result_type
+                spmv(const typename remove_imaginary<typename bindings::value_type<
+                         MatrixAP>::type>::type alpha, const MatrixAP& ap, const VectorX& x,
+                     const typename remove_imaginary<typename bindings::value_type<
+                         MatrixAP>::type>::type beta, VectorY& y)
+                {
+                    spmv_impl<typename bindings::value_type<
+                        MatrixAP>::type>::invoke(alpha, ap, x, beta, y);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

@@ -12,25 +12,28 @@
 
 #ifndef BOOST_EXTENSION_IMPL_CREATE_HPP
 #define BOOST_EXTENSION_IMPL_CREATE_HPP
-namespace boost {
-namespace extensions {
-namespace impl {
 
+namespace boost
+{
+    namespace extensions
+    {
+        namespace impl
+        {
 #define N BOOST_EXTENSION_MAX_FUNCTOR_PARAMS
-template <class T, class D
-          BOOST_PP_COMMA_IF(N)
-          BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT( \
-            BOOST_PP_INC(N), class Param, void) >
-struct create_function;
+            template <class T, class D
+                      BOOST_PP_COMMA_IF(N)
+                      BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT(
+                          BOOST_PP_INC(N), class Param, void) >
+            struct create_function;
 #undef N
 
-// generate specializations of create_func
+            // generate specializations of create_func
 # define BOOST_PP_ITERATION_LIMITS \
   (0, BOOST_PP_INC(BOOST_EXTENSION_MAX_FUNCTOR_PARAMS) - 1)
 # define BOOST_PP_FILENAME_1 "Core/Utils/extension/impl/create_func.hpp"
 # include BOOST_PP_ITERATE()
-}  // namespace impl
-}  // namespace extensions
-}  // namespace boost
+        } // namespace impl
+    } // namespace extensions
+} // namespace boost
 
 #endif  // BOOST_EXTENSION_IMPL_CREATE_HPP

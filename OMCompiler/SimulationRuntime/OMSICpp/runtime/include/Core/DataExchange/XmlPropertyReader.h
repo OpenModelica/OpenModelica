@@ -3,7 +3,9 @@
 class IContinuous;
 class IGlobalSettings;
 
-class BOOST_EXTENSION_XML_READER_DECL XmlPropertyReader : public IPropertyReader
+class BOOST_EXTENSION_XML_READER_DECL XmlPropertyReader : 
+public
+IPropertyReader
 {
   public:
     XmlPropertyReader(shared_ptr<IGlobalSettings> globalSettings, std::string propertyFile);
@@ -28,6 +30,6 @@ class BOOST_EXTENSION_XML_READER_DECL XmlPropertyReader : public IPropertyReader
     output_real_vars_t _realVars;
     output_der_vars_t _derVars;
     output_res_vars_t _resVars;
-	int _dimRHS;
+    int _dimRHS;
     bool _isInitialized;
 };

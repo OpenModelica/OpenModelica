@@ -51,6 +51,7 @@ shared_ptr<ISettingsFactory> createFactory(PATH libraries_path, PATH config_path
 }
 
 #else
-error "operating system not supported"
+error
+"operating system not supported"
 #endif
 /** @} */ // end of coreSimulationSettings

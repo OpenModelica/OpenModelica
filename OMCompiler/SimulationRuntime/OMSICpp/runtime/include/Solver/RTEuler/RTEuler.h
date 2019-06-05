@@ -27,11 +27,11 @@ interpolation.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-class  RTEuler : public ISolver, public SolverDefaultImplementation
+class RTEuler : public ISolver, public SolverDefaultImplementation
 {
 public:
-   RTEuler(IMixedSystem* system, ISolverSettings* settings);
-     virtual ~RTEuler();
+    RTEuler(IMixedSystem* system, ISolverSettings* settings);
+    virtual ~RTEuler();
 
     /// Set start time for numerical solution
     virtual void setStartTime(const double& t);
@@ -40,7 +40,7 @@ public:
     virtual void setEndTime(const double& t);
 
     /// Set the initial step size (needed for reinitialization after external zero search)
-     virtual void setInitStepSize(const double& h);
+    virtual void setInitStepSize(const double& h);
 
     /// (Re-) initialize the solver
     virtual void initialize();
@@ -52,15 +52,15 @@ public:
     virtual ISolver::SOLVERSTATUS getSolverStatus();
 
     /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
-     virtual void writeSimulationInfo();
+    virtual void writeSimulationInfo();
 
     /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
     virtual const int reportErrorMessage(ostream& messageStream);
-  virtual bool stateSelection();
-  virtual void setTimeOut(unsigned int time_out);
+    virtual bool stateSelection();
+    virtual void setTimeOut(unsigned int time_out);
 
 
-  virtual void stop();
+    virtual void stop();
 
 private:
 
@@ -72,17 +72,18 @@ private:
     // Member variables
     //---------------------------------------------------------------
     ISolverSettings
-        *_eulerSettings;              ///< Settings for the solver
+    * _eulerSettings; ///< Settings for the solver
 
     long int
-        _dimSys;                  ///< Temp       - (total) Dimension of systems (=number of ODE)
+    _dimSys; ///< Temp       - (total) Dimension of systems (=number of ODE)
 
 
     double _tHelp;
     double
-        *_z,                    ///< Temp      - State vector
-        *_zInit,                        ///< Temp           - Initial state vector
-        *_f;                    ///< Temp      - function evaluation                  ///< Temp      - yhelp and fhelp only provided in order to avoid multiple generation of save
+        *_z, ///< Temp      - State vector
+        *_zInit, ///< Temp           - Initial state vector
+        *_f;
+    ///< Temp      - function evaluation                  ///< Temp      - yhelp and fhelp only provided in order to avoid multiple generation of save
 
     ISystemProperties* _properties;
     IContinuous* _continuous_system;
@@ -90,4 +91,5 @@ private:
     IMixedSystem* _mixed_system;
     ITime* _time_system;
 };
+
 /** @} */ // end of solverRteuler

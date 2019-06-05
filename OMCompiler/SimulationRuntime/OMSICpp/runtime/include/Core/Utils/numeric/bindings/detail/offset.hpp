@@ -16,57 +16,64 @@
 #include <Core/Utils/numeric/bindings/has_band_array.hpp>
 #include <Core/Utils/numeric/bindings/stride.hpp>
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace detail {
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace detail
+            {
+                template <typename T, typename Enable = void>
+                struct offset_impl
+                {
+                };
 
-template< typename T, typename Enable = void >
-struct offset_impl {};
+                template <typename T>
+                struct offset_impl<T, typename boost::enable_if<has_linear_array<T>>::type>
+                {
+                    static std::ptrdiff_t invoke(const T& t, std::ptrdiff_t i1)
+                    {
+                        return i1 * bindings::stride1(t);
+                    }
 
-template< typename T >
-struct offset_impl< T, typename boost::enable_if< has_linear_array< T > >::type > {
+                    static std::ptrdiff_t invoke(const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2)
+                    {
+                        return i1 * bindings::stride1(t) +
+                            i2 * bindings::stride2(t);
+                    }
+                };
 
-    static std::ptrdiff_t invoke( const T& t, std::ptrdiff_t i1 ) {
-        return i1 * bindings::stride1( t );
-    }
+                template <typename T>
+                struct offset_impl<T,
+                                   typename boost::enable_if<
+                                       mpl::and_<
+                                           has_band_array<T>,
+                                           is_column_major<T>
+                                       >
+                                   >::type>
+                {
+                    static std::ptrdiff_t invoke(const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2)
+                    {
+                        return i1 * bindings::stride1(t) +
+                            i2 * (bindings::stride2(t) - 1);
+                    }
+                };
 
-    static std::ptrdiff_t invoke( const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2 ) {
-        return i1 * bindings::stride1( t ) +
-               i2 * bindings::stride2( t );
-    }
+                template <typename T>
+                std::ptrdiff_t offset(const T& t, std::ptrdiff_t i1)
+                {
+                    return offset_impl<T>::invoke(t, i1);
+                }
 
-};
-
-template< typename T >
-struct offset_impl< T,
-        typename boost::enable_if<
-            mpl::and_<
-                has_band_array< T >,
-                is_column_major< T >
-            >
-        >::type > {
-
-    static std::ptrdiff_t invoke( const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2 ) {
-        return i1 * bindings::stride1( t ) +
-               i2 * (bindings::stride2( t )-1);
-    }
-
-};
-
-template< typename T >
-std::ptrdiff_t offset( const T& t, std::ptrdiff_t i1 ) {
-    return offset_impl< T >::invoke( t, i1 );
-}
-
-template< typename T >
-std::ptrdiff_t offset( const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2 ) {
-    return offset_impl< T >::invoke( t, i1, i2 );
-}
-
-} // namespace detail
-} // namespace bindings
-} // namespace numeric
+                template <typename T>
+                std::ptrdiff_t offset(const T& t, std::ptrdiff_t i1, std::ptrdiff_t i2)
+                {
+                    return offset_impl<T>::invoke(t, i1, i2);
+                }
+            } // namespace detail
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

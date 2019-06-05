@@ -46,22 +46,25 @@
 #include <Core/Utils/numeric/bindings/blas/detail/blas_option.hpp>
 #endif
 
-namespace boost {
-namespace numeric {
-namespace bindings {
-namespace blas {
-
-//
-// The detail namespace contains value-type-overloaded functions that
-// dispatch to the appropriate back-end BLAS-routine.
-//
-namespace detail {
-
+namespace boost
+{
+    namespace numeric
+    {
+        namespace bindings
+        {
+            namespace blas
+            {
+                //
+                // The detail namespace contains value-type-overloaded functions that
+                // dispatch to the appropriate back-end BLAS-routine.
+                //
+                namespace detail
+                {
 #if defined BOOST_NUMERIC_BINDINGS_BLAS_CBLAS
-//
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -72,9 +75,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -85,9 +88,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -100,9 +103,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -115,10 +118,10 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 #elif defined BOOST_NUMERIC_BINDINGS_BLAS_CUBLAS
-//
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * float value-type.
+                    //
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * float value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -130,9 +133,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * double value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * double value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -144,9 +147,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<float> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<float> value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -160,9 +163,9 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 //
-// Overloaded function for dispatching to
-// * CUBLAS backend, and
-// * complex<double> value-type.
+                    // Overloaded function for dispatching to
+                    // * CUBLAS backend, and
+                    // * complex<double> value-type.
 //
 template< typename Order, typename Trans >
 inline void gemv( const Order, const Trans, const int m, const int n,
@@ -176,150 +179,156 @@ inline void gemv( const Order, const Trans, const int m, const int n,
 }
 
 #else
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * float value-type.
-//
-template< typename Order, typename Trans >
-inline void gemv( const Order, const Trans, const fortran_int_t m,
-        const fortran_int_t n, const float alpha, const float* a,
-        const fortran_int_t lda, const float* x, const fortran_int_t incx,
-        const float beta, float* y, const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_SGEMV( &blas_option< Trans >::value, &m, &n, &alpha, a, &lda, x,
-            &incx, &beta, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * float value-type.
+                    //
+                    template <typename Order, typename Trans>
+                    inline void gemv(const Order, const Trans, const fortran_int_t m,
+                                     const fortran_int_t n, const float alpha, const float* a,
+                                     const fortran_int_t lda, const float* x, const fortran_int_t incx,
+                                     const float beta, float* y, const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_SGEMV(&blas_option<Trans>::value, &m, &n, &alpha, a, &lda, x,
+                                   &incx, &beta, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * double value-type.
-//
-template< typename Order, typename Trans >
-inline void gemv( const Order, const Trans, const fortran_int_t m,
-        const fortran_int_t n, const double alpha, const double* a,
-        const fortran_int_t lda, const double* x, const fortran_int_t incx,
-        const double beta, double* y, const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_DGEMV( &blas_option< Trans >::value, &m, &n, &alpha, a, &lda, x,
-            &incx, &beta, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * double value-type.
+                    //
+                    template <typename Order, typename Trans>
+                    inline void gemv(const Order, const Trans, const fortran_int_t m,
+                                     const fortran_int_t n, const double alpha, const double* a,
+                                     const fortran_int_t lda, const double* x, const fortran_int_t incx,
+                                     const double beta, double* y, const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_DGEMV(&blas_option<Trans>::value, &m, &n, &alpha, a, &lda, x,
+                                   &incx, &beta, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<float> value-type.
-//
-template< typename Order, typename Trans >
-inline void gemv( const Order, const Trans, const fortran_int_t m,
-        const fortran_int_t n, const std::complex<float> alpha,
-        const std::complex<float>* a, const fortran_int_t lda,
-        const std::complex<float>* x, const fortran_int_t incx,
-        const std::complex<float> beta, std::complex<float>* y,
-        const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_CGEMV( &blas_option< Trans >::value, &m, &n, &alpha, a, &lda, x,
-            &incx, &beta, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<float> value-type.
+                    //
+                    template <typename Order, typename Trans>
+                    inline void gemv(const Order, const Trans, const fortran_int_t m,
+                                     const fortran_int_t n, const std::complex<float> alpha,
+                                     const std::complex<float>* a, const fortran_int_t lda,
+                                     const std::complex<float>* x, const fortran_int_t incx,
+                                     const std::complex<float> beta, std::complex<float>* y,
+                                     const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_CGEMV(&blas_option<Trans>::value, &m, &n, &alpha, a, &lda, x,
+                                   &incx, &beta, y, &incy);
+                    }
 
-//
-// Overloaded function for dispatching to
-// * netlib-compatible BLAS backend (the default), and
-// * complex<double> value-type.
-//
-template< typename Order, typename Trans >
-inline void gemv( const Order, const Trans, const fortran_int_t m,
-        const fortran_int_t n, const std::complex<double> alpha,
-        const std::complex<double>* a, const fortran_int_t lda,
-        const std::complex<double>* x, const fortran_int_t incx,
-        const std::complex<double> beta, std::complex<double>* y,
-        const fortran_int_t incy ) {
-    BOOST_STATIC_ASSERT( (is_same<Order, tag::column_major>::value) );
-    BLAS_ZGEMV( &blas_option< Trans >::value, &m, &n, &alpha, a, &lda, x,
-            &incx, &beta, y, &incy );
-}
+                    //
+                    // Overloaded function for dispatching to
+                    // * netlib-compatible BLAS backend (the default), and
+                    // * complex<double> value-type.
+                    //
+                    template <typename Order, typename Trans>
+                    inline void gemv(const Order, const Trans, const fortran_int_t m,
+                                     const fortran_int_t n, const std::complex<double> alpha,
+                                     const std::complex<double>* a, const fortran_int_t lda,
+                                     const std::complex<double>* x, const fortran_int_t incx,
+                                     const std::complex<double> beta, std::complex<double>* y,
+                                     const fortran_int_t incy)
+                    {
+                        BOOST_STATIC_ASSERT((is_same<Order, tag::column_major>::value));
+                        BLAS_ZGEMV(&blas_option<Trans>::value, &m, &n, &alpha, a, &lda, x,
+                                   &incx, &beta, y, &incy);
+                    }
 
 #endif
+                } // namespace detail
 
-} // namespace detail
+                //
+                // Value-type based template class. Use this class if you need a type
+                // for dispatching to gemv.
+                //
+                template <typename Value>
+                struct gemv_impl
+                {
+                    typedef Value value_type;
+                    typedef typename remove_imaginary<Value>::type real_type;
+                    typedef void result_type;
 
-//
-// Value-type based template class. Use this class if you need a type
-// for dispatching to gemv.
-//
-template< typename Value >
-struct gemv_impl {
+                    // high-level transform typedefs and functions
+                    template <typename MatrixA, typename VectorX, typename VectorY>
+                    static result_type transform(MatrixA& A, VectorX& x, VectorY& y,
+                                                 const value_type alpha, const value_type beta)
+                    {
+                        invoke();
+                    }
 
-    typedef Value value_type;
-    typedef typename remove_imaginary< Value >::type real_type;
-    typedef void result_type;
+                    //
+                    // Static member function that
+                    // * Deduces the required arguments for dispatching to BLAS, and
+                    // * Asserts that most arguments make sense.
+                    //
+                    template <typename MatrixA, typename VectorX, typename VectorY>
+                    static result_type invoke(const value_type alpha, const MatrixA& a,
+                                              const VectorX& x, const value_type beta, VectorY& y)
+                    {
+                        namespace bindings = ::boost::numeric::bindings;
+                        typedef typename detail::default_order<MatrixA>::type order;
+                        typedef typename result_of::trans_tag<MatrixA, order>::type trans;
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixA>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorX>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((is_same<typename remove_const<
+                                                         typename bindings::value_type<MatrixA>::type>::type,
+                                                     typename remove_const<typename bindings::value_type<
+                                                         VectorY>::type>::type>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<MatrixA>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorX>::value));
+                        BOOST_STATIC_ASSERT((bindings::has_linear_array<VectorY>::value));
+                        BOOST_STATIC_ASSERT((bindings::is_mutable<VectorY>::value));
+                        BOOST_ASSERT(bindings::size_minor(a) == 1 ||
+                            bindings::stride_minor(a) == 1);
+                        detail::gemv(order(), trans(), bindings::size_row_op(a,
+                                                                             trans()),
+                                     bindings::size_column_op(a, trans()), alpha,
+                                     bindings::begin_value(a), bindings::stride_major(a),
+                                     bindings::begin_value(x), bindings::stride(x), beta,
+                                     bindings::begin_value(y), bindings::stride(y));
+                    }
+                };
 
-    // high-level transform typedefs and functions
-    template< typename MatrixA, typename VectorX, typename VectorY >
-    static result_type transform( MatrixA& A, VectorX& x, VectorY& y,
-            const value_type alpha, const value_type beta ) {
-        invoke();
-    }
+                //
+                // Functions for direct use. These functions are overloaded for temporaries,
+                // so that wrapped types can still be passed and used for write-access. Calls
+                // to these functions are passed to the gemv_impl classes. In the
+                // documentation, the const-overloads are collapsed to avoid a large number of
+                // prototypes which are very similar.
+                //
 
-    //
-    // Static member function that
-    // * Deduces the required arguments for dispatching to BLAS, and
-    // * Asserts that most arguments make sense.
-    //
-    template< typename MatrixA, typename VectorX, typename VectorY >
-    static result_type invoke( const value_type alpha, const MatrixA& a,
-            const VectorX& x, const value_type beta, VectorY& y ) {
-        namespace bindings = ::boost::numeric::bindings;
-        typedef typename detail::default_order< MatrixA >::type order;
-        typedef typename result_of::trans_tag< MatrixA, order >::type trans;
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixA >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorX >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (is_same< typename remove_const<
-                typename bindings::value_type< MatrixA >::type >::type,
-                typename remove_const< typename bindings::value_type<
-                VectorY >::type >::type >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< MatrixA >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorX >::value) );
-        BOOST_STATIC_ASSERT( (bindings::has_linear_array< VectorY >::value) );
-        BOOST_STATIC_ASSERT( (bindings::is_mutable< VectorY >::value) );
-        BOOST_ASSERT( bindings::size_minor(a) == 1 ||
-                bindings::stride_minor(a) == 1 );
-        detail::gemv( order(), trans(), bindings::size_row_op(a,
-                trans()), bindings::size_column_op(a, trans()), alpha,
-                bindings::begin_value(a), bindings::stride_major(a),
-                bindings::begin_value(x), bindings::stride(x), beta,
-                bindings::begin_value(y), bindings::stride(y) );
-    }
-};
-
-//
-// Functions for direct use. These functions are overloaded for temporaries,
-// so that wrapped types can still be passed and used for write-access. Calls
-// to these functions are passed to the gemv_impl classes. In the
-// documentation, the const-overloads are collapsed to avoid a large number of
-// prototypes which are very similar.
-//
-
-//
-// Overloaded function for gemv. Its overload differs for
-//
-template< typename MatrixA, typename VectorX, typename VectorY >
-inline typename gemv_impl< typename bindings::value_type<
-        MatrixA >::type >::result_type
-gemv( const typename bindings::value_type< MatrixA >::type alpha,
-        const MatrixA& a, const VectorX& x,
-        const typename bindings::value_type< MatrixA >::type beta,
-        VectorY& y ) {
-    gemv_impl< typename bindings::value_type<
-            MatrixA >::type >::invoke( alpha, a, x, beta, y );
-}
-
-} // namespace blas
-} // namespace bindings
-} // namespace numeric
+                //
+                // Overloaded function for gemv. Its overload differs for
+                //
+                template <typename MatrixA, typename VectorX, typename VectorY>
+                inline typename gemv_impl<typename bindings::value_type<
+                    MatrixA>::type>::result_type
+                gemv(const typename bindings::value_type<MatrixA>::type alpha,
+                     const MatrixA& a, const VectorX& x,
+                     const typename bindings::value_type<MatrixA>::type beta,
+                     VectorY& y)
+                {
+                    gemv_impl<typename bindings::value_type<
+                        MatrixA>::type>::invoke(alpha, a, x, beta, y);
+                }
+            } // namespace blas
+        } // namespace bindings
+    } // namespace numeric
 } // namespace boost
 
 #endif

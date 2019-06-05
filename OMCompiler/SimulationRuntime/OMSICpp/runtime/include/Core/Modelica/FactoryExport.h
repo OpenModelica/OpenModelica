@@ -15,5 +15,6 @@
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
 
 #else
-    error "operating system not supported"
+error
+"operating system not supported"
 #endif
