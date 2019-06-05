@@ -243,6 +243,7 @@ algorithm
   retSystem := BackendDAEUtil.createEqSystem(travArgs.newDAEVars);
   retSystem := BackendDAEUtil.setEqSystEqs(retSystem, travArgs.newDAEEquations);
   retSystem := BackendDAEUtil.setEqSystRemovedEqns(retSystem, syst.removedEqs);
+  retSystem := BackendEquation.requationsAddDAE(ExpandableArray.toList(shared.removedEqs), retSystem);
 
   if exec then execStat("DAEmode: created system:  " + intString(BackendDAEUtil.systemSize(retSystem)) + ": " );  end if;
 
