@@ -7,6 +7,9 @@ pipeline {
   environment {
     LC_ALL = 'C.UTF-8'
   }
+  parameters {
+    booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
+  }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
   stages {
@@ -55,6 +58,32 @@ pipeline {
           steps {
             script { common.buildOMC('clang', 'clang++', '--without-hwloc') }
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
+          }
+        }
+        stage('MacOS') {
+          agent {
+            node {
+              label 'osx'
+            }
+          }
+          when {
+            expression { params.BUILD_OSX }
+          }
+          environment {
+            RUNTESTDB = '/Users/hudson/jenkins-cache/runtest/'
+            LIBRARIES = '/Users/hudson/jenkins-cache/omlibrary'
+            GMAKE = 'gmake'
+            LC_ALL = 'C'
+          }
+          steps {
+            script {
+              env.PATH="${env.MACPORTS}/bin:${env.PATH}"
+              // Qt5 is MacOS 10.12+...
+              env.QTDIR="${env.MACPORTS}/libexec/qt4"
+              common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include")
+              common.makeLibsAndCache()
+              common.buildGUI('')
+            }
           }
         }
         stage('checks') {
