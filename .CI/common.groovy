@@ -43,7 +43,7 @@ def numLogicalCPU() {
 }
 
 void partest(cache=true, extraArgs='') {
-  sh "rm -f omc-diff.skip && make -C testsuite/difftool clean && make --output-sync -C testsuite/difftool"
+  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && make --output-sync -C testsuite/difftool"
   sh 'build/bin/omc-diff -v1.4'
   sh ("""#!/bin/bash -x
   ulimit -t 1500
