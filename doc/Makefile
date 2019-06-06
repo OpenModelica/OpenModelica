@@ -15,9 +15,9 @@ BUILDDIR=openmodelica-doc_$(BUILDDIR_VER)
 
 omsiruntime-doc:
 	mkdir -p SimulationRuntime/omsi/Images
-	cp images/logo.svg SimulationRuntime/omsi/Images/OMLogo.svg
-	cd SimulationRuntime/omsi && cmake -G "Unix Makefiles" -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/OMSI && make Docs
-	
+	cp images/logo.svg SimulationRuntime/OMSI/Images/OMLogo.svg
+	cd SimulationRuntime/OMSI && cmake -G "Unix Makefiles" -DSOURCE_ROOT=../../../OMCompiler/SimulationRuntime/OMSI && make Docs
+
 cppruntime-doc:
 	mkdir -p SimulationRuntime/cpp/Images
 	cp images/logo.svg SimulationRuntime/cpp/Images/OMLogo.svg
@@ -32,7 +32,7 @@ cppruntime-doc-clean:
 	rm SimulationRuntime/cpp/Doc -rf
 	rm SimulationRuntime/cpp/Images/OMLogo.svg -f
 
-docs-internal: generated_pdfs/dyOptInitialGuess.pdf generated_pdfs/cruntimedraft.pdf usersguide cppruntime-doc
+docs-internal: generated_pdfs/dyOptInitialGuess.pdf generated_pdfs/cruntimedraft.pdf usersguide cppruntime-doc omsiruntime-doc
 	@test ! -z "$(BUILDDIR_VER)" || (echo Call docs, not docs-internal directly; false)
 	@test ! -z "$(BUILDDIR)"
 	rm -rf ./$(BUILDDIR)
