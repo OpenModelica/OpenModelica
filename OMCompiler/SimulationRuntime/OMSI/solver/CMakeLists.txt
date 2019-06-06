@@ -3,7 +3,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 PROJECT(OMSISolver)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
-# Find blas and lapack
+# Global Variables
+IF(NOT OMCTRUNCHOME)
+  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
+ENDIF (NOT OMCTRUNCHOME)
+
+############################
+# Find BLAS and LAPACK
+############################
 IF(IS_MINGW32)
   SET(LAPACK_MINGW  $ENV{OMDEV}/tools/msys/mingw32/bin/libopenblas.dll)
   SET(LAPACK_LIBRARIES  ${LAPACK_MINGW})
@@ -31,29 +38,76 @@ IF(MSVC)
   MESSAGE(STATUS "Using manual set Lapack Libraries: ${LAPACK_LIBRARIES}")
 ENDIF(MSVC)
 
-# Find SUNDIALS KINSOL libraries
-FIND_LIBRARY(KINSOL_LIBRARIE sundials_kinsol
-	PATHS ${CMAKE_INSTALL_PREFIX}/${LIB_OMC}
-	NO_DEFAULT_PATH)
-IF (NOT KINSOL_LIBRARIE)
-  MESSAGE(FATAL_ERROR "Error: SUNDIALS KINSOL library not found!")
+
+############################
+# Find SUNDIALS  libraries #
+############################
+IF(MSVC)
+  SET(SUNDIALS_PATH "${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build_msvc")
+ELSE(MSVC)
+  SET(SUNDIALS_PATH "${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build")
+ENDIF(MSVC)
+
+MESSAGE(STATUS "Sundials path:")
+MESSAGE(STATUS "${SUNDIALS_PATH}")
+
+# SUNDIALS Header
+FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_PATH}/include NO_DEFAULT_PATH)
+IF (NOT SUNDIALS_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "Could not find Sundials; compile omc first")
+ENDIF(NOT SUNDIALS_INCLUDE_DIR)
+
+MESSAGE(STATUS "Sundials include:")
+MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
+INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+
+# SUNDIALS Libraires
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial    PATHS ${SUNDIALS_PATH}/lib NO_DEFAULT_PATH)
+FIND_LIBRARY(SUNDIALS_KINSOL          NAMES sundials_kinsol        PATHS ${SUNDIALS_PATH}/lib NO_DEFAULT_PATH)
+
+# Check if all libraries found
+IF(NOT SUNDIALS_LIBRARY_NVEC)
+  MESSAGE(FATAL_ERROR "Could not find libsundials_nvecserial!")
+ENDIF()
+IF(NOT SUNDIALS_KINSOL)
+  MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
 ENDIF()
 
-FIND_LIBRARY(SUNDIALS_NVEC_LIBRARIE sundials_nvecserial
-	PATHS ${CMAKE_INSTALL_PREFIX}/${LIB_OMC}
-	NO_DEFAULT_PATH)
-IF(NOT SUNDIALS_NVEC_LIBRARIE)
-  MESSAGE(FATAL_ERROR "Error: sundials_nvec_serial library not found!")
+SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
+MESSAGE(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
+
+# Extract the version number from sundials_config.h
+FIND_PATH(SUNDIALS_CONFIG_FILE "sundials_config.h" "${SUNDIALS_INCLUDE_DIR}" "${SUNDIALS_INCLUDE_DIR}/sundials")
+IF(NOT SUNDIALS_CONFIG_FILE)
+  MESSAGE(WARNING "Could not find sundials_config.h")
+  MESSAGE(WARNING "Could not determine sundials version")
+ENDIF(NOT SUNDIALS_CONFIG_FILE)
+
+SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_CONFIG_FILE}/sundials_config.h")
+FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
+STRING(REGEX MATCH "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." _ ${SUNDIALS_CONFIG_FILE_CONTENT})
+IF(NOT CMAKE_MATCH_1)
+  # Newer versions have different define in header file
+  STRING(REGEX MATCH "#define SUNDIALS_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." _ ${SUNDIALS_CONFIG_FILE_CONTENT})
+ENDIF(NOT CMAKE_MATCH_1)
+
+IF(CMAKE_MATCH_1 AND CMAKE_MATCH_2 AND CMAKE_MATCH_3)
+  SET(SUNDIALS_MAJOR_VERSION "${CMAKE_MATCH_1}")
+  SET(SUNDIALS_MINOR_VERSION "${CMAKE_MATCH_2}")
+  SET(SUNDIALS_PATCH_VERSION "${CMAKE_MATCH_3}")
+
+  ADD_DEFINITIONS("-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}")
+  ADD_DEFINITIONS("-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
+ELSE()
+  MESSAGE(FATAL_ERROR "Could not determine sundials version")
 ENDIF()
+MESSAGE(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
 
-include_directories ("${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials")
-MESSAGE(STATUS "Location of SUNDIALS headers: ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials")
 
-SET(SUNDIALS_LIBRARIES ${KINSOL_LIBRARIE} ${SUNDIALS_NVEC_LIBRARIE})
-MESSAGE(STATUS "KINSOL Libraries: ${SUNDIALS_LIBRARIES}")
-
+####################################
 # OMSISolver includes
-include_directories ("${CMAKE_SOURCE_DIR}/solver/include")
+####################################
+include_directories ("${CMAKE_SOURCE_DIR}/solver/include" ${SUNDIALS_INCLUDE_DIR})
 
 add_library(${OMSISolverName}
   src/solver_api.c
@@ -62,7 +116,7 @@ add_library(${OMSISolverName}
   src/solver_lapack.c
 )
 
-
+set(CMAKE_MACOSX_RPATH 1)   # Handle rpath on mac in makefiles
 target_link_libraries(${OMSISolverName} ${CMAKE_DL_LIBS} ${LAPACK_LIBRARIES} ${SUNDIALS_LIBRARIES})
 
 install(TARGETS ${OMSISolverName} DESTINATION ${LIBINSTALLEXT})

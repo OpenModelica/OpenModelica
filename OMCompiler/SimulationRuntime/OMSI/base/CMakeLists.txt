@@ -29,19 +29,26 @@ add_library(${OSUBaseName}
 
 include_directories ("${OMSI_SOURCE_DIR}/solver/include")
 
+# Set RPATH for mac to use lib from build tree and install location
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
 IF(WIN32)
-    target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} wsock32 ws2_32 ${expat_lib})
+  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} wsock32 ws2_32 ${expat_lib})
 ELSE(WIN32)
-    target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${expat_lib})
+  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${expat_lib})
 ENDIF(WIN32)
 
-set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_INSTALL_RPATH "${LIBINSTALLEXT}")
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
 install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/libexpat.a DESTINATION ${LIBINSTALLEXT})
-
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/base/include/omsi_event_helper.h
@@ -58,6 +65,3 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/base/include/omsi_utils.h
   ${CMAKE_SOURCE_DIR}/base/include/uthash.h
   DESTINATION include/omc/omsi/base)
-
-
-
