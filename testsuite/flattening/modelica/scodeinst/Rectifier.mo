@@ -1,10 +1,10 @@
-package PowerSystems  "Library for electrical power systems" 
+package PowerSystems  "Library for electrical power systems"
   extends Modelica.Icons.Package;
   import Modelica.Constants.pi;
   import PowerSystems.Types.SI;
   import PowerSystems.Types.SIpu;
 
-  model System  "System reference" 
+  model System  "System reference"
     parameter Types.SystemFrequency fType = PowerSystems.Types.SystemFrequency.Parameter "system frequency type" annotation(Evaluate = true, Dialog(group = "Frequency"));
     parameter SI.Frequency f = f_nom "frequency if type is parameter, else initial frequency" annotation(Evaluate = true, Dialog(group = "Frequency", enable = fType == PowerSystems.Types.SystemFrequency.Parameter));
     parameter SI.Frequency f_nom = 50 "nominal frequency" annotation(Evaluate = true, Dialog(group = "Nominal"), choices(choice = 50, choice = 60));
@@ -83,19 +83,19 @@ package PowerSystems  "Library for electrical power systems"
   When dragging the 'System' from the package browser into the diagram layer, declaration and instance name are automatically generated.</p>
   <p><a href=\"modelica://PowerSystems.UsersGuide.Overview\">up users guide</a></p>
   </html>
-  ")); 
+  "));
   end System;
 
-  package Examples  
+  package Examples
     extends Modelica.Icons.ExamplesPackage;
 
-    package AC3ph  "Examples for AC3ph components" 
+    package AC3ph  "Examples for AC3ph components"
       extends Modelica.Icons.ExamplesPackage;
 
-      package Inverters  "Inverters dq0" 
+      package Inverters  "Inverters dq0"
         extends Modelica.Icons.ExamplesPackage;
 
-        model Rectifier  "Rectifier" 
+        model Rectifier  "Rectifier"
           inner PowerSystems.System system(dynType = PowerSystems.Types.Dynamics.FixedInitial, refType = PowerSystems.Types.ReferenceFrame.Inertial) annotation(Placement(transformation(extent = {{-100, 80}, {-80, 100}})));
           PowerSystems.Blocks.Signals.TransientPhasor transPh(t_change = 0.1, t_duration = 0.1, a_start = 2, a_end = 1) annotation(Placement(transformation(extent = {{-100, 20}, {-80, 40}})));
           PowerSystems.AC3ph.Sources.Voltage vAC(use_vPhasor_in = true, V_nom = 100) annotation(Placement(transformation(extent = {{-80, 0}, {-60, 20}})));
@@ -121,45 +121,45 @@ package PowerSystems  "Library for electrical power systems"
         <p>3-phase rectifier. Compare 'equation' and 'modular' version.</p>
         <p><a href=\"modelica://PowerSystems.Examples.AC3ph.Inverters\">up users guide</a></p>
         </html>
-        "), experiment(StopTime = 0.2, Interval = 0.2e-3, Tolerance = 1e-005)); 
+        "), experiment(StopTime = 0.2, Interval = 0.2e-3, Tolerance = 1e-005));
         end Rectifier;
         annotation(preferredView = "info", Documentation(info = "<html>
       <p>Comparison of different three-phase rectifier and inverter models.</p>
       <p><a href=\"modelica://PowerSystems.Examples\">up users guide</a></p>
       </html>
-      ")); 
+      "));
       end Inverters;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Introductory examples for detailed component models in AC3ph.</p>
     <p><a href=\"modelica://PowerSystems.Examples\">up users guide</a></p>
-    </html>")); 
+    </html>"));
     end AC3ph;
 
-    package Data  "Data" 
+    package Data  "Data"
       extends Modelica.Icons.MaterialPropertiesPackage;
 
-      package Semiconductors  "Breaker example data" 
+      package Semiconductors  "Breaker example data"
         extends Modelica.Icons.MaterialPropertiesPackage;
 
-        record IdealSC100V_10A  "Ideal semiconductor parameters, example" 
+        record IdealSC100V_10A  "Ideal semiconductor parameters, example"
           extends PowerSystems.Semiconductors.Ideal.SCparameter(V_nom = 100, I_nom = 10, eps = {1e-4, 1e-4}, Vf = 1, Hsw_nom = 2e-3, cT_loss = fill(0, 0), T0_loss = 300);
           annotation(defaultComponentName = "idealSC100_10", defaultComponentPrefixes = "parameter", Documentation(info = "<html>
-        </html>")); 
+        </html>"));
         end IdealSC100V_10A;
         annotation(preferredView = "info", Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Semiconductors;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Example data used in package SpotExamples.</p>
     <p><a href=\"modelica://PowerSystems.Examples\">up users guide</a></p>
-    </html>")); 
+    </html>"));
     end Data;
   end Examples;
 
-  package PhaseSystems  "Phase systems used in power connectors" 
+  package PhaseSystems  "Phase systems used in power connectors"
     extends Modelica.Icons.Package;
 
-    partial package PartialPhaseSystem  "Base package of all phase systems" 
+    partial package PartialPhaseSystem  "Base package of all phase systems"
       extends Modelica.Icons.Package;
       constant String phaseSystemName = "UnspecifiedPhaseSystem";
       constant Integer n "Number of independent voltage and current components";
@@ -170,21 +170,21 @@ package PowerSystems  "Library for electrical power systems"
       type Current = Real(unit = "A", quantity = "Current." + phaseSystemName, nominal = i_nominal) "current for connector";
       type ReferenceAngle = Types.ReferenceAngle "Reference angle for connector";
 
-      replaceable function map  "Map vector of higher order phase system to this phase system" 
+      replaceable function map  "Map vector of higher order phase system to this phase system"
         input Real[:] x;
         output Real[n] y;
       algorithm
         y := x[1:n];
-        annotation(Inline = true); 
+        annotation(Inline = true);
       end map;
 
-      replaceable partial function j  "Return vector rotated by 90 degrees" 
+      replaceable partial function j  "Return vector rotated by 90 degrees"
         extends Modelica.Icons.Function;
         input Real[n] x;
         output Real[n] y;
       end j;
 
-      replaceable partial function phasePowers_vi  "Return phase powers" 
+      replaceable partial function phasePowers_vi  "Return phase powers"
         extends Modelica.Icons.Function;
         input Voltage[n] v "phase voltages";
         input Current[n] i "phase currents";
@@ -192,63 +192,63 @@ package PowerSystems  "Library for electrical power systems"
       end phasePowers_vi;
     end PartialPhaseSystem;
 
-    package TwoConductor  "Two conductors for Spot DC_AC1ph components" 
+    package TwoConductor  "Two conductors for Spot DC_AC1ph components"
       extends PartialPhaseSystem(phaseSystemName = "TwoConductor", n = 2, m = 0);
 
-      redeclare function j  "Direct current has no complex component" 
+      redeclare function j  "Direct current has no complex component"
         extends Modelica.Icons.Function;
         input Real[n] x;
         output Real[n] y;
       algorithm
         y := zeros(n);
-        annotation(Inline = true); 
+        annotation(Inline = true);
       end j;
 
-      redeclare function phasePowers_vi  "Return phase powers" 
+      redeclare function phasePowers_vi  "Return phase powers"
         extends Modelica.Icons.Function;
         input Voltage[n] v "phase voltages";
         input Current[n] i "phase currents";
         output SI.Power[n] p "phase powers";
       algorithm
         p := v .* i;
-        annotation(Inline = true); 
+        annotation(Inline = true);
       end phasePowers_vi;
-      annotation(Icon(graphics = {Line(points = {{-70, -28}, {50, -28}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, 6}, {50, 6}}, color = {95, 95, 95}, smooth = Smooth.None)})); 
+      annotation(Icon(graphics = {Line(points = {{-70, -28}, {50, -28}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, 6}, {50, 6}}, color = {95, 95, 95}, smooth = Smooth.None)}));
     end TwoConductor;
 
-    package ThreePhase_dq0  "AC system in dq0 representation" 
+    package ThreePhase_dq0  "AC system in dq0 representation"
       extends PartialPhaseSystem(phaseSystemName = "ThreePhase_dq0", n = 3, m = 2);
 
-      redeclare function j  "Rotation(pi/2) of vector around {0,0,1} and projection on orth plane" 
+      redeclare function j  "Rotation(pi/2) of vector around {0,0,1} and projection on orth plane"
         extends Modelica.Icons.Function;
         input Real[:] x;
         output Real[size(x, 1)] y;
       algorithm
         y := cat(1, {-x[2], x[1]}, zeros(size(x, 1) - 2));
-        annotation(Inline = true); 
+        annotation(Inline = true);
       end j;
 
-      redeclare function phasePowers_vi  "Return phase powers" 
+      redeclare function phasePowers_vi  "Return phase powers"
         extends Modelica.Icons.Function;
         input Voltage[n] v "phase voltages";
         input Current[n] i "phase currents";
         output SI.Power[n] p "phase powers";
       algorithm
         p := {v[1:2] * i[1:2], -j(v[1:2]) * i[1:2], v[3] * i[3]};
-        annotation(Inline = true); 
+        annotation(Inline = true);
       end phasePowers_vi;
-      annotation(Icon(graphics = {Line(points = {{-70, 28}, {-58, 48}, {-38, 68}, {-22, 48}, {-10, 28}, {2, 8}, {22, -12}, {40, 8}, {50, 28}}, color = {95, 95, 95}, smooth = Smooth.Bezier), Line(points = {{-70, -54}, {50, -54}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, -78}, {50, -78}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, -28}, {50, -28}}, color = {95, 95, 95}, smooth = Smooth.None)}), Diagram(graphics = {Ellipse(extent = {{-60, 60}, {60, -60}}, fillColor = {215, 215, 215}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Line(points = {{0, 0}, {90, 0}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Line(points = {{0, 0}, {-58, 68}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Line(points = {{0, 0}, {-58, -68}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Ellipse(extent = {{-50, 50}, {50, -50}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Ellipse(extent = {{-45, 46}, {45, -46}}, fillColor = {170, 213, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Polygon(points = {{-26, 42}, {-4, 32}, {-28, -20}, {-46, -12}, {-46, 14}, {-32, 36}, {-26, 42}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Polygon(points = {{46, 10}, {28, 18}, {4, -34}, {22, -42}, {38, -30}, {48, -6}, {46, 10}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Line(points = {{0, 0}, {-82, 38}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, thickness = 0.5), Line(points = {{0, 0}, {38, 82}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, thickness = 0.5), Line(points = {{72, 0}, {72, 4}, {70, 18}, {66, 30}, {62, 38}, {56, 46}, {48, 54}, {36, 62}, {30, 65}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, smooth = Smooth.Bezier), Text(extent = {{60, 46}, {76, 36}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, fontName = "Symbol", textString = "q", textStyle = {TextStyle.Italic}), Text(extent = {{76, 0}, {92, -10}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "a", textStyle = {TextStyle.Italic}), Text(extent = {{-64, 64}, {-48, 54}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "b", textStyle = {TextStyle.Italic}), Text(extent = {{-58, -60}, {-42, -70}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "c", textStyle = {TextStyle.Italic}), Text(extent = {{22, 82}, {38, 72}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "d", textStyle = {TextStyle.Italic}), Text(extent = {{-86, 36}, {-70, 26}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "q", textStyle = {TextStyle.Italic}), Text(extent = {{-8, 0}, {8, -10}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "0")})); 
+      annotation(Icon(graphics = {Line(points = {{-70, 28}, {-58, 48}, {-38, 68}, {-22, 48}, {-10, 28}, {2, 8}, {22, -12}, {40, 8}, {50, 28}}, color = {95, 95, 95}, smooth = Smooth.Bezier), Line(points = {{-70, -54}, {50, -54}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, -78}, {50, -78}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, -28}, {50, -28}}, color = {95, 95, 95}, smooth = Smooth.None)}), Diagram(graphics = {Ellipse(extent = {{-60, 60}, {60, -60}}, fillColor = {215, 215, 215}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Line(points = {{0, 0}, {90, 0}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Line(points = {{0, 0}, {-58, 68}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Line(points = {{0, 0}, {-58, -68}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}), Ellipse(extent = {{-50, 50}, {50, -50}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Ellipse(extent = {{-45, 46}, {45, -46}}, fillColor = {170, 213, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Polygon(points = {{-26, 42}, {-4, 32}, {-28, -20}, {-46, -12}, {-46, 14}, {-32, 36}, {-26, 42}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Polygon(points = {{46, 10}, {28, 18}, {4, -34}, {22, -42}, {38, -30}, {48, -6}, {46, 10}}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, pattern = LinePattern.None), Line(points = {{0, 0}, {-82, 38}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, thickness = 0.5), Line(points = {{0, 0}, {38, 82}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, thickness = 0.5), Line(points = {{72, 0}, {72, 4}, {70, 18}, {66, 30}, {62, 38}, {56, 46}, {48, 54}, {36, 62}, {30, 65}}, color = {0, 0, 0}, arrow = {Arrow.None, Arrow.Filled}, smooth = Smooth.Bezier), Text(extent = {{60, 46}, {76, 36}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, fontName = "Symbol", textString = "q", textStyle = {TextStyle.Italic}), Text(extent = {{76, 0}, {92, -10}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "a", textStyle = {TextStyle.Italic}), Text(extent = {{-64, 64}, {-48, 54}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "b", textStyle = {TextStyle.Italic}), Text(extent = {{-58, -60}, {-42, -70}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "c", textStyle = {TextStyle.Italic}), Text(extent = {{22, 82}, {38, 72}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "d", textStyle = {TextStyle.Italic}), Text(extent = {{-86, 36}, {-70, 26}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "q", textStyle = {TextStyle.Italic}), Text(extent = {{-8, 0}, {8, -10}}, pattern = LinePattern.None, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, lineColor = {0, 0, 0}, textString = "0")}));
     end ThreePhase_dq0;
-    annotation(Icon(graphics = {Line(points = {{-70, -52}, {50, -52}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, 8}, {-58, 28}, {-38, 48}, {-22, 28}, {-10, 8}, {2, -12}, {22, -32}, {40, -12}, {50, 8}}, color = {95, 95, 95}, smooth = Smooth.Bezier)})); 
+    annotation(Icon(graphics = {Line(points = {{-70, -52}, {50, -52}}, color = {95, 95, 95}, smooth = Smooth.None), Line(points = {{-70, 8}, {-58, 28}, {-38, 48}, {-22, 28}, {-10, 8}, {2, -12}, {22, -32}, {40, -12}, {50, 8}}, color = {95, 95, 95}, smooth = Smooth.Bezier)}));
   end PhaseSystems;
 
-  package AC1ph_DC  "AC 1-phase and DC components from Spot AC1ph_DC" 
+  package AC1ph_DC  "AC 1-phase and DC components from Spot AC1ph_DC"
     extends Modelica.Icons.VariantsPackage;
 
-    package Sensors  "Sensors n-phase or DC" 
+    package Sensors  "Sensors n-phase or DC"
       extends Modelica.Icons.SensorsPackage;
 
-      model PVImeter  "Power-voltage-current meter, 1-phase" 
+      model PVImeter  "Power-voltage-current meter, 1-phase"
         parameter Boolean av = false "time average power" annotation(Evaluate = true, Dialog(group = "Options"));
         parameter SI.Time tcst(min = 1e-9) = 1 "average time-constant" annotation(Evaluate = true, Dialog(group = "Options", enable = av));
         extends Partials.Meter2Base;
@@ -293,37 +293,37 @@ package PowerSystems  "Library for electrical power systems"
         i     current term_p to term_n, ('plus' - 'minus')/2</pre>
         i0    sum current term_p to term_n, 'plus' + 'minus'
       </pre>
-      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-20, 20}, {20, -20}}, lineColor = {135, 135, 135}), Ellipse(extent = {{-8, 8}, {8, -8}}, lineColor = {135, 135, 135}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Line(points = {{0, 0}, {20, 0}}, color = {0, 0, 255}), Line(points = {{-15, 45}, {15, 59}}, color = {135, 135, 135}), Line(points = {{-15, 35}, {15, 49}}, color = {135, 135, 135})})); 
+      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-20, 20}, {20, -20}}, lineColor = {135, 135, 135}), Ellipse(extent = {{-8, 8}, {8, -8}}, lineColor = {135, 135, 135}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Line(points = {{0, 0}, {20, 0}}, color = {0, 0, 255}), Line(points = {{-15, 45}, {15, 59}}, color = {135, 135, 135}), Line(points = {{-15, 35}, {15, 49}}, color = {135, 135, 135})}));
       end PVImeter;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model Sensor2Base  "Sensor Base, 1-phase" 
+        partial model Sensor2Base  "Sensor Base, 1-phase"
           extends Ports.Port_pn;
         equation
           term_p.v = term_n.v;
           annotation(Documentation(info = "<html>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, 20}, {0, 90}}, color = {135, 135, 135}), Line(points = {{-88, 0}, {-20, 0}}, color = {0, 0, 255}), Line(points = {{0, 0}, {88, 0}}, color = {0, 0, 255}), Line(points = {{30, 20}, {70, 0}, {30, -20}}, color = {0, 0, 255})})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, 20}, {0, 90}}, color = {135, 135, 135}), Line(points = {{-88, 0}, {-20, 0}}, color = {0, 0, 255}), Line(points = {{0, 0}, {88, 0}}, color = {0, 0, 255}), Line(points = {{30, 20}, {70, 0}, {30, -20}}, color = {0, 0, 255})}));
         end Sensor2Base;
 
-        partial model Meter2Base  "Meter base 2 terminal, 1-phase" 
+        partial model Meter2Base  "Meter base 2 terminal, 1-phase"
           extends Sensor2Base;
           extends Common.Nominal.Nominal;
-          annotation(Icon(graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {135, 135, 135})})); 
+          annotation(Icon(graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {135, 135, 135})}));
         end Meter2Base;
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Sensors directly output terminal signals (voltage, current, power).</p>
     <p>Meters allow choosing base-units for output variables.</p>
     </html>
-    ")); 
+    "));
     end Sensors;
 
-    package Sources  "DC voltage sources" 
+    package Sources  "DC voltage sources"
       extends Modelica.Icons.SourcesPackage;
 
-      model DCvoltage  "Ideal DC voltage" 
+      model DCvoltage  "Ideal DC voltage"
         extends Partials.DCvoltageBase(pol = -1);
         parameter SIpu.Voltage v0 = 1 "fixed DC voltage" annotation(Dialog(enable = not use_vDC_in));
       protected
@@ -340,13 +340,13 @@ package PowerSystems  "Library for electrical power systems"
       <p>Optional input:
       <pre>  vDC_in     DC voltage in SI or pu, depending on choice of 'units' </pre></p>
       </html>
-      ")); 
+      "));
       end DCvoltage;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model VoltageBase  "Voltage base" 
+        partial model VoltageBase  "Voltage base"
           extends Ports.Port_n;
           extends Common.Nominal.Nominal(final S_nom = 1);
           parameter Integer pol(min = -1, max = 1) = -1 "grounding scheme" annotation(Evaluate = true, choices(choice = 1, choice = 0, choice = -1));
@@ -365,10 +365,10 @@ package PowerSystems  "Library for electrical power systems"
           annotation(Documentation(info = "<html>
         <p>Allows positive, symmetrical, and negativ grounding according to the choice of parameter 'pol'.<br>
         If the connector 'neutral' remains unconnected, then the source is NOT grounded. In all other cases connect 'neutral' to the desired circuit or ground.</p>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, -70}, {70, 70}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-70, 0}, {70, 0}}, color = {176, 0, 0}, thickness = 0.5)})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, -70}, {70, 70}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-70, 0}, {70, 0}}, color = {176, 0, 0}, thickness = 0.5)}));
         end VoltageBase;
 
-        partial model DCvoltageBase  "DC voltage base" 
+        partial model DCvoltageBase  "DC voltage base"
           extends VoltageBase;
           parameter Integer pol(min = -1, max = 1) = -1 "grounding scheme" annotation(Evaluate = true, choices(choice = 1, choice = 0, choice = -1));
           parameter Boolean use_vDC_in = false "= true to use input signal vDC_in, otherwise use fixed value" annotation(Evaluate = true, choices(checkBox = true));
@@ -378,7 +378,7 @@ package PowerSystems  "Library for electrical power systems"
         equation
           connect(vDC_in, vDC_internal);
           annotation(Documentation(info = "<html>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-50, 10}, {50, -60}}, lineColor = {176, 0, 0}, lineThickness = 0.5, fillColor = {127, 0, 255}, fillPattern = FillPattern.Solid, textString = "=")})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-50, 10}, {50, -60}}, lineColor = {176, 0, 0}, lineThickness = 0.5, fillColor = {127, 0, 255}, fillPattern = FillPattern.Solid, textString = "=")}));
         end DCvoltageBase;
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
@@ -390,51 +390,51 @@ package PowerSystems  "Library for electrical power systems"
     <p>DC sources have the optional input:</p>
     <pre>  vDC_in:       DC voltage</pre>
     <p>To use signal inputs, choose parameters use_vPhasor_in=signal and/or fType=Signal.</p>
-    </html>")); 
+    </html>"));
     end Sources;
 
-    package Ports  "Strandard electric ports" 
+    package Ports  "Strandard electric ports"
       extends Modelica.Icons.InterfacesPackage;
 
-      partial model PortBase  "base model defining PhaseSystem" 
+      partial model PortBase  "base model defining PhaseSystem"
         package PS = PhaseSystems.TwoConductor;
       end PortBase;
 
-      connector TwoPin_p  "AC1/DC terminal ('positive')" 
+      connector TwoPin_p  "AC1/DC terminal ('positive')"
         extends Interfaces.TerminalDC(redeclare package PhaseSystem = PhaseSystems.TwoConductor);
         annotation(defaultComponentName = "term_p", Documentation(info = "<html>
       <p>Electric connector with a vector of 'pin's, positive.</p>
       </html>
-      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-120, 120}, {100, 60}}, lineColor = {0, 0, 255}, textString = "%name"), Polygon(points = {{-20, 0}, {40, -60}, {100, 0}, {40, 60}, {-20, 0}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-10, 50}, {90, -50}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "")})); 
+      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-120, 120}, {100, 60}}, lineColor = {0, 0, 255}, textString = "%name"), Polygon(points = {{-20, 0}, {40, -60}, {100, 0}, {40, 60}, {-20, 0}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-10, 50}, {90, -50}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "")}));
       end TwoPin_p;
 
-      connector TwoPin_n  "AC1/DC terminal ('negative')" 
+      connector TwoPin_n  "AC1/DC terminal ('negative')"
         extends Interfaces.TerminalDC(redeclare package PhaseSystem = PhaseSystems.TwoConductor);
         annotation(defaultComponentName = "term_n", Documentation(info = "<html>
       <p>Electric connector with a vector of 'pin's, negative.</p>
-      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {0, 0, 255}, pattern = LinePattern.None, lineThickness = 0.5, textString = "")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, 120}, {120, 60}}, lineColor = {0, 0, 255}, textString = "%name"), Polygon(points = {{-100, 0}, {-40, -60}, {20, 0}, {-40, 60}, {-100, 0}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 50}, {10, -50}}, lineColor = {0, 0, 255}, pattern = LinePattern.None, lineThickness = 0.5, textString = "")})); 
+      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {0, 0, 255}, pattern = LinePattern.None, lineThickness = 0.5, textString = "")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, 120}, {120, 60}}, lineColor = {0, 0, 255}, textString = "%name"), Polygon(points = {{-100, 0}, {-40, -60}, {20, 0}, {-40, 60}, {-100, 0}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 50}, {10, -50}}, lineColor = {0, 0, 255}, pattern = LinePattern.None, lineThickness = 0.5, textString = "")}));
       end TwoPin_n;
 
-      partial model Port_n  "One port, 'negative'" 
+      partial model Port_n  "One port, 'negative'"
         extends PortBase;
         Ports.TwoPin_n term "negative terminal" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
-        annotation(Icon(graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html></html>")); 
+        annotation(Icon(graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html></html>"));
       end Port_n;
 
-      partial model Port_p_n  "Two port" 
+      partial model Port_p_n  "Two port"
         extends PortBase;
         Ports.TwoPin_p term_p "positive terminal" annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
         Ports.TwoPin_n term_n "negative terminal" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
         annotation(Icon(graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Port_p_n;
 
-      partial model Port_pn  "Two port, 'current_in = current_out'" 
+      partial model Port_pn  "Two port, 'current_in = current_out'"
         extends Port_p_n;
       equation
         term_p.i + term_n.i = zeros(2);
         annotation(Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Port_pn;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Electrical ports with connectors Ports.AC1ph_DC:</p>
@@ -444,28 +444,28 @@ package PowerSystems  "Library for electrical power systems"
       _pn:      with conservation of current
     </pre>
     </html>
-    ")); 
+    "));
     end Ports;
     annotation(preferredView = "info", Documentation(info = "<html>
   <p><a href=\"modelica://PowerSystems.UsersGuide\">up users guide</a></p>
   </html>
-  ")); 
+  "));
   end AC1ph_DC;
 
-  package AC3ph  "AC three phase components from Spot ACdq0" 
+  package AC3ph  "AC three phase components from Spot ACdq0"
     extends Modelica.Icons.VariantsPackage;
     replaceable package PackagePhaseSystem = PhaseSystems.ThreePhase_dq0 "Default phase system for AC3ph" annotation(choicesAllMatching = true);
 
-    package Impedances  "Impedance and admittance two terminal" 
+    package Impedances  "Impedance and admittance two terminal"
       extends Modelica.Icons.VariantsPackage;
 
-      model Inductor  "Inductor with series resistor, 3-phase dq0" 
+      model Inductor  "Inductor with series resistor, 3-phase dq0"
         extends Partials.ImpedBase;
         parameter SIpu.Resistance r = 0 "resistance";
         parameter SIpu.Reactance x_s = 1 "self reactance";
         parameter SIpu.Reactance x_m = 0 "mutual reactance, -x_s/2 < x_m < x_s";
       protected
-        final parameter SI.Resistance[2] RL_base = Utilities.Precalculation.baseRL(puUnits, V_nom, S_nom, 2 * pi * f_nom);
+        final parameter Real[2] RL_base = Utilities.Precalculation.baseRL(puUnits, V_nom, S_nom, 2 * pi * f_nom);
         final parameter SI.Resistance R = r * RL_base[1];
         final parameter SI.Inductance L = (x_s - x_m) * RL_base[2];
         final parameter SI.Inductance L0 = (x_s + 2 * x_m) * RL_base[2];
@@ -483,13 +483,13 @@ package PowerSystems  "Library for electrical power systems"
         end if;
         annotation(defaultComponentName = "ind1", Documentation(info = "<html>
       <p>Info see package ACdq0.Impedances.</p>
-      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-80, 30}, {-40, -30}}, lineColor = {0, 120, 120}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 30}, {80, -30}}, lineColor = {0, 120, 120}, lineThickness = 0.5, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-60, 60}, {-40, 40}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 60}, {60, 40}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-60, 10}, {-40, -10}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 10}, {60, -10}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-60, -40}, {-40, -60}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -40}, {60, -60}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 30}, {60, 20}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -20}, {60, -30}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -70}, {60, -80}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid)})); 
+      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-80, 30}, {-40, -30}}, lineColor = {0, 120, 120}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 30}, {80, -30}}, lineColor = {0, 120, 120}, lineThickness = 0.5, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-60, 60}, {-40, 40}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 60}, {60, 40}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-60, 10}, {-40, -10}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 10}, {60, -10}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-60, -40}, {-40, -60}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -40}, {60, -60}}, lineColor = {0, 0, 255}, lineThickness = 0.5, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, 30}, {60, 20}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -20}, {60, -30}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-40, -70}, {60, -80}}, lineColor = {175, 175, 175}, fillColor = {175, 175, 175}, fillPattern = FillPattern.Solid)}));
       end Inductor;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model ImpedBase  "Impedance base, 3-phase dq0" 
+        partial model ImpedBase  "Impedance base, 3-phase dq0"
           extends Ports.Port_pn;
           extends Common.Nominal.NominalAC;
           parameter Types.Dynamics dynType = system.dynType "transient or steady-state model" annotation(Evaluate = true, Dialog(tab = "Initialization"));
@@ -505,7 +505,7 @@ package PowerSystems  "Library for electrical power systems"
           i = term_p.i;
           annotation(Documentation(info = "<html>
         </html>
-        "), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Line(points = {{-80, 50}, {-60, 50}}, color = {0, 0, 255}), Line(points = {{-80, 0}, {-60, 0}}, color = {0, 0, 255}), Line(points = {{-80, -50}, {-60, -50}}, color = {0, 0, 255}), Line(points = {{60, 50}, {80, 50}}, color = {0, 0, 255}), Line(points = {{60, 0}, {80, 0}}, color = {0, 0, 255}), Line(points = {{60, -50}, {80, -50}}, color = {0, 0, 255})})); 
+        "), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Line(points = {{-80, 50}, {-60, 50}}, color = {0, 0, 255}), Line(points = {{-80, 0}, {-60, 0}}, color = {0, 0, 255}), Line(points = {{-80, -50}, {-60, -50}}, color = {0, 0, 255}), Line(points = {{60, 50}, {80, 50}}, color = {0, 0, 255}), Line(points = {{60, 0}, {80, 0}}, color = {0, 0, 255}), Line(points = {{60, -50}, {80, -50}}, color = {0, 0, 255})}));
         end ImpedBase;
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
@@ -601,13 +601,13 @@ package PowerSystems  "Library for electrical power systems"
       b_dq0 = P*b_abc*transpose(P)
       g_dq0 = P*g_abc*transpose(P)
     </pre>
-    </html>")); 
+    </html>"));
     end Impedances;
 
-    package Inverters  "Rectifiers and Inverters" 
+    package Inverters  "Rectifiers and Inverters"
       extends Modelica.Icons.VariantsPackage;
 
-      model Rectifier  "Rectifier, 3-phase dq0" 
+      model Rectifier  "Rectifier, 3-phase dq0"
         extends Partials.AC_DC_base(heat(final m = 3));
         replaceable model Rectifier = PowerSystems.AC3ph.Inverters.Components.RectifierEquation "rectifier model" annotation(choices(choice(redeclare model Rectifier = PowerSystems.AC3ph.Inverters.Components.RectifierEquation "equation, with losses"), choice(redeclare model Rectifier = PowerSystems.AC3ph.Inverters.Components.RectifierModular "modular, with losses")));
         Rectifier rectifier "rectifier model" annotation(Placement(transformation(extent = {{-10, -10}, {10, 10}})));
@@ -618,13 +618,13 @@ package PowerSystems  "Library for electrical power systems"
         annotation(defaultComponentName = "rectifier", Documentation(info = "<html>
       <p>Passive rectifier, allows choosing between equation-based and modular version.</p>
       </html>
-      ")); 
+      "));
       end Rectifier;
 
-      package Components  "Equation-based and modular components" 
+      package Components  "Equation-based and modular components"
         extends Modelica.Icons.VariantsPackage;
 
-        model RectifierEquation  "Rectifier equation, 3-phase dq0" 
+        model RectifierEquation  "Rectifier equation, 3-phase dq0"
           extends Partials.SwitchEquation(heat(final m = 3));
           replaceable record Data = PowerSystems.Semiconductors.Ideal.SCparameter(final Hsw_nom = 0) "SC parameters" annotation(choicesAllMatching = true);
           final parameter Data par "SC parameters" annotation(Placement(transformation(extent = {{-80, -80}, {-60, -60}})));
@@ -654,7 +654,7 @@ package PowerSystems  "Library for electrical power systems"
           annotation(defaultComponentName = "rectifier", Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-60, -70}, {60, -90}}, lineColor = {176, 0, 0}, textString = "eq")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Polygon(points = {{-10, -38}, {0, -18}, {10, -38}, {-10, -38}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Polygon(points = {{-10, 18}, {0, 38}, {10, 18}, {-10, 18}}, lineColor = {0, 0, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, -18}, {0, 18}}, color = {0, 0, 255}), Line(points = {{-10, -18}, {10, -18}}, color = {0, 0, 255}), Line(points = {{-10, 38}, {10, 38}}, color = {0, 0, 255}), Line(points = {{0, 0}, {60, 0}}, color = {0, 0, 255}), Text(extent = {{-40, -60}, {40, -80}}, lineColor = {176, 0, 0}, textString = "time resolved equation"), Line(points = {{-70, 10}, {-60, 10}, {-60, 52}, {0, 52}, {0, 40}}, color = {0, 0, 255}), Line(points = {{-70, -10}, {-60, -10}, {-60, -50}, {0, -50}, {0, -38}}, color = {0, 0, 255})}), Documentation(info = "<html>
         <p>Passive rectifier, based on switch-equation.<br>
         Blocking losses are neglected in the expression of dissipated heat <tt>Q_flow</tt>.</p>
-        </html>")); 
+        </html>"));
         end RectifierEquation;
         annotation(preferredView = "info", Documentation(info = "<html>
       <p>Contains alternative components:
@@ -662,23 +662,23 @@ package PowerSystems  "Library for electrical power systems"
       <li>Equation-based: faster code, restricted to ideal V-I characteristic, but including forward threshold voltage, needed for calculation of thermal losses.</li>
       <li>Modular: composed from semiconductor-switches and diodes. These components with ideal V-I characteristic can be replaced by custom-specified semiconductor models.</li>
       </ul>
-      </html>")); 
+      </html>"));
       end Components;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model AC_DC_base  "AC-DC base, 3-phase dq0" 
+        partial model AC_DC_base  "AC-DC base, 3-phase dq0"
           extends PowerSystems.Icons.Inverter_dq0;
           extends Ports.PortBase;
           Ports.ACdq0_n AC "AC 3-phase connection" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
           AC1ph_DC.Ports.TwoPin_p DC "DC connection" annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
           Interfaces.ThermalV_n heat(m = 3) "vector heat port" annotation(Placement(transformation(origin = {0, 100}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
           annotation(Documentation(info = "<html>
-        </html>")); 
+        </html>"));
         end AC_DC_base;
 
-        partial model SwitchEquation  "Switch equation, 3-phase dq0" 
+        partial model SwitchEquation  "Switch equation, 3-phase dq0"
           extends AC_DC_base;
         protected
           PS.Voltage vDC1 = 0.5 * (DC.v[1] - DC.v[2]);
@@ -702,10 +702,10 @@ package PowerSystems  "Library for electrical power systems"
           T = heat.ports.T;
           heat.ports.Q_flow = -Q_flow;
           annotation(Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{68, 18}, {72, 22}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Ellipse(extent = {{68, -2}, {72, 2}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Ellipse(extent = {{68, -22}, {72, -18}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{76, 24}, {84, 16}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid, textString = "a"), Text(extent = {{76, 4}, {84, -4}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid, textString = "b"), Text(extent = {{76, -16}, {84, -24}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid, textString = "c"), Ellipse(extent = {{-72, 12}, {-68, 8}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Ellipse(extent = {{-72, -8}, {-68, -12}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-86, 16}, {-74, 4}}, lineColor = {0, 0, 255}, textString = "+"), Text(extent = {{-86, -4}, {-74, -16}}, lineColor = {0, 0, 255}, textString = "-")}), Documentation(info = "<html>
-        </html>")); 
+        </html>"));
         end SwitchEquation;
         annotation(Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>The package contains passive rectifiers and switched/modulated inverters. Different implementations use:
@@ -727,35 +727,35 @@ package PowerSystems  "Library for electrical power systems"
     where <tt>Hsw_nom</tt> denotes the dissipated heat per switching operation at nominal voltage and current, averaged over 'on' and 'off'. The same temperature dependence is assumed as for Vf. A generalisation to powers of i and v is straightforward.</p>
     <p>NOTE: actually the switching losses are only implemented for time-averaged components!</p>
     </html>
-    ")); 
+    "));
     end Inverters;
 
-    package Nodes  "Nodes and adaptors" 
+    package Nodes  "Nodes and adaptors"
       extends Modelica.Icons.VariantsPackage;
 
-      model GroundOne  "Ground, one conductor" 
+      model GroundOne  "Ground, one conductor"
         Interfaces.Electric_p term "positive scalar terminal" annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
       equation
         term.v = 0;
         annotation(defaultComponentName = "grd1", Documentation(info = "<html>
       <p>Zero voltage on terminal.</p>
       </html>
-      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name"), Rectangle(extent = {{-4, 50}, {4, -50}}, lineColor = {128, 128, 128}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-4, 0}}, color = {0, 0, 255})}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Line(points = {{-60, 0}, {-80, 0}}, color = {0, 0, 255}), Rectangle(extent = {{-60, 20}, {-54, -20}}, lineColor = {128, 128, 128}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid)})); 
+      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name"), Rectangle(extent = {{-4, 50}, {4, -50}}, lineColor = {128, 128, 128}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid), Line(points = {{-90, 0}, {-4, 0}}, color = {0, 0, 255})}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Line(points = {{-60, 0}, {-80, 0}}, color = {0, 0, 255}), Rectangle(extent = {{-60, 20}, {-54, -20}}, lineColor = {128, 128, 128}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid)}));
       end GroundOne;
       annotation(preferredView = "info", Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end Nodes;
 
-    package Sensors  "Sensors and meters 3-phase" 
+    package Sensors  "Sensors and meters 3-phase"
       extends Modelica.Icons.SensorsPackage;
 
-      model PVImeter  "Power-voltage-current meter, 3-phase dq0" 
+      model PVImeter  "Power-voltage-current meter, 3-phase dq0"
         extends Partials.Meter2Base;
         parameter Boolean av = false "time average power" annotation(Evaluate = true, Dialog(group = "Options"));
         parameter SI.Time tcst(min = 1e-9) = 1 "average time-constant" annotation(Evaluate = true, Dialog(group = "Options", enable = av));
 
-        function v2vpp_abc  
+        function v2vpp_abc
           input SIpu.Voltage[3] v_abc;
           output SIpu.Voltage[3] vpp_abc;
         algorithm
@@ -823,13 +823,13 @@ package PowerSystems  "Library for electrical power systems"
       </pre>
       <p><i>Comment on the sign-definition of reactive power see</i> ACdq0.Sensors.</p>
       </html>
-      ")); 
+      "));
       end PVImeter;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model Sensor2Base  "Sensor 2 terminal base, 3-phase dq0" 
+        partial model Sensor2Base  "Sensor 2 terminal base, 3-phase dq0"
           extends Ports.Port_pn;
           parameter Integer signalTrsf = 0 "signal in which reference frame?" annotation(Evaluate = true, Dialog(group = "Options"), choices(choice = 0, choice = 1, choice = 2, choice = 3));
         protected
@@ -838,10 +838,10 @@ package PowerSystems  "Library for electrical power systems"
         equation
           term_p.v = term_n.v;
           annotation(Documentation(info = "<html>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, 20}, {0, 90}}, color = {135, 135, 135}), Line(points = {{-90, 0}, {-20, 0}}, color = {0, 100, 100}, thickness = 0.5), Line(points = {{0, 0}, {90, 0}}, color = {0, 100, 100}, thickness = 0.5), Line(points = {{30, 20}, {70, 0}, {30, -20}}, color = {0, 100, 100}, thickness = 0.5), Ellipse(extent = {{-20, 20}, {20, -20}}, lineColor = {135, 135, 135})})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, 20}, {0, 90}}, color = {135, 135, 135}), Line(points = {{-90, 0}, {-20, 0}}, color = {0, 100, 100}, thickness = 0.5), Line(points = {{0, 0}, {90, 0}}, color = {0, 100, 100}, thickness = 0.5), Line(points = {{30, 20}, {70, 0}, {30, -20}}, color = {0, 100, 100}, thickness = 0.5), Ellipse(extent = {{-20, 20}, {20, -20}}, lineColor = {135, 135, 135})}));
         end Sensor2Base;
 
-        partial model Meter2Base  "Meter 2 terminal base, 3-phase dq0" 
+        partial model Meter2Base  "Meter 2 terminal base, 3-phase dq0"
           extends Sensor2Base(final signalTrsf = 0);
           extends Common.Nominal.Nominal;
           parameter Boolean abc = false "abc inertial" annotation(Evaluate = true, Dialog(group = "Options"));
@@ -857,7 +857,7 @@ package PowerSystems  "Library for electrical power systems"
           end if;
           Rot_dq = rot_dq(term_p.theta[1]);
           annotation(Documentation(info = "<html>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {135, 135, 135})})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, 70}, {70, -70}}, lineColor = {135, 135, 135})}));
         end Meter2Base;
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
@@ -879,13 +879,13 @@ package PowerSystems  "Library for electrical power systems"
     We adapt the sign-definition to this practical convention:</p>
     <pre>  p_reactive = -(J*v)*i</pre>
     </html>
-    ")); 
+    "));
     end Sensors;
 
-    package Sources  "Voltage and Power Sources" 
+    package Sources  "Voltage and Power Sources"
       extends Modelica.Icons.SourcesPackage;
 
-      model Voltage  "Ideal voltage, 3-phase dq0" 
+      model Voltage  "Ideal voltage, 3-phase dq0"
         extends Partials.VoltageBase;
         parameter SIpu.Voltage v0 = 1 "fixed voltage" annotation(Dialog(enable = not use_vPhasor_in));
         parameter SI.Angle alpha0 = 0 "fixed phase angle" annotation(Dialog(enable = not use_vPhasor_in));
@@ -912,13 +912,13 @@ package PowerSystems  "Library for electrical power systems"
          vPhasor_in[2]     in rad
       </pre></p>
       </html>
-      ")); 
+      "));
       end Voltage;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        partial model SourceBase  "Voltage base, 3-phase dq0" 
+        partial model SourceBase  "Voltage base, 3-phase dq0"
           extends Ports.Port_n;
           extends Common.Nominal.Nominal;
           Interfaces.Electric_p neutral "(use for grounding)" annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
@@ -938,10 +938,10 @@ package PowerSystems  "Library for electrical power systems"
           end if;
           annotation(Documentation(info = "<html>
         <p>If the connector 'neutral' remains unconnected, then the source has an isolated neutral point. In all other cases connect 'neutral' to the desired circuit or ground.</p>
-        </html>")); 
+        </html>"));
         end SourceBase;
 
-        partial model VoltageBase  "Voltage base, 3-phase dq0" 
+        partial model VoltageBase  "Voltage base, 3-phase dq0"
           extends SourceBase(final S_nom = 1);
           parameter Types.SourceFrequency fType = PowerSystems.Types.SourceFrequency.System "frequency type" annotation(Evaluate = true, Dialog(group = "Frequency"));
           parameter SI.Frequency f = system.f "frequency if type is parameter" annotation(Dialog(group = "Frequency", enable = fType == PowerSystems.Types.SourceFrequency.Parameter));
@@ -969,7 +969,7 @@ package PowerSystems  "Library for electrical power systems"
             der(theta) = omega_internal;
           end if;
           annotation(Documentation(info = "<html>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, -70}, {70, 70}}, lineColor = {0, 100, 100}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-70, 0}, {70, 0}}, color = {176, 0, 0}, thickness = 0.5), Text(extent = {{-50, 30}, {50, -70}}, lineColor = {176, 0, 0}, lineThickness = 0.5, fillColor = {127, 0, 255}, fillPattern = FillPattern.Solid, textString = "~")})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-70, -70}, {70, 70}}, lineColor = {0, 100, 100}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-70, 0}, {70, 0}}, color = {176, 0, 0}, thickness = 0.5), Text(extent = {{-50, 30}, {50, -70}}, lineColor = {176, 0, 0}, lineThickness = 0.5, fillColor = {127, 0, 255}, fillPattern = FillPattern.Solid, textString = "~")}));
         end VoltageBase;
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
@@ -994,38 +994,38 @@ package PowerSystems  "Library for electrical power systems"
     <tr><td>Phase to phase dq-norm</td><td>|vpp_dq|</td><td>sqrt(2)</td><td>565</td></tr>
     </table>
     </html>
-    ")); 
+    "));
     end Sources;
 
-    package Ports  "AC three-phase ports dq0 representation" 
+    package Ports  "AC three-phase ports dq0 representation"
       extends Modelica.Icons.InterfacesPackage;
 
-      partial model PortBase  "base model adapting Spot to PowerSystems" 
+      partial model PortBase  "base model adapting Spot to PowerSystems"
         package PS = PackagePhaseSystem;
         function j = PS.j annotation(Inline = true);
       end PortBase;
 
-      connector ACdq0_p  "AC terminal, 3-phase dq0 ('positive')" 
+      connector ACdq0_p  "AC terminal, 3-phase dq0 ('positive')"
         extends Interfaces.Terminal(redeclare package PhaseSystem = PackagePhaseSystem);
         annotation(defaultComponentName = "term_p", Documentation(info = "<html>
       <p>AC connector with vector variables in dq0-representation, positive.</p>
-      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 120, 120}, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {255, 255, 255}, textString = "dq0")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{0, 50}, {100, -50}}, lineColor = {0, 120, 120}, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid), Text(extent = {{12, 40}, {90, -40}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "dq0"), Text(extent = {{-120, 120}, {100, 60}}, lineColor = {0, 120, 120}, textString = "%name")})); 
+      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 120, 120}, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {255, 255, 255}, textString = "dq0")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{0, 50}, {100, -50}}, lineColor = {0, 120, 120}, fillColor = {0, 120, 120}, fillPattern = FillPattern.Solid), Text(extent = {{12, 40}, {90, -40}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "dq0"), Text(extent = {{-120, 120}, {100, 60}}, lineColor = {0, 120, 120}, textString = "%name")}));
       end ACdq0_p;
 
-      connector ACdq0_n  "AC terminal, 3-phase dq0 ('negative')" 
+      connector ACdq0_n  "AC terminal, 3-phase dq0 ('negative')"
         extends Interfaces.Terminal(redeclare package PhaseSystem = PackagePhaseSystem);
         annotation(defaultComponentName = "term_n", Documentation(info = "<html>
       <p>AC connector with vector variables in dq0-representation, negative.</p>
-      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 120, 120}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {0, 120, 120}, textString = "dq0")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 50}, {0, -50}}, lineColor = {0, 120, 120}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 40}, {-10, -40}}, lineColor = {0, 120, 120}, textString = "dq0"), Text(extent = {{-100, 120}, {120, 60}}, lineColor = {0, 120, 120}, fillColor = {0, 100, 100}, fillPattern = FillPattern.Solid, textString = "%name")})); 
+      </html>"), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 120, 120}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {0, 120, 120}, textString = "dq0")}), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Ellipse(extent = {{-100, 50}, {0, -50}}, lineColor = {0, 120, 120}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 40}, {-10, -40}}, lineColor = {0, 120, 120}, textString = "dq0"), Text(extent = {{-100, 120}, {120, 60}}, lineColor = {0, 120, 120}, fillColor = {0, 100, 100}, fillPattern = FillPattern.Solid, textString = "%name")}));
       end ACdq0_n;
 
-      partial model Port_n  "AC one port 'negative', 3-phase" 
+      partial model Port_n  "AC one port 'negative', 3-phase"
         extends PortBase;
         Ports.ACdq0_n term "negative terminal" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
-        annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html></html>")); 
+        annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html></html>"));
       end Port_n;
 
-      partial model Port_p_n  "AC two port, 3-phase" 
+      partial model Port_p_n  "AC two port, 3-phase"
         extends PortBase;
         Ports.ACdq0_p term_p "positive terminal" annotation(Placement(transformation(extent = {{-110, -10}, {-90, 10}})));
         Ports.ACdq0_n term_n "negative terminal" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
@@ -1033,15 +1033,15 @@ package PowerSystems  "Library for electrical power systems"
         Connections.branch(term_p.theta, term_n.theta);
         term_n.theta = term_p.theta;
         annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name")}), Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Port_p_n;
 
-      partial model Port_pn  "AC two port 'current_in = current_out', 3-phase" 
+      partial model Port_pn  "AC two port 'current_in = current_out', 3-phase"
         extends Port_p_n;
       equation
         term_p.i + term_n.i = zeros(PS.n);
         annotation(Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end Port_pn;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Electrical ports with connectors ACdq0:</p>
@@ -1051,17 +1051,17 @@ package PowerSystems  "Library for electrical power systems"
       _pn:      with conservation of current
     </pre>
     </html>
-    ")); 
+    "));
     end Ports;
   end AC3ph;
 
-  package Blocks  "Blocks" 
+  package Blocks  "Blocks"
     extends Modelica.Icons.Package;
 
-    package Signals  "Special signals" 
+    package Signals  "Special signals"
       extends Modelica.Icons.VariantsPackage;
 
-      block TransientPhasor  "Transient {norm, phase} of vector" 
+      block TransientPhasor  "Transient {norm, phase} of vector"
         extends Partials.MO(final n = 2);
         parameter SI.Time t_change = 0.5 "time when change";
         parameter SI.Time t_duration = 1 "transition duration";
@@ -1079,37 +1079,37 @@ package PowerSystems  "Library for electrical power systems"
       at time <tt>t_change</tt> with a transition duration <tt>t_duration</tt>.<br><br>
       The transition function is a hyperbolic tangent for both norm and phase.</p>
       </html>
-      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, 100}, {100, 60}}, lineColor = {175, 175, 175}, textString = "phasor"), Text(extent = {{-102, -10}, {18, -50}}, lineColor = {160, 160, 164}, textString = "start"), Text(extent = {{-10, 50}, {110, 10}}, lineColor = {160, 160, 164}, textString = "end"), Line(points = {{-80, -60}, {-64, -60}, {-44, -58}, {-34, -54}, {-26, -48}, {-20, -40}, {-14, -30}, {-8, -18}, {-2, -6}, {2, 4}, {8, 18}, {14, 30}, {20, 40}, {26, 48}, {34, 54}, {44, 58}, {64, 60}, {80, 60}}, color = {95, 0, 191})})); 
+      "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, 100}, {100, 60}}, lineColor = {175, 175, 175}, textString = "phasor"), Text(extent = {{-102, -10}, {18, -50}}, lineColor = {160, 160, 164}, textString = "start"), Text(extent = {{-10, 50}, {110, 10}}, lineColor = {160, 160, 164}, textString = "end"), Line(points = {{-80, -60}, {-64, -60}, {-44, -58}, {-34, -54}, {-26, -48}, {-20, -40}, {-14, -30}, {-8, -18}, {-2, -6}, {2, 4}, {8, 18}, {14, 30}, {20, 40}, {26, 48}, {34, 54}, {44, 58}, {64, 60}, {80, 60}}, color = {95, 0, 191})}));
       end TransientPhasor;
       annotation(preferredView = "info", Documentation(info = "<html>
-    </html>")); 
+    </html>"));
     end Signals;
 
-    package Partials  "Partial models" 
+    package Partials  "Partial models"
       extends Modelica.Icons.BasesPackage;
 
-      partial block MO  
+      partial block MO
         extends PowerSystems.Icons.Block0;
         Modelica.Blocks.Interfaces.RealOutput[n] y "output signal-vector" annotation(Placement(transformation(extent = {{90, -10}, {110, 10}})));
         parameter Integer n = 1 "dim of output signal-vector";
         annotation(Documentation(info = "<html>
-      </html>")); 
+      </html>"));
       end MO;
       annotation(Documentation(info = "<html>
-    </html>")); 
+    </html>"));
     end Partials;
     annotation(preferredView = "info", Documentation(info = "<html>
   <p><a href=\"modelica://PowerSystems.UsersGuide.Overview\">up users guide</a></p>
-  </html>")); 
+  </html>"));
   end Blocks;
 
-  package Common  "Common components" 
+  package Common  "Common components"
     extends Modelica.Icons.Package;
 
-    package Thermal  "Thermal boundary and adaptors" 
+    package Thermal  "Thermal boundary and adaptors"
       extends Modelica.Icons.VariantsPackage;
 
-      model BdCondV  "Default (Neumann) boundary condition, vector port" 
+      model BdCondV  "Default (Neumann) boundary condition, vector port"
         parameter Integer m(final min = 1) = 1 "dimension of heat port";
         extends Partials.BdCondBase;
         PowerSystems.Interfaces.ThermalV_p heat(final m = m) "vector heat port" annotation(Placement(transformation(origin = {0, -100}, extent = {{-10, -10}, {10, 10}}, rotation = 90)));
@@ -1119,35 +1119,35 @@ package PowerSystems  "Library for electrical power systems"
       <p>Deault thermal boundary condition for applications where the thermal output of heat-producing components is not needed.<br>
       Boundary has fixed temperature T = 0.</p>
       </html>
-      
-      ")); 
+
+      "));
       end BdCondV;
 
-      package Partials  "Partial models" 
+      package Partials  "Partial models"
         extends Modelica.Icons.BasesPackage;
 
-        model BdCondBase  "Default (Neumann) boundary condition base" 
+        model BdCondBase  "Default (Neumann) boundary condition base"
           parameter SI.Temperature T_amb = 300 "ambient temperature";
           annotation(defaultComponentName = "bdCond", Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, 0}, {100, -40}}, lineColor = {0, 0, 0}, textString = "%name"), Rectangle(extent = {{-80, -50}, {80, -80}}, lineColor = {0, 0, 0}, fillColor = {192, 192, 192}, fillPattern = FillPattern.Backward), Line(points = {{-80, -50}, {80, -50}}, color = {255, 255, 255})}), Documentation(info = "<html>
         <p>Deault thermal boundary condition for applications where the thermal output of heat-producing components is not needed.<br>
         Boundary has fixed temperature T = 0.</p>
         </html>
-        
-        ")); 
+
+        "));
         end BdCondBase;
         annotation(Documentation(info = "<html>
       </html>
-      ")); 
+      "));
       end Partials;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Auxiliary thermal boundary-conditions, boundary-elements and adptors.</p>
-    </html>")); 
+    </html>"));
     end Thermal;
 
-    package Nominal  "Units and nominal values" 
+    package Nominal  "Units and nominal values"
       extends Modelica.Icons.BasesPackage;
 
-      partial model Nominal  "Units and nominal values" 
+      partial model Nominal  "Units and nominal values"
         parameter Boolean puUnits = true "= true, if scaled with nom. values (pu), else scaled with 1 (SI)" annotation(Evaluate = true, Dialog(group = "Parameter Scaling"));
         parameter SI.Voltage V_nom(final min = 0) = 1 "nominal Voltage (= base for pu)" annotation(Evaluate = true, Dialog(enable = puUnits, group = "Nominal"));
         parameter SI.ApparentPower S_nom(final min = 0) = 1 "nominal Power (= base for pu)" annotation(Evaluate = true, Dialog(enable = puUnits, group = "Nominal"));
@@ -1172,10 +1172,10 @@ package PowerSystems  "Library for electrical power systems"
       <p>Note that the choice between SI and pu does <b>not</b> affect state- and connector variables.
       These remain <b>always</b> in SI-units. It only affects input of parameter values and output variables.</p>
       </html>
-      ")); 
+      "));
       end Nominal;
 
-      partial model NominalAC  "Units and nominal values AC" 
+      partial model NominalAC  "Units and nominal values AC"
         extends Nominal;
         parameter SI.Frequency f_nom = system.f_nom "nominal frequency" annotation(Evaluate = true, Dialog(group = "Nominal"), choices(choice = 50, choice = 60));
       protected
@@ -1183,32 +1183,32 @@ package PowerSystems  "Library for electrical power systems"
         annotation(Documentation(info = "<html>
       <p>Same as 'Nominal', but with additional parameter 'nominal frequency'.</p>
       </html>
-      ")); 
+      "));
       end NominalAC;
 
-      record NominalDataVI  "Units and nominal data" 
+      record NominalDataVI  "Units and nominal data"
         extends Modelica.Icons.Record;
         SI.Voltage V_nom(final min = 0) = 1 "nom Voltage" annotation(Evaluate = true, Dialog(group = "Nominal"));
         SI.Current I_nom(final min = 0) = 1 "nom Current" annotation(Evaluate = true, Dialog(group = "Nominal"));
-        annotation(defaultComponentPrefixes = "parameter"); 
+        annotation(defaultComponentPrefixes = "parameter");
       end NominalDataVI;
       annotation(preferredView = "info", Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end Nominal;
     annotation(preferredView = "info", Documentation(info = "<html>
   <p><a href=\"modelica://PowerSystems.UsersGuide.Overview\">up users guide</a></p>
   </html>
-  ")); 
+  "));
   end Common;
 
-  package Semiconductors  "Semiconductors" 
+  package Semiconductors  "Semiconductors"
     extends Modelica.Icons.Package;
 
-    package Ideal  "Custom models" 
+    package Ideal  "Custom models"
       extends Modelica.Icons.VariantsPackage;
 
-      record SCparameter  "Ideal semiconductor parameters" 
+      record SCparameter  "Ideal semiconductor parameters"
         extends Common.Nominal.NominalDataVI;
         parameter Real[2] eps(final min = {0, 0}, each final unit = "1") = {1e-4, 1e-4} "{resistance 'on', conductance 'off'}";
         parameter SI.Voltage Vf(final min = 0) = 0 "forward threshold-voltage" annotation(Evaluate = true);
@@ -1229,61 +1229,61 @@ package PowerSystems  "Library for electrical power systems"
       <pre>  h = hSw_nom*v*i/S_nom,   S_nom = V_nom*I_nom</pre>
       where <tt>q</tt> denotes the dissipated heat per switching operation at nominal voltage and current, averaged over 'on' and 'off'.<br>
       A generalisation to powers of i and v is straightforward.</p>
-      </html>")); 
+      </html>"));
       end SCparameter;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Ideal semiconductor models (default choice).</p>
     </html>
-    ")); 
+    "));
     end Ideal;
     annotation(preferredView = "info", Documentation(info = "<html>
   <p><a href=\"modelica://PowerSystems.UsersGuide.Overview\">up users guide</a></p>
   </html>
-  ")); 
+  "));
   end Semiconductors;
 
-  package Interfaces  
+  package Interfaces
     extends Modelica.Icons.InterfacesPackage;
 
-    connector Terminal  "General power terminal" 
+    connector Terminal  "General power terminal"
       replaceable package PhaseSystem = PhaseSystems.PartialPhaseSystem "Phase system" annotation(choicesAllMatching = true);
       PhaseSystem.Voltage[PhaseSystem.n] v "voltage vector";
       flow PhaseSystem.Current[PhaseSystem.n] i "current vector";
       PhaseSystem.ReferenceAngle[PhaseSystem.m] theta "optional vector of phase angles";
     end Terminal;
 
-    connector TerminalDC  "Power terminal for pure DC models" 
+    connector TerminalDC  "Power terminal for pure DC models"
       replaceable package PhaseSystem = PhaseSystems.PartialPhaseSystem "Phase system" annotation(choicesAllMatching = true);
       PhaseSystem.Voltage[PhaseSystem.n] v "voltage vector";
       flow PhaseSystem.Current[PhaseSystem.n] i "current vector";
     end TerminalDC;
 
-    connector Electric_p  "Electric terminal ('positive')" 
+    connector Electric_p  "Electric terminal ('positive')"
       extends Modelica.Electrical.Analog.Interfaces.PositivePin;
       annotation(defaultComponentName = "term_p", Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end Electric_p;
 
-    connector ThermalV_p  "Thermal vector heat port ('positive')" 
+    connector ThermalV_p  "Thermal vector heat port ('positive')"
       parameter Integer m(final min = 1) = 1 "number of single heat-ports";
       Modelica.Thermal.HeatTransfer.Interfaces.HeatPort_a[m] ports "vector of single heat ports";
       annotation(defaultComponentName = "heat_p", Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-120, 120}, {100, 60}}, lineColor = {176, 0, 0}, textString = "%name"), Polygon(points = {{-20, 0}, {40, -60}, {100, 0}, {40, 60}, {-20, 0}}, lineColor = {176, 0, 0}, fillColor = {176, 0, 0}, fillPattern = FillPattern.Solid), Text(extent = {{-10, 50}, {90, -50}}, lineColor = {235, 235, 235}, pattern = LinePattern.None, textString = "%m")}), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {176, 0, 0}, fillColor = {176, 0, 0}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {255, 255, 255}, pattern = LinePattern.None, textString = "%m")}), Documentation(info = "<html>
     <p>Thermal connector with a vector of 'port's, positive.</p>
     </html>
-    ")); 
+    "));
     end ThermalV_p;
 
-    connector ThermalV_n  "Thermal vector heat port ('negative')" 
+    connector ThermalV_n  "Thermal vector heat port ('negative')"
       parameter Integer m(final min = 1) = 1 "number of single heat-ports";
       Modelica.Thermal.HeatTransfer.Interfaces.HeatPort_b[m] ports "vector of single heat ports";
       annotation(defaultComponentName = "heat_n", Documentation(info = "<html>
     <p>Thermal connector with a vector of 'port's, negative.</p>
     </html>
-    "), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, 120}, {120, 60}}, lineColor = {176, 0, 0}, textString = "%name"), Polygon(points = {{-100, 0}, {-40, -60}, {20, 0}, {-40, 60}, {-100, 0}}, lineColor = {176, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 50}, {10, -50}}, lineColor = {176, 0, 0}, textString = "%m")}), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {176, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {176, 0, 0}, textString = "%m")})); 
+    "), Diagram(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(extent = {{-100, 120}, {120, 60}}, lineColor = {176, 0, 0}, textString = "%name"), Polygon(points = {{-100, 0}, {-40, -60}, {20, 0}, {-40, 60}, {-100, 0}}, lineColor = {176, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-90, 50}, {10, -50}}, lineColor = {176, 0, 0}, textString = "%m")}), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(points = {{-120, 0}, {0, -120}, {120, 0}, {0, 120}, {-120, 0}}, lineColor = {176, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-60, 60}, {60, -60}}, lineColor = {176, 0, 0}, textString = "%m")}));
     end ThermalV_n;
 
-    connector Frequency  "Weighted frequency" 
+    connector Frequency  "Weighted frequency"
       flow SI.Time H "inertia constant";
       flow SI.Angle w_H "angular velocity, inertia-weighted";
       Real h "Dummy potential-variable to balance flow-variable H";
@@ -1295,17 +1295,17 @@ package PowerSystems  "Library for electrical power systems"
       H:        weight, i.e. inertia constant of machine (dimension time)
       H_omega:  weighted angular frequency H*omega
     </pre>
-    </html>")); 
+    </html>"));
     end Frequency;
   end Interfaces;
 
-  package Utilities  "Basic utilities" 
+  package Utilities  "Basic utilities"
     extends Modelica.Icons.UtilitiesPackage;
 
-    package Math  "Mathematical functions" 
+    package Math  "Mathematical functions"
       extends Modelica.Icons.Package;
 
-      function taylor  "Taylor series" 
+      function taylor  "Taylor series"
         extends Modelica.Icons.Function;
         input Real x "argument";
         input Real[:] c "coefficients";
@@ -1322,17 +1322,17 @@ package PowerSystems  "Library for electrical power systems"
         annotation(Documentation(info = "<html>
       <p>Calculates the Taylor series
       <pre>  y = 1 + sum(c[k]*x^k)</pre></p>
-      </html>")); 
+      </html>"));
       end taylor;
       annotation(preferredView = "info", Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end Math;
 
-    package Precalculation  "Precalculation functions" 
+    package Precalculation  "Precalculation functions"
       extends Modelica.Icons.Package;
 
-      function baseV  "Base voltage" 
+      function baseV  "Base voltage"
         extends Modelica.Icons.Function;
         input Boolean puUnits "= true if pu else SI units";
         input SI.Voltage V_nom "nom voltage";
@@ -1354,10 +1354,10 @@ package PowerSystems  "Library for electrical power systems"
         V_base = 1
       </pre></p>
       </html>
-      ")); 
+      "));
       end baseV;
 
-      function baseI  "Base current" 
+      function baseI  "Base current"
         extends Modelica.Icons.Function;
         input Boolean puUnits "= true if pu else SI units";
         input SI.Voltage V_nom "nom voltage";
@@ -1380,10 +1380,10 @@ package PowerSystems  "Library for electrical power systems"
         I_base = 1;
       </pre></p>
       </html>
-      ")); 
+      "));
       end baseI;
 
-      function baseRL  "Base resistance and inductance" 
+      function baseRL  "Base resistance and inductance"
         extends Modelica.Icons.Function;
         input Boolean puUnits "= true if pu else SI units";
         input SI.Voltage V_nom "nom voltage";
@@ -1408,7 +1408,7 @@ package PowerSystems  "Library for electrical power systems"
         RL_base = {1, 1/omega_nom} (converts reactance X to inductance L!)
       </pre></p>
       </html>
-      ")); 
+      "));
       end baseRL;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p>Functions needed for the determination of coefficient-matrices from a set of phenomenological input parameters.</p>
@@ -1421,13 +1421,13 @@ package PowerSystems  "Library for electrical power systems"
     <li>Canay, I. M.: Determination of the Model Parameters of Machines from the Reactance Operators x_d(p), x_q(p).<br>
     IEEE Transactions on Energy Conversion, Vol. 8, No. 2, June 1993.</li>
     </ul></p>
-    </html>")); 
+    </html>"));
     end Precalculation;
 
-    package Transforms  "Transform functions" 
+    package Transforms  "Transform functions"
       extends Modelica.Icons.Package;
 
-      function park  "Park transform" 
+      function park  "Park transform"
         extends Modelica.Icons.Function;
         input SI.Angle theta "transformation angle";
         output Real[3, 3] P "Park transformation matrix";
@@ -1472,10 +1472,10 @@ package PowerSystems  "Library for electrical power systems"
                    [  0,  0,   1]
       </pre></p>
       <p><a href=\"modelica://PowerSystems.UsersGuide.Introduction.Transforms\">up users guide</a></p>
-      </html>")); 
+      </html>"));
       end park;
 
-      function der_park  "Derivative of Park transform" 
+      function der_park  "Derivative of Park transform"
         extends Modelica.Icons.Function;
         input SI.Angle theta "transformation angle";
         input SI.AngularFrequency omega "d/dt theta";
@@ -1494,10 +1494,10 @@ package PowerSystems  "Library for electrical power systems"
         der_P := transpose([-s23omega * s, -s23omega * c, {0, 0, 0}]);
         annotation(Inline = true, derivative(order = 2) = PowerSystems.Utilities.Transforms.der2_park, Documentation(info = "<html>
       <p>First derivative of function park(theta) with respect to time.</p>
-      </html>")); 
+      </html>"));
       end der_park;
 
-      function der2_park  "2nd derivative of Park transform" 
+      function der2_park  "2nd derivative of Park transform"
         extends Modelica.Icons.Function;
         input SI.Angle theta "transformation angle";
         input SI.AngularFrequency omega "d/dt theta";
@@ -1519,10 +1519,10 @@ package PowerSystems  "Library for electrical power systems"
         der2_P := transpose([(-s23omega_dot * s) - s23omega2 * c, (-s23omega_dot * c) + s23omega2 * s, {0, 0, 0}]);
         annotation(Inline = true, Documentation(info = "<html>
       <p>Second derivative of function park(theta) with respect to time.</p>
-      </html>")); 
+      </html>"));
       end der2_park;
 
-      function rotation_dq  "Rotation matrix dq" 
+      function rotation_dq  "Rotation matrix dq"
         extends Modelica.Icons.Function;
         input SI.Angle theta "rotation angle";
         output Real[2, 2] R_dq "rotation matrix";
@@ -1557,10 +1557,10 @@ package PowerSystems  "Library for electrical power systems"
       with P0 the orthogonal transform 'Transforms.P0'.</p>
       <p><a href=\"modelica://PowerSystems.UsersGuide.Introduction.Transforms\">up users guide</a></p>
       </html>
-      ")); 
+      "));
       end rotation_dq;
 
-      function der_rotation_dq  "Derivative of rotation matrix dq" 
+      function der_rotation_dq  "Derivative of rotation matrix dq"
         extends Modelica.Icons.Function;
         input SI.Angle theta;
         input SI.AngularFrequency omega "d/dt theta";
@@ -1574,10 +1574,10 @@ package PowerSystems  "Library for electrical power systems"
         der_R_dq := [dc, -ds; ds, dc];
         annotation(Inline = true, derivative(order = 2) = PowerSystems.Utilities.Transforms.der2_rotation_dq, Documentation(info = "<html>
       <p>First derivative of function rotation_dq(theta) with respect to time.</p>
-      </html>")); 
+      </html>"));
       end der_rotation_dq;
 
-      function der2_rotation_dq  "2nd derivative of rotation matrix dq" 
+      function der2_rotation_dq  "2nd derivative of rotation matrix dq"
         extends Modelica.Icons.Function;
         input SI.Angle theta;
         input SI.AngularFrequency omega "d/dt theta";
@@ -1597,19 +1597,19 @@ package PowerSystems  "Library for electrical power systems"
         der2_R_dq := [d2c, -d2s; d2s, d2c];
         annotation(Inline = true, Documentation(info = "<html>
       <p>Second derivative of function rotation_dq(theta) with respect to time.</p>
-      </html>")); 
+      </html>"));
       end der2_rotation_dq;
       annotation(preferredView = "info", Documentation(info = "<html>
     <p><a href=\"modelica://PowerSystems.UsersGuide.Introduction.Transforms\">up users guide</a></p>
     </html>
-    ")); 
+    "));
     end Transforms;
   end Utilities;
 
-  package Types  
+  package Types
     extends Modelica.Icons.TypesPackage;
 
-    package SI  "SI types with custom attributes, like display units" 
+    package SI  "SI types with custom attributes, like display units"
       extends Modelica.Icons.Package;
       import MSI = Modelica.SIunits;
       type Time = MSI.Time;
@@ -1630,10 +1630,10 @@ package PowerSystems  "Library for electrical power systems"
       type HeatFlowRate = MSI.HeatFlowRate;
       annotation(Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end SI;
 
-    package SIpu  "Additional types for power systems" 
+    package SIpu  "Additional types for power systems"
       extends Modelica.Icons.Package;
       type Voltage = Real(final quantity = "ElectricPotential", unit = "V/V");
       type Current = Real(final quantity = "ElectricCurrent", unit = "A/A");
@@ -1642,7 +1642,7 @@ package PowerSystems  "Library for electrical power systems"
       type Reactance = Real(final quantity = "Reactance", unit = "Ohm/Ohm");
       annotation(Documentation(info = "<html>
     </html>
-    ")); 
+    "));
     end SIpu;
 
     type SourceFrequency = enumeration(Parameter "Parameter f", Signal "Signal omega_in", System "System defined") "Options for specification of frequency" annotation(Documentation(info = "<html>
@@ -1674,10 +1674,10 @@ package PowerSystems  "Library for electrical power systems"
     </pre></p>
     </html>"));
 
-    type ReferenceAngle  "Reference angle" 
+    type ReferenceAngle  "Reference angle"
       extends SI.Angle;
 
-      function equalityConstraint  
+      function equalityConstraint
         input ReferenceAngle[:] theta1;
         input ReferenceAngle[:] theta2;
         output Real[0] residue "No constraints";
@@ -1692,30 +1692,30 @@ package PowerSystems  "Library for electrical power systems"
     <pre>
       theta[1]       angle relative to reference-system
       theta[2]       reference angle, defining reference-system
-    
+
       der(theta[1])  relative frequency in reference-system with orientation theta[2]
       der(theta[1] + theta[2])  absolute frequency
     </pre>
-    </html>")); 
+    </html>"));
     end ReferenceAngle;
   end Types;
 
-  package Icons  "Icons" 
+  package Icons  "Icons"
     extends Modelica.Icons.IconsPackage;
 
     partial block Block  "Block icon"  annotation(Documentation(info = "
     "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-80, 60}, {80, -60}}, lineColor = {0, 0, 127}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid)})); end Block;
 
-    partial block Block0  "Block icon 0" 
+    partial block Block0  "Block icon 0"
       extends Block;
       annotation(Documentation(info = "
-    "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, -80}, {100, -120}}, lineColor = {0, 0, 0}, textString = "%name")})); 
+    "), Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Text(extent = {{-100, -80}, {100, -120}}, lineColor = {0, 0, 0}, textString = "%name")}));
     end Block0;
 
     partial model Inverter_dq0  "Inverter icon"  annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}, grid = {2, 2}), graphics = {Rectangle(extent = {{-80, 60}, {80, -60}}, lineColor = {0, 120, 120}, lineThickness = 0.5, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{-80, -60}, {80, 60}}, color = {0, 120, 120}), Text(extent = {{10, 20}, {70, -10}}, lineColor = {0, 120, 120}, lineThickness = 0.5, textString = "~"), Text(extent = {{10, 0}, {70, -30}}, lineColor = {0, 120, 120}, lineThickness = 0.5, textString = "~"), Line(points = {{24, 0}, {56, 0}}, color = {0, 120, 120}), Line(points = {{24, -20}, {56, -20}}, color = {0, 120, 120}), Line(points = {{24, -40}, {56, -40}}, color = {0, 120, 120}), Text(extent = {{-100, -90}, {100, -130}}, lineColor = {0, 0, 0}, textString = "%name"), Text(extent = {{-80, 40}, {0, 0}}, textString = "=")}), Documentation(info = "")); end Inverter_dq0;
     annotation(preferredView = "info", Documentation(info = "<html>
   </html>
-  ")); 
+  "));
   end Icons;
   annotation(preferredView = "info", version = "0.6.0", versionDate = "2017-01-18", Documentation(info = "<html>
 <p>The Modelica PowerSystems library is intended for the modeling of electrical <b>power systems</b> at different <b>levels of detail</b> both in <b>transient</b> and <b>steady-state</b> mode.</p>
@@ -1732,16 +1732,16 @@ Work on the predecessor Spot library was in parts supported by the RealSim proje
 by funding of the IST Programme, Contract No. IST-1999-11979. </i></p>
 <p/>
 </html>
-"), uses(Modelica(version = "3.2.2")), Icon(graphics = {Line(points = {{-60, -16}, {38, -16}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{-60, -16}, {-60, -42}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{38, -16}, {38, -42}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{-10, 10}, {-10, -16}}, color = {0, 0, 0}, smooth = Smooth.None), Ellipse(extent = {{-20, 30}, {0, 10}}, lineColor = {0, 0, 0}), Ellipse(extent = {{-20, 42}, {0, 22}}, lineColor = {0, 0, 0}), Ellipse(extent = {{-70, -42}, {-50, -62}}, lineColor = {0, 0, 0}), Ellipse(extent = {{28, -42}, {48, -62}}, lineColor = {0, 0, 0}), Line(points = {{-10, 52}, {-10, 42}}, color = {0, 0, 0}, smooth = Smooth.None)})); 
+"), uses(Modelica(version = "3.2.2")), Icon(graphics = {Line(points = {{-60, -16}, {38, -16}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{-60, -16}, {-60, -42}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{38, -16}, {38, -42}}, color = {0, 0, 0}, smooth = Smooth.None), Line(points = {{-10, 10}, {-10, -16}}, color = {0, 0, 0}, smooth = Smooth.None), Ellipse(extent = {{-20, 30}, {0, 10}}, lineColor = {0, 0, 0}), Ellipse(extent = {{-20, 42}, {0, 22}}, lineColor = {0, 0, 0}), Ellipse(extent = {{-70, -42}, {-50, -62}}, lineColor = {0, 0, 0}), Ellipse(extent = {{28, -42}, {48, -62}}, lineColor = {0, 0, 0}), Line(points = {{-10, 52}, {-10, 42}}, color = {0, 0, 0}, smooth = Smooth.None)}));
 end PowerSystems;
 
-package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation" 
+package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation"
   extends Modelica.Icons.Package;
 
-  package ExternalReferences  "Library of functions to access external resources" 
+  package ExternalReferences  "Library of functions to access external resources"
     extends Modelica.Icons.Package;
 
-    function loadResource  "Return the absolute path name of a URI or local file name (in this default implementation URIs are not supported, but only local file names)" 
+    function loadResource  "Return the absolute path name of a URI or local file name (in this default implementation URIs are not supported, but only local file names)"
       extends Modelica.Utilities.Internal.PartialModelicaServices.ExternalReferences.PartialLoadResource;
     algorithm
       fileReference := OpenModelica.Scripting.uriToFilename(uri);
@@ -1750,11 +1750,11 @@ package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Mode
     The interface of this model is documented at
     <a href=\"modelica://Modelica.Utilities.Files.loadResource\">Modelica.Utilities.Files.loadResource</a>.
     </p>
-    </html>")); 
+    </html>"));
     end loadResource;
   end ExternalReferences;
 
-  package Machine  
+  package Machine
     extends Modelica.Icons.Package;
     final constant Real eps = 1.e-15 "Biggest number such that 1.0 + eps = 1.0";
     final constant Real small = 1.e-60 "Smallest number such that small and -small are representable on the machine";
@@ -1767,7 +1767,7 @@ package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Mode
   but indirectly via the alias definition in
   <a href=\"modelica://Modelica.Constants\">Modelica.Constants</a>.
   </p>
-  </html>")); 
+  </html>"));
   end Machine;
   annotation(Protection(access = Access.hide), preferredView = "info", version = "3.2.2", versionBuild = 0, versionDate = "2016-01-15", dateModified = "2016-01-15 08:44:41Z", revisionId = "$Id::                                       $", uses(Modelica(version = "3.2.2")), conversion(noneFromVersion = "1.0", noneFromVersion = "1.1", noneFromVersion = "1.2", noneFromVersion = "3.2.1"), Documentation(info = "<html>
 <p>
@@ -1819,17 +1819,17 @@ Copyright &copy; 2009-2016, DLR and Dassault Syst&egrave;mes AB.
 <i>This Modelica package is <u>free</u> software and the use is completely at <u>your own risk</u>; it can be redistributed and/or modified under the terms of the Modelica License 2. For license conditions (including the disclaimer of warranty) see <a href=\"modelica://Modelica.UsersGuide.ModelicaLicense2\">Modelica.UsersGuide.ModelicaLicense2</a> or visit <a href=\"https://www.modelica.org/licenses/ModelicaLicense2\"> https://www.modelica.org/licenses/ModelicaLicense2</a>.</i>
 </p>
 
-</html>")); 
+</html>"));
 end ModelicaServices;
 
-package Modelica  "Modelica Standard Library - Version 3.2.2" 
+package Modelica  "Modelica Standard Library - Version 3.2.2"
   extends Modelica.Icons.Package;
 
-  package Blocks  "Library of basic input/output control blocks (continuous, discrete, logical, table blocks)" 
+  package Blocks  "Library of basic input/output control blocks (continuous, discrete, logical, table blocks)"
     import SI = Modelica.SIunits;
     extends Modelica.Icons.Package;
 
-    package Interfaces  "Library of connectors and partial models for input/output blocks" 
+    package Interfaces  "Library of connectors and partial models for input/output blocks"
       import Modelica.SIunits;
       extends Modelica.Icons.InterfacesPackage;
       connector RealInput = input Real "'input Real' as connector" annotation(defaultComponentName = "u", Icon(graphics = {Polygon(lineColor = {0, 0, 127}, fillColor = {0, 0, 127}, fillPattern = FillPattern.Solid, points = {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}})}, coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}, preserveAspectRatio = true, initialScale = 0.2)), Diagram(coordinateSystem(preserveAspectRatio = true, initialScale = 0.2, extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(lineColor = {0, 0, 127}, fillColor = {0, 0, 127}, fillPattern = FillPattern.Solid, points = {{0.0, 50.0}, {100.0, 0.0}, {0.0, -50.0}, {0.0, 50.0}}), Text(lineColor = {0, 0, 127}, extent = {{-10.0, 60.0}, {-10.0, 85.0}}, textString = "%name")}), Documentation(info = "<html>
@@ -1870,7 +1870,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
            Realized a first version, based on an existing Dymola library
            of Dieter Moormann and Hilding Elmqvist.</li>
     </ul>
-    </html>")); 
+    </html>"));
     end Interfaces;
     annotation(Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Rectangle(origin = {0.0, 35.1488}, fillColor = {255, 255, 255}, extent = {{-30.0, -20.1488}, {30.0, 20.1488}}), Rectangle(origin = {0.0, -34.8512}, fillColor = {255, 255, 255}, extent = {{-30.0, -20.1488}, {30.0, 20.1488}}), Line(origin = {-51.25, 0.0}, points = {{21.25, -35.0}, {-13.75, -35.0}, {-13.75, 35.0}, {6.25, 35.0}}), Polygon(origin = {-40.0, 35.0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{10.0, 0.0}, {-5.0, 5.0}, {-5.0, -5.0}}), Line(origin = {51.25, 0.0}, points = {{-21.25, 35.0}, {13.75, 35.0}, {13.75, -35.0}, {-6.25, -35.0}}), Polygon(origin = {40.0, -35.0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-10.0, 0.0}, {5.0, 5.0}, {5.0, -5.0}})}), Documentation(info = "<html>
   <p>
@@ -1932,20 +1932,20 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
          Realized a first version, based on an existing Dymola library
          of Dieter Moormann and Hilding Elmqvist.</li>
   </ul>
-  </html>")); 
+  </html>"));
   end Blocks;
 
-  package Electrical  "Library of electrical models (analog, digital, machines, multi-phase)" 
+  package Electrical  "Library of electrical models (analog, digital, machines, multi-phase)"
     extends Modelica.Icons.Package;
 
-    package Analog  "Library for analog electrical models" 
+    package Analog  "Library for analog electrical models"
       import SI = Modelica.SIunits;
       extends Modelica.Icons.Package;
 
-      package Interfaces  "Connectors and partial models for Analog electrical components" 
+      package Interfaces  "Connectors and partial models for Analog electrical components"
         extends Modelica.Icons.InterfacesPackage;
 
-        connector PositivePin  "Positive pin of an electric component" 
+        connector PositivePin  "Positive pin of an electric component"
           SI.Voltage v "Potential at the pin" annotation(unassignedMessage = "An electrical potential cannot be uniquely calculated.
         The reason could be that
         - a ground object is missing (Modelica.Electrical.Analog.Basic.Ground)
@@ -1964,7 +1964,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
                by Christoph Clauss<br> initially implemented<br>
                </li>
         </ul>
-        </html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-40, 40}, {40, -40}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-160, 110}, {40, 50}}, lineColor = {0, 0, 255}, textString = "%name")})); 
+        </html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-40, 40}, {40, -40}}, lineColor = {0, 0, 255}, fillColor = {0, 0, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-160, 110}, {40, 50}}, lineColor = {0, 0, 255}, textString = "%name")}));
         end PositivePin;
         annotation(Documentation(info = "<html>
       <p>This package contains connectors and interfaces (partial models) for analog electrical components. The partial models contain typical combinations of pins, and internal variables which are often used. Furthermore, the thermal heat port is in this package which can be included by inheritance.</p>
@@ -2000,7 +2000,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
              by Christoph Clauss<br> initially implemented<br>
              </li>
       </ul>
-      </html>")); 
+      </html>"));
       end Interfaces;
       annotation(Documentation(info = "<html>
     <p>
@@ -2028,7 +2028,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         D-01069 Dresden, Germany
     </dd>
     </dl>
-    </html>"), Icon(graphics = {Line(points = {{12, 60}, {12, -60}}), Line(points = {{-12, 60}, {-12, -60}}), Line(points = {{-80, 0}, {-12, 0}}), Line(points = {{12, 0}, {80, 0}})})); 
+    </html>"), Icon(graphics = {Line(points = {{12, 60}, {12, -60}}), Line(points = {{-12, 60}, {-12, -60}}), Line(points = {{-80, 0}, {-12, 0}}), Line(points = {{12, 0}, {80, 0}})}));
     end Analog;
     annotation(Documentation(info = "<html>
   <p>
@@ -2037,27 +2037,27 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
   especially three phase induction machines such as an asynchronous motor.
   </p>
 
-  </html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Rectangle(origin = {20.3125, 82.8571}, extent = {{-45.3125, -57.8571}, {4.6875, -27.8571}}), Line(origin = {8.0, 48.0}, points = {{32.0, -58.0}, {72.0, -58.0}}), Line(origin = {9.0, 54.0}, points = {{31.0, -49.0}, {71.0, -49.0}}), Line(origin = {-2.0, 55.0}, points = {{-83.0, -50.0}, {-33.0, -50.0}}), Line(origin = {-3.0, 45.0}, points = {{-72.0, -55.0}, {-42.0, -55.0}}), Line(origin = {1.0, 50.0}, points = {{-61.0, -45.0}, {-61.0, -10.0}, {-26.0, -10.0}}), Line(origin = {7.0, 50.0}, points = {{18.0, -10.0}, {53.0, -10.0}, {53.0, -45.0}}), Line(origin = {6.2593, 48.0}, points = {{53.7407, -58.0}, {53.7407, -93.0}, {-66.2593, -93.0}, {-66.2593, -58.0}})})); 
+  </html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Rectangle(origin = {20.3125, 82.8571}, extent = {{-45.3125, -57.8571}, {4.6875, -27.8571}}), Line(origin = {8.0, 48.0}, points = {{32.0, -58.0}, {72.0, -58.0}}), Line(origin = {9.0, 54.0}, points = {{31.0, -49.0}, {71.0, -49.0}}), Line(origin = {-2.0, 55.0}, points = {{-83.0, -50.0}, {-33.0, -50.0}}), Line(origin = {-3.0, 45.0}, points = {{-72.0, -55.0}, {-42.0, -55.0}}), Line(origin = {1.0, 50.0}, points = {{-61.0, -45.0}, {-61.0, -10.0}, {-26.0, -10.0}}), Line(origin = {7.0, 50.0}, points = {{18.0, -10.0}, {53.0, -10.0}, {53.0, -45.0}}), Line(origin = {6.2593, 48.0}, points = {{53.7407, -58.0}, {53.7407, -93.0}, {-66.2593, -93.0}, {-66.2593, -58.0}})}));
   end Electrical;
 
-  package Thermal  "Library of thermal system components to model heat transfer and simple thermo-fluid pipe flow" 
+  package Thermal  "Library of thermal system components to model heat transfer and simple thermo-fluid pipe flow"
     extends Modelica.Icons.Package;
 
-    package HeatTransfer  "Library of 1-dimensional heat transfer with lumped elements" 
+    package HeatTransfer  "Library of 1-dimensional heat transfer with lumped elements"
       extends Modelica.Icons.Package;
 
-      package Interfaces  "Connectors and partial models" 
+      package Interfaces  "Connectors and partial models"
         extends Modelica.Icons.InterfacesPackage;
 
-        partial connector HeatPort  "Thermal port for 1-dim. heat transfer" 
+        partial connector HeatPort  "Thermal port for 1-dim. heat transfer"
           Modelica.SIunits.Temperature T "Port temperature";
           flow Modelica.SIunits.HeatFlowRate Q_flow "Heat flow rate (positive if flowing from outside into the component)";
           annotation(Documentation(info = "<html>
 
-        </html>")); 
+        </html>"));
         end HeatPort;
 
-        connector HeatPort_a  "Thermal port for 1-dim. heat transfer (filled rectangular icon)" 
+        connector HeatPort_a  "Thermal port for 1-dim. heat transfer (filled rectangular icon)"
           extends HeatPort;
           annotation(defaultComponentName = "port_a", Documentation(info = "<html>
         <p>This connector is used for 1-dimensional heat flow between components.
@@ -2072,10 +2072,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         class.</p>
         <p>Note, that the two connector classes <b>HeatPort_a</b> and
         <b>HeatPort_b</b> are identical with the only exception of the different
-        <b>icon layout</b>.</p></html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-50, 50}, {50, -50}}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid), Text(extent = {{-120, 120}, {100, 60}}, lineColor = {191, 0, 0}, textString = "%name")})); 
+        <b>icon layout</b>.</p></html>"), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid)}), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-50, 50}, {50, -50}}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid), Text(extent = {{-120, 120}, {100, 60}}, lineColor = {191, 0, 0}, textString = "%name")}));
         end HeatPort_a;
 
-        connector HeatPort_b  "Thermal port for 1-dim. heat transfer (unfilled rectangular icon)" 
+        connector HeatPort_b  "Thermal port for 1-dim. heat transfer (unfilled rectangular icon)"
           extends HeatPort;
           annotation(defaultComponentName = "port_b", Documentation(info = "<html>
         <p>This connector is used for 1-dimensional heat flow between components.
@@ -2090,11 +2090,11 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         class.</p>
         <p>Note, that the two connector classes <b>HeatPort_a</b> and
         <b>HeatPort_b</b> are identical with the only exception of the different
-        <b>icon layout</b>.</p></html>"), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-50, 50}, {50, -50}}, lineColor = {191, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-100, 120}, {120, 60}}, lineColor = {191, 0, 0}, textString = "%name")}), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {191, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid)})); 
+        <b>icon layout</b>.</p></html>"), Diagram(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-50, 50}, {50, -50}}, lineColor = {191, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Text(extent = {{-100, 120}, {120, 60}}, lineColor = {191, 0, 0}, textString = "%name")}), Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {191, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid)}));
         end HeatPort_b;
         annotation(Documentation(info = "<html>
 
-      </html>")); 
+      </html>"));
       end Interfaces;
       annotation(Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {13.758, 27.517}, lineColor = {128, 128, 128}, fillColor = {192, 192, 192}, fillPattern = FillPattern.Solid, points = {{-54, -6}, {-61, -7}, {-75, -15}, {-79, -24}, {-80, -34}, {-78, -42}, {-73, -49}, {-64, -51}, {-57, -51}, {-47, -50}, {-41, -43}, {-38, -35}, {-40, -27}, {-40, -20}, {-42, -13}, {-47, -7}, {-54, -5}, {-54, -6}}), Polygon(origin = {13.758, 27.517}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid, points = {{-75, -15}, {-79, -25}, {-80, -34}, {-78, -42}, {-72, -49}, {-64, -51}, {-57, -51}, {-47, -50}, {-57, -47}, {-65, -45}, {-71, -40}, {-74, -33}, {-76, -23}, {-75, -15}, {-75, -15}}), Polygon(origin = {13.758, 27.517}, lineColor = {160, 160, 164}, fillColor = {192, 192, 192}, fillPattern = FillPattern.Solid, points = {{39, -6}, {32, -7}, {18, -15}, {14, -24}, {13, -34}, {15, -42}, {20, -49}, {29, -51}, {36, -51}, {46, -50}, {52, -43}, {55, -35}, {53, -27}, {53, -20}, {51, -13}, {46, -7}, {39, -5}, {39, -6}}), Polygon(origin = {13.758, 27.517}, fillColor = {160, 160, 164}, fillPattern = FillPattern.Solid, points = {{18, -15}, {14, -25}, {13, -34}, {15, -42}, {21, -49}, {29, -51}, {36, -51}, {46, -50}, {36, -47}, {28, -45}, {22, -40}, {19, -33}, {17, -23}, {18, -15}, {18, -15}}), Polygon(origin = {13.758, 27.517}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid, points = {{-9, -23}, {-9, -10}, {18, -17}, {-9, -23}}), Line(origin = {13.758, 27.517}, points = {{-41, -17}, {-9, -17}}, color = {191, 0, 0}, thickness = 0.5), Line(origin = {13.758, 27.517}, points = {{-17, -40}, {15, -40}}, color = {191, 0, 0}, thickness = 0.5), Polygon(origin = {13.758, 27.517}, lineColor = {191, 0, 0}, fillColor = {191, 0, 0}, fillPattern = FillPattern.Solid, points = {{-17, -46}, {-17, -34}, {-40, -40}, {-17, -46}})}), Documentation(info = "<html>
     <p>
@@ -2204,21 +2204,21 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
            added component ThermalCollector</li>
 
     </ul>
-    </html>")); 
+    </html>"));
     end HeatTransfer;
     annotation(Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Line(origin = {-47.5, 11.6667}, points = {{-2.5, -91.6667}, {17.5, -71.6667}, {-22.5, -51.6667}, {17.5, -31.6667}, {-22.5, -11.667}, {17.5, 8.3333}, {-2.5, 28.3333}, {-2.5, 48.3333}}, smooth = Smooth.Bezier), Polygon(origin = {-50.0, 68.333}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{0.0, 21.667}, {-10.0, -8.333}, {10.0, -8.333}}), Line(origin = {2.5, 11.6667}, points = {{-2.5, -91.6667}, {17.5, -71.6667}, {-22.5, -51.6667}, {17.5, -31.6667}, {-22.5, -11.667}, {17.5, 8.3333}, {-2.5, 28.3333}, {-2.5, 48.3333}}, smooth = Smooth.Bezier), Polygon(origin = {0.0, 68.333}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{0.0, 21.667}, {-10.0, -8.333}, {10.0, -8.333}}), Line(origin = {52.5, 11.6667}, points = {{-2.5, -91.6667}, {17.5, -71.6667}, {-22.5, -51.6667}, {17.5, -31.6667}, {-22.5, -11.667}, {17.5, 8.3333}, {-2.5, 28.3333}, {-2.5, 48.3333}}, smooth = Smooth.Bezier), Polygon(origin = {50.0, 68.333}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{0.0, 21.667}, {-10.0, -8.333}, {10.0, -8.333}})}), Documentation(info = "<html>
   <p>
   This package contains libraries to model heat transfer
   and fluid heat flow.
   </p>
-  </html>")); 
+  </html>"));
   end Thermal;
 
-  package Math  "Library of mathematical functions (e.g., sin, cos) and of functions operating on vectors and matrices" 
+  package Math  "Library of mathematical functions (e.g., sin, cos) and of functions operating on vectors and matrices"
     import SI = Modelica.SIunits;
     extends Modelica.Icons.Package;
 
-    package Icons  "Icons for Math" 
+    package Icons  "Icons for Math"
       extends Modelica.Icons.IconsPackage;
 
       partial function AxisCenter  "Basic icon for mathematical function with y-axis in the center"  annotation(Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {0, 0, 0}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Line(points = {{0, -80}, {0, 68}}, color = {192, 192, 192}), Polygon(points = {{0, 90}, {-8, 68}, {8, 68}, {0, 90}}, lineColor = {192, 192, 192}, fillColor = {192, 192, 192}, fillPattern = FillPattern.Solid), Text(extent = {{-150, 150}, {150, 110}}, textString = "%name", lineColor = {0, 0, 255})}), Diagram(graphics = {Line(points = {{0, 80}, {-8, 80}}, color = {95, 95, 95}), Line(points = {{0, -80}, {-8, -80}}, color = {95, 95, 95}), Line(points = {{0, -90}, {0, 84}}, color = {95, 95, 95}), Text(extent = {{5, 104}, {25, 84}}, lineColor = {95, 95, 95}, textString = "y"), Polygon(points = {{0, 98}, {-6, 82}, {6, 82}, {0, 98}}, lineColor = {95, 95, 95}, fillColor = {95, 95, 95}, fillPattern = FillPattern.Solid)}), Documentation(info = "<html>
@@ -2229,7 +2229,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       </html>")); end AxisCenter;
     end Icons;
 
-    function asin  "Inverse sine (-1 <= u <= 1)" 
+    function asin  "Inverse sine (-1 <= u <= 1)"
       extends Modelica.Math.Icons.AxisCenter;
       input Real u;
       output SI.Angle y;
@@ -2250,10 +2250,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     <p>
     <img src=\"modelica://Modelica/Resources/Images/Math/asin.png\">
     </p>
-    </html>")); 
+    </html>"));
     end asin;
 
-    function atan2  "Four quadrant inverse tangent" 
+    function atan2  "Four quadrant inverse tangent"
       extends Modelica.Math.Icons.AxisCenter;
       input Real u1;
       input Real u2;
@@ -2283,10 +2283,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     <img src=\"modelica://Modelica/Resources/Images/Math/atan2.png\">
     </p>
 
-    </html>")); 
+    </html>"));
     end atan2;
 
-    function exp  "Exponential, base e" 
+    function exp  "Exponential, base e"
       extends Modelica.Math.Icons.AxisCenter;
       input Real u;
       output Real y;
@@ -2307,7 +2307,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     <p>
     <img src=\"modelica://Modelica/Resources/Images/Math/exp.png\">
     </p>
-    </html>")); 
+    </html>"));
     end exp;
     annotation(Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Line(points = {{-80, 0}, {-68.7, 34.2}, {-61.5, 53.1}, {-55.1, 66.4}, {-49.4, 74.6}, {-43.8, 79.1}, {-38.2, 79.8}, {-32.6, 76.6}, {-26.9, 69.7}, {-21.3, 59.4}, {-14.9, 44.1}, {-6.83, 21.2}, {10.1, -30.8}, {17.3, -50.2}, {23.7, -64.2}, {29.3, -73.1}, {35, -78.4}, {40.6, -80}, {46.2, -77.6}, {51.9, -71.5}, {57.5, -61.9}, {63.9, -47.2}, {72, -24.8}, {80, 0}}, color = {0, 0, 0}, smooth = Smooth.Bezier)}), Documentation(info = "<html>
   <p>
@@ -2351,16 +2351,16 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
          Realized.</li>
   </ul>
 
-  </html>")); 
+  </html>"));
   end Math;
 
-  package Utilities  "Library of utility functions dedicated to scripting (operating on files, streams, strings, system)" 
+  package Utilities  "Library of utility functions dedicated to scripting (operating on files, streams, strings, system)"
     extends Modelica.Icons.Package;
 
-    package Files  "Functions to work with files and directories" 
+    package Files  "Functions to work with files and directories"
       extends Modelica.Icons.FunctionsPackage;
 
-      function loadResource  "Return the absolute path name of a URI or local file name" 
+      function loadResource  "Return the absolute path name of a URI or local file name"
         extends Modelica.Utilities.Internal.PartialModelicaServices.ExternalReferences.PartialLoadResource;
         extends ModelicaServices.ExternalReferences.loadResource;
         annotation(Documentation(info = "<html>
@@ -2391,7 +2391,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
         file2 = loadResource(\"C:\\\\data\\\\readParameters.txt\")
                 file2 = \"C:/data/readParameters.txt\"
       </pre></blockquote>
-      </html>")); 
+      </html>"));
       end loadResource;
       annotation(Documentation(info = "<html>
     <p>
@@ -2452,19 +2452,19 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
                write to this file (useful for temporary output of files).</td>
       </tr>
     </table>
-    </html>")); 
+    </html>"));
     end Files;
 
-    package Internal  "Internal components that a user should usually not directly utilize" 
+    package Internal  "Internal components that a user should usually not directly utilize"
       extends Modelica.Icons.InternalPackage;
 
-      partial package PartialModelicaServices  "Interfaces of components requiring a tool specific implementation" 
+      partial package PartialModelicaServices  "Interfaces of components requiring a tool specific implementation"
         extends Modelica.Icons.InternalPackage;
 
-        package ExternalReferences  "Functions to access external resources" 
+        package ExternalReferences  "Functions to access external resources"
           extends Modelica.Icons.InternalPackage;
 
-          partial function PartialLoadResource  "Interface for tool specific function to return the absolute path name of a URI or local file name" 
+          partial function PartialLoadResource  "Interface for tool specific function to return the absolute path name of a URI or local file name"
             extends Modelica.Icons.Function;
             input String uri "URI or local file name";
             output String fileReference "Absolute path name of file";
@@ -2475,7 +2475,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
           <a href=\"modelica://Modelica.Utilities.Files.loadResource\">Modelica.Utilities.Internal.FileSystem.loadResource</a>.
           </p>
 
-          </html>")); 
+          </html>"));
           end PartialLoadResource;
         end ExternalReferences;
         annotation(Documentation(info = "<html>
@@ -2489,7 +2489,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       In the Modelica Standard Library, the models and functions of ModelicaServices
       are used.
       </p>
-      </html>")); 
+      </html>"));
       end PartialModelicaServices;
     end Internal;
     annotation(Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(origin = {1.3835, -4.1418}, rotation = 45.0, fillColor = {64, 64, 64}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-15.0, 93.333}, {-15.0, 68.333}, {0.0, 58.333}, {15.0, 68.333}, {15.0, 93.333}, {20.0, 93.333}, {25.0, 83.333}, {25.0, 58.333}, {10.0, 43.333}, {10.0, -41.667}, {25.0, -56.667}, {25.0, -76.667}, {10.0, -91.667}, {0.0, -91.667}, {0.0, -81.667}, {5.0, -81.667}, {15.0, -71.667}, {15.0, -61.667}, {5.0, -51.667}, {-5.0, -51.667}, {-15.0, -61.667}, {-15.0, -71.667}, {-5.0, -81.667}, {0.0, -81.667}, {0.0, -91.667}, {-10.0, -91.667}, {-25.0, -76.667}, {-25.0, -56.667}, {-10.0, -41.667}, {-10.0, 43.333}, {-25.0, 58.333}, {-25.0, 83.333}, {-20.0, 93.333}}), Polygon(origin = {10.1018, 5.218}, rotation = -45.0, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, points = {{-15.0, 87.273}, {15.0, 87.273}, {20.0, 82.273}, {20.0, 27.273}, {10.0, 17.273}, {10.0, 7.273}, {20.0, 2.273}, {20.0, -2.727}, {5.0, -2.727}, {5.0, -77.727}, {10.0, -87.727}, {5.0, -112.727}, {-5.0, -112.727}, {-10.0, -87.727}, {-5.0, -77.727}, {-5.0, -2.727}, {-20.0, -2.727}, {-20.0, 2.273}, {-10.0, 7.273}, {-10.0, 17.273}, {-20.0, 27.273}, {-20.0, 82.273}})}), Documentation(info = "<html>
@@ -2534,10 +2534,10 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
   <i>This Modelica package is <u>free</u> software and the use is completely at <u>your own risk</u>; it can be redistributed and/or modified under the terms of the Modelica License 2. For license conditions (including the disclaimer of warranty) see <a href=\"modelica://Modelica.UsersGuide.ModelicaLicense2\">Modelica.UsersGuide.ModelicaLicense2</a> or visit <a href=\"https://www.modelica.org/licenses/ModelicaLicense2\"> https://www.modelica.org/licenses/ModelicaLicense2</a>.</i>
   </p>
 
-  </html>")); 
+  </html>"));
   end Utilities;
 
-  package Constants  "Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)" 
+  package Constants  "Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)"
     import SI = Modelica.SIunits;
     import NonSI = Modelica.SIunits.Conversions.NonSIunits;
     extends Modelica.Icons.Package;
@@ -2597,78 +2597,78 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
          by <a href=\"http://www.robotic.dlr.de/Martin.Otter/\">Martin Otter</a>:<br>
          Realized.</li>
   </ul>
-  </html>"), Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(origin = {-9.2597, 25.6673}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{48.017, 11.336}, {48.017, 11.336}, {10.766, 11.336}, {-25.684, 10.95}, {-34.944, -15.111}, {-34.944, -15.111}, {-32.298, -15.244}, {-32.298, -15.244}, {-22.112, 0.168}, {11.292, 0.234}, {48.267, -0.097}, {48.267, -0.097}}, smooth = Smooth.Bezier), Polygon(origin = {-19.9923, -8.3993}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{3.239, 37.343}, {3.305, 37.343}, {-0.399, 2.683}, {-16.936, -20.071}, {-7.808, -28.604}, {6.811, -22.519}, {9.986, 37.145}, {9.986, 37.145}}, smooth = Smooth.Bezier), Polygon(origin = {23.753, -11.5422}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-10.873, 41.478}, {-10.873, 41.478}, {-14.048, -4.162}, {-9.352, -24.8}, {7.912, -24.469}, {16.247, 0.27}, {16.247, 0.27}, {13.336, 0.071}, {13.336, 0.071}, {7.515, -9.983}, {-3.134, -7.271}, {-2.671, 41.214}, {-2.671, 41.214}}, smooth = Smooth.Bezier)})); 
+  </html>"), Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(origin = {-9.2597, 25.6673}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{48.017, 11.336}, {48.017, 11.336}, {10.766, 11.336}, {-25.684, 10.95}, {-34.944, -15.111}, {-34.944, -15.111}, {-32.298, -15.244}, {-32.298, -15.244}, {-22.112, 0.168}, {11.292, 0.234}, {48.267, -0.097}, {48.267, -0.097}}, smooth = Smooth.Bezier), Polygon(origin = {-19.9923, -8.3993}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{3.239, 37.343}, {3.305, 37.343}, {-0.399, 2.683}, {-16.936, -20.071}, {-7.808, -28.604}, {6.811, -22.519}, {9.986, 37.145}, {9.986, 37.145}}, smooth = Smooth.Bezier), Polygon(origin = {23.753, -11.5422}, fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-10.873, 41.478}, {-10.873, 41.478}, {-14.048, -4.162}, {-9.352, -24.8}, {7.912, -24.469}, {16.247, 0.27}, {16.247, 0.27}, {13.336, 0.071}, {13.336, 0.071}, {7.515, -9.983}, {-3.134, -7.271}, {-2.671, 41.214}, {-2.671, 41.214}}, smooth = Smooth.Bezier)}));
   end Constants;
 
-  package Icons  "Library of icons" 
+  package Icons  "Library of icons"
     extends Icons.Package;
 
-    partial package ExamplesPackage  "Icon for packages containing runnable examples" 
+    partial package ExamplesPackage  "Icon for packages containing runnable examples"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {8.0, 14.0}, lineColor = {78, 138, 73}, fillColor = {78, 138, 73}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-58.0, 46.0}, {42.0, -14.0}, {-58.0, -74.0}, {-58.0, 46.0}})}), Documentation(info = "<html>
     <p>This icon indicates a package that contains executable examples.</p>
-    </html>")); 
+    </html>"));
     end ExamplesPackage;
 
     partial package Package  "Icon for standard packages"  annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(lineColor = {200, 200, 200}, fillColor = {248, 248, 248}, fillPattern = FillPattern.HorizontalCylinder, extent = {{-100.0, -100.0}, {100.0, 100.0}}, radius = 25.0), Rectangle(lineColor = {128, 128, 128}, extent = {{-100.0, -100.0}, {100.0, 100.0}}, radius = 25.0)}), Documentation(info = "<html>
     <p>Standard package icon.</p>
     </html>")); end Package;
 
-    partial package BasesPackage  "Icon for packages containing base classes" 
+    partial package BasesPackage  "Icon for packages containing base classes"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Ellipse(extent = {{-30.0, -30.0}, {30.0, 30.0}}, lineColor = {128, 128, 128}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid)}), Documentation(info = "<html>
     <p>This icon shall be used for a package/library that contains base models and classes, respectively.</p>
-    </html>")); 
+    </html>"));
     end BasesPackage;
 
-    partial package VariantsPackage  "Icon for package containing variants" 
+    partial package VariantsPackage  "Icon for package containing variants"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}), graphics = {Ellipse(origin = {10.0, 10.0}, fillColor = {76, 76, 76}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-80.0, -80.0}, {-20.0, -20.0}}), Ellipse(origin = {10.0, 10.0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{0.0, -80.0}, {60.0, -20.0}}), Ellipse(origin = {10.0, 10.0}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{0.0, 0.0}, {60.0, 60.0}}), Ellipse(origin = {10.0, 10.0}, lineColor = {128, 128, 128}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, extent = {{-80.0, 0.0}, {-20.0, 60.0}})}), Documentation(info = "<html>
     <p>This icon shall be used for a package/library that contains several variants of one component.</p>
-    </html>")); 
+    </html>"));
     end VariantsPackage;
 
-    partial package InterfacesPackage  "Icon for packages containing interfaces" 
+    partial package InterfacesPackage  "Icon for packages containing interfaces"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {20.0, 0.0}, lineColor = {64, 64, 64}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, points = {{-10.0, 70.0}, {10.0, 70.0}, {40.0, 20.0}, {80.0, 20.0}, {80.0, -20.0}, {40.0, -20.0}, {10.0, -70.0}, {-10.0, -70.0}}), Polygon(fillColor = {102, 102, 102}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-100.0, 20.0}, {-60.0, 20.0}, {-30.0, 70.0}, {-10.0, 70.0}, {-10.0, -70.0}, {-30.0, -70.0}, {-60.0, -20.0}, {-100.0, -20.0}})}), Documentation(info = "<html>
     <p>This icon indicates packages containing interfaces.</p>
-    </html>")); 
+    </html>"));
     end InterfacesPackage;
 
-    partial package SourcesPackage  "Icon for packages containing sources" 
+    partial package SourcesPackage  "Icon for packages containing sources"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {23.3333, 0.0}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-23.333, 30.0}, {46.667, 0.0}, {-23.333, -30.0}}), Rectangle(fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-70, -4.5}, {0, 4.5}})}), Documentation(info = "<html>
     <p>This icon indicates a package which contains sources.</p>
-    </html>")); 
+    </html>"));
     end SourcesPackage;
 
-    partial package SensorsPackage  "Icon for packages containing sensors" 
+    partial package SensorsPackage  "Icon for packages containing sensors"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Ellipse(origin = {0.0, -30.0}, fillColor = {255, 255, 255}, extent = {{-90.0, -90.0}, {90.0, 90.0}}, startAngle = 20.0, endAngle = 160.0), Ellipse(origin = {0.0, -30.0}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-20.0, -20.0}, {20.0, 20.0}}), Line(origin = {0.0, -30.0}, points = {{0.0, 60.0}, {0.0, 90.0}}), Ellipse(origin = {-0.0, -30.0}, fillColor = {64, 64, 64}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-10.0, -10.0}, {10.0, 10.0}}), Polygon(origin = {-0.0, -30.0}, rotation = -35.0, fillColor = {64, 64, 64}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-7.0, 0.0}, {-3.0, 85.0}, {0.0, 90.0}, {3.0, 85.0}, {7.0, 0.0}})}), Documentation(info = "<html>
     <p>This icon indicates a package containing sensors.</p>
-    </html>")); 
+    </html>"));
     end SensorsPackage;
 
-    partial package UtilitiesPackage  "Icon for utility packages" 
+    partial package UtilitiesPackage  "Icon for utility packages"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(origin = {1.3835, -4.1418}, rotation = 45.0, fillColor = {64, 64, 64}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-15.0, 93.333}, {-15.0, 68.333}, {0.0, 58.333}, {15.0, 68.333}, {15.0, 93.333}, {20.0, 93.333}, {25.0, 83.333}, {25.0, 58.333}, {10.0, 43.333}, {10.0, -41.667}, {25.0, -56.667}, {25.0, -76.667}, {10.0, -91.667}, {0.0, -91.667}, {0.0, -81.667}, {5.0, -81.667}, {15.0, -71.667}, {15.0, -61.667}, {5.0, -51.667}, {-5.0, -51.667}, {-15.0, -61.667}, {-15.0, -71.667}, {-5.0, -81.667}, {0.0, -81.667}, {0.0, -91.667}, {-10.0, -91.667}, {-25.0, -76.667}, {-25.0, -56.667}, {-10.0, -41.667}, {-10.0, 43.333}, {-25.0, 58.333}, {-25.0, 83.333}, {-20.0, 93.333}}), Polygon(origin = {10.1018, 5.218}, rotation = -45.0, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid, points = {{-15.0, 87.273}, {15.0, 87.273}, {20.0, 82.273}, {20.0, 27.273}, {10.0, 17.273}, {10.0, 7.273}, {20.0, 2.273}, {20.0, -2.727}, {5.0, -2.727}, {5.0, -77.727}, {10.0, -87.727}, {5.0, -112.727}, {-5.0, -112.727}, {-10.0, -87.727}, {-5.0, -77.727}, {-5.0, -2.727}, {-20.0, -2.727}, {-20.0, 2.273}, {-10.0, 7.273}, {-10.0, 17.273}, {-20.0, 27.273}, {-20.0, 82.273}})}), Documentation(info = "<html>
     <p>This icon indicates a package containing utility classes.</p>
-    </html>")); 
+    </html>"));
     end UtilitiesPackage;
 
-    partial package TypesPackage  "Icon for packages containing type definitions" 
+    partial package TypesPackage  "Icon for packages containing type definitions"
       extends Modelica.Icons.Package;
-      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {-12.167, -23}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{12.167, 65}, {14.167, 93}, {36.167, 89}, {24.167, 20}, {4.167, -30}, {14.167, -30}, {24.167, -30}, {24.167, -40}, {-5.833, -50}, {-15.833, -30}, {4.167, 20}, {12.167, 65}}, smooth = Smooth.Bezier, lineColor = {0, 0, 0}), Polygon(origin = {2.7403, 1.6673}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{49.2597, 22.3327}, {31.2597, 24.3327}, {7.2597, 18.3327}, {-26.7403, 10.3327}, {-46.7403, 14.3327}, {-48.7403, 6.3327}, {-32.7403, 0.3327}, {-6.7403, 4.3327}, {33.2597, 14.3327}, {49.2597, 14.3327}, {49.2597, 22.3327}}, smooth = Smooth.Bezier)})); 
+      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {-12.167, -23}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{12.167, 65}, {14.167, 93}, {36.167, 89}, {24.167, 20}, {4.167, -30}, {14.167, -30}, {24.167, -30}, {24.167, -40}, {-5.833, -50}, {-15.833, -30}, {4.167, 20}, {12.167, 65}}, smooth = Smooth.Bezier, lineColor = {0, 0, 0}), Polygon(origin = {2.7403, 1.6673}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{49.2597, 22.3327}, {31.2597, 24.3327}, {7.2597, 18.3327}, {-26.7403, 10.3327}, {-46.7403, 14.3327}, {-48.7403, 6.3327}, {-32.7403, 0.3327}, {-6.7403, 4.3327}, {33.2597, 14.3327}, {49.2597, 14.3327}, {49.2597, 22.3327}}, smooth = Smooth.Bezier)}));
     end TypesPackage;
 
-    partial package FunctionsPackage  "Icon for packages containing functions" 
+    partial package FunctionsPackage  "Icon for packages containing functions"
       extends Modelica.Icons.Package;
-      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(lineColor = {128, 128, 128}, extent = {{-90, -90}, {90, 90}}, textString = "f")})); 
+      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(lineColor = {128, 128, 128}, extent = {{-90, -90}, {90, 90}}, textString = "f")}));
     end FunctionsPackage;
 
-    partial package IconsPackage  "Icon for packages containing icons" 
+    partial package IconsPackage  "Icon for packages containing icons"
       extends Modelica.Icons.Package;
-      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {-8.167, -17}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-15.833, 20.0}, {-15.833, 30.0}, {14.167, 40.0}, {24.167, 20.0}, {4.167, -30.0}, {14.167, -30.0}, {24.167, -30.0}, {24.167, -40.0}, {-5.833, -50.0}, {-15.833, -30.0}, {4.167, 20.0}, {-5.833, 20.0}}, smooth = Smooth.Bezier, lineColor = {0, 0, 0}), Ellipse(origin = {-0.5, 56.5}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-12.5, -12.5}, {12.5, 12.5}}, lineColor = {0, 0, 0})})); 
+      annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Polygon(origin = {-8.167, -17}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-15.833, 20.0}, {-15.833, 30.0}, {14.167, 40.0}, {24.167, 20.0}, {4.167, -30.0}, {14.167, -30.0}, {24.167, -30.0}, {24.167, -40.0}, {-5.833, -50.0}, {-15.833, -30.0}, {4.167, 20.0}, {-5.833, 20.0}}, smooth = Smooth.Bezier, lineColor = {0, 0, 0}), Ellipse(origin = {-0.5, 56.5}, fillColor = {128, 128, 128}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-12.5, -12.5}, {12.5, 12.5}}, lineColor = {0, 0, 0})}));
     end IconsPackage;
 
     partial package InternalPackage  "Icon for an internal package (indicating that the package should not be directly utilized by user)"  annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Rectangle(lineColor = {215, 215, 215}, fillColor = {255, 255, 255}, fillPattern = FillPattern.HorizontalCylinder, extent = {{-100, -100}, {100, 100}}, radius = 25), Rectangle(lineColor = {215, 215, 215}, extent = {{-100, -100}, {100, 100}}, radius = 25), Ellipse(extent = {{-80, 80}, {80, -80}}, lineColor = {215, 215, 215}, fillColor = {215, 215, 215}, fillPattern = FillPattern.Solid), Ellipse(extent = {{-55, 55}, {55, -55}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.Solid), Rectangle(extent = {{-60, 14}, {60, -14}}, lineColor = {215, 215, 215}, fillColor = {215, 215, 215}, fillPattern = FillPattern.Solid, rotation = 45)}), Documentation(info = "<html>
@@ -2679,11 +2679,11 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     </p>
     </html>")); end InternalPackage;
 
-    partial package MaterialPropertiesPackage  "Icon for package containing property classes" 
+    partial package MaterialPropertiesPackage  "Icon for package containing property classes"
       extends Modelica.Icons.Package;
       annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Ellipse(lineColor = {102, 102, 102}, fillColor = {204, 204, 204}, pattern = LinePattern.None, fillPattern = FillPattern.Sphere, extent = {{-60.0, -60.0}, {60.0, 60.0}})}), Documentation(info = "<html>
     <p>This icon indicates a package that contains properties</p>
-    </html>")); 
+    </html>"));
     end MaterialPropertiesPackage;
 
     partial function Function  "Icon for functions"  annotation(Icon(coordinateSystem(preserveAspectRatio = false, extent = {{-100, -100}, {100, 100}}), graphics = {Text(lineColor = {0, 0, 255}, extent = {{-150, 105}, {150, 145}}, textString = "%name"), Ellipse(lineColor = {108, 88, 49}, fillColor = {255, 215, 136}, fillPattern = FillPattern.Solid, extent = {{-100, -100}, {100, 100}}), Text(lineColor = {108, 88, 49}, extent = {{-90.0, -90.0}, {90.0, 90.0}}, textString = "f")}), Documentation(info = "<html>
@@ -2722,16 +2722,16 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
 
   <p>Copyright &copy; 1998-2016, Modelica Association, DLR, AIT, and Modelon AB. </p>
   <p><i>This Modelica package is <b>free</b> software; it can be redistributed and/or modified under the terms of the <b>Modelica license</b>, see the license conditions and the accompanying <b>disclaimer</b> in <a href=\"modelica://Modelica.UsersGuide.ModelicaLicense2\">Modelica.UsersGuide.ModelicaLicense2</a>.</i> </p>
-  </html>")); 
+  </html>"));
   end Icons;
 
-  package SIunits  "Library of type and unit definitions based on SI units according to ISO 31-1992" 
+  package SIunits  "Library of type and unit definitions based on SI units according to ISO 31-1992"
     extends Modelica.Icons.Package;
 
-    package Conversions  "Conversion functions to/from non SI units and type definitions of non SI units" 
+    package Conversions  "Conversion functions to/from non SI units and type definitions of non SI units"
       extends Modelica.Icons.Package;
 
-      package NonSIunits  "Type definitions of non SI units" 
+      package NonSIunits  "Type definitions of non SI units"
         extends Modelica.Icons.Package;
         type Temperature_degC = Real(final quantity = "ThermodynamicTemperature", final unit = "degC") "Absolute temperature in degree Celsius (for relative temperature use SIunits.TemperatureDifference)" annotation(absoluteValue = true);
         annotation(Documentation(info = "<html>
@@ -2752,7 +2752,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
       definitions have been placed erroneously in Modelica.SIunits although they
       are not SIunits. For backward compatibility, these type definitions are
       still kept in Modelica.SIunits.</p>
-      </html>"), Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}), graphics = {Text(origin = {15.0, 51.8518}, extent = {{-105.0, -86.8518}, {75.0, -16.8518}}, lineColor = {0, 0, 0}, textString = "[km/h]")})); 
+      </html>"), Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}), graphics = {Text(origin = {15.0, 51.8518}, extent = {{-105.0, -86.8518}, {75.0, -16.8518}}, lineColor = {0, 0, 0}, textString = "[km/h]")}));
       end NonSIunits;
       annotation(Documentation(info = "<html>
     <p>This package provides conversion functions from the non SI Units
@@ -2771,7 +2771,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
                                                           // to radian per seconds
     </pre>
 
-    </html>")); 
+    </html>"));
     end Conversions;
 
     type Angle = Real(final quantity = "Angle", final unit = "rad", displayUnit = "deg");
@@ -2845,7 +2845,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
   <li><i>April 8, 1998</i> by <a href=\"http://www.robotic.dlr.de/Martin.Otter/\">Martin Otter</a> and Astrid Jaschinski:<br/>Complete ISO 31 chapters realized.</li>
   <li><i>Nov. 15, 1997</i> by <a href=\"http://www.robotic.dlr.de/Martin.Otter/\">Martin Otter</a> and Hubertus Tummescheit:<br/>Some chapters realized.</li>
   </ul>
-  </html>")); 
+  </html>"));
   end SIunits;
   annotation(preferredView = "info", version = "3.2.2", versionBuild = 3, versionDate = "2016-04-03", dateModified = "2016-04-03 08:44:41Z", revisionId = "$Id::                                       $", uses(Complex(version = "3.2.2"), ModelicaServices(version = "3.2.2")), conversion(noneFromVersion = "3.2.1", noneFromVersion = "3.2", noneFromVersion = "3.1", noneFromVersion = "3.0.1", noneFromVersion = "3.0", from(version = "2.1", script = "modelica://Modelica/Resources/Scripts/Dymola/ConvertModelica_from_2.2.2_to_3.0.mos"), from(version = "2.2", script = "modelica://Modelica/Resources/Scripts/Dymola/ConvertModelica_from_2.2.2_to_3.0.mos"), from(version = "2.2.1", script = "modelica://Modelica/Resources/Scripts/Dymola/ConvertModelica_from_2.2.2_to_3.0.mos"), from(version = "2.2.2", script = "modelica://Modelica/Resources/Scripts/Dymola/ConvertModelica_from_2.2.2_to_3.0.mos")), Icon(coordinateSystem(extent = {{-100.0, -100.0}, {100.0, 100.0}}), graphics = {Polygon(origin = {-6.9888, 20.048}, fillColor = {0, 0, 0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-93.0112, 10.3188}, {-93.0112, 10.3188}, {-73.011, 24.6}, {-63.011, 31.221}, {-51.219, 36.777}, {-39.842, 38.629}, {-31.376, 36.248}, {-25.819, 29.369}, {-24.232, 22.49}, {-23.703, 17.463}, {-15.501, 25.135}, {-6.24, 32.015}, {3.02, 36.777}, {15.191, 39.423}, {27.097, 37.306}, {32.653, 29.633}, {35.035, 20.108}, {43.501, 28.046}, {54.085, 35.19}, {65.991, 39.952}, {77.897, 39.688}, {87.422, 33.338}, {91.126, 21.696}, {90.068, 9.525}, {86.099, -1.058}, {79.749, -10.054}, {71.283, -21.431}, {62.816, -33.337}, {60.964, -32.808}, {70.489, -16.14}, {77.368, -2.381}, {81.072, 10.054}, {79.749, 19.05}, {72.605, 24.342}, {61.758, 23.019}, {49.587, 14.817}, {39.003, 4.763}, {29.214, -6.085}, {21.012, -16.669}, {13.339, -26.458}, {5.401, -36.777}, {-1.213, -46.037}, {-6.24, -53.446}, {-8.092, -52.387}, {-0.684, -40.746}, {5.401, -30.692}, {12.81, -17.198}, {19.424, -3.969}, {23.658, 7.938}, {22.335, 18.785}, {16.514, 23.283}, {8.047, 23.019}, {-1.478, 19.05}, {-11.267, 11.113}, {-19.734, 2.381}, {-29.259, -8.202}, {-38.519, -19.579}, {-48.044, -31.221}, {-56.511, -43.392}, {-64.449, -55.298}, {-72.386, -66.939}, {-77.678, -74.612}, {-79.53, -74.083}, {-71.857, -61.383}, {-62.861, -46.037}, {-52.278, -28.046}, {-44.869, -15.346}, {-38.784, -2.117}, {-35.344, 8.731}, {-36.403, 19.844}, {-42.488, 23.813}, {-52.013, 22.49}, {-60.744, 16.933}, {-68.947, 10.054}, {-76.884, 2.646}, {-93.0112, -12.1707}, {-93.0112, -12.1707}}, smooth = Smooth.Bezier), Ellipse(origin = {40.8208, -37.7602}, fillColor = {161, 0, 4}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, extent = {{-17.8562, -17.8563}, {17.8563, 17.8562}})}), Documentation(info = "<html>
 <p>
@@ -2904,7 +2904,7 @@ A.&nbsp;Haumer, C.&nbsp;Kral, Modelon, TU Hamburg-Harburg, Politecnico di Milano
 <p>
 <b>Modelica&reg;</b> is a registered trademark of the Modelica Association.
 </p>
-</html>")); 
+</html>"));
 end Modelica;
 
 model Rectifier_total  "Rectifier"
