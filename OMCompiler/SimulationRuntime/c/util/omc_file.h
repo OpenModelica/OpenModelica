@@ -58,15 +58,15 @@ extern "C" {
 #if defined(_MSC_VER)
 
 #ifndef MULTIBYTE_TO_WIDECHAR_VAR
-#define MULTIBYTE_TO_WIDECHAR_VAR(string, unicodeString, unicodeLength) wchar_t *unicodeString = (wchar_t)malloc(unicodeLength*sizeof(wchar_t)); MultiByteToWideChar(CP_UTF8, 0, string, -1, unicodeString, unicodeLength)
+#define MULTIBYTE_TO_WIDECHAR_VAR(string, unicodeString, unicodeLength) wchar_t *unicodeString = (wchar_t*)malloc(unicodeLength*sizeof(wchar_t)); MultiByteToWideChar(CP_UTF8, 0, string, -1, unicodeString, unicodeLength)
 #endif
 
 #ifndef WIDECHAR_TO_MULTIBYTE_VAR
-#define WIDECHAR_TO_MULTIBYTE_VAR(unicode, string, stringLength) char *string = (char)malloc(stringLength*sizeof(char)); WideCharToMultiByte(CP_UTF8, 0, unicode, -1, string, stringLength, NULL, NULL)
+#define WIDECHAR_TO_MULTIBYTE_VAR(unicode, string, stringLength) char *string = (char*)malloc(stringLength*sizeof(char)); WideCharToMultiByte(CP_UTF8, 0, unicode, -1, string, stringLength, NULL, NULL)
 #endif
 
 #ifndef MULTIBYTE_OR_WIDECHAR_VAR_FREE
-#define MULTIBYTE_TO_WIDECHAR_VAR_FREE(unicodeString) if (unicodeString) { free(unicodeString); }
+#define MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeString) if (unicodeString) { free(unicodeString); }
 #endif
 
 #else /* mingw */
