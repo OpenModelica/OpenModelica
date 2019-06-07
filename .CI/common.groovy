@@ -20,7 +20,7 @@ def numPhysicalCPU() {
   if (env.JENKINS_NUM_PHYSICAL_CPU) {
     return env.JENKINS_NUM_PHYSICAL_CPU
   }
-  
+
   if (isWindows())
   {
     return env.NUMBER_OF_PROCESSORS.toInteger() / 2 ?: 1
@@ -98,7 +98,7 @@ void partest(cache=true, extraArgs='') {
   } else {
   sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync -C testsuite/difftool"
   sh 'build/bin/omc-diff -v1.4'
-  
+
   sh ("""#!/bin/bash -x
   ulimit -t 1500
   ulimit -v 6291456 # Max 6GB per process
@@ -180,7 +180,7 @@ void buildOMC(CC, CXX, extraFlags) {
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
-	 set MSYS2_PATH_TYPE=inherit
+   set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath ' ${WORKSPACE} '` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
   } else {
@@ -209,7 +209,7 @@ void buildGUI(stash) {
      ) > buildGUIWindows.sh
 
      set MSYSTEM=MINGW64
-	 set MSYS2_PATH_TYPE=inherit
+   set MSYS2_PATH_TYPE=inherit
      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath ' ${WORKSPACE} '` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
   } else {
@@ -282,6 +282,28 @@ def tagName() {
 def makeCommand() {
   // OSX uses gmake as the GNU make program
   return env.GMAKE ?: "make"
+}
+
+def shouldWeBuildOSX() {
+  if (env.CHANGE_ID) {
+    if (pullRequest.labels.contains("CI/Build OSX")) {
+      return true
+    }
+  }
+  return params.BUILD_OSX
+}
+
+def shouldWeBuildMINGW() {
+  if (env.CHANGE_ID) {
+    if (pullRequest.labels.contains("CI/Build MINGW")) {
+      return true
+    }
+  }
+  return params.BUILD_MINGW
+}
+
+def isPR() {
+  return env.CHANGE_ID ? true : false
 }
 
 return this
