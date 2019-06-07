@@ -9,7 +9,7 @@ PROJECT(SimulationRuntimeC)
 
 # Global Variables
 IF(NOT OMCTRUNCHOME)
-  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../../)
+  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 ENDIF (NOT OMCTRUNCHOME)
 
 # OMDEV PATH
@@ -23,7 +23,7 @@ link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
 IF(MSVC)
   SET(Sundials_Path ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build_msvc)
-ELSEIF(MSVC)
+ELSE(MSVC)
   SET(Sundials_Path ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build)
 ENDIF(MSVC)
 
@@ -37,34 +37,40 @@ MESSAGE(STATUS "Sundials include:")
 MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
 # SUNDIALS Libraires
-if(MSVC)
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-else(MSVC)
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES libsundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES libsundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES libsundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES libsundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-endif(MSVC)
+IF(MSVC)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE   NAMES sundials_cvode        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_IDA     NAMES sundials_ida          PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial   PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_KINSOL          NAMES sundials_kinsol       PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+ELSE(MSVC)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE   NAMES libsundials_cvode         PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_IDA     NAMES libsundials_ida           PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES libsundials_nvecserial    PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+  FIND_LIBRARY(SUNDIALS_KINSOL          NAMES libsundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+ENDIF(MSVC)
 
 IF(SUNDIALS_INCLUDE_DIR)
-
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
 
-  if(SUNDIALS_LIBRARY_CVODE AND
-   SUNDIALS_LIBRARY_IDA AND
-   SUNDIALS_LIBRARY_NVEC AND
-   SUNDIALS_KINSOL)
-
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
-
-  ENDIF(SUNDIALS_LIBRARY_CVODE AND
-        SUNDIALS_LIBRARY_IDA AND
-        SUNDIALS_LIBRARY_NVEC AND
-        SUNDIALS_KINSOL)
-
+  IF(SUNDIALS_LIBRARY_CVODE AND SUNDIALS_LIBRARY_IDA AND SUNDIALS_LIBRARY_NVEC AND SUNDIALS_KINSOL)
+    SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
+  ELSE (SUNDIALS_LIBRARY_CVODE AND SUNDIALS_LIBRARY_IDA AND SUNDIALS_LIBRARY_NVEC AND SUNDIALS_KINSOL)
+    IF(NOT SUNDIALS_CVODE_LIB)
+      MESSAGE(SEND_ERROR "Could not find libsundials_cvode!")
+    ENDIF()
+    IF(NOT SUNDIALS_LIBRARY_IDA)
+      MESSAGE(SEND_ERROR "Could not find libsundials_ida!")
+    ENDIF()
+    IF(NOT SUNDIALS_LIBRARY_NVEC)
+      MESSAGE(SEND_ERROR "Could not find libsundials_nvecserial!")
+    ENDIF()
+    IF(NOT SUNDIALS_KINSOL)
+      MESSAGE(SEND_ERROR "Could not find libsundials_kinsol!")
+    ENDIF()
+    MESSAGE(FATAL_ERROR "Could not find all sundials libs")
+  ENDIF(SUNDIALS_LIBRARY_CVODE AND SUNDIALS_LIBRARY_IDA AND SUNDIALS_LIBRARY_NVEC AND SUNDIALS_KINSOL)
+ELSE(SUNDIALS_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "Could not find Sundials include directory")
 ENDIF(SUNDIALS_INCLUDE_DIR)
 
 # Defines for Visual Studio
