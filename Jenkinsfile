@@ -1,4 +1,7 @@
 def common
+def shouldWeBuildOSX
+def shouldWeBuildMINGW
+def isPR
 pipeline {
   agent none
   options {
@@ -24,8 +27,15 @@ pipeline {
             def buildNumber = env.BUILD_NUMBER as int
             if (buildNumber > 1) milestone(buildNumber - 1)
             milestone(buildNumber)
+            isPR = true
+          } else {
+            isPR = false
           }
           common = load("${env.workspace}/.CI/common.groovy")
+          shouldWeBuildOSX = common.shouldWeBuildOSX()
+          print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
+          shouldWeBuildMINGW = common.shouldWeBuildMINGW()
+          print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
         }
       }
     }
@@ -68,7 +78,8 @@ pipeline {
             }
           }
           when {
-            expression { params.BUILD_OSX }
+            beforeAgent true
+            expression { shouldWeBuildOSX }
           }
           environment {
             RUNTESTDB = '/Users/hudson/jenkins-cache/runtest/'
@@ -94,7 +105,8 @@ pipeline {
             }
           }
           when {
-            expression { params.BUILD_MINGW }
+            beforeAgent true
+            expression { shouldWeBuildMINGW }
           }
           environment {
             RUNTESTDB = '/c/dev/'
@@ -486,9 +498,8 @@ pipeline {
             }
           }
           when {
-            not {
-              changeRequest()
-            }
+            beforeAgent true
+            expression { not isPR }
           }
           steps {
             unstash 'compliance'
@@ -505,9 +516,8 @@ pipeline {
             }
           }
           when {
-            not {
-              changeRequest()
-            }
+            beforeAgent true
+            expression { not isPR }
           }
           steps {
             unstash 'usersguide'
