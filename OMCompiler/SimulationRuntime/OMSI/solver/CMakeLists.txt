@@ -36,7 +36,6 @@ ENDIF(MSVC)
 ############################
   #set sundials solvers include and library directories
   IF(MSVC)
-
     SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/include/")
     SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials/build_msvc/lib/")
   ELSE(MSVC)
