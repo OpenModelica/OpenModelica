@@ -8,23 +8,23 @@ Base.PCRE.JIT_STACK[] = ccall((:pcre2_jit_stack_create_8, Base.PCRE.PCRE_LIB), P
 ccall((:pcre2_jit_stack_assign_8, Base.PCRE.PCRE_LIB), Cvoid,
       (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), Base.PCRE.MATCH_CONTEXT[], C_NULL, Base.PCRE.JIT_STACK[])
 
-
 function main()
-  omc=OMCSession()
-  sendExpression(omc, "setCommandLineOptions(\"-g=MetaModelica\")")
+  omc = size(ARGS, 1) == 1 ? OMCSession(ARGS[1]) : OMCSession()
+  @assert sendExpression(omc, "setCommandLineOptions(\"-g=MetaModelica\")")
   files = [
     "FrontEnd/Absyn.mo",
     "FrontEnd/AbsynUtil.mo",
     "FrontEnd/Graphviz.mo"
   ]
   for file in files
-    print(file)
-    base = Base.Filesystem.basename(file)
+    println(file)
+    base = Base.Filesystem.basename(file)::AbstractString
     sendExpression(omc, "clear()")
+    print(sendExpression(omc, "getSettings()"))
     @assert sendExpression(omc, "loadFile(\"Compiler/$file\")")
     try
       x = sendExpression(omc, "OpenModelica.Scripting.Experimental.toJulia()")
-      write(open("toJulia/$(base[1:end-3]).jl", "w"),x)
+      write(open("toJulia/$(base[1:end-3]).jl", "w"), x)
       println(x)
     catch e
       bt = backtrace()
