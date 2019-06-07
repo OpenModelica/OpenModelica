@@ -66,11 +66,11 @@ match import
 case IMPORT(__) then
   match imp
     case NAMED_IMPORT(__) then
-      'import <%name%> = <%AbsynDumpTpl.dumpPath(path)%>'
+      'import <%name%> = <%dumpPathJL(path)%>'
     case QUAL_IMPORT(__) then
-      'import <%AbsynDumpTpl.dumpPath(path)%>'
+      'import <%dumpPathJL(path)%>'
     case UNQUAL_IMPORT(__) then
-      'import <%AbsynDumpTpl.dumpPath(path)%>.*'
+      'import <%dumpPathJL(path)%>.*'
     else error(sourceInfo(), "SCodeDump.dumpImport: Unknown import.")
 end dumpImport;
 
@@ -78,7 +78,7 @@ template dumpExtends(SCode.Element extends)
 ::=
 match extends
   case EXTENDS(__) then
-    let bc_str = AbsynDumpTpl.dumpPath(baseClassPath)
+    let bc_str = dumpPathJL(baseClassPath)
     let mod_str = dumpModifier(modifications)
     let ann_str = dumpAnnotationOpt(ann)
     'extends <%bc_str%><%mod_str%><%ann_str%>'
@@ -95,6 +95,11 @@ match class
     let cdef_str = dumpClassDef(classDef, functionContext)
     let cmt_str = dumpClassComment(cmt)
     let ann_str = dumpClassAnnotation(cmt)
+    let returnType =
+      match SCode.getOutputElements(p.elementLst)
+        case {} then ""
+        case L as H::{} then '::<%dumpOutputs(SCode.getOutputElements(p.elementLst))%>'
+        case L as H::T then '::Tuple{<%dumpOutputs(SCode.getOutputElements(p.elementLst))%>}'
     let inputs = p.elementLst |> elt as COMPONENT(attributes=ATTR(direction=INPUT(__))) =>
       let type_str = dumpTypeSpec(elt.typeSpec)
       let mod_str = dumpModifier(elt.modifications)
@@ -102,7 +107,7 @@ match class
       '<%elt.name%>::<%type_str%><%mod_str%><%cmt_str%>'
       ; separator = ","
     <<
-    function <%name%>(<%inputs%>)
+    function <%name%>(<%inputs%>)<%returnType%>
     <%cmt_str%>
       <%cdef_str%>
     <%ann_str%>
@@ -146,7 +151,7 @@ end dumpClassHeader;
 template dumpRestrictionSuperType(SCode.Restriction r)
 ::=
 match r
-case R_METARECORD(__) then '<: <%AbsynDumpTpl.dumpPath(name)%>'
+case R_METARECORD(__) then '<: <%dumpPathJL(name)%>'
 end dumpRestrictionSuperType;
 
 template dumpClassDef(SCode.ClassDef classDef, Context context)
@@ -183,10 +188,10 @@ match classDef
         ':'
     '= enumeration(<%enum_str%>)'
   case PDER(__) then
-    let func_str = AbsynDumpTpl.dumpPath(functionPath)
+    let func_str = dumpPathJL(functionPath)
     '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)'
   case OVERLOAD(__) then
-    '= overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)'
+    '= overload(<%pathLst |> path => dumpPathJL(path); separator=", "%>)'
   else error(sourceInfo(), "SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
@@ -194,17 +199,33 @@ template dumpTypeSpec(Absyn.TypeSpec typeSpec)
 ::=
 match typeSpec
   case TPATH(__) then
-    let path_str = AbsynDumpTpl.dumpPath(path)
+    let path_str = dumpPathJL(path)
     let arraydim_str = AbsynDumpTpl.dumpArrayDimOpt(arrayDim)
     '<%path_str%><%arraydim_str%>'
   case TCOMPLEX(__) then
     let path_str = (match path
        case IDENT(name="list") then 'List'
-       else AbsynDumpTpl.dumpPath(path))
+       else dumpPathJL(path))
     let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty) ;separator=", ")
     let arraydim_str = AbsynDumpTpl.dumpArrayDimOpt(arrayDim)
     '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
+
+template dumpTypeSpecAF(Absyn.TypeSpec typeSpec)
+::=
+match typeSpec
+  case TPATH(__) then
+    let path_str = dumpPathJLAF(path)
+    let arraydim_str = AbsynDumpTpl.dumpArrayDimOpt(arrayDim)
+    '<%path_str%><%arraydim_str%>'
+  case TCOMPLEX(__) then
+    let path_str = (match path
+       case IDENT(name="list") then 'List'
+       else dumpPathJL(path))
+    let ty_str = (typeSpecs |> ty => dumpTypeSpecAF(ty) ;separator=", ")
+    let arraydim_str = AbsynDumpTpl.dumpArrayDimOpt(arrayDim)
+    '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
+end dumpTypeSpecAF;
 
 template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann)
 ::=
@@ -1050,31 +1071,13 @@ match c
 end dumpMatchCase;
 
 template dumpOperator(Absyn.Operator op)
-::=
-match op
-  case ADD(__) then '+'
-  case SUB(__) then '-'
-  case MUL(__) then '*'
-  case DIV(__) then '/'
-  case POW(__) then '^'
-  case UPLUS(__) then '+'
-  case UMINUS(__) then '-'
-  case ADD_EW(__) then '.+'
-  case SUB_EW(__) then '.-'
-  case MUL_EW(__) then '.*'
-  case DIV_EW(__) then './'
-  case POW_EW(__) then '.^'
-  case UPLUS_EW(__) then '.+'
-  case UMINUS_EW(__) then '.-'
-  case AND(__) then 'and'
-  case OR(__) then 'or'
-  case NOT(__) then 'not'
-  case LESS(__) then '<'
-  case LESSEQ(__) then '<='
-  case GREATER(__) then '>'
-  case GREATEREQ(__) then '>='
-  case EQUAL(__) then '=='
-  case NEQUAL(__) then '<>'
+"Just calls the corresponding function in AbsynDumptpl for most things"
+::= match op
+      case AND(__) then '&&'
+      case OR(__) then '||'
+      case NOT(__) then '!'
+      case NEQUAL(__) then '!='
+    else AbsynDumpTpl.dumpOperator(op)
 end dumpOperator;
 
 template dumpCref(Absyn.ComponentRef cref)
@@ -1151,6 +1154,59 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 #error "<% Error.infoStr(srcInfo) %> <% errMessage %>"<%\n%>
 >>
 end error;
+
+template dumpPathJL(Absyn.Path path)
+"Wrapper function for dump path. Needed since certain keywords will have a sligthly different meaning in Julia"
+::=
+match path
+  case FULLYQUALIFIED(__) then
+    '.<%AbsynDumpTpl.dumpPath(path)%>'
+  case QUALIFIED(__) then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    '<%name%>__<%AbsynDumpTpl.dumpPath(path)%>'
+    else
+    '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
+  /*Julia keywords have a slightly different semantic meaning*/
+  case IDENT(__) then
+    match name
+      case "Real" then 'ModelicaReal'
+      /* Integers in Modelica are Signed */
+      case "Integer" then 'Signed'
+      case "Boolean" then 'Bool'
+      else '<%name%>'
+  else
+    AbsynDumpTpl.errorMsg("SCodeDump.dumpPath: Unknown path.")
+end dumpPathJL;
+
+template dumpPathJLAF(Absyn.Path path)
+"Similar to the first but with AF. Used for return values"
+::=
+match path
+  case FULLYQUALIFIED(__) then
+    '.<%AbsynDumpTpl.dumpPath(path)%>'
+  case QUALIFIED(__) then
+    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
+    '<%name%>__<%AbsynDumpTpl.dumpPath(path)%>'
+    else
+    '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
+  /*Julia keywords have a slightly different semantic meaning*/
+  case IDENT(__) then
+    match name
+      case "Real" then 'AbstractFloat'
+      /* Integers in Modelica are Signed */
+      case "Integer" then 'Signed'
+      case "Boolean" then 'Bool'
+      else '<%name%>'
+  else
+    AbsynDumpTpl.errorMsg("SCodeDump.dumpPath: Unknown path.")
+end dumpPathJLAF;
+
+template dumpOutputs(list<SCode.Element> elements)
+::= elements |> elt as COMPONENT(attributes=ATTR(direction=OUTPUT(__))) =>
+      let type_str = '<%dumpTypeSpecAF(elt.typeSpec)%>'
+      '<%type_str%>'
+      ; separator = ", "
+end dumpOutputs;
 
 annotation(__OpenModelica_Interface="backend");
 end MMToJulia;

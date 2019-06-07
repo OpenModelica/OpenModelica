@@ -1,15 +1,19 @@
+using MetaModelica : ModelicaReal
+
 abstract type Token end
 struct FileInfo
   line::Int
   column::Int
 end
-
 struct IntToken <: Token
-  value::Int
+  value::Signed
 end
 struct RealToken <: Token
   original::String
-  value::Real
+  value::ModelicaReal
+end
+struct BoolToken <: Token
+  value::Bool
 end
 struct StringToken <: Token
   value::String

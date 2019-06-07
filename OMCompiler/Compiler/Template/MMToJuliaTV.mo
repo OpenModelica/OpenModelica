@@ -1442,6 +1442,12 @@ package SCode
     record INITIAL end INITIAL;
     record NON_INITIAL end NON_INITIAL;
   end Initial;
+
+  function getOutputElements
+    input list<Element> inElements;
+    output list<Element> outElements;
+  end getOutputElements;
+
 end SCode;
 
 package SCodeDump
