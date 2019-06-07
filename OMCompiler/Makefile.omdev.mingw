@@ -21,6 +21,11 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/build
 endif
 
+builddir_build=$(OMBUILDDIR)
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
+
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
 endif
@@ -451,10 +456,10 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 
 
 omcCAPImsvcinstall:
-	$(MAKE) -C SimulationRuntime/omsicpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall: CMinpack_msvc fmil_msvc sundials_msvc copycppmsvcheader
-	$(MAKE) -C SimulationRuntime/omsicpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
+runtimeCPPmsvcinstall: CMinpack_msvc fmil_msvc sundials_msvc copycppmsvcheader OMSIBaseMSVC
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
 

@@ -24,8 +24,8 @@ install(TARGETS ${OSUName} DESTINATION ${LIBINSTALLEXT})
 
 IF(BUILD_SHARED_LIBS)
 	
-    MESSAGE(STATUS "Set rpath for omsu simulation executable " ${OMC_LIB})
-    set(CMAKE_INSTALL_RPATH "$ORIGIN/../${OMC_LIB}/omsicpp/:$ORIGIN")
+    MESSAGE(STATUS "Set rpath for omsu simulation executable " ${LIB_OMC})
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/../${LIB_OMC}/omsicpp/:$ORIGIN")
     SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
     #SET (CMAKE_EXE_LINKER_FLAGS
     #"${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$$ORIGIN/../${LibFolderExtension}/'" )

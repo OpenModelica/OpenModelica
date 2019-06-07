@@ -45,39 +45,37 @@ OMSIBase: sundials $(LAPACK_TARGET) expat
 
 OMSIBaseMSVC: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
+	#echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
-	mkdir -p Build_MSVC
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
+	#mkdir -p SimulationRuntime/OMSI/Build_MSVC
+	#echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > SimulationRuntime/OMSI/Build_MSVC/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
+	#echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> SimulationRuntime/OMSI/Build_MSVC/build.bat
+	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DLIB_OMC=$(LIB_OMC) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/OMSI/Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
-	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
-	echo echo Running NMake JOM >> Build_MSVC/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC/build.bat
-	cd ./Build_MSVC; echo "change to Build_MSVC";\
-	cmd /c build.bat
+	#echo set MAKEFLAGS="" >> SimulationRuntime/OMSI/Build_MSVC/build.bat
+	#echo echo Running NMake JOM >> SimulationRuntime/OMSI/Build_MSVC/build.bat
+	#echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/OMSI/Build_MSVC/build.bat
+	#cd ./SimulationRuntime/OMSI/Build_MSVC; echo "change to Build_MSVC"; cmd /c build.bat
 
 	echo 'Build cppRuntime (static) with MSVC'
 	#rm -rf Build_MSVC_static
-	mkdir -p Build_MSVC_static
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC_static/build.bat
+	mkdir -p SimulationRuntime/OMSI/Build_MSVC_static
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > SimulationRuntime/OMSI/Build_MSVC_static/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DLIB_OMC=$(LIB_OMC) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
-	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
-	echo echo Running NMake JOM >> Build_MSVC_static/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC_static/build.bat
-	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
-	cmd /c build.bat
+	echo set MAKEFLAGS="" >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	echo echo Running NMake JOM >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	cd ./SimulationRuntime/OMSI/Build_MSVC_static; echo "change to Build_MSVC_static"; cmd /c build.bat
 
 	# move folder to build dir
-	cp -R --verbose Build_MSVC/tmp/* $(builddir_build)
-	cp -R --verbose Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
+	#cp -R --verbose ./SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
+	cp -R --verbose ./SimulationRuntime/OMSI/Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
@@ -119,7 +117,7 @@ OMSICPP:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 OMSICPPinstall: copycppheader OMSICPP
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) OMC_LIB=$(LIB_OMC)
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppDataExchange.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
