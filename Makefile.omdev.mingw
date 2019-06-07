@@ -8,7 +8,11 @@ OMDEVMSYS=$(shell cygpath $$OMDEV)
 CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
 CMAKE_TARGET = "MSYS Makefiles"
 
-builddir_bin = $(OMBUILDDIR)/bin
+
+builddir_build=$(OMBUILDDIR)
+builddir_bin=$(OMBUILDDIR)/bin
+builddir_lib=$(OMBUILDDIR)/lib/omc
+builddir_inc=$(OMBUILDDIR)/include/omc
 
 PKG_CONFIG_BIN = $(OMDEVMSYS)/lib/gtk+-2.24.10/bin
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
