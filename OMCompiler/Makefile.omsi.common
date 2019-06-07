@@ -119,7 +119,7 @@ OMSICPP:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 OMSICPPinstall: copycppheader OMSICPP
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) OMC_LIB=$(LIB_OMC)
+	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppDataExchange.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
