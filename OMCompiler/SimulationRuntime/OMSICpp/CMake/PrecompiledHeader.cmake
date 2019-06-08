@@ -91,7 +91,7 @@ IF(MSVC)
 		ENDIF(NOT _sourceFound)
 		#copy pre compiled header file in installation directory
 		MESSAGE(STATUS "install pch: ${CMAKE_BINARY_DIR}/${_inputWe}.pch" )
-		INSTALL (FILES "${CMAKE_BINARY_DIR}/Core/${_inputWe}.pch" DESTINATION include/omc/OMSICpp/Core)
+		INSTALL (FILES "${CMAKE_BINARY_DIR}/Core/${_inputWe}.pch" DESTINATION include/omc/omsicpp/Core)
 		SET(PCH_FILE "${_inputWe}.pch")
 		SET(H_FILE "${_name}")
 	ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
@@ -156,7 +156,7 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STRE
 	ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 	SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include Core/${_name} -Winvalid-pch")
 	#copy pre compiled header file in installation directory
-	INSTALL(FILES "${_output}" DESTINATION include/omc/OMSICpp/Core)
+	INSTALL(FILES "${_output}" DESTINATION include/omc/omsicpp/Core)
 	SET(PCH_FILE "${_name}.gch")
 	SET(H_FILE "${_name}")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -210,7 +210,7 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	#SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include ${_name} -Winvalid-pch")
 
 	#copy pre compiled header file in installation directory
-	#INSTALL (FILES "${_output}" DESTINATION include/omc/OMSICpp/Core)
+	#INSTALL (FILES "${_output}" DESTINATION include/omc/omsicpp/Core)
 	#SET(PCH_FILE "${_name}")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 

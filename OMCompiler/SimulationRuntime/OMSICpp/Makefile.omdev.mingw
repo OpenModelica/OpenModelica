@@ -178,7 +178,7 @@ runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
-	mkdir -p Build_MSVC
+	mkdir -p Build_MSVC/Core
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
@@ -193,7 +193,7 @@ runtimeCPPmsvc: getMSVCversion
 
 	echo 'Build cppRuntime (static) with MSVC'
 	#rm -rf Build_MSVC_static
-	mkdir -p Build_MSVC_static
+	mkdir -p Build_MSVC_static/Core
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC_static/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
