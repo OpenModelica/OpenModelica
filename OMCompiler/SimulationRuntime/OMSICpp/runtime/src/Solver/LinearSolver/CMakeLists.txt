@@ -7,7 +7,9 @@ add_library(${LinearSolverName} LinearSolver.cpp LinearSolverSettings.cpp Factor
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${LinearSolverName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
+IF(MSVC)
   install(FILES $<TARGET_PDB_FILE:${LinearSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+ENDIF(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${LinearSolverName} runtime/include/Core/Modelica.h)
