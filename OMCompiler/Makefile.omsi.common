@@ -43,7 +43,7 @@ OMSIBase: sundials $(LAPACK_TARGET) expat
 		 $(CMAKE_CALL); \
 	   $(MAKE) );)
 
-OMSIBaseMSVC: getMSVCversion
+OMSIBaseMSVC: getMSVCversion CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	#echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
