@@ -12,7 +12,7 @@ set(BASE_LIB "" CACHE INTERNAL "" )
 # add the system default implementation library
 if(USE_FMILIB)
 add_library(${SystemName} LinearAlgLoopDefaultImplementation.cpp NonLinearAlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimObjects.cpp SimVars.cpp OSUSystem.cpp FactoryExport.cpp)
-target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB}  ${ExtensionUtilitiesName})
+target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${ExtensionUtilitiesName})
 else(USE_FMILIB)
 add_library(${SystemName} LinearAlgLoopDefaultImplementation.cpp NonLinearAlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp SimObjects.cpp SimVars.cpp  FactoryExport.cpp)
 target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
@@ -21,7 +21,9 @@ endif(USE_FMILIB)
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SystemName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
+IF(MSVC)
   install(FILES $<TARGET_PDB_FILE:${SystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+ENDIF(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 
