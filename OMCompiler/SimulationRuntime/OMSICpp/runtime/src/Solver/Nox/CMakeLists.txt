@@ -7,7 +7,9 @@ add_library(${NoxName} Nox.cpp NoxSettings.cpp FactoryExport.cpp NoxLapackInterf
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${NoxName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
-install(FILES $<TARGET_PDB_FILE:${NoxName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+IF(MSVC)
+ install(FILES $<TARGET_PDB_FILE:${NoxName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+ENDIF(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${NoxName} runtime/include/Core/Modelica.h)

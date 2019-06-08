@@ -7,7 +7,9 @@ add_library(${KinsolName} Kinsol.cpp KinsolLapack.cpp KinsolSettings.cpp Factory
 if(NOT BUILD_SHARED_LIBS)
     set_target_properties(${KinsolName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
+IF(MSVC)
     install(FILES $<TARGET_PDB_FILE:${KinsolName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+ENDIF(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${KinsolName} Include/Core/Modelica.h)
