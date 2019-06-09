@@ -90,7 +90,7 @@ match class
   case CLASS(restriction=R_UNIONTYPE(__)) then
     dumpClassDef(classDef, packageContext)
   case CLASS(partialPrefix=PARTIAL(__), restriction=R_FUNCTION(__)) then
-    'const <%name%> = Function' // Julia does not really support types of higher-order functions
+    '<%name%> = Function' // Julia does not really support types of higher-order functions
   case CLASS(classDef=p as PARTS(__), restriction=R_FUNCTION(__)) then
     let cdef_str = dumpClassDef(classDef, functionContext)
     let cmt_str = dumpClassComment(cmt)
@@ -349,7 +349,7 @@ match ifequation
       <%if_branch_str%>
     <%elseif_str%>
     <%else_str%>
-    end if;
+    end;
     >>
 end dumpIfEEquation;
 
@@ -495,7 +495,7 @@ match if_statement
     <%else_if_str%>
     else
       <%else_branch_str%>
-    end if;
+    end;
     >>
 end dumpIfStatement;
 
@@ -505,7 +505,7 @@ template dumpElseIfStatements(list<tuple<Absyn.Exp, list<SCode.Statement>>> else
     let cond_str = dumpExp(cond)
     let body_str = dumpStatements(body)
     <<
-    elseif <%cond_str%> then
+    elseif <%cond_str%>
       <%body_str%>
     >> ;separator="\n"
 end dumpElseIfStatements;
@@ -513,22 +513,22 @@ end dumpElseIfStatements;
 template dumpForStatement(SCode.Statement for_statement)
 ::=
 match for_statement
-  case ALG_FOR(range=SOME(e)) then
+  case ALG_FOR(range=SOME(e))
     let range_str = dumpExp(e)
     let body_str = dumpStatements(forBody)
     let cmt_str = dumpComment(comment)
     <<
-    for <%index%> in <%range_str%> loop
+    for <%index%> in <%range_str%>
       <%body_str%>
-    end for<%cmt_str%>;
+    end <%cmt_str%>
     >>
   case ALG_FOR(__) then
     let body_str = dumpStatements(forBody)
     let cmt_str = dumpComment(comment)
     <<
-    for <%index%> loop
+    for <%index%>
       <%body_str%>
-    end for<%cmt_str%>;
+    end <%cmt_str%>
     >>
 end dumpForStatement;
 
@@ -540,9 +540,9 @@ match while_statement
     let body_str = dumpStatements(whileBody)
     let cmt_str = dumpComment(comment)
     <<
-    while <%cond_str%> loop
+    while <%cond_str%>
       <%body_str%>
-    end while;
+    end
     >>
 end dumpWhileStatement;
 
@@ -578,9 +578,9 @@ match try_statement
     <<
     try
       <%algs1%>
-    else
+    catch Exception
       <%algs2%>
-    end try<%cmt_str%>;
+    end <%cmt_str%>
     >>
 end dumpTryStatement;
 
@@ -647,7 +647,7 @@ match restriction
   case R_METARECORD(__) then 'struct'
   case R_UNIONTYPE(__) then 'uniontype'
   case R_RECORD(__) then 'record'
-  case R_TYPE(__) then 'const'
+  case R_TYPE(__) then '' // Should be const iff in global scope
   case R_FUNCTION(__) then 'function'
   else error(sourceInfo(), 'SCodeDump.dumpRestriction: Unknown restriction <%SCodeDumpTpl.dumpRestriction(restriction)%>')
 end dumpRestriction;
@@ -754,17 +754,9 @@ end dumpAnnotationSubModifier;
 template dumpAttributes(SCode.Attributes attributes, Context context)
 ::=
 match attributes
-  case ATTR(variability=CONST(__)) then 'const '
+  case ATTR(variability=CONST(__)) then match '' //Only global constants are allowed in Julia
   case ATTR(__) then dumpDirection(direction, context)
 end dumpAttributes;
-
-template dumpVariability(SCode.Variability variability)
-::=
-match variability
-  case DISCRETE(__) then 'discrete '
-  case PARAM(__) then 'parameter '
-  case CONST(__) then 'const '
-end dumpVariability;
 
 template dumpDirection(Absyn.Direction direction, Context context)
 ::=
