@@ -212,6 +212,18 @@ public
     end match;
   end setTypedExp;
 
+  function hasExp
+    input Binding binding;
+    output Boolean hasExp;
+  algorithm
+    hasExp := match binding
+      case UNTYPED_BINDING() then true;
+      case TYPED_BINDING() then true;
+      case FLAT_BINDING() then true;
+      else false;
+    end match;
+  end hasExp;
+
   function getExp
     input Binding binding;
     output Expression exp;

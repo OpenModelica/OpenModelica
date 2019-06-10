@@ -2837,7 +2837,7 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or isNonExpandableExp(cond) then
+    if var > Variability.PARAMETER or Inst.isExpressionNotFixed(cond) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the origin so we can check that when
       // typing the body of the branch.
@@ -2892,34 +2892,6 @@ algorithm
 
   ifEq := Equation.IF(bl2, source);
 end typeIfEquation;
-
-function isNonExpandableExp
-  input Expression exp;
-  output Boolean isNonExpandable;
-algorithm
-  isNonExpandable := Expression.contains(exp, isNonExpandableExp_traverser);
-end isNonExpandableExp;
-
-function isNonExpandableExp_traverser
-  input Expression exp;
-  output Boolean isNonExpandable;
-algorithm
-  isNonExpandable := match exp
-    local
-      Function fn;
-
-    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
-      then
-        match fn.path
-          case Absyn.IDENT(name = "cardinality") then true;
-          case Absyn.QUALIFIED(name = "Connections", path = Absyn.IDENT(name = "isRoot")) then true;
-          case Absyn.QUALIFIED(name = "Connections", path = Absyn.IDENT(name = "rooted")) then true;
-          else Call.isImpure(exp.call);
-        end match;
-
-    else false;
-  end match;
-end isNonExpandableExp_traverser;
 
 function isNonConstantIfCondition
   input Expression exp;
