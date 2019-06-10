@@ -3354,18 +3354,17 @@ algorithm
     return;
   end if;
 
-  isNotFixed := match binding
-    case Binding.UNTYPED_BINDING()
-      then isExpressionNotFixed(binding.bindingExp, requireFinal, depth);
-
-    else false;
-  end match;
+  if Binding.hasExp(binding) then
+    isNotFixed := isExpressionNotFixed(Binding.getExp(binding), requireFinal, depth);
+  else
+    isNotFixed := true;
+  end if;
 end isBindingNotFixed;
 
 function isExpressionNotFixed
   input Expression exp;
-  input Boolean requireFinal;
-  input Integer depth;
+  input Boolean requireFinal = false;
+  input Integer depth = 1;
   output Boolean isNotFixed;
 algorithm
   isNotFixed := match exp
@@ -3407,6 +3406,17 @@ algorithm
           isNotFixed := isExpressionNotFixed(Util.getOption(exp.dimIndex), requireFinal, depth);
         else
           isNotFixed := false;
+        end if;
+      then
+        isNotFixed;
+
+    case Expression.CALL()
+      algorithm
+        if Call.isImpure(exp.call) or Call.isExternal(exp.call) then
+          isNotFixed := true;
+        else
+          isNotFixed := Expression.containsShallow(exp,
+            function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
         end if;
       then
         isNotFixed;
