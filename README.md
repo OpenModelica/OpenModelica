@@ -1,4 +1,4 @@
-# OpenModelica
+# OpenModelica [![License: OSMC-PL](https://img.shields.io/badge/license-OSMC--PL-lightgrey.svg)](OSMC-License.txt)
 
 [OpenModelica](https://openmodelica.org) is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
