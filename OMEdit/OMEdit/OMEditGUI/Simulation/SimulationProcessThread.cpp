@@ -123,7 +123,6 @@ void SimulationProcessThread::runSimulationExecutable()
   /* Ticket:4583
    * Use the OMEdit working directory so users can put their input files there.
    */
-//  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
@@ -138,7 +137,7 @@ void SimulationProcessThread::runSimulationExecutable()
   QStringList args(QString("-port=").append(QString::number(mpSimulationOutputWidget->getTcpServer()->serverPort())));
   args << "-logFormat=xmltcp" << simulationOptions.getSimulationFlags();
   // start the executable
-  QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
+  QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.());
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
 #ifdef WIN32
@@ -298,12 +297,7 @@ void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::
   }
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    /* Ticket:4486
-     * Don't print the success message since omc now outputs the success information.
-     */
-    //emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
-  } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
+  if (mpSimulationProcess->error() == QProcess::UnknownError) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
     emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);

@@ -2232,6 +2232,7 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
  */
 int OMCProxy::readSimulationResultSize(QString fileName)
 {
+  qDebug() << fileName;
   int size = mpOMCInterface->readSimulationResultSize(fileName);
   getErrorString();
   // close the simulation result file.
