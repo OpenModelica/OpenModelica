@@ -545,9 +545,7 @@ template getNumberOfEventIndicators(SimCode simCode)
 match simCode
   case SIMCODE(zeroCrossings = zeroCrossings, modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
     match Config.simCodeTarget()
-      case "Cpp"
-      case "omsicpp"
-        then listLength(zeroCrossings)
+      case "Cpp" then listLength(zeroCrossings)
       else vi.numZeroCrossings
     end match
   else ""

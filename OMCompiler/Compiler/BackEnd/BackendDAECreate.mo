@@ -3486,7 +3486,7 @@ algorithm
       DAE.FunctionTree funcs;
   case(_)
     equation
-      true = (stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"Cpp") or stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"omsicpp"));
+      true = stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"Cpp");
       funcLst = DAE.AvlTreePathFunction.toList(fTreeIn);
       funcLst = List.map(funcLst,renameFunctionParameter1);
       funcs = DAE.AvlTreePathFunction.addList(DAE.AvlTreePathFunction.new(), funcLst);

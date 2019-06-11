@@ -46,7 +46,7 @@ template translateModel(SimCode simCode)
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
                                          additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, dotPath(modelInfo.name)),
                                          additionalHpcomDestructorBodyStatements(hpcomData.schedules),
-                                         stateDerVectorName, false,numRealVars,numIntVars,numBoolVars,numStringVars,numPreVars), 'OMCpp<%fileNamePrefix%>.cpp')
+                                         stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
 
       let() = textFile(simulationHeaderFile(simCode ,contextOther, &extraFuncs, &extraFuncsDecl, "",
                       additionalHpcomIncludes(simCode, &extraFuncs, &extraFuncsDecl, className, false),
