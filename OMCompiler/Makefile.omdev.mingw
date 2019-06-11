@@ -21,11 +21,6 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/build
 endif
 
-builddir_build=$(OMBUILDDIR)
-builddir_bin=$(OMBUILDDIR)/bin
-builddir_lib=$(OMBUILDDIR)/lib/omc
-builddir_inc=$(OMBUILDDIR)/include/omc
-
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
 endif
@@ -50,17 +45,17 @@ CMAKE_CHECK_UNDEFINED_LOOKUP = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
-	BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw32/include
-	IS_MINGW32 = -DIS_MINGW32=ON
-	IS_MINGW64 = -DIS_MINGW64=OFF
-	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win32
-	LVE_EXE_SUFFIX=win32
+BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw32/include
+IS_MINGW32 = -DIS_MINGW32=ON
+IS_MINGW64 = -DIS_MINGW64=OFF
+MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win32
+LVE_EXE_SUFFIX=win32
 else # mingw64
-	BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
-	IS_MINGW32 = -DIS_MINGW32=OFF
-	IS_MINGW64 = -DIS_MINGW64=ON
-	MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
-	LVE_EXE_SUFFIX=win64
+BOOST_PATH = $(OMDEVMSYS)/tools/msys/mingw64/include
+IS_MINGW32 = -DIS_MINGW32=OFF
+IS_MINGW64 = -DIS_MINGW64=ON
+MINGW_FMIL_FLAGS=-DFMILIB_FMI_PLATFORM=win64
+LVE_EXE_SUFFIX=win64
 endif
 BOOST_PATH_MSVC = $(OMDEVMSYS)/lib/3rdParty/boost-1_55/
 WROOT=$(shell cygpath $$SYSTEMROOT)
@@ -93,6 +88,7 @@ LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC.a
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables.a
 SUITESPARSE_LIBS=
+BOOTSTRAP_FMIL_DEP=fmil
 
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
@@ -101,7 +97,7 @@ include Makefile.common
 include Makefile.omsi.common
 
 # For Windows build static FMI lib!
-FMILIB_SHARED = ON
+FMILIB_SHARED = OFF
 # For Windows build static CMinpack lib!
 CMINPACKLIB_SHARED = OFF
 
@@ -274,16 +270,16 @@ endif
 	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
 copycppheader:
-	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp directory
-	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
-	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
-	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
+	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp directory
+	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
+	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
+	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
 
 copycppmsvcheader: getMSVCversion
-	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
-	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
-	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
-	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
+	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp/ directory
+	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
+	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
+	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
 
 ifeq ($(OMENCRYPTION),yes)
 omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla OMSI
@@ -321,12 +317,11 @@ fmil_msvc: getMSVCversion
 	cmd /c build.bat
 
 	# copy dll to bin folder
-	mkdir -p $(OMBUILDDIR)/bin/msvc
-	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/bin/msvc/fmilib.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/bin/fmilib.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib.lib)
 	# copy the dll with the actual name: fmilib_shared.dll as the fmilib.lib contains that name and the exe will look for it
-	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/bin/fmilib_shared.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.lib)
 
@@ -419,12 +414,11 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	cd ./3rdParty/sundials/build_msvc; echo "change to 3rdParty/sundials/build_msvc";\
 	cmd /c build.bat
 
-   	# copy dll to lib and bin folder
+	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
 	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
-	mkdir -p $(OMBUILDDIR)/bin/msvc
-	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)
+	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/)
 
 # build trilinos nox
 nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
@@ -456,15 +450,12 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 
 
 omcCAPImsvcinstall:
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall: CMinpack_msvc fmil_msvc sundials_msvc copycppmsvcheader OMSIBaseMSVC
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
-	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
-	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
-
-runtimeOMSIBaseMSVCInstall:
-	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
+runtimeCPPmsvcinstall:  CMinpack_msvc Umfpack_msvc fmil_msvc sundials_msvc copycppmsvcheader
+	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
 simulationruntimecmsvc:  getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""

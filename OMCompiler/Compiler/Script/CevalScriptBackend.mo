@@ -2996,12 +2996,6 @@ algorithm
        then ".bat";
     case ("Cpp","WIN64")
        then ".bat";
-    case ("omsicpp","WIN64")
-     then ".bat";
-    case ("omsicpp","WIN32")
-       then ".bat";
-    case ("omsicpp","Unix")
-       then ".sh";
     else Autoconf.exeExt;
   end match;
  end getSimulationExtension;

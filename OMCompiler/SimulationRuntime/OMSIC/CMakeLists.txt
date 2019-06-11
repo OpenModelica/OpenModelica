@@ -73,6 +73,11 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/include/omsu/omsu_event_simulation.h
 DESTINATION include/omc/omsic)
 
+install(FILES
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2Functions.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2FunctionTypes.h
+  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2TypesPlatform.h
+DESTINATION include/omc/omsic/fmi2/)
 
 # uninstall target
 if(NOT TARGET uninstall)

@@ -6,9 +6,9 @@ PLATFORMS=static dynamic
 
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE)
 
-CMAKE_CALL= $(CMAKE) -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) ..
+CMAKE_CALL=cmake -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) ..
 
-.PHONY: OMSIBaseClean OMSICClean OMSICPPclean
+.PHONY: OMSIBaseClean OMSICClean
 
 
 #############################
@@ -16,6 +16,8 @@ CMAKE_CALL= $(CMAKE) -G $(CMAKE_TARGET) --build . -DPLATFORM=$(PLATFORM) $(CMAKE
 #############################
 
 OMSI: OMSIBaseInstall OMSICInstall
+
+
 
 OMSI-clean: OMSIBaseClean OMSICClean
 	cd $(OMBUILDDIR);                             \
@@ -27,15 +29,7 @@ OMSI-clean: OMSIBaseClean OMSICClean
 # Rules for OMSIBase library
 #############################
 
-OMSIBaseInstall: OMSIBase
-	cd SimulationRuntime/OMSI; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);) \
-
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-
-OMSIBase: sundials $(LAPACK_TARGET) expat
+OMSIBase: sundials fmil
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
@@ -43,39 +37,49 @@ OMSIBase: sundials $(LAPACK_TARGET) expat
 		 $(CMAKE_CALL); \
 	   $(MAKE) );)
 
-OMSIBaseMSVC: getMSVCversion CMinpack_msvc fmil_msvc sundials_msvc
+OMSIBaseMSVC: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	#echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
+	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
-	#mkdir -p SimulationRuntime/OMSI/Build_MSVC
-	#echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > SimulationRuntime/OMSI/Build_MSVC/build.bat
+	mkdir -p Build_MSVC
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
 
-	#echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> SimulationRuntime/OMSI/Build_MSVC/build.bat
-	#echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DLIB_OMC=$(LIB_OMC) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/OMSI/Build_MSVC/build.bat
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
-	#echo set MAKEFLAGS="" >> SimulationRuntime/OMSI/Build_MSVC/build.bat
-	#echo echo Running NMake JOM >> SimulationRuntime/OMSI/Build_MSVC/build.bat
-	#echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/OMSI/Build_MSVC/build.bat
-	#cd ./SimulationRuntime/OMSI/Build_MSVC; echo "change to Build_MSVC"; cmd /c build.bat
+	echo set MAKEFLAGS="" >> Build_MSVC/build.bat
+	echo echo Running NMake JOM >> Build_MSVC/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC/build.bat
+	cd ./Build_MSVC; echo "change to Build_MSVC";\
+	cmd /c build.bat
 
 	echo 'Build cppRuntime (static) with MSVC'
 	#rm -rf Build_MSVC_static
-	mkdir -p SimulationRuntime/OMSI/Build_MSVC_static
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	mkdir -p Build_MSVC_static
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC_static/build.bat
 
-	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DLIB_OMC=$(LIB_OMC) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
-	echo set MAKEFLAGS="" >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
-	echo echo Running NMake JOM >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> SimulationRuntime/OMSI/Build_MSVC_static/build.bat
-	cd ./SimulationRuntime/OMSI/Build_MSVC_static; echo "change to Build_MSVC_static"; cmd /c build.bat
+	echo set MAKEFLAGS="" >> Build_MSVC_static/build.bat
+	echo echo Running NMake JOM >> Build_MSVC_static/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_MSVC_static/build.bat
+	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
+	cmd /c build.bat
 
 	# move folder to build dir
-	#cp -R --verbose ./SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
-	cp -R --verbose ./SimulationRuntime/OMSI/Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
+	cp -R --verbose Build_MSVC/tmp/* $(builddir_build)
+	cp -R --verbose Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
+
+OMSIBaseInstall: OMSIBase
+	cd SimulationRuntime/OMSI; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);) \
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
@@ -89,11 +93,6 @@ OMSIBaseClean:
 # Rules for OMSIC libraries
 #############################
 
-OMSICInstall: OMSIC
-	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);)
-
 OMSIC: OMSIBaseInstall
 	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
@@ -102,31 +101,14 @@ OMSIC: OMSIBaseInstall
 		 $(CMAKE_CALL); \
 		 $(MAKE) ); )
 
+OMSICInstall: OMSIC
+	cd SimulationRuntime/OMSIC; \
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  (cd Build_$(PLATFORM); $(MAKE) install);)
+
 OMSICClean:
 	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
 	  rm -R -f Build_$(PLATFORM); \
 	)
-
-#############################
-# Rules for OMSICpp libraries
-#############################
-
-OMSICPP:
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
-
-OMSICPPinstall: copycppheader OMSICPP
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppDataExchange.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppNewton.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSimulationSettings.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSolver.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystem.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
-
-OMSICPPclean:
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)

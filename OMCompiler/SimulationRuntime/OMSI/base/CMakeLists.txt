@@ -40,6 +40,7 @@ set(CMAKE_INSTALL_RPATH "${LIBINSTALLEXT}")
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
+install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/libexpat.a DESTINATION ${LIBINSTALLEXT})
 
 
 install(FILES

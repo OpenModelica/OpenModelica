@@ -30,7 +30,6 @@ taskGraph.log \
 debugDumps.log \
 dumpCruntime.log \
 omsic.log \
-omsicpp.log \
 optimization.log \
 xmlFiles.log \
 resolveLoops.log \
@@ -549,9 +548,6 @@ dumpCruntime.log: omc-diff
 omsic.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/omsi/omsic -f Makefile test  > $@
 	@echo $@ done
-omsicpp.log: omc-diff
-	$(MAKE) -j1 -C openmodelica/omsi/omsicpp -f Makefile test  > $@
-	@echo $@ done
 resolveLoops.log: omc-diff
 	$(MAKE) -C simulation/modelica/resolveLoops -f Makefile test > $@
 	@echo $@ done
@@ -651,7 +647,6 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/omsi/omsic -f Makefile clean
-	$(MAKE) -C openmodelica/omsi/omsicpp -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
 	$(MAKE) -C openmodelica/interactive-API -f Makefile clean
 	$(MAKE) -C openmodelica/parser -f Makefile clean
