@@ -89,12 +89,13 @@ pipeline {
           }
           steps {
             script {
-              env.PATH="${env.MACPORTS}/bin:${env.PATH}"
               // Qt5 is MacOS 10.12+...
-              env.QTDIR="${env.MACPORTS}/libexec/qt4"
-              common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include")
-              common.makeLibsAndCache()
-              common.buildGUI('')
+              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
+                sh "echo PATH: \$PATH QTDIR: \$QTDIR"
+                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include")
+                common.makeLibsAndCache()
+                common.buildGUI('')
+              }
             }
           }
         }
@@ -114,10 +115,12 @@ pipeline {
           }
           steps {
             script {
-              env.PATH="C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"
-              common.buildOMC('cc', 'c++', "")
-              common.makeLibsAndCache()
-              common.buildGUI('')
+              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+                bat "echo PATH: %PATH%"
+                common.buildOMC('cc', 'c++', "")
+                common.makeLibsAndCache()
+                common.buildGUI('')
+              }
             }
           }
         }

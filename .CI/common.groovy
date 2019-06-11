@@ -8,7 +8,7 @@ void standardSetup() {
 
   if (isWindows()) {
     echo "PATH: ${env.PATH}"
-    bat "git clean -ffdx -e OMSetup && git submodule foreach --recursive git clean -ffdx"
+    bat "git clean -ffdx -e OMSetup && git submodule foreach --recursive \"git clean -ffdx\""
     return
   }
 
@@ -74,8 +74,9 @@ void partest(cache=true, extraArgs='') {
      set OMDEV=C:\\OMDev
      echo on
      (
-     echo export MSYS_WORKSPACE="`cygpath ' ${WORKSPACE} '`"
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}\\build"
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="${MSYS_WORKSPACE}\\build\\lib\\omlibrary"
      echo cd ${MSYS_WORKSPACE}/testsuite/partest
      echo time perl ./runtests.pl -j8 -nocolour -with-xml
@@ -92,7 +93,7 @@ void partest(cache=true, extraArgs='') {
 
      set MSYSTEM=MINGW64
      set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cypath ' ${WORKSPACE} '` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x runTestWindows.sh && ./runTestWindows.sh && rm -f ./runTestWindows.sh"
   """)
 
   } else {
@@ -161,12 +162,13 @@ void buildOMC(CC, CXX, extraFlags) {
      set OMDEV=C:\\OMDev
      echo on
      (
-     echo export MSYS_WORKSPACE="`cygpath ' ${WORKSPACE} '`"
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}\\build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}\\build\\lib\\omlibrary"
+     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
+     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc omc-diff omlibrary-core
      echo set +e
      echo cd \${MSYS_WORKSPACE}
@@ -180,8 +182,8 @@ void buildOMC(CC, CXX, extraFlags) {
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
-   set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath ' ${WORKSPACE} '` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
   """)
   } else {
   sh 'autoconf'
@@ -199,18 +201,19 @@ void buildGUI(stash) {
      set OMDEV=C:\\OMDev
      echo on
      (
-     echo export MSYS_WORKSPACE="`cygpath ' ${WORKSPACE} '`"
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}\\build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}\\build\\lib\\omlibrary"
+     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
+     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients
      ) > buildGUIWindows.sh
 
      set MSYSTEM=MINGW64
-   set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath ' ${WORKSPACE} '` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildGUIWindows.sh && ./buildGUIWindows.sh && rm -f ./buildGUIWindows.sh"
   """)
   } else {
 
