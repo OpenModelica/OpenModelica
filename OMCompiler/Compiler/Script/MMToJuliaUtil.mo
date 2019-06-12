@@ -30,7 +30,10 @@
  */
 
 encapsulated package MMToJuliaUtil
-
+protected
+import List;
+import Absyn;
+public
 uniontype Context
   record FUNCTION
   end FUNCTION;
@@ -49,6 +52,30 @@ function makeUniontypeContext
 algorithm
   context := UNIONTYPE(name);
 end makeUniontypeContext;
+
+function makeInputDirection
+  output Absyn.Direction direction;
+algorithm
+  direction := Absyn.INPUT();
+end makeInputDirection;
+
+function makeOutputDirection
+  output Absyn.Direction direction;
+algorithm
+  direction := Absyn.OUTPUT();
+end makeOutputDirection;
+
+function filterOnDirection "Returns a list<ElementItem>, where the direction is equal to the supplied direction"
+  input list<Absyn.ElementItem> inputs;
+  input Absyn.Direction direction;
+  output list<Absyn.ElementItem> outputs = {};
+algorithm
+  for i in inputs loop
+    if Absyn.directionEqual(direction, Absyn.getDirection(i)) then
+      outputs := i :: outputs;
+    end if;
+  end for;
+end filterOnDirection;
 
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

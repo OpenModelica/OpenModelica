@@ -29,9 +29,16 @@
  *
  */
 
-encapsulated package AbsynToJuliaTV
+interface package AbsynToJuliaTV
 
 package builtin
+
+  function listHead
+    input list<T> lst;
+    output T head;
+    replaceable type T subtypeof Any;
+  end listHead;
+
   function listReverse
     input list<T> inLst;
     output list<T> outLst;
@@ -896,6 +903,12 @@ package Absyn
     output Boolean b;
   end isClassdef;
 
+  function getElementItemsInClassPart
+    "Returns the public and protected elements in a class part."
+    input ClassPart inClassPart;
+    output list<ElementItem> outElements;
+  end getElementItemsInClassPart;
+
 end Absyn;
 
 package Config
@@ -933,7 +946,20 @@ package System
     input String inString;
     output String outString;
   end trimWhitespace;
+  function stringReplace
+    input String str;
+    input String source;
+    input String target;
+    output String res;
+  end stringReplace;
+  function escapedString
+    input String unescapedString;
+    input Boolean unescapeNewline;
+    output String escapedString;
+  end escapedString;
 end System;
+
+
 
 package Tpl
   function addSourceTemplateError
@@ -971,6 +997,17 @@ package MMToJuliaUtil
     input String name;
     output Context context;
   end makeUniontypeContext;
+  function filterOnDirection
+    input list<Absyn.ElementItem> inputs;
+    input Absyn.Direction direction;
+    output list<Absyn.ElementItem> outputs;
+  end filterOnDirection;
+  function makeInputDirection
+    output Absyn.Direction direction;
+  end makeInputDirection;
+  function makeOutputDirection
+    output Absyn.Direction direction;
+  end makeOutputDirection;
 end MMToJuliaUtil;
 
 end AbsynToJuliaTV;

@@ -1559,6 +1559,12 @@ package MMToJuliaUtil
     input String name;
     output Context context;
   end makeUniontypeContext;
+  function makeInputDirection
+    output Absyn.Direction direction;
+  end makeInputDirection;
+  function makeOutputDirection
+    output Absyn.Direction direction;
+  end makeOutputDirection;
 end MMToJuliaUtil;
 
 end MMToJuliaTV;

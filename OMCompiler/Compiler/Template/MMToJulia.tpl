@@ -495,7 +495,7 @@ match if_statement
     <%else_if_str%>
     else
       <%else_branch_str%>
-    end;
+    end
     >>
 end dumpIfStatement;
 
@@ -513,7 +513,7 @@ end dumpElseIfStatements;
 template dumpForStatement(SCode.Statement for_statement)
 ::=
 match for_statement
-  case ALG_FOR(range=SOME(e))
+  case ALG_FOR(range=SOME(e)) then
     let range_str = dumpExp(e)
     let body_str = dumpStatements(forBody)
     let cmt_str = dumpComment(comment)
@@ -754,7 +754,7 @@ end dumpAnnotationSubModifier;
 template dumpAttributes(SCode.Attributes attributes, Context context)
 ::=
 match attributes
-  case ATTR(variability=CONST(__)) then match '' //Only global constants are allowed in Julia
+  case ATTR(variability=CONST(__)) then  '' //Only global constants are allowed in Julia
   case ATTR(__) then dumpDirection(direction, context)
 end dumpAttributes;
 
