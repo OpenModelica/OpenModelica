@@ -92,6 +92,7 @@ algorithm
   a_ := not a;
   b_ := not b;
   c_ := not c;
+//End of mInverse. I am a comment
 end mInverse;
 
 end BoolTests;
