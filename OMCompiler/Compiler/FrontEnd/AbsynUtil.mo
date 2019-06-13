@@ -6320,5 +6320,28 @@ algorithm
   end match;
 end traverseInnerClassElementspec;
 
+public function getComponentTypeSpec
+"@auhtor: johti
+ Get the typespec path in an ElementItem if it has one"
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.TypeSpec> outTypeSpec;
+algorithm
+  outTypeSpec := match inElementItem
+    local
+      Absyn.TypeSpec typeSpec;
+      Absyn.ElementSpec specification;
+    case Absyn.ELEMENTITEM(__) then
+      match inElementItem.element
+        case Absyn.ELEMENT(specification = specification) then
+        match specification
+          case Absyn.COMPONENTS(typeSpec = typeSpec) then SOME(typeSpec);
+          else then NONE();
+        end match;
+        else then NONE();
+      end match;
+    else then NONE();
+  end match;
+end getComponentTypeSpec;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
