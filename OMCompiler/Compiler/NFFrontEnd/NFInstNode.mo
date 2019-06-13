@@ -1599,6 +1599,16 @@ uniontype InstNode
 
     end match;
   end copyInstancePtr;
+
+  function isRecord
+    input InstNode node;
+    output Boolean isRec;
+  algorithm
+    isRec := match node
+      case CLASS_NODE() then Restriction.isRecord(Class.restriction(Pointer.access(node.cls)));
+      case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
+    end match;
+  end isRecord;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

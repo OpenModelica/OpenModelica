@@ -847,17 +847,13 @@ uniontype Component
 
   function getFixedAttribute
     input Component component;
-    output Boolean fixed = false;
+    output Boolean fixed;
   protected
     list<Modifier> typeAttrs = {};
     Binding binding;
   algorithm
     // for parameters the default is fixed = true
-    if isParameter(component) or isStructuralParameter(component) then
-      fixed := true;
-    else
-      fixed := false;
-    end if;
+    fixed := isParameter(component) or isStructuralParameter(component);
 
     binding := Class.lookupAttributeBinding("fixed", InstNode.getClass(classInstance(component)));
 
