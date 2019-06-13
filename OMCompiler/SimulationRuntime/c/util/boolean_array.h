@@ -200,4 +200,9 @@ extern void convert_alloc_boolean_array_from_f77(const boolean_array_t* a,
                                           boolean_array_t* dest);
 extern void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int ndims, ...);
 
+/* Returns the smallest value in the given array, or true if the array is empty. */
+extern modelica_boolean min_boolean_array(const boolean_array_t a);
+/* Returns the largest value in the given array, or false if the array is empty. */
+extern modelica_boolean max_boolean_array(const boolean_array_t a);
+
 #endif

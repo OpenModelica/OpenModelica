@@ -311,6 +311,21 @@ public
     end match;
   end isEmptyArray;
 
+  function isSingleElementArray
+    input Type ty;
+    output Boolean isSingleElement;
+  algorithm
+    isSingleElement := match ty
+      local
+        Dimension d;
+
+      case ARRAY(dimensions = {d})
+        then Dimension.isKnown(d) and Dimension.size(d) == 1;
+
+      else false;
+    end match;
+  end isSingleElementArray;
+
   function isEnumeration
     input Type ty;
     output Boolean isEnum;
