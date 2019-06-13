@@ -3346,25 +3346,56 @@ end isStructuralComponent;
 function isBindingNotFixed
   input Binding binding;
   input Boolean requireFinal;
-  input Integer depth = 1;
+  input Integer maxDepth = 4;
   output Boolean isNotFixed;
 algorithm
-  if depth > 4 then
+  if maxDepth == 0 then
     isNotFixed := true;
     return;
   end if;
 
   if Binding.hasExp(binding) then
-    isNotFixed := isExpressionNotFixed(Binding.getExp(binding), requireFinal, depth);
+    isNotFixed := isExpressionNotFixed(Binding.getExp(binding), requireFinal, maxDepth);
   else
     isNotFixed := true;
   end if;
 end isBindingNotFixed;
 
+function isComponentBindingNotFixed
+  input Component component;
+  input InstNode node;
+  input Boolean requireFinal;
+  input Integer maxDepth;
+  input Boolean isRecord = false;
+  output Boolean isNotFixed;
+protected
+  Binding binding;
+  InstNode parent;
+algorithm
+  binding := Component.getBinding(component);
+
+  if Binding.isUnbound(binding) then
+    if isRecord or InstNode.isRecord(node) then
+      // TODO: Check whether the record fields have bindings or not.
+      isNotFixed := false;
+    else
+      parent := InstNode.parent(node);
+
+      if InstNode.isComponent(parent) and InstNode.isRecord(parent) then
+        isNotFixed := isComponentBindingNotFixed(InstNode.component(parent), parent, requireFinal, maxDepth, true);
+      else
+        isNotFixed := true;
+      end if;
+    end if;
+  else
+    isNotFixed := isBindingNotFixed(binding, requireFinal, maxDepth);
+  end if;
+end isComponentBindingNotFixed;
+
 function isExpressionNotFixed
   input Expression exp;
   input Boolean requireFinal = false;
-  input Integer depth = 1;
+  input Integer maxDepth = 4;
   output Boolean isNotFixed;
 algorithm
   isNotFixed := match exp
@@ -3388,7 +3419,7 @@ algorithm
                  (not requireFinal or Component.isFinal(c)) and
                  not Component.isExternalObject(c) and
                  Component.getFixedAttribute(c) then
-            isNotFixed := isBindingNotFixed(Component.getBinding(c), requireFinal, depth + 1);
+            isNotFixed := isComponentBindingNotFixed(c, node, requireFinal, maxDepth - 1);
           else
             isNotFixed := true;
           end if;
@@ -3398,12 +3429,12 @@ algorithm
       then
         isNotFixed or
         Expression.containsShallow(exp,
-          function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
+          function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
 
     case Expression.SIZE()
       algorithm
         if isSome(exp.dimIndex) then
-          isNotFixed := isExpressionNotFixed(Util.getOption(exp.dimIndex), requireFinal, depth);
+          isNotFixed := isExpressionNotFixed(Util.getOption(exp.dimIndex), requireFinal, maxDepth);
         else
           isNotFixed := false;
         end if;
@@ -3416,15 +3447,34 @@ algorithm
           isNotFixed := true;
         else
           isNotFixed := Expression.containsShallow(exp,
-            function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
+            function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
         end if;
       then
         isNotFixed;
 
     else Expression.containsShallow(exp,
-      function isExpressionNotFixed(requireFinal = requireFinal, depth = depth));
+      function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
   end match;
 end isExpressionNotFixed;
+
+function getRecordFieldBinding
+  input Component comp;
+  input InstNode node;
+  output Binding binding;
+protected
+  InstNode parent;
+algorithm
+  binding := Component.getBinding(comp);
+
+  if Binding.isUnbound(binding) then
+    parent := InstNode.parent(node);
+
+    if InstNode.isComponent(parent) and
+       Restriction.isRecord(Class.restriction(InstNode.getClass(parent))) then
+      binding := getRecordFieldBinding(InstNode.component(parent), parent);
+    end if;
+  end if;
+end getRecordFieldBinding;
 
 function markStructuralParamsDim
   input Dimension dimension;

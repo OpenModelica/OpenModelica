@@ -2837,7 +2837,7 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or Inst.isExpressionNotFixed(cond) then
+    if var > Variability.PARAMETER or Inst.isExpressionNotFixed(cond, maxDepth = 100) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the origin so we can check that when
       // typing the body of the branch.
