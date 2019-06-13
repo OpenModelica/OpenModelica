@@ -6320,7 +6320,7 @@ algorithm
   end match;
 end traverseInnerClassElementspec;
 
-public function getComponentTypeSpec
+public function getTypeSpecFromElementItemOpt
 "@auhtor: johti
  Get the typespec path in an ElementItem if it has one"
   input Absyn.ElementItem inElementItem;
@@ -6341,7 +6341,63 @@ algorithm
       end match;
     else then NONE();
   end match;
-end getComponentTypeSpec;
+end getTypeSpecFromElementItemOpt;
+
+
+public function getTypeSpecFromElementItemOpt
+"@auhtor: johti
+ Get the typespec path in an ElementItem if it has one"
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.TypeSpec> outTypeSpec;
+algorithm
+  outTypeSpec := match inElementItem
+    local
+      Absyn.TypeSpec typeSpec;
+      Absyn.ElementSpec specification;
+    case Absyn.ELEMENTITEM(__) then
+      match inElementItem.element
+        case Absyn.ELEMENT(specification = specification) then
+        match specification
+          case Absyn.COMPONENTS(typeSpec = typeSpec) then SOME(typeSpec);
+          else then NONE();
+        end match;
+        else then NONE();
+      end match;
+    else then NONE();
+  end match;
+end getTypeSpecFromElementItemOpt;
+
+public function getElementSpecificationFromElementItemOpt
+  "@auhtor: johti
+     Get a ComponentItem from an ElementItem if it has one"
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.ElementSpec> outSpec;
+algorithm
+  outSpec := match inElementItem
+    local
+      Absyn.ElementSpec specification;
+      Absyn.Element element;
+    case Absyn.ELEMENTITEM(element = element) then
+      match element
+        case Absyn.ELEMENT(specification = specification) then SOME(specification);
+        else NONE();
+      end match;
+    else NONE();
+  end match;
+end getElementSpecificationFromElementItemOpt;
+
+public function getComponentItemsFromElementSpec
+"@auhtor: johti
+ Get the componentItems from a given elemSpec otherwise returns an empty list"
+  input Absyn.ElementSpec elemSpec;
+  output list<Absyn.ComponentItem> componentItems;
+algorithm
+  componentItems := match elemSpec
+    local list<ComponentItem> components;
+    case Absyn.COMPONENTS(components=components) then components;
+    else {};
+  end match;
+end getComponentItemsFromElementSpec;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
