@@ -40,17 +40,18 @@ function translateFilesIfOutputIsEmpty(directory, omc)
 end
 
 function checkSyntax(directory, description)
-  # @testset "Syntax for $description: " begin
-  #   cd(abspath("$directory"))
-  #   for f in filter(x -> endswith(x, "jl"), readdir())
-  #     println("Parsing: $f...")
-  #     fileContents = read(f, String)
-  #     try
-  #       @test_nowarn eval(Meta.parse(fileContents))
-  #     catch
-  #       @test false
-  #     end
-  #   end
-  # end
+  @testset "Syntax for $description: " begin
+    cd(abspath("$directory"))
+    for f in filter(x -> endswith(x, "jl"), readdir())
+      println("Parsing: $f...")
+      fileContents = read(f, String)
+      try
+        @test_nowarn eval(Meta.parse(fileContents))
+      catch
+        @test false
+      end
+    end
+  end
 end
+
 end #= End syntaxCheck.jl=#
