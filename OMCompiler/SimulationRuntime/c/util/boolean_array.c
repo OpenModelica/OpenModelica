@@ -922,3 +922,33 @@ void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int
         boolean_set(dest, i, value);
     }
 }
+
+modelica_boolean min_boolean_array(const boolean_array_t a)
+{
+  size_t nr_of_elements;
+
+  omc_assert_macro(base_array_ok(&a));
+  nr_of_elements = base_array_nr_of_elements(a);
+
+  size_t i;
+  for (i = 0; i < nr_of_elements; ++i) {
+    if (!boolean_get(a, i)) return 0;
+  }
+
+  return 1;
+}
+
+modelica_boolean max_boolean_array(const boolean_array_t a)
+{
+  size_t nr_of_elements;
+
+  omc_assert_macro(base_array_ok(&a));
+  nr_of_elements = base_array_nr_of_elements(a);
+
+  size_t i;
+  for (i = 0; i < nr_of_elements; ++i) {
+    if (boolean_get(a, i)) return 1;
+  }
+
+  return 0;
+}

@@ -709,7 +709,7 @@ protected
     (args, ty, var) := match args
       case {arg1}
         algorithm
-          (arg1, ty1, var1) := Typing.typeExp(arg1, origin, info);
+          (arg1, ty1, var) := Typing.typeExp(arg1, origin, info);
           ty := Type.arrayElementType(ty1);
 
           if not (Type.isArray(ty1) and Type.isBasic(ty)) then
@@ -717,8 +717,14 @@ protected
               {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any[:, ...]"}, info);
           end if;
 
+          // If the argument is an array with a single element we can just
+          // return that element instead of making a min/max call.
+          if Type.isSingleElementArray(ty1) then
+            callExp := Expression.applySubscript(Subscript.first(listHead(Type.arrayDims(ty1))), arg1);
+            return;
+          end if;
         then
-          ({arg1}, ty, var1);
+          ({arg1}, ty, var);
 
       case {arg1, arg2}
         algorithm

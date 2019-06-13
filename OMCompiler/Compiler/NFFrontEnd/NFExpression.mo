@@ -1106,8 +1106,7 @@ public
         case Type.BOOLEAN() guard idx <= 2
           then if idx == 1 then Expression.BOOLEAN(false) else Expression.BOOLEAN(true);
 
-        case Type.ENUMERATION()
-          then Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, idx), idx);
+        case Type.ENUMERATION() then nthEnumLiteral(ty, idx);
       end match;
     else
       subscriptedExp := SUBSCRIPTED_EXP(TYPENAME(ty), {index}, ty);
@@ -1266,7 +1265,7 @@ public
         algorithm
           iidx := iidx + index - 1;
         then
-          ENUM_LITERAL(startExp.ty, Type.nthEnumLiteral(startExp.ty, iidx), iidx);
+          nthEnumLiteral(startExp.ty, iidx);
 
     end match;
   end applyIndexSubscriptRange2;
@@ -5011,6 +5010,14 @@ public
       else ();
     end match;
   end retype;
+
+  function nthEnumLiteral
+    input Type ty;
+    input Integer n;
+    output Expression exp;
+  algorithm
+    exp := Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
+  end nthEnumLiteral;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

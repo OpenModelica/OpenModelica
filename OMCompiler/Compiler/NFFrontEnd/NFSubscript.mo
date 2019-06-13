@@ -852,5 +852,16 @@ public
     outSubs := listReverseInPlace(outSubs);
   end mergeList;
 
+  function first
+    input Dimension dim;
+    output Subscript sub;
+  algorithm
+    sub := match dim
+      case Dimension.INTEGER() then INDEX(Expression.INTEGER(1));
+      case Dimension.BOOLEAN() then INDEX(Expression.BOOLEAN(false));
+      case Dimension.ENUM()    then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
+    end match;
+  end first;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;
