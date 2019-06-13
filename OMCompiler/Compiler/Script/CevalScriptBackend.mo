@@ -96,7 +96,7 @@ import Parser;
 import Print;
 import Refactor;
 import SCodeDump;
-import MMToJulia;
+import AbsynToJulia;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -3094,8 +3094,9 @@ algorithm
 
     case (cache,_,"toJulia",{},_)
       algorithm
-        sp := SymbolTable.getSCode();
-        str := Tpl.tplString(MMToJulia.dumpProgram, sp);
+        Dump.dump(SymbolTable.getAbsyn());
+        print(Print.getString());
+        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
       then (cache,Values.STRING(str));
 
     case (cache,_,"relocateFunctions",_,_)

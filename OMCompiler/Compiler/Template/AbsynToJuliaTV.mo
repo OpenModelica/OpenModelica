@@ -1010,4 +1010,16 @@ package MMToJuliaUtil
   end makeOutputDirection;
 end MMToJuliaUtil;
 
+package AbsynUtil
+function getTypeSpecFromElementItemOpt
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.TypeSpec> outTypeSpec;
+end getTypeSpecFromElementItemOpt;
+function getComponentItemsFromElementItem
+  input Absyn.ElementItem inElementItem;
+  output list<Absyn.ComponentItem> componentItems;
+end getComponentItemsFromElementItem;
+
+end AbsynUtil;
+
 end AbsynToJuliaTV;
