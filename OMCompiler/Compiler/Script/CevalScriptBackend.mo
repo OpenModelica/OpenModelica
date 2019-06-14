@@ -3094,8 +3094,6 @@ algorithm
 
     case (cache,_,"toJulia",{},_)
       algorithm
-        Dump.dump(SymbolTable.getAbsyn());
-        print(Print.getString());
         str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
       then (cache,Values.STRING(str));
 

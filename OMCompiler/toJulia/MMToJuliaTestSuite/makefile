@@ -4,4 +4,4 @@ syntaxTest :
 semanticTest : syntaxTest
 	julia runSemanticCheck.jl ${OMC_EXEC}
 clean :
-	rm ./OutputPrimitives/*.jl ./OutputAlgorithms/*.jl ./OutputEquations/*.jl *~
+	rm ./OutputPrimitives/*.jl* ./OutputAlgorithms/*.jl* ./OutputEquations/*.jl* *~

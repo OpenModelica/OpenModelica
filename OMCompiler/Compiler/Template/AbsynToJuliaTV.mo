@@ -1008,6 +1008,10 @@ package MMToJuliaUtil
   function makeOutputDirection
     output Absyn.Direction direction;
   end makeOutputDirection;
+  function isFunctionContext
+    input Context givenCTX;
+    output Boolean isFuncCTX;
+  end isFunctionContext;
 end MMToJuliaUtil;
 
 package AbsynUtil

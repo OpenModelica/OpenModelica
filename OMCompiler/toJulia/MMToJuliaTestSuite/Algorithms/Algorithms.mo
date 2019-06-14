@@ -1,4 +1,7 @@
 package Algorithms
+/*
+  This files contains a couple of different algorithms; no match or matchcontinue expressions.
+*/
 
 uniontype Complex
   record COMPLEX
@@ -200,17 +203,6 @@ algorithm
     end for;
   end if;
 end FFT;
-
-function fib2
-  input Integer i;
-  output Integer o;
-algorithm
-  o := match i
-	case 0 then 0;
-    case 1 then 1;
-    else then fib2(i - 1) + fib2(i - 2);
-  end match;
-end fib2;
 
 function tak
   input Integer x;

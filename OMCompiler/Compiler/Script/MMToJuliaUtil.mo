@@ -65,6 +65,13 @@ algorithm
   direction := Absyn.OUTPUT();
 end makeOutputDirection;
 
+function isFunctionContext
+  input Context givenCTX;
+  output Boolean isFuncCTX = false;
+algorithm
+  isFuncCTX := match givenCTX case FUNCTION(__) then true; else false; end match;
+end isFunctionContext;
+
 function filterOnDirection "Returns a list<ElementItem>, where the direction is equal to the supplied direction"
   input list<Absyn.ElementItem> inputs;
   input Absyn.Direction direction;
