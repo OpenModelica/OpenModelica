@@ -80,7 +80,6 @@ semla:
 	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/* $(builddir_lib)/omc/SEMLA
-	mv $(builddir_lib)/omc/SEMLA/lve$(EXE) $(builddir_lib)/omc/SEMLA/LVE/lve_$(LVE_EXE_SUFFIX)$(EXE)
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build

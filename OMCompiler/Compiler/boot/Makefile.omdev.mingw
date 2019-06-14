@@ -21,7 +21,7 @@ endif
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 ifeq ($(OMENCRYPTION),yes)
-OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto -lgdi32 -lws2_32
+OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto -lcrypt32 -lgdi32 -lws2_32
 else
 OMENCRYPTIONLIBS=
 endif
