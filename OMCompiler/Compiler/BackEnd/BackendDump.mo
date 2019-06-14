@@ -130,7 +130,7 @@ algorithm
   dumpOption(inSyst.mT, dumpIncidenceMatrixT);
 
   print("\n");
-  dumpFullMatching(inSyst.matching);
+  dumpFullMatching(inSyst.matching,SOME(inSyst));
   print("\n");
 end printEqSystem;
 
@@ -1351,22 +1351,25 @@ end dumpComponentsAdvanced3;
 
 public function dumpComponents
   input BackendDAE.StrongComponents inComps;
+  input Option<BackendDAE.EqSystem> inSyst = NONE();
 algorithm
   print("StrongComponents\n");
   print(UNDERLINE + "\n");
-  List.map_0(inComps,dumpComponent);
+  List.map1(inComps,dumpComponent,inSyst);
 end dumpComponents;
 
 public function dumpComponent
   input BackendDAE.StrongComponent inComp;
+  input Option<BackendDAE.EqSystem> inSyst = NONE();
 
 algorithm
-  print(printComponent(inComp));
+  print(printComponent(inComp,inSyst));
 
 end dumpComponent;
 
 public function printComponent
   input BackendDAE.StrongComponent inComp;
+  input Option<BackendDAE.EqSystem> inSyst = NONE();
   output String oString;
 
 protected
@@ -1376,12 +1379,14 @@ algorithm
   oString := match (inComp)
     local
       Integer i,v;
-      list<Integer> ilst,vlst,ilst2,vlst2;
+      list<Integer> ilst,vlst,ilst2,vlst2,innerEqLst;
+      list<list<Integer>> innerVarLst;
       list<String> ls;
       String s,s2,s3,s4;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
       BackendDAE.InnerEquations innerEquations,innerEquations2;
+      BackendDAE.EqSystem eSys;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
@@ -1436,6 +1441,17 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
+        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
+          SOME(eSys) = inSyst;
+          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+          tmpStr = tmpStr
+                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
+                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
+                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+        else
+          tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+        end if;
       then tmpStr;
     case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,innerEquations=innerEquations2)),linear=b)
       equation
@@ -1447,6 +1463,18 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
+        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
+          SOME(eSys) = inSyst;
+          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+          tmpStr = tmpStr
+                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
+                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
+                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+        else
+          tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+        end if;
+
         ls = List.map(innerEquations2, innerEquationString);
         s = stringDelimitList(ls, ", ");
         ls = List.map(ilst2, intString);
@@ -1455,6 +1483,17 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr2 = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
+        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
+          SOME(eSys) = inSyst;
+          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
+          tmpStr2 = tmpStr2
+                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
+                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
+                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+        else
+          tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
+        end if;
       then tmpStr + tmpStr2;
   end match;
 end printComponent;
@@ -3052,6 +3091,7 @@ end dumpSolvability;
 
 public function dumpFullMatching
   input BackendDAE.Matching inMatch;
+  input Option<BackendDAE.EqSystem> inSyst = NONE();
 algorithm
   _:= match(inMatch)
     local
@@ -3065,7 +3105,7 @@ algorithm
     case (BackendDAE.MATCHING(ass1, _, comps)) equation
       dumpMatching(ass1);
       print("\n\n");
-      dumpComponents(comps);
+      dumpComponents(comps,inSyst);
     then ();
   end match;
 end dumpFullMatching;
@@ -3167,6 +3207,16 @@ algorithm
   s3 := intString(e);
   outS := stringAppendList({inS,s3,": ",s2,";\n"});
 end dumpMarkedEqns1;
+
+public function dumpMarkedVarsLsts
+  input BackendDAE.EqSystem syst;
+  input list<list<Integer>> inIntegerLstLst;
+  output String outString = "";
+algorithm
+  for inIntegerLst in inIntegerLstLst loop
+    outString := outString + dumpMarkedVars(syst,inIntegerLst) + ",";
+  end for;
+end dumpMarkedVarsLsts;
 
 public function dumpMarkedVars
 "Dumps only the variable names given as list of indexes to a string."
