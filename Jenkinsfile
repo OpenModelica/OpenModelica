@@ -102,7 +102,7 @@ pipeline {
         stage('Win/MinGW') {
           agent {
             node {
-              label 'windows.openmodelica.org'
+              label 'windows'
             }
           }
           when {
