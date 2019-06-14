@@ -267,6 +267,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   {
     long step;
     char buffer[4096];
+    double lambda;
 
     infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
 
@@ -288,7 +289,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
+      lambda = data->simulationInfo->lambda;
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", lambda);
 
       if(data->simulationInfo->lambda > 1.0) {
         data->simulationInfo->lambda = 1.0;
@@ -299,7 +301,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       else
         data->callback->functionInitialEquations(data, threadData);
 
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 
 #if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT))

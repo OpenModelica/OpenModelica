@@ -23,6 +23,5 @@ simulate(Engine1a_output); getErrorString();
 // "Notification: No output variables in this system (2/4)
 // Notification: No output variables in this system (3/4)
 // Notification: No output variables in this system (4/4)
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // endResult

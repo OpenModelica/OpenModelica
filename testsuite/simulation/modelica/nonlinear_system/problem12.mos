@@ -27,8 +27,7 @@ val(z,{0.0, 0.5, 1.0});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // {0.1413741945152485,0.2812491225132911,1.0}
 // {1.000399466692872,1.006256979103416,2.0}
 // {1.940439478068367,3.537907544719854,243.0}
@@ -40,8 +39,7 @@ val(z,{0.0, 0.5, 1.0});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // {0.1413741945152485,0.2812491225132911,1.0}
 // {1.000399466692872,1.006256979103416,2.0}
 // {1.940439478068367,3.537907544719854,243.0}
