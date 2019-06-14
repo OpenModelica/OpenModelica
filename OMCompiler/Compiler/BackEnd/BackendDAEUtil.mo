@@ -5163,6 +5163,24 @@ algorithm
   end match;
 end getEqnAndVarsFromInnerEquation;
 
+public function getEqnAndVarsFromInnerEquationLst
+  input BackendDAE.InnerEquations innerEquations;
+  output tuple<list<Integer>,list<list<Integer>>,list<BackendDAE.Constraints>> eqnVarConstTpl;
+protected
+  Integer eqn;
+  list<Integer> eqns = {}, vars;
+  list<list<Integer>> allVars = {};
+  BackendDAE.Constraints constraints;
+  list<BackendDAE.Constraints> allConstraints = {};
+algorithm
+  for innerEq in innerEquations loop
+    (eqn,vars,constraints) := getEqnAndVarsFromInnerEquation(innerEq);
+    eqns := eqn::eqns;
+    allVars := vars::allVars;
+    allConstraints := constraints::allConstraints;
+  end for;
+  eqnVarConstTpl := (eqns,allVars,allConstraints);
+end getEqnAndVarsFromInnerEquationLst;
 
 protected function transformSolvabilityForCasualTearingSet
   input BackendDAE.Solvability inSolvab;

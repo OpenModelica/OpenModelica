@@ -1307,6 +1307,7 @@ buildModel(testOptdaedump); getErrorString();
 // {1:7}
 // {{{6:4}, {7:9}, {8:5}}
 // ,{2:8}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {5:2}
 // {3:6}
 //
@@ -1408,6 +1409,7 @@ buildModel(testOptdaedump); getErrorString();
 // {1:7}
 // {{{6:4}, {7:9}, {8:5}}
 // ,{2:8}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {5:2}
 // {3:6}
 //
@@ -2126,6 +2128,7 @@ buildModel(testOptdaedump); getErrorString();
 // {1:7}
 // {{{6:4}, {7:9}, {8:5}}
 // ,{2:8}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {5:2}
 // {3:6}
 //
@@ -2227,6 +2230,7 @@ buildModel(testOptdaedump); getErrorString();
 // {1:7}
 // {{{6:4}, {7:9}, {8:5}}
 // ,{2:8}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {5:2}
 // {3:6}
 //
@@ -2328,6 +2332,7 @@ buildModel(testOptdaedump); getErrorString();
 // {1:7}
 // {{{6:4}, {7:9}, {8:5}}
 // ,{2:8}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {5:2}
 // {3:6}
 //
@@ -3071,6 +3076,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -3156,6 +3162,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -3858,6 +3865,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -3943,6 +3951,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4028,6 +4037,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4113,6 +4123,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4198,6 +4209,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4283,6 +4295,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4368,6 +4381,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
@@ -4453,6 +4467,7 @@ buildModel(testOptdaedump); getErrorString();
 // {2:6}
 // {{{5:3}, {6:8}, {3:4}}
 // ,{4:7}} Size: 1 linear
+// For more information please use "-d=tearingdump".
 // {7:2}
 // {1:9}
 // {8:1}
