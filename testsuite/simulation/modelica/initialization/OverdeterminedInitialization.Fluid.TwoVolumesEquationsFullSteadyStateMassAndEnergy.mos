@@ -15,15 +15,18 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyState
 // ""
 // true
 // ""
+//
+// Nonlinear iteration variables with default zero start attribute in NLSJac0. (5)
+// ========================================
+// 1: $DER.T1:VARIABLE(stateSelect=StateSelect.prefer ) type: Real
+// 2: $DER.p1:VARIABLE(stateSelect=StateSelect.prefer ) type: Real
+// 3: $DER.T2:VARIABLE(stateSelect=StateSelect.prefer ) type: Real
+// 4: p1:VARIABLE(stateSelect=StateSelect.prefer ) type: Real
+// 5: T2:VARIABLE(stateSelect=StateSelect.prefer ) type: Real
+//
 // {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullSteadyStateMassAndEnergy_init.xml"}
 // "Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
 //          $DER.M2 = 0.0.
-// Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
-//          T2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
-//          $DER.T1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
-//          $DER.p1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
-//          $DER.T2:VARIABLE(stateSelect=StateSelect.prefer )  type: Real 
-//          p1:VARIABLE(stateSelect=StateSelect.prefer )  type: Real
 // "
 // endResult

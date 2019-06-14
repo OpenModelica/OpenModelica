@@ -625,7 +625,7 @@ algorithm
   cr_lst := BaseHashTable.hashTableKeyList(ht);
 end getCrefsFromEquations;
 
-protected function findUnknownCrefs
+public function findUnknownCrefs
   input output BackendDAE.Equation inEq;
   input output tuple<BackendDAE.Variables, BackendDAE.Variables, HashTable.HashTable> extraArgs;
 algorithm

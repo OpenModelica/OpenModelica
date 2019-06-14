@@ -43,8 +43,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // {{0.0,0.0},{3.0,3.0},{-3.0,-3.0}}
 // ""
 // true
@@ -56,8 +55,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // {{0.0,0.0},{3.0,3.0},{-3.0,-3.0}}
 // ""
 // endResult

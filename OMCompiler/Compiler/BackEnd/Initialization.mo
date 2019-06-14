@@ -292,10 +292,10 @@ algorithm
     end if;
 
     // warn about iteration variables with default zero start attribute
-    b := warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
-    if b and (not Flags.isSet(Flags.INITIALIZATION)) then
-      Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {msg});
-    end if;
+    // b := warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
+    //if b and (not Flags.isSet(Flags.INITIALIZATION)) then
+    //  Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {msg});
+    //end if;
 
     if Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
       BackendDump.dumpEqnsSolved(initdae, "initial system: eqns in order");

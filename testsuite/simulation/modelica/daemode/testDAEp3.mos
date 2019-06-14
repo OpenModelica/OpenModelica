@@ -28,10 +28,9 @@ val(y,1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // 0.9
-// 0.512240001019491
-// 1.201683485715925
-// 1.025938907621438
+// 0.5122399993895521
+// 1.20168279943422
+// 1.02593778816815
 // endResult
