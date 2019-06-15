@@ -170,7 +170,6 @@ void buildOMC(CC, CXX, extraFlags) {
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc omc-diff omlibrary-core
-     echo set +e
      echo cd \${MSYS_WORKSPACE}
      echo sed -i.bak 's/mingw32-make/..\\..\\usr\\bin\\make/g' build/share/omc/scripts/Compile.bat
      echo cd \${MSYS_WORKSPACE}
