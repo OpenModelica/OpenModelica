@@ -57,7 +57,7 @@ end
 
 function executeTestSteps(homeDirectory, sourceDirectory, outputDirectory, omc)
   outDir = createDirectoryReportErrorOnFailure(abspath(outputDirectory))
-  translateFilesIfOutputIsEmpty(sourceDirectory, outDir, omc)
+  translateFilesIfOutputIsEmpty(sourceDirectory, outDir, omc, homeDirectory)
   checkSyntax(outDir, sourceDirectory)
   cd(homeDirectory)
 end
@@ -80,7 +80,7 @@ function createDirectoryReportErrorOnFailure(dirToCreate)
   return directory
 end
 
-function translateFilesIfOutputIsEmpty(directoryWithModelicaFiles, directory, omc)
+function translateFilesIfOutputIsEmpty(directoryWithModelicaFiles, directory, omc, homeDirectory)
   cd(directoryWithModelicaFiles)
   primitiveTestSet = 3
   if size(readdir(directory), 1) < primitiveTestSet
@@ -89,7 +89,7 @@ function translateFilesIfOutputIsEmpty(directoryWithModelicaFiles, directory, om
       @test metaModelicaToJulia(filesToConvert, omc, directory) != nothing
     end
   end
-  cd("..")
+  cd(homeDirectory)
 end
 
 function checkSyntax(directory, description)
