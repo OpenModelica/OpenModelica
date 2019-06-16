@@ -39,6 +39,12 @@ package builtin
     replaceable type T subtypeof Any;
   end listHead;
 
+  function listEmpty
+    input list<T> lst;
+    output Boolean b;
+    replaceable type T subtypeof Any;
+  end listEmpty;
+
   function listReverse
     input list<T> inLst;
     output list<T> outLst;
@@ -73,6 +79,13 @@ package builtin
     end SOURCEINFO;
   end SourceInfo;
 end builtin;
+
+package Static
+  function fromEquationsToAlgAssignments
+    input Absyn.ClassPart cp;
+    output list<Absyn.AlgorithmItem> algsOut;
+  end fromEquationsToAlgAssignments;
+end Static;
 
 package Absyn
   type Ident = String;
@@ -1012,6 +1025,14 @@ package MMToJuliaUtil
     input Context givenCTX;
     output Boolean isFuncCTX;
   end isFunctionContext;
+  function explicitReturnInClassPart
+    input list<Absyn.ClassPart> classParts;
+    output Boolean existsImplicitReturn;
+  end explicitReturnInClassPart;
+  function algorithmItemsContainsReturn
+    input list<Absyn.AlgorithmItem> contents;
+    output Boolean existsReturn;
+  end algorithmItemsContainsReturn;
 end MMToJuliaUtil;
 
 package AbsynUtil

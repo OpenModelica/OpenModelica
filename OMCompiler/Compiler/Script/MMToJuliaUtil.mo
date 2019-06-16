@@ -84,5 +84,38 @@ algorithm
   end for;
 end filterOnDirection;
 
+function explicitReturnInClassPart
+  "@author:johti17
+   Only works for Algorithms!"
+  input list<Absyn.ClassPart> classParts;
+  output Boolean existsImplicitReturn;
+algorithm
+  for cp in classParts loop
+    existsImplicitReturn := match cp
+      local list<Absyn.AlgorithmItem> contents;
+      case Absyn.ALGORITHMS(contents = contents) then algorithmItemsContainsReturn(contents);
+      else false;
+    end match;
+  end for;
+end explicitReturnInClassPart;
+
+function algorithmItemsContainsReturn
+"@author: johti17"
+  input list<Absyn.AlgorithmItem> contents;
+  output Boolean existsReturn;
+algorithm
+  for item in contents loop
+    existsReturn := match item
+      local Absyn.Algorithm alg;
+      case Absyn.ALGORITHMITEM(algorithm_ = alg) then
+        match alg
+          case Absyn.ALG_RETURN(__) then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end for;
+end algorithmItemsContainsReturn;
+
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

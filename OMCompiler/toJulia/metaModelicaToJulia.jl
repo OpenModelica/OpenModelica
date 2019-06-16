@@ -26,4 +26,5 @@ function metaModelicaToJulia(files, omc, outputdir)
     base = Base.Filesystem.basename(file)
     write(all, "include(\"$(base[1:end-3]).jl\")\n")
   end
+  return something
 end
