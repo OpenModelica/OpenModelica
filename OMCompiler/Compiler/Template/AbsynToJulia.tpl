@@ -80,17 +80,17 @@ template dumpClassHeader(ClassDef classDef, String name, Absyn.Restriction restr
 ::=
 match classDef
   case CLASS_EXTENDS(__) then AbsynDumpTpl.errorMsg("Extend restrection not supported")
-  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restriction, typeVars)%><%dumpRestrictionSuperType(restriction)%> <%cmt%>'
+  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restriction, typeVars)%><%dumpRestrictionSuperType(restriction)%>'
   else '<%name%>'
 end dumpClassHeader;
 
-template dumpRestrictionSuperType(Absyn.Restriction r, list<String> typeVars)
+template dumpRestrictionSuperType(Absyn.Restriction r)
 ::=
 match r
   case R_METARECORD(__) then '<: <%dumpPathJL(name)%>'
 end dumpRestrictionSuperType;
 
-template dumpRestrictionTypeVars(Absyn.Restriction restriction)
+template dumpRestrictionTypeVars(Absyn.Restriction restriction, list<String> typeVars)
 ::=
 match restriction
   case R_UNIONTYPE(__) then
