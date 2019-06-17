@@ -49,7 +49,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(5,72.0%) 33}
+//  * Linear torn systems: 1 {(2,100.0%) 36}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 4
