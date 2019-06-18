@@ -87,7 +87,7 @@ algorithm
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, constVariability) for a in var.typeAttributes);
+  var.typeAttributes := list(evaluateTypeAttribute(a, Variability.STRUCTURAL_PARAMETER) for a in var.typeAttributes);
 end evaluateVariable;
 
 function evaluateBinding
