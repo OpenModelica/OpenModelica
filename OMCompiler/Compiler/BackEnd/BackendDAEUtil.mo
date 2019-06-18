@@ -7061,10 +7061,6 @@ algorithm
     BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
   end if;
 
-  if Flags.isSet(Flags.BLT_DUMP) then
-    BackendDump.bltdump("bltdump", dae);
-  end if;
-
   if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
     // prepare the equations
     dae := BackendDAEOptimize.evaluateOutputsOnly(dae);

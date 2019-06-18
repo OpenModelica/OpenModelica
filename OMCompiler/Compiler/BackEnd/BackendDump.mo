@@ -746,7 +746,7 @@ algorithm
   end if;
 end dumpExternalObjectClasses;
 
-protected function dumpStateSets
+public function dumpStateSets
   input BackendDAE.StateSets stateSets;
   input String heading;
 algorithm
@@ -4633,7 +4633,7 @@ algorithm
           print(")\n");
           print("=============\n");
           print(str);
-          print("\n");
+          print("\n\n");
         end if;
       then
         ();
@@ -4644,7 +4644,7 @@ protected function printStateOrderStr "help function to dumpStateOrder"
   input tuple<DAE.ComponentRef,DAE.ComponentRef> tpl;
   output String str;
 algorithm
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " ---d/dt---> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
 end printStateOrderStr;
 
 public function dumpBackendDAEModeData

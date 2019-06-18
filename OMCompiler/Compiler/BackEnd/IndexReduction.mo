@@ -129,9 +129,6 @@ algorithm
     size := BackendDAEUtil.systemSize(inSystem);
     ErrorExt.delCheckpoint("Pantelides");
     ErrorExt.setCheckpoint("Pantelides");
-    if Flags.isSet(Flags.BLT_DUMP) then
-      print("Reduce Index\n");
-    end if;
     markarr := arrayCreate(size, -1);
     (osyst, oshared, oass1, oass2, outArg, _) := pantelidesIndexReduction1(unassignedStates, unassignedEqns, inEqns, eqns_1, inActualEqn, inSystem, inShared, inAssignments1, inAssignments2, 1, markarr, inArg, {});
     ErrorExt.rollBack("Pantelides");
@@ -291,8 +288,10 @@ algorithm
         // do not differentiate self generated equations $_DER.x = der(x)
         MSSSeqs1 = List.select1(MSSSeqs1,intLe,noofeqns);
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("Differentiate equations in MSSS("+stringDelimitList(List.map(MSSSeqs,intString),",")+"):");
+          print("##############--MSSS--##############\n"
+                + "Indices of constraint equations: ");
           BackendDump.debuglst(MSSSeqs1,intString," ","\n");
+          print("\n");
         end if;
 
         //try to differentiate all equations from the MSSS, eqnstpl is empty if thats not possible
@@ -636,6 +635,7 @@ algorithm
     if Flags.isSet(Flags.BLT_DUMP) then
       print("Update Incidence Matrix: ");
       BackendDump.debuglst(eqnslst1,intString," ","\n");
+      print("\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     (syst,omapEqnIncRow,omapIncRowEqn) :=
@@ -788,8 +788,7 @@ algorithm
       // change the variable types (algebraic -> state, 1.der -> 2.der, ...)
       (eqDiff, (_, (outVars, outEqns, outChangedVars, _, _, _))) := BackendEquation.traverseExpsOfEquation(eqDiff, Expression.traverseSubexpressionsHelper, (changeDerVariablesToStatesFinder, (outVars, outEqns, outChangedVars, eqIdx, imapIncRowEqn, mt)));
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("replaced differentiated eqs:");
-          debugdifferentiateEqns((eqOrig, eqDiff));
+          debugdifferentiateEqns((eqOrig, eqDiff, eqIdx));
         end if;
       outEqns := BackendEquation.setAtIndex(outEqns, eqIdx, eqDiff);
       //collect original equations
@@ -1336,8 +1335,7 @@ algorithm
     // do late Inline also in orgeqnslst
     orgEqnsLst := inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}));
     if Flags.isSet(Flags.BLT_DUMP) then
-      print("Dynamic State Selection\n");
-      BackendDump.dumpEqSystem(inSystem, "Index Reduced System");
+      print("########################### STATE SELECTION ###########################\n");
     end if;
     // geth the number of states without stateSelect.always (free states), if the number of differentiated equations is equal to the number of free states no selection is necessary
     numFreeStates := BackendVariable.traverseBackendDAEVars(vars,countStateCandidates,0);
@@ -1346,9 +1344,6 @@ algorithm
 
     // select dummy states
     (osyst,oshared,oHt,oSetIndex) := selectStates(numFreeStates,numOrgEqs,inSystem,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iHt,iSetIndex);
-    if Flags.isSet(Flags.BLT_DUMP) then
-      BackendDump.dumpEqSystem(osyst, "Final System with DummyStates");
-    end if;
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.dynamicStateSelectionWork failed!"});
     fail();
@@ -1648,6 +1643,9 @@ algorithm
     oStateSets := BackendDAE.STATESET(oSetIndex,rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ,BackendDAE.EMPTY_JACOBIAN())::oStateSets;
     oSetIndex := oSetIndex + 1;
   end for;
+  if Flags.isSet(Flags.BLT_DUMP) then
+    BackendDump.dumpStateSets(oStateSets,"Generated StateSets:");
+  end if;
 end generateStateSets;
 
 public function makeStartExp
@@ -1729,6 +1727,9 @@ algorithm
         BackendDAEEXT.matching(nv, ne, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
         syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
+        if Flags.isSet(Flags.BLT_DUMP) then
+          BackendDump.dumpEquationList(eqnslst, "No state selection needed for following equations:");
+        end if;
       then
         (syst,inShared,ht,iSetIndex);
     // select states
@@ -2009,9 +2010,6 @@ algorithm
       guard intGt(nfreeStates,1) and not intGt(neqns,nfreeStates)
       equation
         // try to select dummy vars
-        if Flags.isSet(Flags.BLT_DUMP) then
-          print("try to select dummy vars with natural matching(newer)\n");
-        end if;
         //  print("nVars " + intString(nfreeStates) + " nEqns " + intString(neqns) + "\n");
         // sort vars with heuristic
         hovvars = BackendVariable.listVar1(statecandidates);
@@ -2023,9 +2021,12 @@ algorithm
         //  BackendDump.printEqSystem(syst);
         hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(inSystem),SOME(mT1));
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("highest Order Derivatives:\n");
-          BackendDump.printVariables(hovvars);
-          BackendDump.printEquationList(eqnslst);
+          print("########## Try static state selection ##########\n"
+                + "Try to select dummy vars with natural matching (newer)\n"
+                + "Select " + intString(listLength(eqnslst)) + " dummy states from "
+                + intString(BackendVariable.varsSize(hovvars)) + " candidates.\n");
+          BackendDump.dumpVariables(hovvars,"Highest order derivatives (state candidates):");
+          BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
         // generate incidence matrix from system and equations of that level and the states of that level
         nv = BackendVariable.varsSize(vars);
@@ -2047,7 +2048,7 @@ algorithm
         // add level equations
         funcs = BackendDAEUtil.getFunctions(inShared);
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
-        // match the variables not the equations, to have prevered states unmatched
+        // match the variables not the equations, to have preferred states unmatched
         vec1 = Array.expand(nfreeStates,ass1,-1);
         vec2 = Array.expand(neqns,ass2,-1);
         true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
@@ -2078,6 +2079,7 @@ algorithm
         (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
+          print("\n");
           BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
         end if;
         // get indicenceMatrix from Enhanced
@@ -2085,14 +2087,16 @@ algorithm
         nv = BackendVariable.varsSize(vars);
         ne = BackendEquation.equationArraySize(eqns);
         mT = AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
-        // match the variables not the equations, to have prevered states unmatched
+        // match the variables not the equations, to have preferred states unmatched
         Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
         BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
         vec1 = arrayCreate(nv,-1);
         vec2 = arrayCreate(ne,-1);
         BackendDAEEXT.getAssignment(vec1,vec2);
         if Flags.isSet(Flags.BLT_DUMP) then
+          print("\n");
           BackendDump.dumpMatching(vec1);
+          print("\n");
           BackendDump.dumpMatching(vec2);
         end if;
         // get the matched state candidates -> dummyVars
@@ -2100,15 +2104,19 @@ algorithm
         dummyVars = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         dummyVars = List.select(dummyVars, BackendVariable.isStateVar);
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("select as Dummy States:\n");
-          BackendDump.printVarList(dummyVars);
+          BackendDump.dumpVarList(dummyVars, "Selected dummy states:");
         end if;
         // get assigned and unassigned equations
         unassigned = Matching.getUnassigned(ne, vec2, {});
         _ = Matching.getAssigned(ne, vec2, {});
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("Unassigned Eqns:\n");
-          BackendDump.debuglst(unassigned,intString," ","\n");
+          if listEmpty(unassigned) then
+            print("Perfect Matching, no dynamic index reduction needed! There are no unassigned equations.\n\n");
+          else
+            print("No perfect matching possible, dynamic index reduction needed.\n");
+            BackendDump.dumpEquationList(BackendEquation.getEquationArraySubsetLst(eqns,unassigned),"Unassigned equations:");
+            print("\n");
+          end if;
         end if;
         // splitt it into sets
         syst = BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
@@ -2129,9 +2137,13 @@ algorithm
       guard intGt(neqns,nfreeStates)
       equation
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("highest Order Derivatives:\n");
-          BackendDump.printVarList(statecandidates);
-          BackendDump.printEquationList(eqnslst);
+          hovvars = BackendVariable.listVar1(statecandidates);
+          print("########## Try static state selection ##########\n"
+                + "Try to select dummy vars with natural matching (newer)\n"
+                + "Select " + intString(listLength(eqnslst)) + " dummy states from "
+                + intString(BackendVariable.varsSize(hovvars)) + " andidates.\n");
+          BackendDump.dumpVariables(hovvars,"Highest order derivatives (state candidates):");
+          BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
         // no chance, to much equations
         msg = "It is not possible to select continues time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
@@ -4027,12 +4039,15 @@ algorithm
 end increaseDifferentiation;
 
 protected function debugdifferentiateEqns
-  input tuple<BackendDAE.Equation,BackendDAE.Equation> inTpl;
+  input tuple<BackendDAE.Equation,BackendDAE.Equation,Integer> inTpl;
 protected
   BackendDAE.Equation a,b;
+  Integer idx;
 algorithm
-  (a,b) := inTpl;
-  print("High index problem, differentiated equation:\n" + BackendDump.equationString(a) + "\nto\n" + BackendDump.equationString(b) + "\n");
+  (a,b,idx) := inTpl;
+  print("------------------" + intString(idx) + "------------------\n"
+        + "Constraint equation to be differentiated:\n" + BackendDump.equationString(a) + "\n"
+        + "Differentiated equation:\n" + BackendDump.equationString(b) + "\n\n");
 end debugdifferentiateEqns;
 
 protected function getSetVars
