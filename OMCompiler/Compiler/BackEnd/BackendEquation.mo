@@ -1997,6 +1997,17 @@ algorithm
   end match;
 end generateEquation;
 
+public function getEquationArraySubsetLst
+  "Returns a subset of an equation array as lst, specified by a list of indices."
+  input BackendDAE.EquationArray eqnArr;
+  input list<Integer> iLst;
+  output list<BackendDAE.Equation> subset = {};
+algorithm
+  for i in iLst loop
+    subset := ExpandableArray.get(i,eqnArr)::subset;
+  end for;
+end getEquationArraySubsetLst;
+
 public function getEquationAttributes
   input BackendDAE.Equation inEqn;
   output BackendDAE.EquationAttributes outAttr;

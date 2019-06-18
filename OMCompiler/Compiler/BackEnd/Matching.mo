@@ -5604,7 +5604,10 @@ algorithm
         (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
         (m1,m1t) = removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
-        if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0 then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0
+        then print("Index Reduction neccessary!\n"
+                   + "MSS subsets:\n " + stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n\n");
+        end if;
 
         //Debug information
           //if listLength(List.flatten(meqns1)) >= 5 then meqs_short = List.firstN(List.flatten(meqns1),5); else meqs_short = List.flatten(meqns1); end if;
@@ -5839,7 +5842,7 @@ algorithm
 end getMarked;
 
 public function getUnassigned "author: Frenkel TUD 2012-05
-  return all Indixes with ass[indx]<1, traverses the
+  return all Indices with ass[indx]<1, traverses the
   array from the ne element to the first."
   input Integer ne;
   input array<Integer> ass;
