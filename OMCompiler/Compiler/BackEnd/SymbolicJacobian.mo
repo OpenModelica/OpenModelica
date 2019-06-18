@@ -2668,11 +2668,21 @@ algorithm
             casualTearingSet.jac = jacobianCausal;
             optCasualTearingSet = SOME(casualTearingSet);
           end if;
-
       then (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), shared);
 
-      // do not touch linear and constant systems for now
+      // do not touch constant systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
+
+      // Convert linear system to a torn system with symbolica jacobian, when flag is enabled
+      case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR(), eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
+        guard(Flags.isSet(Flags.LS_ANALYTIC_JACOBIAN))
+        equation
+          strictTearingset = BackendDAE.TEARINGSET(iterationvarsInts, residualequations, {}, BackendDAE.EMPTY_JACOBIAN());
+          (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, true);
+          strictTearingset.jac = jacobian;
+      then (BackendDAE.TORNSYSTEM(strictTearingset, NONE(), true, mixedSystem), shared);
+
+      // Do not touch linear system
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR()), _, _, _) then (comp, inShared);
 
       case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)

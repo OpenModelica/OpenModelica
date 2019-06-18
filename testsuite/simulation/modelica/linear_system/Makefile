@@ -10,6 +10,7 @@ NPendulum40.mos \
 problem1.mos \
 problem2.mos \
 problem3.mos \
+analyticJacProblem3.mos \
 constantStates.mos \
 Ticket2404.mos \
 Ticket3926.mos \
