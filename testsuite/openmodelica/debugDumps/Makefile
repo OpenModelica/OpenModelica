@@ -8,6 +8,7 @@ paramdlowdump.mos \
 symjacdump.mos \
 tearingdump.mos \
 libraryCoverageFlags.mos \
+dumpSparsePatternLin.mos \
 
 
 FAILINGTESTFILES = \

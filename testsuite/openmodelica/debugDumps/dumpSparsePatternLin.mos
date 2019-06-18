@@ -1,0 +1,83 @@
+// name: dumpSparsePatternLin.mos
+// keywords: omc debug dump
+// status: correct
+// 
+// omc debug dump: +d=dumpSparsePattern
+// Dump sparse pattern for a linear problem
+
+loadString("
+  model problem3
+    Real x[2], b[2] = {59.17, 46.78};
+    Real A[2,2] = [[0.003,59.14+time];[5.291, -6.130]];
+  equation
+    A * x = b;
+  end problem3;
+"); getErrorString();
+
+setCommandLineOptions("--maxSizeLinearTearing=0 +d=LSanalyticJacobian,dumpSparsePattern"); getErrorString();
+buildModel(problem3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//  --- SparsityPattern ---
+// ========================================
+// Number of non zero elements: 4
+// independents [or inputs] (2)
+// {x[1], x[2]}
+// dependents [or outputs] (2)
+// {$res1, $res2}
+// x[1] affects the following (2) outputs
+//   {$res2, $res1}
+// x[2] affects the following (2) outputs
+//   {$res2, $res1}
+//
+// transposed pattern
+// $res1 affects the following (2) outputs
+//   {x[1], x[2]}
+// $res2 affects the following (2) outputs
+//   {x[1], x[2]}
+//
+//  --- Sparsity Coloring ---
+// ========================================
+// Number of colors: 2
+// The following (1) independents belong to one color
+// 0: {x[1]}
+// The following (1) independents belong to one color
+// 1: {x[2]}
+//
+//  --- SparsityPattern ---
+// ========================================
+// Number of non zero elements: 4
+// independents [or inputs] (2)
+// {x[1], x[2]}
+// dependents [or outputs] (2)
+// {$res1, $res2}
+// x[1] affects the following (2) outputs
+//   {$res2, $res1}
+// x[2] affects the following (2) outputs
+//   {$res2, $res1}
+//
+// transposed pattern
+// $res1 affects the following (2) outputs
+//   {x[1], x[2]}
+// $res2 affects the following (2) outputs
+//   {x[1], x[2]}
+//
+//  --- Sparsity Coloring ---
+// ========================================
+// Number of colors: 2
+// The following (1) independents belong to one color
+// 0: {x[1]}
+// The following (1) independents belong to one color
+// 1: {x[2]}
+// {"problem3","problem3_init.xml"}
+// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
+// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
+// "
+// endResult
