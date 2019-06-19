@@ -15,7 +15,7 @@ model foo
      a[1] := 1;
      a[2] := 1;
      y := sum(a)*x;
-    annotation(Inline=true); 
+    annotation(Inline=true);
   end f;
 
   Real y(start=0,fixed=true);
@@ -65,8 +65,7 @@ val(y,{0,0.5,1.0});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
+// ""
 // {0.0,0.5,1.0}
 // {0.0,0.5,1.0}
 // endResult

@@ -49,11 +49,10 @@ val(v,0.5);
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// -3.805609927078452
+// ""
+// -1.085543757874853
 // 1.151917842006256
 // 1.284025416687741
 // 2.849653908226362
-// 0.6278866210164383
+// -4.812245717390759
 // endResult

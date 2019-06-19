@@ -43,55 +43,7 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: c:VARIABLE()  type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): c = b + a   [binding |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: x:STATE(1)()  type: Real 
-//
-//
-// Equations (1, 1)
-// ========================================
-// 1/1 (1): der(x) = a   [dynamic |0|0|0|0|]
-//
-//
-// Matching
-// ========================================
-// 1 variables and equations
-// var 1 is solved in eqn 1
-//
-//
-// StrongComponents
-// ========================================
-// {1:1}
-//
-//
-// unspecified partition
-// ========================================
-//
-// Variables (1)
-// ========================================
-// 1: y:STATE(1)()  type: Real 
+// 1: y:STATE(1)()  type: Real
 //
 //
 // Equations (1, 1)
@@ -108,6 +60,34 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 // StrongComponents
 // ========================================
 // {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: x:STATE(1)()  type: Real 
+// 2: c:VARIABLE()  type: Real
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): der(x) = a   [dynamic |0|0|0|0|]
+// 2/2 (1): c = b + der(x)   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+// {2:2}
 //
 //
 //

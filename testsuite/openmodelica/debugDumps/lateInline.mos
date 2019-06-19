@@ -145,46 +145,6 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// pre-optimization module removeEqualFunctionCalls (simulation)
-// ########################################
-//
-//
-// unknown partition
-// ========================================
-//
-// Variables (2)
-// ========================================
-// 1: y:VARIABLE()  type: Real 
-// 2: x:VARIABLE()  type: Real 
-//
-//
-// Equations (2, 2)
-// ========================================
-// 1/1 (1): x = testOptdaedump.f(time)   [binding |0|0|0|0|]
-// 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
-//
-//
-// Incidence Matrix (row: equation)
-// ========================================
-// number of rows: 2
-// 1: 2
-// 2: 2 1
-//
-// Transposed Incidence Matrix (row: variable)
-// ========================================
-// number of rows: 2
-// 1: 2
-// 2: 2 1
-//
-// no matching
-//
-//
-//
-// BackendDAEType: simulation
-//
-//
-//
-// ########################################
 // pre-optimization module clockPartitioning (simulation)
 // ########################################
 //
