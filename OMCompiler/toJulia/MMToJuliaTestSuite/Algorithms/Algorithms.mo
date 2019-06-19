@@ -72,8 +72,6 @@ algorithm
   complexNumbers := arrayList(A);
 end createTestArray2;
 
-
-
 function pivot1
   input Real b[:,:];
   input Integer p;
@@ -227,30 +225,6 @@ algorithm
 	no := ackerman(m-1, ackerman(m,n-1));
   end if;
 end ackerman;
-
-function swap
-  input Real a;
-  input Real b;
-  output Real ao;
-  output Real bo;
-algorithm
-  ao := b;
-  bo := a;
-end swap;
-
-function inSort
-  input array<Real> arr;
-protected
-  Integer i = 1;
-algorithm
-  while i < arrayLength(arr) loop
-    while j > 0 and arrayGet(arr,j-1) > arrayGet(arr,j) loop
-      (i,j) := swap(arrayGet(arr,j),arrayGet(arr,j-1));
-      j := j - 1;
-    end while;
-    i := i + 1;
-  end while;
-end inSort;
 
 function realSummation
   output Real result;
