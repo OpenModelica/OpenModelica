@@ -4163,32 +4163,29 @@ protected function addStateOrderFinder
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables oVars;
 algorithm
-  oVars := match(iVlst,iDerVlst,inVars)
+  oVars := match(iVlst,iDerVlst)
     local
-      DAE.ComponentRef cr,dcr;
+      DAE.ComponentRef dcr;
       BackendDAE.Var var,dvar;
       list<BackendDAE.Var> vlst,dvlst;
       BackendDAE.Variables vars;
       String msg;
-    case ({},_,_) then inVars;
-    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=NONE())))::vlst,
-          BackendDAE.VAR(varName=dcr)::dvlst,_)
-      equation
-        var = BackendVariable.setStateDerivative(var,SOME(dcr));
-        vars = BackendVariable.addVar(var,inVars);
-      then
-        addStateOrderFinder(vlst,dvlst,vars);
-    case(var::_,dvar::_,_)
-      equation
-        msg = "IndexReduction.addStateOrderFinder failed for " + BackendDump.varString(var) + " with derivative " + BackendDump.varString(dvar) + "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
-      then
-        fail();
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.addStateOrderFinder failed!"});
-      then
-        fail();
+
+    case ({}, _) then inVars;
+
+    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE()))::vlst, BackendDAE.VAR(varName=dcr)::dvlst) equation
+      var = BackendVariable.setStateDerivative(var, SOME(dcr));
+      vars = BackendVariable.addVar(var, inVars);
+    then addStateOrderFinder(vlst, dvlst, vars);
+
+    case (var::_, dvar::_) equation
+      msg = "IndexReduction.addStateOrderFinder failed for " + BackendDump.varString(var) + " with derivative " + BackendDump.varString(dvar) + "\n";
+      Error.addMessage(Error.INTERNAL_ERROR, {msg});
+    then fail();
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.addStateOrderFinder failed!"});
+    then fail();
   end match;
 end addStateOrderFinder;
 
