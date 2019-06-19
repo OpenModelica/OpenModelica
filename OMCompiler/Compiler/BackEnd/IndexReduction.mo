@@ -1223,9 +1223,6 @@ algorithm
     end if;
   end if;
   eqns := BackendEquation.getEqnsFromEqSystem(inSystem);
-  if Flags.isSet(Flags.BLT_DUMP) then
-    BackendDump.dumpStateOrder(so);
-  end if;
   outArg := (so,arrayCreate(BackendEquation.getNumberOfEquations(eqns),{}),mapEqnIncRow,mapIncRowEqn,BackendEquation.getNumberOfEquations(eqns));
 end getStructurallySingularSystemHandlerArg;
 
