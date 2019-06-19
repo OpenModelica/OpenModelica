@@ -57,6 +57,5 @@ typedef struct DATA_LIS
 int allocateLisData(int n_row, int n_col, int nz, void **data);
 int freeLisData(void **data);
 int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
-
 #endif
 

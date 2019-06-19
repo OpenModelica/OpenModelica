@@ -804,6 +804,25 @@ _omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec)
   return sqrt(result);
 }
 
+/*! \fn _omc_scalar _omc_gen_euclideanVectorNorm(_omc_vector* vec)
+ *
+ *  calculates the euclidean vector norm
+ *
+ *  \param [in]  [vec] !TODO: DESCRIBE ME!
+ */
+_omc_scalar _omc_gen_euclideanVectorNorm(const _omc_scalar* vec_data, const _omc_size vec_size)
+{
+  _omc_size i;
+  _omc_scalar result = 0;
+  assertStreamPrint(NULL, vec_size > 0, "Vector size is greater than zero");
+  assertStreamPrint(NULL, NULL != vec_data, "Vector data is NULL pointer");
+  for (i = 0; i < vec_size; ++i) {
+    result += pow(fabs(vec_data[i]),2.0);
+  }
+
+  return sqrt(result);
+}
+
 /*! \fn _omc_scalar _omc_maximumVectorNorm(_omc_vector* vec)
  *
  *  calculates the maximum vector norm

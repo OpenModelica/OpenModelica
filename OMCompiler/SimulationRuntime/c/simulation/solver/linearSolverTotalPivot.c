@@ -38,6 +38,7 @@
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_error.h"
+#include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
 
@@ -320,8 +321,8 @@ int freeTotalPivotData(void** voiddata)
  */
 int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
-  int i,j,k,l,ii,currentSys = sysNumber;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[currentSys]);
+  int i,j,k,l,ii;
+  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
@@ -394,6 +395,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   int eqSystemNumber = systemData->equationIndex;
   int indexes[2] = {1,eqSystemNumber};
   int rank;
+  _omc_scalar residualNorm = 0;
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
@@ -459,7 +461,11 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
     }
 
     if (ACTIVE_STREAM(LOG_LS_V)){
-      infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      if (1 == systemData->method) {
+        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      }
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
       for(i=0; i<systemData->size; ++i)
       {
