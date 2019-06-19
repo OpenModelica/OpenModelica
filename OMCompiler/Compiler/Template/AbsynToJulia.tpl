@@ -1,4 +1,14 @@
 package AbsynToJulia
+/* TODOS:
+
+TODO:Public/Private semantics
+   Add export for all public functions in the module.
+   Just do not export private modules. This should solve public and private for MetaModelica
+   and keep the semantics the same.
+   Simple go through all classes and export the public classes, not efficient but it should work..
+   Ignore all protected.
+
+*/
 
 import interface AbsynToJuliaTV;
 import AbsynDumpTpl;
@@ -19,25 +29,35 @@ end dumpClass;
 template dumpClassElement(Absyn.Class class, DumpOptions options)
 ::=
 match class
-  case CLASS(restriction=R_UNIONTYPE(__)) then
-      dumpClassDef(body, packageContext, options)
+  case CLASS(body=parts as PARTS(__),restriction=R_UNIONTYPE(__)) then
+      /*
+        In Julia we treat uniontypes as declarations. They do not have a direct definition
+        I use a uniontype macro for short here so things that belong together are grouped together
+       */
+       let commentStr = dumpCommentStrOpt(parts.comment)
+       let class_def_str = dumpClassDef(parts, makeUniontypeContext(name), options)
+     <<
+      @Uniontype <%name%> begin
+      <%commentStr%>
+       <%class_def_str%>
+      end
+     >>
   case CLASS(partialPrefix=true, restriction=R_FUNCTION(__)) then
     /* Julia does not really support types of higher-order functions */
     '<%name%> = Function'
   case CLASS(body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
     let commentStr = dumpCommentStrOpt(parts.comment)
-    //Currently only check first section. See over this... people can add inputs at other places
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(Absyn.getElementItemsInClassPart(cp)))
     let return_str =
       /*No return if there are explicit return statements in the AST*/
       if explicitReturnInClassPart(parts.classParts) then
         ""
       else
-        if listEmpty(parts.classParts) then
-          ""
+        if returnType then
+          'return <%(parts.classParts |> cp => dumpReturnStrJL(Absyn.getElementItemsInClassPart(cp), functionContext))%>'
         else
-          'return <%(parts.classParts |> cp => dumpReturnStrJL(Absyn.getElementItemsInClassPart(cp)))%>'
-    let inputs_str = (parts.classParts |> cp => dumpInputsJL(Absyn.getElementItemsInClassPart(cp)))
+          ""
+    let inputs_str = (parts.classParts |> cp => dumpInputsJL(Absyn.getElementItemsInClassPart(cp), functionContext))
     let functionBodyStr = dumpClassDef(parts, functionContext, options)
     <<
     function <%name%>(<%inputs_str%>)<%returnType%>
@@ -49,54 +69,61 @@ match class
   case CLASS(body=parts as PARTS(__)) then
     let enc_str = if encapsulatedPrefix then "" /*Should we use a macro here?*/ else ""
     let partial_str = if partialPrefix then "abstract" else ""
-    let res_str = dumpRestriction(restriction)
-    let prefixes_str = '<%partial_str%><%res_str%><%name%><%\n%>'
+    let class_type_str = dumpClassType(restriction)
     let cdef_str1 = dumpClassDef(parts, packageContext, options)
-    let cdef_str2 = match restriction
+    let cdef_str2 = match restriction /*What about nested packages*/
       case R_PACKAGE(__) then
         <<
-
+        <%\n%>
         using MetaModelica
+        <%\n%>
         <%cdef_str1%>
-
+        <%\n%>
         >>
       else
       <<
         <%cdef_str1%>
       >>
+   let begin_str = match restriction
+     case R_RECORD(__) then  'begin'
+     else ''
 
     let cdef_str = cdef_str2
     let cmt_str = dumpCommentStrOpt(parts.comment)
     /* Investigate header_str and annotation string*/
     //let ann_str = dumpClassAnnotation(cmt)
-    let header_str = dumpClassHeader(parts, name, restriction)
+    let header_str = dumpClassHeader(parts, restriction)
     let footer_str = dumpClassFooter(parts, cdef_str, name, cmt_str, "" /*ann_str*/)
+    let partial_str_and_class_type = '<%partial_str%><%class_type_str%>'
     <<
-    '<%prefixes_str%><%header_str%><%footer_str%>'
+    <%partial_str_and_class_type%> <%name%> <%begin_str%>
+      <%header_str%>
+      <%\n%>
+    <%footer_str%>
     >>
 end dumpClassElement;
 
-template dumpClassHeader(ClassDef classDef, String name, Absyn.Restriction restriction)
+template dumpClassHeader(ClassDef classDef, Absyn.Restriction restriction)
 ::=
 match classDef
-  case CLASS_EXTENDS(__) then AbsynDumpTpl.errorMsg("Extend restrection not supported")
-  case PARTS(__) then '<%name%><%dumpRestrictionTypeVars(restriction, typeVars)%><%dumpRestrictionSuperType(restriction)%>'
-  else '<%name%>'
+  case CLASS_EXTENDS(__) then AbsynDumpTpl.errorMsg("Extend  not supported")
+  case PARTS(__) then '<%dumpClassTypeTypeVars(restriction, typeVars)%><%dumpClassTypeSuperType(restriction)%>'
+  else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassHeader: <%dumpClassTypeSuperType(classDef)%>")
 end dumpClassHeader;
 
-template dumpRestrictionSuperType(Absyn.Restriction r)
+template dumpClassTypeSuperType(Absyn.Restriction r)
 ::=
 match r
   case R_METARECORD(__) then '<: <%dumpPathJL(name)%>'
-end dumpRestrictionSuperType;
+end dumpClassTypeSuperType;
 
-template dumpRestrictionTypeVars(Absyn.Restriction restriction, list<String> typeVars)
+template dumpClassTypeTypeVars(Absyn.Restriction restriction, list<String> typeVars)
 ::=
 match restriction
   case R_UNIONTYPE(__) then
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
   else ""
-end dumpRestrictionTypeVars;
+end dumpClassTypeTypeVars;
 
 template dumpClassFooter(ClassDef classDef, String cdefStr, String name, String cmt, String ann)
 ::=
@@ -117,11 +144,11 @@ match classDef
       >>
 end dumpClassFooter;
 
-template dumpInputsJL(list<ElementItem> inputs)
+template dumpInputsJL(list<ElementItem> inputs, Context context)
 ::=
   let inputStr = ((MMToJuliaUtil.filterOnDirection(inputs, MMToJuliaUtil.makeInputDirection()))
     |> ei
-      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei))%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei))%>'
+      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), context)%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), context)%>'
       ;separator=", ")
  '<%inputStr%>'
 
@@ -135,15 +162,15 @@ match MMToJuliaUtil.filterOnDirection(outputs, MMToJuliaUtil.makeOutputDirection
   case L as H::T then '::Tuple{<%dumpOutputsJL(L)%>}'
 end dumpReturnTypeJL;
 
-template dumpReturnStrJL(list<ElementItem> outputs)
+template dumpReturnStrJL(list<ElementItem> outputs, Context context)
 ::=
 match MMToJuliaUtil.filterOnDirection(outputs, MMToJuliaUtil.makeOutputDirection())
   case {} then ""
   case L as H::{} then
-  '<%(L |> e => dumpElementItemRaw(e, defaultDumpOptions); separator=", ")%>'
+  '<%(L |> e => dumpElementItemRaw(e, defaultDumpOptions, context); separator=", ")%>'
   case L as H::T then
   <<
-  (<%(L |> e => dumpElementItemRaw(e, defaultDumpOptions); separator=", ")%>)
+  (<%(L |> e => dumpElementItemRaw(e, defaultDumpOptions, context); separator=", ")%>)
   >>
 end dumpReturnStrJL;
 
@@ -166,39 +193,39 @@ match cdef
   else "TODO Unkown class definition"
 end dumpClassDef;
 
-template dumpRestriction(Absyn.Restriction restriction)
+template dumpClassType(Absyn.Restriction restriction)
 ::=
 match restriction
-  case R_PACKAGE(__) then 'module'
-  case R_METARECORD(__) then 'struct'
-  case R_RECORD(__) then 'struct' //These should not occur correct? It does however...
-  case R_UNIONTYPE(__) then 'uniontype'
+  case R_PACKAGE(__) then "module"
+  case R_METARECORD(__) then "struct"
+  case R_RECORD(__) then '@Record' //Only handles Metamodelica records(!)
+  case R_UNIONTYPE(__) then "uniontype"
   case R_TYPE(__) then '' // Should be const iff we are in a global scope (Julia 1.0 (Packages are not))
-  case R_FUNCTION(__) then 'function'
-  //TODO: The other ones are probably not relevant for now
-  else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpRestriction: Unknown restriction for class." + AbsynDumpTpl.dumpRestriction(restriction))
-end dumpRestriction;
+  case R_FUNCTION(__) then "function"
+  /* TODO: The other ones are probably not relevant for now */
+  else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassType: Unknown restriction for class." + AbsynDumpTpl.dumpRestriction(restriction))
+end dumpClassType;
 
 template dumpClassPart(Absyn.ClassPart class_part, Integer idx, Context context, DumpOptions options)
 ::=
 match class_part
   case PUBLIC(__) then
         let el_str = if isFunctionContext(context) then
-                       dumpElementItems(filterOnDirection(contents, makeOutputDirection()), "", true, options)
+                       dumpElementItems(filterOnDirection(contents, makeOutputDirection()), context, "", true, options)
                      else
-                       dumpElementItems(contents, "", true, options)
+                       dumpElementItems(contents, context,"", true, options)
       <<
         <%el_str%>
       >>
   case PROTECTED(__) then
-    let el_str = dumpElementItems(contents, "", true, options)
+    let el_str = dumpElementItems(contents, context, "", true, options)
     <<
       <%el_str%>
     >>
   case CONSTRAINTS(__) then
     <<
     constraint
-      <%(contents |> exp => dumpExp(exp) ;separator=" ")%>
+      <%(contents |> exp => dumpExp(exp, context) ;separator=" ")%>
     >>
   case EQUATIONS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EQUATIONS(__) not supported.")
@@ -206,7 +233,7 @@ match class_part
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: INITIALEQUATIONS() not supported.")
   case ALGORITHMS(__) then
     <<
-      <%(contents |> eq => dumpAlgorithmItem(eq) ;separator="\n")%><%\n%>
+      <%(contents |> eq => dumpAlgorithmItem(eq, context) ;separator="\n")%>
     >>
   case INITIALALGORITHMS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: INITIALALGORITHMS() not supported.")
@@ -217,15 +244,15 @@ match class_part
         AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
 end dumpClassPart;
 
-template dumpElementItems(list<Absyn.ElementItem> items, String prevSpacing, Boolean first, DumpOptions options)
+template dumpElementItems(list<Absyn.ElementItem> items, Context context, String prevSpacing, Boolean first, DumpOptions options)
 ::=
 match items
   case item :: rest_items then
     let spacing = dumpElementItemSpacing(item)
     let pre_spacing = if not first then
       dumpElementItemPreSpacing(spacing, prevSpacing)
-    let item_str = dumpElementItem(item, options)
-    let rest_str = dumpElementItems(rest_items, spacing, false, options)
+    let item_str = dumpElementItem(item, options, context)
+    let rest_str = dumpElementItems(rest_items, context, spacing, false, options)
     let post_spacing = if rest_str then spacing
     <<
     <%pre_spacing%>
@@ -252,14 +279,14 @@ match cdef
   case CLASS_EXTENDS(__) then '<%\n%>'
 end dumpClassDefSpacing;
 
-template dumpElementItem(Absyn.ElementItem eitem, DumpOptions options)
+template dumpElementItem(Absyn.ElementItem eitem, DumpOptions options, Context context)
 ::=
 match eitem
-  case ELEMENTITEM(__) then '<%dumpElement(element, options)%>'
+  case ELEMENTITEM(__) then '<%dumpElement(element, options, context)%>'
   case LEXER_COMMENT(__) then dumpCommentStr(comment)
 end dumpElementItem;
 
-template dumpElementItemRaw(Absyn.ElementItem eitem, DumpOptions options)
+template dumpElementItemRaw(Absyn.ElementItem eitem, DumpOptions options, Context context)
 "Same as dumpElementItem but does not add the local prefix"
 ::=
 match eitem
@@ -268,7 +295,7 @@ match eitem
       case ELEMENT(__)  then
         match specification
           case COMPONENTS(__) then
-            let comps_str = (components |> comp => dumpComponentItem(comp) ;separator=", ")
+            let comps_str = (components |> comp => dumpComponentItem(comp, context) ;separator=", ")
             '<%comps_str%>'
           else
             AbsynDumpTpl.errorMsg("AbsynToJulia.dumpElementItem: on none component type")
@@ -277,7 +304,7 @@ match eitem
   case LEXER_COMMENT(__) then dumpCommentStr(comment)
 end dumpElementItemRaw;
 
-template dumpElement(Absyn.Element elem, DumpOptions options)
+template dumpElement(Absyn.Element elem, DumpOptions options, Context context)
 ::=
 match elem
   case ELEMENT(__) then
@@ -285,12 +312,10 @@ match elem
     let final_str = dumpFinal(finalPrefix)
     let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re)
     let repl_str = match redeclareKeywords case SOME(re) then dumpReplaceable(re)
-    let elementSpec_str = dumpElementSpec(specification, options)
+    let elementSpec_str = dumpElementSpec(specification, options, context)
     let constrainClass_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
     '<%elementSpec_str%><%constrainClass_str%>'
-  case DEFINEUNIT(__) then
-    let args_str = if args then '(<%(args |> arg => dumpNamedArg(arg))%>)'
-    'defineunit <%name%><%args_str%>;'
+  case DEFINEUNIT(__) then AbsynDumpTpl.errorMsg("AbsynToJulia.dumpElement: DEFINEUNIT(__) not supported")
   case TEXT(__) then
     if boolUnparseFileFromInfo(info, options) then
     let name_str = match optName case SOME(name) then name
@@ -372,21 +397,21 @@ match repl
   case REDECLARE_REPLACEABLE() then "replaceable "
 end dumpReplaceable;
 
-template dumpModification(Absyn.Modification mod)
+template dumpModification(Absyn.Modification mod, Context context)
 ::=
 match mod
   case CLASSMOD(__) then
     let arg_str = if elementArgLst then
       '(<%(elementArgLst |> earg => dumpElementArg(earg) ;separator=", ")%>)'
-    let eq_str = dumpEqMod(eqMod)
+    let eq_str = dumpEqMod(eqMod, context)
     '<%arg_str%><%eq_str%>'
 end dumpModification;
 
-template dumpEqMod(Absyn.EqMod eqmod)
-::= match eqmod case EQMOD(__) then '<%\ %>= <%dumpExp(exp)%>'
+template dumpEqMod(Absyn.EqMod eqmod, Context context)
+::= match eqmod case EQMOD(__) then '<%\ %>= <%dumpExp(exp, context)%>'
 end dumpEqMod;
 
-template dumpElementSpec(ElementSpec specification, DumpOptions options)
+template dumpElementSpec(ElementSpec specification, DumpOptions options, Context context)
 ::=
 match specification
   case CLASSDEF(__) then dumpClassElement(class_, options)
@@ -397,26 +422,32 @@ match specification
     let ann_str = dumpAnnotationOptSpace(annotationOpt)
     'extends <%bc_str%><%mod_str%><%ann_str%>'
   case COMPONENTS(__) then
-    let ty_str = dumpTypeSpec(typeSpec)
+    let ty_str = dumpTypeSpec(typeSpec, context)
     let attr_str = dumpElementAttr(attributes)
-    //let dim_str = dumpElementAttrDim(attributes) readd. We do not use it for now
     let comps_str = (components |> comp =>
-                    let comp_str = dumpComponentItem(comp)
+                    let comp_str = dumpComponentItem(comp, context)
                     '<%comp_str%>::<%ty_str%>'
                     ;separator=", ")
     //TODO more check for more complex variables..
     //This must be local variables. Output and protected variables should be dumped here..
-    'local <%comps_str%>'
+    match context
+      case FUNCTION(__) then
+        'local <%comps_str%>'
+      case UNIONTYPE(__) then
+        '<%comps_str%>'
+      case PACKAGE(__) then
+        '<%comps_str%>'
+      else 'ERROR'
   case IMPORT(__) then
     let imp_str = dumpImport(import_)
     'import <%imp_str%>'
 end dumpElementSpec;
 
-template dumpElementSpecForComponents(ElementSpec specification, DumpOptions options)
+template dumpElementSpecForComponents(ElementSpec specification, DumpOptions options, Context context)
 ::=
 match specification
   case COMPONENTS(__) then
-    let comps_str = (components |> comp => dumpComponentItem(comp) ;separator=", ")
+    let comps_str = (components |> comp => dumpComponentItem(comp, context) ;separator=", ")
     '<%comps_str%>'
 end dumpElementSpecForComponents;
 
@@ -441,10 +472,6 @@ match var
   else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpVariability: Only const and var are supported")
 end dumpVariability;
 
-template dumpElementAttrDim(Absyn.ElementAttributes attr)
-::= match attr case ATTR(__) then dumpSubscripts(arrayDim)
-end dumpElementAttrDim;
-
 template dumpConstrainClass(Absyn.ConstrainClass cc)
 ::=
 match cc
@@ -455,48 +482,44 @@ match cc
     ' constrainedby <%path_str%><%el_str%><%cmt_str%>'
 end dumpConstrainClass;
 
-template dumpComponentItems(list<Absyn.ComponentItem> componentItems)
+template dumpComponentItems(list<Absyn.ComponentItem> componentItems, Context context)
 "Returns a comma separated list of component items without the condition string"
-::= (componentItems |> ci => dumpComponentItemWithoutCondString(ci) ;separator=", ")
+::= (componentItems |> ci => dumpComponentItemWithoutCondString(ci, context) ;separator=", ")
 end dumpComponentItems;
 
-template dumpComponentItem(Absyn.ComponentItem comp)
+template dumpComponentItem(Absyn.ComponentItem comp, Context context)
 ::=
 match comp
   case COMPONENTITEM(__) then
-    let comp_str = dumpComponent(component)
-    let cond_str = dumpComponentCondition(condition) //TODO. This will complicate things...
+    let comp_str = dumpComponent(component, context)
+    let cond_str = dumpComponentCondition(condition, context) //TODO. This will complicate things...
     let cmt = dumpCommentOpt(comment)
     '<%comp_str%><%cond_str%><%cmt%>'
 end dumpComponentItem;
 
-template dumpComponentItemWithoutCondStringOpt(Option<Absyn.ComponentItem> compOpt)
-::= match compOpt case SOME(comp) then dumpComponentItemWithoutCondString(comp) else ""
-end dumpComponentItemWithoutCondStringOpt;
-
-template dumpComponentItemWithoutCondString(Absyn.ComponentItem comp)
+template dumpComponentItemWithoutCondString(Absyn.ComponentItem comp, Context context)
 ::=
 match comp
   case COMPONENTITEM(__) then
-    let comp_str = dumpComponent(component)
+    let comp_str = dumpComponent(component, context)
     //let cmt = dumpCommentOpt(comment)
     '<%comp_str%>'
 end dumpComponentItemWithoutCondString;
 
-template dumpComponent(Absyn.Component comp)
+template dumpComponent(Absyn.Component comp, Context context)
 ::=
 match comp
   case COMPONENT(__) then
-    let dim_str = dumpSubscripts(arrayDim)
-    let mod_str = match modification case SOME(mod) then dumpModification(mod)
+    let dim_str = dumpSubscripts(arrayDim, context)
+    let mod_str = match modification case SOME(mod) then dumpModification(mod, context)
     '<%name%><%dim_str%><%mod_str%>'
 end dumpComponent;
 
-template dumpComponentCondition(Option<Absyn.ComponentCondition> cond)
+template dumpComponentCondition(Option<Absyn.ComponentCondition> cond, Context context)
 ::=
 match cond
   case SOME(cexp) then
-    let exp_str = dumpExp(cexp)
+    let exp_str = dumpExp(cexp, context)
     ' if <%exp_str%>'
 end dumpComponentCondition;
 
@@ -523,32 +546,32 @@ template dumpEquation(Absyn.Equation eq)
 ::= "No equations allowed. Translate them to algorithms"
 end dumpEquation;
 
-template dumpAlgorithmItems(list<Absyn.AlgorithmItem> algs)
-::= (algs |> alg => dumpAlgorithmItem(alg) ;separator="\n")
+template dumpAlgorithmItems(list<Absyn.AlgorithmItem> algs, Context context)
+::= (algs |> alg => dumpAlgorithmItem(alg, context) ;separator="\n")
 end dumpAlgorithmItems;
 
-template dumpAlgorithmItem(Absyn.AlgorithmItem alg)
+template dumpAlgorithmItem(Absyn.AlgorithmItem alg, Context context)
 ::=
 match alg
   case ALGORITHMITEM(__) then
-    let alg_str = dumpAlgorithm(algorithm_)
+    let alg_str = dumpAlgorithm(algorithm_, context)
     let cmt_str = dumpCommentOpt(comment)
     '<%alg_str%><%cmt_str%>'
   case ALGORITHMITEMCOMMENT(__) then dumpCommentStr(comment)
 end dumpAlgorithmItem;
 
-template dumpAlgorithm(Absyn.Algorithm alg)
+template dumpAlgorithm(Absyn.Algorithm alg, Context context)
 ::=
 match alg
   case ALG_ASSIGN(__) then
-    let lhs_str = dumpLhsExp(assignComponent)
-    let rhs_str = dumpExp(value)
+    let lhs_str = dumpLhsExp(assignComponent, context)
+    let rhs_str = dumpExp(value, context)
     '<%lhs_str%> = <%rhs_str%>'
   case ALG_IF(__) then
-    let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if")
+    let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
     let elseif_str = (elseIfAlgorithmBranch |> (c, b) =>
-        dumpAlgorithmBranch(c, b, "elseif") ;separator="\n")
-    let else_branch_str = dumpAlgorithmItems(elseBranch)
+        dumpAlgorithmBranch(c, b, "elseif", context) ;separator="\n")
+    let else_branch_str = dumpAlgorithmItems(elseBranch, context)
     let else_str = if else_branch_str then
       <<
       else
@@ -561,33 +584,33 @@ match alg
     end
     >>
   case ALG_FOR(__) then
-    let iter_str = dumpForIterators(iterators)
-    let body_str = dumpAlgorithmItems(forBody)
+    let iter_str = dumpForIterators(iterators, context)
+    let body_str = dumpAlgorithmItems(forBody, context)
     <<
     for <%iter_str%>
       <%body_str%>
     end
     >>
   case ALG_WHILE(__) then
-    let while_str = dumpAlgorithmBranch(boolExpr, whileBody, "while")
+    let while_str = dumpAlgorithmBranch(boolExpr, whileBody, "while", context)
     <<
     <%while_str%>
     end
     >>
   case ALG_WHEN_A(__) then  AbsynDumpTpl.errorMsg("When statements are not allowed!.")
   case ALG_NORETCALL(__) then
-    let name_str = dumpCref(functionCall)
-    let args_str = dumpFunctionArgs(functionArgs)
+    let name_str = dumpCref(functionCall, context)
+    let args_str = dumpFunctionArgs(functionArgs, context)
     '<%name_str%>(<%args_str%>)'
   /*Here we need to gather all return values for the function*/
   case ALG_RETURN(__) then "return"
   case ALG_BREAK(__) then "break"
   case ALG_FAILURE(__) then
-    let arg_str = if equ then dumpAlgorithmItems(equ) else "..."
+    let arg_str = if equ then dumpAlgorithmItems(equ, context) else "..."
     '@failure(<%arg_str%>)' //We could simply use throw or we can define a macro for this
   case ALG_TRY(__) then
-    let arg1 = dumpAlgorithmItems(body)
-    let arg2 = dumpAlgorithmItems(elseBody)
+    let arg1 = dumpAlgorithmItems(body, context)
+    let arg2 = dumpAlgorithmItems(elseBody, context)
     <<
     try
       <%arg1%>
@@ -599,10 +622,10 @@ match alg
 end dumpAlgorithm;
 
 template dumpAlgorithmBranch(Absyn.Exp cond, list<Absyn.AlgorithmItem> body,
-String header)
+String header, Context context)
 ::=
-  let cond_str = dumpExp(cond)
-  let body_str = (body |> eq => dumpAlgorithmItem(eq) ;separator="\n")
+  let cond_str = dumpExp(cond, context)
+  let body_str = (body |> eq => dumpAlgorithmItem(eq, context) ;separator="\n")
   <<
   <%header%> <%cond_str%>
     <%body_str%>
@@ -647,119 +670,119 @@ match path
     dumpPathJL(path)
 end dumpPathNoQual;
 
-template dumpTypeSpecOpt(Option<Absyn.TypeSpec> typespecOpt)
-::= match typespecOpt case SOME(ts) then dumpTypeSpec(ts) else ""
+template dumpTypeSpecOpt(Option<Absyn.TypeSpec> typespecOpt, Context context)
+::= match typespecOpt case SOME(ts) then dumpTypeSpec(ts, context) else ""
 end dumpTypeSpecOpt;
 
-template dumpTypeSpec(Absyn.TypeSpec typeSpec)
+template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
 ::=
 match typeSpec
   case TPATH(__) then
     let path_str = dumpPathJL(path)
-    let arraydim_str = dumpArrayDimOpt(arrayDim)
+    let arraydim_str = dumpArrayDimOpt(arrayDim, context)
     '<%path_str%><%arraydim_str%>'
   case TCOMPLEX(__) then
     let path_str = dumpPathJL(path)
-    let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty) ;separator=", ")
-    let arraydim_str = dumpArrayDimOpt(arrayDim)
+    let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty, context) ;separator=", ")
+    let arraydim_str = dumpArrayDimOpt(arrayDim, context)
     '<%path_str%><<%ty_str%>><%arraydim_str%>'
 end dumpTypeSpec;
 
-template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim)
-::= match arraydim case SOME(ad) then dumpSubscripts(ad)
+template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim, Context context)
+::= match arraydim case SOME(ad) then dumpSubscripts(ad, context)
 end dumpArrayDimOpt;
 
-template dumpSubscripts(list<Subscript> subscripts)
+template dumpSubscripts(list<Subscript> subscripts, Context context)
 ::=
   if subscripts then
-    let sub_str = (subscripts |> s => dumpSubscript(s) ;separator=", ")
+    let sub_str = (subscripts |> s => dumpSubscript(s, context) ;separator=", ")
     '[<%sub_str%>]'
 end dumpSubscripts;
 
-template dumpSubscript(Absyn.Subscript subscript)
+template dumpSubscript(Absyn.Subscript subscript, Context context)
 ::=
 match subscript
   case NOSUB(__) then ':'
-  case SUBSCRIPT(__) then dumpExp(subscript)
+  case SUBSCRIPT(__) then dumpExp(subscript, context)
 end dumpSubscript;
 
-template dumpExp(Absyn.Exp exp)
+template dumpExp(Absyn.Exp exp, Context context)
 ::=
 match exp
   case INTEGER(__) then value
   case REAL(__) then value
-  case CREF(__) then dumpCref(componentRef)
+  case CREF(__) then dumpCref(componentRef, context)
   case STRING(__) then ('"<%value; absIndent=0%>"')
   case BOOL(__) then value
   case e as BINARY(__) then
-    let lhs_str = dumpOperand(exp1, e, true)
-    let rhs_str = dumpOperand(exp2, e, false)
+    let lhs_str = dumpOperand(exp1, e, true, context)
+    let rhs_str = dumpOperand(exp2, e, false, context)
     let op_str = dumpOperator(op)
     '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case e as UNARY(__) then
-    let exp_str = dumpOperand(exp, e, false)
+    let exp_str = dumpOperand(exp, e, false, context)
     let op_str = dumpOperator(op)
     '<%op_str%><%exp_str%>'
   case e as LBINARY(__) then
-    let lhs_str = dumpOperand(exp1, e, true)
-    let rhs_str = dumpOperand(exp2, e, false)
+    let lhs_str = dumpOperand(exp1, e, true, context)
+    let rhs_str = dumpOperand(exp2, e, false, context)
     let op_str = dumpOperator(op)
     '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case e as LUNARY(__) then
-    let exp_str = dumpOperand(exp, e, false)
+    let exp_str = dumpOperand(exp, e, false, context)
     let op_str = dumpOperator(op)
     '<%op_str%> <%exp_str%>'
   case e as RELATION(__) then
-    let lhs_str = dumpOperand(exp1, e, true)
-    let rhs_str = dumpOperand(exp2, e, false)
+    let lhs_str = dumpOperand(exp1, e, true, context)
+    let rhs_str = dumpOperand(exp2, e, false, context)
     let op_str = dumpOperator(op)
     '<%lhs_str%> <%op_str%> <%rhs_str%>'
-  case IFEXP(__) then dumpIfExp(exp)
+  case IFEXP(__) then dumpIfExp(exp, context)
   case CALL(function_=Absyn.CREF_IDENT(name="$array")) then
-    let args_str = dumpFunctionArgs(functionArgs)
+    let args_str = dumpFunctionArgs(functionArgs, context)
     '{<%args_str%>}'
   case CALL(__) then
-    let func_str = dumpCref(function_)
-    let args_str = dumpFunctionArgs(functionArgs)
+    let func_str = dumpCref(function_, context)
+    let args_str = dumpFunctionArgs(functionArgs, context)
     '<%func_str%>(<%args_str%>)'
   case PARTEVALFUNCTION(__) then
-    let func_str = dumpCref(function_)
-    let args_str = dumpFunctionArgs(functionArgs)
+    let func_str = dumpCref(function_, context)
+    let args_str = dumpFunctionArgs(functionArgs, context)
     'function <%func_str%>(<%args_str%>)'
   case ARRAY(__) then
-    let array_str = (arrayExp |> e => dumpExp(e) ;separator=", ")
+    let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
     '{<%array_str%>}'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
-        (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
+        (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
     '[<%matrix_str%>]'
   case e as RANGE(step = SOME(step)) then
-    let start_str = dumpOperand(start, e, false)
-    let step_str = dumpOperand(step, e, false)
-    let stop_str = dumpOperand(stop, e, false)
+    let start_str = dumpOperand(start, e, false, context)
+    let step_str = dumpOperand(step, e, false, context)
+    let stop_str = dumpOperand(stop, e, false, context)
     '<%start_str%>:<%step_str%>:<%stop_str%>'
   case e as RANGE(step = NONE()) then
-    let start_str = dumpOperand(start, e, false)
-    let stop_str = dumpOperand(stop, e, false)
+    let start_str = dumpOperand(start, e, false, context)
+    let stop_str = dumpOperand(stop, e, false, context)
     '<%start_str%>:<%stop_str%>'
   case TUPLE(__) then
-    let tuple_str = (expressions |> e => dumpExp(e); separator=", " ;empty)
+    let tuple_str = (expressions |> e => dumpExp(e,context); separator=", " ;empty)
     '(<%tuple_str%>)'
   case END(__) then 'end'
-  case CODE(__) then '$Code(<%dumpCodeNode(code)%>)'
+  case CODE(__) then '$Code(<%dumpCodeNode(code, context)%>)'
   case AS(__) then
-    let exp_str = dumpExp(exp)
+    let exp_str = dumpExp(exp, context)
     '<%id%> as <%exp_str%>'
   case CONS(__) then
-    let head_str = dumpExp(head)
-    let rest_str = dumpExp(rest)
+    let head_str = dumpExp(head, context)
+    let rest_str = dumpExp(rest, context)
     '<%head_str%>> => <%rest_str%>'
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
-    let list_str = (exps |> e => dumpExp(e) ;separator=", ")
+    let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
     '{<%list_str%>}'
   case DOT(__) then
-    '<%dumpExp(exp)%>.<%dumpExp(index)%>'
+    '<%dumpExp(exp, context)%>.<%dumpExp(index, context)%>'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 
@@ -768,7 +791,7 @@ template dumpPattern(Absyn.Exp exp)
 match exp
   case INTEGER(__) then value
   case REAL(__) then value
-  case CREF(__) then dumpCref(componentRef)
+  case CREF(__) then dumpCref(componentRef, functionContext /*Only occurs in fc*/)
   case STRING(__) then ('"<%stringReplace(value,"$","\\$"); absIndent=0%>"')
   case BOOL(__) then value
   case ARRAY(arrayExp=exps)
@@ -779,25 +802,28 @@ match exp
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
     let func_str = (match id
-    case "list" then "list"
-    else dumpCref(function_))
+    case "list" then "List"
+    else dumpCref(function_, functionContext))
     '<%func_str%>(<%args_str%>)'
   case CALL(__) then
-    let func_str = dumpCref(function_)
+    let func_str = dumpCref(function_, functionContext)
     let args_str = dumpFunctionArgsPattern(functionArgs)
     '<%func_str%>(<%args_str%>)'
   case TUPLE(__) then
     let tuple_str = (expressions |> e => dumpPattern(e); separator=", " ;empty)
     '(<%tuple_str%>)'
-  case AS(__) then
+  case AS(__) then //TODO
     let exp_str = dumpPattern(exp)
     '<%id%> as <%exp_str%>'
   case CONS(__) then
-    let head_str = dumpPattern(head)
-    let rest_str = dumpPattern(rest)
-    '<%head_str%> :: <%rest_str%>'
-  case _ then '/* AbsynDumpTpl.dumpPattern: UNHANDLED Abyn.Exp <%dumpExp(exp)%> */'
+    let consOp = dumpCons(dumpPattern(head), dumpPattern(rest))
+    '<%consOp%>'
+  case _ then '#= AbsynDumpTpl.dumpPattern: UNHANDLED Abyn.Exp  =#'
 end dumpPattern;
+
+template dumpCons(String headString, String tailString)
+::= '<%headString%> => <%tailString%>'
+end dumpCons;
 
 template dumpFunctionArgsPattern(Absyn.FunctionArgs args)
 ::=
@@ -817,55 +843,55 @@ match narg
     '<%argName%> = <%dumpPattern(argValue)%>'
 end dumpNamedArgPattern;
 
-template dumpLhsExp(Absyn.Exp lhs)
+template dumpLhsExp(Absyn.Exp lhs, Context context)
 ::=
 match lhs
-  case IFEXP(__) then '(<%dumpExp(lhs)%>)'
-  else dumpExp(lhs)
+  case IFEXP(__) then '(<%dumpExp(lhs, context)%>)'
+  else dumpExp(lhs, context)
 end dumpLhsExp;
 
-template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs)
+template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs, Context context)
 ::=
-  let op_str = dumpExp(operand)
+  let op_str = dumpExp(operand, context)
   if shouldParenthesize(operand, operation, lhs) then
     '(<%op_str%>)'
   else
     op_str
 end dumpOperand;
 
-template dumpIfExp(Absyn.Exp if_exp)
+template dumpIfExp(Absyn.Exp if_exp, Context context)
 ::=
 match if_exp
   case IFEXP(__) then
-    let cond_str = dumpExp(ifExp)
-    let true_branch_str = dumpExp(trueBranch)
-    let else_branch_str = dumpExp(elseBranch)
-    let else_if_str = dumpElseIfExp(elseIfBranch)
+    let cond_str = dumpExp(ifExp, context)
+    let true_branch_str = dumpExp(trueBranch, context)
+    let else_branch_str = dumpExp(elseBranch, context)
+    let else_if_str = dumpElseIfExp(elseIfBranch, context)
     'if <%cond_str%> then <%true_branch_str%><%else_if_str%> else <%else_branch_str%>'
 end dumpIfExp;
 
-template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if)
+template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context context)
 ::=
   else_if |> eib as (cond, branch) =>
-    let cond_str = dumpExp(cond)
-    let branch_str = dumpExp(branch)
+    let cond_str = dumpExp(cond, context)
+    let branch_str = dumpExp(branch, context)
     ' elseif <%cond_str%> then <%branch_str%>' ;separator="\n"
 end dumpElseIfExp;
 
-template dumpCodeNode(Absyn.CodeNode code)
+template dumpCodeNode(Absyn.CodeNode code, Context context)
 ::=
 match code
   case C_TYPENAME(__) then dumpPathJL(path)
-  case C_VARIABLENAME(__) then dumpCref(componentRef)
+  case C_VARIABLENAME(__) then dumpCref(componentRef, context)
   case C_CONSTRAINTSECTION(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_CONSTRAINTSECTION not supported")
   case C_EQUATIONSECTION(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_CONSTRAINTSECTION not supported")
   case C_ALGORITHMSECTION(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_ALGORITHMSECTION not supported")
-  case C_ELEMENT(__) then dumpElement(element, Dump.defaultDumpOptions)
-  case C_EXPRESSION(__) then dumpExp(exp)
-  case C_MODIFICATION(__) then dumpModification(modification)
+  case C_ELEMENT(__) then dumpElement(element, Dump.defaultDumpOptions, context)
+  case C_EXPRESSION(__) then dumpExp(exp, context)
+  case C_MODIFICATION(__) then dumpModification(modification, context)
 end dumpCodeNode;
 
 //John: look at this one more time...
@@ -873,16 +899,17 @@ template dumpMatchExp(Absyn.Exp match_exp)
 ::=
 match match_exp
   case MATCHEXP(__) then
-    let ty_str = dumpMatchType(matchTy)
-    let input_str = dumpExp(inputExp)
+    let match_ty_str = dumpMatchType(matchTy)
+    let input_str = dumpExp(inputExp, functionContext)
     let locals_str = dumpMatchLocals(localDecls)
-    let cases_str = (cases |> c => dumpMatchCase(c) ;separator="\n\n")
+    let cases_str = (cases |> c => dumpMatchCase(c, functionContext) ;separator="\n\n")
     let cmt_str = dumpCommentStrOpt(comment)
     <<
-    <%ty_str%> <%input_str%>
+    begin
     <%locals_str%>
+    <%match_ty_str%> <%input_str%> begin
       <%cases_str%><%cmt_str%>
-    end <%ty_str%>
+    end
     >>
 end dumpMatchExp;
 
@@ -899,30 +926,30 @@ template dumpMatchContents(ClassPart cp)
   case EQUATIONS(contents={}) then ""
   case EQUATIONS(__) then
   <<
-    <%(Static.fromEquationsToAlgAssignments(cp) |> alg => dumpAlgorithmItem(alg) ;separator="\n")%>
+    <%(Static.fromEquationsToAlgAssignments(cp) |> alg => dumpAlgorithmItem(alg, functionContext) ;separator="\n")%>
   >>
   case ALGORITHMS(contents={}) then ""
   case ALGORITHMS(contents=algs) then
     <<
-      <%(algs |> alg => dumpAlgorithmItem(alg) ;separator="\n")%>
+      <%(algs |> alg => dumpAlgorithmItem(alg, functionContext) ;separator="\n")%>
     >>
 end dumpMatchContents;
 
 template dumpMatchLocals(list<ElementItem> locals)
 ::= if locals then
   <<
-      <%(locals |> decl => dumpElementItem(decl, defaultDumpOptions) ;separator="\n")%>
+    <%(locals |> decl => dumpElementItem(decl, defaultDumpOptions, functionContext) ;separator="\n")%>
   >>
 end dumpMatchLocals;
 
-template dumpMatchCase(Absyn.Case c)
+template dumpMatchCase(Absyn.Case c, Context context)
 ::=
 match c
   case CASE(__) then
     let pattern_str = dumpPattern(pattern)
-    let guard_str = match patternGuard case SOME(g) then 'guard <%dumpExp(g)%> '
+    let guard_str = match patternGuard case SOME(g) then 'guard <%dumpExp(g, context)%> '
     let eql_str = dumpMatchContents(classPart)
-    let result_str = dumpExp(result)
+    let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
     <<
     <%pattern_str%> <%guard_str%><%cmt_str%> => (
@@ -932,7 +959,7 @@ match c
     >>
   case ELSE(__) then
     let eql_str = dumpMatchContents(classPart)
-    let result_str = dumpExp(result)
+    let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
     <<
     _ <%cmt_str%> => begin (
@@ -951,55 +978,55 @@ template dumpOperator(Absyn.Operator op)
     else AbsynDumpTpl.dumpOperator(op)
 end dumpOperator;
 
-template dumpCref(Absyn.ComponentRef cref)
+template dumpCref(Absyn.ComponentRef cref, Context context)
 ::=
 match cref
   case CREF_QUAL(__) then
-    '<%name%><%dumpSubscripts(subscripts)%>.<%dumpCref(componentRef)%>'
+    '<%name%><%dumpSubscripts(subscripts, context)%>.<%dumpCref(componentRef, context)%>'
   case CREF_IDENT(__)
-    then '<%name%><%dumpSubscripts(subscripts)%>'
-  case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
+    then '<%name%><%dumpSubscripts(subscripts, context)%>'
+  case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef, context)%>'
   case WILD(__) then if Config.acceptMetaModelicaGrammar() then "_" else ""
   case ALLWILD(__) then '__'
 end dumpCref;
 
-template dumpFunctionArgs(Absyn.FunctionArgs args)
+template dumpFunctionArgs(Absyn.FunctionArgs args, Context context)
 ::=
 match args
   case FUNCTIONARGS(__) then
-    let args_str = (args |> arg => dumpExp(arg) ;separator=", ")
-    let namedargs_str = (argNames |> narg => dumpNamedArg(narg) ;separator=", ")
+    let args_str = (args |> arg => dumpExp(arg, context) ;separator=", ")
+    let namedargs_str = (argNames |> narg => dumpNamedArg(narg, context) ;separator=", ")
     let separator = if args_str then if argNames then ', '
     '<%args_str%><%separator%><%namedargs_str%>'
   case FOR_ITER_FARG(__) then
-    let exp_str = dumpExp(exp)
-    let iter_str = (iterators |> i => dumpForIterator(i) ;separator=", ")
+    let exp_str = dumpExp(exp, context)
+    let iter_str = (iterators |> i => dumpForIterator(i, context) ;separator=", ")
     '<%exp_str%> <%match iterType case THREAD(__) then "threaded "%>for <%iter_str%>'
 end dumpFunctionArgs;
 
-template dumpNamedArg(Absyn.NamedArg narg)
+template dumpNamedArg(Absyn.NamedArg narg, Context context)
 ::=
 match narg
   case NAMEDARG(__) then
-    '<%argName%> = <%dumpExp(argValue)%>'
+    '<%argName%> = <%dumpExp(argValue, context)%>'
 end dumpNamedArg;
 
-template dumpForIterators(Absyn.ForIterators iters)
-::= (iters |> i => dumpForIterator(i) ;separator=", ")
+template dumpForIterators(Absyn.ForIterators iters, Context context)
+::= (iters |> i => dumpForIterator(i, context) ;separator=", ")
 end dumpForIterators;
 
-template dumpForIterator(Absyn.ForIterator iterator)
+template dumpForIterator(Absyn.ForIterator iterator, Context context)
 ::=
 match iterator
   case ITERATOR(__) then
-    let range_str = match range case SOME(r) then ' in <%dumpExp(r)%>'
-    let guard_str = match guardExp case SOME(g) then ' guard <%dumpExp(g)%>'
+    let range_str = match range case SOME(r) then ' in <%dumpExp(r, context)%>'
+    let guard_str = match guardExp case SOME(g) then ' guard <%dumpExp(g, context)%>'
     '<%name%><%guard_str%><%range_str%>'
 end dumpForIterator;
 
 template dumpOutputsJL(list<ElementItem> elements)
 ::=
-  let outputStr = (elements |> e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e)) ;separator=", ")
+  let outputStr = (elements |> e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e), functionContext) ;separator=", ")
   '<%outputStr%>'
 end dumpOutputsJL;
 
