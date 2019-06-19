@@ -38,6 +38,7 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
 
@@ -91,8 +92,7 @@ allocateLisData(int n_row, int n_col, int nz, void** voiddata)
 /*! \fn free memory for linear system solver Lis
  *
  */
-int
-freeLisData(void **voiddata)
+int freeLisData(void **voiddata)
 {
   DATA_LIS* data = (DATA_LIS*) *voiddata;
 
@@ -107,18 +107,26 @@ freeLisData(void **voiddata)
 }
 
 
+/*!
+ * Print LIS_MATRIX provided in column sparse row format
+ *
+ * \param [in] A    Matrix A of linear problem A*x=b in CSR format
+ * \param [in] n    Dimension of A
+ */
 void printLisMatrixCSR(LIS_MATRIX A, int n)
 {
   int i, j;
   /* A matrix */
-  infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d ", n, n, A->nnz);
+  infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d", n, n, A->nnz);
+  infoStreamPrint(LOG_LS_V, 0, "Column Sparse Row format. Print tuple (index,value) for each row:");
   for(i=0; i<n; i++)
   {
     char *buffer = (char*)malloc(sizeof(char)*A->ptr[i+1]*50);
     buffer[0] = 0;
-    for(j=A->ptr[i]; j<A->ptr[i+1]; j++)
+    sprintf(buffer, "column %d: ", i);
+    for(j = A->ptr[i]; j < A->ptr[i+1]; j++)
     {
-       sprintf(buffer, "%s(%d,%d,%g) ", buffer, i, A->index[j], A->value[j]);
+       sprintf(buffer, "%s(%d,%g) ", buffer, A->index[j], A->value[j]);
     }
     infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     free(buffer);
@@ -158,12 +166,12 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j-1];
+        ii = jacobian->sparsePattern.leadindex[j];
         while(ii < jacobian->sparsePattern.leadindex[j+1])
         {
           l  = jacobian->sparsePattern.index[ii];
-          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
-          systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
+          /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
+          systemData->setAElement(l, i, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
@@ -175,7 +183,7 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
   return 0;
 }
 
-/*! \fn wrapper_fvec_umfpack for the residual function
+/*! \fn wrapper_fvec_lis for the residual function
  *
  */
 static int wrapper_fvec_lis(double* x, double* f, void** data, int sysNumber)
@@ -193,9 +201,7 @@ static int wrapper_fvec_lis(double* x, double* f, void** data, int sysNumber)
  *                [sysNumber] index of the corresponding linear system
  *
  */
-
-int
-solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
+int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
@@ -203,6 +209,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
   LIS_INT err;
+  _omc_scalar residualNorm = 0;
 
   int indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;
@@ -216,10 +223,10 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   }
 
   rt_ext_tp_tick(&(solverData->timeClock));
+
+  lis_matrix_set_size(solverData->A, solverData->n_row, 0);
   if (0 == systemData->method)
   {
-
-    lis_matrix_set_size(solverData->A, solverData->n_row, 0);
     /* set A matrix */
     systemData->setA(data, threadData, systemData);
     lis_matrix_assemble(solverData->A);
@@ -228,8 +235,6 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     systemData->setb(data, threadData, systemData);
 
   } else {
-
-    lis_matrix_set_size(solverData->A, solverData->n_row, 0);
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
       getAnalyticalJacobianLis(data, threadData, sysNumber);
@@ -280,10 +285,10 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     free(buffer);
   }
 
-  /* print solution */
+  /* Log solution */
   if (1 == success){
 
-    if (1 == systemData->method){
+    if (1 == systemData->method){ /* Case calculate jacobian -> matrix A*/
       /* take the solution */
       lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
       for(i = 0; i < solverData->n_row; ++i)
@@ -291,6 +296,14 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
       /* update inner equations */
       wrapper_fvec_lis(aux_x, solverData->work, dataAndThreadData, sysNumber);
+      residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
+
+      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+        warningStreamPrint(LOG_LS, 0,
+            "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
+            (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
+        success = 0;
+      }
     } else {
       /* write solution */
       lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
@@ -298,7 +311,11 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     if (ACTIVE_STREAM(LOG_LS_V))
     {
-      infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      if (1 == systemData->method) {
+        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      }
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)

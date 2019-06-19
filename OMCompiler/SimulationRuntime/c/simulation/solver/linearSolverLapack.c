@@ -304,7 +304,11 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     }
 
     if (ACTIVE_STREAM(LOG_LS_V)){
-      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        if (1 == systemData->method) {
+          infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        } else {
+          infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+        }
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {

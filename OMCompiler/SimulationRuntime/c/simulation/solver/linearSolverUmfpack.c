@@ -41,6 +41,7 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
 
@@ -196,6 +197,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
   DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData[0];
+  _omc_scalar residualNorm = 0;
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
@@ -305,13 +307,25 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
       /* update inner equations */
       wrapper_fvec_umfpack(aux_x, solverData->work, dataAndThreadData, sysNumber);
+      residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
+
+      if ((isnan(residualNorm)) || (residualNorm>1e-4)){
+        warningStreamPrint(LOG_LS, 0,
+            "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
+            (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
+        success = 0;
+      }
     } else {
       /* the solution is automatically in x */
     }
 
     if (ACTIVE_STREAM(LOG_LS_V))
     {
-      infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      if (1 == systemData->method) {
+        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      }
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
