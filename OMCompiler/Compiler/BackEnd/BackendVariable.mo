@@ -203,7 +203,7 @@ public function varUnreplaceable "author: lochel
   output Boolean outUnreplaceable = inVar.unreplaceable;
 end varUnreplaceable;
 
-public function setVarUnreplaceable "author: arun 
+public function setVarUnreplaceable "author: arun
   sets the unreplaceable attribute of a variable to be false or true"
   input BackendDAE.Var inVar;
   input Boolean value;
@@ -490,14 +490,13 @@ end varHasStateDerivative;
 
 public function setStateDerivative "author: Frenkel TUD
   sets the state derivative."
-  input BackendDAE.Var inVar;
-  input Option<DAE.ComponentRef> dcr;
-  output BackendDAE.Var outVar = inVar;
+  input output BackendDAE.Var var;
+  input Option<DAE.ComponentRef> derName;
 protected
   Integer index;
 algorithm
-  BackendDAE.STATE(index=index) := inVar.varKind;
-  outVar.varKind := BackendDAE.STATE(index, dcr);
+  BackendDAE.STATE(index=index) := var.varKind;
+  var.varKind := BackendDAE.STATE(index, derName);
 end setStateDerivative;
 
 public function getVariableAttributefromType

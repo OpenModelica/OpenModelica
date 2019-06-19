@@ -798,7 +798,6 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evaluateParameters",
     "simplifyIfEquations",
     "expandDerOperator",
-    "removeEqualFunctionCalls",
     "clockPartitioning",
     "findStateOrder",
     "replaceEdgeChange",
@@ -1371,7 +1370,7 @@ constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(104, "dynam
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Enable Dynamic Tearing also for the initialization system."));
 constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(105, "preferTVarsWithStartValue",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Prefer tearing variables with start value for initialization."));
 constant ConfigFlag EQUATIONS_PER_FILE = CONFIG_FLAG(106, "equationsPerFile",
   NONE(), EXTERNAL(), INT_FLAG(2000), NONE(),

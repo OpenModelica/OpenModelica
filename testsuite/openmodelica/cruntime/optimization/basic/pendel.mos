@@ -17,7 +17,7 @@ model pendel
 
   Real x(start=x0,min=0,max=1);
   Real y(start=y0, fixed=true, min=0,max=1);
-  
+
   Real vx(start=0);
   Real vy(start=0,min=-1,max=0.0);
   Real cost(nominal=100) =( cos(Fx)-sin(Fy))*sin(time^2) annotation(isLagrange = true);
@@ -47,8 +47,8 @@ echo(true);
 res.resultFile;
 if regexBool(messages, "EXIT: Optimal Solution Found.\n") then
   print("Optimal Solution Found!\n");
-  if regexBool(messages,"Number of Iterations....: 64") then
-    print("Number of Iterations....: 64\n");
+  if regexBool(messages,"Number of Iterations....: 91") then
+    print("Number of Iterations....: 91\n");
   else
     print("wrong Number of Iterations! Update test\n");
   end if;
@@ -90,26 +90,26 @@ val(Fx,5.0);
 // true
 // "pendel_res.mat"
 // Optimal Solution Found!
-// Number of Iterations....: 64
+// Number of Iterations....: 91
 //
 // ""
 // ""
 // -0.0
-// -1.659802327078357
-// -0.1810650803865342
-// -0.8129041257192998
-// -0.06888096353801151
-// -0.03166509723098989
-// 0.4999999993334863
-// 0.4999999833331176
-// 0.4999999666607621
-// 0.4999999501537176
-// 0.4999999336917155
-// 0.4999999180081858
-// -3.30761299558503
-// -3.307611589086046
+// -1.659802327071079
+// -0.1810650803223208
+// -0.8129041257070627
+// -0.06888096344942475
+// -0.03166506452173983
+// 0.4999999993337779
+// 0.4999999833403194
+// 0.4999999666751017
+// 0.4999999501796328
+// 0.4999999337320414
+// 0.4999999182288091
+// -3.307612995835737
+// -3.307611589112298
 // -5.0
-// -3.307611465132354
-// -5.0
-// -4.999999953525733
+// -3.307611465222483
+// -4.999999999999887
+// -4.999999953525426
 // endResult
