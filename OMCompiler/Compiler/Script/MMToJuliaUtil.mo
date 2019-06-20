@@ -42,9 +42,13 @@ uniontype Context
   record UNIONTYPE
     String name;
   end UNIONTYPE;
+  record NO_CONTEXT
+  end NO_CONTEXT;
 end Context;
+
 constant Context packageContext = PACKAGE();
 constant Context functionContext = FUNCTION();
+constant Context noContext = NO_CONTEXT();
 
 function makeUniontypeContext
   input String name;

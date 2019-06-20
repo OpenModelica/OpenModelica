@@ -18,27 +18,47 @@ template dumpProgram(Absyn.Program program)
 match program
   case PROGRAM(classes = {}) then ""
   case PROGRAM(__) then
+    /* Necessary forward declarations */
     let cls_str = (classes |> cls => dumpClass(cls, defaultDumpOptions) ;separator="\n\n")
-    '<%cls_str%>'
+    <<
+      <%cls_str%>
+    >>
 end dumpProgram;
 
+template dumpSCodeElements(list<SCode.Element> elements)
+::= dumpSCodeElements2(filterElements(elements, defaultOptions))
+end dumpSCodeElements;
+
+template dumpSCodeElements2(list<SCode.Element> elements)
+::=
+  let str = elements |> el hasindex i1 fromindex 1 =>
+  (
+    match el
+      case CLASS(restriction=SCode.R_UNIONTYPE(__)) then
+        '@UniontypeDecl <%name%> <%\n%>'
+      else ''
+  )
+  '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types=#<%\n%><%str%>'
+end dumpSCodeElements2;
+
 template dumpClass(Absyn.Class cls, DumpOptions options)
-::= dumpClassElement(cls, options)
+/*We do not yet know our context in Absyn */
+::= dumpClassElement(cls, options, noContext)
 end dumpClass;
 
-template dumpClassElement(Absyn.Class class, DumpOptions options)
+template dumpClassElement(Absyn.Class class, DumpOptions options, Context context)
 ::=
 match class
   case CLASS(body=parts as PARTS(__),restriction=R_UNIONTYPE(__)) then
       /*
         In Julia we treat uniontypes as declarations. They do not have a direct definition
-        I use a uniontype macro for short here so things that belong together are grouped together
-       */
+        I use a uniontype macro for short here so things that belong together are grouped together..
+      */
        let commentStr = dumpCommentStrOpt(parts.comment)
        let class_def_str = dumpClassDef(parts, makeUniontypeContext(name), options)
      <<
-      @Uniontype <%name%> begin
       <%commentStr%>
+      @Uniontype <%name%> begin
        <%class_def_str%>
       end
      >>
@@ -60,8 +80,8 @@ match class
     let inputs_str = (parts.classParts |> cp => dumpInputsJL(Absyn.getElementItemsInClassPart(cp), functionContext))
     let functionBodyStr = dumpClassDef(parts, functionContext, options)
     <<
+    <%commentStr%>
     function <%name%>(<%inputs_str%>)<%returnType%>
-      <%commentStr%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -71,11 +91,13 @@ match class
     let partial_str = if partialPrefix then "abstract" else ""
     let class_type_str = dumpClassType(restriction)
     let cdef_str1 = dumpClassDef(parts, packageContext, options)
+    let forwardDeclarations = dumpSCodeElements(SCodeUtil.translateClassdefElements(parts.classParts))
     let cdef_str2 = match restriction /*What about nested packages*/
       case R_PACKAGE(__) then
         <<
         <%\n%>
         using MetaModelica
+        <%forwardDeclarations%>
         <%\n%>
         <%cdef_str1%>
         <%\n%>
@@ -101,6 +123,17 @@ match class
       <%\n%>
     <%footer_str%>
     >>
+  case CLASS(body=parts as DERIVED(__)) then
+    /* Derived should have the last context as it's context right? */
+    let comment = dumpCommentOpt(parts.comment)
+    let spec = dumpTypeSpec(parts.typeSpec, context)
+    let args = (parts.arguments |> earg => dumpElementArg(earg) ;separator=', ')
+    let attr = dumpElementAttr(parts.attributes)
+    <<
+    <%name%> = <%spec%> <%attr%><%comment%>
+    >>
+  /*PDER. Should not occur. Derived Enumeration and Overload might?*/
+
 end dumpClassElement;
 
 template dumpClassHeader(ClassDef classDef, Absyn.Restriction restriction)
@@ -414,7 +447,7 @@ end dumpEqMod;
 template dumpElementSpec(ElementSpec specification, DumpOptions options, Context context)
 ::=
 match specification
-  case CLASSDEF(__) then dumpClassElement(class_, options)
+  case CLASSDEF(__) then dumpClassElement(class_, options, context)
   case EXTENDS(__) then
     let bc_str = dumpPathJL(path)
     let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
@@ -656,6 +689,7 @@ match path
       case "Real" then 'ModelicaReal'
       case "Integer" then 'ModelicaInteger'
       case "Boolean" then 'Bool'
+      case "list" then 'List'
       else '<%name%>'
   else
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
@@ -685,7 +719,7 @@ match typeSpec
     let path_str = dumpPathJL(path)
     let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty, context) ;separator=", ")
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
-    '<%path_str%><<%ty_str%>><%arraydim_str%>'
+    '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
 
 template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim, Context context)
@@ -749,9 +783,9 @@ match exp
     let func_str = dumpCref(function_, context)
     let args_str = dumpFunctionArgs(functionArgs, context)
     'function <%func_str%>(<%args_str%>)'
-  case ARRAY(__) then
+  case ARRAY(__) /*MM grammar changing behaviour...*/ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
-    '{<%array_str%>}'
+    '(<%array_str%>)'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
@@ -776,11 +810,11 @@ match exp
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
-    '<%head_str%>> => <%rest_str%>'
+    '<%head_str%> => <%rest_str%>'
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
-    '{<%list_str%>}'
+    'list(<%list_str%>)'
   case DOT(__) then
     '<%dumpExp(exp, context)%>.<%dumpExp(index, context)%>'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
@@ -906,9 +940,10 @@ match match_exp
     let cmt_str = dumpCommentStrOpt(comment)
     <<
     begin
-    <%locals_str%>
-    <%match_ty_str%> <%input_str%> begin
-      <%cases_str%><%cmt_str%>
+      <%locals_str%>
+      <%match_ty_str%> <%input_str%> begin
+        <%cases_str%><%cmt_str%>
+      end
     end
     >>
 end dumpMatchExp;
@@ -952,20 +987,20 @@ match c
     let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
     <<
-    <%pattern_str%> <%guard_str%><%cmt_str%> => (
+    <%pattern_str%> <%guard_str%><%cmt_str%> => begin
       <%eql_str%>
       <%result_str%>
-      )
+    end
     >>
   case ELSE(__) then
     let eql_str = dumpMatchContents(classPart)
     let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
     <<
-    _ <%cmt_str%> => begin (
-      <%eql_str%>
-      <%result_str%>
-      )
+    _ <%cmt_str%> => begin
+        <%eql_str%>
+        <%result_str%>
+    end
     >>
 end dumpMatchCase;
 

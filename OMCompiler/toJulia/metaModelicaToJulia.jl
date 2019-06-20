@@ -1,5 +1,11 @@
 using OMJulia: OMCSession, sendExpression
 
+macro uniontype(expr)
+  quote
+    abstract type $expr end;
+  end
+end
+
 function metaModelicaToJulia(files, omc, outputdir)
   @assert sendExpression(omc, "setCommandLineOptions(\"-g=MetaModelica\")")
   for file in files

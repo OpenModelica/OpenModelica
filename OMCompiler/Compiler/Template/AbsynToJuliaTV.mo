@@ -1006,6 +1006,7 @@ package MMToJuliaUtil
   end Context;
   constant Context packageContext;
   constant Context functionContext;
+  constant Context noContext;
   function makeUniontypeContext
     input String name;
     output Context context;
@@ -1044,7 +1045,81 @@ function getComponentItemsFromElementItem
   input Absyn.ElementItem inElementItem;
   output list<Absyn.ComponentItem> componentItems;
 end getComponentItemsFromElementItem;
-
 end AbsynUtil;
+
+package SCodeUtil
+  function translateAbsyn2SCode
+    input Absyn.Program inProgram;
+    output SCode.Program outProgram;
+  end translateAbsyn2SCode;
+  function translateClassdefElements
+    input list<Absyn.ClassPart> inAbsynClassPartLst;
+    output list<SCode.Element> outElementLst;
+  end translateClassdefElements;
+end SCodeUtil;
+
+package SCode
+  type Program = list<SCode.Element>;
+  type Ident = String;
+uniontype Element
+  record IMPORT
+  end IMPORT;
+  record EXTENDS
+  end EXTENDS;
+  record CLASS
+    Ident   name;
+    Restriction restriction;
+  end CLASS;
+  record COMPONENT
+  end COMPONENT;
+  record DEFINEUNIT
+  end DEFINEUNIT;
+end Element;
+
+uniontype Restriction
+  record R_CLASS end R_CLASS;
+  record R_OPTIMIZATION end R_OPTIMIZATION;
+  record R_MODEL end R_MODEL;
+  record R_RECORD
+  end R_RECORD;
+  record R_BLOCK end R_BLOCK;
+  record R_CONNECTOR
+  end R_CONNECTOR;
+  record R_OPERATOR end R_OPERATOR;
+  record R_TYPE end R_TYPE;
+  record R_PACKAGE end R_PACKAGE;
+  record R_FUNCTION
+  end R_FUNCTION;
+  record R_ENUMERATION end R_ENUMERATION;
+  record R_PREDEFINED_INTEGER     "predefined IntegerType" end R_PREDEFINED_INTEGER;
+  record R_PREDEFINED_REAL        "predefined RealType"    end R_PREDEFINED_REAL;
+  record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
+  record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
+  record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
+  record R_PREDEFINED_CLOCK       "predefined ClockType"   end R_PREDEFINED_CLOCK;
+  record R_METARECORD "Metamodelica extension"
+  end R_METARECORD;
+  record R_UNIONTYPE
+  end R_UNIONTYPE;
+end Restriction;
+end SCode;
+
+package SCodeDump
+  uniontype SCodeDumpOptions
+    record OPTIONS
+      Boolean stripAlgorithmSections;
+      Boolean stripProtectedImports;
+      Boolean stripStringComments;
+      Boolean stripExternalDecl;
+      Boolean stripOutputBindings;
+    end OPTIONS;
+  end SCodeDumpOptions;
+  constant SCodeDumpOptions defaultOptions;
+  function filterElements
+    input list<SCode.Element> element;
+    input SCodeDumpOptions options;
+    output list<SCode.Element> outElements;
+  end filterElements;
+end SCodeDump;
 
 end AbsynToJuliaTV;
