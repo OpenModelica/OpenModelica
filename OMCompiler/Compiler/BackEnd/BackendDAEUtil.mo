@@ -7773,6 +7773,7 @@ protected function allInitOptimizationModules
     (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy"),
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
+    (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
