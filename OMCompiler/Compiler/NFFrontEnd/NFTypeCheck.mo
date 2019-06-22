@@ -2363,6 +2363,12 @@ algorithm
   else
     for c1 in comps1 loop
       c2 :: rest_c2 := rest_c2;
+
+      if InstNode.name(c1) <> InstNode.name(c2) then
+        matchKind := MatchKind.NOT_COMPATIBLE;
+        return;
+      end if;
+
       (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, allowUnknown);
 
       if matchKind == MatchKind.NOT_COMPATIBLE then
