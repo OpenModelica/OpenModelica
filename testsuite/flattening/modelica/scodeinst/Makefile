@@ -229,6 +229,7 @@ ConnectExternalObject1.mo \
 ConnectInitial.mo \
 ConnectInvalidForm1.mo \
 ConnectInvalidType1.mo \
+ConnectInvalidType2.mo \
 ConnectNonConnector1.mo \
 ConnectNonConnector2.mo \
 ConnectNonConnector3.mo \
