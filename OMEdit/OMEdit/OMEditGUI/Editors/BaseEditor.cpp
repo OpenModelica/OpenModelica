@@ -1719,6 +1719,10 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
   bool hasModifier = (pEvent->modifiers() != Qt::NoModifier) && !ctrlOrShift;
   QString completionPrefix = mpBaseEditor->wordUnderCursor();
+  int lastDotIndex = completionPrefix.lastIndexOf('.');
+  if (lastDotIndex != -1) {
+    completionPrefix = completionPrefix.right(completionPrefix.length() - lastDotIndex - 1);
+  }
   if ((!isCompleterShortcut && !isCompleterChar) && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 1 || eow.contains(pEvent->text().right(1)))) {
     mpCompleter->popup()->hide();
     return;
