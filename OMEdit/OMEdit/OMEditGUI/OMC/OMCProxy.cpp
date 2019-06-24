@@ -1697,32 +1697,30 @@ QString OMCProxy::listFile(QString className, bool nestedClasses)
  */
 QString OMCProxy::diffModelicaFileListings(QString before, QString after)
 {
-  QString escapedBefore = StringHandler::escapeString(before);
-  QString escapedAfter = StringHandler::escapeString(after);
-  QString result;
+  QString result = "";
+  // check if both strings are same
   // only use the diffModelicaFileListings when preserve text indentation settings is true
-  if (OptionsDialog::instance()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+  if (before.compare(after) != 0 && OptionsDialog::instance()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
+    QString escapedBefore = StringHandler::escapeString(before);
+    QString escapedAfter = StringHandler::escapeString(after);
     sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
     result = StringHandler::unparse(getResult());
     /* ticket:5413 Don't show the error of diffModelicaFileListings
      * Instead show the following warning. The developers can read the actual error message from the log file.
      */
     if ((getMessagesStringInternal() > 0) || (result.isEmpty())) {
-      QString msg = tr("Could not preserve the formatting of the original model when duplicating it. "
-                       "The duplicate model was created with internal pretty-printing algorithm.");
+      QString msg = tr("Could not preserve the formatting of the model instead internal pretty-printing algorithm is used.");
       MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::warningLevel);
       MessagesWidget::instance()->addGUIMessage(messageItem);
     }
-    if (result.isEmpty()) {
-      result = after; // use omc pretty-printing since diffModelicaFileListings() failed.
+    if (MainWindow::instance()->isDebug()) {
+      mpOMCDiffBeforeTextBox->setPlainText(before);
+      mpOMCDiffAfterTextBox->setPlainText(after);
+      mpOMCDiffMergedTextBox->setPlainText(result);
     }
-  } else {
-    result = after;
   }
-  if (MainWindow::instance()->isDebug()) {
-    mpOMCDiffBeforeTextBox->setPlainText(before);
-    mpOMCDiffAfterTextBox->setPlainText(after);
-    mpOMCDiffMergedTextBox->setPlainText(result);
+  if (result.isEmpty()) {
+    result = after; // use omc pretty-printing since diffModelicaFileListings() failed OR Preserve Text Indentation is not enabled.
   }
   return result;
 }
