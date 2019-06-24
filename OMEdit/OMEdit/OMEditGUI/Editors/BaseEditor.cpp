@@ -1583,8 +1583,13 @@ void PlainTextEdit::insertCompletionItem(const QModelIndex &index)
   QStringList completionlength = completerItem.mValue.split("\n");
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
-  int extra = completionlength[0].length() - mpCompleter->completionPrefix().length();
-  cursor.insertText(completionlength[0].right(extra));
+  /* Ticket #5333#comment:7. Since we allow case insensitive matching so we have to replace the whole word with
+   * completion text instead of just completing it.
+   */
+  cursor.setPosition(cursor.position(), QTextCursor::MoveAnchor);
+  cursor.setPosition(cursor.position() - mpCompleter->completionPrefix().length(), QTextCursor::KeepAnchor);
+  cursor.removeSelectedText();
+  cursor.insertText(completionlength[0]);
   // store the cursor position to be used for selecting text when inserting code snippets
   int currentpos = cursor.position();
   int startpos = currentpos-completionlength[0].length();
