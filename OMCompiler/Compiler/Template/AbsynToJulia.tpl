@@ -68,19 +68,13 @@ match class
   case CLASS(body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
     let commentStr = dumpCommentStrOpt(parts.comment)
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(Absyn.getElementItemsInClassPart(cp)))
-    let return_str =
-      /*No return if there are explicit return statements in the AST*/
-      if explicitReturnInClassPart(parts.classParts) then
-        ""
-      else
-        if returnType then
-          'return <%(parts.classParts |> cp => dumpReturnStrJL(Absyn.getElementItemsInClassPart(cp), functionContext))%>'
-        else
-          ""
+    let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(Absyn.getElementItemsInClassPart(cp), functionContext))%>'
     let inputs_str = (parts.classParts |> cp => dumpInputsJL(Absyn.getElementItemsInClassPart(cp), functionContext))
-    let functionBodyStr = dumpClassDef(parts, functionContext, options)
+    let header = dumpClassHeader(parts, restriction)
+    let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
     <<
     <%commentStr%>
+    <%header%>
     function <%name%>(<%inputs_str%>)<%returnType%>
       <%functionBodyStr%>
       <%return_str%>
@@ -133,7 +127,6 @@ match class
     <%name%> = <%spec%> <%attr%><%comment%>
     >>
   /*PDER. Should not occur. Derived Enumeration and Overload might?*/
-
 end dumpClassElement;
 
 template dumpClassHeader(ClassDef classDef, Absyn.Restriction restriction)
@@ -148,6 +141,7 @@ template dumpClassTypeSuperType(Absyn.Restriction r)
 ::=
 match r
   case R_METARECORD(__) then '<: <%dumpPathJL(name)%>'
+  case R_FUNCTION(__) then '' //Do nothing here for functions.. For now
 end dumpClassTypeSuperType;
 
 template dumpClassTypeTypeVars(Absyn.Restriction restriction, list<String> typeVars)
@@ -155,6 +149,9 @@ template dumpClassTypeTypeVars(Absyn.Restriction restriction, list<String> typeV
 match restriction
   case R_UNIONTYPE(__) then
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
+  /*Not pretty. But should solve generic functions scathered here and there*/
+  case R_FUNCTION(__) then
+    (if typeVars then (typeVars |> tv => (tv + " = Any") ; separator="\n"))
   else ""
 end dumpClassTypeTypeVars;
 
@@ -179,7 +176,7 @@ end dumpClassFooter;
 
 template dumpInputsJL(list<ElementItem> inputs, Context context)
 ::=
-  let inputStr = ((MMToJuliaUtil.filterOnDirection(inputs, MMToJuliaUtil.makeInputDirection()))
+  let inputStr = (listReverse((MMToJuliaUtil.filterOnDirection(inputs, MMToJuliaUtil.makeInputDirection())))
     |> ei
       => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), context)%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), context)%>'
       ;separator=", ")
@@ -273,8 +270,8 @@ match class_part
   case EXTERNAL(__) then
     let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann)%>;'
     match externalDecl
-      case EXTERNALDECL(__) then
-        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
+      case EXTERNALDECL(__) then //Turned of temporary to translate builtin
+        "#= Defined in the runtime =#" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
 end dumpClassPart;
 
 template dumpElementItems(list<Absyn.ElementItem> items, Context context, String prevSpacing, Boolean first, DumpOptions options)
@@ -636,7 +633,7 @@ match alg
     let args_str = dumpFunctionArgs(functionArgs, context)
     '<%name_str%>(<%args_str%>)'
   /*Here we need to gather all return values for the function*/
-  case ALG_RETURN(__) then "return"
+  case ALG_RETURN(__) then dumpAlgReturnString(context)
   case ALG_BREAK(__) then "break"
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ, context) else "..."
@@ -653,6 +650,14 @@ match alg
     >>
   case ALG_CONTINUE(__) then "continue"
 end dumpAlgorithm;
+
+template dumpAlgReturnString(Context context)
+  "Dumps the return string for a specific function context"
+::= match context
+    case FUNCTION(__) then "return <%returnStr%>"
+    /*TODO: Should not occur?*/
+    else "return"
+end dumpAlgReturnString;
 
 template dumpAlgorithmBranch(Absyn.Exp cond, list<Absyn.AlgorithmItem> body,
 String header, Context context)
@@ -690,6 +695,7 @@ match path
       case "Integer" then 'ModelicaInteger'
       case "Boolean" then 'Bool'
       case "list" then 'List'
+      case "array" then 'Array'
       else '<%name%>'
   else
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
@@ -783,7 +789,7 @@ match exp
     let func_str = dumpCref(function_, context)
     let args_str = dumpFunctionArgs(functionArgs, context)
     'function <%func_str%>(<%args_str%>)'
-  case ARRAY(__) /*MM grammar changing behaviour...*/ then
+  case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur...*/ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
     '(<%array_str%>)'
   case MATRIX(__) then
@@ -901,7 +907,7 @@ match if_exp
     let true_branch_str = dumpExp(trueBranch, context)
     let else_branch_str = dumpExp(elseBranch, context)
     let else_if_str = dumpElseIfExp(elseIfBranch, context)
-    'if <%cond_str%> then <%true_branch_str%><%else_if_str%> else <%else_branch_str%>'
+    'if (<%cond_str%>) <%true_branch_str%><%else_if_str%> else <%else_branch_str%> end'
 end dumpIfExp;
 
 template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context context)
@@ -909,7 +915,7 @@ template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context contex
   else_if |> eib as (cond, branch) =>
     let cond_str = dumpExp(cond, context)
     let branch_str = dumpExp(branch, context)
-    ' elseif <%cond_str%> then <%branch_str%>' ;separator="\n"
+    ' elseif (<%cond_str%>) <%branch_str%>' ;separator="\n"
 end dumpElseIfExp;
 
 template dumpCodeNode(Absyn.CodeNode code, Context context)

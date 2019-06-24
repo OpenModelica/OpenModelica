@@ -36,6 +36,7 @@ import Absyn;
 public
 uniontype Context
   record FUNCTION
+    String returnValuesStr;
   end FUNCTION;
   record PACKAGE
   end PACKAGE;
@@ -47,8 +48,8 @@ uniontype Context
 end Context;
 
 constant Context packageContext = PACKAGE();
-constant Context functionContext = FUNCTION();
 constant Context noContext = NO_CONTEXT();
+constant Context functionContext = FUNCTION("");
 
 function makeUniontypeContext
   input String name;
@@ -56,6 +57,13 @@ function makeUniontypeContext
 algorithm
   context := UNIONTYPE(name);
 end makeUniontypeContext;
+
+function makeFunctionContext
+  input String returnValuesStr;
+  output Context context;
+algorithm
+  context := FUNCTION(returnValuesStr);
+end makeFunctionContext;
 
 function makeInputDirection
   output Absyn.Direction direction;

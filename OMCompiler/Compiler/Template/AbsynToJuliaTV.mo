@@ -1011,6 +1011,10 @@ package MMToJuliaUtil
     input String name;
     output Context context;
   end makeUniontypeContext;
+  function makeFunctionContext
+    input String returnValuesStr;
+    output Context context;
+  end makeFunctionContext;
   function filterOnDirection
     input list<Absyn.ElementItem> inputs;
     input Absyn.Direction direction;
