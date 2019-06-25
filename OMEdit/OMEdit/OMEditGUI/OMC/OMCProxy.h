@@ -62,7 +62,6 @@ private:
   CustomExpressionBox *mpExpressionTextBox;
   QPushButton *mpOMCLoggerSendButton;
   QPlainTextEdit *mpOMCLoggerTextBox;
-  QTextCursor mOMCLoggerTextCursor;
   QWidget *mpOMCDiffWidget;
   Label *mpOMCDiffBeforeLabel;
   QPlainTextEdit *mpOMCDiffBeforeTextBox;
@@ -83,6 +82,7 @@ private:
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
+  bool eventFilter(QObject *pObject, QEvent *pEvent);
   void getPreviousCommand();
   void getNextCommand();
   bool initializeOMC(threadData_t *threadData);

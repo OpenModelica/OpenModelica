@@ -82,7 +82,6 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::OpenModelicaCompilerCLI));
   // OMC Logger textbox
   mpOMCLoggerTextBox = new QPlainTextEdit;
-  mOMCLoggerTextCursor = QTextCursor(mpOMCLoggerTextBox->document());
   mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setReadOnly(true);
@@ -101,6 +100,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
   pVerticalalLayout->addLayout(pHorizontalLayout);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
+  mpOMCLoggerWidget->installEventFilter(this);
   if (MainWindow::instance()->isDebug()) {
     // OMC Diff widget
     mpOMCDiffWidget = new QWidget;
@@ -133,12 +133,41 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   }
 }
 
+/*!
+ * \brief OMCProxy::~OMCProxy
+ * Deletes the OMSC logger widget and OMC diff widget if there is any.
+ */
 OMCProxy::~OMCProxy()
 {
+  // delete the logger widget
   delete mpOMCLoggerWidget;
   if (MainWindow::instance()->isDebug()) {
     delete mpOMCDiffWidget;
   }
+}
+
+/*!
+ * \brief OMCProxy::eventFilter
+ * Handles the close event of OMC logger widget and saves its geometry.
+ * \param pObject
+ * \param pEvent
+ * \return
+ */
+bool OMCProxy::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject != mpOMCLoggerWidget) {
+    return QObject::eventFilter(pObject, pEvent);
+  }
+
+  QWidget *pOMCLoggerWidget = qobject_cast<QWidget*>(pObject);
+  if (pOMCLoggerWidget && pEvent->type() == QEvent::Close) {
+    // save the geometry
+    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+      Utilities::getApplicationSettings()->setValue("OMCLoggerWidget/geometry", pOMCLoggerWidget->saveGeometry());
+    }
+    return true;
+  }
+  return QObject::eventFilter(pObject, pEvent);
 }
 
 /*!
@@ -397,6 +426,11 @@ void OMCProxy::showException(QString exception)
 void OMCProxy::openOMCLoggerWidget()
 {
   mpExpressionTextBox->setFocus(Qt::ActiveWindowFocusReason);
+  /* restore the window geometry. */
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+      && Utilities::getApplicationSettings()->contains("OMCLoggerWidget/geometry")) {
+    mpOMCLoggerWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMCLoggerWidget/geometry").toByteArray());
+  }
   mpOMCLoggerWidget->show();
   mpOMCLoggerWidget->raise();
   mpOMCLoggerWidget->activateWindow();
