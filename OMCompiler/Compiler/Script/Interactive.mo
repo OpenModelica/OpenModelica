@@ -10105,44 +10105,26 @@ end addConnection;
 
 public function updateConnectionAnnotation
   "Updates a connection annotation in a model."
-  input Absyn.Path inPath;
+  input Absyn.ComponentRef inClass;
   input String inFrom;
   input String inTo;
-  input Absyn.Annotation inAnnotation;
+  input list<Absyn.NamedArg> inAnnotation;
   input Absyn.Program inProgram;
-  output Boolean outResult;
   output Absyn.Program outProgram;
+protected
+  Absyn.Path class_path;
+  Absyn.Class cls;
+  Absyn.Within class_within;
 algorithm
-  (outResult, outProgram) := matchcontinue (inPath, inFrom , inTo, inAnnotation, inProgram)
-    local
-      Absyn.Path path, modelwithin;
-      String from, to;
-      Absyn.Annotation ann;
-      Absyn.Class cdef, newcdef;
-      Absyn.Program newp, p;
-
-    case (path, from, to, ann, (p as Absyn.PROGRAM()))
-      equation
-        modelwithin = Absyn.stripLast(path);
-        cdef = getPathedClassInProgram(path, p);
-        newcdef = updateConnectionAnnotationInClass(cdef, from, to, ann);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        (true, newp);
-
-    case (path, from, to, ann, (p as Absyn.PROGRAM()))
-      equation
-        cdef = getPathedClassInProgram(path, p);
-        newcdef = updateConnectionAnnotationInClass(cdef, from, to, ann);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then
-        (true, newp);
-
-    case (_, _, _, _, (p as Absyn.PROGRAM())) then (false, p);
-  end matchcontinue;
+  class_path := Absyn.crefToPath(inClass);
+  cls := getPathedClassInProgram(class_path, inProgram);
+  cls := updateConnectionAnnotationInClass(cls, inFrom, inTo, annotationListToAbsyn(inAnnotation));
+  class_within := if Absyn.pathIsIdent(class_path) then
+    Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(class_path));
+  outProgram := updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end updateConnectionAnnotation;
 
-protected function updateConnectionAnnotationInClass
+public function updateConnectionAnnotationInClass
   "Helper function to updateConnectionAnnotation."
   input Absyn.Class inClass1;
   input String inFrom;

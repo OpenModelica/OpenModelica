@@ -2634,13 +2634,23 @@ algorithm
       then
         (cache,v);
 
-    case (cache,_,"updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
-                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},_)
+    case (cache,_,"updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.CODE(Absyn.C_EXPRESSION(aexp))},_)
       equation
-        (b, p) = Interactive.updateConnectionAnnotation(classpath, str1, str2, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
+        p = Interactive.updateConnectionAnnotation(Absyn.pathToCref(classpath), str1, str2, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        (cache,Values.BOOL(b));
+        (cache,Values.BOOL(true));
+
+    case (cache,_,"updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
+                                      Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))},_)
+      algorithm
+        p := SymbolTable.getAbsyn();
+        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := Interactive.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
+        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if Absyn.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(classpath))), p);
+        SymbolTable.setAbsyn(p);
+      then
+        (cache,Values.BOOL(true));
 
     case (cache,_,"updateConnection",_,_) then (cache,Values.BOOL(false));
 

@@ -1237,7 +1237,7 @@ void LineAnnotation::updateConnectionAnnotation()
     updateOMSConnection();
   } else {
     // get the connection line annotation.
-    QString annotationString = QString("annotate=").append(getShapeAnnotation());
+    QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
