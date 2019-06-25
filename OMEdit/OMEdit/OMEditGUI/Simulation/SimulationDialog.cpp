@@ -1391,6 +1391,11 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
     pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
+    /* restore the window geometry. */
+    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+        && Utilities::getApplicationSettings()->contains("SimulationOutputWidget/geometry")) {
+      pSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("SimulationOutputWidget/geometry").toByteArray());
+    }
     pSimulationOutputWidget->show();
   }
 }

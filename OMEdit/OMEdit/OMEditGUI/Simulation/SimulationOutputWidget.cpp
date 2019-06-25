@@ -416,6 +416,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
 
 SimulationOutputWidget::~SimulationOutputWidget()
 {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
+    Utilities::getApplicationSettings()->setValue("SimulationOutputWidget/geometry", saveGeometry());
+  }
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
     Utilities::removeDirectoryRecursivly(mSimulationOptions.getWorkingDirectory());
