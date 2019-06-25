@@ -460,8 +460,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   initializeDataStruc(comp->fmuData, comp->threadData);
   /* setup model data with default start data */
   setDefaultStartValues(comp);
-  setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
+  setAllVarsToStart(comp->fmuData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
@@ -692,16 +692,24 @@ fmi2Status fmi2Reset(fmi2Component c)
 
   setThreadData(comp);
 
-  if (comp->state & modelTerminated) {
-    /* intialize modelData */
-    fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
-    initializeDataStruc(comp->fmuData, comp->threadData);
+  if (!(comp->state & modelTerminated)) {
+    deInitializeDataStruc(comp->fmuData);
   }
+  /* intialize modelData */
+  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
+  initializeDataStruc(comp->fmuData, comp->threadData);
   /* reset the values to start */
   setDefaultStartValues(comp);
-  setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
+  setAllVarsToStart(comp->fmuData);
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+#if !defined(OMC_MINIMAL_METADATA)
+  modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
+#endif
 
+  comp->_need_update = 1;
   comp->state = modelInstantiated;
   resetThreadData(comp);
   return fmi2OK;
