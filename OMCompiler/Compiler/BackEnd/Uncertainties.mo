@@ -314,12 +314,12 @@ algorithm
       BackendDAE.BackendDAE dae;
       BackendDAE.BackendDAE dlow,dlow_1;
       BackendDAE.IncidenceMatrix m,mt;
-      list<Integer> approximatedEquations,approximatedEquations_one,constantvars,extractedvars,extractedeqs;
-      list<BackendDAE.Equation> setC_eq,setS_eq;
+      list<Integer> approximatedEquations,approximatedEquations_one,constantvars,extractedvars,extractedeqs,extractedsetsvars;
+      list<BackendDAE.Equation> setC_eq,setS_eq,reqns;
       list<BackendDAE.EqSystem> eqsyslist;
       BackendDAE.Variables allVars,knownVariables,unknownVariables,globalKnownVars,finalvars,inDiffVars,inResVars,inotherVars,tmpglobalKnownVars,setcVars;
       BackendDAE.EquationArray allEqs,newEqs,inResEquations,inotherEquations;
-      list<BackendDAE.Var> knownvarlist,knvarlst, states, inputvars, paramvars,newfinalvars;
+      list<BackendDAE.Var> knownvarlist,knvarlst, states, inputvars, paramvars,newfinalvars,resVarsLst;
       list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,inputvar,outputvars,fullvars,finalvarlist;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem currentSystem;
@@ -332,8 +332,9 @@ algorithm
       list<tuple<list<Integer>,Integer>> blockranks;
       list<list<String>> blockstatus;
       list<tuple<Integer,Integer>> var;
-      list<BackendDAE.Var> tempvar,tempvar1;
+      list<BackendDAE.Var> tempvar,tempvar1,tmpparamvars;
       list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blocktargetinfo;
+      list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> predecessorblocktargetinfo;
       list<Boolean> blocksqstatus;
       list<Integer> removedequationssolvedvar,outputblocks,removedequationvars,approximated_eq_solvar,
       sets_eqs,sets_vars;
@@ -353,6 +354,7 @@ algorithm
       BackendDAE.EquationArray outResidualEqns,outOtherEqns;
       list<BackendDAE.InnerEquation> sets_inner_equations;
       String str;
+      list<DAE.ComponentRef> cr_lst;
     case(dae)
        equation
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dae;
@@ -363,12 +365,13 @@ algorithm
         print("\nModelInfo: " + modelname + "\n" + UNDERLINE + "\n\n");
         BackendDump.dumpEquationArray(allEqs,"orderedEquation");
         BackendDump.dumpVariables(allVars,"orderedVariables");
+        //BackendDump.dumpVariables(globalKnownVars,"parameters");
         (match1,match2) = Matching.PerfectMatching(m);
         var=dumpMatching(match1);
         BackendDump.dumpMatching(match1);
         bltblocks=Sorting.Tarjan(m,match1);
         // dump BLT BLOCKS
-        //dumpListList(bltblocks,"BLT_BLOCKS");
+        dumpListList(bltblocks,"BLT_BLOCKS");
         true = listEmpty(eqsyslist);
         mExt=getExtIncidenceMatrix(m);
         //dumpExtIncidenceMatrix(mExt);
@@ -393,6 +396,13 @@ algorithm
         blockranks=List.toListWithPositions(blockstofind);
         blockstatus=checkBlockStatus(blockstofind,blockstatus);
         blocktargetinfo=findBlockTargets(blockstofind,blockstatus,var,mExt,initblocks,blockranks);
+
+        // new algorithm, find predeccsorblocks
+        predecessorblocktargetinfo=findPredecessorBlocks(blocktargetinfo);
+        //print("Final Predecessors Block: " + anyString(predecessorblocktargetinfo) + "\n");
+        (tempsetC,tempsetS)=ExtractEquationsfromPredecessorBlocks(predecessorblocktargetinfo,blockranks,approximatedEquations);
+
+        /*
         //step-3 of algorithm
         (blocksqstatus,blockdata)=findSquareAndNonSquareBlocks(blocktargetinfo,var,mExt,initblocks);
         //Step-4 of algorithm
@@ -402,6 +412,7 @@ algorithm
         // find intermediate variables in SET-C
         (matchedknownssetc,matchedunknownssetc) = getVariableOccurence(tempsetC,mExt,knowns);
         // Extract Optimal Set-S equations if intermediate variables in present in SET-S, This approach is reverted due to lack of proof, may be used in future
+        */
         /*
         tempsetS={};
         if(not listEmpty(matchedunknownssetc)) then
@@ -409,15 +420,19 @@ algorithm
            (_,extractedeqs,var_dependencytree,eq_dependencytree) = BuildSquareSubSet(sets_eqs,sets_vars,knowns,mExt,var,constantvars,approximatedEquations);
            tempsetS=listAppend(tempsetS,extractedeqs);
         end if;*/
-        tempsetS=List.setDifferenceOnTrue(tempsetS,approximatedEquations,intEq);
-        tempsetC = List.setDifferenceOnTrue(tempsetC,tempsetS,intEq);
+
+        //tempsetS=List.setDifferenceOnTrue(tempsetS,approximatedEquations,intEq);
+        //tempsetC = List.setDifferenceOnTrue(tempsetC,tempsetS,intEq);
+        (matchedknownssetc,matchedunknownssetc) = getVariableOccurence(tempsetC,mExt,knowns);
         extractedvars=getVariablesAfterExtraction(tempsetC,tempsetS,mExt);
+        extractedsetsvars=getVariablesAfterExtraction(tempsetS,{},mExt);
         finalvarlist=getRemovedEquationSolvedVariables(listAppend(tempsetC,tempsetS),var);
         (finalvarlist,inputvarlist,_)=List.intersection1OnTrue(extractedvars,finalvarlist,intEq);
 
         inputvarlist=List.setDifferenceOnTrue(inputvarlist,knowns,intEq);
 
         print("\nFINAL SET OF EQUATIONS After Reconciliation \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(tempsetC)+"\n" +"SET_S: "+ dumplistInteger(tempsetS)+ "\n\n" );
+
         //BackendDump.dumpList(setC,"setC_Eqs :");
         //BackendDump.dumpList(setS,"setS_Eqs :");
 
@@ -430,16 +445,42 @@ algorithm
 
         BackendDump.dumpEquationList(setC_eq,"SET_C");
         BackendDump.dumpEquationList(setS_eq,"SET_S");
-        VerifyDataReconciliation(tempsetC,tempsetS,knowns,unknowns,mExt,var,constantvars,approximatedEquations,allVars,allEqs,mapIncRowEqn);
+
+        // prepare outdiff vars (i.e) variables of interest
+        outDiffVars=BackendVariable.listVar(List.map1r(listReverse(knowns),BackendVariable.getVarAt,allVars));
+        // set uncertain variables unreplaceable attributes to be true
+        outDiffVars=BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars),BackendVariable.setVarUnreplaceable,true));
+
+        // prepare set-c residual equations and residual vars
+        (_, reqns) = BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
+        (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(listReverse(reqns), "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
+        outResidualVars = BackendVariable.listVar(resVarsLst);
+        outResidualEqns = BackendEquation.listEquation(reqns);
+
+        // prepare set-s other equations
+        outOtherEqns = BackendEquation.listEquation(setS_eq);
+
+        // extract parameters from set-s equations
+        tmpparamvars = BackendEquation.equationsVars(outOtherEqns,globalKnownVars);
+
+        // prepare variables stucture from list of extracted equations
+        cr_lst = BackendEquation.getAllCrefFromEquations(BackendEquation.listEquation(setS_eq));
+        outOtherVars = dumpCrefList(cr_lst,outDiffVars,tmpparamvars);
+
+        BackendDump.dumpVariables(outOtherVars,"Unknown variables in SET_S ");
+        BackendDump.dumpVariables(BackendVariable.listVar(tmpparamvars),"Parameters in SET_S");
+
+
+        VerifyDataReconciliation(tempsetC,tempsetS,knowns,unknowns,mExt,var,constantvars,approximatedEquations,allVars,allEqs,mapIncRowEqn,outOtherVars,setS_eq);
         //outDae = BackendDAE.DAE({currentSystem}, shared);
 
         /* Prepare Torn systems for Jacobians */
         //create the Set-S equation to BackendDae innerequation structure
-        sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns,inputvarlist);
+        //sets_inner_equations=createInnerEquations(tempsetS,var,setS,knowns,inputvarlist);
         //sets_inner_equations={BackendDAE.INNEREQUATION(eqn = 56, vars = {48}), BackendDAE.INNEREQUATION(eqn = 3, vars = {70}), BackendDAE.INNEREQUATION(eqn = 6, vars = {77}),BackendDAE.INNEREQUATION(eqn = 23, vars = {55}), BackendDAE.INNEREQUATION(eqn = 20, vars = {42}), BackendDAE.INNEREQUATION(eqn = 50, vars = {20})};
-        (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
+        //(outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),setC,sets_inner_equations,shared.functionTree);
         // set uncertain variables unreplaceable attributes to be true
-        outDiffVars=BackendVariable.listVar(List.map1(listReverse(BackendVariable.varList(outDiffVars)),BackendVariable.setVarUnreplaceable,true));
+        //outDiffVars=BackendVariable.listVar(List.map1(listReverse(BackendVariable.varList(outDiffVars)),BackendVariable.setVarUnreplaceable,true));
         // Dump the torn systems
         /*
         BackendDump.dumpVariables(outDiffVars,"Jacobian_knownVariables");
@@ -447,7 +488,6 @@ algorithm
         BackendDump.dumpVariables(outOtherVars,"Jacobian_outOtherVars");
         BackendDump.dumpEquationArray(outResidualEqns,"Jacobian_ResidualEquation");
         BackendDump.dumpEquationArray(outOtherEqns,"Jacobian_other_Equation");*/
-
         (simcodejacobian,shared)=SymbolicJacobian.getSymbolicJacobian(outDiffVars,outResidualEqns,outResidualVars,outOtherEqns,outOtherVars,shared,BackendVariable.listVar(List.map1r(extractedvars,BackendVariable.getVarAt,allVars)),"F",false);
         // put the jacobian also into shared object
         setcVars=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
@@ -460,9 +500,10 @@ algorithm
 
         // set the variables of interest as INPUTS
         tempvar=BackendVariable.varList(outDiffVars);
-        tempvar1= List.map1r(inputvarlist,BackendVariable.getVarAt,allVars);
-        tmpglobalKnownVars=BackendVariable.listVar(List.map1(listAppend(tempvar,tempvar1),BackendVariable.setVarDirection,DAE.INPUT()));
+        //tempvar1= List.map1r(inputvarlist,BackendVariable.getVarAt,allVars);
+        tmpglobalKnownVars=BackendVariable.listVar(List.map1(tempvar,BackendVariable.setVarDirection,DAE.INPUT()));
         shared = BackendDAEUtil.setSharedGlobalKnownVars(shared,BackendVariable.mergeVariables(globalKnownVars, tmpglobalKnownVars));
+        //shared = BackendDAEUtil.setSharedGlobalKnownVars(shared,tmpglobalKnownVars);
         //BackendDump.dumpVariables(tmpglobalKnownVars,"inputvars");
         // write the variables to the csv file
         if not System.regularFileExists(modelname+"_Inputs.csv") then
@@ -476,6 +517,30 @@ algorithm
     case(_) then inDae;
   end match;
 end dataReconciliation;
+
+public function dumpCrefList
+  input list<DAE.ComponentRef> cr_lst;
+  input BackendDAE.Variables invar;
+  input list<BackendDAE.Var> paramvars;
+  output BackendDAE.Variables outvar;
+protected
+  list<DAE.ComponentRef> tmpcr,tmpparamcrefs;
+  list<BackendDAE.Var> tmpvar={};
+  Integer count=1;
+algorithm
+  tmpcr:=List.map(BackendVariable.varList(invar),BackendVariable.varCref);
+  tmpparamcrefs:=List.map(paramvars,BackendVariable.varCref);
+  //print(anyString(tmpcr)+"\n");
+  for i in cr_lst loop
+    if (not listMember(i,tmpcr) and not listMember(i,tmpparamcrefs)) then
+      //print(intString(count) + "(:)" + ComponentReference.crefStr(i) + "\n");
+      tmpvar:= BackendVariable.makeVar(i)::tmpvar;
+      count:=count+1;
+    end if;
+  end for;
+  outvar:=BackendVariable.listVar(List.unique(tmpvar));
+  //BackendDump.dumpVariables(outvar,"filetered vars");
+end dumpCrefList;
 
 /* function which dumps the variable names to csv file */
 public function dumpToCsv
@@ -637,6 +702,8 @@ public function VerifyDataReconciliation
    input BackendDAE.Variables allVars;
    input BackendDAE.EquationArray allEqs;
    input array<Integer> mapIncRowEqn;
+   input BackendDAE.Variables outsetS_vars;
+   input list<BackendDAE.Equation> outsetS_eq;
 protected
    list<Integer> matchedeq,matchedknownssetc,matchedunknownssetc,matchedknownssets,matchedunknownssets;
    list<Integer> tmpunknowns,tmpknowns,tmplist1,tmplist2,tmplist3,tmplist1sets,setstmp;
@@ -650,9 +717,9 @@ algorithm
    print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm"+ "\n" + UNDERLINE + "\n");
 
    var:=List.map1r(listReverse(knowns),BackendVariable.getVarAt,allVars);
-   convar:=List.map1r(constantvars,BackendVariable.getVarAt,allVars);
+   //convar:=List.map1r(constantvars,BackendVariable.getVarAt,allVars);
    BackendDump.dumpVarList(var,"knownVariables:"+dumplistInteger(listReverse(knowns)));
-   BackendDump.dumpVarList(convar,"ConstantVariables:"+dumplistInteger(constantvars));
+   //BackendDump.dumpVarList(convar,"ConstantVariables:"+dumplistInteger(constantvars));
    print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
 
    //depeqs:=List.map1r(eqs, BackendEquation.get, allEqs);
@@ -666,7 +733,7 @@ algorithm
        print("-Failed\n");
        BackendDump.dumpEquationList(List.map1r(matchedeq, BackendEquation.get, allEqs),"-Equations Found in SET_C and SET_S:" +dumplistInteger(matchedeq));
        Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1- Failed : The system is ill-posed."});
-       return;
+       fail();
    end if;
 
    (matchedknownssetc,matchedunknownssetc):=getVariableOccurence(setc,mExt,knowns);
@@ -687,7 +754,7 @@ algorithm
               print("-Failed\n");
               BackendDump.dumpVarList(List.map1r(tmplist2,BackendVariable.getVarAt,allVars),"knownVariables not Found:" +dumplistInteger(tmplist2));
               Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2- Failed : The system is ill-posed."});
-              return;
+              fail();
          end if;
          print("-Passed \n");
          BackendDump.dumpVarList(List.map1r(tmplist1,BackendVariable.getVarAt,allVars),"-SET_C has known variables:" +dumplistInteger(tmplist1));
@@ -701,7 +768,7 @@ algorithm
    else
        resstr:="-Failed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations  > " + intString(listLength(knowns)) +" known variables \n\n";
        Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed : The system is ill-posed."});
-       return;
+       fail();
    end if;
 
    //Condition-4
@@ -718,19 +785,31 @@ algorithm
            BackendDump.dumpVarList(List.map1r(tmplistvar1,BackendVariable.getVarAt,allVars),"-SET_S has intermediate variables involved in SET_C:" +dumplistInteger(tmplistvar1));
            print("-Passed\n\n");
        else
-            BackendDump.dumpVarList(List.map1r(tmplistvar2,BackendVariable.getVarAt,allVars),"-SET_S does not have intermediate variables involved in SET_C:" +dumplistInteger(tmplistvar2));
+           BackendDump.dumpVarList(List.map1r(tmplistvar2,BackendVariable.getVarAt,allVars),"-SET_S does not have intermediate variables involved in SET_C:" +dumplistInteger(tmplistvar2));
            Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed : The system is ill-posed."});
-           return;
+           fail();
        end if;
    end if;
 
    //Condition-5
    print("Condition-5 " +"\"SET_S should be square \"" + "\n" + UNDERLINE +"\n");
-   if(listEmpty(sets)) then
+   if(listEmpty(outsetS_eq)) then
        print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations \n\n");
        return;
+   else
+      if(listLength(outsetS_eq)==listLength(BackendVariable.varList(outsetS_vars))) then
+        print("-Passed" + "\n "+ "Set_S has " + intString(listLength(outsetS_eq)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
+      else
+        print("-Failed" + "\n "+ "Set_S has " + intString(listLength(outsetS_eq)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed Set_S is not square: The system is ill-posed."});
+        //BackendDump.dumpEquationList(outsetS_eq,"SET_S");
+        //BackendDump.dumpVariables(outsetS_vars,"Set-S Variable");
+        fail();
+      end if;
+      //BackendDump.dumpEquationList(outsetS_eq,"SET_S");
+      //BackendDump.dumpVariables(outsetS_vars,"Set-S Variable");
    end if;
-
+   /*
    if(not listEmpty(matchedunknownssetc)) then
        (sets_eqs,sets_vars):=getSolvedDependentEquationAndVars(matchedunknownssetc,solvedvar);
        (tmplist1,tmplist2,tmplist3):=List.intersection1OnTrue(sets_eqs,sets,intEq);
@@ -744,7 +823,7 @@ algorithm
        end if;
        (_,extractedeqs,var_dependencytree,eq_dependencytree):= BuildSquareSubSet(sets_eqs,sets_vars,knowns,mExt,solvedvar,constantvars,approximatedEquations);
        dumpDependencyTree(var_dependencytree,eq_dependencytree,knowns,constantvars,allVars,allEqs,mapIncRowEqn);
-   end if;
+   end if;*/
 end VerifyDataReconciliation;
 
 public function BuildSquareSubSetHelper
@@ -1080,6 +1159,105 @@ algorithm
    end for;
 end findBlockTargetsHelper1;
 
+public function findPredecessorBlocks
+  input list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blockinfo;
+  output list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> outblockinfo={};
+protected
+  list<Integer> dependencyequation;
+  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks,tmptargetblocks;
+  list<tuple<list<String>,Integer>> targetblocksvar;
+  list<Integer> blockitem,blockitems1,blockitems2,foundblockranks;
+  list<String> blockvarlst,blockvarlst1,blockvarlst2;
+  Integer foundblock,count=1,foundblockrank,tmpcount;
+  //mapBlocks map1=map;
+  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1,targetexist;
+  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
+algorithm
+  print("Targets of blocks without predecessors\n" + "=====================================\n");
+  for blocks in blockinfo loop
+    (blockitems1,targetblocks,targetblocksvar):= blocks;
+    //print(intString(count) + ": " + anyString(targetblocks) + "\n ");
+    tmpcount:=1;
+    targetexist:=false;
+    for tmpblocks in blockinfo loop
+      (_,tmptargetblocks,_):= tmpblocks;
+      if(not intEq(count,tmpcount)) then
+        //print("Targets:" + intString(tmpcount) + ": " + anyString(tmptargetblocks) + "\n ");
+        //print("first block:" + anyString(List.first(targetblocks))+ "\n");
+        if(listMember(List.first(targetblocks),tmptargetblocks)) then
+          //print("Predeccsors Block Found:" + anyString(targetblocks) + "\n");
+          targetexist:=true;
+        end if;
+      end if;
+      tmpcount:=tmpcount+1;
+    end for;
+    if(targetexist==false) then
+      //print("Predeccsors Block Found:" + anyString(targetblocks) + "\n");
+      //(_,exist,foundblock):=findSquareAndNonSquareBlocksHelper(targetblocks,targetblocksvar);
+      (exist,dependencyequation,foundblockranks):=findSquareAndNonSquareBlocksHelper1(targetblocks,targetblocksvar);
+      if(exist) then
+        // eliminateblocks which are not needed
+        (targetblocks,targetblocksvar):=EliminatePredecessorBlockTarget(targetblocks,targetblocksvar);
+        print("target("+ dumplistInteger(blockitems1)+ ") : " + anyString(targetblocks) + " => Blue_Block_Ranks in target "+ dumplistInteger(foundblockranks) + " => Blue Block Equations : " + dumplistInteger(dependencyequation)+ "\n");
+        //print("Found Block rank:" + anyString(targetblocksvar)+ "\n");
+        //outblockinfo:=(blockitems1,targetblocks,targetblocksvar,foundblock)::outblockinfo;
+        outblockinfo:=(blockitems1,targetblocks,targetblocksvar,dependencyequation,foundblockranks)::outblockinfo;
+      end if;
+    end if;
+    count:=count+1;
+  end for;
+  outblockinfo:=listReverse(outblockinfo);
+end findPredecessorBlocks;
+
+// This function eliminates the Blocks which are not needed for extraction algorithm
+public function EliminatePredecessorBlockTarget
+  input list<tuple<list<Integer>,Integer>> inlist1;
+  input list<tuple<list<String>,Integer>> inlist2;
+  output list<tuple<list<Integer>,Integer>> targetblocks={};
+  output list<tuple<list<String>,Integer>> targetblocksvar={};
+protected
+  Boolean checkknowns;
+  list<String> blocksvarlist;
+  Integer count=1,rank;
+algorithm
+  for i in listReverse(inlist2) loop
+    (blocksvarlist,rank):=i;
+    checkknowns:=listMember("knowns",blocksvarlist);
+    if(listMember("knowns",blocksvarlist)) then
+      //print("\n Eliminate BLocks pos :" + intString(count) + "\n elements to fetch: " + intString(listLength(inlist1)-count));
+      targetblocks:=List.firstN(inlist1,(listLength(inlist1)-count)+1);
+      targetblocksvar:=List.firstN(inlist2,(listLength(inlist2)-count)+1);
+      break;
+    end if;
+    count:=count+1;
+  end for;
+end EliminatePredecessorBlockTarget;
+
+/*
+public function findPredecessorBlocksHelper
+  input list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blockinfo;
+protected
+  list<Integer> dependencyequation;
+  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks;
+  list<tuple<list<String>,Integer>> targetblocksvar;
+  list<Integer> blockitem,blockitems1,blockitems2;
+  list<String> blockvarlst,blockvarlst1,blockvarlst2;
+  Integer foundblock,count=1,foundblockrank,tmpcount=1;
+  //mapBlocks map1=map;
+  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1;
+  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
+algorithm
+  print("\n PredeccesorBlocks\n");
+  for blocks in blockinfo loop
+    (blockitems1,targetblocks,targetblocksvar):= blocks;
+    print(intString(count) + ": " + anyString(targetblocks) + "\n ");
+    for tmpblocks in blockinfo loop
+      (blockitems1,targetblocks,targetblocksvar):= blocks;
+    end for;
+    count:=count+1;
+  end for;
+end findPredecessorBlocksHelper;
+*/
 
 public function findSquareAndNonSquareBlocks
   /*
@@ -1152,6 +1330,39 @@ algorithm
     end for;
 end findSquareAndNonSquareBlocksHelper;
 
+public function findSquareAndNonSquareBlocksHelper1
+	input list<tuple<list<Integer>,Integer>> inlist1;
+	input list<tuple<list<String>,Integer>> inlist2;
+	output Boolean exists=false;
+	output list<Integer> foundknownblocks={};
+	output list<Integer> blockranks={};
+protected
+  Boolean checkknowns;
+  list<String> blocksvarlist;
+  Integer count=1,rank,tmpcount;
+  list<Integer> targetblocks;
+algorithm
+  for i in inlist2 loop
+    (blocksvarlist,rank):=i;
+    (targetblocks,_):=listGet(inlist1,count);
+    checkknowns:=listMember("knowns",blocksvarlist);
+    if(checkknowns==true) then
+      exists:=true;
+      blockranks:=rank::blockranks;
+      tmpcount:=1;
+      for j in blocksvarlist loop
+        if(valueEq(j,"knowns")) then
+          foundknownblocks:=listGet(targetblocks,tmpcount)::foundknownblocks;
+        end if;
+        tmpcount:=tmpcount+1;
+      end for;
+    end if;
+    count:=count+1;
+  end for;
+  foundknownblocks:=listReverse(foundknownblocks);
+  blockranks:=listReverse(blockranks);
+end findSquareAndNonSquareBlocksHelper1;
+
 public function getBlockVarList
    input list<Integer> blocktofind;
    input list<list<Integer>> inlist1;
@@ -1184,6 +1395,113 @@ algorithm
   //outlist:=listReverse(listAppend(outlist,{inlist2}));
   outlist:=listReverse(outlist);
 end getActualBlocks;
+
+public function ExtractEquationsfromPredecessorBlocks
+ /*
+   order of dataStructure of predecessorblockdata
+    list<Integer> - Blocks -> {1,2}
+    list<tuple<list<Integer>,Integer>> - targetBlocks (eg: target {1} : {({1},1}),({2},2})})
+    list<tuple<list<String>,Integer>>  - Blocksvarlist ->{knowns,unknowns}
+    list<Integer>       - list of known Block
+    list<Integer>       - list of known BlockRanks
+   */
+  input list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> predecessortargetinfo;
+  input list<tuple<list<Integer>,Integer>> allblockranks;
+  input list<Integer> approximatedEquations;
+  output list<Integer> setc={};
+  output list<Integer> sets={};
+protected
+  list<Integer> dependendblock,foundblockranks,knownblocks,usedblocks,targetblocktobeinserted,blockspostoberemoved={};
+  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks,tmptargetblocks;
+  list<tuple<list<String>,Integer>> targetblocksvar,tmptargetblocksvar;
+  list<Integer> blockitems,blockitems1,blockitems2,tmpsetc,tmpsets;
+  list<String> blockvarlst,blockvarlst1,blockvarlst2;
+  Integer foundblock,count,tmpcount,blocksize;
+  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1,targetexist;
+  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
+  list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> tmppredecessortargetinfo;
+algorithm
+  // first loop
+  tmpcount:=0;
+  usedblocks:={};
+  print("\nLoop-1\n"+ "========\n");
+  for blocks in predecessortargetinfo loop
+    (blockitems,targetblocks,targetblocksvar,knownblocks,foundblockranks):= blocks;
+    (dependendblock,_):=listGet(allblockranks,List.first(foundblockranks));
+    targetblocktobeinserted:=List.setDifferenceOnTrue(knownblocks,usedblocks,intEq);
+    print("\nExtractEquationsfromNoPredecessorBlocks :" + dumplistInteger(blockitems) + " => " + dumplistInteger(dependendblock) + " => known blocks:" + dumplistInteger(targetblocktobeinserted) + "\n");
+    //print("\ntargetblocktobeinserted :" + anyString(targetblocktobeinserted) + "=> SET_S :" + anyString(usedblocks));
+    if(not listEmpty(targetblocktobeinserted)) then
+       usedblocks:=List.first(targetblocktobeinserted)::usedblocks;
+    else
+       //print("\n Problem is ill posed because there are two few variables of interest. Boundary condition A is ignored \n");
+       blockspostoberemoved:=tmpcount::blockspostoberemoved;
+       //sets:=listAppend(blockitems,sets);
+    end if;
+    //print("\nAfterinsertion :" + dumplistInteger(targetblocktobeinserted) + "=> SET_S :" + dumplistInteger(usedblocks) + "\n");
+
+    /*
+     EXISTING NON-EQUAL BLOCKS with Target blocks different
+     eg: B1={B1,B2,B3}
+     where B1=>B3(B1 depends on B3) which contains variable of interest
+     */
+    if (not List.setEqualOnTrue(blockitems,dependendblock,intEq) and not listEmpty(targetblocktobeinserted)) then
+      // insert Blocksize-1 equation into set-s
+        blocksize:=listLength(blockitems)-1;
+        sets:=listAppend(List.firstN(blockitems,blocksize),sets);
+        // insert 1 equation of targetBlock into set-s
+        //sets:=List.first(dependendblock)::sets;
+        sets:=List.first(targetblocktobeinserted)::sets;
+        print("\nAfterinsertion :" + dumplistInteger(targetblocktobeinserted) + "=> SET_S :" + dumplistInteger(sets) + "\n");
+    elseif(not List.setEqualOnTrue(blockitems,dependendblock,intEq) and listEmpty(targetblocktobeinserted)) then
+       // Block does not exist
+       print("\nProblem is ill posed because there are two few variables of interest. Boundary condition A is ignored \n");
+       sets:=listAppend(blockitems,sets);
+       print("\nAfterinsertion :" + dumplistInteger(targetblocktobeinserted) + "=> SET_S :" + dumplistInteger(sets) + "\n");
+    elseif (List.setEqualOnTrue(blockitems,dependendblock,intEq) and listLength(blockitems)==1) then
+      sets:={};
+    else
+      Error.addMessage(Error.INTERNAL_ERROR, {": Problem is ill posed because a variable of interest is set on boundary condition B"});
+      //fail();
+    end if;
+    tmpcount:=tmpcount+1;
+  end for;
+  print("\nFinal Extraction After Loop-1:\n===================================\n" + "SET_C : " + dumplistInteger(setc) + "\n" + "SET_S : " + dumplistInteger(sets) + "\n");
+  //print("\n Blocks to be removed:" + anyString(listReverse(blockspostoberemoved)));
+  //tmppredecessortargetinfo:= List.deletePositions(predecessortargetinfo,blockspostoberemoved);
+  //print("\n Blocks to be removed:" + anyString(listLength(tmppredecessortargetinfo)));
+
+  print("\nLoop-2\n===========\n");
+  //second loop
+  for i in predecessortargetinfo loop
+    (_,targetblocks,targetblocksvar,_,_):= i;
+    //print("\n second loop: " + anyString(List.restOrEmpty(targetblocks)));
+    tmptargetblocks:=List.restOrEmpty(targetblocks);
+    tmptargetblocksvar:=List.restOrEmpty(targetblocksvar);
+    count:=1;
+    for j in tmptargetblocks loop
+      (blockitems1,_):=j;
+      (blockvarlst1,_):=listGet(tmptargetblocksvar,count);
+      (tmpsetc,tmpsets):=extractMixedBlock(blockitems1,blockvarlst1);
+      setc:=listAppend(setc,tmpsetc);
+      sets:=listAppend(sets,tmpsets);
+      count:=count+1;
+    end for;
+  end for;
+  //print("Raw Extraction : \n" + "setc : " + anyString(setc) + "\n" + "sets: " + anyString(sets) + "\n ");
+  sets:=List.unique(sets);
+  setc:=List.unique(setc);
+  // remove equations from set-c which are present in set-s
+  setc:=List.setDifferenceOnTrue(setc,sets,intEq);
+  // remove approximated equation from setc and sets if present
+  setc:=List.setDifferenceOnTrue(setc,approximatedEquations,intEq);
+  sets:=List.setDifferenceOnTrue(sets,approximatedEquations,intEq);
+  print("\nFinal Extraction After Loop 2:\n=============================\n" + "SET_C : " + dumplistInteger(setc) + "\n" + "SET_S: " + dumplistInteger(sets) + "\n");
+  if(listEmpty(setc)) then
+    Error.addMessage(Error.INTERNAL_ERROR, {" Set-C is Empty! : Problem is ill posed because there are two few variables of interest"});
+    fail();
+  end if;
+end ExtractEquationsfromPredecessorBlocks;
 
 public function ExtractEquationsfromBlocks
   /*
