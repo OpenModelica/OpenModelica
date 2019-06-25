@@ -31,7 +31,7 @@ setComponentComment(A,x,"comment for x");                                       
 addConnection(a,b,A);                                                                                       getErrorString();
 setConnectionComment(A,a,b,"connecting a and b");                                                           getErrorString();
 list();                                                                                                     getErrorString();
-updateConnection(A, "a", "b", annotate=$annotation(Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}}))); getErrorString();
+updateConnection(A, "a", "b", annotate=Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}}));              getErrorString();
 list();                                                                                                     getErrorString();
 getConnectionCount(A);                                                                                      getErrorString();
 getNthConnection(A, 1);                                                                                     getErrorString();
@@ -166,7 +166,7 @@ list(A);                                                                        
 // end A;"
 // Evaluating: getErrorString()
 // ""
-// Evaluating: updateConnection(A, "a", "b", annotate = $Code((Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}))))
+// Evaluating: updateConnection(A, "a", "b", annotate = Line(points = {{-22.0, 15.0}, {32.0, 15.0}, {32.0, 16.0}}))
 // true
 // Evaluating: getErrorString()
 // ""
