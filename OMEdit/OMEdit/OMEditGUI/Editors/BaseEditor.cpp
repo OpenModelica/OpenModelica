@@ -1689,7 +1689,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   } else if (shiftModifier && pEvent->key() == Qt::Key_Home) {
     handleHomeKey(true);
     return;
-  } else if (pEvent->key() == Qt::Key_Home) {
+  } else if (!controlModifier && pEvent->key() == Qt::Key_Home) {
     handleHomeKey(false);
     return;
   } else if (shiftModifier && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)) {
