@@ -6,6 +6,7 @@ DualMassOscillator_me.mos \
 initialization.mos \
 initialization2.mos \
 outputState.mos \
+reset.mos \
 
 FAILINGTESTFILES = \
 
