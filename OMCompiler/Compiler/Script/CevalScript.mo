@@ -244,7 +244,7 @@ algorithm
     //        OPENMODELICAHOME that we set will contain a SPACE at the end!
     //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
     //        to the environment variable! Don't ask me why, ask Microsoft.
-    omhome := "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& ";
+    omhome := "set OPENMODELICAHOME=" + System.stringReplace(omhome_1, "/", "\\") + "&& ";
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
