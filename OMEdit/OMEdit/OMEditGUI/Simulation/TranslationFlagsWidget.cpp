@@ -76,7 +76,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
-  mpNewInstantiationCheckBox = new QCheckBox(tr("Enable experimental new instantiation phase"));
+  mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
   mpDataReconciliationCheckBox = new QCheckBox(tr("Enable data reconciliation"));
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
@@ -99,7 +99,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpEvaluateAllParametersCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpNLSanalyticJacobianCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
-  pMainLayout->addWidget(mpNewInstantiationCheckBox, row++, 0, 1, 3);
+  pMainLayout->addWidget(mpOldInstantiationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpDataReconciliationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
@@ -126,7 +126,7 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpEvaluateAllParametersCheckBox->setChecked(simulationOptions.getEvaluateAllParameters());
   mpNLSanalyticJacobianCheckBox->setChecked(simulationOptions.getNLSanalyticJacobian());
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
-  mpNewInstantiationCheckBox->setChecked(simulationOptions.getNewInstantiation());
+  mpOldInstantiationCheckBox->setChecked(simulationOptions.getOldInstantiation());
   mpDataReconciliationCheckBox->setChecked(simulationOptions.getDataReconciliation());
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
@@ -144,7 +144,7 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setEvaluateAllParameters(mpEvaluateAllParametersCheckBox->isChecked());
   pSimulationOptions->setNLSanalyticJacobian(mpNLSanalyticJacobianCheckBox->isChecked());
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
-  pSimulationOptions->setNewInstantiation(mpNewInstantiationCheckBox->isChecked());
+  pSimulationOptions->setOldInstantiation(mpOldInstantiationCheckBox->isChecked());
   pSimulationOptions->setDataReconciliation(mpDataReconciliationCheckBox->isChecked());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
@@ -192,8 +192,8 @@ QString TranslationFlagsWidget::commandLineOptions()
   if (mpParmodautoCheckBox->isChecked()) {
     debugFlags.append("parmodauto");
   }
-  // new instantiation
-  if (mpNewInstantiationCheckBox->isChecked()) {
+  // enable new instantiation
+  if (!mpOldInstantiationCheckBox->isChecked()) {
     debugFlags.append("newInst");
   }
 

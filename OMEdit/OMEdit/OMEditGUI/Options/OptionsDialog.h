@@ -620,6 +620,7 @@ public:
   QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
+  QCheckBox* getEnableNewInstantiationAPICheckBox() {return mpEnableNewInstantiationAPICheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
   QCheckBox* getCloseSimulationOutputWidgetsBeforeSimulationCheckBox() {return mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;}
@@ -643,6 +644,7 @@ private:
   QComboBox *mpCXXCompilerComboBox;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
+  QCheckBox *mpEnableNewInstantiationAPICheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
   QCheckBox *mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;
@@ -709,6 +711,12 @@ class NotificationsPage : public QWidget
 {
   Q_OBJECT
 public:
+  enum OldFrontend {
+    AlwaysAskForOF = 0,
+    TryOnceWithOF = 1,
+    SwitchPermanentlyToOF = 2,
+    KeepUsingNF = 3
+  };
   NotificationsPage(OptionsDialog *pOptionsDialog);
   QCheckBox* getQuitApplicationCheckBox() {return mpQuitApplicationCheckBox;}
   QCheckBox* getItemDroppedOnItselfCheckBox() {return mpItemDroppedOnItselfCheckBox;}
@@ -717,6 +725,7 @@ public:
   QCheckBox* getSaveModelForBitmapInsertionCheckBox() {return mpSaveModelForBitmapInsertionCheckBox;}
   QCheckBox* getAlwaysAskForDraggedComponentName() {return mpAlwaysAskForDraggedComponentName;}
   QCheckBox* getAlwaysAskForTextEditorErrorCheckBox() {return mpAlwaysAskForTextEditorErrorCheckBox;}
+  QComboBox* getOldFrontendComboBox() {return mpOldFrontendComboBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpNotificationsGroupBox;
@@ -727,6 +736,8 @@ private:
   QCheckBox *mpSaveModelForBitmapInsertionCheckBox;
   QCheckBox *mpAlwaysAskForDraggedComponentName;
   QCheckBox *mpAlwaysAskForTextEditorErrorCheckBox;
+  Label *mpOldFrontendLabel;
+  QComboBox *mpOldFrontendComboBox;
 };
 
 class LineStylePage : public QWidget

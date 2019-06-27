@@ -708,7 +708,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->isChecked());
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
-      mpTranslationFlagsWidget->getNewInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNewInstantiationCheckBox()->isChecked());
+      mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getDataReconciliationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getDataReconciliationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
@@ -751,7 +751,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               } else if (commandLineOptionValue.compare("parmodauto") == 0) {
                 mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("newInst") == 0) {
-                mpTranslationFlagsWidget->getNewInstantiationCheckBox()->setChecked(true);
+                mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(false);
               } else {
                 additionalDebugFlagsList.append(commandLineOptionValue);
               }
@@ -1102,6 +1102,100 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
 #endif
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+  if (!result) {
+    //! @todo Remove this once new frontend is used as default and old frontend is removed.
+    bool newFrontendEnabled = false;
+    QList<QString> options = MainWindow::instance()->getOMCProxy()->getCommandLineOptions();
+    foreach (QString option, options) {
+      if (option.contains("newInst")) {
+        newFrontendEnabled = true;
+        break;
+      }
+    }
+
+    if (newFrontendEnabled) {
+      QSettings *pSettings = Utilities::getApplicationSettings();
+      int answer;
+      QComboBox *pOldFrontendComboBox = OptionsDialog::instance()->getNotificationsPage()->getOldFrontendComboBox();
+      if (pOldFrontendComboBox->itemData(pOldFrontendComboBox->currentIndex()) == NotificationsPage::AlwaysAskForOF) {
+        QDialog *pOldFrontEndSelectionDialog = new QDialog;
+        pOldFrontEndSelectionDialog->setAttribute(Qt::WA_DeleteOnClose);
+        pOldFrontEndSelectionDialog->setWindowTitle(QString("%1 -%2").arg(Helper::applicationName, Helper::question));
+        pOldFrontEndSelectionDialog->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        // Icon
+        Label *pPixmapLabel = new Label;
+        QStyle *pStyle = this->style();
+        int iconSize = pStyle->pixelMetric(QStyle::PM_MessageBoxIconSize, 0, this);
+        pPixmapLabel->setPixmap(pStyle->standardIcon(QStyle::SP_MessageBoxQuestion, 0, this).pixmap(iconSize, iconSize));
+        // Label
+        Label *pMessageLabel = new Label(tr("The code generation process failed, see the Messages Browser for detailed diagnostic messages.<br /><br />"
+                                            "Most likely this is due to some issues in the Modelica source code, but it could also be due to some issues with the new OpenModelica compiler frontend.<br />"
+                                            "In this case, you may re-try the code generation with the old frontend, see also <b>%1->Simulation->Enable old frontend for code generation</b>.").arg(Helper::toolsOptionsPath));
+        pMessageLabel->setTextFormat(Qt::RichText);
+        pMessageLabel->setTextInteractionFlags(pMessageLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+        pMessageLabel->setOpenExternalLinks(true);
+        // Checkbox
+        QCheckBox *pRememberCheckBox = new QCheckBox(tr("Remember my decision and do not ask again"));
+        // buttons
+        QPushButton *pTryOnceButton = new QPushButton(tr("Try with old frontend once"));
+        pTryOnceButton->setAutoDefault(false);
+        connect(pTryOnceButton, SIGNAL(clicked()), pOldFrontEndSelectionDialog, SLOT(accept()));
+        QSignalMapper signalMapper;
+        QPushButton *pSwitchButton = new QPushButton(tr("Switch to old frontend permanently"));
+        pSwitchButton->setAutoDefault(false);
+        connect(pSwitchButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+        QPushButton *pKeepButton = new QPushButton(tr("Keep using new frontend"));
+        pKeepButton->setAutoDefault(true);
+        connect(pKeepButton, SIGNAL(clicked()), &signalMapper, SLOT(map()));
+        signalMapper.setMapping(pSwitchButton, 2);
+        signalMapper.setMapping(pKeepButton, 3);
+        connect(&signalMapper, SIGNAL(mapped(int)), pOldFrontEndSelectionDialog, SLOT(done(int)));
+        QDialogButtonBox *pButtonBox = new QDialogButtonBox(Qt::Horizontal);
+        pButtonBox->addButton(pKeepButton, QDialogButtonBox::ActionRole);
+        pButtonBox->addButton(pTryOnceButton, QDialogButtonBox::ActionRole);
+        pButtonBox->addButton(pSwitchButton, QDialogButtonBox::ActionRole);
+        // horizontal layout
+        QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
+        pHorizontalLayout->addWidget(pPixmapLabel, 0, Qt::AlignTop);
+        pHorizontalLayout->addWidget(pMessageLabel, 0, Qt::AlignTop);
+        // main layout
+        QGridLayout *pMainLayout = new QGridLayout;
+        pMainLayout->addLayout(pHorizontalLayout, 0, 0, 1, 2, Qt::AlignTop | Qt::AlignLeft);
+        pMainLayout->addWidget(pRememberCheckBox, 1, 0, Qt::AlignLeft | Qt::AlignBottom);
+        pMainLayout->addWidget(pButtonBox, 1, 1, Qt::AlignRight | Qt::AlignBottom);
+        pOldFrontEndSelectionDialog->setLayout(pMainLayout);
+        answer = pOldFrontEndSelectionDialog->exec();
+        if (answer > 1 && pRememberCheckBox->isChecked()) {
+          pSettings->setValue("notifications/promptOldFrontend", answer);
+          pOldFrontendComboBox->setCurrentIndex(pOldFrontendComboBox->findData(answer));
+        }
+      } else {
+        answer = pOldFrontendComboBox->itemData(pOldFrontendComboBox->currentIndex()).toInt();
+      }
+
+      switch (answer) {
+        case 1:
+          MainWindow::instance()->getOMCProxy()->disableNewInstantiation();
+          result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+          break;
+        case 2:
+          OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(true);
+          mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(true);
+          if (mpLibraryTreeItem->mSimulationOptions.isValid()) {
+            mpLibraryTreeItem->mSimulationOptions.setOldInstantiation(true);
+          }
+          MainWindow::instance()->getOMCProxy()->disableNewInstantiation();
+          result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
+          break;
+        case 3:
+          break;
+        case 0:
+        default:
+          // user cancelled. Do nothing.
+          break;
+      }
+    }
+  }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
   // set the infoXMLOperations flag
