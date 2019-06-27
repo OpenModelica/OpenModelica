@@ -1,0 +1,12 @@
+// name: Ticket5548.mos
+// keywords: test fix for but 5548
+// status: correct
+//
+//
+
+getAvailableMatchingAlgorithms(); getErrorString();
+
+// Result:
+// ({"BFSB","DFSB","MC21A","PF","PFPlus","HK","HKDW","ABMP","PR","DFSBExt","BFSBExt","MC21AExt","PFExt","PFPlusExt","HKExt","HKDWExt","ABMPExt","PRExt","BB"},{"Breadth First Search based algorithm.","Depth First Search based algorithm.","Depth First Search based algorithm with look ahead feature.","Depth First Search based algorithm with look ahead feature.","Depth First Search based algorithm with look ahead feature and fair row traversal.","Combined BFS and DFS algorithm.","Combined BFS and DFS algorithm.","Combined BFS and DFS algorithm.","Matching algorithm using push relabel mechanism.","Depth First Search based Algorithm external c implementation.","Breadth First Search based Algorithm external c implementation.","Depth First Search based Algorithm with look ahead feature external c implementation.","Depth First Search based Algorithm with look ahead feature external c implementation.","Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation.","Combined BFS and DFS algorithm external c implementation.","Combined BFS and DFS algorithm external c implementation.","Combined BFS and DFS algorithm external c implementation.","Matching algorithm using push relabel mechanism external c implementation.","BBs try."})
+// ""
+// endResult
