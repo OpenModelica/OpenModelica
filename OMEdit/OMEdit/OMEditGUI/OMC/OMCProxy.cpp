@@ -2499,6 +2499,16 @@ bool OMCProxy::setIndexReductionMethod(QString method)
 }
 
 /*!
+ * \brief OMCProxy::getCommandLineOptions
+ * Returns the enabled command line options.
+ * \return
+ */
+QList<QString> OMCProxy::getCommandLineOptions()
+{
+  return mpOMCInterface->getCommandLineOptions();
+}
+
+/*!
  * \brief OMCProxy::setCommandLineOptions
  * Sets the OMC CommandLineOptions.
  * \param options - a space separated list fo OMC command line options e.g. -d=initialization --cheapmatchingAlgorithm=3
@@ -2527,6 +2537,16 @@ bool OMCProxy::clearCommandLineOptions()
     printMessagesStringInternal();
     return false;
   }
+}
+
+bool OMCProxy::enableNewInstantiation()
+{
+  return mpOMCInterface->enableNewInstantiation();
+}
+
+bool OMCProxy::disableNewInstantiation()
+{
+  return mpOMCInterface->disableNewInstantiation();
 }
 
 /*!

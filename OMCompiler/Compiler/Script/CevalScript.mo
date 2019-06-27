@@ -1002,6 +1002,26 @@ algorithm
     case (cache,_,"clearCommandLineOptions",_,_)
       then (cache,Values.BOOL(false));
 
+    case (cache,_,"enableNewInstantiation",_,_)
+      equation
+        Flags.enableDebug(Flags.SCODE_INST);
+      then
+        (cache,Values.BOOL(true));
+
+    case (cache,_,"enableNewInstantiation",_,_)
+      then
+        (cache,Values.BOOL(false));
+
+    case (cache,_,"disableNewInstantiation",_,_)
+      equation
+        Flags.disableDebug(Flags.SCODE_INST);
+      then
+        (cache,Values.BOOL(true));
+
+    case (cache,_,"disableNewInstantiation",_,_)
+      then
+        (cache,Values.BOOL(false));
+
     case (cache,_,"clearDebugFlags",_,_)
       equation
         Flags.resetDebugFlags();

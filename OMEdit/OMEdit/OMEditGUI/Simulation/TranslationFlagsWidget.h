@@ -53,7 +53,7 @@ public:
   QCheckBox *getEvaluateAllParametersCheckBox() const {return mpEvaluateAllParametersCheckBox;}
   QCheckBox *getNLSanalyticJacobianCheckBox() const {return mpNLSanalyticJacobianCheckBox;}
   QCheckBox *getParmodautoCheckBox() const {return mpParmodautoCheckBox;}
-  QCheckBox *getNewInstantiationCheckBox() const {return mpNewInstantiationCheckBox;}
+  QCheckBox *getOldInstantiationCheckBox() const {return mpOldInstantiationCheckBox;}
   QCheckBox *getDataReconciliationCheckBox() const {return mpDataReconciliationCheckBox;}
   QLineEdit *getAdditionalTranslationFlagsTextBox() const {return mpAdditionalTranslationFlagsTextBox;}
 
@@ -70,7 +70,7 @@ private:
   QCheckBox *mpEvaluateAllParametersCheckBox;
   QCheckBox *mpNLSanalyticJacobianCheckBox;
   QCheckBox *mpParmodautoCheckBox;
-  QCheckBox *mpNewInstantiationCheckBox;
+  QCheckBox *mpOldInstantiationCheckBox;
   QCheckBox *mpDataReconciliationCheckBox;
   Label *mpAdditionalTranslationFlagsLabel;
   QLineEdit *mpAdditionalTranslationFlagsTextBox;

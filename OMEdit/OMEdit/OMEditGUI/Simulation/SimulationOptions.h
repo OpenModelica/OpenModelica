@@ -76,7 +76,7 @@ public:
     setEvaluateAllParameters(false);
     setNLSanalyticJacobian(true);
     setParmodauto(false);
-    setNewInstantiation(false);
+    setOldInstantiation(false);
     setDataReconciliation(false);
     setAdditionalTranslationFlags("");
     // Simulation
@@ -173,8 +173,8 @@ public:
   bool getNLSanalyticJacobian() const {return mNLSanalyticJacobian;}
   void setParmodauto(bool parmodauto) {mParmodauto = parmodauto;}
   bool getParmodauto() const {return mParmodauto;}
-  void setNewInstantiation(bool newInstantiation) {mNewInstantiation = newInstantiation;}
-  bool getNewInstantiation() const {return mNewInstantiation;}
+  void setOldInstantiation(bool oldInstantiation) {mOldInstantiation = oldInstantiation;}
+  bool getOldInstantiation() const {return mOldInstantiation;}
   void setDataReconciliation(bool dataReconciliation) {mDataReconciliation = dataReconciliation;}
   bool getDataReconciliation() const {return mDataReconciliation;}
   void setAdditionalTranslationFlags(QString additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
@@ -278,7 +278,7 @@ private:
   bool mEvaluateAllParameters;
   bool mNLSanalyticJacobian;
   bool mParmodauto;
-  bool mNewInstantiation;
+  bool mOldInstantiation;
   bool mDataReconciliation;
   QString mAdditionalTranslationFlags;
   // simulation flags

@@ -573,9 +573,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/parmodauto")) {
     mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->setChecked(mpSettings->value("simulation/parmodauto").toBool());
   }
-  // save new instantiation
+  // save old instantiation
   if (mpSettings->contains("simulation/newInst")) {
-    mpSimulationPage->getTranslationFlagsWidget()->getNewInstantiationCheckBox()->setChecked(mpSettings->value("simulation/newInst").toBool());
+    mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(!mpSettings->value("simulation/newInst").toBool());
   }
   if (mpSettings->contains("simulation/dataReconciliation")) {
     mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->setChecked(mpSettings->value("simulation/dataReconciliation").toBool());
@@ -621,6 +621,9 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mpSettings->contains("simulation/deleteEntireSimulationDirectory")) {
     mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->setChecked(mpSettings->value("simulation/deleteEntireSimulationDirectory").toBool());
+  }
+  if (mpSettings->contains("simulation/nfAPI")) {
+    mpSimulationPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
   }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
@@ -702,6 +705,13 @@ void OptionsDialog::readNotificationsSettings()
   }
   if (mpSettings->contains("notifications/alwaysAskForTextEditorError")) {
     mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->setChecked(mpSettings->value("notifications/alwaysAskForTextEditorError").toBool());
+  }
+  if (mpSettings->contains("notifications/promptOldFrontend")) {
+    bool ok;
+    int currentIndex = mpNotificationsPage->getOldFrontendComboBox()->findData(mpSettings->value("notifications/promptOldFrontend").toInt(&ok));
+    if (currentIndex > -1 && ok) {
+      mpNotificationsPage->getOldFrontendComboBox()->setCurrentIndex(currentIndex);
+    }
   }
 }
 
@@ -1190,8 +1200,8 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/NLSanalyticJacobian", mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked());
   // save parmodauto
   mpSettings->setValue("simulation/parmodauto", mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked());
-  // save new instantiation
-  mpSettings->setValue("simulation/newInst", mpSimulationPage->getTranslationFlagsWidget()->getNewInstantiationCheckBox()->isChecked());
+  // save old instantiation
+  mpSettings->setValue("simulation/newInst", !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked());
   // save dataReconciliation
   mpSettings->setValue("simulation/dataReconciliation", mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked());
   // save command line options
@@ -1254,6 +1264,11 @@ void OptionsDialog::saveGlobalSimulationSettings()
   } else {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=false");
   }
+  // save nfAPI
+  mpSettings->setValue("simulation/nfAPI", mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked());
+  if (mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
+  }
 }
 
 //! Saves the Messages section settings to omedit.ini
@@ -1288,6 +1303,7 @@ void OptionsDialog::saveNotificationsSettings()
   mpSettings->setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
   mpSettings->setValue("notifications/alwaysAskForDraggedComponentName", mpNotificationsPage->getAlwaysAskForDraggedComponentName()->isChecked());
   mpSettings->setValue("notifications/alwaysAskForTextEditorError", mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->isChecked());
+  mpSettings->setValue("notifications/promptOldFrontend", mpNotificationsPage->getOldFrontendComboBox()->itemData(mpNotificationsPage->getOldFrontendComboBox()->currentIndex()).toInt());
 }
 
 //! Saves the LineStyle section settings to omedit.ini
@@ -3661,6 +3677,10 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
+  //! @todo Remove this once we enable this bydefault in OMC.
+  /* Enable new instantiation use in OMC API */
+  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
+  mpEnableNewInstantiationAPICheckBox->setChecked(true);
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -3724,6 +3744,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpCXXCompilerComboBox, row++, 1);
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpEnableNewInstantiationAPICheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, row++, 0, 1, 2);
@@ -3966,16 +3987,25 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   // create the always ask for text editor error
   mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
   mpAlwaysAskForTextEditorErrorCheckBox->setChecked(true);
+  // prompt for old frontend
+  mpOldFrontendLabel = new Label(tr("If new frontend for code generation fails?"));
+  mpOldFrontendComboBox = new QComboBox;
+  mpOldFrontendComboBox->addItem(tr("Always ask for old frontend"), NotificationsPage::AlwaysAskForOF);
+  mpOldFrontendComboBox->addItem(tr("Try with old frontend once"), NotificationsPage::TryOnceWithOF);
+  mpOldFrontendComboBox->addItem(tr("Switch to old frontend permanently"), NotificationsPage::SwitchPermanentlyToOF);
+  mpOldFrontendComboBox->addItem(tr("Keep using new frontend"), NotificationsPage::KeepUsingNF);
   // set the layout of notifications group
   QGridLayout *pNotificationsLayout = new QGridLayout;
   pNotificationsLayout->setAlignment(Qt::AlignTop);
-  pNotificationsLayout->addWidget(mpQuitApplicationCheckBox, 0, 0);
-  pNotificationsLayout->addWidget(mpItemDroppedOnItselfCheckBox, 1, 0);
-  pNotificationsLayout->addWidget(mpReplaceableIfPartialCheckBox, 2, 0);
-  pNotificationsLayout->addWidget(mpInnerModelNameChangedCheckBox, 3, 0);
-  pNotificationsLayout->addWidget(mpSaveModelForBitmapInsertionCheckBox, 4, 0);
-  pNotificationsLayout->addWidget(mpAlwaysAskForDraggedComponentName, 5, 0);
-  pNotificationsLayout->addWidget(mpAlwaysAskForTextEditorErrorCheckBox, 6, 0);
+  pNotificationsLayout->addWidget(mpQuitApplicationCheckBox, 0, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpItemDroppedOnItselfCheckBox, 1, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpReplaceableIfPartialCheckBox, 2, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpInnerModelNameChangedCheckBox, 3, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpSaveModelForBitmapInsertionCheckBox, 4, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpAlwaysAskForDraggedComponentName, 5, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpAlwaysAskForTextEditorErrorCheckBox, 6, 0, 1, 2);
+  pNotificationsLayout->addWidget(mpOldFrontendLabel, 7, 0);
+  pNotificationsLayout->addWidget(mpOldFrontendComboBox, 7, 1);
   mpNotificationsGroupBox->setLayout(pNotificationsLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;

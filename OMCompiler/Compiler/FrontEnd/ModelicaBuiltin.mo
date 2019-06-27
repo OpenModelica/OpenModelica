@@ -1511,6 +1511,18 @@ external "builtin";
 annotation(preferredView="text");
 end setCompilerFlags;
 
+function enableNewInstantiation
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end enableNewInstantiation;
+
+function disableNewInstantiation
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end disableNewInstantiation;
+
 function setDebugFlags "example input: failtrace,-noevalfunc"
   input String debugFlags;
   output Boolean success;
