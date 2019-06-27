@@ -77,6 +77,7 @@ StateMachine.mos \
 Ticket4674.mos \
 UsesAnnotation1.mos \
 Ticket5506.mos \
+Ticket5548.mos \
 
 
 # test that currently fail. Move up when fixed.

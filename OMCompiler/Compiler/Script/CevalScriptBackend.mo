@@ -45,6 +45,7 @@ import FCore;
 import Error;
 import GlobalScript;
 import Interactive;
+import InteractiveUtil;
 import Values;
 import SimCode;
 import UnitAbsyn;
@@ -1862,6 +1863,120 @@ algorithm
         v = Values.TUPLE({v1,v2});
       then (cache,v);
 
+    else then cevalInteractiveFunctions4(inCache,inEnv,inFunctionName,inVals,msg);
+
+ end matchcontinue;
+end cevalInteractiveFunctions3;
+
+public function cevalInteractiveFunctions4
+"defined in the interactive environment."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input String inFunctionName;
+  input list<Values.Value> inVals;
+  input Absyn.Msg msg;
+  output FCore.Cache outCache;
+  output Values.Value outValue;
+protected
+  import LexerModelicaDiff.{Token,TokenId,tokenContent,scanString,reportErrors,filterModelicaDiff,modelicaDiffTokenEq,modelicaDiffTokenWhitespace};
+  import DiffAlgorithm.{Diff,diff,printActual,printDiffTerminalColor,printDiffXml};
+algorithm
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inFunctionName,inVals,msg)
+    local
+      String omdev,simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,token,varid,cmd,executable,executable1,encoding,method_str,
+             outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
+             call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
+             title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
+             platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
+             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile;
+      list<DAE.Exp> simOptions;
+      list<Values.Value> vals;
+      Absyn.Path path,classpath,className,baseClassPath;
+      SCode.Program scodeP,sp;
+      Option<list<SCode.Element>> fp;
+      FCore.Graph env;
+      Absyn.Program p,ip,pnew,newp,ptot;
+      list<Absyn.Program> newps;
+      GlobalScript.SimulationOptions simOpt;
+      Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
+      DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
+      DAE.Type tp, ty;
+      list<DAE.Type> tys;
+      Absyn.Class absynClass, absynClass2;
+      Absyn.ClassDef cdef;
+      Absyn.Exp aexp;
+      DAE.DAElist dae;
+      Option<DAE.DAElist> odae;
+      BackendDAE.BackendDAE daelow,optdae;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqnarr;
+      array<list<Integer>> m,mt;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
+      Absyn.ComponentRef cr,cr_1;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status, access;
+      Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
+      Integer fmiLogLevel, direction;
+      list<Integer> is;
+      list<FMI.TypeDefinitions> fmiTypeDefinitionsList;
+      list<FMI.ModelVariables> fmiModelVariablesList;
+      FMI.ExperimentAnnotation fmiExperimentAnnotation;
+      FMI.Info fmiInfo;
+      list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs,modifiernamelst;
+      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
+      GlobalScript.Statements istmts;
+      list<GlobalScript.Statements> istmtss;
+      Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
+      FCore.Cache cache;
+      Absyn.ComponentRef  crefCName;
+      list<tuple<String,Values.Value>> resultValues;
+      list<Real> realVals;
+      list<tuple<String,list<String>>> deps,depstransitive,depstransposed,depstransposedtransitive,depsmerged,depschanged;
+      Absyn.CodeNode codeNode;
+      list<Values.Value> cvars,vals2;
+      list<Absyn.Path> paths;
+      list<Absyn.NamedArg> nargs;
+      list<Absyn.Class> classes;
+      list<Absyn.ElementArg> eltargs,annlst;
+      Absyn.Within within_;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      GlobalScript.SimulationOptions defaulSimOpt;
+      SimCode.SimulationSettings simSettings;
+      Boolean dumpExtractionSteps, requireExactVersion;
+      list<tuple<Absyn.Path,list<String>,Boolean>> uses;
+      Config.LanguageStandard oldLanguageStd;
+      SCode.Element cl;
+      list<SCode.Element> cls, elts;
+      list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
+      HashSetString.HashSet hashSetString;
+      list<Boolean> blst;
+      list<Error.TotalMessage> messages;
+      UnitAbsyn.Unit u1,u2;
+      Real stoptime,starttime,tol,stepsize,interval;
+      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix,method,annotationname,modifiername,modifiervalue;
+      list<String> interfaceType;
+      list<tuple<String,list<String>>> interfaceTypeAssoc;
+      list<tuple<String,String>> relocatableFunctionsTuple;
+      SCode.Encapsulated encflag;
+      SCode.Restriction restr;
+      list<list<Values.Value>> valsLst;
+      list<Token> tokens1, tokens2, errorTokens;
+      list<SimpleModelicaParser.ParseTree> parseTree1, parseTree2;
+      list<tuple<Diff, list<Token>>> diffs;
+      list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
+      SourceInfo info;
+      SymbolTable forkedSymbolTable;
+
+    case (cache,_,"getAvailableIndexReductionMethods",_,_)
+      equation
+        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v = Values.TUPLE({v1,v2});
+      then (cache,v);
+
     case (cache,_,"getMatchingAlgorithm",_,_)
       equation
         str = Config.getMatchingAlgorithm();
@@ -2636,7 +2751,7 @@ algorithm
 
     case (cache,_,"updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.CODE(Absyn.C_EXPRESSION(aexp))},_)
       equation
-        p = Interactive.updateConnectionAnnotation(Absyn.pathToCref(classpath), str1, str2, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
+        p = InteractiveUtil.updateConnectionAnnotation(Absyn.pathToCref(classpath), str1, str2, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         (cache,Values.BOOL(true));
@@ -2646,7 +2761,7 @@ algorithm
       algorithm
         p := SymbolTable.getAbsyn();
         absynClass := Interactive.getPathedClassInProgram(classpath, p);
-        absynClass := Interactive.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
+        absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
         p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if Absyn.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(classpath))), p);
         SymbolTable.setAbsyn(p);
       then
@@ -2657,7 +2772,7 @@ algorithm
     case (cache,_,"updateConnectionNames",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
                                            Values.STRING(str3), Values.STRING(str4)},_)
       equation
-        (b, p) = Interactive.updateConnectionNames(classpath, str1, str2, str3, str4, SymbolTable.getAbsyn());
+        (b, p) = InteractiveUtil.updateConnectionNames(classpath, str1, str2, str3, str4, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         (cache,Values.BOOL(b));
@@ -2978,7 +3093,7 @@ algorithm
       then (cache,Values.BOOL(false));
 
  end matchcontinue;
-end cevalInteractiveFunctions3;
+end cevalInteractiveFunctions4;
 
 protected function getLibrarySubdirectories "author: lochel
   This function returns a list of subdirectories that contain a package.mo file."
