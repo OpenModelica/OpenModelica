@@ -117,15 +117,34 @@ match class
       <%\n%>
     <%footer_str%>
     >>
-  case CLASS(body=parts as DERIVED(__)) then
+  /*Regular type redefinitions*/
+  case CLASS(body=parts as DERIVED(__), restriction=R_TYPE(__)) then
     /* Derived should have the last context as it's context right? */
-    let comment = dumpCommentOpt(parts.comment)
+    let comment = dumpCommentOpt(parts.comment, context)
     let spec = dumpTypeSpec(parts.typeSpec, context)
-    let args = (parts.arguments |> earg => dumpElementArg(earg) ;separator=', ')
+    let args = (parts.arguments |> earg => dumpElementArg(earg, context) ;separator=', ')
     let attr = dumpElementAttr(parts.attributes)
     <<
     <%name%> = <%spec%> <%attr%><%comment%>
     >>
+  /*
+    This is a special case that seems to occur from time to time!
+    Modelica style function redfinition something that is not support in Julia.
+    I solve this using a macro @FunctionExtend..
+    function pathStringNoQual = pathString(usefq=false);
+    =>
+      @ExtendFunction pathStringNoQual pathString(usefq=false);
+  */
+  case CLASS(body=parts as DERIVED(__), restriction=R_FUNCTION(__)) then
+    let comment = dumpCommentOpt(parts.comment, context)
+    let spec = dumpTypeSpec(parts.typeSpec, context)
+    let args = (parts.arguments |> earg => dumpElementArg(earg, context) ;separator=', ')
+    let attr = dumpElementAttr(parts.attributes)
+    let name_of_new_function = '<%name%>'
+      <<
+        <%comment%>
+        @ExtendFunction <%name_of_new_function%> <%spec%>(<%attr%>)
+      >>
   /*PDER. Should not occur. Derived Enumeration and Overload might?*/
 end dumpClassElement;
 
@@ -268,7 +287,7 @@ match class_part
   case INITIALALGORITHMS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: INITIALALGORITHMS() not supported.")
   case EXTERNAL(__) then
-    let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann)%>;'
+    let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann, context)%>;'
     match externalDecl
       case EXTERNALDECL(__) then //Turned of temporary to translate builtin
         "#= Defined in the runtime =#" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
@@ -343,7 +362,7 @@ match elem
     let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re)
     let repl_str = match redeclareKeywords case SOME(re) then dumpReplaceable(re)
     let elementSpec_str = dumpElementSpec(specification, options, context)
-    let constrainClass_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
+    let constrainClass_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc, context)
     '<%elementSpec_str%><%constrainClass_str%>'
   case DEFINEUNIT(__) then AbsynDumpTpl.errorMsg("AbsynToJulia.dumpElement: DEFINEUNIT(__) not supported")
   case TEXT(__) then
@@ -361,34 +380,34 @@ match info
     'SOURCEINFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)\n'
 end dumpInfo;
 
-template dumpAnnotation(Absyn.Annotation ann)
+template dumpAnnotation(Absyn.Annotation ann, Context context)
 ::=
 match ann
   case ANNOTATION(elementArgs={}) then "#= annotation() =#"
   case ANNOTATION(__) then
     <<
     #= annotation(
-      <%(elementArgs |> earg => dumpElementArg(earg) ;separator=',<%\n%>')%>) #=
+      <%(elementArgs |> earg => dumpElementArg(earg, context) ;separator=',<%\n%>')%>) #=
     >>
 end dumpAnnotation;
 
-template dumpAnnotationOpt(Option<Absyn.Annotation> oann)
-::= match oann case SOME(ann) then dumpAnnotation(ann)
+template dumpAnnotationOpt(Option<Absyn.Annotation> oann, Context context)
+::= match oann case SOME(ann) then dumpAnnotation(ann, context)
 end dumpAnnotationOpt;
 
-template dumpAnnotationOptSpace(Option<Absyn.Annotation> oann)
-::= match oann case SOME(ann) then " " + dumpAnnotation(ann)
+template dumpAnnotationOptSpace(Option<Absyn.Annotation> oann, Context context)
+::= match oann case SOME(ann) then " " + dumpAnnotation(ann, context)
 end dumpAnnotationOptSpace;
 
-template dumpComment(Absyn.Comment cmt)
+template dumpComment(Absyn.Comment cmt, Context context)
 ::=
 match cmt
   case COMMENT(__) then
-    dumpCommentStrOpt(comment) + dumpAnnotationOptSpace(annotation_)
+    dumpCommentStrOpt(comment) + dumpAnnotationOptSpace(annotation_, context)
 end dumpComment;
 
-template dumpCommentOpt(Option<Absyn.Comment> ocmt)
-::= match ocmt case SOME(cmt) then dumpComment(cmt)
+template dumpCommentOpt(Option<Absyn.Comment> ocmt, Context context)
+::= match ocmt case SOME(cmt) then dumpComment(cmt, context)
 end dumpCommentOpt;
 
 template dumpCommentStrOpt(Option<String> comment)
@@ -401,8 +420,25 @@ let replaceAllRegular = '<%\ %>#= <%System.stringReplace(System.escapedString(co
 '<%replaceAllRegular%>'
 end dumpCommentStr;
 
-template dumpElementArg(Absyn.ElementArg earg)
-::= AbsynDumpTpl.errorMsg("AbsynToJulia.dumpElementArg: Not implemented")
+template dumpElementArg(Absyn.ElementArg earg, Context context)
+::=
+match earg
+  case MODIFICATION(__) then
+    let each_str = dumpEach(eachPrefix)
+    let final_str = dumpFinal(finalPrefix)
+    let path_str = dumpPathJL(path)
+    let mod_str = match modification case SOME(mod) then dumpModification(mod, context)
+    let cmt_str = dumpCommentStrOpt(comment)
+    '<%each_str%><%final_str%><%path_str%><%mod_str%><%cmt_str%>'
+  case REDECLARATION(__) then
+    let each_str = dumpEach(eachPrefix)
+    let final_str = dumpFinal(finalPrefix)
+    let redecl_str = dumpRedeclare(redeclareKeywords)
+    let repl_str = dumpReplaceable(redeclareKeywords)
+    let eredecl_str = '<%redecl_str%><%each_str%>'
+    let elem_str = dumpElementSpec(elementSpec, defaultDumpOptions, context)
+    let cc_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc, context)
+    '<%elem_str%><%cc_str%>'
 end dumpElementArg;
 
 template dumpEach(Absyn.Each each)
@@ -432,7 +468,7 @@ template dumpModification(Absyn.Modification mod, Context context)
 match mod
   case CLASSMOD(__) then
     let arg_str = if elementArgLst then
-      '(<%(elementArgLst |> earg => dumpElementArg(earg) ;separator=", ")%>)'
+      '(<%(elementArgLst |> earg => dumpElementArg(earg, context) ;separator=", ")%>)'
     let eq_str = dumpEqMod(eqMod, context)
     '<%arg_str%><%eq_str%>'
 end dumpModification;
@@ -447,9 +483,9 @@ match specification
   case CLASSDEF(__) then dumpClassElement(class_, options, context)
   case EXTENDS(__) then
     let bc_str = dumpPathJL(path)
-    let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
+    let args_str = (elementArg |> earg => dumpElementArg(earg, context) ;separator=", ")
     let mod_str = if args_str then '(<%args_str%>)'
-    let ann_str = dumpAnnotationOptSpace(annotationOpt)
+    let ann_str = dumpAnnotationOptSpace(annotationOpt, context)
     'extends <%bc_str%><%mod_str%><%ann_str%>'
   case COMPONENTS(__) then
     let ty_str = dumpTypeSpec(typeSpec, context)
@@ -502,13 +538,13 @@ match var
   else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpVariability: Only const and var are supported")
 end dumpVariability;
 
-template dumpConstrainClass(Absyn.ConstrainClass cc)
+template dumpConstrainClass(Absyn.ConstrainClass cc, Context context)
 ::=
 match cc
   case CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p, elementArg = el)) then
     let path_str = dumpPathJL(p)
-    let el_str = if el then '(<%(el |> e => dumpElementArg(e) ;separator=", ")%>)'
-    let cmt_str = dumpCommentOpt(comment)
+    let el_str = if el then '(<%(el |> e => dumpElementArg(e, context) ;separator=", ")%>)'
+    let cmt_str = dumpCommentOpt(comment, context)
     ' constrainedby <%path_str%><%el_str%><%cmt_str%>'
 end dumpConstrainClass;
 
@@ -523,7 +559,7 @@ match comp
   case COMPONENTITEM(__) then
     let comp_str = dumpComponent(component, context)
     let cond_str = dumpComponentCondition(condition, context) //TODO. This will complicate things...
-    let cmt = dumpCommentOpt(comment)
+    let cmt = dumpCommentOpt(comment, context)
     '<%comp_str%><%cond_str%><%cmt%>'
 end dumpComponentItem;
 
@@ -532,8 +568,8 @@ template dumpComponentItemWithoutCondString(Absyn.ComponentItem comp, Context co
 match comp
   case COMPONENTITEM(__) then
     let comp_str = dumpComponent(component, context)
-    //let cmt = dumpCommentOpt(comment)
-    '<%comp_str%>'
+    let cmt = dumpCommentOpt(comment, context)
+    '<%comp_str%><%cmt%>'
 end dumpComponentItemWithoutCondString;
 
 template dumpComponent(Absyn.Component comp, Context context)
@@ -585,7 +621,7 @@ template dumpAlgorithmItem(Absyn.AlgorithmItem alg, Context context)
 match alg
   case ALGORITHMITEM(__) then
     let alg_str = dumpAlgorithm(algorithm_, context)
-    let cmt_str = dumpCommentOpt(comment)
+    let cmt_str = dumpCommentOpt(comment, context)
     '<%alg_str%><%cmt_str%>'
   case ALGORITHMITEMCOMMENT(__) then dumpCommentStr(comment)
 end dumpAlgorithmItem;
