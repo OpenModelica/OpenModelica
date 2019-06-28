@@ -997,6 +997,7 @@ end Flags;
 package MMToJuliaUtil
   uniontype Context
     record FUNCTION
+      String retValsStr;
     end FUNCTION;
     record PACKAGE
     end PACKAGE;

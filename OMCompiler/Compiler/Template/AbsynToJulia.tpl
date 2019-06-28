@@ -133,7 +133,7 @@ match class
     I solve this using a macro @FunctionExtend..
     function pathStringNoQual = pathString(usefq=false);
     =>
-      @ExtendFunction pathStringNoQual pathString(usefq=false);
+      @ExtendedFunction pathStringNoQual pathString(usefq=false);
   */
   case CLASS(body=parts as DERIVED(__), restriction=R_FUNCTION(__)) then
     let comment = dumpCommentOpt(parts.comment, context)
@@ -143,7 +143,7 @@ match class
     let name_of_new_function = '<%name%>'
       <<
         <%comment%>
-        @ExtendFunction <%name_of_new_function%> <%spec%>(<%attr%>)
+        @ExtendedFunction <%name_of_new_function%> <%spec%>(<%attr%>)
       >>
   /*PDER. Should not occur. Derived Enumeration and Overload might?*/
 end dumpClassElement;
@@ -690,8 +690,8 @@ end dumpAlgorithm;
 template dumpAlgReturnString(Context context)
   "Dumps the return string for a specific function context"
 ::= match context
-    case FUNCTION(__) then "return <%returnStr%>"
-    /*TODO: Should not occur?*/
+    case FUNCTION(__) then 'return <%retValsStr%>'
+    /*TODO: Should not occur? Models with sections?*/
     else "return"
 end dumpAlgReturnString;
 
@@ -824,7 +824,10 @@ match exp
   case PARTEVALFUNCTION(__) then
     let func_str = dumpCref(function_, context)
     let args_str = dumpFunctionArgs(functionArgs, context)
-    'function <%func_str%>(<%args_str%>)'
+    /*  Same scenario when extending functions.
+        We pass a function and change the parameters
+    */
+    '@ExtendedAnonFunction <%func_str%>(<%args_str%>)'
   case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur...*/ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
     '(<%array_str%>)'
@@ -848,7 +851,8 @@ match exp
   case CODE(__) then '$Code(<%dumpCodeNode(code, context)%>)'
   case AS(__) then
     let exp_str = dumpExp(exp, context)
-    '<%id%> as <%exp_str%>'
+    /* TODO Macro might be needed for this case*/
+    '<%id%> = <%exp_str%>'
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
@@ -888,9 +892,10 @@ match exp
   case TUPLE(__) then
     let tuple_str = (expressions |> e => dumpPattern(e); separator=", " ;empty)
     '(<%tuple_str%>)'
-  case AS(__) then //TODO
+  case AS(__) then
+  /*TODO: Macro might be needed here*/
     let exp_str = dumpPattern(exp)
-    '<%id%> as <%exp_str%>'
+    '<%id%> = <%exp_str%>'
   case CONS(__) then
     let consOp = dumpCons(dumpPattern(head), dumpPattern(rest))
     '<%consOp%>'

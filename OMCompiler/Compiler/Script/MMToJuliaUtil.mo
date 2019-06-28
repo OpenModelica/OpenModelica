@@ -36,7 +36,7 @@ import Absyn;
 public
 uniontype Context
   record FUNCTION
-    String returnValuesStr;
+    String retValsStr;
   end FUNCTION;
   record PACKAGE
   end PACKAGE;
