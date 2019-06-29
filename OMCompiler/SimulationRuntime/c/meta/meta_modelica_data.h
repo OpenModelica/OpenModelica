@@ -138,7 +138,7 @@ typedef int mmc_switch_type;
 #define MMC_TAGPTR(p)             ((void*)((char*)(p) + 3))
 #define MMC_UNTAGPTR(x)           ((void*)((char*)(x) - 3))
 #define MMC_IS_INTEGER(X)         (0 == ((mmc_sint_t) (X) & 1))
-#define MMC_TAGFIXNUM(i)          (((i) << 1)+0)
+#define MMC_TAGFIXNUM(i)          ((((mmc_uint_t) (i)) << 1)+0)
 #define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) (X)) >> 1)
 
 #else
@@ -146,7 +146,7 @@ typedef int mmc_switch_type;
 #define MMC_TAGPTR(p)             ((void*)((char*)(p) + 0))
 #define MMC_UNTAGPTR(x)           ((void*)((char*)(x) - 0))
 #define MMC_IS_INTEGER(X)         (1 == ((mmc_sint_t) (X) & 1))
-#define MMC_TAGFIXNUM(i)          (((i) << 1)+1)
+#define MMC_TAGFIXNUM(i)          ((((mmc_uint_t) (i)) << 1)+1)
 #define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) ((X)-1)) >> 1)
 
 #endif
