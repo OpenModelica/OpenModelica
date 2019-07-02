@@ -6,6 +6,7 @@ if true then /* Suppress output */
   setCommandLineOptions("+g=MetaModelica");
   files := {
     prefixPath + "FrontEnd/Absyn.mo",
+    prefixPath + "FrontEnd/AbsynUtil.mo",
     prefixPath + "FrontEnd/Algorithm.mo",
     prefixPath + "FrontEnd/Builtin.mo",
     prefixPath + "FrontEnd/Ceval.mo",
