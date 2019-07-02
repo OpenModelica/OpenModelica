@@ -140,6 +140,8 @@ private:
 #if !defined(WITHOUT_OSG)
   QCheckBox *mpLaunchAnimationCheckBox;
 #endif
+  // Interactive Simulation Tab
+  QWidget *mpInteractiveSimulationTab;
   // Translation Tab
   QWidget *mpTranslationTab;
   TranslationFlagsWidget *mpTranslationFlagsWidget;
@@ -260,6 +262,7 @@ public slots:
   void showSimulationFlagsHelp();
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
+  void reject();
   void updateInteractiveSimulationCurves();
   void updateYAxis(double min, double max);
 private slots:
