@@ -36,6 +36,7 @@ encapsulated package BackendEquation
                BackendDAE.Equation data type."
 
 import Absyn;
+import AbsynUtil;
 import BackendDAE;
 import DAE;
 
@@ -2644,18 +2645,18 @@ algorithm
 
     // a = Record(b1, b2, b3, ..)
     case (DAE.CREF(componentRef = cr1), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2, complexClassType=ClassInf.RECORD(pathb1)))), _)
-      guard Absyn.pathEqual(pathb, pathb1)
+      guard AbsynUtil.pathEqual(pathb, pathb1)
     then aliasRecord(cr1, varLst2, elst2, inTpls);
 
     // Record(a1, a2, a3, ..) = b
     case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1, complexClassType=ClassInf.RECORD(patha1)))), DAE.CREF(componentRef = cr2), _)
-      guard Absyn.pathEqual(patha, patha1)
+      guard AbsynUtil.pathEqual(patha, patha1)
     then aliasRecord(cr2, varLst1, elst1, inTpls);
 
     // Record(a1, a2, a3, ..) = Record(b1, b2, b3, ..)
     case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
       DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))), _)
-      guard  Absyn.pathEqual(patha, patha1) and Absyn.pathEqual(pathb, pathb1)
+      guard  AbsynUtil.pathEqual(patha, patha1) and AbsynUtil.pathEqual(pathb, pathb1)
     then List.threadFold(elst1, elst2, aliasEquation1, inTpls);
 
     // matchcontinue part

@@ -45,6 +45,7 @@ encapsulated package Values
 
 
 public import Absyn;
+public import AbsynUtil;
 
 public
 uniontype Value

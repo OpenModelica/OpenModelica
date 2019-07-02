@@ -47,6 +47,7 @@ encapsulated package ConnectUtil
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import SCode;
 import ClassInf;
 import Config;
@@ -553,7 +554,7 @@ algorithm
     // Assumes that the enum has been reversed with reverseEnumType.
     case DAE.DIM_ENUM(p, l :: l_rest, new_idx)
       algorithm
-        ep := Absyn.joinPaths(p, Absyn.IDENT(l));
+        ep := AbsynUtil.joinPaths(p, Absyn.IDENT(l));
         dim_size := new_idx - 1;
       then
         (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
@@ -670,8 +671,8 @@ public function addOuterConnectToSets
 protected
   Boolean is_outer1, is_outer2;
 algorithm
-  is_outer1 := Absyn.isOuter(io1);
-  is_outer2 := Absyn.isOuter(io2);
+  is_outer1 := AbsynUtil.isOuter(io1);
+  is_outer2 := AbsynUtil.isOuter(io2);
 
   added := match(is_outer1, is_outer2)
     // Both are outer => error.
@@ -2775,7 +2776,7 @@ protected
 algorithm
   (potentials, flows, streams) := countConnectorVars(vars);
   true := checkConnectorBalance2(potentials, flows, streams, path, info);
-  //print(Absyn.pathString(path) + " has:\n\t" +
+  //print(AbsynUtil.pathString(path) + " has:\n\t" +
   //  String(potentials) + " potential variables\n\t" +
   //  String(flows) + " flow variables\n\t" +
   //  String(streams) + " stream variables\n\n");
@@ -2803,7 +2804,7 @@ algorithm
   if potentialVars <> flowVars then
     flow_str := String(flowVars);
     potential_str := String(potentialVars);
-    class_str := Absyn.pathString(path);
+    class_str := AbsynUtil.pathString(path);
     error_str := stringAppendList({
       "The number of potential variables (",
       potential_str,
@@ -2819,7 +2820,7 @@ algorithm
   // A stream connector must have exactly one scalar variable with the flow prefix.
   if streamVars > 0 and flowVars <> 1 then
     flow_str := String(flowVars);
-    class_str := Absyn.pathString(path);
+    class_str := AbsynUtil.pathString(path);
     error_str := stringAppendList({
       "A stream connector must have exactly one flow variable, this connector has ",
       flow_str, " flow variables."});
@@ -2854,7 +2855,7 @@ algorithm
       (p, f, s) := countConnectorVars(Types.getConnectorVars(ty2));
 
       // If the variable is input/output we don't count potential variables.
-      if Absyn.isInputOrOutput(DAEUtil.getAttrDirection(attr)) then
+      if AbsynUtil.isInputOrOutput(DAEUtil.getAttrDirection(attr)) then
         p := 0;
       end if;
 

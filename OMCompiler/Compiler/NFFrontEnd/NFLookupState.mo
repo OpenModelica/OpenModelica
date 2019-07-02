@@ -32,6 +32,7 @@
 encapsulated package NFLookupState
 
 import Absyn;
+import AbsynUtil;
 import SCode;
 import NFInstNode.InstNode;
 import NFComponent.Component;
@@ -57,7 +58,7 @@ uniontype LookupStateName
     output String str;
   algorithm
     str := match name
-      case PATH() then Absyn.pathString(name.path);
+      case PATH() then AbsynUtil.pathString(name.path);
       case CREF() then Dump.printComponentRefStr(name.cref);
     end match;
   end toString;
@@ -67,8 +68,8 @@ uniontype LookupStateName
     output String id;
   algorithm
     id := match name
-      case PATH() then Absyn.pathFirstIdent(name.path);
-      case CREF() then Absyn.crefFirstIdent(name.cref);
+      case PATH() then AbsynUtil.pathFirstIdent(name.path);
+      case CREF() then AbsynUtil.crefFirstIdent(name.cref);
     end match;
   end firstIdent;
 
@@ -77,8 +78,8 @@ uniontype LookupStateName
     output String id;
   algorithm
     id := match name
-      case PATH() then Absyn.pathSecondIdent(name.path);
-      case CREF() then Absyn.crefSecondIdent(name.cref);
+      case PATH() then AbsynUtil.pathSecondIdent(name.path);
+      case CREF() then AbsynUtil.crefSecondIdent(name.cref);
     end match;
   end secondIdent;
 end LookupStateName;

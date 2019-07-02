@@ -38,6 +38,7 @@ encapsulated package DAEUtil
   This module exports some helper functions to the DAE AST."
 
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import DAE;
 public import FCore;
@@ -1569,7 +1570,7 @@ public function isInnerVar
   output Boolean isInner;
 algorithm
   isInner := match element
-    case DAE.VAR() then Absyn.isInner(element.innerOuter);
+    case DAE.VAR() then AbsynUtil.isInner(element.innerOuter);
     else false;
   end match;
 end isInnerVar;
@@ -2089,7 +2090,7 @@ algorithm
         path = ClassInf.getStateName(inState);
         str1 = "\n" +
         "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + Absyn.pathString(path);
+        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2100,7 +2101,7 @@ algorithm
         path = ClassInf.getStateName(inState);
         str1 = "\n" +
         "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + Absyn.pathString(path);
+        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2744,8 +2745,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathStringDefault), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
+        msg = "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.traceln(msg);
       then
@@ -2766,8 +2767,8 @@ algorithm
     case (_,_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
     else
       equation
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathStringDefault), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
+        msg = "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{msg},info);
       then fail();
   end matchcontinue;
@@ -2782,13 +2783,13 @@ algorithm
     local Absyn.Path path; list<DAE.Function> fns;
     case (path,fn::_)
       equation
-        true = Absyn.pathEqual(functionName(fn),path);
+        true = AbsynUtil.pathEqual(functionName(fn),path);
       then fn;
     case (path,_::fns) then getNamedFunctionFromList(path, fns);
     case (path,{})
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- DAEUtil.getNamedFunctionFromList failed " + Absyn.pathString(path));
+        Debug.traceln("- DAEUtil.getNamedFunctionFromList failed " + AbsynUtil.pathString(path));
       then
         fail();
   end matchcontinue;
@@ -3838,7 +3839,7 @@ algorithm
   else
     lst := DAE.AvlTreePathFunction.toList(ft);
     lstInvalid := List.select(lst, isInvalidFunctionEntry);
-    str := stringDelimitList(list(Absyn.pathString(p) for p in List.map(lstInvalid, Util.tuple21)), "\n ");
+    str := stringDelimitList(list(AbsynUtil.pathString(p) for p in List.map(lstInvalid, Util.tuple21)), "\n ");
     str := "\n " + str + "\n";
     Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
     if failOnError then
@@ -3852,7 +3853,7 @@ public function getFunctionNames
   input DAE.FunctionTree ft;
   output list<String> strs;
 algorithm
-  strs := List.mapMap(getFunctionList(ft), functionName, Absyn.pathStringDefault);
+  strs := List.mapMap(getFunctionList(ft), functionName, AbsynUtil.pathStringDefault);
 end getFunctionNames;
 
 protected function isInvalidFunctionEntry
@@ -3915,7 +3916,7 @@ algorithm
     case NONE()
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- DAEUtil.traverseDAEFuncLst failed: " + Absyn.pathString(key));
+        Debug.traceln("- DAEUtil.traverseDAEFuncLst failed: " + AbsynUtil.pathString(key));
       then fail();
   end match;
 end traverseDAEFuncHelper;
@@ -5229,7 +5230,7 @@ algorithm
 
       else
         algorithm
-          Error.addInternalError("DAEUtil.splitElements got unknown element.", Absyn.dummyInfo);
+          Error.addInternalError("DAEUtil.splitElements got unknown element.", AbsynUtil.dummyInfo);
         then
           fail();
     end match;
@@ -5637,7 +5638,7 @@ algorithm
     case (func::funcs,tree)
       equation
         true = isExtFunction(func);
-        // print("Add ext to cache: " + Absyn.pathString(functionName(func)) + "\n");
+        // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
         tree = DAE.AvlTreePathFunction.add(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 
@@ -5674,12 +5675,12 @@ algorithm
       Absyn.Path p;
     case ((p, NONE()))
       equation
-        str = Absyn.pathString(p) + " [invalid]";
+        str = AbsynUtil.pathString(p) + " [invalid]";
       then
         str;
     case ((p, SOME(_)))
       equation
-        str = Absyn.pathString(p) + " [valid]  ";
+        str = AbsynUtil.pathString(p) + " [valid]  ";
       then
         str;
   end match;

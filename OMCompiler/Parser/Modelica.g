@@ -104,9 +104,9 @@ goto rule ## func ## Ex; }}
     int offset2;
   } fileinfo;
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
-  modelica_boolean omc_Absyn_isDerCref(threadData_t* threadData, void* exp);
+  modelica_boolean omc_AbsynUtil_isDerCref(threadData_t* threadData, void* exp);
   #else
-  modelica_boolean (*omc_Absyn_isDerCref)(threadData_t* threadData, void* exp);
+  modelica_boolean (*omc_AbsynUtil_isDerCref)(threadData_t* threadData, void* exp);
   #endif
 }
 
@@ -884,7 +884,7 @@ assign_clause_a returns [void* ast]
         {
           int looks_like_cref = (MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1));
           int looks_like_call = ((MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1)) && (MMC_GETHDR(e2.ast) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2)));
-          int looks_like_der_cr = !looks_like_cref && !looks_like_call && omc_Absyn_isDerCref(ModelicaParser_threadData, e1);
+          int looks_like_der_cr = !looks_like_cref && !looks_like_call && omc_AbsynUtil_isDerCref(ModelicaParser_threadData, e1);
           modelicaParserAssert(eq != 0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
               assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);

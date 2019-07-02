@@ -40,6 +40,7 @@ encapsulated package NFSCodeLookup
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import Error;
 public import NFInstPrefix;
 public import SCode;
@@ -90,23 +91,23 @@ public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
 // Metatypes used to define the builtin types.
 public constant SCode.Element BUILTIN_REALTYPE = SCode.CLASS(
   "$RealType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_REAL(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
+  SCode.R_PREDEFINED_REAL(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGERTYPE = SCode.CLASS(
   "$IntegerType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_INTEGER(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
+  SCode.R_PREDEFINED_INTEGER(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_BOOLEANTYPE = SCode.CLASS(
   "$BooleanType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_BOOLEAN(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
+  SCode.R_PREDEFINED_BOOLEAN(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STRINGTYPE = SCode.CLASS(
   "$StringType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_STRING(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
+  SCode.R_PREDEFINED_STRING(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUMTYPE = SCode.CLASS(
   "$EnumType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
-  SCode.R_PREDEFINED_ENUMERATION(), BUILTIN_EMPTY_CLASS, SCode.noComment, Absyn.dummyInfo);
+  SCode.R_PREDEFINED_ENUMERATION(), BUILTIN_EMPTY_CLASS, SCode.noComment, AbsynUtil.dummyInfo);
 
 public constant Item BUILTIN_REALTYPE_ITEM =
   NFSCodeEnv.VAR(BUILTIN_REALTYPE, NONE());
@@ -136,96 +137,96 @@ public constant Absyn.TypeSpec BUILTIN_STATESELECT_SPEC =
 // Generic elements:
 public constant SCode.Element BUILTIN_ATTR_QUANTITY = SCode.COMPONENT(
   "quantity", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_UNIT = SCode.COMPONENT(
   "unit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_DISPLAYUNIT = SCode.COMPONENT(
   "displayUnit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_FIXED = SCode.COMPONENT(
   "fixed", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ATTR_STATESELECT = SCode.COMPONENT(
   "stateSelect", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STATESELECT_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 // Real-specific elements:
 public constant SCode.Element BUILTIN_REAL_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_REAL_NOMINAL = SCode.COMPONENT(
   "nominal", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 // Integer-specific elements:
 public constant SCode.Element BUILTIN_INTEGER_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGER_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_INTEGER_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 // Boolean-specific elements:
 public constant SCode.Element BUILTIN_BOOLEAN_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 // String-specific elements:
 public constant SCode.Element BUILTIN_STRING_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 // StateSelect-specific elements:
 public constant SCode.Element BUILTIN_ENUM_MIN = SCode.COMPONENT(
   "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUM_MAX = SCode.COMPONENT(
   "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_ENUM_START = SCode.COMPONENT(
   "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_NEVER = SCode.COMPONENT(
   "never", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_AVOID = SCode.COMPONENT(
   "avoid", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_DEFAULT = SCode.COMPONENT(
   "default", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_PREFER = SCode.COMPONENT(
   "prefer", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 public constant SCode.Element BUILTIN_STATESELECT_ALWAYS = SCode.COMPONENT(
   "always", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
-  SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  SCode.NOMOD(), SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
 
 // Environments for the builtin types:
@@ -316,25 +317,25 @@ public constant Item BUILTIN_REAL = NFSCodeEnv.CLASS(
   SCode.CLASS("Real", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), BUILTIN_REAL_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_REAL_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_INTEGER = NFSCodeEnv.CLASS(
   SCode.CLASS("Integer", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), BUILTIN_INTEGER_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_INTEGER_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_BOOLEAN = NFSCodeEnv.CLASS(
   SCode.CLASS("Boolean", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), BUILTIN_BOOLEAN_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_BOOLEAN_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STRING = NFSCodeEnv.CLASS(
   SCode.CLASS("String", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), BUILTIN_STRING_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_STRING_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STATESELECT = NFSCodeEnv.CLASS(
   SCode.CLASS("StateSelect",  SCode.defaultPrefixes,
@@ -345,19 +346,19 @@ public constant Item BUILTIN_STATESELECT = NFSCodeEnv.CLASS(
         SCode.ENUM("default", SCode.noComment),
         SCode.ENUM("prefer", SCode.noComment),
         SCode.ENUM("always", SCode.noComment)}),
-      SCode.noComment, Absyn.dummyInfo), BUILTIN_STATESELECT_ENV, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), BUILTIN_STATESELECT_ENV, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_EXTERNALOBJECT = NFSCodeEnv.CLASS(
   SCode.CLASS("ExternalObject", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_CLOCK = NFSCodeEnv.CLASS(
   SCode.CLASS("Clock", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-      SCode.noComment, Absyn.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
+      SCode.noComment, AbsynUtil.dummyInfo), NFSCodeEnv.emptyEnv, NFSCodeEnv.BASIC_TYPE());
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -697,9 +698,9 @@ algorithm
     case (_, _, _)
       equation
         env_path = NFSCodeEnv.getEnvPath(inEnv);
-        bc_path = Absyn.removePrefix(env_path, inBaseClass);
-        visited_path = Absyn.stringListPath(inVisitedScopes);
-        true = Absyn.pathPrefixOf(visited_path, bc_path);
+        bc_path = AbsynUtil.removePrefix(env_path, inBaseClass);
+        visited_path = AbsynUtil.stringListPath(inVisitedScopes);
+        true = AbsynUtil.pathPrefixOf(visited_path, bc_path);
       then
         false;
 
@@ -846,7 +847,7 @@ protected
 algorithm
   env := NFSCodeEnv.getEnvTopScope(inEnv);
   (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
-  outPath := Absyn.makeFullyQualified(outPath);
+  outPath := AbsynUtil.makeFullyQualified(outPath);
 end lookupFullyQualified;
 
 public function lookupNameInPackage
@@ -911,7 +912,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
         (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv, {});
-        cref = Absyn.pathToCrefWithSubs(new_path, subs);
+        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
       then
         (item, cref);
 
@@ -926,8 +927,8 @@ algorithm
         (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
         // not fully qualified
         failure(Absyn.CREF_FULLYQUALIFIED(_) = cref_rest);
-        cref = Absyn.pathToCrefWithSubs(new_path, subs);
-        cref = Absyn.joinCrefs(cref, cref_rest);
+        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
+        cref = AbsynUtil.joinCrefs(cref, cref_rest);
       then
         (item, cref);
 
@@ -1365,7 +1366,7 @@ algorithm
 
     case (_, _, _, _, SOME(error_id))
       equation
-        name_str = Absyn.pathString(inName);
+        name_str = AbsynUtil.pathString(inName);
         env_str = NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
@@ -1375,11 +1376,11 @@ algorithm
 end lookupName;
 
 protected function joinPaths
-  "Joins two paths, like Absyn.joinPaths but not with quite the same behaviour.
+  "Joins two paths, like AbsynUtil.joinPaths but not with quite the same behaviour.
    If the second path is fully qualified it just returns the cref, because then
    it has been looked up through an import and already points directly at the
    class. If the first path is fully qualified it joins the paths, and return a
-   fully qualified path. Otherwise it has the same behaviour as Absyn.joinPaths,
+   fully qualified path. Otherwise it has the same behaviour as AbsynUtil.joinPaths,
    i.e. it simply joins the paths."
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
@@ -1407,7 +1408,7 @@ algorithm
       equation
         path = joinPaths(path, inPath2);
       then
-        Absyn.makeFullyQualified(path);
+        AbsynUtil.makeFullyQualified(path);
   end match;
 end joinPaths;
 
@@ -1565,11 +1566,11 @@ algorithm
         // instantiation which handles this correctly.
         false = Flags.isSet(Flags.SCODE_INST);
         env_path = NFSCodeEnv.getEnvPath(inEnv);
-        cref1 = Absyn.unqualifyCref(inCref);
+        cref1 = AbsynUtil.unqualifyCref(inCref);
         // try to strip as much as possible
         cref2 = crefStripEnvPrefix2(cref1, env_path);
         // check if we really did anything, fail if we did nothing!
-        false = Absyn.crefEqual(cref1, cref2);
+        false = AbsynUtil.crefEqual(cref1, cref2);
       then
         cref2;
 
@@ -1671,7 +1672,7 @@ algorithm
     case (Absyn.CREF_IDENT(name, subs), _)
       equation
         (_, path, env) = lookupSimpleName(name, inEnv);
-        cref = Absyn.pathToCrefWithSubs(path, subs);
+        cref = AbsynUtil.pathToCrefWithSubs(path, subs);
       then
         (cref, env);
 
@@ -1680,7 +1681,7 @@ algorithm
       equation
         // Lookup the first identifier.
         (item, new_path, env) = lookupSimpleName(name, inEnv);
-        cref = Absyn.pathToCrefWithSubs(new_path, subs);
+        cref = AbsynUtil.pathToCrefWithSubs(new_path, subs);
 
         // Lookup the rest of the cref in the enclosing scope of the first
         // identifier.
@@ -1709,20 +1710,20 @@ protected
 algorithm
   env := NFSCodeEnv.getEnvTopScope(inEnv);
   (_, outCref) := lookupCrefInPackage(inCref, inEnv);
-  outCref := Absyn.crefMakeFullyQualified(outCref);
+  outCref := AbsynUtil.crefMakeFullyQualified(outCref);
 end lookupCrefFullyQualified;
 
 public function joinCrefs
   "Joins two component references. If the second cref is fully qualified it just
   returns the cref, because then it has been looked up through an import and
-  already points directly at the class. Otherwise it just calls Absyn.joinCrefs."
+  already points directly at the class. Otherwise it just calls AbsynUtil.joinCrefs."
   input Absyn.ComponentRef inCref1;
   input Absyn.ComponentRef inCref2;
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := match(inCref1, inCref2)
     case (_, Absyn.CREF_FULLYQUALIFIED()) then inCref2;
-    else Absyn.joinCrefs(inCref1, inCref2);
+    else AbsynUtil.joinCrefs(inCref1, inCref2);
   end match;
 end joinCrefs;
 
@@ -1773,7 +1774,7 @@ algorithm
     inTypeName,
     SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, AbsynUtil.dummyInfo);
 end makeDummyMetaType;
 
 public function qualifyPath
@@ -1803,7 +1804,7 @@ algorithm
         (_, path, env) = lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
           inInfo, inErrorType);
         path = NFSCodeEnv.mergePathWithEnvPath(path, env);
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
       then
         path;
 
@@ -1811,7 +1812,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.qualifyPath failed on " +
-          Absyn.pathString(inPath) + " in " +
+          AbsynUtil.pathString(inPath) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();

@@ -1524,7 +1524,7 @@ end printUnresolvableTypeError;
 //        t2Str = Types.unparseType(t2);
 //        s1 = "Failed to match or convert '" + e1Str + "' of type '" + t1Str +
 //             "' to type '" + t2Str + "'";
-//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, AbsynUtil.dummyInfo);
 //        true = Flags.isSet(Flags.FAILTRACE);
 //        Debug.traceln("- NFTypeCheck.matchCallArgs failed with type mismatch: " + t1Str + " tys: " + t2Str);
 //      then
@@ -1652,7 +1652,7 @@ end printUnresolvableTypeError;
 //        t2Str = Types.unparseType(expected_type);
 //        s1 = "Failed to match or convert '" + e1Str + "' of type '" + t1Str +
 //             "' to type '" + t2Str + "'";
-//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, AbsynUtil.dummyInfo);
 //        true = Flags.isSet(Flags.FAILTRACE);
 //        Debug.traceln("- NFTypeCheck.matchCallArg failed with type mismatch: " + t1Str + " tys: " + t2Str);
 //      then
@@ -1745,7 +1745,7 @@ end printUnresolvableTypeError;
 //             ExpressionDump.printListStr(expectedDims,ExpressionDump.dimensionString,",") + "], found [" +
 //             ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") + "]";
 //
-//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
+//        Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, AbsynUtil.dummyInfo);
 //        true = Flags.isSet(Flags.FAILTRACE);
 //        Debug.traceln("- NFTypeCheck.checkVectorization failed ");
 //      then
@@ -1951,7 +1951,7 @@ end printUnresolvableTypeError;
 //    // Assumes that the enum has been reversed with reverseEnumType.
 //    case DAE.DIM_ENUM(p, l :: l_rest, new_idx)
 //      equation
-//        ep = Absyn.joinPaths(p, Absyn.IDENT(l));
+//        ep = AbsynUtil.joinPaths(p, Absyn.IDENT(l));
 //        dim_size = new_idx - 1;
 //      then
 //        (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
@@ -3139,7 +3139,7 @@ algorithm
 
   if not stringEmpty(err) then
     Error.addSourceMessageAndFail(Error.INVALID_REDUCTION_TYPE,
-      {Expression.toString(exp), Type.toString(ty), Absyn.pathString(name), err}, info);
+      {Expression.toString(exp), Type.toString(ty), AbsynUtil.pathString(name), err}, info);
   end if;
 end checkReductionType;
 

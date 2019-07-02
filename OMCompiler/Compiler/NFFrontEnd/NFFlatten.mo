@@ -106,7 +106,7 @@ encapsulated package FunctionTreeImpl
 
   redeclare function extends keyStr
   algorithm
-    outString := Absyn.pathString(inKey);
+    outString := AbsynUtil.pathString(inKey);
   end keyStr;
 
   redeclare function extends valueStr
@@ -116,7 +116,7 @@ encapsulated package FunctionTreeImpl
 
   redeclare function extends keyCompare
   algorithm
-    outResult := Absyn.pathCompareNoQual(inKey1, inKey2);
+    outResult := AbsynUtil.pathCompareNoQual(inKey1, inKey2);
   end keyCompare;
 
   redeclare function addConflictDefault = addConflictKeep;
@@ -1076,7 +1076,7 @@ algorithm
 
     case Equation.CONNECT() then true;
     case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn)))
-      then Absyn.pathFirstIdent(Function.name(fn)) == "Connections";
+      then AbsynUtil.pathFirstIdent(Function.name(fn)) == "Connections";
     else false;
   end match;
 end isConnectEq;
@@ -1155,7 +1155,7 @@ algorithm
     {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
     Prefix.ComponentPrefix.NOCOMPPRE(),
     ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
-    Absyn.dummyInfo
+    AbsynUtil.dummyInfo
   );
 
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);

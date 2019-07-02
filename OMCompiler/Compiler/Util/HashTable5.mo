@@ -43,6 +43,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import Absyn;
 public import BaseHashTable;
+protected import AbsynUtil;
 protected import Dump;
 protected import System;
 
@@ -109,7 +110,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Absyn.crefEqual,Dump.printComponentRefStr,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,AbsynUtil.crefEqual,Dump.printComponentRefStr,intString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

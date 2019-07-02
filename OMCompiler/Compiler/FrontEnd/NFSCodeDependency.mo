@@ -39,6 +39,7 @@ encapsulated package NFSCodeDependency
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import NFInstPrefix;
 public import NFSCodeEnv;
@@ -77,7 +78,7 @@ public function analyse
   output SCode.Program outProgram;
   output Env outEnv;
 algorithm
-  analyseClass(inClassName, inEnv, Absyn.dummyInfo);
+  analyseClass(inClassName, inEnv, AbsynUtil.dummyInfo);
   analyseClassExtends(inEnv);
   (outEnv, outProgram) :=
     collectUsedProgram(inEnv, inProgram, inClassName);
@@ -108,7 +109,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeDependency.analyseClass failed for " +
-          Absyn.pathString(inClassName) + " in " +
+          AbsynUtil.pathString(inClassName) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -144,7 +145,7 @@ algorithm
 
     case (_, _, _, _, SOME(error_id))
       equation
-        name_str = Absyn.pathString(inPath);
+        name_str = AbsynUtil.pathString(inPath);
         env_str = NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
@@ -494,7 +495,7 @@ algorithm
 
     case (NFSCodeEnv.FRAME(name = SOME(name)), _)
       equation
-        analyseClass(Absyn.IDENT(name), inEnv, Absyn.dummyInfo);
+        analyseClass(Absyn.IDENT(name), inEnv, AbsynUtil.dummyInfo);
       then
         ();
   end match;
@@ -581,7 +582,7 @@ algorithm
     case (SCode.ENUMERATION(), _, _, _, _) then ();
     case (SCode.OVERLOAD(pathLst = paths), _, _, _, _)
       algorithm
-	    if not Config.synchronousFeaturesAllowed() and Absyn.pathFirstIdent(listHead(paths)) == "OMC_NO_CLOCK" then
+	    if not Config.synchronousFeaturesAllowed() and AbsynUtil.pathFirstIdent(listHead(paths)) == "OMC_NO_CLOCK" then
           List.map2_0({listHead(paths)},analyseClass,inEnv,inInfo);
 		else
 		  List.map2_0(paths,analyseClass,inEnv,inInfo);
@@ -626,7 +627,7 @@ algorithm
 
     case SCode.EXTENDS(baseClassPath = bc)
       equation
-        name = Absyn.pathString(bc);
+        name = AbsynUtil.pathString(bc);
         name = "extends " + name;
       then
         name;
@@ -878,8 +879,8 @@ algorithm
     case (SCode.EXTENDS(modifications = mods, info = info), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
       equation
-        //print("bc = " + Absyn.pathString(bc) + "\n");
-        //print("bc2 = " + Absyn.pathString(bc2) + "\n");
+        //print("bc = " + AbsynUtil.pathString(bc) + "\n");
+        //print("bc2 = " + AbsynUtil.pathString(bc2) + "\n");
         (ty_item, _, ty_env) =
           NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
@@ -1496,7 +1497,7 @@ protected function analyseExp
   input Env inEnv;
   input SourceInfo inInfo;
 algorithm
-  (_, _) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inEnv, inInfo));
+  (_, _) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inEnv, inInfo));
 end analyseExp;
 
 protected function analyseOptExp
@@ -1602,7 +1603,7 @@ algorithm
       equation
         // We want to use lookupClass since we need the item and environment, and
         // we don't care about any subscripts, so convert the cref to a path.
-        path = Absyn.crefToPathIgnoreSubs(inCref);
+        path = AbsynUtil.crefToPathIgnoreSubs(inCref);
         (item, env) = lookupClass(path, inEnv, true, inInfo, NONE());
         analyseItem(item, env);
       then
@@ -1696,7 +1697,7 @@ protected function traverseExp
   output Absyn.Exp outExp;
   output tuple<Env, SourceInfo> outTuple;
 algorithm
-  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
+  (outExp, outTuple) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function analyseAlgorithm
@@ -2093,7 +2094,7 @@ algorithm
     NFSCodeEnv.removeClsAndVarsFromFrame(inClassEnv);
   // Collect all constants in the top class, even if they're not used.
   // This makes it easier to write test cases.
-  collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
+  collect_constants := AbsynUtil.pathEqual(inClassName, inAccumPath);
   (outUsedElements, outNewEnv) :=
     collectUsedElements2(inElements, inEnv, cls_and_vars, {}, {empty_class_env},
       inClassName, inAccumPath, collect_constants);
@@ -2152,7 +2153,7 @@ algorithm
     // A class definition, just use collectUsedClass.
     case (SCode.CLASS(name = name), _, _, env, _, _, _)
       equation
-        cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
+        cls_path = AbsynUtil.joinPaths(inAccumPath, Absyn.IDENT(name));
         (cls, env) =
           collectUsedClass(inElement, inEnclosingEnv, inClsAndVars,
             inClassName,env, cls_path);

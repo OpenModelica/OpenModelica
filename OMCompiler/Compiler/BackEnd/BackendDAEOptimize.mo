@@ -41,6 +41,7 @@ encapsulated package BackendDAEOptimize
                - and so on ..."
 
 public import Absyn;
+public import AbsynUtil;
 public import BackendDAE;
 public import DAE;
 public import FCore;
@@ -1441,8 +1442,8 @@ algorithm
     case (f as DAE.FUNCTION(path = path),funcs)
       equation
          true = boolOr(
-                  stringEq(Absyn.pathLastIdent(path), "constructor"),
-                  stringEq(Absyn.pathLastIdent(path), "destructor"));
+                  stringEq(AbsynUtil.pathLastIdent(path), "constructor"),
+                  stringEq(AbsynUtil.pathLastIdent(path), "destructor"));
          funcs1 = DAE.AvlTreePathFunction.add(funcs, path, SOME(f));
        then
         funcs1;
@@ -1671,7 +1672,7 @@ algorithm
       then (systs,shared);
     else
       equation
-        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
+        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",AbsynUtil.dummyInfo);
       then fail();
   end matchcontinue;
 end partitionIndependentBlocksHelper;

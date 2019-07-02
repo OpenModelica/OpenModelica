@@ -43,8 +43,9 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import Absyn;
 public import BaseHashTable;
-protected import Util;
+protected import AbsynUtil;
 protected import System;
+protected import Util;
 
 public type Key = String;
 public type Value = Absyn.Path;
@@ -97,7 +98,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(stringHashDjb2Mod,stringEq,Util.id,Absyn.pathStringDefault));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(stringHashDjb2Mod,stringEq,Util.id,AbsynUtil.pathStringDefault));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

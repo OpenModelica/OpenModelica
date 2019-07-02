@@ -39,6 +39,7 @@ encapsulated package InstUtil
 "
 
 import Absyn;
+import AbsynUtil;
 import ClassInf;
 import DAE;
 import FCore;
@@ -326,11 +327,11 @@ algorithm
       Absyn.Path path1, path2;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.State.TYPE(path=path1)),_)
       equation
-        name = Absyn.pathLastIdent(path1);
-        path2 = Absyn.stripLast(path1);
-        "$Code" = Absyn.pathLastIdent(path2);
-        path2 = Absyn.stripLast(path2);
-        "OpenModelica" = Absyn.pathLastIdent(path2);
+        name = AbsynUtil.pathLastIdent(path1);
+        path2 = AbsynUtil.stripLast(path1);
+        "$Code" = AbsynUtil.pathLastIdent(path2);
+        path2 = AbsynUtil.stripLast(path2);
+        "OpenModelica" = AbsynUtil.pathLastIdent(path2);
       then Util.assoc(name,{
         ("Expression",    DAE.T_CODE(DAE.C_EXPRESSION())),
         ("ExpressionOrModification",    DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION())),
@@ -364,7 +365,7 @@ algorithm
 
     case (cache,env,DAE.T_ENUMERATION(names = names, literalVarLst = vars, path=p),_,ClassInf.ENUMERATION(pname))
       equation
-        (cache,env_1) = updateEnumerationEnvironment1(cache,env,Absyn.pathString(pname),names,vars,p);
+        (cache,env_1) = updateEnumerationEnvironment1(cache,env,AbsynUtil.pathString(pname),names,vars,p);
       then
        (cache,env_1);
 
@@ -706,8 +707,8 @@ protected
 algorithm
   try
     SOME(path) := FGraph.getScopePath(inEnv);
-    path := Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
-    path := Absyn.makeFullyQualified(path);
+    path := AbsynUtil.joinPaths(path, Absyn.IDENT("equalityConstraint"));
+    path := AbsynUtil.makeFullyQualified(path);
   else
     return;
   end try;
@@ -880,7 +881,7 @@ algorithm
       equation
         (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p);
         print("Error!: " + SCodeDump.restrString(r1) + " " + FGraph.printGraphPathStr(inEnv) +
-              " cannot be extended by " + SCodeDump.restrString(r2) + " " + Absyn.pathString(p) + " due to derived/base class restrictions.\n");
+              " cannot be extended by " + SCodeDump.restrString(r2) + " " + AbsynUtil.pathString(p) + " due to derived/base class restrictions.\n");
       then fail();
   end matchcontinue;
 end checkExtendsForTypeRestiction;
@@ -1232,8 +1233,8 @@ public function removeSelfReference
   input  Absyn.Path path;
   output Absyn.Path outPath;
 algorithm
-  outPath := if stringEq(className, Absyn.pathFirstIdent(path)) then
-      Absyn.removePrefix(Absyn.IDENT(className), path)
+  outPath := if stringEq(className, AbsynUtil.pathFirstIdent(path)) then
+      AbsynUtil.removePrefix(Absyn.IDENT(className), path)
     else
       path;
 end removeSelfReference;
@@ -1370,9 +1371,9 @@ algorithm
       then getModsForDep(dep,elems);
     case(dep,((SCode.COMPONENT(name=name1),cmod))::_)
       equation
-        name2 = Absyn.printComponentRefStr(dep);
+        name2 = AbsynUtil.printComponentRefStr(dep);
         true = stringEq(name2,name1);
-        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), Absyn.dummyInfo);
+        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
       then
         cmod;
     case(dep,_::elems)
@@ -1469,9 +1470,9 @@ algorithm
     // handle the normal case
     case (e::rest, deps)
       equation
-        //(_, (_, _, (els, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
+        //(_, (_, _, (els, deps))) = AbsynUtil.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
         //deps = getDepsFromExps(rest, els, deps);
-        (_, (_, _, deps, _)) = Absyn.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps, isFunction));
+        (_, (_, _, deps, _)) = AbsynUtil.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps, isFunction));
         deps = getDepsFromExps(rest, inAllElements, deps, isFunction);
       then
         deps;
@@ -1550,7 +1551,7 @@ algorithm
     case (_)
       equation
         (l1, l2) = getExpsFromMod(inMod);
-        outCrefs = List.flatten(List.map2(listAppend(l1, l2), Absyn.getCrefFromExp, true, true));
+        outCrefs = List.flatten(List.map2(listAppend(l1, l2), AbsynUtil.getCrefFromExp, true, true));
       then
         outCrefs;
 
@@ -1603,7 +1604,7 @@ algorithm
                                              classDef = SCode.DERIVED(Absyn.TPATH(_, ado), m, _))))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
-        (_, se) = Absyn.getExpsFromArrayDimOpt(ado);
+        (_, se) = AbsynUtil.getExpsFromArrayDimOpt(ado);
         (l3, l4) = getExpsFromMod(m);
         l1 = listAppend(se, listAppend(l1, l3));
         l4 = listAppend(l2, l4);
@@ -1633,7 +1634,7 @@ algorithm
                                                  modifications = m, attributes = SCode.ATTR(arrayDims = ad))))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
-        (_, se) = Absyn.getExpsFromArrayDim(ad);
+        (_, se) = AbsynUtil.getExpsFromArrayDim(ad);
         (l3, l4) = getExpsFromMod(m);
         l1 = listAppend(se, listAppend(l1, l3));
         l4 = listAppend(l2, l4);
@@ -1658,7 +1659,7 @@ algorithm
     case ((Absyn.SUBSCRIPT(subscript = exp) :: rest))
       equation
         l1 = getCrefFromDim(rest);
-        l2 = Absyn.getCrefFromExp(exp,true,true);
+        l2 = AbsynUtil.getCrefFromExp(exp,true,true);
         res = List.union(l1, l2);
       then
         res;
@@ -1708,7 +1709,7 @@ algorithm
                            modifications = mod), daeMod), (inAllElements, isFunction))
       equation
         true = SCode.isParameterOrConst(var);
-        (_, exps) = Absyn.getExpsFromArrayDim(ad);
+        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
         exps = listAppend(bexps, listAppend(sexps, exps));
         (bexps, sexps) = getExpsFromConstrainClass(rp);
@@ -1727,7 +1728,7 @@ algorithm
     // For input and output variables in function scope return no dependencies so they stay in order!
     case ((SCode.COMPONENT(attributes = SCode.ATTR(direction = direction)), _), (_, true))
       equation
-        true = Absyn.isInputOrOutput(direction);
+        true = AbsynUtil.isInputOrOutput(direction);
       then
         {};
 
@@ -1737,7 +1738,7 @@ algorithm
                            attributes = SCode.ATTR(arrayDims = ad),
                            modifications = mod), daeMod), (inAllElements, isFunction))
       equation
-        (_, exps) = Absyn.getExpsFromArrayDim(ad);
+        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
         exps = listAppend(sexps, exps);
         // DO *NOT* ignore the bindings in function scope. We do not want to keep the order!
@@ -1765,7 +1766,7 @@ algorithm
                        classDef = SCode.DERIVED(modifications = mod, attributes = SCode.ATTR(arrayDims = ad))),
                        daeMod), (inAllElements, isFunction))
       equation
-        (_, exps) = Absyn.getExpsFromArrayDim(ad);
+        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
         (_, sexps) = getExpsFromMod(mod);
         exps = listAppend(sexps, exps);
         (bexps, sexps) = getExpsFromConstrainClass(rp);
@@ -1876,14 +1877,14 @@ algorithm
 
     case (exp as Absyn.CREF(componentRef = cref), (all_el, stack, accum_el, b))
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         e = List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
 
     case (exp as Absyn.CALL(function_ = cref), (all_el, stack, accum_el, b))
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         e = List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
@@ -1917,7 +1918,7 @@ algorithm
     // important.
     case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _, false))
       equation
-        (_, (_, _, deps, _)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
+        (_, (_, _, deps, _)) = AbsynUtil.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
       then
         (exp, (all_el, rest_stack, listAppend(deps, stack_el), false));
 
@@ -2287,8 +2288,8 @@ algorithm
     // we might find the type: A.B.P.C instead.
     case (SOME(ep), tp)
       equation
-        tp = Absyn.stripLast(tp);
-        true = Absyn.pathPrefixOf(tp, ep);
+        tp = AbsynUtil.stripLast(tp);
+        true = AbsynUtil.pathPrefixOf(tp, ep);
       then
         ();
 
@@ -2335,7 +2336,7 @@ algorithm
 
     error := matchcontinue comp
       case SCode.COMPONENT(typeSpec = Absyn.TPATH(path = ty_path))
-      guard(comp.name == Absyn.pathLastIdent(ty_path))
+      guard(comp.name == AbsynUtil.pathLastIdent(ty_path))
         algorithm
           // name is equal with the last ident from type path.
           // this is only a problem if the environment in which the component
@@ -2345,14 +2346,14 @@ algorithm
           checkCompEnvPathVsCompTypePath(FGraph.getScopePath(env), ty_path);
           err_msg := comp.name + " in env: " + FGraph.printGraphPathStr(env);
           Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME,
-            {err_msg, Absyn.pathString(ty_path)}, comp.info);
+            {err_msg, AbsynUtil.pathString(ty_path)}, comp.info);
         then
           true;
 
       case SCode.COMPONENT(prefixes = prefs as SCode.PREFIXES(),
                            attributes = attr as SCode.ATTR())
         algorithm
-          ty_path := Absyn.typeSpecPath(comp.typeSpec);
+          ty_path := AbsynUtil.typeSpecPath(comp.typeSpec);
           local_mod := Mod.lookupModificationP(mod, ty_path);
 
           if SCode.finalBool(SCode.prefixesFinal(prefs)) then
@@ -2423,7 +2424,7 @@ protected function memberCrefs
   output Boolean outIsMember;
 algorithm
   outIsMember := List.isMemberOnTrue(inComponentRef, inComponentRefs,
-    Absyn.crefEqualNoSubs);
+    AbsynUtil.crefEqualNoSubs);
 end memberCrefs;
 
 public function chainRedeclares "
@@ -2540,10 +2541,10 @@ algorithm
         print("Depreciated record constructor used: Inst.addRecordConstructorsToTheCache");
 
         // false = Config.acceptMetaModelicaGrammar();
-        true = Absyn.isInputOrOutput(inDirection);
+        true = AbsynUtil.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
-        false = stringEq(Absyn.pathLastIdent(path), name);
-        // print("InstFunction.implicitFunctionInstantiation: " + name + " in f:" + Absyn.pathString(path) + " in s:" + FGraph.printGraphPathStr(inEnv) + " m: " + Mod.printModStr(inMod) + "\n");
+        false = stringEq(AbsynUtil.pathLastIdent(path), name);
+        // print("InstFunction.implicitFunctionInstantiation: " + name + " in f:" + AbsynUtil.pathString(path) + " in s:" + FGraph.printGraphPathStr(inEnv) + " m: " + Mod.printModStr(inMod) + "\n");
         (cache, env, ih) = InstFunction.implicitFunctionInstantiation(inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims);
       then
         (cache, env, ih);
@@ -2993,7 +2994,7 @@ algorithm
   DAE.DAE(elementLst = eqs) := inEquations;
   DAE.DAE(elementLst = vars) := inVariables;
     Error.assertion(intEq(listLength(eqs), listLength(vars)),
-        "- InstUtil.moveBindings: Mismatched number of equations and variables.", Absyn.dummyInfo);
+        "- InstUtil.moveBindings: Mismatched number of equations and variables.", AbsynUtil.dummyInfo);
   vars := List.threadMap(eqs, vars, moveBindings2);
   outVariables := DAE.DAE(vars);
 end moveBindings;
@@ -4133,7 +4134,7 @@ algorithm
         // only display when the failtrace flag is on
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.elabArraydim failed on: \n\tcref:");
-        Debug.trace(Absyn.pathString(path) + " " + Dump.printComponentRefStr(cref));
+        Debug.trace(AbsynUtil.pathString(path) + " " + Dump.printComponentRefStr(cref));
         Debug.traceln(Dump.printArraydimStr(ad) + " = " + Types.unparseOptionEqMod(eq));
       then
         fail();
@@ -4208,11 +4209,11 @@ algorithm
     true := Types.numberOfDimensions(inType) >= listLength(inArrayDim) + listLength(flat_id);
     outDimensions := elabArraydimType2(inType, inArrayDim, flat_id);
   else
-    ad_str := Absyn.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
+    ad_str := AbsynUtil.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
     ty_str := Types.unparseTypeNoAttr(inType);
     exp_str := ExpressionDump.printExpStr(inExp);
     name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
-      Absyn.printComponentRefStr(inCref);
+      AbsynUtil.printComponentRefStr(inCref);
     Error.addSourceMessageAndFail(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,
       {name_str, ad_str, exp_str, ty_str}, inInfo);
   end try;
@@ -4433,7 +4434,7 @@ algorithm
 
     case SCode.NAMEMOD("derivative",(SCode.MOD(subModLst = subs2,binding=SOME(Absyn.CREF(acr))))) :: subs
       equation
-        deriveFunc = Absyn.crefToPath(acr);
+        deriveFunc = AbsynUtil.crefToPath(acr);
         (_,deriveFunc) = Inst.makeFullyQualified(inCache,inEnv,deriveFunc);
         order = getDerivativeOrder(subs2);
 
@@ -4446,10 +4447,10 @@ algorithm
 
 
         /*print("\n adding conditions on derivative count: " + intString(listLength(conditionRefs)) + "\n");
-        dbgString = Absyn.optPathString(defaultDerivative);
+        dbgString = AbsynUtil.optPathString(defaultDerivative);
         dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " + dbgString + "\n");
-        print("**** Function derived: " + Absyn.pathString(baseFunc) + " \n");
-        print("**** Deriving function: " + Absyn.pathString(deriveFunc) + "\n");
+        print("**** Function derived: " + AbsynUtil.pathString(baseFunc) + " \n");
+        print("**** Deriving function: " + AbsynUtil.pathString(deriveFunc) + "\n");
         print("**** Conditions: " + stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") + "\n");
         print("**** Order: " + intString(order) + "\n");
         print(dbgString);*/
@@ -4492,7 +4493,7 @@ algorithm
 
     case(SCode.NAMEMOD("noDerivative",(SCode.MOD(binding = SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
-      name = Absyn.printComponentRefStr(acr);
+      name = AbsynUtil.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);
     then
@@ -4500,7 +4501,7 @@ algorithm
 
     case(SCode.NAMEMOD("zeroDerivative",(SCode.MOD(binding =  SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
     equation
-      name = Absyn.printComponentRefStr(acr);
+      name = AbsynUtil.printComponentRefStr(acr);
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);
     then
@@ -4593,7 +4594,7 @@ algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
   case({},_,_,_) then NONE();
   case(SCode.NAMEMOD("derivative",(SCode.MOD(binding =SOME(Absyn.CREF(acr)))))::_,_,_,_)
     equation
-      p = Absyn.crefToPath(acr);
+      p = AbsynUtil.crefToPath(acr);
       (_,p) = Inst.makeFullyQualified(inCache,inEnv, p);
     then
       SOME(p);
@@ -5525,7 +5526,7 @@ algorithm
     case (_,ClassInf.META_UNIONTYPE(_),_,SOME(bc2),_,_) then bc2;
     case (p,ClassInf.META_UNIONTYPE(_),_,_,_,_)
       equation
-        pstr = Absyn.pathString(p);
+        pstr = AbsynUtil.pathString(p);
         info = SCode.elementInfo(inClass);
         Error.addSourceMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr}, info);
       then fail();
@@ -5793,12 +5794,12 @@ algorithm
     case(SCode.COMPONENT(name = name, info=info)) then (name, info);
     case(SCode.EXTENDS(baseClassPath=path, info = info))
       equation
-        ret = Absyn.pathString(path);
+        ret = AbsynUtil.pathString(path);
       then
         (ret, info);
     case(SCode.IMPORT(imp = imp, info = info))
       equation
-        name = Absyn.printImportString(imp);
+        name = AbsynUtil.printImportString(imp);
       then
         (name, info);
   end match;
@@ -5934,7 +5935,7 @@ algorithm
       equation
         e = Util.tuple21(em);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
-        true = stringEq("ModelicaServices", Absyn.pathFirstIdent(p));
+        true = stringEq("ModelicaServices", AbsynUtil.pathFirstIdent(p));
         (acc1, acc2, acc3) = splitInners(rest, em::inAcc1, inAcc2, inAcc3);
       then
         (acc1, acc2, acc3);
@@ -5943,7 +5944,7 @@ algorithm
       equation
         e = Util.tuple21(em);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
-        true = stringEq("Modelica", Absyn.pathFirstIdent(p));
+        true = stringEq("Modelica", AbsynUtil.pathFirstIdent(p));
         (acc1, acc2, acc3) = splitInners(rest, inAcc1, em::inAcc2, inAcc3);
       then
         (acc1, acc2, acc3);
@@ -5972,9 +5973,9 @@ algorithm
 
     () := match comp
       case SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))
-        guard Absyn.isInner(io)
+        guard AbsynUtil.isInner(io)
         algorithm
-          if Absyn.isOuter(io) then
+          if AbsynUtil.isOuter(io) then
             // inner outer components.
             outInnerOuterTplLstElementMod := e :: outInnerOuterTplLstElementMod;
           else
@@ -6199,7 +6200,7 @@ algorithm
     // inner components
     case ((comp as SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))) :: xs)
       equation
-        true = Absyn.isInner(io);
+        true = AbsynUtil.isInner(io);
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,extElts,comp::innerComps,otherComps);
@@ -6555,7 +6556,7 @@ algorithm
       equation
         vars = generateUnusedNamesLstCall(e,exps);
         subs = List.mapList(vars,stringSub);
-        (e2,_) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
+        (e2,_) = AbsynUtil.traverseExp(e,AbsynUtil.crefInsertSubscriptLstLst, subs);
         e2 = wrapIntoForLst(e2,vars,exps);
       then
         SOME(e2);
@@ -6952,7 +6953,7 @@ algorithm
 
     case(SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ads)))
       then
-        Absyn.getCrefsFromSubs(ads,true,true);
+        AbsynUtil.getCrefsFromSubs(ads,true,true);
 
     else {};
 
@@ -6970,7 +6971,7 @@ algorithm
   crefs := match(cond)
     local  Absyn.Exp e;
     case(NONE()) then {};
-    case SOME(e) then Absyn.getCrefFromExp(e,true,true);
+    case SOME(e) then AbsynUtil.getCrefFromExp(e,true,true);
   end match;
 end getCrefFromCond;
 
@@ -6988,7 +6989,7 @@ algorithm
     else
       equation
         /* Doesn't work anyway right away
-        crefStr = Absyn.printComponentRefStr(cref);
+        crefStr = AbsynUtil.printComponentRefStr(cref);
         varStr = SCodeDump.variabilityString(variability);
         Error.addMessage(Error.CIRCULAR_PARAM,{crefStr,varStr});*/
       then fail();
@@ -7036,7 +7037,7 @@ algorithm
   for eq in equations1 loop
     _ := match eq
       case DAE.INITIALEQUATION(exp1=DAE.CREF(ty=DAE.T_COMPLEX()), exp2=DAE.CALL(path=path))
-        guard Absyn.pathLastIdent(path)=="constructor"
+        guard AbsynUtil.pathLastIdent(path)=="constructor"
         algorithm
           // Don't duplicate constructor calls
           is := i::is;
@@ -7380,7 +7381,7 @@ algorithm
     case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
       true = Config.synchronousFeaturesAllowed();
 
-        name = Absyn.pathFirstIdent(path);
+        name = AbsynUtil.pathFirstIdent(path);
       // BTH
       true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
     then true;
@@ -7388,7 +7389,7 @@ algorithm
     case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
       false = Config.synchronousFeaturesAllowed();
 
-      name = Absyn.pathFirstIdent(path);
+      name = AbsynUtil.pathFirstIdent(path);
       // BTH
         true = listMember(name, {"Real", "Integer", "Boolean", "String"});
     then true;
@@ -7426,7 +7427,7 @@ algorithm
       then optimizeFunctionCheckForLocals(path,elts,oalg,acc,invars,outvars);
     case (_,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),_,_,_)
       equation
-        str = Absyn.pathString(path);
+        str = AbsynUtil.pathString(path);
         if not Config.acceptMetaModelicaGrammar() then
           Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
@@ -7574,7 +7575,7 @@ algorithm
 
     case (path1,call as DAE.CALL(path=path2,attr=attr as DAE.CALL_ATTR(tailCall=DAE.NO_TAIL())),_,_)
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = AbsynUtil.pathEqual(path1,path2);
         str = "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
@@ -8114,7 +8115,7 @@ algorithm
         scopeName = FNode.refName(r);
         true = FGraph.checkScopeType({r}, SOME(FCore.PARALLEL_SCOPE()));
         isparglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
-        hasnodir = not Absyn.isInputOrOutput(dir);
+        hasnodir = not AbsynUtil.isInputOrOutput(dir);
         true = isparglobal and hasnodir;
 
         errorString = "\n" +
@@ -8230,8 +8231,8 @@ algorithm
     case SCode.EQUATION(SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp))
       /*,domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info))*/
     algorithm
-      (_,fieldNames1) := Absyn.traverseExpTopDown(lhs_exp, fieldInPderExp, inFieldNames);
-      (_,fieldNames1) := Absyn.traverseExpTopDown(rhs_exp, fieldInPderExp, fieldNames1);
+      (_,fieldNames1) := AbsynUtil.traverseExpTopDown(lhs_exp, fieldInPderExp, inFieldNames);
+      (_,fieldNames1) := AbsynUtil.traverseExpTopDown(rhs_exp, fieldInPderExp, fieldNames1);
     then
       listAppend(inFieldNames,fieldNames1);
     else
@@ -8583,8 +8584,8 @@ algorithm
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-          (lhs_exp, _) = Absyn.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
-          (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
+          (lhs_exp, _) = AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
+          (rhs_exp, _) = AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
         then
           {newEQFun(1, lhs_exp, rhs_exp, domainCr1, N, true, fieldLst, comment, info)};
 
@@ -8595,8 +8596,8 @@ algorithm
         equation
           domainCr1 = Absyn.CREF_IDENT(name, subscripts);
           (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-          (lhs_exp, _) = Absyn.traverseExp(lhs_exp, extrapFieldTraverseFun, N);
-          (rhs_exp, _) = Absyn.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
+          (lhs_exp, _) = AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, N);
+          (rhs_exp, _) = AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
         then
           {newEQFun(N, lhs_exp, rhs_exp, domainCr1, N, true, fieldLst, comment, info)};
       //Unhandled pde
@@ -8722,7 +8723,7 @@ protected function extrapolateFieldEq
   protected list<Absyn.Subscript> subscripts;
   protected Integer i1 = 1, i2 = 2, i3 = 3;
 algorithm
-  if List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+  if List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
     (name, subscripts) := match fieldCr
       case Absyn.CREF_IDENT(name = name, subscripts = subscripts)
       then
@@ -8760,9 +8761,9 @@ protected function creatFieldEqs "creates list of equations for fields. If the e
   output List<SCode.Equation> outDiscretizedEQs;
   protected Boolean bl, br;
 algorithm
-  (_,bl) := Absyn.traverseExp(lhs_exp, hasPderTraverseFun, false);
-  (_,br) := Absyn.traverseExp(rhs_exp, hasPderTraverseFun, false);
-  //outDiscretizedEQs := match (Absyn.traverseExp(lhs_exp, hasPderTraverseFun, false),Absyn.traverseExp(rhs_exp, hasPderTraverseFun, false))
+  (_,bl) := AbsynUtil.traverseExp(lhs_exp, hasPderTraverseFun, false);
+  (_,br) := AbsynUtil.traverseExp(rhs_exp, hasPderTraverseFun, false);
+  //outDiscretizedEQs := match (AbsynUtil.traverseExp(lhs_exp, hasPderTraverseFun, false),Absyn.traverseExp(rhs_exp, hasPderTraverseFun, false))
   outDiscretizedEQs := match (bl, br)
     //case ((_,false),(_,false)) //no pder()
     case (false,false) //no pder()
@@ -8802,8 +8803,8 @@ protected function newEQFun
   output SCode.Equation outEQ;
   protected Absyn.Exp outLhs_exp, outRhs_exp;
 algorithm
-  (outLhs_exp, _) := Absyn.traverseExpTopDown(inLhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false,N,isBC));
-  (outRhs_exp, _) := Absyn.traverseExpTopDown(inRhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false,N,isBC));
+  (outLhs_exp, _) := AbsynUtil.traverseExpTopDown(inLhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false,N,isBC));
+  (outRhs_exp, _) := AbsynUtil.traverseExpTopDown(inRhs_exp,discretizeTraverseFun,(i,fieldLst,domainCr,info,false,N,isBC));
   outEQ := SCode.EQUATION(SCode.EQ_EQUALS(outLhs_exp, outRhs_exp, comment, info));
 end newEQFun;
 
@@ -8841,7 +8842,7 @@ algorithm
     case Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts))
     //field
       equation
-        true = List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual);
+        true = List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual);
         exp = (if isBC and i == 1 then
                 Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))  //left BC
               elseif isBC and i == N then
@@ -8854,7 +8855,7 @@ algorithm
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
     //pder - first derivative
       equation
-        if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+        if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
           failVar = true;
           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
         end if;
@@ -8882,7 +8883,7 @@ algorithm
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x")),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
     //pder - second derivative
       equation
-        if not List.isMemberOnTrue(fieldCr,fieldLst,Absyn.crefEqual) then
+        if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
           failVar = true;
           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
         end if;

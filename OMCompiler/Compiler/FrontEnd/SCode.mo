@@ -46,6 +46,7 @@ encapsulated package SCode
   The SCode representation is used as input to the Inst module"
 
 public import Absyn;
+public import AbsynUtil;
 
 // Some definitions are aliased from Absyn
 public type Ident = Absyn.Ident;
@@ -898,7 +899,7 @@ algorithm
     case(CLASS(info = i)) then i;
     case(EXTENDS(info = i)) then i;
     case(IMPORT(info = i)) then i;
-    else Absyn.dummyInfo;
+    else AbsynUtil.dummyInfo;
 
   end match;
 end elementInfo;
@@ -988,9 +989,9 @@ algorithm
     case (COMPONENT(), COMPONENT()) then inElement1.name == inElement2.name;
     case (DEFINEUNIT(), DEFINEUNIT()) then inElement1.name == inElement2.name;
     case (EXTENDS(), EXTENDS())
-      then Absyn.pathEqual(inElement1.baseClassPath, inElement2.baseClassPath);
+      then AbsynUtil.pathEqual(inElement1.baseClassPath, inElement2.baseClassPath);
     case (IMPORT(), IMPORT())
-      then Absyn.importEqual(inElement1.imp, inElement2.imp);
+      then AbsynUtil.importEqual(inElement1.imp, inElement2.imp);
     else false;
   end match;
 end elementNameEqual;
@@ -1155,20 +1156,20 @@ public function elementEqual
          true = prefixesEqual(prefixes1,prefixes2);
          true = attributesEqual(attr1,attr2);
          true = modEqual(mod1,mod2);
-         true = Absyn.typeSpecEqual(tp1,tp2);
+         true = AbsynUtil.typeSpecEqual(tp1,tp2);
        then
          true;
 
      case (EXTENDS(path1,_,mod1,_,_), EXTENDS(path2,_,mod2,_,_))
        equation
-         true = Absyn.pathEqual(path1,path2);
+         true = AbsynUtil.pathEqual(path1,path2);
          true = modEqual(mod1,mod2);
        then
          true;
 
     case (IMPORT(imp = im1), IMPORT(imp = im2))
        equation
-         true = Absyn.importEqual(im1,im2);
+         true = AbsynUtil.importEqual(im1,im2);
        then
          true;
 
@@ -1303,7 +1304,7 @@ protected function classDefEqual
      case (DERIVED(tySpec1,mod1,attr1),
            DERIVED(tySpec2,mod2,attr2))
        equation
-         true = Absyn.typeSpecEqual(tySpec1, tySpec2);
+         true = AbsynUtil.typeSpecEqual(tySpec1, tySpec2);
          true = modEqual(mod1,mod2);
          true = attributesEqual(attr1, attr2);
        then
@@ -1382,7 +1383,7 @@ algorithm
 
     case(Absyn.NOSUB(),Absyn.NOSUB()) then true;
     case(Absyn.SUBSCRIPT(e1),Absyn.SUBSCRIPT(e2))
-      then Absyn.expEqual(e1,e2);
+      then AbsynUtil.expEqual(e1,e2);
 
   end match;
 end subscriptEqual;
@@ -1425,14 +1426,14 @@ algorithm
     case(ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1),
         ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))
       equation
-        b1 = Absyn.crefEqual(cr1,cr2);
-        b2 = Absyn.expEqual(e1,e2);
+        b1 = AbsynUtil.crefEqual(cr1,cr2);
+        b2 = AbsynUtil.expEqual(e1,e2);
         equal = boolAnd(b1,b2);
       then equal;
     case(ALG_ASSIGN(assignComponent = e11 as Absyn.TUPLE(_), value = e12),ALG_ASSIGN(assignComponent = e21 as Absyn.TUPLE(_), value = e22))
       equation
-        b1 = Absyn.expEqual(e11,e21);
-        b2 = Absyn.expEqual(e12,e22);
+        b1 = AbsynUtil.expEqual(e11,e21);
+        b2 = AbsynUtil.expEqual(e12,e22);
         equal = boolAnd(b1,b2);
       then equal;
     // base it on equality for now as the ones below are not implemented!
@@ -1487,36 +1488,36 @@ algorithm
       equation
         true = equationEqual22(tb1,tb2);
         List.threadMapAllValue(fb1,fb2,equationEqual2,true);
-        List.threadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
+        List.threadMapAllValue(ifcond1,ifcond2,AbsynUtil.expEqual,true);
       then
         true;
 
     case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
       equation
-        true = Absyn.expEqual(e11,e21);
-        true = Absyn.expEqual(e12,e22);
+        true = AbsynUtil.expEqual(e11,e21);
+        true = AbsynUtil.expEqual(e12,e22);
       then
         true;
 
     case(EQ_PDE(expLeft = e11, expRight = e12, domain = cr1),EQ_PDE(expLeft = e21, expRight = e22, domain = cr2))
       equation
-        true = Absyn.expEqual(e11,e21);
-        true = Absyn.expEqual(e12,e22);
-        true = Absyn.crefEqual(cr1,cr2);
+        true = AbsynUtil.expEqual(e11,e21);
+        true = AbsynUtil.expEqual(e12,e22);
+        true = AbsynUtil.crefEqual(cr1,cr2);
       then
         true;
 
     case(EQ_CONNECT(crefLeft = cr11, crefRight = cr12),EQ_CONNECT(crefLeft = cr21, crefRight = cr22))
       equation
-        true = Absyn.crefEqual(cr11,cr21);
-        true = Absyn.crefEqual(cr12,cr22);
+        true = AbsynUtil.crefEqual(cr11,cr21);
+        true = AbsynUtil.crefEqual(cr12,cr22);
       then
         true;
 
     case (EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
       equation
         List.threadMapAllValue(eql1,eql2,equationEqual2,true);
-        true = Absyn.expEqual(exp1,exp2);
+        true = AbsynUtil.expEqual(exp1,exp2);
         true = stringEq(id1,id2);
       then
         true;
@@ -1531,27 +1532,27 @@ algorithm
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
         List.threadMapAllValue(elst1,elst2,equationEqual2,true);
-        true = Absyn.expEqual(cond1,cond2);
+        true = AbsynUtil.expEqual(cond1,cond2);
       then
         true;
 
     case (EQ_ASSERT(condition = c1, message = m1),EQ_ASSERT(condition = c2, message = m2))
       equation
-        true = Absyn.expEqual(c1,c2);
-        true = Absyn.expEqual(m1,m2);
+        true = AbsynUtil.expEqual(c1,c2);
+        true = AbsynUtil.expEqual(m1,m2);
       then
         true;
 
     case (EQ_REINIT(), EQ_REINIT())
       equation
-        true = Absyn.expEqual(eq1.cref, eq2.cref);
-        true = Absyn.expEqual(eq1.expReinit, eq2.expReinit);
+        true = AbsynUtil.expEqual(eq1.cref, eq2.cref);
+        true = AbsynUtil.expEqual(eq1.expReinit, eq2.expReinit);
       then
         true;
 
     case (EQ_NORETCALL(exp = e1), EQ_NORETCALL(exp = e2))
       equation
-        true = Absyn.expEqual(e1,e2);
+        true = AbsynUtil.expEqual(e1,e2);
       then
         true;
 
@@ -1605,7 +1606,7 @@ algorithm
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
         true = subModsEqual(submodlst1,submodlst2);
-        true = Absyn.expEqual(e1,e2);
+        true = AbsynUtil.expEqual(e1,e2);
       then
         true;
 
@@ -1677,7 +1678,7 @@ algorithm
 
     case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
       equation
-        true = Absyn.expEqual(e1,e2);
+        true = AbsynUtil.expEqual(e1,e2);
         true = subscriptsEqual(ss1,ss2);
       then
         true;
@@ -1707,8 +1708,8 @@ algorithm
         true = valueEq(ct1, ct2);
         true = parallelismEqual(prl1,prl2);
         true = variabilityEqual(var1,var2);
-        true = Absyn.directionEqual(dir1,dir2);
-        true = Absyn.isFieldEqual(if1,if2);
+        true = AbsynUtil.directionEqual(dir1,dir2);
+        true = AbsynUtil.isFieldEqual(if1,if2);
       then
         true;
 
@@ -1766,7 +1767,7 @@ protected function arrayDimEqual
 
      case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
        equation
-         true = Absyn.expEqual(e1,e2);
+         true = AbsynUtil.expEqual(e1,e2);
          true =  arrayDimEqual(ad1,ad2);
        then
          true;
@@ -1879,8 +1880,8 @@ end setClassPartialPrefix;
 public function findIteratorIndexedCrefsInEEquations
   input list<EEquation> inEqs;
   input String inIterator;
-  input list<Absyn.IteratorIndexedCref> inCrefs = {};
-  output list<Absyn.IteratorIndexedCref> outCrefs;
+  input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
+  output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
   outCrefs := List.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator,
     inCrefs);
@@ -1889,18 +1890,18 @@ end findIteratorIndexedCrefsInEEquations;
 public function findIteratorIndexedCrefsInEEquation
   input EEquation inEq;
   input String inIterator;
-  input list<Absyn.IteratorIndexedCref> inCrefs = {};
-  output list<Absyn.IteratorIndexedCref> outCrefs;
+  input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
+  output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
   outCrefs := SCode.foldEEquationsExps(inEq,
-    function Absyn.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
+    function AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
 end findIteratorIndexedCrefsInEEquation;
 
 public function findIteratorIndexedCrefsInStatements
   input list<Statement> inStatements;
   input String inIterator;
-  input list<Absyn.IteratorIndexedCref> inCrefs = {};
-  output list<Absyn.IteratorIndexedCref> outCrefs;
+  input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
+  output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
   outCrefs := List.fold1(inStatements, findIteratorIndexedCrefsInStatement,
       inIterator, inCrefs);
@@ -1909,11 +1910,11 @@ end findIteratorIndexedCrefsInStatements;
 public function findIteratorIndexedCrefsInStatement
   input Statement inStatement;
   input String inIterator;
-  input list<Absyn.IteratorIndexedCref> inCrefs = {};
-  output list<Absyn.IteratorIndexedCref> outCrefs;
+  input list<AbsynUtil.IteratorIndexedCref> inCrefs = {};
+  output list<AbsynUtil.IteratorIndexedCref> outCrefs;
 algorithm
   outCrefs := SCode.foldStatementsExps(inStatement,
-    function Absyn.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
+    function AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
 end findIteratorIndexedCrefsInStatement;
 
 protected function filterComponents
@@ -2140,7 +2141,7 @@ algorithm
       Absyn.Direction dir2;
 
     case (COMPONENT(attributes = ATTR(direction = dir2)),_)
-      then Absyn.directionEqual(dir1,dir2);
+      then AbsynUtil.directionEqual(dir1,dir2);
 
     else false;
   end match;
@@ -2607,7 +2608,7 @@ algorithm
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)
       equation
-        (expl1, arg) = Absyn.traverseExpList(expl1, traverser, arg);
+        (expl1, arg) = AbsynUtil.traverseExpList(expl1, traverser, arg);
       then
         (EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
@@ -2705,7 +2706,7 @@ algorithm
       equation
         (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg);
       then
-        (Absyn.crefMakeFullyQualified(cr), arg);
+        (AbsynUtil.crefMakeFullyQualified(cr), arg);
 
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)
       equation
@@ -3231,7 +3232,7 @@ algorithm
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 == outVar1;
-        argsStr = List.mapMap(args, Absyn.expCref, Absyn.crefIdent);
+        argsStr = List.mapMap(args, AbsynUtil.expCref, AbsynUtil.crefIdent);
         equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
@@ -3289,7 +3290,7 @@ algorithm
     else
       equation
         Error.addInternalError("SCode.getStatementInfo failed", sourceInfo());
-      then Absyn.dummyInfo;
+      then AbsynUtil.dummyInfo;
   end match;
 end getStatementInfo;
 
@@ -3724,7 +3725,7 @@ algorithm
     case(REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p1, modifier = m1))),
          REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
       equation
-        true = Absyn.pathEqual(p1, p2);
+        true = AbsynUtil.pathEqual(p1, p2);
         true = modEqual(m1, m2);
       then
         true;
@@ -3754,7 +3755,7 @@ algorithm
         true = valueEq(v1, v2);
         true = valueEq(rd1, rd2);
         true = valueEq(f1, f2);
-        true = Absyn.innerOuterEqual(io1, io2);
+        true = AbsynUtil.innerOuterEqual(io1, io2);
         true = replaceableEqual(rpl1, rpl2);
       then
         true;
@@ -4188,7 +4189,7 @@ algorithm
 
     case MOD(info = info) then info;
     case REDECL(element = el) then elementInfo(el);
-    else Absyn.dummyInfo;
+    else AbsynUtil.dummyInfo;
   end match;
 end getModifierInfo;
 
@@ -4242,7 +4243,7 @@ algorithm
       Absyn.InnerOuter io;
 
     case COMPONENT(prefixes = PREFIXES(innerOuter = io))
-      then Absyn.isInner(io);
+      then AbsynUtil.isInner(io);
 
     else false;
 
@@ -4381,7 +4382,7 @@ algorithm
 
     case (EXTENDS(baseClassPath = p)::rest, _, i)
       equation
-        true = stringEq(Absyn.pathString(p), i);
+        true = stringEq(AbsynUtil.pathString(p), i);
       then
         inElement::rest;
 
@@ -4534,7 +4535,7 @@ algorithm
         e;
 
     case ((e as EXTENDS(baseClassPath = p))::_, i)
-      guard stringEq(Absyn.pathString(p), i)
+      guard stringEq(AbsynUtil.pathString(p), i)
       then
         e;
 
@@ -4585,7 +4586,7 @@ algorithm
     local Absyn.Path p;
     case (COMPONENT(name = s)) then s;
     case (CLASS(name = s)) then s;
-    case (EXTENDS(baseClassPath = p)) then Absyn.pathString(p);
+    case (EXTENDS(baseClassPath = p)) then AbsynUtil.pathString(p);
   end match;
 end getElementName;
 
@@ -5720,7 +5721,7 @@ algorithm
       Absyn.Path path;
     case {} then false;
     case EXTENDS(baseClassPath = path)::_
-      guard( Absyn.pathEqual(path, Absyn.IDENT("ExternalObject")) ) then true;
+      guard( AbsynUtil.pathEqual(path, Absyn.IDENT("ExternalObject")) ) then true;
     case _::els then hasExtendsOfExternalObject(els);
   end match;
 end hasExtendsOfExternalObject;

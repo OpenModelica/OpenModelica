@@ -32,6 +32,7 @@
 encapsulated package Uncertainties
 
 public import Absyn;
+public import AbsynUtil;
 public import BackendDAE;
 public import BackendVarTransform;
 public import DAE;
@@ -294,7 +295,7 @@ algorithm
         outStringA = "Grid[{"+Print.getString()+"}]";
         _=writeFileIfNonEmpty(outputFile,outStringA);
         true = Flags.isSet(Flags.FAILTRACE);
-        resstr = Absyn.pathStringNoQual(className);
+        resstr = AbsynUtil.pathStringNoQual(className);
         resstr = stringAppendList({"modelEquationsUC: The model equations in model",resstr," could not be extracted"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
@@ -2201,7 +2202,7 @@ algorithm
     then (dae,cache,graph);
   else
       equation
-        resstr = Absyn.pathStringNoQual(className);
+        resstr = AbsynUtil.pathStringNoQual(className);
         resstr = stringAppendList({"modelEquationsUC: The model ",resstr," could not be flattened"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then fail();

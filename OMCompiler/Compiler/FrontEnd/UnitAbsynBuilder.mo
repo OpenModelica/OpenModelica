@@ -37,8 +37,8 @@ public import MMath;
 public import FCore;
 public import HashTable;
 public import Absyn;
+public import AbsynUtil;
 
-protected import AbsynUtil;
 protected import Array;
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -198,8 +198,8 @@ algorithm
     list<Absyn.ElementItem> elts;
     String n;
     case((cl as Absyn.CLASS(),pa,i)) equation
-      elts = Absyn.getElementItemsInClass(cl);
-      defunits = Absyn.getDefineUnitsInElements(elts);
+      elts = AbsynUtil.getElementItemsInClass(cl);
+      defunits = AbsynUtil.getDefineUnitsInElements(elts);
       registerDefineunits(defunits);
     then ((cl,pa,i));
     case((cl,pa,i)) then ((cl,pa,i));

@@ -39,6 +39,7 @@ encapsulated package InstSection
   and algorithm sections (including connect equations)."
 
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
@@ -1012,7 +1013,7 @@ algorithm
 
     case (Absyn.TUPLE(crefs), Absyn.CALL())
       algorithm
-        if not List.all(crefs, Absyn.isCref) then
+        if not List.all(crefs, AbsynUtil.isCref) then
           left_str := Dump.printExpStr(left);
           right_str := Dump.printExpStr(right);
           Error.addSourceMessageAndFail(Error.TUPLE_ASSIGN_CREFS_ONLY,
@@ -1303,7 +1304,7 @@ public function instEqEquation "author: LS, ELN
   input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   input Boolean inImplicit;
-  input SourceInfo extraInfo=Absyn.dummyInfo "We have 2 sources?";
+  input SourceInfo extraInfo=AbsynUtil.dummyInfo "We have 2 sources?";
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inImplicit)
@@ -1870,7 +1871,7 @@ protected
   DAE.Properties prop;
   list<SCode.Statement> body;
   SourceInfo info;
-  list<Absyn.IteratorIndexedCref> iter_crefs;
+  list<AbsynUtil.IteratorIndexedCref> iter_crefs;
 algorithm
   SCode.ALG_FOR(index = iterator, range = oarange, forBody = body, info = info) := inForStatement;
 
@@ -2058,7 +2059,7 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
+        source = ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2125,7 +2126,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       equation
         // set the source of this element
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
+        source = ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2173,9 +2174,9 @@ algorithm
       equation
         // set the source of this element
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
+        source = ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
 
-        (cache,constraints_1,_) = Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, Absyn.dummyInfo);
+        (cache,constraints_1,_) = Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, AbsynUtil.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
 
         dae = DAE.DAE({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(constraints_1),source)});
@@ -3025,7 +3026,7 @@ algorithm
     // adrpo: check for connect(A, A) as we should give a warning and remove it!
     case (cache,env,ih,sets,_,c1,c2,_,graph)
       equation
-        true = Absyn.crefEqual(c1, c2);
+        true = AbsynUtil.crefEqual(c1, c2);
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c1);
         Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
@@ -3070,10 +3071,10 @@ algorithm
     case (cache,env,_,_,pre,c1,c2,_,_)
       equation
         ErrorExt.rollBack("expandableConnectors");
-        subs1 = Absyn.getSubsFromCref(c1,true,true);
-        crefs1 = Absyn.getCrefsFromSubs(subs1,true,true);
-        subs2 = Absyn.getSubsFromCref(c2,true,true);
-        crefs2 = Absyn.getCrefsFromSubs(subs2,true,true);
+        subs1 = AbsynUtil.getSubsFromCref(c1,true,true);
+        crefs1 = AbsynUtil.getCrefsFromSubs(subs1,true,true);
+        subs2 = AbsynUtil.getSubsFromCref(c2,true,true);
+        crefs2 = AbsynUtil.getCrefsFromSubs(subs2,true,true);
         //print("Crefs in " + Dump.printComponentRefStr(c1) + ": " + stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") + "\n");
         //print("Crefs in " + Dump.printComponentRefStr(c2) + ": " + stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") + "\n");
         s1 = Dump.printComponentRefStr(c1);
@@ -3342,8 +3343,8 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Absyn.printComponentRefStr(c1) + "], " +
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Absyn.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c1) + "], " +
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + AbsynUtil.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
       then
         fail();
 
@@ -3366,7 +3367,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // strip the last prefix!
-        c1_prefix = Absyn.crefStripLast(c1);
+        c1_prefix = AbsynUtil.crefStripLast(c1);
         // elab expandable connector
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
@@ -3389,7 +3390,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
+        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
@@ -3410,7 +3411,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), Absyn.dummyInfo),
+                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
           // add empty here to connect individual components!
@@ -3430,7 +3431,7 @@ algorithm
                     envExpandable);
         // ******************************************************************************
 
-        // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
+        // c1 = AbsynUtil.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
         // then connect each of the components normally.
         (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
       then
@@ -3454,7 +3455,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // strip the last prefix!
-        c1_prefix = Absyn.crefStripLast(c1);
+        c1_prefix = AbsynUtil.crefStripLast(c1);
         // elab expandable connector
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
         // lookup the expandable connector
@@ -3477,7 +3478,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
-        Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
+        Absyn.CREF_IDENT(componentName, _) = AbsynUtil.crefGetLastIdent(c1);
 
         envComponentEmpty = FGraph.removeComponentsFromScope(envComponent);
 
@@ -3497,7 +3498,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), Absyn.dummyInfo),
+                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
                           envComponentEmpty);
@@ -3523,7 +3524,7 @@ algorithm
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env: " + FGraph.printGraphStr(env));
 
         // use the cannon cref here as we will NOT find [i] in this environment!!!!
-        // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
+        // c1 = AbsynUtil.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
         // now it should be in the Env, fetch the info!
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache, env, c1, impl, false, pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
@@ -3816,8 +3817,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,name::names,impl,graph,_)
       equation
         // add name to both c1 and c2, then connect normally
-        c1_full = Absyn.joinCrefs(c1, Absyn.CREF_IDENT(name, {}));
-        c2_full = Absyn.joinCrefs(c2, Absyn.CREF_IDENT(name, {}));
+        c1_full = AbsynUtil.joinCrefs(c1, Absyn.CREF_IDENT(name, {}));
+        c2_full = AbsynUtil.joinCrefs(c2, Absyn.CREF_IDENT(name, {}));
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(full_expandable, full_expandable)(" + Dump.printComponentRefStr(c1_full) + ", " + Dump.printComponentRefStr(c2_full) + ")");
 
         (cache,env,ih,sets,dae1,graph) = instConnect(cache,env,ih,sets,pre,c1_full,c2_full,impl,graph,info);
@@ -4739,7 +4740,7 @@ algorithm
     case (_, {}, _, _) then {};
     case (_, l :: ls, _, _)
       equation
-        enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
+        enum_type_name = AbsynUtil.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
         (e,_) = ExpressionSimplify.simplify1(Expression.makeASUB(expr, {e}));
         e = if Expression.isCref(e) then Expression.unliftExp(e) else e;
@@ -4803,7 +4804,7 @@ algorithm
     // add an error
     case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
       equation
-        true = Absyn.expContainsInitial(exp);
+        true = AbsynUtil.expContainsInitial(exp);
         true = SCode.algorithmsContainReinit(algs);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then false;
@@ -4865,7 +4866,7 @@ algorithm
     // Add an error for when initial() then reinit().
     case SCode.EQ_WHEN(condition = exp, eEquationLst = el, info = info)
       equation
-        true = Absyn.expContainsInitial(exp);
+        true = AbsynUtil.expContainsInitial(exp);
         true = SCode.equationsContainReinit(el);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then
@@ -5124,7 +5125,7 @@ algorithm
     // (v1,v2,..,vn) := func(...)
     case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
-        true = List.all(expl, Absyn.isCref);
+        true = List.all(expl, AbsynUtil.isCref);
         (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
         (cache,expl_1,cprops,attrs) =
@@ -5141,7 +5142,7 @@ algorithm
     case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        true = List.all(expl, Absyn.isCref);
+        true = List.all(expl, AbsynUtil.isCref);
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
@@ -5183,7 +5184,7 @@ algorithm
     /* Tuple with lhs being a tuple NOT of crefs => Error */
     case (_,e as Absyn.TUPLE(expressions = expl),_,_)
       equation
-        false = List.all(expl, Absyn.isCref);
+        false = List.all(expl, AbsynUtil.isCref);
         s = Dump.printExpStr(e);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s}, info);
       then
@@ -5192,7 +5193,7 @@ algorithm
     case (cache,e1 as Absyn.TUPLE(expressions = expl),_,prop2)
       equation
         Absyn.CALL() = inRhs;
-        true = List.all(expl, Absyn.isCref);
+        true = List.all(expl, AbsynUtil.isCref);
         (cache,e_1,prop1) = Static.elabExpLHS(cache,inEnv,e1,inImpl,false,inPre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
@@ -5209,7 +5210,7 @@ algorithm
     /* Tuple with rhs not CALL or CONSTANT => Error */
     case (_,Absyn.TUPLE(expressions = expl),e_1,_)
       equation
-        true = List.all(expl, Absyn.isCref);
+        true = List.all(expl, AbsynUtil.isCref);
         failure(Absyn.CALL() = inRhs);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
@@ -5313,7 +5314,7 @@ protected
   DAE.Properties prop;
   list<SCode.Statement> body;
   SourceInfo info;
-  list<Absyn.IteratorIndexedCref> iter_crefs;
+  list<AbsynUtil.IteratorIndexedCref> iter_crefs;
 algorithm
   SCode.ALG_PARFOR(index = iterator, range = oarange, parforBody = body, info = info) := inForStatement;
 
@@ -5444,7 +5445,7 @@ algorithm
     case((cref,info),_,_)
       equation
         errorString = "\n" +
-        "- Component '" + Absyn.pathString(ComponentReference.crefToPath(cref)) +
+        "- Component '" + AbsynUtil.pathString(ComponentReference.crefToPath(cref)) +
         "' is used in a parallel for loop." + "\n" +
         "- Parallel for loops can only contain references to parglobal variables."
         ;

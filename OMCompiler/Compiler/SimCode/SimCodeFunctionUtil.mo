@@ -410,7 +410,7 @@ algorithm
   b := match (decl1,decl2)
     local
       Absyn.Path path1,path2;
-    case (SimCodeFunction.RECORD_DECL_DEF(path=path1),SimCodeFunction.RECORD_DECL_DEF(path=path2)) then Absyn.pathGe(path1,path2);
+    case (SimCodeFunction.RECORD_DECL_DEF(path=path1),SimCodeFunction.RECORD_DECL_DEF(path=path2)) then AbsynUtil.pathGe(path1,path2);
     else true;
   end match;
 end orderRecordDecls;
@@ -488,7 +488,7 @@ protected
   String name;
 algorithm
   DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) := ty;
-  name := Absyn.pathStringUnquoteReplaceDot(path, "_");
+  name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
   decl := List.find1(allDecls, isRecordDecl, name);
 end getRecordDependenciesFromType;
 
@@ -515,7 +515,7 @@ algorithm
       String name1,name2;
       Absyn.Path path1,path2;
     case (SimCodeFunction.RECORD_DECL_FULL(name=name1),SimCodeFunction.RECORD_DECL_FULL(name=name2)) then stringEq(name1,name2);
-    case (SimCodeFunction.RECORD_DECL_DEF(path=path1),SimCodeFunction.RECORD_DECL_DEF(path=path2)) then Absyn.pathEqual(path1,path2);
+    case (SimCodeFunction.RECORD_DECL_DEF(path=path1),SimCodeFunction.RECORD_DECL_DEF(path=path2)) then AbsynUtil.pathEqual(path1,path2);
     else false;
   end match;
 end isRecordDeclEqual;
@@ -569,7 +569,7 @@ algorithm
     case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="builtin"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
         // skip over builtin functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
-        fname = Absyn.pathString(Absyn.makeNotFullyQualified(path));
+        fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = stringEq(fname, name);
         if not b then
           (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
@@ -581,7 +581,7 @@ algorithm
     case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="C"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
         // skip over known external C functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
-        fname = Absyn.pathString(Absyn.makeNotFullyQualified(path));
+        fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
         b = listMember(name, SCode.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
           (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
@@ -863,8 +863,8 @@ algorithm
 
     case DAE.EXTARG(componentRef, dir, type_)
       equation
-        isInput = Absyn.isInput(dir);
-        isOutput = Absyn.isOutput(dir);
+        isInput = AbsynUtil.isInput(dir);
+        isOutput = AbsynUtil.isOutput(dir);
         outputIndex = if isOutput then -1 else 0; // correct output index is added later by fixOutputIndex
         isArray = Types.isArray(type_);
         type_ = Types.simplifyType(type_);
@@ -1557,7 +1557,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst), accRecDecls, rt)
       equation
-        sname = Absyn.pathStringUnquoteReplaceDot(name, "_");
+        sname = AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
         if not listMember(sname, rt) then
           vars = List.map(varlst, typesVarNoBinding);
           vars = List.sort(vars,compareVariable);
@@ -1578,7 +1578,7 @@ algorithm
 
     case (DAE.T_METARECORD(fields = varlst, path=path), accRecDecls, rt)
       equation
-        sname = Absyn.pathStringUnquoteReplaceDot(path, "_");
+        sname = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         if not listMember(sname, rt) then
           fieldNames = List.map(varlst, generateVarName);
           accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
@@ -1732,7 +1732,7 @@ algorithm
     case ({}, accRecDecls, rt) then (accRecDecls, rt);
     case (DAE.METARECORDCALL(path=path, fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
-        name = Absyn.pathStringUnquoteReplaceDot(path, "_");
+        name = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         b = listMember(name, rt);
         accRecDecls = List.consOnTrue(not b, SimCodeFunction.RECORD_DECL_DEF(path, fieldNames), accRecDecls);
         rt_1 = List.consOnTrue(not b, name, rt);
@@ -1879,7 +1879,7 @@ algorithm
       then if System.directoryExists(str) then {istr} else {};
     case (_, _, _, _)
       equation
-        str = "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Include";
+        str = "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Include";
         str = CevalScript.getFullPathFromUri(program, str, false);
         istr = "\"-I"+str+"\"";
       then if System.directoryExists(str) then {istr} else {};
@@ -1907,7 +1907,7 @@ algorithm
     equation
       platform1 = uri + "/" + System.openModelicaPlatform();
       platform2 = uri + "/" + System.modelicaPlatform();
-    then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::
+    then uri::platform2::platform1::(Settings.getHomeDir(false)+"/.openmodelica/binaries/"+AbsynUtil.pathFirstIdent(path))::
       (Settings.getInstallationDirectoryPath() + "/lib/")::(Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc")::{};
   end matchcontinue;
 end getLinkerLibraryPaths;
@@ -1935,10 +1935,10 @@ algorithm
             equation
               SCode.MOD(binding = SOME(Absyn.STRING(str))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
             then str;
-          else "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
+          else "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
         end matchcontinue;
         str := CevalScript.getFullPathFromUri(program, str, false);
-        resourcesStr := CevalScript.getFullPathFromUri(program, "modelica://" + Absyn.pathFirstIdent(path) + "/Resources", false);
+        resourcesStr := CevalScript.getFullPathFromUri(program, "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources", false);
         isLinux := stringEq("linux",Autoconf.os);
         target := Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should have the highest priority
@@ -1970,7 +1970,7 @@ end getGerneralTarget;
 
 protected function userCompiledBinariesDirectory
   input Absyn.Path path;
-  output String str = Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path);
+  output String str = Settings.getHomeDir(false)+"/.openmodelica/binaries/"+AbsynUtil.pathFirstIdent(path);
 end userCompiledBinariesDirectory;
 
 protected function generateExtFunctionLibraryDirectoryPaths
@@ -2000,7 +2000,7 @@ algorithm
       then libs;
     case (_, _, _)
       equation
-        str = "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
+        str = "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
@@ -2332,7 +2332,7 @@ algorithm
     case ({}, ht, _) then ht;
     case (path::rest, ht, _)
       equation
-        ht = getCalledFunctionsInFunction2(path, Absyn.pathStringNoQual(path), ht, funcs);
+        ht = getCalledFunctionsInFunction2(path, AbsynUtil.pathStringNoQual(path), ht, funcs);
         ht = getCalledFunctionsInFunctions(rest, ht, funcs);
       then ht;
   end match;
@@ -2393,8 +2393,8 @@ algorithm
       String pathstr;
     case (DAE.FUNCTION(type_=DAE.T_FUNCTION(funcResultType=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=path)))),_)
       equation
-        path = Absyn.joinPaths(path,Absyn.IDENT("destructor"));
-      then addDestructor2(path,Absyn.pathStringNoQual(path),inHt);
+        path = AbsynUtil.joinPaths(path,Absyn.IDENT("destructor"));
+      then addDestructor2(path,AbsynUtil.pathStringNoQual(path),inHt);
     else inHt;
   end match;
 end addDestructor;
@@ -2423,23 +2423,23 @@ algorithm
       list<Absyn.Path> acc, filter;
     case (DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false)), (acc, filter))
       equation
-        path = Absyn.makeNotFullyQualified(path);
-        false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
+        path = AbsynUtil.makeNotFullyQualified(path);
+        false = List.isMemberOnTrue(path, filter, AbsynUtil.pathEqual);
       then (inExp, (path::acc, filter));
     case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path)), (acc, filter))
       equation
-        false = List.isMemberOnTrue(path, {Absyn.IDENT("list"),Absyn.IDENT("listReverse"),Absyn.IDENT("array"),Absyn.IDENT("min"),Absyn.IDENT("max"),Absyn.IDENT("sum"),Absyn.IDENT("product")}, Absyn.pathEqual);
-        false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
+        false = List.isMemberOnTrue(path, {Absyn.IDENT("list"),Absyn.IDENT("listReverse"),Absyn.IDENT("array"),Absyn.IDENT("min"),Absyn.IDENT("max"),Absyn.IDENT("sum"),Absyn.IDENT("product")}, AbsynUtil.pathEqual);
+        false = List.isMemberOnTrue(path, filter, AbsynUtil.pathEqual);
       then (inExp, (path::acc, filter));
     case (DAE.PARTEVALFUNCTION(path = path), (acc, filter))
       equation
-        path = Absyn.makeNotFullyQualified(path);
-        false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
+        path = AbsynUtil.makeNotFullyQualified(path);
+        false = List.isMemberOnTrue(path, filter, AbsynUtil.pathEqual);
       then (inExp, (path::acc, filter));
     case (DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)), (acc, filter))
       equation
-        path = Absyn.crefToPath(getCrefFromExp(inExp));
-        false = List.isMemberOnTrue(path, filter, Absyn.pathEqual);
+        path = AbsynUtil.crefToPath(getCrefFromExp(inExp));
+        false = List.isMemberOnTrue(path, filter, AbsynUtil.pathEqual);
       then (inExp, (path::acc, filter));
     else (inExp,itpl);
   end matchcontinue;
@@ -2477,7 +2477,7 @@ algorithm
       String aliasStr;
     case (_,_,_)
       equation
-        aliasStr = Absyn.pathStringUnquoteReplaceDot(BaseHashTable.get(str, inHt),"_");
+        aliasStr = AbsynUtil.pathStringUnquoteReplaceDot(BaseHashTable.get(str, inHt),"_");
       then (SOME(aliasStr),inHt);
     else
       equation

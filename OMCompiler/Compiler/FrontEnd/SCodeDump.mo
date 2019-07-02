@@ -38,6 +38,7 @@ encapsulated package SCodeDump
   This module functions for printing SCode."
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 
 protected import Dump;
@@ -165,7 +166,7 @@ algorithm
     case SCode.R_TYPE() then "type";
     case SCode.R_PACKAGE() then "package";
     case SCode.R_ENUMERATION() then "enumeration";
-    case SCode.R_METARECORD() then "metarecord " + Absyn.pathString(inRestriction.name);
+    case SCode.R_METARECORD() then "metarecord " + AbsynUtil.pathString(inRestriction.name);
     case SCode.R_UNIONTYPE() then "uniontype";
     // predefined types
     case SCode.R_PREDEFINED_INTEGER() then "Integer";
@@ -215,7 +216,7 @@ algorithm
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
-        str = Absyn.pathString(path);
+        str = AbsynUtil.pathString(path);
         str = str + printModStr(mod,defaultOptions);
         res = stringAppendList({"extends ",str,";"});
       then
@@ -259,7 +260,7 @@ algorithm
 
     case (SCode.IMPORT(imp = imp))
       equation
-         str = "import "+ Absyn.printImportString(imp) + ";";
+         str = "import "+ AbsynUtil.printImportString(imp) + ";";
       then str;
   end match;
 end shortElementStr;
@@ -434,7 +435,7 @@ algorithm
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
         constrainingClass = path, modifier = mod))))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         mod_str = printModStr(mod,defaultOptions);
       then ("replaceable ", path_str + "(" + mod_str + ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
@@ -477,7 +478,7 @@ algorithm
         s = visibilityStr(v) +
             redeclareStr(rd) +
             finalStr(f) +
-            Absyn.innerOuterStr(io) +
+            AbsynUtil.innerOuterStr(io) +
             replaceablePrefixStr(rpl);
       then
         s;

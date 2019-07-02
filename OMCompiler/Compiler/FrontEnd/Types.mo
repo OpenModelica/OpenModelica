@@ -47,6 +47,7 @@ encapsulated package Types
 
 public import ClassInf;
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import InstTypes;
 public import Values;
@@ -1126,7 +1127,7 @@ algorithm
     case (Values.BOOL()) then (DAE.T_BOOL_DEFAULT);
     case (Values.ENUM_LITERAL(name = path, index = index))
       equation
-        path = Absyn.pathPrefix(path);
+        path = AbsynUtil.pathPrefix(path);
       then DAE.T_ENUMERATION(SOME(index), path, {}, {}, {});
 
     case ((Values.ARRAY(valueLst = (v :: vs))))
@@ -1156,7 +1157,7 @@ algorithm
       equation
         true = index >= 0;
         vars = valuesToVars(vl, ids);
-        utPath = Absyn.stripLast(cname);
+        utPath = AbsynUtil.stripLast(cname);
       then DAE.T_METARECORD(cname, utPath, {} /* typeVar? */, index, vars, false /*We simply do not know...*/);
 
         // MetaModelica list type
@@ -1510,7 +1511,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p1)),
           DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p2)))
       then
-        Absyn.pathEqual(p1,p2);
+        AbsynUtil.pathEqual(p1,p2);
 
     // Complex type
     case (DAE.T_COMPLEX(complexClassType = st1,varLst = els1),
@@ -1579,22 +1580,22 @@ algorithm
       then subtype(t1,t2);
 
     case (DAE.T_METARECORD(path=p1),DAE.T_METARECORD(path=p2))
-      then Absyn.pathEqual(p1,p2);
+      then AbsynUtil.pathEqual(p1,p2);
 
     case (DAE.T_METAUNIONTYPE(path = p1),DAE.T_METARECORD(utPath=p2))
-      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
+      then if AbsynUtil.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // If the record is the only one in the uniontype, of course their types match
     case (DAE.T_METARECORD(knownSingleton=b1,utPath = p1),DAE.T_METAUNIONTYPE(knownSingleton=b2,path=p2))
-      then if Absyn.pathEqual(p1,p2) and (b1 or b2) /*Values.mo loses knownSingleton information */ then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
+      then if AbsynUtil.pathEqual(p1,p2) and (b1 or b2) /*Values.mo loses knownSingleton information */ then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
 
     // <uniontype> = <uniontype>
     case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_METAUNIONTYPE(path = p2))
-      then if Absyn.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
+      then if AbsynUtil.pathEqual(p1,p2) then subtypeTypelist(inType1.typeVars,inType2.typeVars,requireRecordNamesEqual) else false;
     /*case (DAE.T_METAUNIONTYPE(path = p1), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
-      then Absyn.pathEqual(p1,p2); // TODO: Remove?
+      then AbsynUtil.pathEqual(p1,p2); // TODO: Remove?
     case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(path = p1))
-      then Absyn.pathEqual(p1,p2); // TODO: Remove?*/
+      then AbsynUtil.pathEqual(p1,p2); // TODO: Remove?*/
 
     case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2)) then valueEq(c1,c2);
 
@@ -2160,7 +2161,7 @@ algorithm
       then s2;
     case (DAE.T_ENUMERATION(path = path, names = l))
       equation
-        s1 = if Config.typeinfo() then " /*" + Absyn.pathString(path) + "*/ (" else "(";
+        s1 = if Config.typeinfo() then " /*" + AbsynUtil.pathString(path) + "*/ (" else "(";
         s2 = stringDelimitList(l, ", ");
         /* s2 = stringAppendList(List.map(vs, unparseVar));
         s2 = if_(s2 == "", "", "(" + s2 + ")"); */
@@ -2179,7 +2180,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path),varLst = vs))
       equation
-        name = Absyn.pathStringNoQual(path);
+        name = AbsynUtil.pathStringNoQual(path);
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
         res = stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
@@ -2188,7 +2189,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path, b),varLst = vs))
       equation
-        name = Absyn.pathStringNoQual(path);
+        name = AbsynUtil.pathStringNoQual(path);
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
         str = if b then "expandable " else "";
@@ -2198,7 +2199,7 @@ algorithm
 
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, complexType = bc_tp))
       equation
-        st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
+        st_str = AbsynUtil.pathString(ClassInf.getStateName(ci_state));
         res = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
         res = stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
@@ -2207,7 +2208,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ci_state))
       equation
-        st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
+        st_str = AbsynUtil.pathString(ClassInf.getStateName(ci_state));
         res = ClassInf.printStateStr(ci_state);
         res = stringAppendList({res," ",st_str});
       then
@@ -2215,7 +2216,7 @@ algorithm
 
     case (DAE.T_FUNCTION(funcArg = params, funcResultType = restype, path=path))
       equation
-        funcstr = Absyn.pathString(path);
+        funcstr = AbsynUtil.pathString(path);
         paramstrs = List.map(params, unparseParam);
         paramstr = stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
@@ -2270,14 +2271,14 @@ algorithm
      // MetaModelica uniontype
     case DAE.T_METAUNIONTYPE()
       equation
-        res = Absyn.pathStringNoQual(inType.path);
+        res = AbsynUtil.pathStringNoQual(inType.path);
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica uniontype (but we know which record in the UT it is)
 /*
     case (DAE.T_METARECORD(utPath=_, fields = vs, source = {p}))
       equation
-        str = Absyn.pathStringNoQual(p);
+        str = AbsynUtil.pathStringNoQual(p);
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
@@ -2285,7 +2286,7 @@ algorithm
 */
     case DAE.T_METARECORD()
       equation
-        res = Absyn.pathStringNoQual(inType.path);
+        res = AbsynUtil.pathStringNoQual(inType.path);
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica boxed type
@@ -2455,7 +2456,7 @@ algorithm
         s1 = printParamsStr(params);
         s2 = printTypeStr(restype);
         str = stringAppendList({"function(", s1,") => ",s2});
-        str = str + Absyn.pathString(inType.path);
+        str = str + AbsynUtil.pathString(inType.path);
       then
         str;
 
@@ -2547,13 +2548,13 @@ algorithm
     // Uniontype, Metarecord
     case (t as DAE.T_METARECORD())
       equation
-        s1 = Absyn.pathStringNoQual(t.path);
+        s1 = AbsynUtil.pathStringNoQual(t.path);
         str = "#" + s1 + "#";
       then
         str;
     case (t as DAE.T_METAUNIONTYPE())
       equation
-        s1 = Absyn.pathStringNoQual(t.path);
+        s1 = AbsynUtil.pathStringNoQual(t.path);
         str = "#" + s1 + "#";
       then
         str;
@@ -2596,7 +2597,7 @@ algorithm
       equation
         varNames = List.map(vars,varName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
-        s = isExpandableStr + Absyn.pathString(connectorName);
+        s = isExpandableStr + AbsynUtil.pathString(connectorName);
         s2 = "{" + stringDelimitList(varNames,", ") + "}";
       then
         (s,s2);
@@ -2606,7 +2607,7 @@ algorithm
       equation
         varNames = List.map(vars,varName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
-        s = isExpandableStr + Absyn.pathString(connectorName);
+        s = isExpandableStr + AbsynUtil.pathString(connectorName);
         s2 = "{" + stringDelimitList(varNames,", ") + "}" + " subtype of: " + printTypeStr(t);
       then
         (s,s2);
@@ -3232,7 +3233,7 @@ algorithm
     case(DAE.TYPES_VAR(binding=DAE.EQBOUND(exp=exp)), _) then exp;
     case(DAE.TYPES_VAR(name=name, binding=DAE.UNBOUND()), _)
       equation
-        str = "Record '" + Absyn.pathString(inPath) + "' member '" + name + "' has no default value and is not modifiable by a constructor function.\n";
+        str = "Record '" + AbsynUtil.pathString(inPath) + "' member '" + name + "' has no default value and is not modifiable by a constructor function.\n";
         Error.addCompilerWarning(str);
       then
         DAE.ICONST(0);
@@ -3480,12 +3481,12 @@ algorithm
     case (DAE.T_CLOCK()) then "Clock";
     case (DAE.T_COMPLEX(complexClassType = st))
       equation
-        n = Absyn.pathString(ClassInf.getStateName(st));
+        n = AbsynUtil.pathString(ClassInf.getStateName(st));
       then
         n;
     case (DAE.T_SUBTYPE_BASIC(complexClassType = st))
       equation
-        n = Absyn.pathString(ClassInf.getStateName(st));
+        n = AbsynUtil.pathString(ClassInf.getStateName(st));
       then
         n;
     case (arrayty as DAE.T_ARRAY())
@@ -4001,7 +4002,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = cty1, varLst = vars1),
           DAE.T_COMPLEX(complexClassType = cty2, varLst = vars2))
       equation
-        true = Absyn.pathEqual(ClassInf.getStateName(cty1),
+        true = AbsynUtil.pathEqual(ClassInf.getStateName(cty1),
                                ClassInf.getStateName(cty2));
         true = List.isEqualOnTrue(vars1, vars2,
           varsElabEquivalent);
@@ -4019,7 +4020,7 @@ algorithm
     case (DAE.T_ENUMERATION(path = p1, names = names1),
           DAE.T_ENUMERATION(path = p2, names = names2))
       equation
-        true = Absyn.pathEqual(p1, p2);
+        true = AbsynUtil.pathEqual(p1, p2);
         true = List.isEqualOnTrue(names1, names2, stringEqual);
       then
         true;
@@ -4575,7 +4576,7 @@ algorithm
         true = typeConvertIntToEnumCheck(exp, t2); // Will warn or report error depending on whether oi is out of range.
         // select from enum list:
         name = listGet(l, oi);
-        tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
+        tp = AbsynUtil.joinPaths(tp, Absyn.IDENT(name));
       then
         (DAE.ENUM_LITERAL(tp, oi),expected);
 
@@ -4598,7 +4599,7 @@ algorithm
     // Complex types (records) that need a cast
     case (e, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p1),varLst = els1), t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p2),varLst = els2),_)
       equation
-        false = Absyn.pathEqual(p1,p2) "We need to add a cast from one record to another";
+        false = AbsynUtil.pathEqual(p1,p2) "We need to add a cast from one record to another";
         true = Flags.isSet(Flags.ALLOW_RECORD_TOO_MANY_FIELDS) or (listLength(els1) == listLength(els2));
         true = subtypeVarlist(els1, els2);
         e = DAE.CAST(t2, e);
@@ -4628,7 +4629,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         elist = Patternm.resultExps(cases);
         (elist_1,_) = matchTypeList(elist, actual, expected, printFailtrace);
-        cases=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
+        cases=Patternm.fixCaseReturnTypes2(cases,elist_1,AbsynUtil.dummyInfo);
         et=simplifyType(expected);
       then
         (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et),expected);
@@ -4740,7 +4741,7 @@ algorithm
           _)
       equation
         true = subtype(t1,t2);
-        true = Absyn.pathEqual(path1, path2);
+        true = AbsynUtil.pathEqual(path1, path2);
         t2 = DAE.T_METABOXED(t1);
         l = List.map(v, getVarName);
         tys1 = List.map(v, getVarType);
@@ -4755,7 +4756,7 @@ algorithm
           _)
       equation
         true = subtype(t1,t2);
-        true = Absyn.pathEqual(path1, path2);
+        true = AbsynUtil.pathEqual(path1, path2);
         t2 = DAE.T_METABOXED(t1);
         l = List.map(v, getVarName);
         tys1 = List.map(v, getVarType);
@@ -4774,7 +4775,7 @@ algorithm
         tys1 = List.map(v, getVarType);
         tys2 = List.map(tys1, boxIfUnboxedType);
         expTypes = List.map(tys1, simplifyType);
-        pathList = List.map(l, Absyn.makeIdentPathFromString);
+        pathList = List.map(l, AbsynUtil.makeIdentPathFromString);
         crefList = List.map(pathList, ComponentReference.pathToCref);
         crefList = List.map1r(crefList, ComponentReference.joinCrefs, cref);
         elist = List.threadMap(crefList, expTypes, Expression.makeCrefExp);
@@ -5719,12 +5720,12 @@ algorithm
 
     case (t1 as DAE.T_METAUNIONTYPE(path = path1), DAE.T_METARECORD(utPath=path2))
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = AbsynUtil.pathEqual(path1,path2);
       then t1;
 
     case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = AbsynUtil.pathEqual(path1,path2);
       then DAE.T_METAUNIONTYPE({},inType1.typeVars,false,DAE.NOT_SINGLETON(),path1);
 
     case (DAE.T_INTEGER(),DAE.T_REAL())
@@ -6411,7 +6412,7 @@ protected
   list<DAE.Type> tys;
 algorithm
   if not listEmpty(unsolvedBindings) then
-    pathStr := Absyn.pathString(path);
+    pathStr := AbsynUtil.pathString(path);
     bindingsStr := polymorphicBindingsStr(bindings);
     solvedBindingsStr := polymorphicBindingsStr(solvedBindings);
     unsolvedBindingsStr := polymorphicBindingsStr(unsolvedBindings);
@@ -6765,24 +6766,24 @@ algorithm
 
     case (DAE.T_METAUNIONTYPE(),DAE.T_METAUNIONTYPE())
       equation
-        true = Absyn.pathEqual(actual.path, expected.path);
+        true = AbsynUtil.pathEqual(actual.path, expected.path);
       then subtypePolymorphicList(actual.typeVars, expected.typeVars, envPath, inBindings);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)))
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = AbsynUtil.pathEqual(path1,path2);
       then inBindings;
 
     // MM Function Reference. sjoelund
     case (DAE.T_FUNCTION(farg1,ty1,_,path1),DAE.T_FUNCTION(farg2,ty2,_,_))
       algorithm
-        if Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1) then // Don't rename the result type for recursive calls...
+        if AbsynUtil.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1) then // Don't rename the result type for recursive calls...
           tList1 := List.map(farg1, funcArgType);
           tList2 := List.map(farg2, funcArgType);
           bindings := subtypePolymorphicList(tList1,tList2,envPath,inBindings);
           bindings := subtypePolymorphic(ty1,ty2,envPath,bindings);
         else
-          prefix := "$" + Absyn.pathString(path1) + ".";
+          prefix := "$" + AbsynUtil.pathString(path1) + ".";
           (DAE.T_FUNCTION(farg1,ty1,_,_),_) := traverseType(actual, prefix, prefixTraversedPolymorphicType);
           tList1 := List.map(farg1, funcArgType);
           tList2 := List.map(farg2, funcArgType);
@@ -7663,7 +7664,7 @@ algorithm
   b := match (st1,st2)
     local
       Absyn.Path p1,p2;
-    case (ClassInf.RECORD(p1),ClassInf.RECORD(p2)) then Absyn.pathEqual(p1,p2);
+    case (ClassInf.RECORD(p1),ClassInf.RECORD(p2)) then AbsynUtil.pathEqual(p1,p2);
     else true;
   end match;
 end classTypeEqualIfRecord;
@@ -7924,7 +7925,7 @@ algorithm
           DAE.T_ENUMERATION(path = tp, names = l))
       equation
         true = (1 <= oi and oi <= listLength(l));
-        pathStr = Absyn.pathString(tp);
+        pathStr = AbsynUtil.pathString(tp);
         intStr = intString(oi);
         enumConst = listGet(l, oi);
         Error.addMessage(Error.INTEGER_ENUMERATION_CONVERSION_WARNING, {intStr, pathStr, enumConst});
@@ -7932,7 +7933,7 @@ algorithm
     case (DAE.ICONST(oi),
           DAE.T_ENUMERATION(path = tp, names = l))
       equation
-        pathStr = Absyn.pathString(tp);
+        pathStr = AbsynUtil.pathString(tp);
         false = stringEq(pathStr, "");
         intStr = intString(oi);
         lengthStr = intString(listLength(l));
@@ -7941,7 +7942,7 @@ algorithm
     case (DAE.ICONST(oi),
           DAE.T_ENUMERATION(path = tp))
       equation
-        pathStr = Absyn.pathString(tp);
+        pathStr = AbsynUtil.pathString(tp);
         true = stringEq(pathStr, "");
         intStr = intString(oi);
         Error.addMessage(Error.INTEGER_TO_UNKNOWN_ENUMERATION, {intStr});
@@ -8416,13 +8417,13 @@ algorithm
     case DAE.T_METAUNIONTYPE(path = p1)
       algorithm
         DAE.T_METAUNIONTYPE(path = p2) := inType2;
-        outCompatible := Absyn.pathEqual(p1, p2);
+        outCompatible := AbsynUtil.pathEqual(p1, p2);
       then inType1;
 
     case DAE.T_METARECORD(utPath = p1)
       algorithm
         DAE.T_METARECORD(utPath = p2) := inType2;
-        outCompatible := Absyn.pathEqual(p1, p2);
+        outCompatible := AbsynUtil.pathEqual(p1, p2);
       then
         inType1;
 
@@ -8535,13 +8536,13 @@ algorithm
     // metarecords actually have uniontype type.
     case (DAE.T_METARECORD(), DAE.T_METAUNIONTYPE())
       algorithm
-        outCompatible := Absyn.pathEqual(ty1.utPath, ty2.path);
+        outCompatible := AbsynUtil.pathEqual(ty1.utPath, ty2.path);
       then
         ty2;
 
     case (DAE.T_METAUNIONTYPE(), DAE.T_METARECORD())
       algorithm
-        outCompatible := Absyn.pathEqual(ty1.path, ty2.utPath);
+        outCompatible := AbsynUtil.pathEqual(ty1.path, ty2.utPath);
       then
         ty1;
 

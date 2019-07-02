@@ -42,6 +42,7 @@ encapsulated package VisualXML
 protected
 
 import Absyn;
+import AbsynUtil;
 import BackendDAE;
 import BackendDAEUtil;
 import BackendEquation;
@@ -563,7 +564,7 @@ algorithm
     case(BackendDAE.VAR(source=source))
       algorithm
        paths := ElementSource.getElementSourceTypes(source);
-       //_ := list(Absyn.pathString(p) for p in paths);
+       //_ := list(AbsynUtil.pathString(p) for p in paths);
        //print("paths_lst "+stringDelimitList(paths_lst, "; ")+"\n");
        (obj,_) := hasVisPath(paths,1);
     then Util.stringNotEqual(obj,"");
@@ -593,7 +594,7 @@ algorithm
       algorithm
         paths := ElementSource.getElementSourceTypes(source);
         //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
-        //print(List.toString(paths, Absyn.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
+        //print(List.toString(paths, AbsynUtil.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
         (obj,idx) := hasVisPath(paths,1);
         true := Util.stringNotEqual(obj,"");
         //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");

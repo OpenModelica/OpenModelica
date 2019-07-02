@@ -54,6 +54,7 @@ protected import Util;
 protected import Expression;
 protected import ExpressionDump;
 protected import Absyn;
+protected import AbsynUtil;
 protected import Dump;
 protected import ValuesUtil;
 protected import Values;
@@ -132,11 +133,11 @@ algorithm
 
      case DAE.FUNCTION(path = fpath)
        equation
-         res = Absyn.pathStringNoQual(fpath);
+         res = AbsynUtil.pathStringNoQual(fpath);
        then res;
      case DAE.RECORD_CONSTRUCTOR(path = fpath)
        equation
-         res = Absyn.pathStringNoQual(fpath);
+         res = AbsynUtil.pathStringNoQual(fpath);
        then res;
      else "";
   end matchcontinue;
@@ -203,7 +204,7 @@ algorithm
     case(DAE.LESS()) then " LESS ";
     case(DAE.EQUAL()) then " EQUAL ";
     case(DAE.NEQUAL()) then " NEQUAL ";
-    case(DAE.USERDEFINED(p)) then " Userdefined:" + Absyn.pathString(p) + " ";
+    case(DAE.USERDEFINED(p)) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
     else " --UNDEFINED-- ";
   end match;
 end dumpOperatorString;
@@ -248,7 +249,7 @@ algorithm
     case(DAE.LESS(_)) then " < ";
     case(DAE.EQUAL(_)) then " == ";
     case(DAE.NEQUAL(_)) then " <> ";
-    case(DAE.USERDEFINED(p)) then " Userdefined:" + Absyn.pathString(p) + " ";
+    case(DAE.USERDEFINED(p)) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
     else " --UNDEFINED-- ";
   end match;
 end dumpOperatorSymbol;
@@ -1153,7 +1154,7 @@ algorithm
     case DAE.EXTOBJECTCLASS(path = fpath)
       equation
         Print.printBuf("class ");
-        fstr = Absyn.pathString(fpath);
+        fstr = AbsynUtil.pathString(fpath);
         Print.printBuf(fstr);
         Print.printBuf("\n extends ExternalObject;\n");
         Print.printBuf("end ");
@@ -1209,7 +1210,7 @@ algorithm
         impureStr = if isImpure then "impure " else "";
         Print.printBuf(impureStr);
         Print.printBuf("function ");
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
@@ -1233,7 +1234,7 @@ algorithm
         impureStr = if isImpure then "impure " else "";
         Print.printBuf(impureStr);
         Print.printBuf("function ");
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
@@ -1253,11 +1254,11 @@ algorithm
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
         Print.printBuf("function ");
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         Print.printBuf(" \"Automatically generated record constructor for "+fstr+"\"\n");
         Print.printBuf(printRecordConstructorInputsStr(t));
-        Print.printBuf("  output "+Absyn.pathLastIdent(fpath)+ " res;\n");
+        Print.printBuf("  output "+AbsynUtil.pathLastIdent(fpath)+ " res;\n");
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -2547,7 +2548,7 @@ algorithm
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path))
       equation
-        name = Absyn.pathStringNoQual(path);
+        name = AbsynUtil.pathStringNoQual(path);
       then
         name;
 
@@ -2556,7 +2557,7 @@ algorithm
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) =
           Types.arrayElementType(ty);
         dims = Types.getDimensions(tp);
-        name = Absyn.pathStringNoQual(path);
+        name = AbsynUtil.pathStringNoQual(path);
         dim_str = List.toString(dims, ExpressionDump.dimensionString, "", "[",
             ", ", "]", false);
       then
@@ -3581,7 +3582,7 @@ algorithm
                        type_ = t, isImpure = isImpure, comment = c), str)
       equation
         str = IOStream.append(str, dumpParallelismStr(t));
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         impureStr = if isImpure then "impure " else "";
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
@@ -3604,7 +3605,7 @@ algorithm
       case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
                          isImpure = isImpure, comment = c), str)
       equation
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         impureStr = if isImpure then "impure " else "";
         str = IOStream.append(str, impureStr);
         str = IOStream.append(str, "function ");
@@ -3622,12 +3623,12 @@ algorithm
     case (DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp), str)
       equation
         false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
-        fstr = Absyn.pathStringNoQual(fpath);
+        fstr = AbsynUtil.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, " \"Automatically generated record constructor for " + fstr + "\"\n");
         str = IOStream.append(str, printRecordConstructorInputsStr(tp));
-        str = IOStream.append(str, "  output "+Absyn.pathLastIdent(fpath) + " res;\n");
+        str = IOStream.append(str, "  output "+AbsynUtil.pathLastIdent(fpath) + " res;\n");
         str = IOStream.append(str, "end ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, ";\n\n");
@@ -3756,7 +3757,7 @@ algorithm
     local
       Absyn.Path p1;
     case (Absyn.TOP()) then "TOP";
-    case (Absyn.WITHIN(p1)) then Absyn.pathString(p1);
+    case (Absyn.WITHIN(p1)) then AbsynUtil.pathString(p1);
   end match;
 end withinString;
 
@@ -3976,7 +3977,7 @@ algorithm
       equation
         cmt = ElementSource.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
-        s1 = Absyn.pathString(path);
+        s1 = AbsynUtil.pathString(path);
         str = stringAppendList({"EXTOBJ  ",s1,"  ", sourceStr, ";\n"});
       then
         str;

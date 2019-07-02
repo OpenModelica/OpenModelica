@@ -39,6 +39,7 @@ encapsulated package ValuesUtil
   expression values."
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import Values;
 
@@ -116,7 +117,7 @@ algorithm
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
     case(Values.ENUM_LITERAL(name = path))
       equation
-        path = Absyn.pathPrefix(path);
+        path = AbsynUtil.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{});
     case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(listHead(valLst));
@@ -1753,7 +1754,7 @@ algorithm
         ();
     case Values.ENUM_LITERAL(name = p)
       equation
-        s = Absyn.pathString(p);
+        s = AbsynUtil.pathString(p);
         Print.printBuf(s);
       then
         ();
@@ -1794,7 +1795,7 @@ algorithm
 
     case ((Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
-        recordName = Absyn.pathStringNoQual(recordPath);
+        recordName = AbsynUtil.pathStringNoQual(recordPath);
 
         Print.printBuf("record " + recordName + "\n");
         valRecordString(xs,ids);
@@ -1825,13 +1826,13 @@ algorithm
 
     case (Values.CODE(A = Absyn.C_TYPENAME(path)))
       equation
-        Print.printBuf(Absyn.pathString(path));
+        Print.printBuf(AbsynUtil.pathString(path));
       then
         ();
 
     case (Values.CODE(A = Absyn.C_VARIABLENAME(cr)))
       equation
-        Print.printBuf(Absyn.printComponentRefStr(cr));
+        Print.printBuf(AbsynUtil.printComponentRefStr(cr));
       then
         ();
 
@@ -1865,7 +1866,7 @@ algorithm
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
     case (Values.ENUM_LITERAL(index = n, name=p))
       equation
-        s = intString(n) + " /* ENUM: " + Absyn.pathString(p) + " */";
+        s = intString(n) + " /* ENUM: " + AbsynUtil.pathString(p) + " */";
         Print.printBuf(s);
       then
         ();

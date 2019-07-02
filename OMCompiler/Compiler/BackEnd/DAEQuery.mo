@@ -41,6 +41,7 @@ public import SCode;
 
 // protected imports
 protected import Absyn;
+protected import AbsynUtil;
 protected import Algorithm;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -287,7 +288,7 @@ algorithm
       equation
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
-        paths_lst = List.map(paths, Absyn.pathString);
+        paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
@@ -312,7 +313,7 @@ algorithm
       equation
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
-        paths_lst = List.map(paths, Absyn.pathString);
+        paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");

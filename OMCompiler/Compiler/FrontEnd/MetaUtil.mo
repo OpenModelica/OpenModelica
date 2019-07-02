@@ -36,6 +36,7 @@ encapsulated package MetaUtil
 "
 
 import Absyn;
+import AbsynUtil;
 import ClassInf;
 import DAE;
 import FCore;
@@ -252,7 +253,7 @@ protected function fixElementItems
   output list<Absyn.Class> outMetaClasses = {};
 protected
   Integer index = 0;
-  Boolean singleton = sum(if Absyn.isElementItem(e) then 1 else 0 for e in inElementItems) == 1;
+  Boolean singleton = sum(if AbsynUtil.isElementItem(e) then 1 else 0 for e in inElementItems) == 1;
   Absyn.Class c;
   Absyn.Restriction r;
 algorithm
@@ -304,9 +305,9 @@ algorithm
 
     case (ClassInf.META_UNIONTYPE(typeVars=typeVars), SCode.PARTS())
       algorithm
-        p := Absyn.makeFullyQualified(inState.path);
+        p := AbsynUtil.makeFullyQualified(inState.path);
         names := SCode.elementNames(list(e for e guard match e case SCode.CLASS(restriction=SCode.R_METARECORD()) then true; else false; end match in inClassDef.elementLst));
-        paths := list(Absyn.suffixPath(p, n) for n in names);
+        paths := list(AbsynUtil.suffixPath(p, n) for n in names);
         b := listLength(paths)==1;
         if b then
           p2 := listGet(paths, 1);

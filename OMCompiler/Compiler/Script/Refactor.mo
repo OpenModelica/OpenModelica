@@ -41,6 +41,8 @@ encapsulated package Refactor
 
 
 public import Absyn;
+public import AbsynUtil;
+
 protected import List;
 protected import Interactive;
 protected import Inst;
@@ -111,7 +113,7 @@ algorithm
       info = file_info),p,cPath)
       equation
        //  debug_print("Refactoring Class:", n);
-        cPath = Absyn.joinPaths(cPath,Absyn.IDENT(n));
+        cPath = AbsynUtil.joinPaths(cPath,Absyn.IDENT(n));
         env = Interactive.getClassEnv(p,cPath);
         resultClassDef = refactorGraphAnnInClassDef(d,p,cPath,env);
       then
@@ -626,7 +628,7 @@ algorithm
     case(cPath,path,p, _) // try directly first
       equation
         fullPath = fixPaths(cPath, path);
-       // debug_print("getRestrictionFromPath: TryingLookingUp:", Absyn.pathString(fullPath));
+       // debug_print("getRestrictionFromPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
@@ -635,7 +637,7 @@ algorithm
     case(_,path,p, env) // if it fails try the hard way
       equation
         (_,fullPath) = Interactive.mkFullyQual(env,path);
-    //    debug_print("getRestrictionFromPath: LookingUp:", Absyn.pathString(fullPath));
+    //    debug_print("getRestrictionFromPath: LookingUp:", AbsynUtil.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
@@ -742,7 +744,7 @@ algorithm
         scale = getScaleAnn(rax1,rax2,rcx1,rcx2);
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("iconTransformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("iconTransformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
       equation
@@ -762,7 +764,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
         rotation = getRotationAnn(rot);
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("iconTransformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("iconTransformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
 
   end match;
 end getIconTransformation;
@@ -818,7 +820,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("transformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("transformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -843,7 +845,7 @@ algorithm
         rotation = getRotationAnn(rot);
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("transformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("transformation"),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
 
   end match;
 end getDiagramTransformation;
@@ -872,7 +874,7 @@ algorithm
         aspect = (realAbs(ry2 - ry1) * (realAbs(cry2 - cry1))) / (realAbs(rx2 - rx1) * (realAbs(crx2 - crx1)));
         s = realString(aspect);
       then
-      Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("aspectRatio"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+      Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("aspectRatio"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
 
   end match;
 end getAspectRatioAnn;
@@ -897,7 +899,7 @@ algorithm
         value = (x1 + x2) / 2.0;
         s = realString(value);
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(n),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(n),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
   end match;
 end getXYAnn;
 
@@ -920,7 +922,7 @@ algorithm
         scaleFac = (realAbs(arx1 - arx2)) / (realAbs(crx1 - crx2));
         s = realString(scaleFac);
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("scale"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("scale"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
 
   end match;
 end getScaleAnn;
@@ -940,7 +942,7 @@ protected
 algorithm
 
   value := val1 > val2;
-  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(name),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.BOOL(value),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(name),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.BOOL(value),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
 
 end getFlipAnn;
 
@@ -954,7 +956,7 @@ protected
 algorithm
   r := rot * (-1.0);
   s := realString(r);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("rotation"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("rotation"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
 end getRotationAnn;
 
 
@@ -988,7 +990,7 @@ algorithm
     case(cPath,path,p,context, _) // try directly first
       equation
         fullPath = fixPaths(cPath, path);
-//        debug_print("getCoordsInPath: TryingLookingUp:", Absyn.pathString(fullPath));
+//        debug_print("getCoordsInPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
@@ -1000,10 +1002,10 @@ algorithm
         //  (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache,p_1, Absyn.IDENT(""));
         (_, fullPath) = Interactive.mkFullyQual(env, path);
         //  print("env:\n");print(FGraph.printGraphStr(env));
-        //str = Absyn.pathString(cPath);
+        //str = AbsynUtil.pathString(cPath);
         //print("\npath = ");
         //print(str);
-    //    debug_print("getCoordsInPath: LookingUp:", Absyn.pathString(fullPath));
+    //    debug_print("getCoordsInPath: LookingUp:", AbsynUtil.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
@@ -1037,7 +1039,7 @@ algorithm
 
     case(Absyn.CLASS(body = Absyn.PARTS(ann = ann)),context)
       equation
-        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
+        annlst = List.flatten(List.map(ann,AbsynUtil.annotationToElementArgs));
         (x1,y1,x2,y2) = getCoordsInAnnList(annlst,context);
       then
         (x1,y1,x2,y2);
@@ -1241,14 +1243,14 @@ algorithm
       equation
         val = listGet(patternMapList,x+1);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("pattern"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),Absyn.dummyInfo))),com, mod_info):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("pattern"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),AbsynUtil.dummyInfo))),com, mod_info):: res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         thick = listGet(thicknessMapList,x);
         res = transformConnectAnnList(rest,context,res,p);
         s = realString(thick);
-      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),com,mod_info):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(s),AbsynUtil.dummyInfo))),com,mod_info):: res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
@@ -1260,7 +1262,7 @@ algorithm
         val1 = listGet(arrows,1);
         val2 = listGet(arrows,2);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("arrow"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))}),Absyn.dummyInfo))),com, mod_info):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("arrow"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))}),AbsynUtil.dummyInfo))),com, mod_info):: res;
 
     case(arg :: rest,context,res,p)
       equation
@@ -1308,7 +1310,7 @@ algorithm
         argRes = transAnnLstToCalls(args,c);
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("Icon"), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("graphics"),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res    ;
+      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("Icon"), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("graphics"),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),AbsynUtil.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res    ;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Class" :: c),res,p)
       equation
@@ -1316,7 +1318,7 @@ algorithm
         argRes = transAnnLstToCalls(args,c);
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("Diagram"), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("graphics"),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res;
+      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("Diagram"), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("graphics"),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),AbsynUtil.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context,res,p)
       equation
@@ -1419,8 +1421,8 @@ algorithm
     case ({},_)
     then
       Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("coordinateSystem"), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("extent"), SOME(Absyn.CLASSMOD({},
-      Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})}),Absyn.dummyInfo))),
-      NONE(),Absyn.dummyInfo)},Absyn.NOMOD())),NONE(),Absyn.dummyInfo)/*Create default*/;
+      Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})}),AbsynUtil.dummyInfo))),
+      NONE(),AbsynUtil.dummyInfo)},Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo)/*Create default*/;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = info) :: _,p)
       equation
@@ -1686,7 +1688,7 @@ algorithm
         true = isLinebasedGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("lineColor"),
-        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
@@ -1695,7 +1697,7 @@ algorithm
         true = isLineGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("color"),
-        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
     else
@@ -1971,7 +1973,7 @@ algorithm
     case(lst)
       equation
         lst = Absyn.MODIFICATION(false, Absyn.NON_EACH(),
-        Absyn.IDENT("fillPattern"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(1),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo) :: lst;
+        Absyn.IDENT("fillPattern"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(1),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo) :: lst;
       then lst;
   end match;
 end insertFillPatternInList;
@@ -2077,7 +2079,7 @@ algorithm
     case(oLst,tLst)
       equation
         false = isFillColorInList(listAppend(oLst,tLst));
-        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("fillColor"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::tLst;
+        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("fillColor"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo)::tLst;
       then (oLst,tLst);
 
     else (oldList,transformedList);
@@ -2132,7 +2134,7 @@ algorithm
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
       equation
         lst = setDefaultLineInList(rest);
-      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("color"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.INTEGER(0),Absyn.dummyInfo))), com, info) :: lst;
+      then Absyn.MODIFICATION(fi, e, Absyn.IDENT("color"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.INTEGER(0),AbsynUtil.dummyInfo))), com, info) :: lst;
 
     case(arg::rest)
       equation
@@ -2309,21 +2311,21 @@ algorithm
       Absyn.Path out;
     case (ip1, ip2)
       equation
-        str1 = Absyn.pathLastIdent(ip1);
-        str2 = Absyn.pathFirstIdent(ip2);
+        str1 = AbsynUtil.pathLastIdent(ip1);
+        str2 = AbsynUtil.pathFirstIdent(ip2);
         false = stringEq(str1, str2);
-        p1 = Absyn.stripLast(ip1);
+        p1 = AbsynUtil.stripLast(ip1);
         out = fixPaths(p1, ip2);
       then
         out;
 
     case (ip1, ip2)
       equation
-        str1 = Absyn.pathLastIdent(ip1);
-        str2 = Absyn.pathFirstIdent(ip2);
+        str1 = AbsynUtil.pathLastIdent(ip1);
+        str2 = AbsynUtil.pathFirstIdent(ip2);
         true = stringEq(str1, str2);
-        p1 = Absyn.stripLast(ip1);
-        out = Absyn.joinPaths(p1, ip2);
+        p1 = AbsynUtil.stripLast(ip1);
+        out = AbsynUtil.joinPaths(p1, ip2);
       then
         out;
 

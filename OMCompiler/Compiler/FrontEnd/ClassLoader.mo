@@ -288,7 +288,7 @@ algorithm
         (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, strategy, true, within_, id);
         // print("Got " + packagefile + "\n");
         reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
-        path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
+        path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
         w2 = Absyn.WITHIN(path);
         cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
@@ -361,7 +361,7 @@ algorithm
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if bDirectoryAndFileExists then
           cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages(),encrypted);
-          ei = Absyn.makeClassElement(cl);
+          ei = AbsynUtil.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
           file = mp + pd + id + (if encrypted then ".moc" else ".mo");
@@ -370,7 +370,7 @@ algorithm
             fail();
           end if;
           cl = parsePackageFile(file, strategy, false, w1, id);
-          ei = Absyn.makeClassElement(cl);
+          ei = AbsynUtil.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         end if;
       then cps;
@@ -395,7 +395,7 @@ protected
   Absyn.ClassDef body;
 algorithm
   Absyn.PROGRAM(cs,w2) := getProgramFromStrategy(name, strategy);
-  classNames := List.map(cs, Absyn.getClassName);
+  classNames := List.map(cs, AbsynUtil.getClassName);
   str := stringDelimitList(classNames,", ");
   if not listLength(cs)==1 then
     Error.addSourceMessage(Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
@@ -410,12 +410,12 @@ algorithm
       fail();
     end if;
   end if;
-  s1 := Absyn.withinString(w1);
-  s2 := Absyn.withinString(w2);
-  if not (Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
+  s1 := AbsynUtil.withinString(w1);
+  s2 := AbsynUtil.withinString(w2);
+  if not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
     Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
     fail();
-  elseif expectPackage and not Absyn.isParts(body) then
+  elseif expectPackage and not AbsynUtil.isParts(body) then
     Error.addSourceMessage(Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
     fail();
   end if;
@@ -628,7 +628,7 @@ algorithm
 
     case (name1::_,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
       equation
-        compNames = List.map(comps,Absyn.componentName);
+        compNames = List.map(comps,AbsynUtil.componentName);
         (names,b) = matchCompNames(inNamesToSort,compNames,info);
         orderElt = if b then makeElement(ei,pub) else makeClassLoad(name1);
         (outOrder,names) = getPackageContentNamesinElts(names,if b then elts else inElts,orderElt :: po,pub);
@@ -711,7 +711,7 @@ protected
   list<Absyn.Class> classes;
 algorithm
   Absyn.PROGRAM(classes=classes) := p1;
-  _ := List.map2(classes,Absyn.getNamedAnnotationInClass,Absyn.IDENT("__OpenModelica_messageOnLoad"),checkOnLoadMessageWork);
+  _ := List.map2(classes,AbsynUtil.getNamedAnnotationInClass,Absyn.IDENT("__OpenModelica_messageOnLoad"),checkOnLoadMessageWork);
 end checkOnLoadMessage;
 
 protected function checkOnLoadMessageWork

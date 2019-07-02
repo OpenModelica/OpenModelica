@@ -82,6 +82,7 @@ public import DAE;
 public import Values;
 public import SCode;
 
+protected import AbsynUtil;
 protected import Array;
 protected import BackendDAEUtil;
 protected import BackendVariable;
@@ -496,7 +497,7 @@ algorithm
       case {} then ();
       case (ap :: apLst)
       equation
-        str=Absyn.pathStringNoQual(ap);
+        str=AbsynUtil.pathStringNoQual(ap);
         dumpStrTagContent(ELEMENT,str);
         dumpAbsynPathLst2(apLst);
       then();
@@ -1944,7 +1945,7 @@ algorithm
 /*
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
       equation
-        fs = Absyn.pathStringNoQual(fcn);
+        fs = AbsynUtil.pathStringNoQual(fcn);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("selector");          ----THIS IS FOR ALGORITHM----
         dumpList(args,dumpExp2);
@@ -1955,7 +1956,7 @@ algorithm
     case (DAE.CALL(path = fcn,expLst = args))
       equation
         // Add the ref to path
-        fs = Absyn.pathStringNoQual(fcn);
+        fs = AbsynUtil.pathStringNoQual(fcn);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(fs);
         dumpList(args,dumpExp2);
@@ -2074,7 +2075,7 @@ algorithm
       then ();
     case (DAE.ENUM_LITERAL(name = fcn))
       equation
-        dumpStrMathMLVariable(Absyn.pathStringNoQual(fcn));
+        dumpStrMathMLVariable(AbsynUtil.pathStringNoQual(fcn));
       then ();
     case (DAE.SIZE(sz = SOME(_)))
       equation
@@ -2161,8 +2162,8 @@ algorithm
     case (BackendDAE.EXTOBJCLASS(path,_)::xs,c)
       equation
         dumpStrOpenTag(c);
-        Print.printBuf("class ");Print.printBuf(Absyn.pathStringNoQual(path));Print.printBuf("\n  extends ExternalObject");
-        Print.printBuf("end");Print.printBuf(Absyn.pathStringNoQual(path));
+        Print.printBuf("class ");Print.printBuf(AbsynUtil.pathStringNoQual(path));Print.printBuf("\n  extends ExternalObject");
+        Print.printBuf("end");Print.printBuf(AbsynUtil.pathStringNoQual(path));
         dumpStrCloseTag(c);
         dumpExtObjCls2(xs,c);
       then ();
@@ -2237,7 +2238,7 @@ algorithm
     case DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_)))) then ();
     case _
       equation
-        dumpStrOpenTagAttr(FUNCTION, FUNCTION_NAME, Util.xmlEscape(Absyn.pathStringNoQual(DAEUtil.functionName(fun))));
+        dumpStrOpenTagAttr(FUNCTION, FUNCTION_NAME, Util.xmlEscape(AbsynUtil.pathStringNoQual(DAEUtil.functionName(fun))));
         dumpStrOpenTag(MODELICA_IMPLEMENTATION);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpFunctionStr(fun)));
         dumpStrCloseTag(MODELICA_IMPLEMENTATION);
@@ -2246,7 +2247,7 @@ algorithm
     case (_) then();
 /*
         dumpStrOpenTag(Function)
-        dumpAttribute(name= Absyn.pathStringNoQual(name));
+        dumpAttribute(name= AbsynUtil.pathStringNoQual(name));
         dumpAttribute(Modelica implementation = DAEDump.dumpFunctionStr(fun));
         dumpStrCloseTag(Function)
 */
@@ -2354,7 +2355,7 @@ algorithm
     case BackendDAE.PARAM()        then (VARIABILITY_PARAMETER);
     case BackendDAE.CONST()        then (VARIABILITY_CONSTANT);
     case BackendDAE.EXTOBJ(path)
-      then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathStringNoQual(path))));
+      then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",AbsynUtil.pathStringNoQual(path))));
     else
       equation
         error_msg = "in XMLDump.dumpKind - Unknown kind";

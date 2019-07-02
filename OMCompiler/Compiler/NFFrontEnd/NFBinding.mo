@@ -43,7 +43,7 @@ protected
   import Dump;
 
 public
-  constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, Absyn.dummyInfo);
+  constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, AbsynUtil.dummyInfo);
 
 uniontype Binding
   record UNBOUND
@@ -347,7 +347,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
-      else Absyn.dummyInfo;
+      else AbsynUtil.dummyInfo;
     end match;
   end getInfo;
 
@@ -498,7 +498,7 @@ public
 
       // TODO: Handle propagated dims.
       case (RAW_BINDING(), RAW_BINDING())
-        then Absyn.expEqual(binding1.bindingExp, binding2.bindingExp);
+        then AbsynUtil.expEqual(binding1.bindingExp, binding2.bindingExp);
 
       case (UNTYPED_BINDING(), UNTYPED_BINDING())
         then Expression.isEqual(binding1.bindingExp, binding2.bindingExp);

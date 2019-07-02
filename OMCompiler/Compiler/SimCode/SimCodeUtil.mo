@@ -61,6 +61,7 @@ import Values;
 protected
 import Array;
 import Autoconf;
+import AbsynUtil;
 import AvlSetString;
 import BackendDAEOptimize;
 import BackendDAETransform;
@@ -2482,7 +2483,7 @@ algorithm
       // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp);
       // tmp
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       tempvars = createTempVars(varLst, crtmp, itempvars);
       // 0 = a - tmp
@@ -2503,7 +2504,7 @@ algorithm
       // ((e2_1, _)) = Expression.extendArrExp((inExp1, false));
       (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp1);
       // tmp
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       tempvars = createTempVars(varLst, crtmp, itempvars);
       // 0 = a - tmp
@@ -2519,11 +2520,11 @@ algorithm
 
     /* Record() = f() */
     case (DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), _) equation
-      true = Absyn.pathEqual(path, rpath);
+      true = AbsynUtil.pathEqual(path, rpath);
       (e2_1, _) = Expression.extendArrExp(inExp1, false);
       // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       // tmp = f()
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e1_1 = Expression.crefToExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -2546,11 +2547,11 @@ algorithm
 
     /* f() = Record() */
     case (_, DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty=tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath))))) equation
-      true = Absyn.pathEqual(path, rpath);
+      true = AbsynUtil.pathEqual(path, rpath);
       (e1_1, _) = Expression.extendArrExp(inExp1, false);
       // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       // tmp = f()
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e2_1 = Expression.crefExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -2569,7 +2570,7 @@ algorithm
       // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       // tmp = f()
       tp = Expression.typeof(inExp);
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       crexplst = List.map1(expl, Expression.generateCrefsExpFromExp, cr);
       stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
@@ -2643,7 +2644,7 @@ algorithm
 
       // Prepare cref prefix for temporary variables
       tp = Expression.typeof(inExp);
-      ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
 
       // Create temporary variables and residual equations for variables not solved in this equation
@@ -6159,7 +6160,7 @@ algorithm
     case (_, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
       equation
 
-        true = Absyn.pathEqual(path, rpath);
+        true = AbsynUtil.pathEqual(path, rpath);
         // check all crefs are on the lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -6168,7 +6169,7 @@ algorithm
         (e2_1, _) = Expression.extendArrExp(e2, false);
 
         // tmp = somexp
-        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+        ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefToExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -6190,7 +6191,7 @@ algorithm
     /* f() = Record()  */
     case (_, e1, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), _, _, _)
       equation
-        true = Absyn.pathEqual(path, rpath);
+        true = AbsynUtil.pathEqual(path, rpath);
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -6199,7 +6200,7 @@ algorithm
         (e1_1, _) = Expression.extendArrExp(e1, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
-        ident = Absyn.pathStringUnquoteReplaceDot(path, "_");
+        ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -7180,7 +7181,7 @@ protected
   constant Boolean debug = false;
 algorithm
   try
-    // name = Absyn.pathStringNoQual(class_);
+    // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
     vars := createVars(dlow, inInitDAE, tempVars);
     if debug then execStat("simCode: createVars"); end if;
@@ -7214,7 +7215,7 @@ algorithm
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
-                                   List.sort(program.classes, Absyn.classNameGreater),
+                                   List.sort(program.classes, AbsynUtil.classNameGreater),
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
                                    hasLargeEqSystems, {}, {});
@@ -8206,7 +8207,7 @@ algorithm
     then ();
   case(SimCodeFunction.FUNCTION(name=path,outVars=outVars,functionArguments=functionArguments,variableDeclarations=variableDeclarations)::rest)
     equation
-      print("Function: "+Absyn.pathStringNoQual(path)+"\n");
+      print("Function: "+AbsynUtil.pathStringNoQual(path)+"\n");
       print("\toutVars: ");
       dumpVariablesString(outVars," , ");
       print("\n\tfunctionArguments: ");
@@ -8218,17 +8219,17 @@ algorithm
     then ();
   case(SimCodeFunction.PARALLEL_FUNCTION(name=path)::rest)
     equation
-      print("Parallel Function: "+Absyn.pathStringNoQual(path)+"\n");
+      print("Parallel Function: "+AbsynUtil.pathStringNoQual(path)+"\n");
       dumpFunctions(rest);
     then ();
   case(SimCodeFunction.KERNEL_FUNCTION(name=path)::rest)
     equation
-      print("Kernel Function: "+Absyn.pathStringNoQual(path)+"\n");
+      print("Kernel Function: "+AbsynUtil.pathStringNoQual(path)+"\n");
       dumpFunctions(rest);
     then ();
   case(SimCodeFunction.EXTERNAL_FUNCTION(name=path,outVars=outVars)::rest)
     equation
-      print("External Function: "+Absyn.pathStringNoQual(path)+"\n");
+      print("External Function: "+AbsynUtil.pathStringNoQual(path)+"\n");
       print("\toutVars: ");
       dumpVariablesString(outVars," , ");
       print("\n");
@@ -8236,7 +8237,7 @@ algorithm
     then ();
   case(SimCodeFunction.RECORD_CONSTRUCTOR(name=path, funArgs=funArgs, locals=locals)::rest)
     equation
-      print("Record: "+Absyn.pathStringNoQual(path)+"\n");
+      print("Record: "+AbsynUtil.pathStringNoQual(path)+"\n");
       print("\tfunArgs: ");
       dumpVariablesString(funArgs," , ");
       print("\n\tlocals: ");
@@ -11647,7 +11648,7 @@ algorithm
       DAE.Type ty;
 
     case (SimCodeVar.SIMVAR(type_ = ty as DAE.T_ENUMERATION()), DAE.T_ENUMERATION())
-      then Absyn.pathEqual(ty.path, inType.path);
+      then AbsynUtil.pathEqual(ty.path, inType.path);
     else false;
   end match;
 end enumerationTypeExists;

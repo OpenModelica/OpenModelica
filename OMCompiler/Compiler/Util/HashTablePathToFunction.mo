@@ -44,6 +44,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import Absyn;
 public import NFInstTypes;
+protected import AbsynUtil;
 
 public type Key = Absyn.Path;
 public type Value = NFInstTypes.Function;
@@ -86,7 +87,7 @@ protected function hashFunc
 protected
   String str;
 algorithm
-  str := Absyn.pathString(path);
+  str := AbsynUtil.pathString(path);
   res := stringHashDjb2Mod(str,mod);
 end hashFunc;
 
@@ -115,7 +116,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Absyn.pathEqual,Absyn.pathString,valString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,AbsynUtil.pathEqual,AbsynUtil.pathString,valString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

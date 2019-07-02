@@ -41,6 +41,7 @@ encapsulated package Inline
   "
 
 import Absyn;
+import AbsynUtil;
 import AvlSetPath;
 import BaseHashTable;
 import DAE;
@@ -1434,7 +1435,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inline.getFunctionBody failed for function: " + Absyn.pathString(p));
+        Debug.traceln("Inline.getFunctionBody failed for function: " + AbsynUtil.pathString(p));
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
         fail();

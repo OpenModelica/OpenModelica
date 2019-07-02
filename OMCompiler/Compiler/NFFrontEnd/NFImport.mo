@@ -63,7 +63,7 @@ public
     output String name;
   algorithm
     name := match imp
-      case UNRESOLVED_IMPORT() then Absyn.importName(imp.imp);
+      case UNRESOLVED_IMPORT() then AbsynUtil.importName(imp.imp);
       case RESOLVED_IMPORT() then InstNode.name(imp.node);
     end match;
   end name;

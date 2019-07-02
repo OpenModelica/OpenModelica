@@ -44,6 +44,7 @@ encapsulated package Mod
 
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import FCore;
 public import FGraph;
@@ -220,7 +221,7 @@ algorithm
         b := match mod.binding
           case SOME(e)
             algorithm
-              (_, b) := Absyn.traverseExp(e, Absyn.isInvariantExpNoTraverse, true);
+              (_, b) := AbsynUtil.traverseExp(e, AbsynUtil.isInvariantExpNoTraverse, true);
             then b;
           else true;
         end match;
@@ -260,7 +261,7 @@ algorithm
             then b;
           case SOME(DAE.UNTYPED(exp))
             algorithm
-              (_, b) := Absyn.traverseExp(exp, Absyn.isInvariantExpNoTraverse, true);
+              (_, b) := AbsynUtil.traverseExp(exp, AbsynUtil.isInvariantExpNoTraverse, true);
             then b;
           else true;
         end match;
@@ -500,7 +501,7 @@ algorithm
   // If the expression is a parameter or constant expression:
   if not Types.constIsVariable(c) then
     // Show error messages from ceval only if the expression is constant.
-    msg := Absyn.optMsg(Types.constIsConst(c) and not inImpl, inInfo);
+    msg := AbsynUtil.optMsg(Types.constIsConst(c) and not inImpl, inInfo);
     err_count := Error.getNumErrorMessages();
 
     try
@@ -949,8 +950,8 @@ algorithm
       Absyn.Path path;
 
     case COMPONENT(name = name) then System.gettext("component ") + name;
-    case EXTENDS(path = path) then System.gettext("extends ") + Absyn.pathString(path);
-    case DERIVED(path = path) then System.gettext("inherited class ") + Absyn.pathString(path);
+    case EXTENDS(path = path) then System.gettext("extends ") + AbsynUtil.pathString(path);
+    case DERIVED(path = path) then System.gettext("inherited class ") + AbsynUtil.pathString(path);
 
   end match;
 end printModScope;
@@ -1957,21 +1958,21 @@ algorithm
     // typed vs. untyped mods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
     // untyped vs. typed
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
     // untyped mods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
@@ -2131,21 +2132,21 @@ algorithm
     // typed vs. untyped equmods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
     // untyped vs. typed equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
     // untyped equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2)))
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
+        true = AbsynUtil.expEqual(aexp1,aexp2);
       then
         true;
 
@@ -2678,7 +2679,7 @@ algorithm
 
     case DAE.MOD(binding = SOME(DAE.UNTYPED(exp = exp)))
       equation
-        crefs = Absyn.getCrefFromExp(exp, true, true);
+        crefs = AbsynUtil.getCrefFromExp(exp, true, true);
       then
         crefs;
 
@@ -2997,7 +2998,7 @@ algorithm
 
     case DAE.MOD() then inMod.info;
     case DAE.REDECL() then SCode.elementInfo(inMod.element);
-    else Absyn.dummyInfo;
+    else AbsynUtil.dummyInfo;
   end match;
 end getModInfo;
 

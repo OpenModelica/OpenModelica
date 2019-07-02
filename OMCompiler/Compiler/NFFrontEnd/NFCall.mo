@@ -32,6 +32,7 @@
 encapsulated package NFCall
 
 import Absyn;
+import AbsynUtil;
 import DAE;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
@@ -474,13 +475,13 @@ uniontype Call
         then ComponentRef.compare(call1.ref, call2.ref);
 
       case (TYPED_CALL(), TYPED_CALL())
-        then Absyn.pathCompare(Function.name(call1.fn), Function.name(call2.fn));
+        then AbsynUtil.pathCompare(Function.name(call1.fn), Function.name(call2.fn));
 
       case (UNTYPED_CALL(), TYPED_CALL())
-        then Absyn.pathCompare(ComponentRef.toPath(call1.ref), Function.name(call2.fn));
+        then AbsynUtil.pathCompare(ComponentRef.toPath(call1.ref), Function.name(call2.fn));
 
       case (TYPED_CALL(), UNTYPED_CALL())
-        then Absyn.pathCompare(Function.name(call1.fn), ComponentRef.toPath(call2.ref));
+        then AbsynUtil.pathCompare(Function.name(call1.fn), ComponentRef.toPath(call2.ref));
     end match;
 
     if comp == 0 then
@@ -600,7 +601,7 @@ uniontype Call
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          name := Absyn.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+          name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -618,14 +619,14 @@ uniontype Call
 
       case TYPED_CALL()
         algorithm
-          name := Absyn.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.name(call.fn));
           arg_str := stringDelimitList(list(Expression.toString(arg) for arg in call.arguments), ", ");
         then
           name + "(" + arg_str + ")";
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          name := Absyn.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+          name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -634,7 +635,7 @@ uniontype Call
 
       case TYPED_REDUCTION()
         algorithm
-          name := Absyn.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.name(call.fn));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -669,7 +670,7 @@ uniontype Call
 
       case TYPED_CALL()
         algorithm
-          name := Absyn.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.name(call.fn));
           arg_str := stringDelimitList(list(Expression.toStringTyped(arg) for arg in call.arguments), ", ");
         then
           name + "(" + arg_str + ")";
@@ -792,7 +793,7 @@ uniontype Call
         algorithm
           cast_ty := Type.setArrayElementType(call.ty, ty);
         then
-          match Absyn.pathFirstIdent(Function.name(call.fn))
+          match AbsynUtil.pathFirstIdent(Function.name(call.fn))
             // For 'fill' we can type cast the first argument rather than the
             // whole array that 'fill' constructs.
             case "fill"
@@ -833,7 +834,7 @@ protected
   algorithm
     (args, named_args) := instArgs(functionArgs, scope, info);
 
-    callExp := match Absyn.crefFirstIdent(functionName)
+    callExp := match AbsynUtil.crefFirstIdent(functionName)
       // size creates Expression.SIZE instead of Expression.CALL.
       case "size" then BuiltinCall.makeSizeExp(args, named_args, info);
       // array() call with no iterators creates Expression.ARRAY instead of Expression.CALL.
@@ -906,7 +907,7 @@ protected
 
     (exp, iters) := instIteratorCallArgs(functionArgs, scope, info);
 
-    if Absyn.crefFirstIdent(fn_name) == "array" then
+    if AbsynUtil.crefFirstIdent(fn_name) == "array" then
       callExp := Expression.CALL(UNTYPED_ARRAY_CONSTRUCTOR(exp, iters));
     else
       fn_ref := Function.instFunction(fn_name, scope, info);
@@ -1069,7 +1070,7 @@ protected
     if Type.isArray(ty) then
       defaultValue := NONE();
     else
-      defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
+      defaultValue := match AbsynUtil.pathFirstIdent(Function.name(fn))
         case "sum" then SOME(Expression.makeZero(ty));
         case "product" then SOME(Expression.makeOne(ty));
         case "min" then SOME(Expression.makeMaxValue(ty));
@@ -1077,7 +1078,7 @@ protected
         else
           algorithm
             Error.addSourceMessage(Error.INTERNAL_ERROR,
-              {getInstanceName() + " got unknown reduction name " + Absyn.pathFirstIdent(Function.name(fn))},
+              {getInstanceName() + " got unknown reduction name " + AbsynUtil.pathFirstIdent(Function.name(fn))},
               sourceInfo());
           then
             fail();
@@ -1098,7 +1099,7 @@ protected
     Function fn;
   algorithm
     if Type.isComplex(reductionType) then
-      foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
+      foldExp := match AbsynUtil.pathFirstIdent(Function.name(reductionFn))
         case "sum"
           algorithm
             Type.COMPLEX(cls = op_node) := reductionType;
@@ -1113,7 +1114,7 @@ protected
         else NONE();
       end match;
     else
-      foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
+      foldExp := match AbsynUtil.pathFirstIdent(Function.name(reductionFn))
         case "sum"
           then SOME(Expression.BINARY(
             reductionFoldIterator(resultId, reductionType),
@@ -1473,7 +1474,7 @@ protected
       else
         algorithm
           Error.assertion(false, getInstanceName() + ": unhandled case for " +
-            Absyn.pathString(fn.path), sourceInfo());
+            AbsynUtil.pathString(fn.path), sourceInfo());
         then
           fail();
     end match;

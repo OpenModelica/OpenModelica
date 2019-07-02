@@ -1342,7 +1342,7 @@ algorithm
         b2 = DAEUtil.expTypeArray(ty);
         false = b1 or b2;
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) + "\n");
-        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
+        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, AbsynUtil.dummyInfo);
       then
         ((v, s, BackendDAE.EQUATION(lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     else

@@ -323,7 +323,7 @@ algorithm
 
         if not Function.isPartial(fn) then
           Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
-            {Absyn.pathString(Function.name(fn))}, InstNode.info(instanceNode));
+            {AbsynUtil.pathString(Function.name(fn))}, InstNode.info(instanceNode));
           fail();
         end if;
 
@@ -2903,7 +2903,7 @@ algorithm
 
     case Expression.CREF() then ComponentRef.isIterator(exp.cref);
     case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
-      then match Absyn.pathFirstIdent(fn.path)
+      then match AbsynUtil.pathFirstIdent(fn.path)
         case "Connections" then true;
         case "cardinality" then true;
         else Call.isImpure(exp.call);

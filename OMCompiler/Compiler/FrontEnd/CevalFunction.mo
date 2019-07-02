@@ -53,6 +53,7 @@ encapsulated package CevalFunction
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import FCore;
 public import SCode;
@@ -126,7 +127,7 @@ algorithm
         partialPrefix = false,
         source = src), _)
       equation
-        func_name = Absyn.pathString(p);
+        func_name = AbsynUtil.pathString(p);
         (cache, result) = evaluateFunctionDefinition(inCache, inEnv, func_name,
           func, ty, inFunctionArguments, src);
       then
@@ -138,7 +139,7 @@ algorithm
         partialPrefix = partialPrefix), _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CevalFunction.evaluate failed for function: " + (if partialPrefix then "partial " else "") + Absyn.pathString(p));
+        Debug.traceln("- CevalFunction.evaluate failed for function: " + (if partialPrefix then "partial " else "") + AbsynUtil.pathString(p));
       then
         fail();
   end matchcontinue;
@@ -1678,7 +1679,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  SCode.noComment, NONE(), Absyn.dummyInfo),
+                  SCode.noComment, NONE(), AbsynUtil.dummyInfo),
                 DAE.NOMOD(),
                 FCore.VAR_TYPED(),
                 record_env);
@@ -1700,7 +1701,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  SCode.noComment, NONE(), Absyn.dummyInfo),
+                  SCode.noComment, NONE(), AbsynUtil.dummyInfo),
                 DAE.NOMOD(),
                 FCore.VAR_TYPED(),
                 FGraph.empty());

@@ -38,6 +38,7 @@ encapsulated package RewriteRules
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import Global;
 
@@ -155,7 +156,7 @@ public function rewriteExpFrontEnd
  input Binds inBinds;
  output Absyn.Exp outExp;
 algorithm
-  (outExp, _) := Absyn.traverseExp(inExp, replaceBindsFrontEnd, inBinds);
+  (outExp, _) := AbsynUtil.traverseExp(inExp, replaceBindsFrontEnd, inBinds);
 end rewriteExpFrontEnd;
 
 public function replaceBindsFrontEnd
@@ -192,7 +193,7 @@ algorithm
   for bind in inBinds loop
     FRONTEND_BIND(e, outExp) := bind;
 
-    if Absyn.expEqual(inExp, e) then
+    if AbsynUtil.expEqual(inExp, e) then
       return;
     end if;
   end for;
@@ -236,38 +237,38 @@ algorithm
     // must be equal
     case (Absyn.INTEGER(_), _, _)
       equation
-        true = Absyn.expEqual(inExp, inUnifyWith);
+        true = AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.REAL(_), _, _)
       equation
-        true = Absyn.expEqual(inExp, inUnifyWith);
+        true = AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.STRING(_), _, _)
       equation
-        true = Absyn.expEqual(inExp, inUnifyWith);
+        true = AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.BOOL(_), _, _)
       equation
-        true = Absyn.expEqual(inExp, inUnifyWith);
+        true = AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     // cref
     case (Absyn.CREF(_), _, _)
       equation
-        true = Absyn.expEqual(inExp, inUnifyWith);
+        true = AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.BINARY(e1a, op1a, e2a), Absyn.BINARY(e1b, op1b, e2b), _)
       equation
-        true = Absyn.opEqual(op1a, op1b);
+        true = AbsynUtil.opEqual(op1a, op1b);
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
         outBinds = matchesFrontEnd(e2a, e2b, outBinds);
       then
@@ -275,14 +276,14 @@ algorithm
 
     case (Absyn.UNARY(op1a, e1a), Absyn.UNARY(op1b, e1b), _)
       equation
-        true = Absyn.opEqual(op1a, op1b);
+        true = AbsynUtil.opEqual(op1a, op1b);
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (Absyn.LBINARY(e1a, op1a, e2a), Absyn.LBINARY(e1b, op1b, e2b), _)
       equation
-        true = Absyn.opEqual(op1a, op1b);
+        true = AbsynUtil.opEqual(op1a, op1b);
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
         outBinds = matchesFrontEnd(e2a, e2b, outBinds);
       then
@@ -290,14 +291,14 @@ algorithm
 
     case (Absyn.LUNARY(op1a, e1a), Absyn.LUNARY(op1b, e1b), _)
       equation
-        true = Absyn.opEqual(op1a, op1b);
+        true = AbsynUtil.opEqual(op1a, op1b);
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (Absyn.RELATION(e1a, op1a, e2a), Absyn.RELATION(e1b, op1b, e2b), _)
       equation
-        true = Absyn.opEqual(op1a, op1b);
+        true = AbsynUtil.opEqual(op1a, op1b);
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
         outBinds = matchesFrontEnd(e2a, e2b, outBinds);
       then
@@ -315,14 +316,14 @@ algorithm
 
     case (Absyn.CALL(cr1a, fargs1a), Absyn.CALL(cr1b, fargs1b), _)
       equation
-        true = Absyn.crefEqual(cr1a, cr1b);
+        true = AbsynUtil.crefEqual(cr1a, cr1b);
         outBinds = matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
 
     case (Absyn.PARTEVALFUNCTION(cr1a, fargs1a), Absyn.PARTEVALFUNCTION(cr1b, fargs1b), _)
       equation
-        true = Absyn.crefEqual(cr1a, cr1b);
+        true = AbsynUtil.crefEqual(cr1a, cr1b);
         outBinds = matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
@@ -770,14 +771,14 @@ algorithm
 
     case (DAE.CALL(p1a, exps1a, _), DAE.CALL(p1b, exps1b, _), _)
       equation
-        true = Absyn.pathEqual(p1a, p1b);
+        true = AbsynUtil.pathEqual(p1a, p1b);
         outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (DAE.PARTEVALFUNCTION(p1a, exps1a, _, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _, _), _)
       equation
-        true = Absyn.pathEqual(p1a, p1b);
+        true = AbsynUtil.pathEqual(p1a, p1b);
         outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;

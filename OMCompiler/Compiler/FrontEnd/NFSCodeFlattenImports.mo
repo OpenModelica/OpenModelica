@@ -40,6 +40,7 @@ encapsulated package NFSCodeFlattenImports
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import NFSCodeEnv;
 
@@ -380,7 +381,7 @@ protected function traverseExp
   output Absyn.Exp outExp;
   output tuple<Env, SourceInfo> outTuple;
 algorithm
-  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, inTuple);
+  (outExp, outTuple) := AbsynUtil.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function flattenConstraints
@@ -594,7 +595,7 @@ protected function flattenExp
   input SourceInfo inInfo;
   output Absyn.Exp outExp;
 algorithm
-  (outExp, _) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, (inEnv, inInfo));
+  (outExp, _) := AbsynUtil.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, (inEnv, inInfo));
 end flattenExp;
 
 protected function flattenOptExp
@@ -729,7 +730,7 @@ algorithm
       equation
         cref = flattenComponentRefSubs(cref, inEnv, inInfo);
       then
-        Absyn.crefMakeFullyQualified(cref);
+        AbsynUtil.crefMakeFullyQualified(cref);
 
   end match;
 end flattenComponentRefSubs;

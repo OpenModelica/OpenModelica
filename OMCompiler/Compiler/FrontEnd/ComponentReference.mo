@@ -3488,7 +3488,7 @@ algorithm
       outCref;
 
     case DAE.ENUM_LITERAL(name = enum_lit) equation
-      str = System.stringReplace(Absyn.pathString(enum_lit), ".", "$P");
+      str = System.stringReplace(AbsynUtil.pathString(enum_lit), ".", "$P");
     then
       DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{});
 

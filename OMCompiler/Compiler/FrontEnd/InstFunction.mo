@@ -40,6 +40,7 @@ encapsulated package InstFunction
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
@@ -269,7 +270,7 @@ algorithm
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
         (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
-        // fpath = Absyn.makeFullyQualified(fpath);
+        // fpath = AbsynUtil.makeFullyQualified(fpath);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = InstUtil.addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
@@ -360,7 +361,7 @@ algorithm
         // do not add the stripped class to the env, is already there, not stripped!
         env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualifiedIdent(cache, env_1, n);
-        //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
+        //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + AbsynUtil.pathString(fpath) + "\n");
         cmt = InstUtil.extractComment(daeElts);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
@@ -379,7 +380,7 @@ algorithm
         InstUtil.checkFunctionDefUse(daeElts,info);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
         if false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly then
-          InstUtil.checkFunctionInputUsed(daeElts,NONE(),Absyn.pathString(fpath));
+          InstUtil.checkFunctionInputUsed(daeElts,NONE(),AbsynUtil.pathString(fpath));
         end if;
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(list(e for e guard not DAEUtil.isComment(e) in daeElts))::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
@@ -416,7 +417,7 @@ algorithm
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
         partialPrefixBool = SCode.partialBool(partialPrefix);
-        InstUtil.checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
+        InstUtil.checkExternalFunction(daeElts,extdecl,AbsynUtil.pathString(fpath));
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
 
@@ -450,9 +451,9 @@ dae and can be generated code for in case they are required"
   input SourceInfo info;
   output FCore.Cache outCache;
 algorithm
- // print("instantiate deriative functions for "+Absyn.pathString(path)+"\n");
+ // print("instantiate deriative functions for "+AbsynUtil.pathString(path)+"\n");
  (outCache) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path,info);
- // print("instantiated derivative functions for "+Absyn.pathString(path)+"\n");
+ // print("instantiated derivative functions for "+AbsynUtil.pathString(path)+"\n");
 end instantiateDerivativeFuncs;
 
 protected function instantiateDerivativeFuncs2 "help function"
@@ -502,7 +503,7 @@ algorithm
     else
       equation
         p :: _ = inPaths;
-        fun = Absyn.pathString(p);
+        fun = AbsynUtil.pathString(p);
         scope = FGraph.printGraphPathStr(inEnv);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR,{fun,scope},info);
       then fail();
@@ -650,7 +651,7 @@ algorithm
     // Instantiate each function, add its FQ name to the type, needed when deoverloading
     case (cache,env,ih,_,(fn :: fns))
       equation
-        // print("instOvl: " + Absyn.pathString(fn) + "\n");
+        // print("instOvl: " + AbsynUtil.pathString(fn) + "\n");
         (cache,(c as SCode.CLASS(restriction=rest)),cenv) =
            Lookup.lookupClass(cache, env, fn, SOME(inInfo));
         true = SCode.isFunctionRestriction(rest);
@@ -663,7 +664,7 @@ algorithm
     case (_,_,_,_,(fn :: _))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instOverloaded_functions failed " + Absyn.pathString(fn));
+        Debug.traceln("- Inst.instOverloaded_functions failed " + AbsynUtil.pathString(fn));
       then
         fail();
   end matchcontinue;
@@ -802,7 +803,7 @@ algorithm
 
       case(_, _, _)
         equation
-          path = Absyn.makeFullyQualified(inPath);
+          path = AbsynUtil.makeFullyQualified(inPath);
           func = FCore.getCachedInstFunc(inCache,path);
         then
           (inCache,func);
@@ -828,7 +829,7 @@ algorithm
           locals = List.map(locals,Types.setVarProtected);
           vars = listAppend(inputs,locals);
 
-          path = Absyn.makeFullyQualified(path);
+          path = AbsynUtil.makeFullyQualified(path);
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
@@ -837,7 +838,7 @@ algorithm
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
           // add the instance record constructor too!
-          path = Absyn.pathSetLastIdent(path, Absyn.makeIdentPathFromString(name));
+          path = AbsynUtil.pathSetLastIdent(path, AbsynUtil.makeIdentPathFromString(name));
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);
@@ -851,7 +852,7 @@ algorithm
       else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
-          Debug.traceln("InstFunction.getRecordConstructorFunction failed for " + Absyn.pathString(inPath));
+          Debug.traceln("InstFunction.getRecordConstructorFunction failed for " + AbsynUtil.pathString(inPath));
         then
           fail();
 
@@ -881,7 +882,7 @@ algorithm
     // try to instantiate class
     case (cache, _, DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)), _)
       equation
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
         (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
       then
         cache;
@@ -889,7 +890,7 @@ algorithm
     // if previous stuff didn't work, try to use the ty directly
     case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo), _)
       equation
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
 
         vars = Types.filterRecordComponents(vars, inInfo);
         (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
@@ -952,10 +953,10 @@ algorithm
       Boolean b;
     case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path1)),(path2,info,true))
       equation
-        path1 = Absyn.joinPaths(path1,Absyn.IDENT("constructor"));
-        str1 = Absyn.pathStringNoQual(path2);
-        str2 = Absyn.pathStringNoQual(path1);
-        b = Absyn.pathEqual(path1,path2);
+        path1 = AbsynUtil.joinPaths(path1,Absyn.IDENT("constructor"));
+        str1 = AbsynUtil.pathStringNoQual(path2);
+        str2 = AbsynUtil.pathStringNoQual(path1);
+        b = AbsynUtil.pathEqual(path1,path2);
         Error.assertionOrAddSourceMessage(b, Error.FUNCTION_RETURN_EXT_OBJ, {str1,str2}, info);
         outTpl = if b then inTpl else (path2,info,false);
       then outTpl;

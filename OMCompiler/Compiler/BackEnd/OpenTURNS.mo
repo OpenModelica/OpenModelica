@@ -89,8 +89,8 @@ protected
   Option<BackendDAE.BackendDAE> initDAE_lambda0;
   list<BackendDAE.Equation> removedInitialEquationLst;
 algorithm
-  cname_str := Absyn.pathString(inPath);
-  cname_last_str := Absyn.pathLastIdent(inPath);
+  cname_str := AbsynUtil.pathString(inPath);
+  cname_last_str := AbsynUtil.pathLastIdent(inPath);
   fileNamePrefix := cname_str;
 
   simSettings := CevalScriptBackend.convertSimulationOptionsToSimCode(
@@ -318,8 +318,8 @@ protected function generatePythonScript "generates the python script as input to
   String pythonFileContent;
   list<tuple<String,String>> distributionVarLst;
 algorithm
-  modelName := Absyn.pathString(inModelPath);
-  modelLastName := Absyn.pathLastIdent(inModelPath);
+  modelName := AbsynUtil.pathString(inModelPath);
+  modelLastName := AbsynUtil.pathLastIdent(inModelPath);
   templateFileContent := System.readFile(templateFile);
   //generate the different parts of the python file
   (distributions,distributionVarLst) := generateDistributions(inDaelow);
@@ -378,7 +378,7 @@ algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae2);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
 
-  Error.assertion(not listEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", Absyn.dummyInfo);
+  Error.assertion(not listEmpty(varLst), "OpenTURNS.generateDistributions: No variable in the DAE has the distribution attribute! Check your model ...", AbsynUtil.dummyInfo);
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
 
@@ -633,7 +633,7 @@ protected
   Absyn.Path fpath;
 algorithm
   DAE.CALL(path = fpath,expLst = {DAE.CREF(cr1,_),DAE.CREF(cr2,_),val}) := exp;
-  Absyn.IDENT("Correlation") := Absyn.makeNotFullyQualified(fpath);
+  Absyn.IDENT("Correlation") := AbsynUtil.makeNotFullyQualified(fpath);
   valStr := ExpressionDump.printExpStr(val);
   p1 := List.position(ComponentReference.crefStr(cr1),uncertainVars)-1 "TODO: remove shift if possible";
   p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars)-1 "TODO: remove shift if possible";

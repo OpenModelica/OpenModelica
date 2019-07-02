@@ -37,6 +37,7 @@ encapsulated package CheckModel "
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 
 protected import BaseHashSet;

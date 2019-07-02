@@ -44,6 +44,7 @@ public import FCore;
 
 protected
 
+import AbsynUtil;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
@@ -174,7 +175,7 @@ algorithm
   BackendDAEUtil.checkIncidenceMatrixSolvability(syst, functionTree);
 
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
-    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{String(BackendEquation.equationArraySize(syst.orderedEqs)), String(BackendVariable.varsSize(syst.orderedVars))},Absyn.dummyInfo);
+    Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{String(BackendEquation.equationArraySize(syst.orderedEqs)), String(BackendVariable.varsSize(syst.orderedVars))},AbsynUtil.dummyInfo);
   end if;
   execStat("Generate backend data structure");
   return;
@@ -1027,22 +1028,22 @@ algorithm
       equation
         i = listLength(inNames);
         s1 = listHead(inNames);
-        namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
+        namee1 = AbsynUtil.joinPaths(inPath, Absyn.IDENT(s1));
         sn = listGet(inNames, i);
-        nameen = Absyn.joinPaths(inPath, Absyn.IDENT(sn));
+        nameen = AbsynUtil.joinPaths(inPath, Absyn.IDENT(sn));
       then
         DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), SOME(DAE.ENUM_LITERAL(nameen, i)));
     case (NONE(), SOME(_), _, _, _)
       equation
         s1 = listHead(inNames);
-        namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
+        namee1 = AbsynUtil.joinPaths(inPath, Absyn.IDENT(s1));
       then
         DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), inMax);
     case (SOME(_), NONE(), _, _, _)
       equation
         i = listLength(inNames);
         sn = listGet(inNames, i);
-        nameen = Absyn.joinPaths(inPath, Absyn.IDENT(sn));
+        nameen = AbsynUtil.joinPaths(inPath, Absyn.IDENT(sn));
       then
         DAEUtil.setMinMax(inVarAttr, inMin, SOME(DAE.ENUM_LITERAL(nameen, i)));
     else inVarAttr;
@@ -1355,7 +1356,7 @@ algorithm
     case DAE.ARRAY_EQUATION(dimension=dims, exp = e1 as DAE.ARRAY(array={}),array = e2 as DAE.CALL(path=path),source = source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        b1 = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
+        b1 = stringEq(AbsynUtil.pathLastIdent(path),"equalityConstraint");
         eqns = if b1 then inREquations else inEquations;
         eqns = lowerArrayEqn(dims,e1_1, e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,eqns);
         ((eqns,_)) = if b1 then (inEquations,eqns) else (eqns,inREquations);
@@ -1819,7 +1820,7 @@ algorithm
         b2 = DAEUtil.expTypeArray(tp);
         b3 = Types.isTuple(tp);
         false = b1 or b2 or b3;
-        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
+        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, AbsynUtil.dummyInfo);
       then
         BackendDAE.EQUATION(inExp1, inExp2, source, inEqAttributes)::inEqns;
     else
@@ -3517,7 +3518,7 @@ algorithm
       Option<SCode.Comment> comment;
   case((key,SOME(DAE.FUNCTION(path=path,functions=functions,type_=type_,visibility=vis,partialPrefix=pPref,isImpure=isImpure,inlineType=iType,source=source,comment=comment))))
     equation
-      pathName = Absyn.pathString(path);
+      pathName = AbsynUtil.pathString(path);
       pathName = Util.stringReplaceChar(pathName,".","_")+"_";
       functions = List.map1(functions,renameFunctionParameter2,pathName);
   then((key,SOME(DAE.FUNCTION(path,functions,type_,vis,pPref,isImpure,iType,source,comment))));

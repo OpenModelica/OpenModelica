@@ -531,11 +531,11 @@ interface package VisualXMLTplTV
     end printComponentRefStr;
   end ComponentReference;
 
-  package Absyn
+  package AbsynUtil
     function pathString
-      input Path path;
+      input Absyn.Path path;
       output String s;
     end pathString;
-  end Absyn;
+  end AbsynUtil;
 
 end VisualXMLTplTV;

@@ -135,7 +135,7 @@ algorithm
     case (e,(_,ExpressionSimplifyTypes.DO_EVAL()))
       equation
         (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
-        Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, AbsynUtil.dummyInfo);
         b = not Expression.expEqual(e,eNew);
       then (eNew,b);
     case (e,_)
@@ -296,7 +296,7 @@ algorithm
         true = Expression.isConst(e);
         false = Expression.isConstValue(e);
         str = ExpressionDump.printExpStr(e);
-        Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, Absyn.dummyInfo);
+        Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, AbsynUtil.dummyInfo);
       then fail(); */
 
     // anything else
@@ -319,7 +319,7 @@ algorithm
     case (DAE.RSUB(exp=DAE.CREF(componentRef=cr), ix=-1))
       then DAE.CREF(ComponentReference.joinCrefs(cr, ComponentReference.makeCrefIdent(e.fieldName, e.ty, {})), e.ty);
     case (DAE.RSUB(exp=DAE.CALL(path=p1, expLst=exps, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=vars))), ix=-1))
-      guard Absyn.pathEqual(p1,p2)
+      guard AbsynUtil.pathEqual(p1,p2)
       then listGet(exps, List.position1OnTrue(list(v.name for v in vars), stringEq, e.fieldName));
     case (DAE.RSUB(exp=DAE.RECORD(exps=exps,comp=comp), ix=-1))
       then listGet(exps, List.position1OnTrue(comp, stringEq, e.fieldName));
@@ -1037,7 +1037,7 @@ algorithm
 
     // simplify record constructor from one to another
     case (_,DAE.CALL(p1,exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
-      guard Absyn.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type"
+      guard AbsynUtil.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type"
       then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case (_,DAE.RECORD(_,exps,fieldNames,_),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
@@ -1216,7 +1216,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
+        (_,outExp,_) = Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, AbsynUtil.dummyInfo);
       then
         outExp;
 
@@ -1765,7 +1765,7 @@ algorithm
       then DAE.SCONST(str);
     case (DAE.ENUM_LITERAL(name=name),DAE.ICONST(len),DAE.BCONST(just))
       equation
-        str = Absyn.pathLastIdent(name);
+        str = AbsynUtil.pathLastIdent(name);
         str = cevalBuiltinStringFormat(str,stringLength(str),len,just);
       then DAE.SCONST(str);
   end match;
@@ -5577,7 +5577,7 @@ algorithm
     case (DAE.CREF(componentRef=DAE.CREF_QUAL(id,_,{},DAE.CREF_IDENT(id2,_,{}))),tpl as (name,DAE.CALL(expLst=exps,path=callPath,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(recordPath)))),_))
       equation
         true = stringEq(name,id);
-        true = Absyn.pathEqual(callPath,recordPath);
+        true = AbsynUtil.pathEqual(callPath,recordPath);
         true = listLength(varLst) == listLength(exps);
         i = List.position1OnTrue(varLst,DAEUtil.typeVarIdentEqual,id2);
         exp = listGet(exps,i);

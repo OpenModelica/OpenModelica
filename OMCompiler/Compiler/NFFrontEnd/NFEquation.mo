@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFEquation
   import Absyn;
+  import AbsynUtil;
   import Expression = NFExpression;
   import Type = NFType;
   import NFInstNode.InstNode;

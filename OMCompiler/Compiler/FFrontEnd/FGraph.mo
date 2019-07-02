@@ -40,6 +40,7 @@ encapsulated package FGraph
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import SCode;
 import DAE;
 import Prefix;
@@ -553,7 +554,7 @@ algorithm
               SCode.defaultPrefixes,
               SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
               Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-              SCode.noComment, NONE(), Absyn.dummyInfo);
+              SCode.noComment, NONE(), AbsynUtil.dummyInfo);
         v = DAE.TYPES_VAR(
               name,
               DAE.ATTR(DAE.NON_CONNECTOR(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
@@ -755,7 +756,7 @@ algorithm
   outString := matchcontinue(inGraph)
     case (_)
       then
-        Absyn.pathString(getGraphName(inGraph));
+        AbsynUtil.pathString(getGraphName(inGraph));
     else ".";
   end matchcontinue;
 end getGraphNameStr;
@@ -770,7 +771,7 @@ protected
   Ref r;
 algorithm
   r::s := currentScope(inGraph);
-  p := Absyn.makeIdentPathFromString(FNode.refName(r));
+  p := AbsynUtil.makeIdentPathFromString(FNode.refName(r));
   for r in s loop
     p := Absyn.QUALIFIED(FNode.refName(r), p);
   end for;
@@ -786,7 +787,7 @@ protected
   Scope s;
 algorithm
   _::s := listReverse(currentScope(inGraph));
-  outPath := Absyn.stringListPath(list(str for str guard stringGet(str,1)<>36 /* "$" */ in list(FNode.refName(n) for n in s)));
+  outPath := AbsynUtil.stringListPath(list(str for str guard stringGet(str,1)<>36 /* "$" */ in list(FNode.refName(n) for n in s)));
 end getGraphNameNoImplicitScopes;
 
 public function pushScopeRef
@@ -921,12 +922,12 @@ algorithm
     case (_, _, _)
       equation
         SOME(env_path) = getScopePath(inEnv);
-        cref1 = Absyn.unqualifyCref(inCref);
-        env_path = Absyn.makeNotFullyQualified(env_path);
+        cref1 = AbsynUtil.unqualifyCref(inCref);
+        env_path = AbsynUtil.makeNotFullyQualified(env_path);
         // try to strip as much as possible
         cref2 = crefStripGraphScopePrefix2(cref1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
-        false = Absyn.crefEqual(cref1, cref2);
+        false = AbsynUtil.crefEqual(cref1, cref2);
       then
         cref2;
 
@@ -964,7 +965,7 @@ algorithm
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}),
           env_path, true)
       equation
-        false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
+        false = stringEqual(id1, AbsynUtil.pathFirstIdent(env_path));
       then
         inCref;
   end matchcontinue;
@@ -990,12 +991,12 @@ algorithm
     case (_, _, _)
       equation
         SOME(env_path) = getScopePath(inEnv);
-        path1 = Absyn.makeNotFullyQualified(inPath);
-        env_path = Absyn.makeNotFullyQualified(env_path);
+        path1 = AbsynUtil.makeNotFullyQualified(inPath);
+        env_path = AbsynUtil.makeNotFullyQualified(env_path);
         // try to strip as much as possible
         path2 = pathStripGraphScopePrefix2(path1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
-        false = Absyn.pathEqual(path1, path2);
+        false = AbsynUtil.pathEqual(path1, path2);
       then
         path2;
 
@@ -1026,7 +1027,7 @@ algorithm
         path;
 
     // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
-    case (Absyn.QUALIFIED(name = id1), env_path, true) guard not stringEqual(id1, Absyn.pathFirstIdent(env_path))
+    case (Absyn.QUALIFIED(name = id1), env_path, true) guard not stringEqual(id1, AbsynUtil.pathFirstIdent(env_path))
       then
         inPath;
   end match;
@@ -1378,7 +1379,7 @@ algorithm
           opath := getGraphPathNoImplicitScope_dispatch(rest);
           if isSome(opath) then
             SOME(path) := opath;
-            path_1 := Absyn.joinPaths(path, Absyn.IDENT(id));
+            path_1 := AbsynUtil.joinPaths(path, Absyn.IDENT(id));
             opath := SOME(path_1);
           else
             opath := SOME(Absyn.IDENT(id));
@@ -1410,7 +1411,7 @@ algorithm
   opath := getScopePath(inGraph);
   if isSome(opath) then
     SOME(envPath) := opath;
-    outPath := Absyn.joinPaths(envPath,inPath);
+    outPath := AbsynUtil.joinPaths(envPath,inPath);
   else
     outPath := inPath;
   end if;
@@ -1654,7 +1655,7 @@ algorithm
     /*
     case (_, _, _, _, _, _, _)
       equation
-        print(Absyn.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCode.elementName(inTargetClass) + "\n");
+        print(AbsynUtil.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCode.elementName(inTargetClass) + "\n");
       then
         fail();*/
 
@@ -1678,7 +1679,7 @@ algorithm
     // or OpenModelica scripting stuff
     case (_, _, _, _, _, _, _)
       equation
-        true = stringEq(Absyn.pathFirstIdent(getGraphName(inTargetClassEnv)), "OpenModelica");
+        true = stringEq(AbsynUtil.pathFirstIdent(getGraphName(inTargetClassEnv)), "OpenModelica");
       then
         (inTargetClassEnv, inTargetClass, inIH);
 
@@ -1732,15 +1733,15 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), Absyn.dummyInfo); // variability doesn't matter
+        crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), AbsynUtil.dummyInfo); // variability doesn't matter
 
         // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
-        name = inTargetClassName + "$" + Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
-               ; // + "$" + Absyn.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
-        // name = "'$" + inTargetClassName + "@" + Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
-        // name = "'$" + getGraphNameStr(inSourceEnv) + "." + Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
+        name = inTargetClassName + "$" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
+               ; // + "$" + AbsynUtil.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
+        // name = "'$" + inTargetClassName + "@" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
+        // name = "'$" + getGraphNameStr(inSourceEnv) + "." + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
         // name = "$'" + getGraphNameStr(inSourceEnv) + "." +
-        //        Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +
+        //        AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +
         //        SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions);
       then
         (name, crefPrefix);
@@ -1933,16 +1934,16 @@ algorithm
 
     case (_, _)
       equation
-        p = Absyn.stripLast(inPath);
-        true = Absyn.pathPrefixOf(p, getGraphName(inEnv));
-        pl = Absyn.pathToStringList(p);
+        p = AbsynUtil.stripLast(inPath);
+        true = AbsynUtil.pathPrefixOf(p, getGraphName(inEnv));
+        pl = AbsynUtil.pathToStringList(p);
         lp = listLength(pl);
         cs = currentScope(inEnv);
         le = listLength(cs) - 1;
         diff = le - lp;
         cs = List.stripN(cs, diff);
         env = setScope(inEnv, cs);
-        // print("F: " + Absyn.pathString(inPath) + "\n"); print("E: " + getGraphNameStr(inEnv) + "\n"); print("R: " + getGraphNameStr(env) + "\n");
+        // print("F: " + AbsynUtil.pathString(inPath) + "\n"); print("E: " + getGraphNameStr(inEnv) + "\n"); print("R: " + getGraphNameStr(env) + "\n");
       then
         env;
 

@@ -38,6 +38,7 @@ encapsulated package NFInst
 "
 
 import Absyn;
+import AbsynUtil;
 import SCode;
 import DAE;
 
@@ -128,10 +129,10 @@ algorithm
 
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
-  name := Absyn.pathString(classPath);
+  name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
@@ -212,7 +213,7 @@ algorithm
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
     SCode.PARTS(topClasses, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.COMMENT(NONE(), NONE()), Absyn.dummyInfo);
+    SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
@@ -466,7 +467,7 @@ algorithm
     case Class.EXPANDED_CLASS(elements = ClassTree.PARTIAL_TREE())
       algorithm
         Error.addSourceMessage(Error.EXTENDS_LOOP,
-          {Absyn.pathString(path)}, info);
+          {AbsynUtil.pathString(path)}, info);
       then
         fail();
 
@@ -507,7 +508,7 @@ algorithm
           name := InstNode.name(n) + "." + name;
         end for;
       else
-        name := Absyn.pathString(basePath);
+        name := AbsynUtil.pathString(basePath);
       end if;
 
       Error.addMultiSourceMessage(Error.REPLACEABLE_BASE_CLASS,
@@ -579,7 +580,7 @@ algorithm
               InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
                 SCode.EXTENDS(baseClassPath = base_path))) := ext;
               Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
-                {InstNode.name(node), "extends " + Absyn.pathString(base_path)}, InstNode.info(ext));
+                {InstNode.name(node), "extends " + AbsynUtil.pathString(base_path)}, InstNode.info(ext));
               fail();
             end if;
           end for;
@@ -650,7 +651,7 @@ algorithm
   SCode.DERIVED(typeSpec = ty, attributes = sattrs) := definition;
 
   // Look up the class that's being derived from and expand it.
-  ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), info);
+  ext_node :: _ := Lookup.lookupBaseClassName(AbsynUtil.typeSpecPath(ty), InstNode.parent(node), info);
 
   // Check that the class isn't extending itself, i.e. class A = A.
   if referenceEq(ext_node, node) then
@@ -666,7 +667,7 @@ algorithm
   cls := InstNode.getClass(node);
   prefs := Class.getPrefixes(cls);
   attrs := instDerivedAttributes(sattrs);
-  dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
+  dims := list(Dimension.RAW_DIM(d) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
 
   res := Restriction.fromSCode(SCode.getClassRestriction(element));
@@ -976,7 +977,7 @@ algorithm
           // (probably an inherited element) is an error.
           if not referenceEq(InstNode.definition(extendsNode), InstNode.definition(ext_node)) then
             Error.addMultiSourceMessage(Error.FOUND_OTHER_BASECLASS,
-              {Absyn.pathString(elem.baseClassPath)},
+              {AbsynUtil.pathString(elem.baseClassPath)},
               {InstNode.info(extendsNode), InstNode.info(ext_node)});
             fail();
           end if;
@@ -1626,7 +1627,7 @@ function checkOuterComponentMod
   input InstNode node;
 algorithm
   if not Modifier.isEmpty(mod) and
-     Absyn.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(component))) then
+     AbsynUtil.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(component))) then
     Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
       {Modifier.toString(mod, printName = false), InstNode.name(node)}, InstNode.info(node));
     fail();
@@ -2024,7 +2025,7 @@ algorithm
   if limitReached then
     // If we couldn't determine the exact cause of the recursion, print a generic error.
     Error.addSourceMessage(Error.INST_RECURSION_LIMIT_REACHED,
-      {Absyn.pathString(InstNode.scopePath(component))}, InstNode.info(component));
+      {AbsynUtil.pathString(InstNode.scopePath(component))}, InstNode.info(component));
     fail();
   end if;
 end checkRecursiveDefinition;

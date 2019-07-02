@@ -38,6 +38,7 @@ encapsulated package NFInstPrefix
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 
 public uniontype Prefix
@@ -361,7 +362,7 @@ algorithm
 
     case EMPTY_PREFIX(classPath = SOME(path))
       equation
-        str = "E(" + Absyn.pathLastIdent(path) + ")";
+        str = "E(" + AbsynUtil.pathLastIdent(path) + ")";
       then
         str;
 

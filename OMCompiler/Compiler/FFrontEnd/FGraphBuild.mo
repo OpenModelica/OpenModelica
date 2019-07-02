@@ -39,13 +39,13 @@ encapsulated package FGraphBuild
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import FCore;
 public import FNode;
 public import FGraph;
 public import DAE;
 public import Prefix;
-
 public
 type Name = FCore.Name;
 type Id = FCore.Id;
@@ -374,10 +374,10 @@ algorithm
 
     case (SCode.DERIVED(typeSpec = ts, modifications = m), _, _, g)
       equation
-        p = Absyn.typeSpecPath(ts);
+        p = AbsynUtil.typeSpecPath(ts);
         nr = inParentRef;
         g = mkModNode(FNode.modNodeName, m, FCore.MS_DERIVED(p), nr, inKind, g);
-        ad = Absyn.typeSpecDimensions(ts);
+        ad = AbsynUtil.typeSpecDimensions(ts);
         g = mkDimsNode(FNode.tydimsNodeName, SOME(ad), nr, inKind, g);
       then
         g;
@@ -634,7 +634,7 @@ algorithm
   // add ref node
   g := mkRefNode(FNode.refNodeName, {}, nr, g);
   // add type dimensions if exists
-  tad := Absyn.typeSpecDimensions(ts);
+  tad := AbsynUtil.typeSpecDimensions(ts);
   g := mkDimsNode(FNode.tydimsNodeName, SOME(tad), nr, inKind, g);
   // add component dimensions if exists
   g := mkDimsNode(FNode.dimsNodeName, SOME(ad), nr, inKind, g);
@@ -769,11 +769,11 @@ algorithm
 
     case (_, _, _, g)
       equation
-        name = Absyn.printComponentRefStr(inCref);
+        name = AbsynUtil.printComponentRefStr(inCref);
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CR(inCref));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = mkDimsNode(FNode.subsNodeName, List.mkOption(Absyn.getSubsFromCref(inCref, true, true)), nr, inKind, g);
+        g = mkDimsNode(FNode.subsNodeName, List.mkOption(AbsynUtil.getSubsFromCref(inCref, true, true)), nr, inKind, g);
       then
         g;
 
@@ -960,7 +960,7 @@ algorithm
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.ED(ed));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
-        oae = Util.applyOption(ocr, Absyn.crefExp);
+        oae = Util.applyOption(ocr, AbsynUtil.crefExp);
         g = mkCrefsFromExps(List.consOption(oae, exps), nr, inKind, g);
       then
         g;
@@ -988,7 +988,7 @@ algorithm
 
     case (e::rest, _, _, g)
       equation
-        crefs = Absyn.getCrefFromExp(e, true, true);
+        crefs = AbsynUtil.getCrefFromExp(e, true, true);
         g = mkCrefsNodes(crefs, inParentRef, inKind, g);
         g = mkCrefsFromExps(rest, inParentRef, inKind, g);
       then
@@ -1005,7 +1005,7 @@ protected function analyseExp
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  (_, (_, _, outGraph)) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inRef, inKind, inGraph));
+  (_, (_, _, outGraph)) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inRef, inKind, inGraph));
 end analyseExp;
 
 protected function analyseOptExp
@@ -1197,7 +1197,7 @@ protected function traverseExp
   output Absyn.Exp outExp;
   output tuple<Ref, Kind, Graph> outTuple;
 algorithm
-  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
+  (outExp, outTuple) := AbsynUtil.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function analyseAlgorithm

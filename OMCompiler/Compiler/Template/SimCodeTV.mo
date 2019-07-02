@@ -1705,20 +1705,24 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
+end Absyn;
+
+package AbsynUtil
+
   function pathString
-    input Path path;
+    input Absyn.Path path;
     input String delimiter;
     input Boolean usefq;
     output String outString;
   end pathString;
 
   function pathLastIdent
-    input Path inPath;
+    input Absyn.Path inPath;
     output String str;
   end pathLastIdent;
 
   constant builtin.SourceInfo dummyInfo;
-end Absyn;
+end AbsynUtil;
 
 package MMath
   uniontype Rational

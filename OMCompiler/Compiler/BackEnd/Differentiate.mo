@@ -49,6 +49,7 @@ public import DAEUtil;
 public import Types;
 
 // protected imports
+protected import AbsynUtil;
 protected import Algorithm;
 protected import Array;
 protected import BackendDump;
@@ -694,7 +695,7 @@ algorithm
             (expl, strLst) := match res1
               case DAE.RECORD(exps=expl,comp=strLst) then (expl, strLst);
               case DAE.CALL(path=p1,expLst=expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=varLst)))
-              guard Absyn.pathEqual(p1,p2)
+              guard AbsynUtil.pathEqual(p1,p2)
               then (expl, list(v.name for v in varLst));
             end match;
             res := listGet(expl, List.position1OnTrue(strLst, stringEq, e1.fieldName));
@@ -2113,7 +2114,7 @@ algorithm
         // add Warning
         typlststring = List.map(tlst, Types.unparseType);
         typstring = "\n" + stringDelimitList(typlststring,";\n");
-        dastring = Absyn.pathString(dpath);
+        dastring = AbsynUtil.pathString(dpath);
         print("Input warnings for function mapper2\n");
         Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
@@ -2240,7 +2241,7 @@ algorithm
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
+        funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(path), false);
         diffFuncData = BackendDAE.emptyInputData;
          diffFuncData.matrixName = SOME(funcname);
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
@@ -2267,7 +2268,7 @@ algorithm
         // add Warning
         typlststring = List.map(tlst, Types.unparseType);
         typstring = "\n" + stringDelimitList(typlststring,";\n");
-        dastring = Absyn.pathString(dpath);
+        dastring = AbsynUtil.pathString(dpath);
         print("Input warnings for function mapper2\n");
         Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
@@ -2632,7 +2633,7 @@ algorithm
 
       // prepare diffData
       path = DAEUtil.functionName(func);
-      funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
+      funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(path), false);
       diffFuncData = BackendDAE.emptyInputData;
       diffFuncData.matrixName = SOME(funcname);
       diffFuncData.diffedFunctions = inInputData.diffedFunctions;
@@ -2683,7 +2684,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         path = DAEUtil.functionName(inFunction);
-        str = "\nDifferentiate.differentiatePartialFunction failed for function: " + Absyn.pathString(path) + "\n";
+        str = "\nDifferentiate.differentiatePartialFunction failed for function: " + AbsynUtil.pathString(path) + "\n";
         Debug.trace(str);
       then fail();
   end matchcontinue;
@@ -2698,7 +2699,7 @@ protected function getDiffedTypeandName
   output DAE.Type diffedType;
 algorithm
   diffedType := Types.extendsFunctionTypeArgs(DAEUtil.getFunctionType(inFunction), inputVarsDer, outputVarsDer, blst);
-  diffedName := Absyn.stringPath("$DER" + Util.modelicaStringToCStr(Absyn.pathString(DAEUtil.functionName(inFunction)), false));
+  diffedName := AbsynUtil.stringPath("$DER" + Util.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
 end getDiffedTypeandName;
 
 protected function getFunctionInOutVars
@@ -2719,7 +2720,7 @@ algorithm
   inputVars := DAEUtil.getFunctionInputVars(inFunction);
   outputVars := DAEUtil.getFunctionOutputVars(inFunction);
   diffData := BackendDAE.emptyInputData;
-  diffData.matrixName := SOME(Util.modelicaStringToCStr(Absyn.pathString(DAEUtil.functionName(inFunction)), false));
+  diffData.matrixName := SOME(Util.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
 
   (inputVarsDer, functions, inputVarsNoDer, blst) := differentiateElementVars(inputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, true);
   (outputVarsDer, functions, outputVarsNoDer, _) := differentiateElementVars(outputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, false);
@@ -2958,7 +2959,7 @@ algorithm
         algorithm
           // Get expression.
           DAE.CALL(path = p2) := listGet(expl, i);
-          true := Absyn.pathEqual(p1, p2);
+          true := AbsynUtil.pathEqual(p1, p2);
         then
           ();
 
@@ -3019,7 +3020,7 @@ algorithm
     case (_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        s = Absyn.pathString(fname);
+        s = AbsynUtil.pathString(fname);
         s = stringAppend("-Differentiate.getFunctionMapper failed for function ",s);
         Debug.traceln(s);
       then

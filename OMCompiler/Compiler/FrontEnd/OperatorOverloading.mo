@@ -33,6 +33,7 @@ encapsulated package OperatorOverloading
 
 public
 import Absyn;
+import AbsynUtil;
 import DAE;
 import FCore;
 import Prefix;
@@ -214,11 +215,11 @@ algorithm
        equation
 
          path = getRecordPath(type1);
-         path = Absyn.makeFullyQualified(path);
+         path = AbsynUtil.makeFullyQualified(path);
          (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path);
 
          str1 = "'" + Dump.opSymbolCompact(aboper) + "'";
-         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+         path = AbsynUtil.joinPaths(path, Absyn.IDENT(str1));
 
          (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
          true = SCode.isOperator(operatorCl);
@@ -269,11 +270,11 @@ algorithm
         (cache,_,DAE.PROP(type1,_)) = Static.elabExp(cache,env,exp1,inImpl,inDoVect,inPre,inInfo);
 
         path = getRecordPath(type1);
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path);
 
         str1 = "'String'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        path = AbsynUtil.joinPaths(path, Absyn.IDENT(str1));
 
         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
         true = SCode.isOperator(operatorCl);
@@ -594,7 +595,7 @@ algorithm
         // Apply operation according to the Specifications.See the function.
         bool1 = Types.arrayType(type1);
         bool2 = Types.arrayType(type2);
-        if bool1 and bool2 and Absyn.opIsElementWise(op) then
+        if bool1 and bool2 and AbsynUtil.opIsElementWise(op) then
           types = {};
         else
           opStr = "'" + Dump.opSymbolCompact(op) + "'";
@@ -1307,15 +1308,15 @@ package AvlTreePathPathEnv "AvlTree Path -> Path"
   redeclare type Value = Absyn.Path;
   redeclare function extends keyStr
   algorithm
-    outString := Absyn.pathString(inKey);
+    outString := AbsynUtil.pathString(inKey);
   end keyStr;
   redeclare function extends valueStr
   algorithm
-    outString := Absyn.pathString(inValue);
+    outString := AbsynUtil.pathString(inValue);
   end valueStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+    outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
   end keyCompare;
   redeclare function addConflictDefault = addConflictKeep;
 annotation(__OpenModelica_Interface="util");
@@ -1327,7 +1328,7 @@ package AvlTreePathOperatorTypes "AvlTree Path -> list<Type>"
   redeclare type Value = list<DAE.Type>;
   redeclare function extends keyStr
   algorithm
-    outString := Absyn.pathString(inKey);
+    outString := AbsynUtil.pathString(inKey);
   end keyStr;
   redeclare function extends valueStr
   algorithm
@@ -1335,7 +1336,7 @@ package AvlTreePathOperatorTypes "AvlTree Path -> list<Type>"
   end valueStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+    outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
   end keyCompare;
   redeclare function addConflictDefault = addConflictKeep;
 annotation(__OpenModelica_Interface="util");
@@ -1359,7 +1360,7 @@ protected
   tuple<AvlTreePathPathEnv.Tree,AvlTreePathOperatorTypes.Tree> trees;
 algorithm
   scalarType := Types.arrayElementType(ty);
-  pathIn := Absyn.makeFullyQualified(getRecordPath(scalarType));
+  pathIn := AbsynUtil.makeFullyQualified(getRecordPath(scalarType));
   trees := getGlobalRoot(Global.operatorOverloadingCache);
   (tree1,tree2) := trees;
   try
@@ -1371,7 +1372,7 @@ algorithm
     setGlobalRoot(Global.operatorOverloadingCache, (tree1,tree2));
   end try;
   opNamePath := Absyn.IDENT(opName);
-  path := Absyn.makeFullyQualified(Absyn.joinPaths(path, opNamePath));
+  path := AbsynUtil.makeFullyQualified(AbsynUtil.joinPaths(path, opNamePath));
   try
     funcs := AvlTreePathOperatorTypes.get(tree2, path);
   else

@@ -62,6 +62,7 @@ encapsulated package Static
   The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 import Absyn;
+import AbsynUtil;
 import DAE;
 import FCore;
 import FGraph;
@@ -158,9 +159,9 @@ algorithm
       case (Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()),
             DAE.T_ENUMERATION(path = path2, names = names))
         algorithm
-          path := Absyn.crefToPath(cr);
-          (path1, Absyn.IDENT(name)) := Absyn.splitQualAndIdentPath(path);
-          true := Absyn.pathEqual(path1, path2);
+          path := AbsynUtil.crefToPath(cr);
+          (path1, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(path);
+          true := AbsynUtil.pathEqual(path1, path2);
           idx := List.position(name, names);
           exp := DAE.ENUM_LITERAL(path, idx);
           prop := DAE.PROP(last_ty, DAE.C_CONST());
@@ -200,9 +201,9 @@ algorithm
     case (Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()),
           DAE.T_ENUMERATION(path = path2, names = names))
       algorithm
-        path := Absyn.crefToPath(cr);
-        (path1, Absyn.IDENT(name)) := Absyn.splitQualAndIdentPath(path);
-        true := Absyn.pathEqual(path1, path2);
+        path := AbsynUtil.crefToPath(cr);
+        (path1, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(path);
+        true := AbsynUtil.pathEqual(path1, path2);
       then
         List.position(name, names);
 
@@ -463,7 +464,7 @@ protected
   Boolean b;
 algorithm
   Absyn.IFEXP(ifExp = cond_e, trueBranch = true_e, elseBranch = false_e) :=
-    Absyn.canonIfExp(inExp);
+    AbsynUtil.canonIfExp(inExp);
   (cache, cond_exp, cond_prop) := elabExpInExpression(inCache,
     inEnv, cond_e, inImplicit, inDoVect, inPrefix, inInfo);
 
@@ -596,7 +597,7 @@ algorithm
     (outCache, outExp, outProperties) := elabExpInExpression(inCache,
       inEnv, Absyn.CREF(cref), inImplicit, inDoVect, inPrefix, inInfo);
   else
-    path := Absyn.crefToPath(cref);
+    path := AbsynUtil.crefToPath(cref);
     (outCache, {tty}) := Lookup.lookupFunctionsInEnv(inCache, inEnv, path, inInfo);
     tty := Types.makeFunctionPolymorphicReference(tty);
     (outCache, args, consts, _, tty, _, slots) := elabTypes(outCache, inEnv, pos_args,
@@ -1332,7 +1333,7 @@ algorithm
     c := Types.constAnd(exp_const, iter_const);
     fn := match inReductionFn
       case Absyn.CREF_IDENT("$array",{}) then Absyn.IDENT("array");
-      else Absyn.crefToPath(inReductionFn);
+      else AbsynUtil.crefToPath(inReductionFn);
     end match;
     (outCache, exp, exp_ty, res_ty, v, fn) := reductionType(outCache, inEnv, fn,
       exp, exp_ty, Types.unboxedType(exp_ty), dims, has_guard_exp, inInfo);
@@ -1413,7 +1414,7 @@ algorithm
       // An implicit iteration range, try to deduce the range based on how the
       // iterator is used.
       (iter_exp, DAE.PROP(full_iter_ty, iter_const), outCache) := deduceIterationRange(iter_name,
-        Absyn.findIteratorIndexedCrefs(inReductionExp, iter_name), inEnv, outCache, inInfo);
+        AbsynUtil.findIteratorIndexedCrefs(inReductionExp, iter_name), inEnv, outCache, inInfo);
     end if;
 
     // We need to evaluate the iterator because the rest of the compiler is stupid.
@@ -1455,7 +1456,7 @@ public function deduceIterationRange
    expression to find out where the iterator is used as a subscript, and uses
    the subscripted components' dimensions to determine the size of the range."
   input String inIterator;
-  input list<Absyn.IteratorIndexedCref> inCrefs;
+  input list<AbsynUtil.IteratorIndexedCref> inCrefs;
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
   input Absyn.Info inInfo;
@@ -1541,7 +1542,7 @@ protected
 algorithm
   (cr1, idx1) := inCref1;
   (cr2, idx2) := inCref2;
-  outEqual := idx1 == idx2 and Absyn.crefEqual(cr1, cr2);
+  outEqual := idx1 == idx2 and AbsynUtil.crefEqual(cr1, cr2);
 end iteratorIndexedCrefsEqual;
 
 protected function deduceReductionIterationRange_traverser
@@ -1666,8 +1667,8 @@ algorithm
     // Enumeration dimension => Enum.first:Enum.last
     case DAE.DIM_ENUM(enumTypeName = enum_path, literals = enum_lits)
       algorithm
-        enum_start := Absyn.suffixPath(enum_path, listHead(enum_lits));
-        enum_end := Absyn.suffixPath(enum_path, List.last(enum_lits));
+        enum_start := AbsynUtil.suffixPath(enum_path, listHead(enum_lits));
+        enum_end := AbsynUtil.suffixPath(enum_path, List.last(enum_lits));
         range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {});
         range_const := DAE.C_CONST();
       then
@@ -1745,8 +1746,8 @@ algorithm
 
     else
       equation
-        cr = Absyn.pathToCref(path);
-        // print("makeReductionFoldExp => " + Absyn.pathString(path) + Types.unparseType(expty) + "\n");
+        cr = AbsynUtil.pathToCref(path);
+        // print("makeReductionFoldExp => " + AbsynUtil.pathString(path) + Types.unparseType(expty) + "\n");
         env = FGraph.addForIterator(inEnv, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId, {});
@@ -1844,7 +1845,7 @@ algorithm
 
     case (Absyn.IDENT("min"), DAE.T_ENUMERATION())
       algorithm
-        v := Values.ENUM_LITERAL(Absyn.suffixPath(unboxedType.path,
+        v := Values.ENUM_LITERAL(AbsynUtil.suffixPath(unboxedType.path,
           List.last(unboxedType.names)), listLength(unboxedType.names));
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_ENUMERATION_DEFAULT, true);
       then
@@ -1882,7 +1883,7 @@ algorithm
 
     case (Absyn.IDENT("max"), DAE.T_ENUMERATION())
       algorithm
-        v := Values.ENUM_LITERAL(Absyn.suffixPath(unboxedType.path, listHead(unboxedType.names)), 1);
+        v := Values.ENUM_LITERAL(AbsynUtil.suffixPath(unboxedType.path, listHead(unboxedType.names)), 1);
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_ENUMERATION_DEFAULT, true);
       then
         (exp, ty, ty, SOME(v), fn);
@@ -1988,7 +1989,7 @@ algorithm
 
     case {}
       algorithm
-        str1 := Absyn.pathString(inPath);
+        str1 := AbsynUtil.pathString(inPath);
         str2 := FGraph.printGraphPathStr(inEnv);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, {str1, str2}, info);
       then
@@ -2269,7 +2270,7 @@ algorithm
     // Conditional expressions
     case (cache,env,e as Absyn.IFEXP(),impl,pre,_)
       equation
-        Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
+        Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = AbsynUtil.canonIfExp(e);
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         (cache,e3_1,prop3) = elabGraphicsExp(cache,env, e3, impl,pre,info);
@@ -2555,7 +2556,7 @@ algorithm
     (outCache, exp, prop) :=
       elabExp(outCache, inEnv, e, inImplicit, inDoVect, inPrefix, inInfo);
 
-    if Absyn.isTuple(e) then
+    if AbsynUtil.isTuple(e) then
       (exp, prop) := Types.matchProp(exp, prop,
         DAE.PROP(DAE.T_METABOXED_DEFAULT, DAE.C_CONST()), true);
     end if;
@@ -5626,7 +5627,7 @@ algorithm
   e := listHead(inPosArgs);
 
   // Check that the argument is a variable (i.e. a component reference).
-  if not Absyn.isCref(e) then
+  if not AbsynUtil.isCref(e) then
     pre_str := PrefixUtil.printPrefixStr3(inPrefix);
     Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
       {"First", "change", pre_str}, inInfo);
@@ -6130,10 +6131,10 @@ algorithm
 
   if PrefixUtil.isNoPrefix(inPrefix) then
     envName := FGraph.getGraphNameNoImplicitScopes(inEnv);
-    str := if Absyn.pathEqual(envName, name) then
-      Absyn.pathLastIdent(name) else Absyn.pathString(envName);
+    str := if AbsynUtil.pathEqual(envName, name) then
+      AbsynUtil.pathLastIdent(name) else AbsynUtil.pathString(envName);
   else
-    str := Absyn.pathLastIdent(name) + "." + PrefixUtil.printPrefixStr(inPrefix);
+    str := AbsynUtil.pathLastIdent(name) + "." + PrefixUtil.printPrefixStr(inPrefix);
   end if;
 
   outExp := DAE.SCONST(str);
@@ -6593,12 +6594,12 @@ algorithm
 
     case (path,DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN(_))))
       equation
-        path = Absyn.makeNotFullyQualified(path);
+        path = AbsynUtil.makeNotFullyQualified(path);
       then (isBuiltin, true, path);
 
     case (path,DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN_PTR())))
       equation
-        path = Absyn.makeNotFullyQualified(path);
+        path = AbsynUtil.makeNotFullyQualified(path);
       then (isBuiltin, false, path);
 
     case (Absyn.IDENT(name = id),_)
@@ -6699,7 +6700,7 @@ algorithm
       return;
     else
       true := numErrorMessages == Error.getNumErrorMessages();
-      name := Absyn.printComponentRefStr(fn);
+      name := AbsynUtil.printComponentRefStr(fn);
       s1 := stringDelimitList(List.map(args, Dump.printExpStr), ", ");
       s2 := stringDelimitList(List.map(nargs, Dump.printNamedArgStr), ", ");
       s := if s2 == "" then s1 else s1 + ", " + s2;
@@ -6720,7 +6721,7 @@ algorithm
     case ()
       algorithm
         ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
-        fn_1 := Absyn.crefToPath(fn);
+        fn_1 := AbsynUtil.crefToPath(fn);
         (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, impl,pre,info);
         ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
       then
@@ -6837,7 +6838,7 @@ algorithm
 
     case Absyn.CREF(componentRef = absynCr) :: absynRest
       equation
-        absynPath = Absyn.crefToPath(absynCr);
+        absynPath = AbsynUtil.crefToPath(absynCr);
         daeCr = ComponentReference.pathToCref(absynPath);
         crefExp = Expression.crefExp(daeCr);
         daeExpList = absynExpListToDaeExpList(absynRest);
@@ -7210,7 +7211,7 @@ algorithm
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn);
         true = SCode.isOperatorRecord(recordCl);
 
-        fn_1 = Absyn.joinPaths(fn,Absyn.IDENT("'constructor'"));
+        fn_1 = AbsynUtil.joinPaths(fn,Absyn.IDENT("'constructor'"));
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,recordEnv,fn_1);
         true = SCode.isOperator(recordCl);
 
@@ -7269,7 +7270,7 @@ algorithm
           elabTypes(cache, env, args, nargs, typelist, true, false/* Do not check types*/,impl,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        fn_str = Absyn.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
+        fn_str = AbsynUtil.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
         types_str = "\n  " + Types.unparseType(tp1);
         Error.assertionOrAddSourceMessage(Error.getNumErrorMessages()<>numErrors,Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
 
@@ -7281,7 +7282,7 @@ algorithm
       equation
         (cache,SCode.CLASS(restriction = re),_) = Lookup.lookupClass(cache,env,fn);
         false = SCode.isFunctionRestriction(re);
-        fn_str = Absyn.pathString(fn);
+        fn_str = AbsynUtil.pathString(fn);
         s = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);
 
@@ -7293,7 +7294,7 @@ algorithm
       equation
         (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn, info);
         t_lst = List.map(typelist, Types.unparseType);
-        fn_str = Absyn.pathString(fn);
+        fn_str = AbsynUtil.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         types_str = stringDelimitList(t_lst, "\n -");
         //fn_str = fn_str + " in component " + pre_str;
@@ -7309,7 +7310,7 @@ algorithm
     case (cache,env,fn,{Absyn.CREF(Absyn.CREF_IDENT(name,_))},_,impl,pre)
       guard Config.acceptOptimicaGrammar()
       equation
-        cref = Absyn.pathToCref(fn);
+        cref = AbsynUtil.pathToCref(fn);
 
         (cache,SOME((daeexp as DAE.CREF(daecref,tp),prop,_))) = elabCref(cache,env, cref, impl,true,pre,info);
         ErrorExt.rollBack("elabCallArgs2FunctionLookup");
@@ -7323,7 +7324,7 @@ algorithm
       equation
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
         scope = FGraph.printGraphPathStr(env) + " (looking for a function or record)";
-        fn_str = Absyn.pathString(fn);
+        fn_str = AbsynUtil.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -7333,7 +7334,7 @@ algorithm
     case (cache,env,fn,_,_,_,pre) /* no matching type found, no candidates. */
       equation
         (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env,fn,info);
-        fn_str = Absyn.pathString(fn);
+        fn_str = AbsynUtil.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = fn_str + " in component " + pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str}, info);
@@ -7346,7 +7347,7 @@ algorithm
       equation
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabCallArgs failed on: " + Absyn.pathString(fn) + " in env: " + FGraph.printGraphPathStr(env));
+        Debug.traceln("- Static.elabCallArgs failed on: " + AbsynUtil.pathString(fn) + " in env: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -7428,9 +7429,9 @@ algorithm
   // replace references to inputs in the arguments
   //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
 
-  //debugPrintString = if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " + Absyn.pathString(fn_1) + "\n", "");print(debugPrintString);
+  //debugPrintString = if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " + AbsynUtil.pathString(fn_1) + "\n", "");print(debugPrintString);
   (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
-  // print("3 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fn_1) + "\n");
+  // print("3 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + AbsynUtil.pathString(fn_1) + "\n");
   // Instantiate the function and add to dae function tree
   (cache,status) := instantiateDaeFunction(cache,inEnv,
     if Lookup.isFunctionCallViaComponent(cache, inEnv, fn) then fn else fn_1, // don't use the fully qualified name for calling component functions
@@ -7523,7 +7524,7 @@ algorithm
         true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
 
         errorString = "\n" +
-             "- Non-Parallel function '" + Absyn.pathString(inFn) +
+             "- Non-Parallel function '" + AbsynUtil.pathString(inFn) +
              "' can not be called from a parallel scope." + "\n" +
              "- Here called from :" + scopeName + "\n" +
              "- Please declare the function as parallel function.";
@@ -7542,7 +7543,7 @@ algorithm
         true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
         // make sure the function is not calling itself
         // recurrsion is not allowed.
-        false = stringEqual(scopeName,Absyn.pathString(inFn));
+        false = stringEqual(scopeName,AbsynUtil.pathString(inFn));
       then
         true;
 
@@ -7555,9 +7556,9 @@ algorithm
 
         // make sure the function is not calling itself
         // recurrsion is not allowed.
-        true = stringEqual(scopeName,Absyn.pathString(inFn));
+        true = stringEqual(scopeName,AbsynUtil.pathString(inFn));
         errorString = "\n" +
-             "- Parallel function '" + Absyn.pathString(inFn) +
+             "- Parallel function '" + AbsynUtil.pathString(inFn) +
              "' can not call itself. Recurrsion is not allowed for parallel functions currently." + "\n" +
              "- Parallel functions can only be called from: 'kernel' functions," +
              " OTHER 'parallel' functions (no recurrsion) or from a body of a" +
@@ -7583,7 +7584,7 @@ algorithm
         scopeName = FNode.refName(ref);
 
         errorString = "\n" +
-             "- Parallel function '" + Absyn.pathString(inFn) +
+             "- Parallel function '" + AbsynUtil.pathString(inFn) +
              "' can not be called from a non parallel scope '" + scopeName + "'.\n" +
              "- Parallel functions can only be called from: 'kernel' functions," +
              " other 'parallel' functions (no recurrsion) or from a body of a" +
@@ -7600,9 +7601,9 @@ algorithm
 
         // make sure the function is not calling itself
         // recurrsion is not allowed.
-        true = stringEqual(scopeName,Absyn.pathString(inFn));
+        true = stringEqual(scopeName,AbsynUtil.pathString(inFn));
         errorString = "\n" +
-             "- Kernel function '" + Absyn.pathString(inFn) +
+             "- Kernel function '" + AbsynUtil.pathString(inFn) +
              "' can not call itself. " + "\n" +
              "- Recurrsion is not allowed for Kernel functions. ";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
@@ -7618,7 +7619,7 @@ algorithm
         true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
 
         errorString = "\n" +
-             "- Kernel function '" + Absyn.pathString(inFn) +
+             "- Kernel function '" + AbsynUtil.pathString(inFn) +
              "' can not be called from a parallel scope '" + scopeName + "'.\n" +
              "- Kernel functions CAN NOT be called from: 'kernel' functions," +
              " 'parallel' functions or from a body of a" +
@@ -7636,7 +7637,7 @@ algorithm
 
         true = stringEqual(scopeName, FCore.parForScopeName);
         errorString = "\n" +
-             "- Kernel function '" + Absyn.pathString(inFn) +
+             "- Kernel function '" + AbsynUtil.pathString(inFn) +
              "' can not be called from inside parallel for (parfor) loop body." + "'.\n" +
              "- Kernel functions CAN NOT be called from: 'kernel' functions," +
              " 'parallel' functions or from a body of a" +
@@ -7653,7 +7654,7 @@ algorithm
         scopeName = FNode.refName(ref);
         // make sure the function is not calling itself
         // recurrsion is not allowed.
-        false = stringEqual(scopeName,Absyn.pathString(inFn));
+        false = stringEqual(scopeName,AbsynUtil.pathString(inFn));
       then
         true;
 
@@ -7706,7 +7707,7 @@ algorithm
     case DAE.T_METARECORD(path=fq_path)
       algorithm
         DAE.TYPES_VAR(name = str) := List.find(inType.fields, Types.varHasMetaRecordType);
-        fn_str := Absyn.pathString(fq_path);
+        fn_str := AbsynUtil.pathString(fq_path);
         Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,
           {fn_str, str}, inInfo);
       then
@@ -7754,7 +7755,7 @@ algorithm
           Types.unparseType(Types.getPropType(prop)) +
           "\n    expected: " +
           Types.unparseType(DAE.T_TUPLE(tys, NONE()));
-        fn_str := Absyn.pathString(fq_path);
+        fn_str := AbsynUtil.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
       then
         (outCache, NONE());
@@ -7763,7 +7764,7 @@ algorithm
     case DAE.T_METARECORD(path = fq_path)
       algorithm
         str := "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(inPosArgs));
-        fn_str := Absyn.pathString(fq_path);
+        fn_str := AbsynUtil.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
       then
         (inCache, NONE());
@@ -7866,8 +7867,8 @@ algorithm
     case (_, _, true, NORMAL_FUNCTION_INST())
       algorithm
         // Don't skip builtin functions or functions in the same package; they are useful to inline
-        false := Absyn.pathIsIdent(inName);
-        // print("Skipping: " + Absyn.pathString(name) + "\n");
+        false := AbsynUtil.pathIsIdent(inName);
+        // print("Skipping: " + AbsynUtil.pathString(name) + "\n");
       then
         (inCache, Util.SUCCESS());
 
@@ -7885,7 +7886,7 @@ algorithm
     case (_, NONE(), _, _)
       algorithm
         false := FGraph.isTopScope(inEnv);
-        true := Absyn.pathSuffixOf(inName, FGraph.getGraphName(inEnv));
+        true := AbsynUtil.pathSuffixOf(inName, FGraph.getGraphName(inEnv));
       then
         (inCache, Util.SUCCESS());
 
@@ -7929,7 +7930,7 @@ algorithm
       algorithm
         true := Error.getNumErrorMessages() == numError;
         envStr := FGraph.printGraphPathStr(inEnv);
-        pathStr := Absyn.pathString(inName);
+        pathStr := AbsynUtil.pathString(inName);
         Error.addMessage(Error.GENERIC_INST_FUNCTION, {pathStr, envStr});
       then
         fail();
@@ -7950,13 +7951,13 @@ algorithm
   if Lookup.isFunctionCallViaComponent(inCache, inEnv, inFunctionName) then
     // do NOT qualify function calls via component instance!
     (_, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName);
-    outFunctionName := FGraph.joinScopePath(outEnv, Absyn.makeIdentPathFromString(SCode.elementName(outClass)));
+    outFunctionName := FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCode.elementName(outClass)));
     outCache := inCache;
   else
     // qualify everything else
     (outCache, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName);
-    outFunctionName := Absyn.makeFullyQualified(
-      FGraph.joinScopePath(outEnv, Absyn.makeIdentPathFromString(SCode.elementName(outClass))));
+    outFunctionName := AbsynUtil.makeFullyQualified(
+      FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCode.elementName(outClass))));
   end if;
 end lookupAndFullyQualify;
 
@@ -8207,7 +8208,7 @@ algorithm
     true := SCode.isExternalObject(els);
     outIsExt := true;
   else
-    last_id := Absyn.pathLastIdent(inPath);
+    last_id := AbsynUtil.pathLastIdent(inPath);
     outCache := inCache;
     outIsExt := last_id == "constructor" or last_id == "destructor";
   end try;
@@ -8635,7 +8636,7 @@ algorithm
   // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
   dummy_var := SCode.COMPONENT("dummy", SCode.defaultPrefixes,
     SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    SCode.noComment, NONE(), Absyn.dummyInfo);
+    SCode.noComment, NONE(), AbsynUtil.dummyInfo);
 
   // Create a new implicit scope with the needed parameters on top of the
   // current env so we can find the bindings if needed. We need an implicit
@@ -9747,7 +9748,7 @@ algorithm
         true = Error.getNumErrorMessages() == numErrors;
         (cache,e_1,prop) = elabExpInExpression(cache, env, e, impl, true,pre,info);
         s1 = intString(position);
-        s2 = Absyn.pathStringNoQual(path);
+        s2 = AbsynUtil.pathStringNoQual(path);
         s3 = ExpressionDump.printExpStr(e_1);
         s4 = Types.unparseTypeNoAttr(Types.getPropType(prop));
         s5 = Types.unparseTypeNoAttr(vt);
@@ -9907,7 +9908,7 @@ algorithm
     case (cache, _, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, polymorphicBindings,_)
       equation
         failure(_ = findNamedArgType(id, farg));
-        s1 = Absyn.pathStringNoQual(path);
+        s1 = AbsynUtil.pathStringNoQual(path);
         Error.addSourceMessage(Error.NO_SUCH_PARAMETER, {s1,id}, info);
         true = isGraphicsExp;
       then (cache,slots,DAE.C_CONST(),polymorphicBindings);
@@ -9918,7 +9919,7 @@ algorithm
         true = Error.getNumErrorMessages() == numErrors;
         vt = findNamedArgType(id, farg);
         (cache,e_1,prop) = elabExpInExpression(cache, env, e, impl, true,pre,info);
-        s1 = Absyn.pathStringNoQual(path);
+        s1 = AbsynUtil.pathStringNoQual(path);
         s2 = ExpressionDump.printExpStr(e_1);
         s3 = Types.unparseTypeNoAttr(Types.getPropType(prop));
         s4 = Types.unparseTypeNoAttr(vt);
@@ -10014,7 +10015,7 @@ algorithm
         exp_str := ExpressionDump.printExpStr(inExp);
         c_str := Types.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
-          {fa1, exp_str, Absyn.pathStringNoQual(fn), Types.unparseConst(c1), c_str}, inInfo);
+          {fa1, exp_str, AbsynUtil.pathStringNoQual(fn), Types.unparseConst(c1), c_str}, inInfo);
       end if;
 
       // Found a valid slot, fill it and reconstruct the slot list.
@@ -10165,7 +10166,7 @@ algorithm
     case (cache, env, c, impl, pre)
       algorithm
         c := replaceEnd(c);
-        env := if Absyn.crefIsFullyQualified(inComponentRef) then FGraph.topScope(inEnv) else inEnv;
+        env := if AbsynUtil.crefIsFullyQualified(inComponentRef) then FGraph.topScope(inEnv) else inEnv;
         (cache,c_1,constSubs,hasZeroSizeDim) := elabCrefSubs(cache, env, inEnv, c, pre, Prefix.NOPRE(), impl, false, info);
         (cache,attr,t,binding,forIteratorConstOpt,splicedExpData) := Lookup.lookupVar(cache, env, c_1);
         // get the binding if is a constant
@@ -10179,10 +10180,10 @@ algorithm
     case (cache, env, c, _, _)
       equation
         c = replaceEnd(c);
-        path = Absyn.crefToPath(c);
+        path = AbsynUtil.crefToPath(c);
         (cache, cl as SCode.CLASS(restriction = SCode.R_ENUMERATION()), env) =
           Lookup.lookupClass(cache, env, path);
-        typeStr = Absyn.pathLastIdent(path);
+        typeStr = AbsynUtil.pathLastIdent(path);
         path = FGraph.joinScopePath(env, Absyn.IDENT(typeStr));
         enum_lit_strs = SCode.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
@@ -10193,7 +10194,7 @@ algorithm
     case (cache, env, c, _, _)
       algorithm
         // true = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
-        path := Absyn.crefToPath(c);
+        path := AbsynUtil.crefToPath(c);
         // call the lookup function that removes errors when it fails!
         (cache, {t}) := lookupFunctionsInEnvNoError(cache, env, path, info);
         (isBuiltin,isBuiltinFn,path) := isBuiltinFunc(path,t);
@@ -10204,7 +10205,7 @@ algorithm
         end match;
         origt := t;
         t := Types.makeFunctionPolymorphicReference(t);
-        c := Absyn.pathToCref(fpath);
+        c := AbsynUtil.pathToCref(fpath);
         expCref := ComponentReference.toExpCref(c);
         exp := Expression.makeCrefExp(expCref,DAE.T_FUNCTION_REFERENCE_FUNC(isBuiltinFnOrInlineBuiltin,origt));
         // This is not done by lookup - only elabCall. So we should do it here.
@@ -10236,13 +10237,13 @@ algorithm
     case (cache,env,c,impl,doVect,pre,info)
       equation
         failure((_,_,_) = elabCrefSubs(cache,env, c, pre, Prefix.NOPRE(),impl,info));
-        id = Absyn.crefFirstIdent(c);
+        id = AbsynUtil.crefFirstIdent(c);
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange),
                SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus,_)
           = Lookup.lookupIdent(cache, env, id);
-        print("Static: cref:" + Absyn.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
         (cache, cl, env) = Lookup.lookupClass(cache, env, tpath);
-        print("Static: cref:" + Absyn.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
+        print("Static: cref:" + AbsynUtil.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
       then
         (cache,NONE());*/
 
@@ -10568,7 +10569,7 @@ algorithm
     // an enumeration literal -> simplify to a literal expression
     case (SCode.CONST(), DAE.T_ENUMERATION(index = SOME(i), path = p), _, _) guard(evalCref)
       algorithm
-        p := Absyn.joinPaths(p, ComponentReference.crefLastPath(inCref));
+        p := AbsynUtil.joinPaths(p, ComponentReference.crefLastPath(inCref));
       then
         (DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), inAttributes);
 
@@ -12167,7 +12168,7 @@ algorithm
     // Type Name
     case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME())
       equation
-        path = Absyn.crefToPath(cr);
+        path = AbsynUtil.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
 
     // Variable Names
@@ -12232,7 +12233,7 @@ algorithm
     case Absyn.CREF(componentRef=cr)
       equation
         ErrorExt.setCheckpoint("elabCodeExp_dispatch1");
-        id = Absyn.crefFirstIdent(cr);
+        id = AbsynUtil.crefFirstIdent(cr);
         _ = matchcontinue()
           case () // if the first one is OpenModelica, search
             equation
@@ -12264,7 +12265,7 @@ algorithm
 
     case _
       equation
-        false = Absyn.isCref(exp);
+        false = AbsynUtil.isCref(exp);
         ErrorExt.setCheckpoint("elabCodeExp_dispatch");
         (_,dexp,prop) = elabExpInExpression(cache,env,exp,false,false,Prefix.NOPRE(),info);
         DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
@@ -12275,7 +12276,7 @@ algorithm
 
     else
       equation
-        false = Absyn.isCref(exp);
+        false = AbsynUtil.isCref(exp);
         ErrorExt.rollBack("elabCodeExp_dispatch");
       then fail();
 
@@ -12378,7 +12379,7 @@ algorithm
         Absyn.CREF_IDENT(name = "size"), functionArgs = Absyn.FUNCTIONARGS(args =
         {cr_exp as Absyn.CREF(componentRef = cr), size_arg}))), _)
       equation
-        true = Absyn.crefEqual(inCref, cr);
+        true = AbsynUtil.crefEqual(inCref, cr);
         (cache, e, _) = elabExpInExpression(inCache, inEnv, cr_exp, inImpl,
           inDoVect, inPrefix, inInfo);
         (cache, dim_exp, _) = elabExpInExpression(cache, inEnv, size_arg, inImpl,
@@ -12395,7 +12396,7 @@ algorithm
     // Array dimension from a Boolean or enumeration.
     case (cache, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _)
       equation
-        type_path = Absyn.crefToPath(cr);
+        type_path = AbsynUtil.crefToPath(cr);
         cache = Lookup.lookupClass(cache, inEnv, type_path);
         (cache, t) = Lookup.lookupType(cache, inEnv, type_path, NONE());
         dim = match t
@@ -12423,7 +12424,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabArrayDim failed on: " +
-          Absyn.printComponentRefStr(inCref) +
+          AbsynUtil.printComponentRefStr(inCref) +
           Dump.printArraydimStr({inDimension}));
       then
         fail();
@@ -12533,7 +12534,7 @@ algorithm
       Absyn.ComponentRef cr;
     case (Absyn.CREF(cr),_)
       equation
-        cr = Absyn.crefStripLastSubs(cr);
+        cr = AbsynUtil.crefStripLastSubs(cr);
       then Absyn.CREF(cr)::es;
     else es;
   end match;
@@ -12548,23 +12549,23 @@ protected
   Absyn.ComponentRef cr, cr_no_subs;
 algorithm
   //print("Before replace: " + Dump.printComponentRefStr(inCref) + "\n");
-  outCref :: cr_parts := Absyn.crefExplode(inCref);
+  outCref :: cr_parts := AbsynUtil.crefExplode(inCref);
 
-  if not Absyn.crefIsIdent(outCref) then
+  if not AbsynUtil.crefIsIdent(outCref) then
     outCref := inCref;
     return;
   end if;
 
-  if Absyn.crefIsFullyQualified(inCref) then
-    outCref := Absyn.crefMakeFullyQualified(outCref);
+  if AbsynUtil.crefIsFullyQualified(inCref) then
+    outCref := AbsynUtil.crefMakeFullyQualified(outCref);
   end if;
 
-  outCref := replaceEndInSubs(Absyn.crefStripLastSubs(outCref), Absyn.crefLastSubs(outCref));
+  outCref := replaceEndInSubs(AbsynUtil.crefStripLastSubs(outCref), AbsynUtil.crefLastSubs(outCref));
 
   for cr in cr_parts loop
-    cr_no_subs := Absyn.crefStripLastSubs(cr);
-    outCref := Absyn.joinCrefs(outCref, cr_no_subs);
-    outCref := replaceEndInSubs(outCref, Absyn.crefLastSubs(cr));
+    cr_no_subs := AbsynUtil.crefStripLastSubs(cr);
+    outCref := AbsynUtil.joinCrefs(outCref, cr_no_subs);
+    outCref := replaceEndInSubs(outCref, AbsynUtil.crefLastSubs(cr));
   end for;
   //print("After replace: " + Dump.printComponentRefStr(outCref) + "\n");
 end replaceEnd;
@@ -12588,7 +12589,7 @@ algorithm
     i := i + 1;
   end for;
 
-  outCref := Absyn.crefSetLastSubs(outCref, listReverse(subs));
+  outCref := AbsynUtil.crefSetLastSubs(outCref, listReverse(subs));
 end replaceEndInSubs;
 
 protected function replaceEndInSub
@@ -12625,7 +12626,7 @@ algorithm
     case Absyn.CREF()
       then Absyn.CREF(replaceEnd(inExp.componentRef));
 
-    else Absyn.traverseExpShallow(inExp, inTuple, replaceEndTraverser);
+    else AbsynUtil.traverseExpShallow(inExp, inTuple, replaceEndTraverser);
 
   end match;
 end replaceEndTraverser;

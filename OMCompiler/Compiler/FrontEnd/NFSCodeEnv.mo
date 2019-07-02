@@ -40,6 +40,7 @@ encapsulated package NFSCodeEnv
 "
 
 import Absyn;
+import AbsynUtil;
 import Mutable;
 import SCode;
 import Util;
@@ -480,7 +481,7 @@ protected
   Absyn.Path bc;
 algorithm
   EXTENDS(baseClass = bc) := inExtends;
-  outIsNamed := Absyn.pathEqual(inName, bc);
+  outIsNamed := AbsynUtil.pathEqual(inName, bc);
 end isExtendNamed;
 
 public function removeRedeclaresFromLocalScope
@@ -870,7 +871,7 @@ algorithm
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
       equation
-        name = Absyn.pathLastIdent(path);
+        name = AbsynUtil.pathLastIdent(path);
       then
         Absyn.NAMED_IMPORT(name, path);
   end match;
@@ -1151,7 +1152,7 @@ algorithm
   iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    SCode.noComment, NONE(), Absyn.dummyInfo);
+    SCode.noComment, NONE(), AbsynUtil.dummyInfo);
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
@@ -1207,7 +1208,7 @@ algorithm
 
     case _
       equation
-        str = Absyn.pathString(getEnvPath(inEnv));
+        str = AbsynUtil.pathString(getEnvPath(inEnv));
       then
         str;
 
@@ -1239,7 +1240,7 @@ algorithm
     case (FRAME(name = SOME(name)) :: rest)
       equation
         path = getEnvPath(rest);
-        path = Absyn.joinPaths(path, Absyn.IDENT(name));
+        path = AbsynUtil.joinPaths(path, Absyn.IDENT(name));
       then
         path;
   end match;
@@ -1398,7 +1399,7 @@ algorithm
       then SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
     case ALIAS(name = name, path = SOME(path))
       equation
-        alias_str = Absyn.pathString(path);
+        alias_str = AbsynUtil.pathString(path);
       then
         "alias " + name + " -> (" + alias_str + "." + name + ")";
     case ALIAS(name = name, path = NONE())
@@ -1593,7 +1594,7 @@ algorithm
       equation
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
           getEnvExtendsFromTable(inEnv);
-        true = Absyn.pathSuffixOf(path, bc);
+        true = AbsynUtil.pathSuffixOf(path, bc);
       then
         rm;
 
@@ -1601,8 +1602,8 @@ algorithm
       equation
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
           getEnvExtendsFromTable(inEnv);
-        false = Absyn.pathSuffixOf(path, bc);
-        print("Derived paths are not the same: " + Absyn.pathString(path) + " != " + Absyn.pathString(bc) + "\n");
+        false = AbsynUtil.pathSuffixOf(path, bc);
+        print("Derived paths are not the same: " + AbsynUtil.pathString(path) + " != " + AbsynUtil.pathString(bc) + "\n");
       then
         rm;
 
@@ -1659,9 +1660,9 @@ algorithm
     case (_, _)
       equation
         env_path = getEnvPath(inEnv);
-        id = Absyn.pathLastIdent(inPath);
+        id = AbsynUtil.pathLastIdent(inPath);
       then
-        Absyn.joinPaths(env_path, Absyn.IDENT(id));
+        AbsynUtil.joinPaths(env_path, Absyn.IDENT(id));
 
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
@@ -1684,8 +1685,8 @@ algorithm
     // Try to merge the last identifier in the path with the environment path.
     case (Absyn.TPATH(path, ad), _)
       equation
-        id = Absyn.pathLastIdent(path);
-        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
+        id = AbsynUtil.pathLastIdent(path);
+        path = AbsynUtil.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
       then
         Absyn.TPATH(path, ad);
 
@@ -1709,7 +1710,7 @@ algorithm
     else
       equation
         path = getEnvPath(inEnv);
-        path = Absyn.suffixPath(path, inIdent);
+        path = AbsynUtil.suffixPath(path, inIdent);
       then
         path;
 
@@ -1794,7 +1795,7 @@ protected
   SCode.Element cls;
 algorithm
   cls := SCode.CLASS(inName, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, AbsynUtil.dummyInfo);
   outTree := EnvTree.add(inTree, inName, CLASS(cls, emptyEnv, BUILTIN()));
 end addDummyClassToTree;
 
@@ -1889,7 +1890,7 @@ algorithm
   EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
   mods_str := stringDelimitList(
     List.map(mods, printRedeclarationStr), "\n");
-  outString := "\t\t" + Absyn.pathString(bc) + "(" + mods_str + ")";
+  outString := "\t\t" + AbsynUtil.pathString(bc) + "(" + mods_str + ")";
 end printExtendsStr;
 
 public function printRedeclarationStr
@@ -1899,7 +1900,7 @@ algorithm
   outString := matchcontinue(inRedeclare)
     local String name; Absyn.Path p;
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p))))
-      then "ALIAS(" + Absyn.pathString(p) + "." + name + ")";
+      then "ALIAS(" + AbsynUtil.pathString(p) + "." + name + ")";
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
       then "ALIAS(" + name + ")";
     else SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
@@ -1916,9 +1917,9 @@ algorithm
   IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps)
     := inImports;
   qual_str := stringDelimitList(
-    List.map(qual_imps, Absyn.printImportString), "\n\t\t");
+    List.map(qual_imps, AbsynUtil.printImportString), "\n\t\t");
   unqual_str := stringDelimitList(
-    List.map(unqual_imps, Absyn.printImportString), "\n\t\t");
+    List.map(unqual_imps, AbsynUtil.printImportString), "\n\t\t");
   outString := "\t\t" + qual_str + unqual_str;
 end printImportTableStr;
 

@@ -35,6 +35,7 @@ encapsulated package SimCodeFunction
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import DAE;
 import HashTableCrefSimVar;
 import HashTableStringToPath;
@@ -406,7 +407,7 @@ protected
   HashTableStringToPath.HashTable ht;
 algorithm
   ht := HashTableStringToPath.emptyHashTable();
-  ht := SimCodeFunctionUtil.getCalledFunctionsInFunction2(path,Absyn.pathStringNoQual(path),ht,funcs);
+  ht := SimCodeFunctionUtil.getCalledFunctionsInFunction2(path,AbsynUtil.pathStringNoQual(path),ht,funcs);
   outPaths := BaseHashTable.hashTableValueList(ht);
 end getCalledFunctionsInFunction;
 

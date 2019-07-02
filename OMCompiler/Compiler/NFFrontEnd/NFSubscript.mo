@@ -45,6 +45,7 @@ protected
 public
   import Expression = NFExpression;
   import Absyn;
+  import AbsynUtil;
   import Dimension = NFDimension;
   import NFPrefixes.Variability;
   import NFCeval.EvalTarget;
@@ -180,7 +181,7 @@ public
   algorithm
     isEqual := match (subscript1, subscript2)
       case (RAW_SUBSCRIPT(), RAW_SUBSCRIPT())
-        then Absyn.subscriptEqual(subscript1.subscript, subscript2.subscript);
+        then AbsynUtil.subscriptEqual(subscript1.subscript, subscript2.subscript);
 
       case (UNTYPED(), UNTYPED())
         then Expression.isEqual(subscript1.exp, subscript2.exp);

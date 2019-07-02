@@ -31,6 +31,7 @@
 
 encapsulated package NFOperatorOverloading
   import Absyn;
+  import AbsynUtil;
   import NFInstNode.InstNode;
   import NFFunction.Function;
   import Type = NFType;
@@ -124,7 +125,7 @@ public
   algorithm
     if not SCode.isElementEncapsulated(InstNode.definition(operatorNode)) then
       Error.addSourceMessage(Error.OPERATOR_NOT_ENCAPSULATED,
-        {Absyn.pathString(InstNode.scopePath(operatorNode, includeRoot = true))},
+        {AbsynUtil.pathString(InstNode.scopePath(operatorNode, includeRoot = true))},
         InstNode.info(operatorNode));
       fail();
     end if;
@@ -208,7 +209,7 @@ protected
   algorithm
     if listLength(fn.outputs) <> 1 then
       Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ONE_OUTPUT_ERROR,
-        {Absyn.pathString(path)}, info);
+        {AbsynUtil.pathString(path)}, info);
       fail();
     end if;
 
@@ -216,7 +217,7 @@ protected
     output_ty := InstNode.classScope(output_node);
     if not InstNode.isSame(output_ty, recordNode) then
       Error.addSourceMessage(Error.OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE,
-        {InstNode.name(output_node), Absyn.pathString(path),
+        {InstNode.name(output_node), AbsynUtil.pathString(path),
          InstNode.name(recordNode), InstNode.name(output_ty)}, info);
       fail();
     end if;

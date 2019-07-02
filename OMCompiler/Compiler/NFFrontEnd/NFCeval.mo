@@ -131,7 +131,7 @@ uniontype EvalTarget
       case CONDITION() then target.info;
       case GENERIC() then target.info;
       case STATEMENT() then ElementSource.getInfo(target.source);
-      else Absyn.dummyInfo;
+      else AbsynUtil.dummyInfo;
     end match;
   end getInfo;
 end EvalTarget;
@@ -1594,7 +1594,7 @@ function evalBuiltinCall
 protected
   Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
 algorithm
-  result := match Absyn.pathFirstIdent(fn_path)
+  result := match AbsynUtil.pathFirstIdent(fn_path)
     case "abs" then evalBuiltinAbs(listHead(args));
     case "acos" then evalBuiltinAcos(listHead(args), target);
     case "array" then evalBuiltinArray(args);
@@ -1656,7 +1656,7 @@ algorithm
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Absyn.pathString(fn_path), sourceInfo());
+          AbsynUtil.pathString(fn_path), sourceInfo());
       then
         fail();
   end match;
@@ -2844,7 +2844,7 @@ algorithm
   e := evalExpPartial(exp);
   (e, ranges, iters) := createIterationRanges(e, iterators);
 
-  (red_fn, default_exp) := match Absyn.pathString(Function.name(fn))
+  (red_fn, default_exp) := match AbsynUtil.pathString(Function.name(fn))
     case "sum" then (evalBinaryAdd, Expression.makeZero(ty));
     case "product" then (evalBinaryMul, Expression.makeOne(ty));
     case "min" then (evalBuiltinMin2, Expression.makeMaxValue(ty));
@@ -2852,7 +2852,7 @@ algorithm
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown reduction function " +
-          Absyn.pathString(Function.name(fn)), sourceInfo());
+          AbsynUtil.pathString(Function.name(fn)), sourceInfo());
       then
         fail();
   end match;

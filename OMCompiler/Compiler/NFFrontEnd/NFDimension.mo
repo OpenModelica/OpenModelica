@@ -268,7 +268,7 @@ public
 
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
-      case ENUM(enumType = ty as Type.ENUMERATION()) then Absyn.pathString(ty.typePath);
+      case ENUM(enumType = ty as Type.ENUMERATION()) then AbsynUtil.pathString(ty.typePath);
       case EXP() then Expression.toString(dim.exp);
       case UNKNOWN() then ":";
       case UNTYPED() then Expression.toString(dim.dimension);

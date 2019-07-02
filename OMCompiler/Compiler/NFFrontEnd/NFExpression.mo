@@ -33,6 +33,7 @@ encapsulated uniontype NFExpression
 protected
   import Util;
   import Absyn;
+  import AbsynUtil;
   import List;
   import System;
   import Flags;
@@ -499,7 +500,7 @@ public
       case ENUM_LITERAL()
         algorithm
           ENUM_LITERAL(ty = ty, index = i) := exp2;
-          comp := Absyn.pathCompare(Type.enumName(exp1.ty), Type.enumName(ty));
+          comp := AbsynUtil.pathCompare(Type.enumName(exp1.ty), Type.enumName(ty));
 
           if comp == 0 then
             comp := Util.intCompare(exp1.index, i);
@@ -554,7 +555,7 @@ public
       case RECORD()
         algorithm
           RECORD(path = p, elements = expl) := exp2;
-          comp := Absyn.pathCompare(exp1.path, p);
+          comp := AbsynUtil.pathCompare(exp1.path, p);
         then
           if comp == 0 then compareList(exp1.elements, expl) else comp;
 
@@ -1502,7 +1503,7 @@ public
       case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
-        then Absyn.pathString(t.typePath) + "." + exp.name;
+        then AbsynUtil.pathString(t.typePath) + "." + exp.name;
 
       case CLKCONST(clk) then ClockKind.toString(clk);
 
@@ -1519,7 +1520,7 @@ public
                         ) + ":" + operandString(exp.stop, exp, false);
 
       case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
-      case RECORD() then List.toString(exp.elements, toString, Absyn.pathString(exp.path), "(", ", ", ")", true);
+      case RECORD() then List.toString(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
       case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
@@ -1650,7 +1651,7 @@ public
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
-        then DAE.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
+        then DAE.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
 
       case CLKCONST()
         then DAE.CLKCONST(ClockKind.toDAE(exp.clk));
@@ -1765,7 +1766,7 @@ public
       case STRING() then Values.STRING(exp.value);
       case BOOLEAN() then Values.BOOL(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
-        then Values.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
+        then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
 
       case ARRAY()
         algorithm
@@ -4997,7 +4998,7 @@ public
       case RANGE()
         algorithm
           exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), Absyn.dummyInfo);
+            typeOf(exp.start), AbsynUtil.dummyInfo);
         then
           ();
 
