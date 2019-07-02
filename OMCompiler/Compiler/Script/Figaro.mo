@@ -8,6 +8,7 @@ import SCodeUtil;
 protected
 
 import Autoconf;
+import AbsynUtil;
 import System;
 
 // Aliases
@@ -277,7 +278,7 @@ algorithm
     // Short class definitions.
     case (fb, ft, program, cn, SCode.DERIVED(typeSpec = ts, modifications = m), e)
       equation
-        p = Absyn.typeSpecPath(ts);
+        p = AbsynUtil.typeSpecPath(ts);
         true = fb == getLastIdent(p);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
@@ -412,7 +413,7 @@ algorithm
       then foClassDef(fcl, cd);
     case (fcl, SCode.COMPONENT(name = n, typeSpec = ts, modifications = m))
       equation
-        p = Absyn.typeSpecPath(ts);
+        p = AbsynUtil.typeSpecPath(ts);
         //tn = findFigaroTypeName(p, fcl);
         tmp = foMod1(m, "fullClassName");
         tn = if tmp == "" then findFigaroTypeName(p, fcl) else tmp;

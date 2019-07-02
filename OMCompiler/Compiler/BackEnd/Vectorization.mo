@@ -39,6 +39,7 @@ public import BackendDAE;
 public import DAE;
 
 protected import Absyn;
+protected import AbsynUtil;
 protected import Algorithm;
 protected import BackendDump;
 protected import BackendEquation;
@@ -448,7 +449,7 @@ algorithm
       algorithm
         DAE.ENUM_LITERAL(name = p) := inExp2;
       then
-        Absyn.pathEqual(inExp1.name, p);
+        AbsynUtil.pathEqual(inExp1.name, p);
 
     case DAE.CREF()
       algorithm
@@ -518,21 +519,21 @@ algorithm
       algorithm
         DAE.CALL(path = p, expLst = expl) := inExp2;
       then
-        Absyn.pathEqual(inExp1.path, p) and
+        AbsynUtil.pathEqual(inExp1.path, p) and
         expEqualNoCrefSubsList(inExp1.expLst, expl);
 
     case DAE.RECORD()
       algorithm
         DAE.RECORD(path = p, exps = expl) := inExp2;
       then
-        Absyn.pathEqual(inExp1.path, p) and
+        AbsynUtil.pathEqual(inExp1.path, p) and
         expEqualNoCrefSubsList(inExp1.exps, expl);
 
     case DAE.PARTEVALFUNCTION()
       algorithm
         DAE.PARTEVALFUNCTION(path = p, expList = expl) := inExp2;
       then
-        Absyn.pathEqual(inExp1.path, p) and
+        AbsynUtil.pathEqual(inExp1.path, p) and
         expEqualNoCrefSubsList(inExp1.expList, expl);
 
     case DAE.RANGE()
@@ -599,7 +600,7 @@ algorithm
       algorithm
         DAE.METARECORDCALL(path = p, args = expl) := inExp2;
       then
-        Absyn.pathEqual(inExp1.path, p) and expEqualNoCrefSubsList(inExp1.args, expl);
+        AbsynUtil.pathEqual(inExp1.path, p) and expEqualNoCrefSubsList(inExp1.args, expl);
 
     case DAE.MATCHEXPRESSION()
       then valueEq(inExp1, inExp2);

@@ -51,6 +51,7 @@ import ComponentRef = NFComponentRef;
 import ExpandExp = NFExpandExp;
 import TypeCheck = NFTypeCheck;
 import Absyn;
+import AbsynUtil;
 import ErrorExt;
 import Flags;
 import Debug;
@@ -132,7 +133,7 @@ algorithm
     exp := range;
   else
     ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-      Type.arrayElementType(ty), Absyn.dummyInfo);
+      Type.arrayElementType(ty), AbsynUtil.dummyInfo);
     exp := Expression.RANGE(ty, start_exp2, step_exp2, stop_exp2);
   end if;
 end simplifyRange;
@@ -155,7 +156,7 @@ algorithm
 
         // HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
         if Flags.isSet(Flags.NF_API) and not Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-          if stringEq("DynamicSelect", Absyn.pathString(Function.nameConsiderBuiltin(call.fn))) then
+          if stringEq("DynamicSelect", AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))) then
             callExp := simplify(listHead(args));
             return;
           end if;
@@ -226,7 +227,7 @@ function simplifyBuiltinCall
   input Call call;
   output Expression exp;
 algorithm
-  exp := match Absyn.pathFirstIdent(name)
+  exp := match AbsynUtil.pathFirstIdent(name)
     case "cat"
       algorithm
         exp := ExpandExp.expandBuiltinCat(args, call);

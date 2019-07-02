@@ -36,6 +36,7 @@ encapsulated package NFLookup
 "
 
 import Absyn;
+import AbsynUtil;
 import SCode;
 import Dump;
 import Error;
@@ -84,7 +85,7 @@ algorithm
     (nodes, state) := lookupNames(name, scope);
   else
     Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
-      {Absyn.pathString(name), InstNode.scopeName(scope)}, info);
+      {AbsynUtil.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 
@@ -433,7 +434,7 @@ algorithm
   try
     (node, state) := lookupName(name, scope, checkAccessViolations);
   else
-    Error.addSourceMessage(errorType, {Absyn.pathString(name), InstNode.scopeName(scope)}, info);
+    Error.addSourceMessage(errorType, {AbsynUtil.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 end lookupNameWithError;
@@ -772,7 +773,7 @@ algorithm
     else node;
   end match;
 
-  name := Absyn.crefFirstIdent(cref);
+  name := AbsynUtil.crefFirstIdent(cref);
   cls := InstNode.getClass(scope);
 
   try

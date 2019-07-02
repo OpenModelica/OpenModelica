@@ -41,6 +41,7 @@ encapsulated package SCodeSimplify
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 
 public function simplifyProgram
@@ -170,7 +171,7 @@ algorithm
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
       equation
-        true = Absyn.pathContains(bcp, Absyn.IDENT("Icons"));
+        true = AbsynUtil.pathContains(bcp, Absyn.IDENT("Icons"));
         els = simplifyElements(rest);
       then
         els;

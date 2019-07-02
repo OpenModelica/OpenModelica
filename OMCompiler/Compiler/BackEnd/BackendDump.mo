@@ -53,6 +53,7 @@ import Tpl;
 
 protected
 import Absyn;
+import AbsynUtil;
 import Array;
 import BackendDAEUtil;
 import BackendEquation;
@@ -502,14 +503,14 @@ algorithm
 
     case BackendDAE.EXTOBJCLASS(path,source)::_ equation
       print("class ");
-      print(Absyn.pathString(path));
+      print(AbsynUtil.pathString(path));
       print("\n  extends ExternalObject;");
       print("\n origin: ");
       paths = ElementSource.getElementSourceTypes(source);
-      paths_lst = list(Absyn.pathString(p) for p in paths);
+      paths_lst = list(AbsynUtil.pathString(p) for p in paths);
       path_str = stringDelimitList(paths_lst, ", ");
       print(path_str + "\n");
-      print("end ");print(Absyn.pathString(path));
+      print("end ");print(AbsynUtil.pathString(path));
     then ();
   end match;
 end printExternalObjectClasses;
@@ -2073,7 +2074,7 @@ algorithm
         s;
     case (DAE.CALL(path = fcn,expLst = args), _,_)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         argstr = stringDelimitList(
           List.map3(args, ExpressionDump.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
         s = stringAppend(fs, "(");
@@ -2484,7 +2485,7 @@ protected
   String dimensions;
 algorithm
   paths := ElementSource.getElementSourceTypes(inVar.source);
-  paths_lst := list(Absyn.pathString(p) for p in paths);
+  paths_lst := list(AbsynUtil.pathString(p) for p in paths);
   unreplaceableStr := if inVar.unreplaceable then " unreplaceable" else "";
   dimensions := ExpressionDump.dimensionsString(inVar.arryDim);
   dimensions := if dimensions <> "" then " [" + dimensions + "]" else "";
@@ -2530,7 +2531,7 @@ algorithm
     case BackendDAE.DISCRETE()    then "DISCRETE";
     case BackendDAE.PARAM()       then "PARAM";
     case BackendDAE.CONST()       then "CONST";
-    case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " + Absyn.pathString(path);
+    case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " + AbsynUtil.pathString(path);
     case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
     case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
     case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";

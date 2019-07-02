@@ -116,7 +116,7 @@ protected
   Absyn.Ident id;
 algorithm
   Absyn.CLASS(name = id) := cl;
-  s := id +": "+ Absyn.classFilename(cl);
+  s := id +": "+ AbsynUtil.classFilename(cl);
 end classString;
 
 annotation(__OpenModelica_Interface="backend");

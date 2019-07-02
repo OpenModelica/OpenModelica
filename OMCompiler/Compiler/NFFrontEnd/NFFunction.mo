@@ -32,6 +32,7 @@
 encapsulated package NFFunction
 
 import Absyn;
+import AbsynUtil;
 import Expression = NFExpression;
 import Pointer;
 import NFInstNode.InstNode;
@@ -303,7 +304,7 @@ uniontype Function
   algorithm
     try
       // Make sure the name is a path.
-      functionPath := Absyn.crefToPath(functionName);
+      functionPath := AbsynUtil.crefToPath(functionName);
     else
       Error.addSourceMessageAndFail(Error.SUBSCRIPTED_FUNCTION_CALL,
         {Dump.printComponentRefStr(functionName)}, info);
@@ -419,7 +420,7 @@ uniontype Function
       case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
         algorithm
           for p in cdef.pathLst loop
-            cr := Absyn.pathToCref(p);
+            cr := AbsynUtil.pathToCref(p);
             (_,sub_fnNode,specialBuiltin) := instFunction(cr,fnNode,info);
             for f in getCachedFuncs(sub_fnNode) loop
               fnNode := InstNode.cacheAddFunc(fnNode, f, specialBuiltin);
@@ -550,7 +551,7 @@ uniontype Function
       local
         String name;
       case DAE.FUNCTION_BUILTIN(name=SOME(name)) then Absyn.IDENT(name);
-      case DAE.FUNCTION_BUILTIN() then Absyn.pathLast(fn.path);
+      case DAE.FUNCTION_BUILTIN() then AbsynUtil.pathLast(fn.path);
       else fn.path;
     end match;
   end nameConsiderBuiltin;
@@ -605,7 +606,7 @@ uniontype Function
     output_str := if printTypes and isTyped(fn) then " => " + Type.toString(fn.returnType) else "";
     fn_name := nameConsiderBuiltin(fn);
     // if isSome(display_name) then Util.getOption(display_name) else fn.path;
-    str := Absyn.pathString(fn_name) + "(" + input_str + ")" + output_str;
+    str := AbsynUtil.pathString(fn_name) + "(" + input_str + ")" + output_str;
   end signatureString;
 
   function candidateFuncListString
@@ -628,7 +629,7 @@ uniontype Function
           for arg in namedArgs), ", ");
     end if;
 
-    str := Absyn.pathString(fn.path) + "(" + str + ")";
+    str := AbsynUtil.pathString(fn.path) + "(" + str + ")";
   end callString;
 
   function typeString
@@ -638,7 +639,7 @@ uniontype Function
     output String str;
   algorithm
     str := List.toString(fn.inputs, paramTypeString,
-      Absyn.pathString(name(fn)) + "<function>",
+      AbsynUtil.pathString(name(fn)) + "<function>",
       "(", ", ", ") => " + Type.toString(fn.returnType), true);
   end typeString;
 
@@ -963,7 +964,7 @@ uniontype Function
       if arg_var > Component.variability(comp) then
         Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
           {InstNode.name(input_node), Expression.toString(arg_exp),
-           Absyn.pathString(Function.name(func)), Prefixes.variabilityString(arg_var),
+           AbsynUtil.pathString(Function.name(func)), Prefixes.variabilityString(arg_var),
            Prefixes.variabilityString(Component.variability(comp))}, info);
         funcMatchKind := NO_MATCH;
         return;
@@ -985,7 +986,7 @@ uniontype Function
       if not matched then
         // Print an error if the types match neither exactly nor vectorized.
         Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
-          {intString(arg_idx), Absyn.pathString(func.path), InstNode.name(input_node),
+          {intString(arg_idx), AbsynUtil.pathString(func.path), InstNode.name(input_node),
            Expression.toString(arg_exp), Type.toString(arg_ty), Type.toString(input_ty)}, info);
         funcMatchKind := NO_MATCH;
         return;
@@ -1329,7 +1330,7 @@ uniontype Function
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH,
-            {Absyn.pathString(name(fn)), argName, Expression.toString(argExp),
+            {AbsynUtil.pathString(name(fn)), argName, Expression.toString(argExp),
              Type.toString(argType), Type.toString(InstNode.getType(i))}, info);
           fail();
         end if;
@@ -1344,7 +1345,7 @@ uniontype Function
     end while;
 
     Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
-      {Absyn.pathString(name(fn)), argName}, info);
+      {AbsynUtil.pathString(name(fn)), argName}, info);
     fail();
   end applyPartialApplicationArg;
 
@@ -1374,10 +1375,10 @@ uniontype Function
     else
       path := Function.nameConsiderBuiltin(fn);
 
-      if not Absyn.pathIsIdent(path) then
+      if not AbsynUtil.pathIsIdent(path) then
         special := false;
       else
-        special := match Absyn.pathFirstIdent(path)
+        special := match AbsynUtil.pathFirstIdent(path)
           // Can have variable number of arguments.
           case "array" then true;
           case "actualStream" then true;
@@ -1458,7 +1459,7 @@ uniontype Function
     if not isBuiltin(fn) then
       scalarBuiltin := false;
     else
-      scalarBuiltin := match Absyn.pathFirstIdent(Function.nameConsiderBuiltin(fn))
+      scalarBuiltin := match AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(fn))
         case "change" then true;
         case "der" then true;
         case "pre" then true;

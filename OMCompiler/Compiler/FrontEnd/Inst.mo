@@ -79,6 +79,7 @@ encapsulated package Inst
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
@@ -230,7 +231,7 @@ algorithm
           cdecls = InstUtil.scodeFlatten(cdecls, inPath);
           ExecStat.execStat("FrontEnd - scodeFlatten");
         end if;
-        pathstr = Absyn.pathString(path);
+        pathstr = AbsynUtil.pathString(path);
 
         //System.startTimer();
         //print("\nBuiltinMaking");
@@ -246,7 +247,7 @@ algorithm
 
         //System.startTimer();
         //print("\nLookupClass");
-        (cache,(cdef as SCode.CLASS(name = n)),env) = Lookup.lookupClass(cache, env, path, SOME(Absyn.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env) = Lookup.lookupClass(cache, env, path, SOME(AbsynUtil.dummyInfo));
 
         //System.stopTimer();
         //print("\nLookupClass: " + realString(System.getTimerIntervalTime()));
@@ -340,7 +341,7 @@ algorithm
         // adrpo: NOTE THAT THE NEXT FUNCTION CALL MUST BE THE FIRST IN THIS CASE, otherwise the stack overflow will not be caught!
         stackOverflow = setStackOverflowSignal(false);
 
-        cname_str = Absyn.pathString(path) + (if stackOverflow then ". The compiler got into Stack Overflow!" else "");
+        cname_str = AbsynUtil.pathString(path) + (if stackOverflow then ". The compiler got into Stack Overflow!" else "");
         if not Config.getGraphicsExpMode() then
           Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
         end if;
@@ -401,14 +402,14 @@ algorithm
       equation
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
 
         cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n),
             cdef, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
-        pathstr = Absyn.pathString(path);
+        pathstr = AbsynUtil.pathString(path);
 
         // set the source of this element
         source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
@@ -421,7 +422,7 @@ algorithm
     case (_,_,_,path) /* error instantiating */
       guard not Config.getGraphicsExpMode()
       equation
-        cname_str = Absyn.pathString(path);
+        cname_str = AbsynUtil.pathString(path);
         //print(" Error flattening partial, errors: " + ErrorExt.printMessagesStr() + "\n");
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
       then
@@ -617,7 +618,7 @@ algorithm
 
         //System.startTimer();
         //print("\nConnect equations and the OverConstrained graph in one step");
-        dae = ConnectUtil.equations(callscope_1, csets, dae1_1, graph, Absyn.pathString(Absyn.makeNotFullyQualified(fq_class)));
+        dae = ConnectUtil.equations(callscope_1, csets, dae1_1, graph, AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fq_class)));
         //System.stopTimer();
         //print("\nConnect and Overconstrained: " + realString(System.getTimerIntervalTime()) + "\n");
         ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c, InstUtil.extractComment(dae.elementLst));
@@ -788,7 +789,7 @@ algorithm
     // if the class is no outer: regular, or inner
     case SCode.CLASS(prefixes = SCode.PREFIXES(innerOuter = io))
       equation
-        true = boolOr(Absyn.isNotInnerOuter(io), Absyn.isOnlyInner(io));
+        true = boolOr(AbsynUtil.isNotInnerOuter(io), AbsynUtil.isOnlyInner(io));
         (cache,env,ih,store,ci_state,graph,csets,dae,tys,bc,oDA,equalityConstraint) =
           instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);
       then
@@ -797,7 +798,7 @@ algorithm
     // if the class is inner or innerouter and an instance, use the original name and original scope
     case SCode.CLASS(name = n, restriction=r, encapsulatedPrefix = encflag, prefixes = SCode.PREFIXES(innerOuter = io))
       equation
-        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
+        true = boolOr(AbsynUtil.isInnerOuter(io), AbsynUtil.isOnlyOuter(io));
         FCore.CL(status = FCore.CLS_INSTANCE(n)) = FNode.refData(FGraph.lastScopeRef(inEnv));
         (env, _) = FGraph.stripLastScopeRef(inEnv);
 
@@ -816,7 +817,7 @@ algorithm
     // if the class is inner or innerouter we need to instantiate the inner!
     case SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io))
       equation
-        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
+        true = boolOr(AbsynUtil.isInnerOuter(io), AbsynUtil.isOnlyOuter(io));
         n = FGraph.getInstanceOriginalName(inEnv, n);
 
         // lookup in IH
@@ -831,7 +832,7 @@ algorithm
     // we could not find the inner, use the outer as it is!
     case SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io), info = info)
       equation
-        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
+        true = boolOr(AbsynUtil.isInnerOuter(io), AbsynUtil.isOnlyOuter(io));
 
         if not Config.getGraphicsExpMode() then
           s1 = n;
@@ -2258,7 +2259,7 @@ algorithm
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
-        _ = Absyn.getArrayDimOptAsList(ad);
+        _ = AbsynUtil.getArrayDimOptAsList(ad);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
@@ -2300,7 +2301,7 @@ algorithm
           // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
           // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
           (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          // print("mods: " + AbsynUtil.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
           mods_1 = Mod.merge(mods, mod_1, className);
 
           (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
@@ -2320,7 +2321,7 @@ algorithm
           // adrpo: as we do this IN THE SAME ENVIRONMENT (no open scope), clone it before doing changes
           // env = FGraph.pushScopeRef(parentEnv, FNode.copyRefNoUpdate(lastRef));
           (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, Mod.DERIVED(cn), info);
-          // print("mods: " + Absyn.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
+          // print("mods: " + AbsynUtil.pathString(cn) + " " + Mod.printModStr(mods_1) + "\n");
           mods_1 = Mod.merge(mods, mod_1, className);
 
           (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) =
@@ -2465,7 +2466,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         false = Mutable.access(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        false = listMember(Absyn.pathString(cn), {"tuple","Tuple","array","Array","Option","list","List"});
+        false = listMember(AbsynUtil.pathString(cn), {"tuple","Tuple","array","Array","Option","list","List"});
         (cache,(SCode.CLASS(name=cn2,restriction=SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
         (cache,fq_class) = makeFullyQualifiedIdent(cache,cenv,cn2);
         new_ci_state = ClassInf.META_UNIONTYPE(fq_class, typeVars);
@@ -2473,7 +2474,7 @@ algorithm
         (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
         tys = list(Types.boxIfUnboxedType(t) for t in tys);
         if not (listLength(tys)==listLength(typeVars)) then
-          Error.addSourceMessage(Error.UNIONTYPE_WRONG_NUM_TYPEVARS,{Absyn.pathString(fq_class),String(listLength(typeVars)),String(listLength(tys))},info);
+          Error.addSourceMessage(Error.UNIONTYPE_WRONG_NUM_TYPEVARS,{AbsynUtil.pathString(fq_class),String(listLength(typeVars)),String(listLength(tys))},info);
           fail();
         end if;
         ty = Types.setTypeVariables(ty, tys);
@@ -2495,7 +2496,7 @@ algorithm
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        false = listMember((Absyn.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
+        false = listMember((AbsynUtil.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
         cns = Dump.unparseTypeSpec(tSpec);
         Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
       then fail();
@@ -2509,7 +2510,7 @@ algorithm
       equation
         false = Mutable.access(stopInst);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn));
-        cns = Absyn.pathString(cn);
+        cns = AbsynUtil.pathString(cn);
         scope_str = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {cns,scope_str}, info);
       then
@@ -2522,7 +2523,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn));
         Debug.trace("- Inst.instClassdef DERIVED( ");
-        Debug.trace(Absyn.pathString(cn));
+        Debug.trace(AbsynUtil.pathString(cn));
         Debug.trace(") lookup failed\n ENV:");
         Debug.trace(FGraph.printGraphStr(env));
       then
@@ -2627,7 +2628,7 @@ algorithm
 
     case (cache,env,ih, (tSpec as Absyn.TCOMPLEX(p,_,_)) :: restTypeSpecs,pre,dims,impl,localAccTypes,_)
       equation
-        id=Absyn.pathString(p);
+        id=AbsynUtil.pathString(p);
         c = SCode.CLASS(id,SCode.defaultPrefixes,
                         SCode.NOT_ENCAPSULATED(),
                         SCode.NOT_PARTIAL(),
@@ -2636,7 +2637,7 @@ algorithm
                           tSpec,SCode.NOMOD(),
                           SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())),
                         SCode.noComment,
-                        Absyn.dummyInfo);
+                        AbsynUtil.dummyInfo);
         (cache,_,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) =
@@ -2692,15 +2693,15 @@ algorithm
 
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims,_,_,_)
       equation
-        //Debug.traceln("Try instbasic 1 " + Absyn.pathString(path));
+        //Debug.traceln("Try instbasic 1 " + AbsynUtil.pathString(path));
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
         (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
         m_2 = Mod.merge(mods, m_1, className);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
-        //Debug.traceln("Try instbasic 2 " + Absyn.pathString(path) + " " + Mod.printModStr(m_2));
+        //Debug.traceln("Try instbasic 2 " + AbsynUtil.pathString(path) + " " + Mod.printModStr(m_2));
         (cache,_,ih,store,dae,_,ty,tys,_) =
         instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), cdef, inst_dims, false, InstTypes.INNER_CALL(), Connect.emptySet);
-        //Debug.traceln("Try instbasic 3 " + Absyn.pathString(path) + " " + Mod.printModStr(m_2));
+        //Debug.traceln("Try instbasic 3 " + AbsynUtil.pathString(path) + " " + Mod.printModStr(m_2));
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
         b3 = Types.extendsBasicType(ty);
@@ -2734,7 +2735,7 @@ algorithm _ := matchcontinue(p)
   local String n;
   case _
     equation
-      n = Absyn.pathString(p);
+      n = AbsynUtil.pathString(p);
       true = InstUtil.isBuiltInClass(n);
       ErrorExt.rollBack("instBasictypeBaseclass");
     then ();
@@ -2905,7 +2906,7 @@ algorithm
           (outCache, cls as SCode.CLASS(), cenv) :=
             Lookup.lookupClass(inCache, inEnv, class_path, SOME(info));
         else
-          class_name := Absyn.pathString(class_path);
+          class_name := AbsynUtil.pathString(class_path);
           scope_str := FGraph.printGraphPathStr(inEnv);
           Error.addSourceMessageAndFail(Error.LOOKUP_ERROR, {class_name, scope_str}, info);
         end try;
@@ -3569,7 +3570,7 @@ algorithm
 
         //---------
         // We build up a class structure for the complex type
-        id = Absyn.pathString(type_name);
+        id = AbsynUtil.pathString(type_name);
 
         cls = SCode.CLASS(id, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
           SCode.NOT_PARTIAL(), SCode.R_TYPE(), SCode.DERIVED(ts, SCode.NOMOD(),
@@ -3620,13 +3621,13 @@ algorithm
         failure((_, _, _) = Lookup.lookupClass(cache, env, t));
         // good for GDB debugging to re-run the instElement again
         // (cache, env, ih, store, dae, csets, ci_state, vars, graph) = instElement(inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState, inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
-        s = Absyn.pathString(t);
+        s = AbsynUtil.pathString(t);
         scope_str = FGraph.printGraphPathStr(env);
         pre = PrefixUtil.prefixAdd(name, {}, {}, pre, vt, ci_state, info);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s, scope_str, ns}, info);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Lookup class failed:" + Absyn.pathString(t));
+        Debug.traceln("Lookup class failed:" + AbsynUtil.pathString(t));
       then
         fail();
 
@@ -3742,14 +3743,14 @@ algorithm
         umod = Mod.unelabMod(cmod);
         crefs = InstUtil.getCrefFromMod(umod);
         crefs_1 = InstUtil.getCrefFromCompDim(comp) "get crefs from dimension arguments";
-        crefs = List.unionOnTrue(crefs,crefs_1,Absyn.crefEqual);
+        crefs = List.unionOnTrue(crefs,crefs_1,AbsynUtil.crefEqual);
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
         ltmod = List.map1(crefs,InstUtil.getModsForDep,xs);
         cmod2 = List.fold2r(cmod::ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
-        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
+        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,AbsynUtil.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
         //print("REDECL     acquired mods: " + Mod.printModStr(cmod2) + "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre,
@@ -3781,7 +3782,7 @@ algorithm
         umod = Mod.unelabMod(cmod);
         crefs = InstUtil.getCrefFromMod(umod);
         crefs_1 = InstUtil.getCrefFromCompDim(comp);
-        crefs = List.unionOnTrue(crefs,crefs_1,Absyn.crefEqual);
+        crefs = List.unionOnTrue(crefs,crefs_1,AbsynUtil.crefEqual);
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
 
@@ -3789,7 +3790,7 @@ algorithm
         cmod2 = List.fold2r(ltmod,Mod.merge,name,true,DAE.NOMOD());
         SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
-        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
+        //print("("+intString(listLength(ltmod))+")UpdateCompeltsMods_(" + stringDelimitList(List.map(crefs,AbsynUtil.printComponentRefStr),",") + ") subs: " + stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+ "\n");
         //print("     acquired mods: " + Mod.printModStr(cmod2) + "\n");
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
@@ -3901,7 +3902,7 @@ algorithm
     // Local redeclaration of class type path is an id.
     case (SCode.CLASS(), SCode.COMPONENT())
       algorithm
-        name := Absyn.typeSpecPathString(inElement.typeSpec);
+        name := AbsynUtil.typeSpecPathString(inElement.typeSpec);
         true := redecl_name == name;
         (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
           inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
@@ -3911,7 +3912,7 @@ algorithm
     // Local redeclaration of class, type is qualified.
     case (SCode.CLASS(), SCode.COMPONENT())
       algorithm
-        name := Absyn.pathFirstIdent(Absyn.typeSpecPath(inElement.typeSpec));
+        name := AbsynUtil.pathFirstIdent(AbsynUtil.typeSpecPath(inElement.typeSpec));
         true := redecl_name == name;
         (outCache, outEnv, outIH) := updateComponentsInEnv(inCache, inEnv, inIH,
           inPrefix, inMod, {Absyn.CREF_IDENT(name, {})}, inState, inImpl);
@@ -3941,7 +3942,7 @@ algorithm
   // in the same way as: comp(redeclare Real x[3]).
   if SCode.isArrayComponent(inOldComponent) and not SCode.isArrayComponent(inNewComponent) then
     (outCache, is_array) := Lookup.isArrayType(outCache, inEnv,
-      Absyn.typeSpecPath(SCode.getComponentTypeSpec(inNewComponent)));
+      AbsynUtil.typeSpecPath(SCode.getComponentTypeSpec(inNewComponent)));
   end if;
 
   outComponent := SCode.propagateAttributesVar(inOldComponent, inNewComponent, is_array);
@@ -4058,7 +4059,7 @@ algorithm
                   DAE.NAMEMOD(ident=n,
                   mod = rmod as DAE.REDECL(_, _, {(SCode.COMPONENT(name = name),_)}))}),_,_,_,_,_)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         true = stringEq(id, name);
         true = stringEq(id, n);
         (outCache,outEnv,outIH,outUpdatedComps) = updateComponentInEnv(inCache,inEnv,inIH,pre,rmod,cref,inCIState,impl,inUpdatedComps,currentCref);
@@ -4075,7 +4076,7 @@ algorithm
              modifications = smod,
              info = info)),_,_,_,_,_)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         true = stringEq(id, name);
         // redeclare with modfication!!
         false = valueEq(smod, SCode.NOMOD());
@@ -4127,7 +4128,7 @@ algorithm
     // redeclare class!
     case (cache,env,ih,_,DAE.REDECL(element = SCode.CLASS(name = name)),_,_,_,_,_)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         true = stringEq(name, id);
         // fetch the original class!
         (cl, _) = Lookup.lookupClassLocal(env, name);
@@ -4140,7 +4141,7 @@ algorithm
     // Variable with NONE() element is already instantiated.
     case (cache,env,ih,_,_,_,_,_,_,_)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         (cache,_,_,_,is,_) = Lookup.lookupIdent(cache,env,id);
         true = FCore.isTyped(is) "If InstStatus is typed, return";
       then
@@ -4149,7 +4150,7 @@ algorithm
     // the default case
     case (cache,env,ih,_,mods,_,_,_,_,_)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         (cache,_,
           SCode.COMPONENT(
             n,
@@ -4430,19 +4431,19 @@ algorithm
       algorithm
         (cache,SCode.CLASS(name = name),env_1) := Lookup.lookupClass(cache, inEnv, path);
         path_2 := makeFullyQualified2(env_1,name);
-      then (cache,Absyn.makeFullyQualified(path_2));
+      then (cache,AbsynUtil.makeFullyQualified(path_2));
     case _
       algorithm
         crPath := ComponentReference.pathToCref(path);
         (cache,_,_,_,_,_,env,_,name) := Lookup.lookupVarInternal(cache, inEnv, crPath, InstTypes.SEARCH_ALSO_BUILTIN());
         path3 := makeFullyQualified2(env,name);
-      then (cache,Absyn.makeFullyQualified(path3));
+      then (cache,AbsynUtil.makeFullyQualified(path3));
     case _
       algorithm
         crPath := ComponentReference.pathToCref(path);
         (cache,env,_,_,_,_,_,_,name) := Lookup.lookupVarInPackages(cache, inEnv, crPath, {}, Mutable.create(false));
         path3 := makeFullyQualified2(env,name);
-      then (cache,Absyn.makeFullyQualified(path3));
+      then (cache,AbsynUtil.makeFullyQualified(path3));
     else (cache,path);
   end matchcontinue;
 end makeFullyQualifiedFromQual;
@@ -4485,7 +4486,7 @@ algorithm
         (cache,SCode.CLASS(name = name),env_1) = Lookup.lookupClassIdent(cache, env, ident);
         path_2 = makeFullyQualified2(env_1,name);
       then
-        (cache,Absyn.makeFullyQualified(path_2));
+        (cache,AbsynUtil.makeFullyQualified(path_2));
 
     // Needed to make external objects fully-qualified
     case (cache,env,s)
@@ -4496,7 +4497,7 @@ algorithm
         true = name == s;
         SOME(path_2) = FGraph.getScopePath(env);
       then
-        (cache,Absyn.makeFullyQualified(path_2));
+        (cache,AbsynUtil.makeFullyQualified(path_2));
 
     // A type can exist without a class (i.e. builtin functions)
     case (cache,env,s)
@@ -4504,7 +4505,7 @@ algorithm
          (cache,_,env_1) = Lookup.lookupTypeIdent(cache,env, s, NONE());
          path_2 = makeFullyQualified2(env_1,s,inPath);
       then
-        (cache,Absyn.makeFullyQualified(path_2));
+        (cache,AbsynUtil.makeFullyQualified(path_2));
 
      // A package constant, first try to look it up local (top frame)
     case (cache,env,_)
@@ -4512,7 +4513,7 @@ algorithm
         (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternalIdent(cache, env, ident, {}, InstTypes.SEARCH_ALSO_BUILTIN());
         path3 = makeFullyQualified2(env,name);
       then
-        (cache,Absyn.makeFullyQualified(path3));
+        (cache,AbsynUtil.makeFullyQualified(path3));
 
     // TODO! FIXME! what do we do here??!!
     case (cache,env,_)
@@ -4520,7 +4521,7 @@ algorithm
         (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackagesIdent(cache, env, ident, {}, {}, Mutable.create(false));
         path3 = makeFullyQualified2(env,name);
       then
-        (cache,Absyn.makeFullyQualified(path3));
+        (cache,AbsynUtil.makeFullyQualified(path3));
 
     // If it fails, leave name unchanged.
     else (inCache,match inPath case Absyn.IDENT("") then Absyn.IDENT(ident); else inPath; end match);
@@ -4842,18 +4843,18 @@ algorithm
       equation
         (cache,env) = Builtin.initialGraph(cache);
         env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS()),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
+        (cache,(cdef as SCode.CLASS()),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(),
             cdef, {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
-        _ = Absyn.pathString(path);
+        _ = AbsynUtil.pathString(path);
       then
         (cache,env_2,ih,dae);
 
     case (_,_,_,path) /* error instantiating */
       equation
-        cname_str = Absyn.pathString(path);
+        cname_str = AbsynUtil.pathString(path);
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
       then
         fail();
@@ -4924,7 +4925,7 @@ algorithm
       String id;
 
     case DAE.REDECL(element = SCode.CLASS(name = id))
-      then if id == Absyn.pathString(path) then
+      then if id == AbsynUtil.pathString(path) then
         (inMod, DAE.NOMOD()) else (DAE.NOMOD(), inMod);
 
     else (DAE.NOMOD(), inMod);
@@ -5250,7 +5251,7 @@ algorithm
     path := makeFullyQualified2Builtin(name, cachedPath);
   else
     SOME(scope) := oscope;
-    path := Absyn.joinPaths(scope, match cachedPath case Absyn.IDENT("") then Absyn.IDENT(name); else cachedPath; end match);
+    path := AbsynUtil.joinPaths(scope, match cachedPath case Absyn.IDENT("") then Absyn.IDENT(name); else cachedPath; end match);
   end if;
 end makeFullyQualified2;
 
@@ -5530,7 +5531,7 @@ protected function emptyInstHashTableSized
   input Integer size;
   output InstHashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Absyn.pathHashMod,Absyn.pathEqual,Absyn.pathStringDefault,opaqVal));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(AbsynUtil.pathHashMod,AbsynUtil.pathEqual,AbsynUtil.pathStringDefault,opaqVal));
 end emptyInstHashTableSized;
 
 /* end HashTable */
@@ -5580,7 +5581,7 @@ algorithm
   name := StringUtil.stringAppend9(InstTypes.callingScopeStr(callScope), "$",
           SCodeDump.restrString(SCode.getClassRestriction(cls)), "$",
           generatePrefixStr(prefix), "$");
-  cachePath := Absyn.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(env));
+  cachePath := AbsynUtil.joinPaths(Absyn.IDENT(name), FGraph.getGraphName(env));
 end generateCachePath;
 
 public function generatePrefixStr
@@ -5588,7 +5589,7 @@ public function generatePrefixStr
   output String str;
 algorithm
   try
-    str := Absyn.pathString(PrefixUtil.prefixToPath(inPrefix), "$", usefq=false, reverse=true);
+    str := AbsynUtil.pathString(PrefixUtil.prefixToPath(inPrefix), "$", usefq=false, reverse=true);
   else
     str := "";
   end try;
@@ -5599,7 +5600,7 @@ protected function showCacheInfo
   input Absyn.Path inPath;
 algorithm
   if Flags.isSet(Flags.SHOW_INST_CACHE_INFO) then
-    print(inMsg + Absyn.pathString(inPath) + "\n");
+    print(inMsg + AbsynUtil.pathString(inPath) + "\n");
   end if;
 end showCacheInfo;
 

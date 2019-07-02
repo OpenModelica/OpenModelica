@@ -31,6 +31,7 @@
 
 encapsulated package NFBuiltinCall
   import Absyn;
+  import AbsynUtil;
   import NFCall.Call;
   import NFCall.CallAttributes;
   import DAE;
@@ -1632,7 +1633,7 @@ protected
     InstNode scope;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    result := Expression.STRING(Absyn.pathString(InstNode.scopePath(scope, includeRoot = true)));
+    result := Expression.STRING(AbsynUtil.pathString(InstNode.scopePath(scope, includeRoot = true)));
   end typeGetInstanceName;
 
   function typeClockCall

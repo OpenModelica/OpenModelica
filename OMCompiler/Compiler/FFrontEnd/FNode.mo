@@ -41,6 +41,7 @@ encapsulated package FNode
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import DAE;
 import SCode;
 import FCore;
@@ -273,7 +274,7 @@ algorithm
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
       equation
-        name = Absyn.pathLastIdent(path);
+        name = AbsynUtil.pathLastIdent(path);
       then
         Absyn.NAMED_IMPORT(name, path);
   end match;
@@ -2011,7 +2012,7 @@ public function mkExtendsName
   input Absyn.Path inPath;
   output Name outName;
 algorithm
-  outName := extendsPrefix + Absyn.pathString(inPath);
+  outName := extendsPrefix + AbsynUtil.pathString(inPath);
 end mkExtendsName;
 
 public function scopeHashWork

@@ -1146,7 +1146,7 @@ algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
     val := SCode.getNamedAnnotation(ann, "tearingSelect");
-    ts_str := Absyn.crefIdent(Absyn.expCref(val));
+    ts_str := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
     ts := match(ts_str)
       case "always" then SOME(BackendDAE.ALWAYS());
       case "prefer" then SOME(BackendDAE.PREFER());
@@ -4834,7 +4834,7 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
     case(r::rest,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_,_)
       equation
-        true = Absyn.pathEqual(path,path1);
+        true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
         // if not negatet rowmark then
         false = intEq(rowmark[rabs],-mark);
@@ -4846,7 +4846,7 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
     case(r::rest,_,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_)
       equation
-        true = Absyn.pathEqual(path,path1);
+        true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
         // if not negatet rowmark then
         false = intEq(rowmark[rabs],-mark);

@@ -42,6 +42,7 @@ encapsulated package Main
 
 protected
 import Absyn;
+import AbsynUtil;
 import Autoconf;
 import BackendDAE;
 import BackendDAECreate;
@@ -241,15 +242,15 @@ algorithm
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
       equation
-        names = List.map(cls,Absyn.className);
-        names = List.map1(names,Absyn.joinPaths,scope);
-        res = "{" + stringDelimitList(list(Absyn.pathString(n) for n in names),",") + "}\n";
+        names = List.map(cls,AbsynUtil.className);
+        names = List.map1(names,AbsynUtil.joinPaths,scope);
+        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
-        names = List.map(cls,Absyn.className);
-        res = "{" + stringDelimitList(list(Absyn.pathString(n) for n in names),",") + "}\n";
+        names = List.map(cls,AbsynUtil.className);
+        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
   end match;
@@ -359,7 +360,7 @@ algorithm
     // some libs present
     case false
       equation
-        path = Absyn.stringPath(inLib);
+        path = AbsynUtil.stringPath(inLib);
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
         p = SymbolTable.getAbsyn();
         (pnew, true) = CevalScript.loadModel({(path, {"default"}, false)}, mp, p, true, true, true, false);
@@ -522,7 +523,7 @@ algorithm
   cls := Config.classToInstantiate();
   // If no class was explicitly specified, instantiate the last class in the
   // program. Otherwise, instantiate the given class name.
-  cname := if stringEmpty(cls) then Absyn.lastClassname(SymbolTable.getAbsyn()) else Absyn.stringPath(cls);
+  cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
   (cache, env, SOME(dae)) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, true);
 end instantiate;
 
@@ -542,7 +543,7 @@ protected
   list<BackendDAE.Equation> removedInitialEquationLst;
 algorithm
   if Config.simulationCg() then
-    info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
+    info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), AbsynUtil.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
     (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow, "");
     simcodegen(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, inClassName, ap);
@@ -566,7 +567,7 @@ algorithm
   if Config.simulationCg() then
     Print.clearErrorBuf();
     Print.clearBuf();
-    cname := Absyn.pathString(inClassName);
+    cname := AbsynUtil.pathString(inClassName);
 
     // If accepting parModelica create a slightly different default settings.
     // Temporary solution for now since Intel OpenCL dll calls hang.

@@ -270,7 +270,7 @@ public
   protected
     Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
   algorithm
-    (outExp, expanded) := match Absyn.pathFirstIdent(fn_path)
+    (outExp, expanded) := match AbsynUtil.pathFirstIdent(fn_path)
       case "cat" then expandBuiltinCat(args, call);
       case "der" then expandBuiltinGeneric(call);
       case "diagonal" then expandBuiltinDiagonal(listHead(args));

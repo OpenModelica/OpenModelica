@@ -971,7 +971,7 @@ algorithm
         // search in instance hierarchy
         instInner = get(cref, ht);
 
-        // isInner = Absyn.isInner(io);
+        // isInner = AbsynUtil.isInner(io);
         // instInner = if_(isInner, instInner, emptyInstInner(inPrefix, name));
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Looking up: " +
         //  ComponentReference.printComponentRefStr(cref) + " FOUND with innerPrefix: " +
@@ -1348,8 +1348,8 @@ algorithm
     case (_,_,tih::_,pre,n,_)
       equation
         // is component an outer or an inner/outer?
-        //true = Absyn.isOuter(io);  // is outer
-        //false = Absyn.isInner(io); // and is not inner
+        //true = AbsynUtil.isOuter(io);  // is outer
+        //false = AbsynUtil.isInner(io); // and is not inner
         // search the instance hierarchy for the inner component
         instInner = lookupInnerInIH(tih, pre, n);
       then
@@ -1391,7 +1391,7 @@ algorithm
     /* only add inner elements
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name))
       equation
-        false = Absyn.isInner(inInnerOuter);
+        false = AbsynUtil.isInner(inInnerOuter);
         // prefix the name!
         (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
         // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " + ComponentReference.printComponentRefStr(cref) + "\n");
@@ -1501,7 +1501,7 @@ algorithm
     // add inner or innerouter
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
       equation
-        true = Absyn.isInner(io);
+        true = AbsynUtil.isInner(io);
         scopeName = FGraph.getGraphNameStr(inScope);
         // add to instance hierarchy
         outIH = updateInstHierarchy(inIH, inPrefix, io,
@@ -1721,7 +1721,7 @@ algorithm
                       then ""
                       else (" Referenced by 'outer' components: {" +
                         stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") + "}");
-        str = Absyn.pathString(typePath) + " " + fullName + "; defined in scope: " + scope + "." + strOuters;
+        str = AbsynUtil.pathString(typePath) + " " + fullName + "; defined in scope: " + scope + "." + strOuters;
       then
         str;
   end match;

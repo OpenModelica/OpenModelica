@@ -41,6 +41,7 @@ encapsulated package NFModifier
 
 public
 import Absyn;
+import AbsynUtil;
 import BaseAvlTree;
 import NFBinding.Binding;
 import NFComponent.Component;
@@ -112,7 +113,7 @@ uniontype ModifierScope
     name := match scope
       case COMPONENT() then scope.name;
       case CLASS() then scope.name;
-      case EXTENDS() then Absyn.pathString(scope.path);
+      case EXTENDS() then AbsynUtil.pathString(scope.path);
     end match;
   end name;
 
@@ -123,7 +124,7 @@ uniontype ModifierScope
     string := match scope
       case COMPONENT() then "component " + scope.name;
       case CLASS() then "class " + scope.name;
-      case EXTENDS() then "extends " + Absyn.pathString(scope.path);
+      case EXTENDS() then "extends " + AbsynUtil.pathString(scope.path);
     end match;
   end toString;
 end ModifierScope;
@@ -352,7 +353,7 @@ public
     info := match modifier
       case MODIFIER() then modifier.info;
       case REDECLARE() then InstNode.info(modifier.element);
-      else Absyn.dummyInfo;
+      else AbsynUtil.dummyInfo;
     end match;
   end info;
 

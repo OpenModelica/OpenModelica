@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFFunctionDerivative
   import Absyn;
+  import AbsynUtil;
   import SCode;
   import NFInstNode.InstNode;
   import NFFunction.Function;
@@ -193,7 +194,7 @@ protected
       case SCode.Mod.MOD()
         algorithm
           Error.addStrictMessage(Error.MISSING_FUNCTION_DERIVATIVE_NAME,
-            {Absyn.pathString(Function.name(fn))}, mod.info);
+            {AbsynUtil.pathString(Function.name(fn))}, mod.info);
         then
           fnDers;
 
@@ -281,7 +282,7 @@ protected
     end for;
 
     Error.addSourceMessage(Error.INVALID_FUNCTION_DERIVATIVE_INPUT,
-      {name, Absyn.pathString(Function.name(fn))}, info);
+      {name, AbsynUtil.pathString(Function.name(fn))}, info);
     fail();
   end getInputIndex;
 

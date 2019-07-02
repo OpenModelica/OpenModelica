@@ -120,6 +120,7 @@ encapsulated package NFEnvExtends
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import NFSCodeEnv;
 
@@ -355,7 +356,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnvExtends.qualifyExtends failed on " +
-          Absyn.pathString(bc) + "\n");
+          AbsynUtil.pathString(bc) + "\n");
       then
         fail();
 
@@ -466,13 +467,13 @@ algorithm
     case (_, _, _, _, true)
       equation
         path = NFSCodeEnv.getEnvPath(inEnv);
-        path = Absyn.joinPathsOptSuffix(path, inRestPath);
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.joinPathsOptSuffix(path, inRestPath);
+        path = AbsynUtil.makeFullyQualified(path);
       then
         path;
 
     // Otherwise, just join them.
-    case (SOME(path), _, _, _, _) then Absyn.joinPathsOptSuffix(path, inRestPath);
+    case (SOME(path), _, _, _, _) then AbsynUtil.joinPathsOptSuffix(path, inRestPath);
 
   end match;
 end makeExtendsPath;
@@ -540,7 +541,7 @@ algorithm
 
     case (_, _, _)
       equation
-        path = Absyn.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
+        path = AbsynUtil.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
         path = Absyn.QUALIFIED("$E", Absyn.QUALIFIED(inError, path));
       then
         SOME(path);
@@ -637,7 +638,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnvExtends.printExtendsError failed to print error " +
-          Absyn.pathString(inErrorPath));
+          AbsynUtil.pathString(inErrorPath));
       then
         fail();
 
@@ -662,7 +663,7 @@ algorithm
       equation
         true = stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
 
-        bc_str = Absyn.pathString(inBaseClass);
+        bc_str = AbsynUtil.pathString(inBaseClass);
         env_str = NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
           {bc_str, env_str}, inInfo);
@@ -673,7 +674,7 @@ algorithm
       equation
         true = stringEq(inError, BASECLASS_INHERITED_ERROR);
 
-        bc_str = Absyn.pathString(inBaseClass);
+        bc_str = AbsynUtil.pathString(inBaseClass);
         Error.addSourceMessage(Error.INHERITED_EXTENDS, {bc_str}, inInfo);
         exts = NFSCodeEnv.getEnvExtendsFromTable(inEnv);
         printInheritedExtendsError(part, exts, inEnv);
@@ -686,7 +687,7 @@ algorithm
 
         (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = Absyn.pathString(inBaseClass);
+        bc_str = AbsynUtil.pathString(inBaseClass);
         msg = if bc_str==part
           then Error.REPLACEABLE_BASE_CLASS_SIMPLE
           else Error.REPLACEABLE_BASE_CLASS;
@@ -701,7 +702,7 @@ algorithm
 
         (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = Absyn.pathString(inBaseClass);
+        bc_str = AbsynUtil.pathString(inBaseClass);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info);
         Error.addSourceMessage(Error.EXTEND_THROUGH_COMPONENT,
           {part, bc_str}, inInfo);
@@ -731,8 +732,8 @@ algorithm
           inEnv, inEnv, NFSCodeLookup.IGNORE_REDECLARES(), {});
         info1 = NFSCodeEnv.getItemInfo(item);
         NFSCodeEnv.EXTENDS(baseClass = bc, info = info2) = ext;
-        bc = Absyn.makeNotFullyQualified(bc);
-        bc_str = Absyn.pathString(bc);
+        bc = AbsynUtil.makeNotFullyQualified(bc);
+        bc_str = AbsynUtil.pathString(bc);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
         Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
           {inName, bc_str}, info2);
@@ -942,7 +943,7 @@ algorithm
         true = stringEqual(inName, name);
         (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
         path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
 
@@ -980,7 +981,7 @@ algorithm
         env = NFSCodeEnv.mergeItemEnv(item, env);
         (item, env) = lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
         path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
-        path = Absyn.makeFullyQualified(path);
+        path = AbsynUtil.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
 

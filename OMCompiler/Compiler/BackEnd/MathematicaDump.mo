@@ -31,19 +31,19 @@
 
 encapsulated package MathematicaDump
 
+  import Absyn;
+  import AbsynUtil;
   import BackendDAE;
   import BackendDump;
   import BackendVariable;
   import ComponentReference;
   import DAE;
-  import Util;
-  import List;
-  import Absyn;
-  import System;
+  import DAEDump;
   import ExpressionDump;
   import IOStream;
-  import DAEDump;
-
+  import List;
+  import System;
+  import Util;
 public function dumpMmaDAEStr "
 Dumps the equations, initial equations variables and parameters on a form suitable
 for reading into Mathematica"
@@ -327,7 +327,7 @@ algorithm
       then s_2;
     case (DAE.CALL(path = fcn,expLst = args),_,_)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         fs = translateKnownMmaFuncs(fs); // can fail
         argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
         s = stringAppend(fs, "[");
@@ -338,7 +338,7 @@ algorithm
 
     case (DAE.CALL(path = fcn,expLst = args),_,_)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
         s_2 = "FunctionCall[\""+ fs +"\"]["+argstr+"]";
       then
@@ -431,7 +431,7 @@ algorithm
         str;
     case (DAE.REDUCTION(DAE.REDUCTIONINFO(path = fcn),exp,(DAE.REDUCTIONITER(id = id,exp = iterexp)::_)),_,_) //TODO: need to suport more than one iterator.
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         expstr = printExpMmaStr(exp,vars,knvars);
         iterstr = printExpMmaStr(iterexp,vars,knvars);
         str = stringAppendList({"Table[",fs,"[",expstr,"],{",id,", ",iterstr,"}]"});
@@ -439,7 +439,7 @@ algorithm
         str;
 
     case(DAE.ENUM_LITERAL(name=path),_,_) equation
-      str = Absyn.pathString(path);
+      str = AbsynUtil.pathString(path);
       str = "Missing[\"ModelicaName\",\""+str+"\"]";
     then str;
 

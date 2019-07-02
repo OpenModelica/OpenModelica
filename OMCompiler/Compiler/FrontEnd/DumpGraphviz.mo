@@ -38,6 +38,7 @@ encapsulated package DumpGraphviz
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import Graphviz;
 protected import Dump;
 
@@ -103,7 +104,7 @@ algorithm
 
     case (Absyn.CLASS(restriction = r,body = Absyn.PARTS(classParts = parts)))
       equation
-        rs = Absyn.restrString(r);
+        rs = AbsynUtil.restrString(r);
         nl = printParts(parts);
       then
         Graphviz.NODE(rs,{},nl);
@@ -238,7 +239,7 @@ protected function printPath "Create a Node from a Path."
 protected
   String s;
 algorithm
-  s := Absyn.pathString(p);
+  s := AbsynUtil.pathString(p);
   pn := makeLeaf(s, {});
 end printPath;
 

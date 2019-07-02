@@ -898,7 +898,7 @@ algorithm
     guard Inline.checkInlineType(inlineType,fns) and Flags.getConfigEnum(Flags.INLINE_METHOD)==2
       equation
         (fn,comment) = Inline.getFunctionBody(p,fns);
-        funcname = Util.modelicaStringToCStr(Absyn.pathString(p), false);
+        funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(p), false);
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           print("Inline Function " +funcname+" type: "+DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
@@ -926,7 +926,7 @@ algorithm
         (newExp, _) = Inline.inlineCall(inExp, {}, fns);
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          funcname = Util.modelicaStringToCStr(Absyn.pathString(p), false);
+          funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(p), false);
           print("\nBackendInline fallback replace implementation: " +funcname+" type: " +DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
           print("out: " + ExpressionDump.printExpStr(newExp) + "\n");

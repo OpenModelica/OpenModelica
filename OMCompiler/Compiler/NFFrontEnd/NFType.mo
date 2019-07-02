@@ -688,7 +688,7 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then "enumeration " + Absyn.pathString(ty.typePath) +
+      case Type.ENUMERATION() then "enumeration " + AbsynUtil.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
@@ -713,7 +713,7 @@ public
     output String str;
   algorithm
     str := match ty
-      case Type.ENUMERATION() then Absyn.pathString(ty.typePath);
+      case Type.ENUMERATION() then AbsynUtil.pathString(ty.typePath);
       else toString(ty);
     end match;
   end typenameString;

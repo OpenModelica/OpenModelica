@@ -41,6 +41,7 @@ encapsulated package InteractiveUtil
 
 //public imports
 import Absyn;
+import AbsynUtil;
 import ConnectionGraph;
 import DAE;
 import FCore;
@@ -54,7 +55,6 @@ import Interactive;
 // protected imports
 protected
 
-import AbsynUtil;
 import Ceval;
 import CevalScript;
 import ClassInf;
@@ -170,7 +170,7 @@ protected
   Absyn.Path path;
   Absyn.Class cl;
 algorithm
-   path := Absyn.crefToPath(cr);
+   path := AbsynUtil.crefToPath(cr);
    cl := getPathedClassInProgram(path, p);
    classStr := Dump.unparseStr(Absyn.PROGRAM({cl},Absyn.TOP()),false);
 end listClass;
@@ -195,11 +195,11 @@ algorithm
     case(_,_,_,_)
       equation
         ErrorExt.setCheckpoint("InteractiveUtil.extractAllComponentreplacements");
-        comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
+        comps = extractAllComponents(p, AbsynUtil.crefToPath(class_)) "class in package" ;
         // rollback errors if we succeed
         ErrorExt.rollBack("InteractiveUtil.extractAllComponentreplacements");
-        false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
-        class_path = Absyn.crefToPath(class_);
+        false = isClassReadOnly(getPathedClassInProgram(AbsynUtil.crefToPath(class_),p));
+        class_path = AbsynUtil.crefToPath(class_);
         comp_repsrules = GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
         comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
       then comp_reps;
@@ -250,9 +250,9 @@ algorithm
 
     case (p,class_,_,_)
       equation
-        model_path = Absyn.crefToPath(class_);
+        model_path = AbsynUtil.crefToPath(class_);
         true = isClassReadOnly(getPathedClassInProgram(model_path,p));
-        str = Absyn.pathString(model_path);
+        str = AbsynUtil.pathString(model_path);
         str = "Error: class: " + str + " is in a read only file!";
       then
         (str, p);
@@ -299,21 +299,21 @@ algorithm
 
     case (p,class_,_,_)
       equation
-        model_path = Absyn.crefToPath(class_);
+        model_path = AbsynUtil.crefToPath(class_);
         true = isClassReadOnly(getPathedClassInProgram(model_path,p));
-        str = Absyn.pathString(model_path);
+        str = AbsynUtil.pathString(model_path);
         str = "Error: class: " + str + " is in a read only file!";
       then
         (str, p);
 
     case (p,class_,old_comp,new_comp)
       equation
-        model_path = Absyn.crefToPath(class_) "class in package" ;
+        model_path = AbsynUtil.crefToPath(class_) "class in package" ;
         cl = getPathedClassInProgram(model_path, p);
         cl = renameComponentInClass(cl, old_comp, new_comp);
-        w = buildWithin(Absyn.makeFullyQualified(model_path));
+        w = buildWithin(AbsynUtil.makeFullyQualified(model_path));
         p = updateProgram(Absyn.PROGRAM({cl}, w), p);
-        str = Absyn.pathString(model_path);
+        str = AbsynUtil.pathString(model_path);
         paths_2 = stringAppendList({"{",str,"}"});
       then
         (paths_2,p);
@@ -350,7 +350,7 @@ algorithm
     case (comp_reps)
       equation
         GlobalScript.COMPONENTREPLACEMENT(path,_,_) = firstComponentReplacement(comp_reps);
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         res = restComponentReplacementRules(comp_reps);
         res_1 = extractRenamedClassesAsStringList(res);
         res_2 = List.union({path_str}, res_1);
@@ -420,8 +420,8 @@ algorithm
       Option<Absyn.Path> opath;
     case (((class_ as Absyn.CLASS(name = id)),SOME(pa),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
-        path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        true = Absyn.pathEqual(class_id, path_1);
+        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        true = AbsynUtil.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,SOME(pa),
@@ -429,7 +429,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id)),NONE(),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.IDENT(id);
-        true = Absyn.pathEqual(class_id, path_1);
+        true = AbsynUtil.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,NONE(),
@@ -649,11 +649,11 @@ algorithm
     case (((Absyn.COMPONENTITEM(component =
       Absyn.COMPONENT(name = name,arrayDim = arrayDim,modification = mod),condition = cond,comment = comment)) :: res),old_comp,new_comp)
       equation
-        old_comp_path = Absyn.crefToPath(old_comp);
-        old_comp_string = Absyn.pathString(old_comp_path);
+        old_comp_path = AbsynUtil.crefToPath(old_comp);
+        old_comp_string = AbsynUtil.pathString(old_comp_path);
         true = stringEq(name, old_comp_string);
-        new_comp_path = Absyn.crefToPath(new_comp);
-        new_comp_string = Absyn.pathString(new_comp_path);
+        new_comp_path = AbsynUtil.crefToPath(new_comp);
+        new_comp_string = AbsynUtil.pathString(new_comp_path);
         res_1 = renameComponentInComponentitems(res, old_comp, new_comp);
         comp_1 = Absyn.COMPONENTITEM(Absyn.COMPONENT(new_comp_string,arrayDim,mod),cond,comment);
       then
@@ -940,7 +940,7 @@ algorithm
     /* the old name for the component */
     case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,path = p,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str,info = mod_info),old_comp,new_comp)
       equation
-        p_1 = Absyn.crefToPath(replaceStartInComponentRef(Absyn.pathToCref(p), old_comp, new_comp));
+        p_1 = AbsynUtil.crefToPath(replaceStartInComponentRef(AbsynUtil.pathToCref(p), old_comp, new_comp));
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
@@ -948,13 +948,13 @@ algorithm
           SOME(Absyn.CLASSMOD(element_args_1,Absyn.EQMOD(exp_1,info))),str,mod_info);
     case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,path = p,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.NOMOD())),comment = str, info = mod_info),old_comp,new_comp)
       equation
-        p_1 = Absyn.crefToPath(replaceStartInComponentRef(Absyn.pathToCref(p), old_comp, new_comp));
+        p_1 = AbsynUtil.crefToPath(replaceStartInComponentRef(AbsynUtil.pathToCref(p), old_comp, new_comp));
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,p_1,SOME(Absyn.CLASSMOD(element_args_1,Absyn.NOMOD())),str,mod_info);
     case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,path = p,modification = NONE(),comment = str, info = mod_info),old_comp,new_comp)
       equation
-        p_1 = Absyn.crefToPath(replaceStartInComponentRef(Absyn.pathToCref(p), old_comp, new_comp));
+        p_1 = AbsynUtil.crefToPath(replaceStartInComponentRef(AbsynUtil.pathToCref(p), old_comp, new_comp));
       then
         Absyn.MODIFICATION(b,each_,p_1,NONE(),str,mod_info);
     case (Absyn.REDECLARATION(finalPrefix = b,redeclareKeywords = redecl,eachPrefix = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c)),info = info),old_comp,new_comp)
@@ -1540,8 +1540,8 @@ algorithm
     case (comps,cr_from,cr_to)
       equation
         GlobalScript.COMPONENTITEM(path_class,_,cr) = firstComponent(comps);
-        cr_from_1 = Absyn.joinCrefs(cr, cr_from);
-        cr_to_1 = Absyn.joinCrefs(cr, cr_to);
+        cr_from_1 = AbsynUtil.joinCrefs(cr, cr_from);
+        cr_to_1 = AbsynUtil.joinCrefs(cr, cr_to);
         comp_rep = GlobalScript.COMPONENTREPLACEMENT(path_class,cr_from_1,cr_to_1);
         res = restComponents(comps);
         comps_1 = makeComponentsReplacementRulesFromComponents(res, cr_from, cr_to);
@@ -1842,7 +1842,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as GlobalScript.COMPONENTITEM(comp_path,_,_))) = firstComponent(comps);
-        true = Absyn.pathEqual(comp_path, path);
+        true = AbsynUtil.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -1851,7 +1851,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as GlobalScript.EXTENDSITEM(comp_path,_))) = firstComponent(comps);
-        true = Absyn.pathEqual(comp_path, path);
+        true = AbsynUtil.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -1892,7 +1892,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as GlobalScript.COMPONENTITEM(_,comp_path,_))) = firstComponent(comps);
-        true = Absyn.pathEqual(comp_path, path);
+        true = AbsynUtil.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -1901,7 +1901,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as GlobalScript.EXTENDSITEM(_,comp_path))) = firstComponent(comps);
-        true = Absyn.pathEqual(comp_path, path);
+        true = AbsynUtil.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -1969,7 +1969,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id,info = file_info)),SOME(pa),(comps,p,env)))
       equation
         false = isReadOnly(file_info);
-        path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
+        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(FCore.emptyCache(), cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
@@ -2329,16 +2329,16 @@ algorithm
     case (comps,GlobalScript.COMPONENTITEM(the1 = ap,the2 = bp,the3 = cr))
       equation
         GlobalScript.COMPONENTITEM(a,b,c) = firstComponent(comps);
-        true = Absyn.pathEqual(a, ap);
-        true = Absyn.pathEqual(b, bp);
-        true = Absyn.crefEqual(c, cr);
+        true = AbsynUtil.pathEqual(a, ap);
+        true = AbsynUtil.pathEqual(b, bp);
+        true = AbsynUtil.crefEqual(c, cr);
       then
         true;
     case (comps,GlobalScript.EXTENDSITEM(the1 = ap,the2 = bp))
       equation
         GlobalScript.EXTENDSITEM(a,b) = firstComponent(comps);
-        true = Absyn.pathEqual(a, ap);
-        true = Absyn.pathEqual(b, bp);
+        true = AbsynUtil.pathEqual(a, ap);
+        true = AbsynUtil.pathEqual(b, bp);
       then
         true;
     case (comps,comp)
@@ -2455,10 +2455,10 @@ algorithm
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
-        pa_str = Absyn.pathString(pa);
-        path_str = Absyn.pathString(path);
-        cr_pa = Absyn.crefToPath(cr);
-        cr_str = Absyn.pathString(cr_pa);
+        pa_str = AbsynUtil.pathString(pa);
+        path_str = AbsynUtil.pathString(path);
+        cr_pa = AbsynUtil.crefToPath(cr);
+        cr_str = AbsynUtil.pathString(cr_pa);
         res_str = stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
       then
         res_str;
@@ -2466,8 +2466,8 @@ algorithm
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
-        pa_str = Absyn.pathString(pa);
-        path_str = Absyn.pathString(path);
+        pa_str = AbsynUtil.pathString(pa);
+        path_str = AbsynUtil.pathString(path);
         res_str = stringAppendList({s1,"ex: ",pa_str,"\t exte: ",path_str,"\n"});
       then
         res_str;
@@ -2537,14 +2537,14 @@ algorithm
     for x in cache loop
       (po, patho, envo) := x;
       // found the path
-      if Absyn.pathEqual(patho, p_class) then
+      if AbsynUtil.pathEqual(patho, p_class) then
         // make sure the program did not change
         if referenceEq(po, p) then
-          //print("Got it from cache: " + Absyn.pathString(patho) + "\n");
+          //print("Got it from cache: " + AbsynUtil.pathString(patho) + "\n");
           env_2 := envo;
           return;
         else // program not the same, invalidate cache
-          //print("Invalidating: " + Absyn.pathString(patho) + "\n");
+          //print("Invalidating: " + AbsynUtil.pathString(patho) + "\n");
           invalidate := true;
           break;
         end if;
@@ -2580,7 +2580,7 @@ protected
   Absyn.Path po;
 algorithm
   (_, po, _) := entry;
-  matches := Absyn.pathEqual(po, p);
+  matches := AbsynUtil.pathEqual(po, p);
 end matchPath;
 
 public function getClassEnv_dispatch
@@ -3201,7 +3201,7 @@ algorithm
       Absyn.Program p;
     case (class_,p)
       equation
-        p_class = Absyn.crefToPath(class_);
+        p_class = AbsynUtil.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         Absyn.CLASS(info = SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
         filename = Util.testsuiteFriendly(filename);
@@ -3239,19 +3239,19 @@ algorithm
       Absyn.Path path;
     case (Absyn.NAMED_IMPORT(name = id,path = path))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         str = stringAppendList({"kind=named, id=",id,", path=",path_str});
       then
         str;
     case (Absyn.QUAL_IMPORT(path = path))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         str = stringAppendList({"kind=qualified, path=",path_str});
       then
         str;
     case (Absyn.UNQUAL_IMPORT(path = path))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         str = stringAppendList({"kind=unqualified, path=",path_str});
       then
         str;
@@ -3306,7 +3306,7 @@ algorithm
     case (_,p) /* class */
       equation
         cdef = getPathedClassInProgram(p_class, p);
-        filename = Absyn.classFilename(cdef);
+        filename = AbsynUtil.classFilename(cdef);
       then filename;
     else "";
   end matchcontinue;
@@ -3339,7 +3339,7 @@ algorithm
       equation
         cdef = getPathedClassInProgram(path, p);
         within_ = buildWithin(path);
-        cdef_1 = Absyn.setClassFilename(cdef, filename);
+        cdef_1 = AbsynUtil.setClassFilename(cdef, filename);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (true,newp);
@@ -3518,7 +3518,7 @@ algorithm
       inherit,env)
       equation
         (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
-        true = Absyn.pathEqual(inherit, path_1);
+        true = AbsynUtil.pathEqual(inherit, path_1);
         eargs = if not keepRedeclares then {} else list(e for e guard(match e case Absyn.REDECLARATION() then true; else false; end match) in eargs);
       then
         Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs,annOpt),info,constr);
@@ -3558,8 +3558,8 @@ algorithm
 
     case (class_,inheritclass,subident,mod,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
-        inherit_class = Absyn.crefToPath(inheritclass);
+        p_class = AbsynUtil.crefToPath(class_);
+        inherit_class = AbsynUtil.crefToPath(inheritclass);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
@@ -3758,8 +3758,8 @@ algorithm
       inherit,submod,mod,env)
       equation
         (_,path_1) = Inst.makeFullyQualified(FCore.emptyCache(),env, path);
-        true = Absyn.pathEqual(inherit, path_1);
-        eargs_1 = setSubmodifierInElementargs(eargs, Absyn.crefToPath(submod), mod);
+        true = AbsynUtil.pathEqual(inherit, path_1);
+        eargs_1 = setSubmodifierInElementargs(eargs, AbsynUtil.crefToPath(submod), mod);
       then
         Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
     else inElement;
@@ -3789,13 +3789,13 @@ protected
   list<Absyn.ElementSpec> exts;
 algorithm
   try
-    cls_path := Absyn.crefToPath(classRef);
-    name := Absyn.crefToPath(extendsRef);
+    cls_path := AbsynUtil.crefToPath(classRef);
+    name := AbsynUtil.crefToPath(extendsRef);
     cls := getPathedClassInProgram(cls_path, program);
     env := getClassEnv(program, cls_path);
     exts := list(makeExtendsFullyQualified(e, env) for e in getExtendsElementspecInClass(cls));
     {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, Absyn.crefToPath(varRef)));
+    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(varRef)));
   else
     valueStr := "";
   end try;
@@ -3832,14 +3832,14 @@ algorithm
       Absyn.Program p;
     case (class_,inherit_name,subident,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        name = Absyn.crefToPath(inherit_name);
+        p_class = AbsynUtil.crefToPath(class_);
+        name = AbsynUtil.crefToPath(inherit_name);
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
         exts = getExtendsElementspecInClass(cdef);
         exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
         {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        finalPrefix = isModifierfinal(extmod, Absyn.crefToPath(subident));
+        finalPrefix = isModifierfinal(extmod, AbsynUtil.crefToPath(subident));
         res = boolString(finalPrefix);
       then
         res;
@@ -3863,7 +3863,7 @@ algorithm
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args;
       String name1,name2;
-    case ((Absyn.MODIFICATION(finalPrefix = f,path = p1,modification = SOME(_)) :: _),p2) guard Absyn.pathEqual(p1, p2)
+    case ((Absyn.MODIFICATION(finalPrefix = f,path = p1,modification = SOME(_)) :: _),p2) guard AbsynUtil.pathEqual(p1, p2)
       then
         f;
     case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args))) :: _),Absyn.QUALIFIED(name = name2,path = p2)) guard stringEq(name1, name2)
@@ -3934,8 +3934,8 @@ algorithm
       Absyn.Program p;
     case (class_,inherit_name,b,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        name = Absyn.crefToPath(inherit_name);
+        p_class = AbsynUtil.crefToPath(class_);
+        name = AbsynUtil.crefToPath(inherit_name);
         cdef = getPathedClassInProgram(p_class, p);
         exts = getExtendsElementspecInClass(cdef);
         env = getClassEnv(p, p_class);
@@ -3964,7 +3964,7 @@ algorithm
       Absyn.Path extpath,path;
     case (Absyn.EXTENDS(path = extpath),path)
       equation
-        res = Absyn.pathEqual(path, extpath);
+        res = AbsynUtil.pathEqual(path, extpath);
       then
         res;
   end match;
@@ -4126,7 +4126,7 @@ protected function clearComponentModifiersInClass
   input Boolean keepRedeclares;
   output Absyn.Class outClass = inClass;
 algorithm
-  (outClass, true) := Absyn.traverseClassComponents(inClass,
+  (outClass, true) := AbsynUtil.traverseClassComponents(inClass,
     function clearComponentModifiersInCompitems(inComponentName =
       inComponentName, keepRedeclares = keepRedeclares), false);
 end clearComponentModifiersInClass;
@@ -4151,7 +4151,7 @@ algorithm
   while not listEmpty(rest_items) loop
     item :: rest_items := rest_items;
 
-    if Absyn.componentName(item) == inComponentName then
+    if AbsynUtil.componentName(item) == inComponentName then
       // Found component, propagate the modifier to it.
       _ := match item
         case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
@@ -4210,7 +4210,7 @@ protected
   Absyn.Class cls;
 algorithm
   try
-    p_class := Absyn.crefToPath(inClass);
+    p_class := AbsynUtil.crefToPath(inClass);
     within_ := buildWithin(p_class);
     cls := getPathedClassInProgram(p_class, inProgram);
     cls := setComponentSubmodifierInClass(cls, inComponentName, inMod);
@@ -4234,7 +4234,7 @@ protected function setComponentSubmodifierInClass
   input Absyn.Modification inMod;
   output Absyn.Class outClass = inClass;
 algorithm
-  (outClass, true) := Absyn.traverseClassComponents(inClass,
+  (outClass, true) := AbsynUtil.traverseClassComponents(inClass,
     function setComponentSubmodifierInCompitems(inComponentName =
       inComponentName, inMod = inMod), false);
 end setComponentSubmodifierInClass;
@@ -4257,18 +4257,18 @@ protected
   Absyn.EqMod eqmod_old, eqmod_new;
   String comp_id;
 algorithm
-  comp_id := Absyn.crefFirstIdent(inComponentName);
+  comp_id := AbsynUtil.crefFirstIdent(inComponentName);
 
   // Try to find the component we're looking for.
   while not listEmpty(rest_items) loop
     item :: rest_items := rest_items;
 
-    if Absyn.componentName(item) == comp_id then
+    if AbsynUtil.componentName(item) == comp_id then
       // Found component, propagate the modifier to it.
       _ := match item
         case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
           algorithm
-            comp.modification := propagateMod(Absyn.crefToPath(inComponentName),
+            comp.modification := propagateMod(AbsynUtil.crefToPath(inComponentName),
               inMod, comp.modification);
             item.component := comp;
           then
@@ -4307,7 +4307,7 @@ algorithm
     old_eqmod := Absyn.NOMOD();
   end if;
 
-  if Absyn.pathIsIdent(inComponentName) then
+  if AbsynUtil.pathIsIdent(inComponentName) then
     Absyn.CLASSMOD(elementArgLst = new_args, eqMod = new_eqmod) := inNewMod;
 
     // If we have no eqmod but a list of submods, keep the old eqmod.
@@ -4322,7 +4322,7 @@ algorithm
     mod := Absyn.CLASSMOD(new_args, old_eqmod);
   end if;
 
-  outMod := if Absyn.isEmptyMod(mod) then NONE() else SOME(mod);
+  outMod := if AbsynUtil.isEmptyMod(mod) then NONE() else SOME(mod);
 end propagateMod;
 
 protected function mergeElementArgs
@@ -4339,7 +4339,7 @@ algorithm
   else
     for narg in inNewArgs loop
       (outArgs, found) := List.replaceOnTrue(narg, outArgs,
-        function Absyn.elementArgEqualName(inArg2 = narg));
+        function AbsynUtil.elementArgEqualName(inArg2 = narg));
 
       if not found then
         outArgs := narg :: outArgs;
@@ -4362,20 +4362,20 @@ algorithm
   // Search through the submods to see if one matches the component name.
   while not listEmpty(rest_submods) loop
     submod :: rest_submods := rest_submods;
-    comp_name := Absyn.pathRest(inComponentName);
+    comp_name := AbsynUtil.pathRest(inComponentName);
     comp_rest := comp_name;
 
     // Try to find the submod whose path matches the best. If the have a
     // component name a.b.c, then first check a.b.c, then a.b, then a.
     while true loop
-      if Absyn.pathEqual(comp_name, Absyn.elementArgName(submod)) then
+      if AbsynUtil.pathEqual(comp_name, AbsynUtil.elementArgName(submod)) then
         // Found matching submod, propagate the modifier to it.
         _ := match(submod)
           case Absyn.MODIFICATION()
             algorithm
-              if not Absyn.pathIsIdent(comp_name) then
-                comp_name := Absyn.pathPrefix(comp_name);
-                comp_rest := Absyn.removePrefix(comp_name, comp_rest);
+              if not AbsynUtil.pathIsIdent(comp_name) then
+                comp_name := AbsynUtil.pathPrefix(comp_name);
+                comp_rest := AbsynUtil.removePrefix(comp_name, comp_rest);
               end if;
 
               submod.modification := propagateMod(comp_rest, inNewMod, submod.modification);
@@ -4392,22 +4392,22 @@ algorithm
         return;
       end if;
 
-      if Absyn.pathIsIdent(comp_name) then
+      if AbsynUtil.pathIsIdent(comp_name) then
         // Nothing left of the path, break and continue with next submod.
         break;
       else
         // Remove the last part of the component name and see if that matches
         // instead.
-        comp_name := Absyn.pathPrefix(comp_name);
+        comp_name := AbsynUtil.pathPrefix(comp_name);
       end if;
     end while;
 
     outSubMods := submod :: outSubMods;
   end while;
 
-  if not Absyn.isEmptyMod(inNewMod) then
+  if not AbsynUtil.isEmptyMod(inNewMod) then
     // No matching submod was found, create a new submod and insert it into the list.
-    submod := createNestedSubMod(Absyn.pathRest(inComponentName), inNewMod);
+    submod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inNewMod);
     outSubMods := listReverse(submod :: outSubMods);
   else
     outSubMods := inSubMods;
@@ -4419,15 +4419,15 @@ protected function createNestedSubMod
   input Absyn.Modification inMod;
   output Absyn.ElementArg outSubMod;
 algorithm
-  if Absyn.pathIsIdent(inComponentName) then
+  if AbsynUtil.pathIsIdent(inComponentName) then
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
-        SOME(inMod), NONE(), Absyn.dummyInfo);
+        SOME(inMod), NONE(), AbsynUtil.dummyInfo);
   else
-    outSubMod := createNestedSubMod(Absyn.pathRest(inComponentName), inMod);
+    outSubMod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inMod);
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(),
-                   Absyn.pathFirstPath(inComponentName),
+                   AbsynUtil.pathFirstPath(inComponentName),
                    SOME(Absyn.CLASSMOD({outSubMod}, Absyn.NOMOD())), NONE(),
-                   Absyn.dummyInfo);
+                   AbsynUtil.dummyInfo);
   end if;
 end createNestedSubMod;
 
@@ -4458,7 +4458,7 @@ algorithm
       Absyn.Path p,p1,p2;
 
     case ({},_,Absyn.CLASSMOD({},Absyn.NOMOD())) then {}; // Empty modification.
-    case ({},_,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),inPath,SOME(mod),NONE(),Absyn.dummyInfo)};
+    case ({},_,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),inPath,SOME(mod),NONE(),AbsynUtil.dummyInfo)};
 
     // Clear modification m(...)
     case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = (p as Absyn.IDENT(name = name)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_)), info = info) :: rest),Absyn.IDENT(name = submodident),(Absyn.CLASSMOD( {},Absyn.NOMOD())))
@@ -4491,7 +4491,7 @@ algorithm
     // Clear modification, m.n
      case ((Absyn.MODIFICATION(path = (p1 as Absyn.QUALIFIED())) :: rest),p2,Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
-        true = Absyn.pathEqual(p1, p2);
+        true = AbsynUtil.pathEqual(p1, p2);
       then
         (rest);
 
@@ -4530,7 +4530,7 @@ algorithm
    // modification, m.n for m.n
    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = p1,modification = SOME(Absyn.CLASSMOD()),comment = cmt,info = info) :: rest),p2,mod)
       equation
-        true = Absyn.pathEqual(p1,p2);
+        true = AbsynUtil.pathEqual(p1,p2);
       then
         (Absyn.MODIFICATION(f,each_,p1,SOME(mod),cmt,info) :: rest);
 
@@ -4558,7 +4558,7 @@ algorithm
     local
       Absyn.Path p;
       list<Absyn.ElementArg> rest;
-    case (_,Absyn.MODIFICATION(path = p)::_) guard Absyn.pathEqual(path,p) then true;
+    case (_,Absyn.MODIFICATION(path = p)::_) guard AbsynUtil.pathEqual(path,p) then true;
     case (_,_::rest) then findPathModification(path,rest);
     case (_,{}) then false;
   end match;
@@ -4577,12 +4577,12 @@ protected
   list<Absyn.ElementArg> args;
 algorithm
   try
-    cls_path := Absyn.crefToPath(classRef);
-    name := Absyn.crefIdent(varRef);
+    cls_path := AbsynUtil.crefToPath(classRef);
+    name := AbsynUtil.crefIdent(varRef);
     cls := getPathedClassInProgram(cls_path, program);
     Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification =
       SOME(Absyn.CLASSMOD(elementArgLst = args)))) := getComponentInClass(cls, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, Absyn.crefToPath(subModRef)));
+    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(subModRef)));
   else
     valueStr := "";
   end try;
@@ -4604,17 +4604,17 @@ algorithm
     arg :: rest_args := rest_args;
 
     found := match arg
-      case Absyn.MODIFICATION() guard Absyn.pathEqual(arg.path, path)
+      case Absyn.MODIFICATION() guard AbsynUtil.pathEqual(arg.path, path)
         algorithm
           SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = value))) := arg.modification;
         then
           true;
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(name = name))
-          guard name == Absyn.pathFirstIdent(path)
+          guard name == AbsynUtil.pathFirstIdent(path)
         algorithm
           SOME(Absyn.CLASSMOD(elementArgLst = rest_args)) := arg.modification;
-          value := getModificationValue(rest_args, Absyn.pathRest(path));
+          value := getModificationValue(rest_args, AbsynUtil.pathRest(path));
         then
           true;
 
@@ -4645,14 +4645,14 @@ algorithm
 
     case (class_,ident,subident,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(ident);
+        p_class = AbsynUtil.crefToPath(class_);
+        Absyn.IDENT(name) = AbsynUtil.crefToPath(ident);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
         compelts = List.map(comps, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
-        mod = getModificationValues(elementArgLst, Absyn.crefToPath(subident));
+        mod = getModificationValues(elementArgLst, AbsynUtil.crefToPath(subident));
         res = Dump.unparseModificationStr(mod);
       then
         res;
@@ -4677,7 +4677,7 @@ algorithm
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args;
       String name1,name2;
-    case ((Absyn.MODIFICATION(path = p1,modification = SOME(mod)) :: _),p2) guard Absyn.pathEqual(p1, p2)
+    case ((Absyn.MODIFICATION(path = p1,modification = SOME(mod)) :: _),p2) guard AbsynUtil.pathEqual(p1, p2)
       then
         mod;
     case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args))) :: _),Absyn.QUALIFIED(name = name2,path = p2))
@@ -4748,14 +4748,14 @@ algorithm
         (name :: names);
     case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD({},_))) :: rest))
       equation
-        name = Absyn.pathString(p);
+        name = AbsynUtil.pathString(p);
         names = getModificationNames(rest);
       then
         (name :: names);
         // modifier with submodifiers -and- binding, e.g. m(...)=2, add also m to list
     case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD()))) :: rest))
       equation
-        name = Absyn.pathString(p);
+        name = AbsynUtil.pathString(p);
         names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
         names = getModificationNames(rest);
         res = listAppend(names2, names);
@@ -4764,7 +4764,7 @@ algorithm
       // modifier with submodifiers, e.g. m(...)
     case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,_))) :: rest))
       equation
-        name = Absyn.pathString(p);
+        name = AbsynUtil.pathString(p);
         names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
         names = getModificationNames(rest);
         res = listAppend(names2, names);
@@ -4836,7 +4836,7 @@ algorithm
       end match;
 
       for c in components loop
-        if Absyn.componentName(c) == componentName then
+        if AbsynUtil.componentName(c) == componentName then
           component := c;
           return;
         end if;
@@ -4886,22 +4886,22 @@ algorithm
 
     case (class_,name,exp,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(varname) = Absyn.crefToPath(name);
+        p_class = AbsynUtil.crefToPath(class_);
+        Absyn.IDENT(varname) = AbsynUtil.crefToPath(name);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         (cdef_1, b) = setVariableBindingInClass(cdef, varname, exp);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-        str = if b then "Ok" else ("Error: component with name: " + varname + " in class: " + Absyn.pathString(p_class) + " not found.");
+        str = if b then "Ok" else ("Error: component with name: " + varname + " in class: " + AbsynUtil.pathString(p_class) + " not found.");
       then
         (newp,str);
 
     case (class_,name,_,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(_) = Absyn.crefToPath(name);
+        p_class = AbsynUtil.crefToPath(class_);
+        Absyn.IDENT(_) = AbsynUtil.crefToPath(name);
         failure(_ = getPathedClassInProgram(p_class, p));
-        str = "Error: class: " + Absyn.pathString(p_class) + " not found.";
+        str = "Error: class: " + AbsynUtil.pathString(p_class) + " not found.";
       then
         (p,str);
 
@@ -5093,13 +5093,13 @@ algorithm
       guard
         stringEq(id, id2)
       then
-        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest), true);
+        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,Absyn.EQMOD(exp,AbsynUtil.dummyInfo)))),cond,cmt) :: rest), true);
 
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),id2,exp)
       guard
         stringEq(id, id2)
       then
-        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest), true);
+        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,AbsynUtil.dummyInfo)))),cond,cmt) :: rest), true);
 
     case (item :: rest,id,exp)
       equation
@@ -5122,7 +5122,7 @@ algorithm
         buildWithin(path);
     case (path)
       equation
-        w_path = Absyn.stripLast(path);
+        w_path = AbsynUtil.stripLast(path);
       then
         Absyn.WITHIN(w_path);
   end match;
@@ -5197,16 +5197,16 @@ algorithm
       list<String> path_str_lst;
     case (p,_,(new_name as Absyn.CREF_QUAL()))
       equation
-        new_path = Absyn.crefToPath(new_name) "class in package" ;
-        tmp_str = Absyn.pathString(new_path);
+        new_path = AbsynUtil.crefToPath(new_name) "class in package" ;
+        tmp_str = AbsynUtil.pathString(new_path);
         print(tmp_str);
         print("\n") "the path is qualified so it cannot be renamed" ;
       then
         ("error",p);
     case (p,(old_class as Absyn.CREF_IDENT()),new_name)
       equation
-        old_path = Absyn.crefToPath(old_class) "class in package" ;
-        new_path = Absyn.crefToPath(new_name);
+        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
+        new_path = AbsynUtil.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(pa_1);
         ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
@@ -5217,10 +5217,10 @@ algorithm
         (res,p_1);
     case (p,(old_class as Absyn.CREF_QUAL()),new_name)
       equation
-        old_path = Absyn.crefToPath(old_class) "class in package" ;
-        new_path_1 = Absyn.crefToPath(new_name);
-        old_path_no_last = Absyn.stripLast(old_path);
-        new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
+        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
+        new_path_1 = AbsynUtil.crefToPath(new_name);
+        old_path_no_last = AbsynUtil.stripLast(old_path);
+        new_path = AbsynUtil.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(pa_1);
         ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
@@ -5265,10 +5265,10 @@ algorithm
 
     case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
-        path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        true = Absyn.pathEqual(old_class_path, path_1);
-        new_name = Absyn.pathLastIdent(new_class_path);
-        path_str = Absyn.pathString(new_class_path);
+        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        true = AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name = AbsynUtil.pathLastIdent(new_class_path);
+        path_str = AbsynUtil.pathString(new_class_path);
       then
         ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -5277,9 +5277,9 @@ algorithm
     case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
-        true = Absyn.pathEqual(old_class_path, path_1);
-        new_name = Absyn.pathLastIdent(new_class_path);
-        path_str = Absyn.pathString(new_class_path);
+        true = AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name = AbsynUtil.pathLastIdent(new_class_path);
+        path_str = AbsynUtil.pathString(new_class_path);
       then
         ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -5287,10 +5287,10 @@ algorithm
 
     case (((class_ as Absyn.CLASS(name = id)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
-        path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
+        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then Absyn.pathString(path_1) else "";
+        path_str = if changed then AbsynUtil.pathString(path_1) else "";
       then
         ((class_1,SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -5301,7 +5301,7 @@ algorithm
         path_1 = Absyn.IDENT(id);
         cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then Absyn.pathString(path_1) else "";
+        path_str = if changed then AbsynUtil.pathString(path_1) else "";
       then
         ((class_1,NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
@@ -5368,7 +5368,7 @@ algorithm
         (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1);
         path_1 = Absyn.IDENT(name);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.DERIVED(Absyn.TPATH(new_path,subscripts),attrs,elementarg,co),file_info),true);
@@ -5501,7 +5501,7 @@ algorithm
         (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path, new_comp);
       then
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
@@ -5509,7 +5509,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.EXTENDS(new_path,elargs,annOpt),true);
@@ -5545,7 +5545,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.NAMED_IMPORT(id,new_path),true);
@@ -5553,7 +5553,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.QUAL_IMPORT(new_path),true);
@@ -5561,7 +5561,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = Absyn.pathEqual(path, old_comp);
+        true = AbsynUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.UNQUAL_IMPORT(new_path),true);
@@ -5585,20 +5585,20 @@ algorithm
     case (Absyn.IDENT(),Absyn.IDENT(name = b)) then Absyn.IDENT(b);
     case ((Absyn.IDENT()),(p2 as Absyn.QUALIFIED()))
       equation
-        b_1 = Absyn.pathLastIdent(p2);
+        b_1 = AbsynUtil.pathLastIdent(p2);
       then
         Absyn.IDENT(b_1);
     case ((p1 as Absyn.QUALIFIED()),(p2 as Absyn.IDENT()))
       equation
-        a_1 = Absyn.stripLast(p1);
-        res = Absyn.joinPaths(a_1, p2);
+        a_1 = AbsynUtil.stripLast(p1);
+        res = AbsynUtil.joinPaths(a_1, p2);
       then
         res;
     case ((p1 as Absyn.QUALIFIED()),(p2 as Absyn.QUALIFIED()))
       equation
-        a_1 = Absyn.stripLast(p1);
-        b_1 = Absyn.pathLastIdent(p2);
-        res = Absyn.joinPaths(a_1, Absyn.IDENT(b_1));
+        a_1 = AbsynUtil.stripLast(p1);
+        b_1 = AbsynUtil.pathLastIdent(p2);
+        res = AbsynUtil.joinPaths(a_1, Absyn.IDENT(b_1));
       then
         res;
   end match;
@@ -5626,7 +5626,7 @@ algorithm
     case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
     case (cr,p)
       equation
-        path = Absyn.crefToPath(cr);
+        path = AbsynUtil.crefToPath(cr);
         class_ = getPathedClassInProgram(path, p);
         res = isPrimitiveClass(class_, p);
       then
@@ -5644,18 +5644,18 @@ protected
   Absyn.Within w;
   Absyn.Path wp;
 algorithm
-  if Absyn.crefIsIdent(inComponentRef) then
-    name := Absyn.crefFirstIdent(inComponentRef);
+  if AbsynUtil.crefIsIdent(inComponentRef) then
+    name := AbsynUtil.crefFirstIdent(inComponentRef);
     w := Absyn.TOP();
   else
-    wp := Absyn.crefToPath(inComponentRef);
-    (wp, Absyn.IDENT(name)) := Absyn.splitQualAndIdentPath(wp);
+    wp := AbsynUtil.crefToPath(inComponentRef);
+    (wp, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(wp);
     w := Absyn.WITHIN(wp);
   end if;
 
   outProgram := updateProgram(Absyn.PROGRAM({
-    Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), Absyn.dummyParts,
-        Absyn.dummyInfo)}, w), inProgram);
+    Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), AbsynUtil.dummyParts,
+        AbsynUtil.dummyInfo)}, w), inProgram);
 end createModel;
 
 protected function deleteClass
@@ -5678,9 +5678,9 @@ algorithm
 
     case (class_,(p as Absyn.PROGRAM()))
       equation
-        cpath = Absyn.crefToPath(class_) "Class inside another class, inside another class" ;
-        parentcpath = Absyn.stripLast(cpath);
-        parentparentcpath = Absyn.stripLast(parentcpath);
+        cpath = AbsynUtil.crefToPath(class_) "Class inside another class, inside another class" ;
+        parentcpath = AbsynUtil.stripLast(cpath);
+        parentparentcpath = AbsynUtil.stripLast(parentcpath);
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
@@ -5689,8 +5689,8 @@ algorithm
         ("true",newp);
     case (class_,(p as Absyn.PROGRAM()))
       equation
-        cpath = Absyn.crefToPath(class_) "Class inside other class" ;
-        parentcpath = Absyn.stripLast(cpath);
+        cpath = AbsynUtil.crefToPath(class_) "Class inside other class" ;
+        parentcpath = AbsynUtil.stripLast(cpath);
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
@@ -5699,7 +5699,7 @@ algorithm
         ("true",newp);
     case (class_,(p as Absyn.PROGRAM()))
       equation
-        cpath = Absyn.crefToPath(class_) "Top level class" ;
+        cpath = AbsynUtil.crefToPath(class_) "Top level class" ;
         cdef = getPathedClassInProgram(cpath, p);
         p.classes = deleteClassFromList(cdef, p.classes);
       then
@@ -5874,14 +5874,14 @@ algorithm
 
     case (_, _)
       equation
-        path = Absyn.crefToPath(cr);
+        path = AbsynUtil.crefToPath(cr);
         Absyn.CLASS(
 
           body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _),
                                        attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, _, _, _, _)) )
         = getPathedClassInProgram(path, p);
         dim_str = getClassDimensions(cdef);
-        strBaseClassPath = Absyn.pathString(baseClassPath);
+        strBaseClassPath = AbsynUtil.pathString(baseClassPath);
         strFlow = if flowPrefix then "\"flow\"" else "\"\"";
         strStream = if streamPrefix then "\"stream\"" else "\"\"";
         strVariability = attrVariabilityStr(attr);
@@ -5915,11 +5915,11 @@ algorithm
 
     case (_, _)
       equation
-        path = Absyn.crefToPath(cr);
+        path = AbsynUtil.crefToPath(cr);
         cls = getPathedClassInProgram(path, p);
-        Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = Absyn.getExternalDecl(cls);
+        Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = AbsynUtil.getExternalDecl(cls);
         strLanguage  = "\"" + Util.getOptionOrDefault(lang, "") + "\"";
-        strOutput  = "\"" + Absyn.printComponentRefStr(
+        strOutput  = "\"" + AbsynUtil.printComponentRefStr(
                                 Util.getOptionOrDefault(
                                   output_,
                                   Absyn.CREF_IDENT("", {}))) + "\"";
@@ -6240,7 +6240,7 @@ algorithm
    /* a class with parts */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
@@ -6249,7 +6249,7 @@ algorithm
     /* an extended class: model extends M end M; */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(parts=parts),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
@@ -6278,7 +6278,7 @@ algorithm
     /* a class with parts */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         getComponentsContainsName(cr, publst);
@@ -6286,7 +6286,7 @@ algorithm
         false;
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(path, p);
         protlst = getProtectedList(parts);
         getComponentsContainsName(cr, protlst);
@@ -6295,7 +6295,7 @@ algorithm
     /* an extended class with parts: model extends M end M; */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         getComponentsContainsName(cr, publst);
@@ -6303,7 +6303,7 @@ algorithm
         false;
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         protlst = getProtectedList(parts);
         getComponentsContainsName(cr, protlst);
@@ -6332,7 +6332,7 @@ algorithm
     /* a class with parts */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
@@ -6341,7 +6341,7 @@ algorithm
     /* an extended class with parts: model extends M end M; */
     case (cr,classname,_)
       equation
-        path = Absyn.crefToPath(classname);
+        path = AbsynUtil.crefToPath(classname);
         Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
@@ -6389,7 +6389,7 @@ algorithm
     /* a class with parts - public elements */
     case (model_,str,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         res = isReplaceableInElements(public_elementitem_list, str);
@@ -6397,7 +6397,7 @@ algorithm
     /* a class with parts - protected elements */
     case (model_,str,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
         res = isReplaceableInElements(protected_elementitem_list, str);
@@ -6405,7 +6405,7 @@ algorithm
     /* an extended class with parts: model extends M end M; public elements */
     case (model_,str,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         res = isReplaceableInElements(public_elementitem_list, str);
@@ -6413,7 +6413,7 @@ algorithm
     /* an extended class with parts: model extends M end M; protected elements */
     case (model_,str,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)) = getPathedClassInProgram(modelpath, p);
         protected_elementitem_list = getProtectedList(parts);
         res = isReplaceableInElements(protected_elementitem_list, str);
@@ -6687,7 +6687,7 @@ algorithm
 
     case (cr,p)
       equation
-        path = Absyn.crefToPath(cr);
+        path = AbsynUtil.crefToPath(cr);
         getPathedClassInProgram(path, p);
       then
         true;
@@ -6721,7 +6721,7 @@ algorithm
     case (Absyn.CLASS(restriction = Absyn.R_TYPE()),_) then true;
     case (Absyn.CLASS(name = cname,restriction = Absyn.R_CLASS(),body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path,_))),p)
       equation
-        inmodel = Absyn.crefToPath(Absyn.CREF_IDENT(cname,{}));
+        inmodel = AbsynUtil.crefToPath(Absyn.CREF_IDENT(cname,{}));
         (cdef,_) = lookupClassdef(path, inmodel, p);
         res = isPrimitiveClass(cdef, p);
       then
@@ -6834,7 +6834,7 @@ algorithm
     case (Absyn.PROGRAM(classes = cls,within_ = Absyn.WITHIN(path = path2)),vars)
       equation
         Values.CODE(Absyn.C_TYPENAME(path)) = getVariableValue("scope", vars) "This should probably be forbidden." ;
-        newpath = Absyn.joinPaths(path, path2);
+        newpath = AbsynUtil.joinPaths(path, path2);
       then
         Absyn.PROGRAM(cls,Absyn.WITHIN(newpath));
     else inProgram;
@@ -6930,53 +6930,53 @@ algorithm
 
     case (path,inmodel,p as Absyn.PROGRAM())
       equation
-        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 1 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
-        path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
+        path = InstUtil.removeSelfReference(AbsynUtil.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
         cdef = getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP()));
-        newpath = Absyn.joinPaths(inmodel, path);
+        newpath = AbsynUtil.joinPaths(inmodel, path);
       then
         (cdef,newpath);
 
     case (path,inmodel,p) /* Then look inside next level */
       equation
-        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
-        innewpath = Absyn.stripLast(inmodel);
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 2 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
+        innewpath = AbsynUtil.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
         (cdef,respath);
 
     case (path,_,p)
       equation
-        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 3 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Real"));
+          AbsynUtil.dummyParts,AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Integer"));
+          AbsynUtil.dummyParts,AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("String"));
+          AbsynUtil.dummyParts,AbsynUtil.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Boolean"));
+          AbsynUtil.dummyParts,AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       equation
         true = Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
-          Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Clock"));
+          AbsynUtil.dummyParts,AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
 
     case (path,inmodel,_)
       equation
-        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
-        s1 = Absyn.pathString(path);
-        s2 = Absyn.pathString(inmodel);
+        //fprintln(Flags.INTER, "InteractiveUtil.lookupClassdef 8 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
+        s1 = AbsynUtil.pathString(path);
+        s2 = AbsynUtil.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
       then
         fail();
@@ -7004,8 +7004,8 @@ algorithm
 
     case (name,(model_ as Absyn.CREF_QUAL()),(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
+        modelpath = AbsynUtil.crefToPath(model_);
+        modelwithin = AbsynUtil.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
@@ -7013,7 +7013,7 @@ algorithm
 
     case (name,(model_ as Absyn.CREF_IDENT()),(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
@@ -7124,7 +7124,7 @@ algorithm
             case SOME((tppath, compitem))
               algorithm
                 // It is an update operation
-                if Absyn.pathEqual(tppath, Absyn.typeSpecPath(spec.typeSpec)) then
+                if AbsynUtil.pathEqual(tppath, AbsynUtil.typeSpecPath(spec.typeSpec)) then
                   spec.components := list(match c
                     case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = name2)) guard stringEq(name, name2) then compitem;
                     else c;
@@ -7223,7 +7223,7 @@ algorithm
     // class cannot be found
     case (_,_,model_,_,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         failure(_ = getPathedClassInProgram(modelpath, p));
       then
         (p,"false\n");
@@ -7231,17 +7231,17 @@ algorithm
     // adding component to model that resides inside package
     case (name,tp,model_,nargs,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
-        w = match modelpath case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(modelpath)); end match;
+        modelpath = AbsynUtil.crefToPath(model_);
+        w = match modelpath case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(modelpath)); end match;
         (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) = getPathedClassInProgram(modelpath, p);
-        tppath = Absyn.crefToPath(tp);
+        tppath = AbsynUtil.crefToPath(tp);
         annotation_ = annotationListToAbsynComment(nargs,NONE());
         modification = modificationToAbsyn(nargs,NONE());
         (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,redecl,io,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(Absyn.pathStripSamePrefix(tppath,modelpath),NONE()),{
+          Absyn.COMPONENTS(attr,Absyn.TPATH(AbsynUtil.pathStripSamePrefix(tppath,modelpath),NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
           SOURCEINFO(filename,false,0,0,0,0,0.0),NONE())));
         newp = updateProgram(Absyn.PROGRAM({newcdef},w), p);
@@ -7403,8 +7403,8 @@ algorithm
     // Updating a component to a model
     case (name,model_,nargs,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
-        tppath2 = Absyn.crefToPath(inTypeCref);
+        modelpath = AbsynUtil.crefToPath(model_);
+        tppath2 = AbsynUtil.crefToPath(inTypeCref);
         Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
         protlst = getProtectedList(parts);
@@ -7433,11 +7433,11 @@ protected
   Absyn.Class cls;
   Absyn.Within class_within;
 algorithm
-  class_path := Absyn.crefToPath(inClass);
+  class_path := AbsynUtil.crefToPath(inClass);
   cls := getPathedClassInProgram(class_path, inProgram);
   cls := addClassAnnotationToClass(cls, annotationListToAbsyn(inAnnotation));
-  class_within := if Absyn.pathIsIdent(class_path) then
-    Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(class_path));
+  class_within := if AbsynUtil.pathIsIdent(class_path) then
+    Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(class_path));
   outProgram := updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end addClassAnnotation;
 
@@ -7454,42 +7454,42 @@ algorithm
   body := match body
     case Absyn.PARTS()
       algorithm
-        body.ann := {List.fold(body.ann, Absyn.mergeAnnotations, inAnnotation)};
+        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
       then
         body;
 
     case Absyn.DERIVED()
       algorithm
-        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+        body.comment := AbsynUtil.mergeCommentAnnotation(inAnnotation, body.comment);
       then
         body;
 
     case Absyn.ENUMERATION()
       algorithm
-        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+        body.comment := AbsynUtil.mergeCommentAnnotation(inAnnotation, body.comment);
       then
         body;
 
     case Absyn.OVERLOAD()
       algorithm
-        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+        body.comment := AbsynUtil.mergeCommentAnnotation(inAnnotation, body.comment);
       then
         body;
 
     case Absyn.CLASS_EXTENDS()
       algorithm
-        body.ann := {List.fold(body.ann, Absyn.mergeAnnotations, inAnnotation)};
+        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
       then
         body;
 
     case Absyn.PDER()
       algorithm
-        body.comment := Absyn.mergeCommentAnnotation(inAnnotation, body.comment);
+        body.comment := AbsynUtil.mergeCommentAnnotation(inAnnotation, body.comment);
       then
         body;
   end match;
 
-  outClass := Absyn.setClassBody(inClass, body);
+  outClass := AbsynUtil.setClassBody(inClass, body);
 end addClassAnnotationToClass;
 
 protected function getInheritedClassesHelper
@@ -7579,14 +7579,14 @@ algorithm
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         lst = getInheritedClassesHelper(c, cdef, env_1);
         failure({} = lst);
-        paths = List.map(lst, Absyn.crefToPath);
+        paths = List.map(lst, AbsynUtil.crefToPath);
       then
         paths;
     case (modelpath) /* if above fails, baseclass not defined. return its name */
       equation
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         extendsLst = getExtendsInClass(cdef);
-        paths = List.map(extendsLst, Absyn.elementSpecToPath);
+        paths = List.map(extendsLst, AbsynUtil.elementSpecToPath);
       then
         paths;
     else {};
@@ -7610,7 +7610,7 @@ algorithm
       Absyn.Program p;
     case (model_,p)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         count = countBaseClasses(cdef);
       then
@@ -7644,7 +7644,7 @@ algorithm
 
     case (model_,n)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
@@ -7654,11 +7654,11 @@ algorithm
         str;
     case (model_,n) /* if above fails, baseclass not defined. return its name */
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         extends_ = getExtendsInClass(cdef);
         Absyn.EXTENDS(path,_,_) = listGet(extends_, n);
-        s = Absyn.pathString(path);
+        s = AbsynUtil.pathString(path);
       then
         s;
     else "Error";
@@ -7702,7 +7702,7 @@ algorithm
         cdef = inClass;
         extends_ = getExtendsInClass(cdef);
         Absyn.EXTENDS(path,_,annOpt) = listGet(extends_, n);
-        s = Absyn.pathString(path);
+        s = AbsynUtil.pathString(path);
       then
         (s, annOpt);
 
@@ -7905,8 +7905,8 @@ algorithm
       equation
         lst = getBaseClasses(cdef, env);
         cref = listGet(lst, n);
-        path = Absyn.crefToPath(cref);
-        str = Absyn.pathString(path);
+        path = AbsynUtil.crefToPath(cref);
+        str = AbsynUtil.pathString(path);
       then
         str;
     /* If that fails, instantiate, which takes more time */
@@ -7919,8 +7919,8 @@ algorithm
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         lst = getBaseClasses(cdef, env_2);
         cref = listGet(lst, n);
-        path = Absyn.crefToPath(cref);
-        str = Absyn.pathString(path);
+        path = AbsynUtil.crefToPath(cref);
+        str = AbsynUtil.pathString(path);
       then
         str;
   end matchcontinue;
@@ -7999,7 +7999,7 @@ algorithm
 
     case (model_,b)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
@@ -8038,7 +8038,7 @@ protected
   list<Absyn.Element> comps1, comps2, comps;
 algorithm
   try
-    model_path := Absyn.crefToPath(inClassPath);
+    model_path := AbsynUtil.crefToPath(inClassPath);
     cdef := getPathedClassInProgram(model_path, inProgram);
     comps1 := getPublicElementsInClass(cdef);
     comps2 := getProtectedElementsInClass(cdef);
@@ -8110,7 +8110,7 @@ algorithm
       Integer n;
     case (model_,p,n)
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = listGet(getConnections(cdef), n);
         str = getStringComment(cmt);
@@ -8165,38 +8165,38 @@ algorithm
 
     case ((model_ as Absyn.CREF_IDENT()),c1,c2,{},(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         ("Ok",newp);
 
     case ((model_ as Absyn.CREF_QUAL()),c1,c2,{},(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        package_ = Absyn.stripLast(modelpath);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
+        package_ = AbsynUtil.stripLast(modelpath);
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         ("Ok",newp);
     case ((model_ as Absyn.CREF_IDENT()),c1,c2,nargs,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         ("Ok",newp);
     case ((model_ as Absyn.CREF_QUAL()),c1,c2,nargs,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        package_ = Absyn.stripLast(modelpath);
+        package_ = AbsynUtil.stripLast(modelpath);
         cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         ("Ok",newp);
@@ -8230,8 +8230,8 @@ algorithm
 
     case (model_,c1,c2,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
+        modelpath = AbsynUtil.crefToPath(model_);
+        modelwithin = AbsynUtil.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
@@ -8239,7 +8239,7 @@ algorithm
         ("Ok",newp);
     case (model_,c1,c2,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
@@ -8308,7 +8308,7 @@ algorithm
     case ({},_,_) then {};
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = cn1,connector2 = cn2)) :: xs),c1,c2)
       guard
-        Absyn.crefEqual(c1,cn1) and Absyn.crefEqual(c2,cn2)
+        AbsynUtil.crefEqual(c1,cn1) and AbsynUtil.crefEqual(c2,cn2)
       then
         deleteEquationInEqlist(xs, c1, c2);
     case ((x :: xs),c1,c2)
@@ -8368,7 +8368,7 @@ algorithm
 
     case ((model_ as Absyn.CREF_IDENT()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
@@ -8376,23 +8376,23 @@ algorithm
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
-                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         (true, newp);
 
     case ((model_ as Absyn.CREF_QUAL()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        package_ = Absyn.stripLast(modelpath);
+        package_ = AbsynUtil.stripLast(modelpath);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
-                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, AbsynUtil.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
@@ -8426,8 +8426,8 @@ algorithm
 
     case (model_, from_, to_, condition_, immediate_, reset_, synchronize_, priority_ ,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
-        modelwithin = Absyn.stripLast(modelpath);
+        modelpath = AbsynUtil.crefToPath(model_);
+        modelwithin = AbsynUtil.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
@@ -8435,7 +8435,7 @@ algorithm
         (true, newp);
     case (model_, from_, to_, condition_, immediate_, reset_, synchronize_, priority_ ,(p as Absyn.PROGRAM()))
       equation
-        modelpath = Absyn.crefToPath(model_);
+        modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
@@ -8523,7 +8523,7 @@ algorithm
 
     case ({},_,_,_,_,_,_,_) then {};
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, namedArgs))) :: xs), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
-      guard Absyn.crefEqual(name, Absyn.CREF_IDENT("transition", {}))
+      guard AbsynUtil.crefEqual(name, Absyn.CREF_IDENT("transition", {}))
       equation
         args = List.map(expArgs, Dump.printExpStr);
         args = addOrUpdateNamedArg(namedArgs, "immediate", "true", args, 4);
@@ -8667,7 +8667,7 @@ algorithm
       String cmt;
     case (class_,cr1,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
+        p_class = AbsynUtil.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         cmt = getComponentCommentInClass(cdef, cr1);
       then
@@ -8819,7 +8819,7 @@ algorithm
       Absyn.ComponentItem c;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad),comment = compcmt) :: _),cr)
       equation
-        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
+        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
         cmt = getClassCommentInCommentOpt(compcmt);
       then
         cmt;
@@ -8864,7 +8864,7 @@ algorithm
 
     case (class_,cr1,cmt,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
+        p_class = AbsynUtil.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentCommentInClass(cdef, cr1, cmt);
@@ -9044,7 +9044,7 @@ algorithm
       Absyn.ComponentItem c;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
       equation
-        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
+        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
         compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
@@ -9078,7 +9078,7 @@ algorithm
       String cmt;
     case (class_,cr1,cr2,cmt,p as Absyn.PROGRAM())
       equation
-        p_class = Absyn.crefToPath(class_);
+        p_class = AbsynUtil.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setConnectionCommentInClass(cdef, cr1, cr2, cmt);
@@ -9184,8 +9184,8 @@ algorithm
       SourceInfo info;
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt, info = info) :: es),cr1,cr2,cmt)
       equation
-        true = Absyn.crefEqual(cr1, c1);
-        true = Absyn.crefEqual(cr2, c2);
+        true = AbsynUtil.crefEqual(cr1, c1);
+        true = AbsynUtil.crefEqual(cr2, c2);
         eqcmt_1 = setClassCommentInCommentOpt(eqcmt, cmt);
       then
         (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt_1,info) :: es);
@@ -9248,7 +9248,7 @@ algorithm
       Absyn.Program p;
     case (model_,p)
       equation
-        modelpath = Absyn.crefToPath(model_) "A complete instantiation is far too expensive. Instead we only
+        modelpath = AbsynUtil.crefToPath(model_) "A complete instantiation is far too expensive. Instead we only
     look through the components of the class for types declared using
     the \"connector\" restricted class keyword. We also look in
     base classes  (recursively)
@@ -9283,7 +9283,7 @@ algorithm
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-        tpstr = Absyn.pathString(tp);
+        tpstr = AbsynUtil.pathString(tp);
         resstr = stringAppendList({str, ",", tpstr});
       then
         resstr;
@@ -9368,7 +9368,7 @@ algorithm
     case (modelpath,p,_,_,_)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        SOME(str) = Absyn.getNamedAnnotationInClass(cdef,id,f);
+        SOME(str) = AbsynUtil.getNamedAnnotationInClass(cdef,id,f);
       then
         str;
 
@@ -9389,7 +9389,7 @@ algorithm
 
     case (Absyn.PROGRAM(classes={cdef}))
       equation
-        SOME(usesStr) = Absyn.getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
+        SOME(usesStr) = AbsynUtil.getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
       then
         usesStr;
 
@@ -9516,7 +9516,7 @@ public function getTopPackages
   input Absyn.Program p;
   output list<Absyn.Path> paths;
 algorithm
-  paths := List.map(getTopPackagesInProgram(p),Absyn.makeIdentPathFromString);
+  paths := List.map(getTopPackagesInProgram(p),AbsynUtil.makeIdentPathFromString);
 end getTopPackages;
 
 protected function getTopPackagesInProgram
@@ -9567,12 +9567,12 @@ algorithm
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation
         strlist = getPackagesInParts(parts);
-      then List.map(strlist,Absyn.makeIdentPathFromString);
+      then List.map(strlist,AbsynUtil.makeIdentPathFromString);
     /* an extended class with parts: model extends M end M; */
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       equation
         strlist = getPackagesInParts(parts);
-      then List.map(strlist,Absyn.makeIdentPathFromString);
+      then List.map(strlist,AbsynUtil.makeIdentPathFromString);
      /* a derived class */
     case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(_,_))))
       equation
@@ -9677,7 +9677,7 @@ public function getTopClassnames
   input Absyn.Program p;
   output list<Absyn.Path> paths;
 algorithm
-  paths := List.map(getTopClassnamesInProgram(p),Absyn.makeIdentPathFromString);
+  paths := List.map(getTopClassnamesInProgram(p),AbsynUtil.makeIdentPathFromString);
 end getTopClassnames;
 
 public function getTopClassnamesInProgram
@@ -9726,7 +9726,7 @@ algorithm
     case Absyn.PROGRAM(classes = {}) then {};
     case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w))
       equation
-        p = Absyn.joinWithinPath(w, Absyn.IDENT(id));
+        p = AbsynUtil.joinWithinPath(w, Absyn.IDENT(id));
         res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w));
       then p::res;
     case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w))
@@ -9761,12 +9761,12 @@ algorithm
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b,c)
       equation
         strlist = getClassnamesInParts(parts,b,c);
-      then List.map(strlist,Absyn.makeIdentPathFromString);
+      then List.map(strlist,AbsynUtil.makeIdentPathFromString);
     /* an extended class with parts: model extends M end M; */
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),b,c)
       equation
         strlist = getClassnamesInParts(parts,b,c);
-      then List.map(strlist,Absyn.makeIdentPathFromString);
+      then List.map(strlist,AbsynUtil.makeIdentPathFromString);
     /* a derived class */
     case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(_, _))),_,_)
       equation
@@ -9898,8 +9898,8 @@ algorithm
       equation
         (_,_,cenv) = Lookup.lookupClassIdent(FCore.emptyCache(), env, baseClassName, SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);
-        p1 = Absyn.joinPaths(envpath, Absyn.IDENT(baseClassName));
-        cref = Absyn.pathToCref(p1);
+        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(baseClassName));
+        cref = AbsynUtil.pathToCref(p1);
         res = getBaseClassesFromParts(parts, env);
       then cref::res;
 
@@ -9907,17 +9907,17 @@ algorithm
       equation
         (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);
-        tpname = Absyn.pathLastIdent(tp);
-        p1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = Absyn.pathToCref(p1);
-        // str = Absyn.pathString(p1);
+        tpname = AbsynUtil.pathLastIdent(tp);
+        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
+        cref = AbsynUtil.pathToCref(p1);
+        // str = AbsynUtil.pathString(p1);
       then {cref};
 
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
       equation
         (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
         NONE() = FGraph.getScopePath(cenv);
-        cref = Absyn.pathToCref(tp);
+        cref = AbsynUtil.pathToCref(tp);
         then {cref};
 
     else {};
@@ -9989,9 +9989,9 @@ algorithm
         cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
         (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
         SOME(envpath) = FGraph.getScopePath(env_1);
-        tpname = Absyn.pathLastIdent(path);
-        p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = Absyn.pathToCref(p_1);
+        tpname = AbsynUtil.pathLastIdent(path);
+        p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
+        cref = AbsynUtil.pathToCref(p_1);
       then
         (cref :: cl);
 
@@ -10000,7 +10000,7 @@ algorithm
         cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
         (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
         NONE() = FGraph.getScopePath(env_1);
-        cref = Absyn.pathToCref(path);
+        cref = AbsynUtil.pathToCref(path);
       then
         (cref :: cl);
 
@@ -10122,10 +10122,10 @@ algorithm
 
   ann := match body
     case Absyn.PARTS()
-      then List.flatten(list(Absyn.annotationToElementArgs(a) for a in body.ann));
+      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
 
     case Absyn.CLASS_EXTENDS()
-      then List.flatten(list(Absyn.annotationToElementArgs(a) for a in body.ann));
+      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
 
     case Absyn.DERIVED(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
       then ann;
@@ -10435,7 +10435,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
         // ss = getDocumentationAnnotationInfo(xs);
       then s;
@@ -10462,7 +10462,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -10488,7 +10488,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "__OpenModelica_infoHeader"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -11213,7 +11213,7 @@ algorithm
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,
             Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(),
-            smod, false, Mod.COMPONENT(ann_name), Absyn.dummyInfo);
+            smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
 
           c := SCode.classSetPartial(c, SCode.NOT_PARTIAL());
           (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
@@ -11472,12 +11472,12 @@ algorithm
 
     // Class already fully instantiated, return cached data.
     case Interactive.GRAPHIC_ENV_FULL_CACHE()
-      then (inCache.cache, inCache.env, Absyn.dummyProgram, inCache);
+      then (inCache.cache, inCache.env, AbsynUtil.dummyProgram, inCache);
 
     // Partial cache, instantiate class to make full cache if needed.
     case Interactive.GRAPHIC_ENV_PARTIAL_CACHE()
       algorithm
-        if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
+        if AbsynUtil.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outCache := inCache.cache;
           outEnv := inCache.env;
           outGraphicEnvCache := inCache;
@@ -11493,7 +11493,7 @@ algorithm
     // No cache, make partial or full cache as needed.
     case Interactive.GRAPHIC_ENV_NO_CACHE()
       algorithm
-        if Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod) then
+        if AbsynUtil.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
           scode_program := SCodeUtil.translateAbsyn2SCode(outGraphicProgram);
           (outCache, outEnv) := Inst.makeEnvFromProgram(scode_program);
@@ -12010,8 +12010,8 @@ protected
   String tp_name;
   FGraph.Graph env;
 algorithm
-  if Absyn.pathIsFullyQualified(p) then
-    typename := Absyn.pathString(p);
+  if AbsynUtil.pathIsFullyQualified(p) then
+    typename := AbsynUtil.pathString(p);
     return;
   end if;
 
@@ -12027,13 +12027,13 @@ algorithm
         // qualified, and we can use it as it is.
         if isSome(oenv_path) then
           SOME(env_path) := oenv_path;
-          tp_name := Absyn.pathLastIdent(p);
-          tp_path := Absyn.suffixPath(env_path, tp_name);
+          tp_name := AbsynUtil.pathLastIdent(p);
+          tp_path := AbsynUtil.suffixPath(env_path, tp_name);
         else
           tp_path := p;
         end if;
       then
-        Absyn.pathString(tp_path);
+        AbsynUtil.pathString(tp_path);
 
     // If the first case fails, i.e. if the type name doesn't reference an
     // existing type, try to construct a fully qualified path to where the
@@ -12041,7 +12041,7 @@ algorithm
     case ()
       algorithm
         // Look up the first identifier in the type name.
-        pkg_path := Absyn.pathFirstPath(p);
+        pkg_path := AbsynUtil.pathFirstPath(p);
         (_, _, env) := Lookup.lookupClass(FCore.emptyCache(), inEnv, pkg_path);
         oenv_path := FGraph.getScopePath(env);
 
@@ -12050,14 +12050,14 @@ algorithm
         // oenv_path is NONE, then the type name is already fully qualified.
         if isSome(oenv_path) then
           SOME(env_path) := oenv_path;
-          tp_path := Absyn.joinPaths(env_path, p);
+          tp_path := AbsynUtil.joinPaths(env_path, p);
         else
           tp_path := p;
         end if;
       then
-        Absyn.pathString(tp_path);
+        AbsynUtil.pathString(tp_path);
 
-    else Absyn.pathString(p);
+    else AbsynUtil.pathString(p);
 
   end matchcontinue;
 
@@ -12609,7 +12609,7 @@ algorithm
   match (inWithin,inPath)
     local Absyn.Path p, p1, p2;
     case (Absyn.TOP(), p) then p;
-    case (Absyn.WITHIN(path = p),p1) equation p2 = Absyn.joinPaths(p, p1); then p2;
+    case (Absyn.WITHIN(path = p),p1) equation p2 = AbsynUtil.joinPaths(p, p1); then p2;
   end match;
 end buildPath;
 
@@ -12705,7 +12705,7 @@ algorithm
         /* adeas31 2012-01-25: false indicates that the classnamesrecursive doesn't look into protected sections */
         /* adeas31 2016-11-29: false indicates that the classnamesrecursive doesn't look for constants */
         (_, paths) = getClassNamesRecursive(NONE(), p, false, false, {});
-        s2 = stringAppendList(List.map1r(list(Absyn.pathString(p) for p in paths),stringAppend,"\n  "));
+        s2 = stringAppendList(List.map1r(list(AbsynUtil.pathString(p) for p in paths),stringAppend,"\n  "));
         Error.addMessage(Error.INSERT_CLASS, {name,s1,s2});
       then
         fail();
@@ -13840,7 +13840,7 @@ algorithm
       Option<Absyn.Modification> res;
       Absyn.NamedArg x;
     case ({}) then NONE();
-    case ((Absyn.NAMEDARG(argName = "binding",argValue = exp) :: _)) then SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,Absyn.dummyInfo)));
+    case ((Absyn.NAMEDARG(argName = "binding",argValue = exp) :: _)) then SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,AbsynUtil.dummyInfo)));
     case ((Absyn.NAMEDARG(argName = "modification",argValue = Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))) :: _)) then SOME(mod);
     case ((_ :: xs)) equation res = modificationToAbsyn2(xs); then res;
   end match;
@@ -14003,16 +14003,16 @@ algorithm
     /* Covers the case annotate=Diagram(1) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {e}, argNames = {})))
       equation
-        p = Absyn.crefToPath(cr);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        p = AbsynUtil.crefToPath(cr);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(x=1,y=2) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))
       equation
         eltarglst = List.map(nargs, namedargToModification);
-        p = Absyn.crefToPath(cr);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+        p = AbsynUtil.crefToPath(cr);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
@@ -14020,8 +14020,8 @@ algorithm
       equation
         eltarglst = List.map(nargs, namedargToModification);
         emod = recordConstructorToModification(e);
-        p = Absyn.crefToPath(cr);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+        p = AbsynUtil.crefToPath(cr);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     else
@@ -14051,12 +14051,12 @@ algorithm
     case (Absyn.NAMEDARG(argName = id,argValue = (c as Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = {})))))
       equation
         Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(elts,_)), comment = NONE()) = recordConstructorToModification(c);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     case (Absyn.NAMEDARG(argName = id,argValue = e))
       equation
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo /*Bad*/))),NONE(),Absyn.dummyInfo);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo /*Bad*/))),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     else
@@ -14089,7 +14089,7 @@ algorithm
     case (classname,p)
       equation
         cdef = getPathedClassInProgram(classname, p);
-        filename = Absyn.classFilename(cdef);
+        filename = AbsynUtil.classFilename(cdef);
         p_1 = getSurroundingPackage(classname, p);
         p_2 = removeInnerDiffFiledClasses(p_1);
       then
@@ -14220,10 +14220,10 @@ algorithm
     case _
       equation
         cdef = getPathedClassInProgram(classpath, p);
-        filename1 = Absyn.classFilename(cdef);
-        ppath = Absyn.stripLast(classpath);
+        filename1 = AbsynUtil.classFilename(cdef);
+        ppath = AbsynUtil.stripLast(classpath);
         pdef = getPathedClassInProgram(ppath, p);
-        filename2 = Absyn.classFilename(pdef);
+        filename2 = AbsynUtil.classFilename(pdef);
         true = stringEq(filename1, filename2);
         res = getSurroundingPackage(ppath, p);
       then
@@ -14493,7 +14493,7 @@ algorithm
     case(Absyn.NOSUB()) then Absyn.NOSUB();
     case(Absyn.SUBSCRIPT(e))
       equation
-        (e1,_) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,_) = AbsynUtil.traverseExp(e,transformFlatExp,0);
       then
         Absyn.SUBSCRIPT(e1);
   end match;
@@ -14537,7 +14537,7 @@ algorithm
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.EQMOD(e,info))))
       equation
         eltArgs1=List.map(eltArgs,transformFlatElementArg);
-        (e1,_) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,_) = AbsynUtil.traverseExp(e,transformFlatExp,0);
       then SOME(Absyn.CLASSMOD(eltArgs1,Absyn.EQMOD(e1,info)));
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.NOMOD())))
       equation
@@ -14557,8 +14557,8 @@ algorithm
     list<Absyn.Subscript> ss;
     String s;
     case _ equation
-      ss = Absyn.crefLastSubs(cr);
-      cr1 = Absyn.crefStripLastSubs(cr);
+      ss = AbsynUtil.crefLastSubs(cr);
+      cr1 = AbsynUtil.crefStripLastSubs(cr);
       s = Dump.printComponentRefStr(cr1);
     then Absyn.CREF_IDENT(s,ss);
   end match;
@@ -14598,7 +14598,7 @@ algorithm
 
     case(Absyn.EQ_IF(e1,thenpart,elseifpart,elsepart))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         thenpart1 = List.map(thenpart,transformFlatEquationItem);
         elsepart1 = List.map(elsepart,transformFlatEquationItem);
         elseifpart1 = List.map(elseifpart,transformFlatElseIfPart);
@@ -14607,15 +14607,15 @@ algorithm
 
     case(Absyn.EQ_EQUALS(e1,e2))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
-        (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
+        (e21,_) = AbsynUtil.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.EQ_EQUALS(e11,e21);
 
     case(Absyn.EQ_PDE(e1,e2,cr1))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
-        (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
+        (e21,_) = AbsynUtil.traverseExp(e2,transformFlatExp,0);
         cr11 = transformFlatComponentRef(cr1);
       then
         Absyn.EQ_PDE(e11,e21,cr11);
@@ -14629,14 +14629,14 @@ algorithm
 
     case(Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},forEqns))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         forEqns1 = List.map(forEqns,transformFlatEquationItem);
       then
         Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},forEqns1);
 
     case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         elseWhenEqns1 = List.map(elseWhenEqns,transformFlatElseIfPart);
         whenEqns1 = List.map(whenEqns,transformFlatEquationItem);
       then
@@ -14661,7 +14661,7 @@ algorithm
       list<Absyn.EquationItem> eqnitems,eqnitems1;
     case((e1,eqnitems))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         eqnitems1 = List.map(eqnitems,transformFlatEquationItem);
       then
         ((e11,eqnitems1));
@@ -14697,7 +14697,7 @@ algorithm
     local Absyn.Exp e1,e11; Absyn.Ident id;
     case(Absyn.NAMEDARG(id,e1))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
       then Absyn.NAMEDARG(id,e11);
   end match;
 end transformFlatNamedArg;
@@ -14713,7 +14713,7 @@ algorithm
       Integer i;
     case( (e,i))
       equation
-        (e1,i) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,i) = AbsynUtil.traverseExp(e,transformFlatExp,0);
       then ((e1,i));
   end match;
 end transformFlatExpTrav;
@@ -14766,14 +14766,14 @@ algorithm
       Absyn.FunctionArgs fargs,fargs1;
     case (Absyn.ALG_ASSIGN(Absyn.CREF(cr),e1))
       equation
-        (_,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (_,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         cr1 = transformFlatComponentRef(cr);
       then
         Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1);
     case (Absyn.ALG_ASSIGN(e1 as Absyn.TUPLE(_),e2))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
-        (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
+        (e21,_) = AbsynUtil.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.ALG_ASSIGN(e11,e21);
     case (Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart))
@@ -14781,24 +14781,24 @@ algorithm
         thenPart1 = List.map(thenPart,transformFlatAlgorithmItem);
         elseIfPart1 =  List.map(elseIfPart,transformFlatElseIfAlgorithm);
         elsePart1 = List.map(elsePart,transformFlatAlgorithmItem);
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
     then
       Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1);
     case (Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},body))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
       then
         Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},body1);
     case(Absyn.ALG_WHILE(e1,body))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
       then
         Absyn.ALG_WHILE(e11,body1);
     case (Absyn.ALG_WHEN_A(e1,body,whenBranch))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
         whenBranch1 =  List.map(whenBranch,transformFlatElseIfAlgorithm);
       then
@@ -14825,7 +14825,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitems,algitems1;
     case((e1,algitems))
       equation
-        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = AbsynUtil.traverseExp(e1,transformFlatExp,0);
         algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then ((e11,algitems1));
   end match;
@@ -15055,7 +15055,7 @@ algorithm
     case (Absyn.CLASS(name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
       equation
         indexArg = intString(index);
-        pathArg = Absyn.pathLastIdent(path);
+        pathArg = AbsynUtil.pathLastIdent(path);
         strs = getDefinitionParts(body.classParts, body.typeVars, false);
         strs = "(metarecord" :: ident :: indexArg :: pathArg :: strs;
       then stringDelimitList(strs, " ");
@@ -15103,9 +15103,9 @@ protected function getDefinitionPathString
   output String out;
 algorithm
   out := match (path)
-    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + Absyn.pathString(path);
+    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + AbsynUtil.pathString(path);
     // Thus, scope/lookup is done by the application recieving this information
-    case _ then Absyn.pathString(path);
+    case _ then AbsynUtil.pathString(path);
   end match;
 end getDefinitionPathString;
 
@@ -15299,7 +15299,7 @@ algorithm
       list<Absyn.ComponentItem> lst;
  /*   case (Absyn.EXTENDS(path = path))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         str = stringAppendList({"elementtype=extends, path=",path_str});
       then
         str;
@@ -15334,7 +15334,7 @@ algorithm
       list<Absyn.ComponentItem> lst;
  /*   case (Absyn.EXTENDS(path = path))
       equation
-        path_str = Absyn.pathString(path);
+        path_str = AbsynUtil.pathString(path);
         str = stringAppendList({"elementtype=extends, path=",path_str});
       then
         str;
@@ -15414,7 +15414,7 @@ algorithm
       String c;
     case (c, r)
       equation
-        res = Absyn.joinPaths(r, Absyn.IDENT(c));
+        res = AbsynUtil.joinPaths(r, Absyn.IDENT(c));
       then res;
   end match;
 end joinPaths;
@@ -15451,13 +15451,13 @@ algorithm
       then (inPath,acc);
     case (NONE(),p as Absyn.PROGRAM(classes=classes),b,c,acc)
       equation
-        strlst = List.map(classes, Absyn.getClassName);
-        result_path_lst = List.mapMap(strlst, Absyn.makeIdentPathFromString, Util.makeOption);
+        strlst = List.map(classes, AbsynUtil.getClassName);
+        result_path_lst = List.mapMap(strlst, AbsynUtil.makeIdentPathFromString, Util.makeOption);
         (_,acc) = List.map3Fold(result_path_lst, getClassNamesRecursive, p, b, c, acc);
       then (inPath,acc);
     case (SOME(pp),_,_,_,_)
       equation
-        s1 = Absyn.pathString(pp);
+        s1 = AbsynUtil.pathString(pp);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,"<TOP>"});
       then (inPath,{});
   end matchcontinue;
@@ -15493,7 +15493,7 @@ algorithm
       then acc;
     case (SCode.CLASS(name=name),SOME(path),acc)
       equation
-        path = Absyn.suffixPath(path,name);
+        path = AbsynUtil.suffixPath(path,name);
         acc = path::acc;
         classes = SCode.getClassElements(inElement);
         acc = List.fold1(classes,getSCodeClassNamesRecursiveWork,SOME(path),acc);
@@ -15510,8 +15510,8 @@ algorithm
   comp := match(path,prg)
   local Absyn.Class cl;
     case(_,_) equation
-      cl = getPathedClassInProgram(Absyn.stripLast(path),prg);
-      comp = getComponentElementInClass(cl,Absyn.pathLastIdent(path));
+      cl = getPathedClassInProgram(AbsynUtil.stripLast(path),prg);
+      comp = getComponentElementInClass(cl,AbsynUtil.pathLastIdent(path));
     then comp;
   end match;
 end getPathedComponentElementInProgram;
@@ -15693,7 +15693,7 @@ protected
   Absyn.Class cls;
 algorithm
   try
-    p_class := Absyn.crefToPath(inClass);
+    p_class := AbsynUtil.crefToPath(inClass);
     within_ := buildWithin(p_class);
     cls := getPathedClassInProgram(p_class, inProgram);
     cls := setComponentDimensionsInClass(cls, inComponentName, inDimensions);
@@ -15712,7 +15712,7 @@ protected function setComponentDimensionsInClass
   input list<Absyn.Exp> inDimensions;
   output Absyn.Class outClass = inClass;
 algorithm
-  (outClass, true) := Absyn.traverseClassComponents(inClass,
+  (outClass, true) := AbsynUtil.traverseClassComponents(inClass,
     function setComponentDimensionsInCompitems(inComponentName = inComponentName, inDimensions = inDimensions), false);
 end setComponentDimensionsInClass;
 
@@ -15734,18 +15734,18 @@ protected
   Absyn.EqMod eqmod_old, eqmod_new;
   String comp_id;
 algorithm
-  comp_id := Absyn.crefFirstIdent(inComponentName);
+  comp_id := AbsynUtil.crefFirstIdent(inComponentName);
 
   // Try to find the component we're looking for.
   while not listEmpty(rest_items) loop
     item :: rest_items := rest_items;
 
-    if Absyn.componentName(item) == comp_id then
+    if AbsynUtil.componentName(item) == comp_id then
       // Found component, propagate the modifier to it.
       _ := match item
         case Absyn.COMPONENTITEM(component = comp as Absyn.COMPONENT())
           algorithm
-            comp.arrayDim := List.map(inDimensions, Absyn.makeSubscript);
+            comp.arrayDim := List.map(inDimensions, AbsynUtil.makeSubscript);
             item.component := comp;
           then
             ();
@@ -15919,16 +15919,16 @@ protected
   Boolean b,c;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  strlst := List.map(classes, Absyn.getClassName);
-  result_path_lst := List.mapMap(strlst, Absyn.makeIdentPathFromString, Util.makeOption);
+  strlst := List.map(classes, AbsynUtil.getClassName);
+  result_path_lst := List.mapMap(strlst, AbsynUtil.makeIdentPathFromString, Util.makeOption);
   (_,acc) := List.map3Fold(result_path_lst, getClassNamesRecursive, inProgram, true, false, {});
   paths := {};
   for pt in acc loop
-    // print("Path: " + Absyn.pathString(pt) + ":\n");
+    // print("Path: " + AbsynUtil.pathString(pt) + ":\n");
     extendPaths := getAllInheritedClasses(pt, inProgram);
-    // print("  " + stringDelimitList(List.map(extendPaths, Absyn.pathStringDefault), ", ")); print("\n");
+    // print("  " + stringDelimitList(List.map(extendPaths, AbsynUtil.pathStringDefault), ", ")); print("\n");
     // System.fflush();
-    b := List.applyAndFold1(extendPaths, boolOr, Absyn.pathSuffixOfr, inClass, false);
+    b := List.applyAndFold1(extendPaths, boolOr, AbsynUtil.pathSuffixOfr, inClass, false);
     paths := if b then pt::paths else paths;
   end for;
   paths := List.unique(paths);
@@ -16066,7 +16066,7 @@ algorithm
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,
             Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(),
-            smod, false, Mod.COMPONENT(ann_name), Absyn.dummyInfo);
+            smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
 
           c := SCode.classSetPartial(c, SCode.NOT_PARTIAL());
           (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
@@ -16144,11 +16144,11 @@ protected
   Absyn.Class cls;
   Absyn.Within class_within;
 algorithm
-  class_path := Absyn.crefToPath(inClass);
+  class_path := AbsynUtil.crefToPath(inClass);
   cls := getPathedClassInProgram(class_path, inProgram);
   cls := updateConnectionAnnotationInClass(cls, inFrom, inTo, annotationListToAbsyn(inAnnotation));
-  class_within := if Absyn.pathIsIdent(class_path) then
-    Absyn.TOP() else Absyn.WITHIN(Absyn.stripLast(class_path));
+  class_within := if AbsynUtil.pathIsIdent(class_path) then
+    Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(class_path));
   outProgram := updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end updateConnectionAnnotation;
 
@@ -16212,8 +16212,8 @@ algorithm
     eq := match eq
       case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
         algorithm
-          c1_str := Absyn.crefString(c1);
-          c2_str := Absyn.crefString(c2);
+          c1_str := AbsynUtil.crefString(c1);
+          c2_str := AbsynUtil.crefString(c2);
 
           if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
             eq.comment := SOME(Absyn.COMMENT(SOME(ann), NONE()));
@@ -16250,7 +16250,7 @@ algorithm
 
     case (path, from, to, fromNew, toNew, (p as Absyn.PROGRAM()))
       equation
-        modelwithin = Absyn.stripLast(path);
+        modelwithin = AbsynUtil.stripLast(path);
         cdef = getPathedClassInProgram(path, p);
         newcdef = updateConnectionNamesInClass(cdef, from, to, fromNew, toNew);
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
@@ -16330,8 +16330,8 @@ algorithm
     eq := match eq
       case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
         algorithm
-          c1_str := Absyn.crefString(c1);
-          c2_str := Absyn.crefString(c2);
+          c1_str := AbsynUtil.crefString(c1);
+          c2_str := AbsynUtil.crefString(c2);
 
           if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
             eq.equation_ := Absyn.EQ_CONNECT(Parser.stringCref(fromNew), Parser.stringCref(toNew));

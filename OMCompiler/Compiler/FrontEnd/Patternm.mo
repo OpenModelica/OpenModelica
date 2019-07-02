@@ -39,6 +39,7 @@ encapsulated package Patternm
   matchcontinue expression."
 
 import Absyn;
+import AbsynUtil;
 import Ceval;
 import ClassInf;
 import ConnectionGraph;
@@ -151,7 +152,7 @@ algorithm
     case ({},_,_,_) then status;
     else
       equation
-        (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
+        (argsNames,_) = AbsynUtil.getNamedFuncArgNamesAndValues(args);
         str1 = stringDelimitList(argsNames, ",");
         str2 = stringDelimitList(fieldNameList, ",");
         Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1,str2}, info);
@@ -288,7 +289,7 @@ algorithm
 
     case (cache,_,Absyn.ARRAY(exps as _::_),_,_,_)
       equation
-        lhs = List.fold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
+        lhs = List.fold(listReverse(exps), AbsynUtil.makeCons, Absyn.ARRAY({}));
         (cache,pattern) = elabPattern(cache,env,lhs,ty,info);
       then (cache,pattern);
 
@@ -322,17 +323,17 @@ algorithm
 
     case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(utPath)),_,_)
       equation
-        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+        (cache,pattern) = elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
     case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METAUNIONTYPE(path = utPath),_,_)
       equation
-        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+        (cache,pattern) = elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
     case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METARECORD(utPath = utPath),_,_)
       equation
-        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+        (cache,pattern) = elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
     case (cache,_,Absyn.CREF(),ty1,_,_)
@@ -505,7 +506,7 @@ algorithm
               end if;
             end for;
             if allWild then
-              Error.addSourceMessage(Error.META_ALL_EMPTY, {Absyn.pathString(callPath)}, info);
+              Error.addSourceMessage(Error.META_ALL_EMPTY, {AbsynUtil.pathString(callPath)}, info);
             end if;
           end if;
         end if;
@@ -525,7 +526,7 @@ algorithm
       equation
         (cache,DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), path = fqPath),_) =
           Lookup.lookupType(cache, env, callPath, NONE());
-        true = Absyn.pathEqual(fqPath,utPath2);
+        true = AbsynUtil.pathEqual(fqPath,utPath2);
 
         fieldTypeList = List.map(fieldVarList, Types.getVarType);
         fieldNameList = List.map(fieldVarList, Types.getVarName);
@@ -547,7 +548,7 @@ algorithm
     case (cache,_,_,_,_,_,_)
       equation
         failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
-        s = Absyn.pathString(callPath);
+        s = AbsynUtil.pathString(callPath);
         Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_RECORD, {s}, info);
       then fail();
   end matchcontinue;
@@ -569,14 +570,14 @@ algorithm
     case (_,_,strs,0,_)
       equation
         str = stringDelimitList(strs,",");
-        str = Absyn.pathString(path) + " missing pattern for fields: " + str;
+        str = AbsynUtil.pathString(path) + " missing pattern for fields: " + str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
 */
     /*
     case (path,_,_,_,info)
       equation
-        str = Absyn.pathString(path) + " mixing positional and named patterns";
+        str = AbsynUtil.pathString(path) + " mixing positional and named patterns";
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
     */
@@ -649,13 +650,13 @@ algorithm
       String s,s1,s2;
     case (_,_,_,_)
       equation
-        true = Absyn.pathEqual(path1,path2);
+        true = AbsynUtil.pathEqual(path1,path2);
       then ();
     else
       equation
         s = Dump.printExpStr(lhs);
-        s1 = Absyn.pathString(path1);
-        s2 = Absyn.pathString(path2);
+        s1 = AbsynUtil.pathString(path1);
+        s2 = AbsynUtil.pathString(path2);
         Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
@@ -693,13 +694,13 @@ algorithm
 
     case DAE.PAT_CALL(name=name, patterns=pats)
       equation
-        id = Absyn.pathString(name);
+        id = AbsynUtil.pathString(name);
         str = stringDelimitList(List.map(pats,patternStr),",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
       equation
-        id = Absyn.pathString(name);
+        id = AbsynUtil.pathString(name);
         fields = List.map(namedpats, Util.tuple32);
         patsStr = List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
         str = stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
@@ -1947,13 +1948,13 @@ algorithm
     case (DAE.PAT_CALL(name1,ix1,{},_,_),DAE.PAT_CALL(name2,ix2,{},_,_))
       equation
         res = ix1 == ix2;
-        res = if res then Absyn.pathEqual(name1, name2) else res;
+        res = if res then AbsynUtil.pathEqual(name1, name2) else res;
       then not res;
 
     case (DAE.PAT_CALL(name1,ix1,ps1,_,_),DAE.PAT_CALL(name2,ix2,ps2,_,_))
       equation
         res = ix1 == ix2;
-        res = if res then Absyn.pathEqual(name1, name2) else res;
+        res = if res then AbsynUtil.pathEqual(name1, name2) else res;
         res = if res then patternListsDoNotOverlap(ps1, ps2) else not res;
       then res;
 
@@ -2780,9 +2781,9 @@ algorithm
       list<DAE.Type> typeVars;
     case (DAE.PAT_AS(id=id,attr=attr),DAE.PAT_CALL(index=index,typeVars=typeVars,fields=fields,knownSingleton=knownSingleton,name=name))
       equation
-         path = Absyn.stripLast(name);
+         path = AbsynUtil.stripLast(name);
          ty = DAE.T_METARECORD(name,path,typeVars,index,fields,knownSingleton);
-         env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
+         env = FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then env;
     else env;
   end match;

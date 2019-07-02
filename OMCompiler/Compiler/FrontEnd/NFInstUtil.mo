@@ -40,6 +40,7 @@ encapsulated package NFInstUtil
 
 public import DAE;
 public import SCode;
+public import Absyn;
 
 function daeToSCodeConnectorType
   input DAE.ConnectorType inConnectorType;

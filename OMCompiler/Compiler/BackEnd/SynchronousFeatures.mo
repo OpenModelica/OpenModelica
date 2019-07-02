@@ -41,6 +41,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 
+protected import AbsynUtil;
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -3131,7 +3132,7 @@ algorithm
   i2 := BackendVariable.varsSize(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
-    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, Absyn.dummyInfo);
+    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);
     BackendDAEUtil.checkIncidenceMatrixSolvability(inSyst, funcs);
     fail();
   end if;
@@ -3206,7 +3207,7 @@ algorithm
     crs := List.mapMap(vl, BackendVariable.varCref, ComponentReference.printComponentRefStr);
     s3 := stringDelimitList(crs, "\n");
     s4 := BackendDump.dumpEqnsStr(el);
-    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
+    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, AbsynUtil.dummyInfo);
     fail();
   end if;
 

@@ -80,6 +80,7 @@ type FlatEdges = NFConnections.BrokenEdges
 
 protected
 import Absyn;
+import AbsynUtil;
 import DAEUtil;
 import NFBuiltin;
 import NFCall.Call;
@@ -1187,8 +1188,8 @@ algorithm
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst as {_})), (rooted,roots,graph))
       equation
         true =
-          Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted")) or
-          Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("rooted")));
+          AbsynUtil.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted")) or
+          AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("rooted")));
         res = match lst
           // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
           case {Expression.ARRAY(elements = {})}
@@ -1234,8 +1235,8 @@ algorithm
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
       equation
         true =
-        Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("isRoot")) or
-        Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")));
+        AbsynUtil.pathEqual(Function.name(call.fn), Absyn.IDENT("isRoot")) or
+        AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")));
         res = match lst
           // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
           case {Expression.ARRAY(elements = {})}
@@ -1260,7 +1261,7 @@ algorithm
     // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
       equation
-        true = Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")));
+        true = AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")));
         res = match lst
           // normal call
           case {uroots as Expression.ARRAY(elements = lst),nodes,message}

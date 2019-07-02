@@ -72,6 +72,7 @@ protected
 import Flags;
 import Dump;
 import Absyn;
+import AbsynUtil;
 import Util;
 
 public function dumpGraph
@@ -413,7 +414,7 @@ algorithm
     // component references
     case (FCore.N(_, _, _, _, nd as FCore.CR(r = r)), _)
       equation
-        s = FNode.dataStr(nd) + ":" + Absyn.printComponentRefStr(r);
+        s = FNode.dataStr(nd) + ":" + AbsynUtil.printComponentRefStr(r);
       then
         (GraphML.COLOR_PURPLE, GraphML.OCTAGON(), s);
 

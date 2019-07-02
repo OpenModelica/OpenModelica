@@ -40,6 +40,7 @@ encapsulated package NFSCodeFlatten
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import NFSCodeDependency;
 public import NFSCodeEnv;
@@ -138,7 +139,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("NFSCodeFlatten.flattenClassInProgram failed on " +
-          Absyn.pathString(inClassName));
+          AbsynUtil.pathString(inClassName));
       then
         fail();
 

@@ -93,7 +93,7 @@ algorithm
 
         Error.assertion(listLength(inputs) == listLength(args),
           getInstanceName() + " got wrong number of arguments for " +
-          Absyn.pathString(Function.name(fn)), sourceInfo());
+          AbsynUtil.pathString(Function.name(fn)), sourceInfo());
 
         stmt := listHead(body);
 

@@ -40,6 +40,7 @@ encapsulated package ExpressionSolve
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 
 // protected imports
@@ -421,13 +422,13 @@ algorithm
       String s1,sn,se,estr,crstr;
     case (DAE.T_ENUMERATION(path=path,names=names),_,_,_)
       equation
-        p1 = Absyn.suffixPath(path,listHead(names));
+        p1 = AbsynUtil.suffixPath(path,listHead(names));
         e1 = DAE.ENUM_LITERAL(p1,1);
         n = listLength(names);
-        pn = Absyn.suffixPath(path,listGet(names,n));
+        pn = AbsynUtil.suffixPath(path,listGet(names,n));
         en = DAE.ENUM_LITERAL(p1,n);
-        s1 = Absyn.pathString(p1);
-        sn = Absyn.pathString(pn);
+        s1 = AbsynUtil.pathString(p1);
+        sn = AbsynUtil.pathString(pn);
         _ = ExpressionDump.printExpStr(iExp);
         crstr = ComponentReference.printComponentRefStr(cr);
         estr = "Expression for " + crstr + " out of min(" + s1 + ")/max(" + sn + ") = ";

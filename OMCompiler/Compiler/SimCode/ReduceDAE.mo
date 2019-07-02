@@ -50,6 +50,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import Util;
+import AbsynUtil;
 public constant String LABELNAME="label";
 
 
@@ -173,7 +174,7 @@ algorithm
       equation
         //make an integer list of labels to be reduced
 
-         (outStringList,outExpList) = Absyn.getNamedFuncArgNamesAndValues(inNamedArgList);
+         (outStringList,outExpList) = AbsynUtil.getNamedFuncArgNamesAndValues(inNamedArgList);
 
         reduceListStr=System.stringReplace(ExpressionDump.printExpStr(Expression.fromAbsynExp(listGet(outExpList,1))), "\"", "");
         reduceList=StringDelimit2Int(reduceListStr,",");

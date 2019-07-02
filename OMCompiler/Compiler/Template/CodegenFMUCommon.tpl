@@ -250,7 +250,7 @@ case SIMVAR(__) then
     case T_REAL(__) then '<Real<%StartString(simvar)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
     case T_BOOL(__) then '<Boolean<%StartString(simvar)%>/>'
     case T_STRING(__) then '<String<%StartString(simvar)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString(path, ".", false)%>"<%StartString(simvar)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString(simvar)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
@@ -589,7 +589,7 @@ case SIMVAR(__) then
     case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString(path, ".", false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
@@ -735,7 +735,7 @@ match type_
   case T_ENUMERATION(__) then
   if isFMIVersion20(FMUVersion) then
   <<
-  <SimpleType name="<%Absyn.pathString(path, ".", false)%>">
+  <SimpleType name="<%AbsynUtil.pathString(path, ".", false)%>">
     <Enumeration>
       <%names |> name hasindex i0 fromindex 1 => '<Item name="<%name%>" value="<%i0%>"/>' ;separator="\n"%>
     </Enumeration>
@@ -743,7 +743,7 @@ match type_
   >>
   else
   <<
-  <Type name="<%Absyn.pathString(path, ".", false)%>">
+  <Type name="<%AbsynUtil.pathString(path, ".", false)%>">
     <EnumerationType>
       <%names |> name => '<Item name="<%name%>"/>' ;separator="\n"%>
     </EnumerationType>

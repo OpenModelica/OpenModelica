@@ -188,7 +188,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only inner!
-        true = Absyn.isOnlyInner(io);
+        true = AbsynUtil.isOnlyInner(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
@@ -229,7 +229,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only outer!
-        true = Absyn.isOnlyOuter(io);
+        true = AbsynUtil.isOnlyOuter(io);
 
         // we should have here any kind of modification!
         false = Mod.modEqual(mod, DAE.NOMOD());
@@ -250,7 +250,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr as SCode.ATTR(direction=Absyn.OUTPUT()),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // only outer!
-        true = Absyn.isOnlyOuter(io);
+        true = AbsynUtil.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
         true = Mod.modEqual(mod, DAE.NOMOD());
@@ -285,7 +285,7 @@ algorithm
     case (cache,env,ih,store,_,mod,pre,n,_,_,_,_,_,_,_,_,_,graph,csets,_)
       equation
         // only outer!
-        true = Absyn.isOnlyOuter(io);
+        true = AbsynUtil.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
         true = Mod.modEqual(mod, DAE.NOMOD());
@@ -330,7 +330,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // only outer!
-        true = Absyn.isOnlyOuter(io);
+        true = AbsynUtil.isOnlyOuter(io);
 
         // no modifications!
         true = Mod.modEqual(mod, DAE.NOMOD());
@@ -360,7 +360,7 @@ algorithm
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
-          s1 = Absyn.pathString(typePath) + " " + s1;
+          s1 = AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
@@ -374,7 +374,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
       equation
         // only outer!
-        true = Absyn.isOnlyOuter(io);
+        true = AbsynUtil.isOnlyOuter(io);
 
         // no modifications!
         true = Mod.modEqual(mod, DAE.NOMOD());
@@ -394,7 +394,7 @@ algorithm
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
-          s1 = Absyn.pathString(typePath) + " " + s1;
+          s1 = AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
@@ -408,7 +408,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr as SCode.ATTR(direction=Absyn.OUTPUT()) ,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // both inner and outer
-        true = Absyn.isInnerOuter(io);
+        true = AbsynUtil.isInnerOuter(io);
 
         // the inner outer must be in an instance that is part of a State Machine
         topInstance = listHead(ih);
@@ -457,7 +457,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // both inner and outer
-        true = Absyn.isInnerOuter(io);
+        true = AbsynUtil.isInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
@@ -508,7 +508,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // no inner no outer
-        true = Absyn.isNotInnerOuter(io);
+        true = AbsynUtil.isNotInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
@@ -1766,7 +1766,7 @@ algorithm
   DAE.DIM_ENUM(enumTypeName = enum_path, literals = literals) := inDimension;
 
   for lit in literals loop
-    enum_lit_path := Absyn.joinPaths(enum_path, Absyn.IDENT(lit));
+    enum_lit_path := AbsynUtil.joinPaths(enum_path, Absyn.IDENT(lit));
     e := DAE.ENUM_LITERAL(enum_lit_path, i);
     mod := Mod.lookupIdxModification(inMod, e);
     i := i + 1;

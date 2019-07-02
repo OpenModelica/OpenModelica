@@ -65,6 +65,7 @@ encapsulated package NFSCodeFlattenRedeclare
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 public import NFSCodeEnv;
 public import NFInstPrefix;
@@ -212,7 +213,7 @@ algorithm
 
     case (_, bc1 :: rest_bc, NFSCodeEnv.EXTENDS(bc2, el, index, info) :: exl)
       equation
-        true = Absyn.pathEqual(bc1, bc2);
+        true = AbsynUtil.pathEqual(bc1, bc2);
         redecl = NFSCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
         NFSCodeCheck.checkDuplicateRedeclarations(redecl, el);
         ex = NFSCodeEnv.EXTENDS(bc2, redecl :: el, index, info);
@@ -267,7 +268,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +
           SCodeDump.unparseElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions) +
-          " in " + Absyn.pathString(NFSCodeEnv.getEnvPath(inEnv)));
+          " in " + AbsynUtil.pathString(NFSCodeEnv.getEnvPath(inEnv)));
       then
         fail();
   end matchcontinue;
@@ -533,7 +534,7 @@ algorithm
     // See if the first base class path matches the first extends. Push the
     // redeclare into that extends if so.
     case (_, _, bc1 :: rest_bc, NFSCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts)
-        guard Absyn.pathEqual(bc1, bc2)
+        guard AbsynUtil.pathEqual(bc1, bc2)
       equation
         redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls, {});
         rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
@@ -554,7 +555,7 @@ algorithm
     // shouldn't happen.
     case (_, _, _, {})
       equation
-        bc_strl = list(Absyn.pathString(p) for p in inBaseClasses);
+        bc_strl = list(AbsynUtil.pathString(p) for p in inBaseClasses);
         bcl_str = stringDelimitList(bc_strl, ", ");
         err_msg = "NFSCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base classes {"
           + bcl_str + "} for " + inName;
@@ -882,7 +883,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         print("pushing: " + inName + " redeclare: " + NFSCodeEnv.itemStr(inRedeclare) + "\n\t");
-        print("into baseclases: " + stringDelimitList(list(Absyn.pathString(p) for p in inBaseClasses), ", ") + "\n\t");
+        print("into baseclases: " + stringDelimitList(list(AbsynUtil.pathString(p) for p in inBaseClasses), ", ") + "\n\t");
         print("called from env: " + NFSCodeEnv.getEnvName(inEnv) + "\n");
         print("-----------------\n");
       then ();

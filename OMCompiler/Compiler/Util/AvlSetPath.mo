@@ -31,16 +31,17 @@
 
 encapsulated package AvlSetPath
   import Absyn;
+  import AbsynUtil;
   import BaseAvlSet;
   extends BaseAvlSet;
   redeclare type Key = Absyn.Path;
   redeclare function extends keyStr
   algorithm
-    outString := Absyn.pathString(inKey);
+    outString := AbsynUtil.pathString(inKey);
   end keyStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := Absyn.pathCompare(inKey1, inKey2);
+    outResult := AbsynUtil.pathCompare(inKey1, inKey2);
   end keyCompare;
 annotation(__OpenModelica_Interface="frontend");
 end AvlSetPath;

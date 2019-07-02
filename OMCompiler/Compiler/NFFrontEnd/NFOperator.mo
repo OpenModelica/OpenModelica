@@ -37,6 +37,7 @@ protected
 public
   import Type = NFType;
   import Absyn;
+  import AbsynUtil;
   import DAE;
 
   type Op = enumeration(
@@ -248,7 +249,7 @@ public
       case Op.GREATEREQ         then ">=";
       case Op.EQUAL             then "==";
       case Op.NEQUAL            then "<>";
-      //case Op.USERDEFINED      then "Userdefined:" + Absyn.pathString(op.fqName);
+      //case Op.USERDEFINED      then "Userdefined:" + AbsynUtil.pathString(op.fqName);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());

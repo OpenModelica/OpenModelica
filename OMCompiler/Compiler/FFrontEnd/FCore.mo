@@ -41,6 +41,7 @@ encapsulated package FCore
 
 public
 import Absyn;
+import AbsynUtil;
 import AvlSetCR;
 import DAE;
 import Mutable;
@@ -588,19 +589,19 @@ algorithm
     case (_, _)
       equation
         checkCachedInstFuncGuard(cache, func);
-        // print("Func quard [there]: " + Absyn.pathString(func) + "\n");
+        // print("Func quard [there]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
       equation
         Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
-        // print("Func quard [new]: " + Absyn.pathString(func) + "\n");
+        // print("Func quard [new]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_)
       equation
-        // print("Func quard [unqual]: " + Absyn.pathString(func) + "\n");
+        // print("Func quard [unqual]: " + AbsynUtil.pathString(func) + "\n");
       then (cache);
 
   end matchcontinue;
@@ -731,9 +732,9 @@ algorithm
   if Config.acceptMetaModelicaGrammar() then
     outPath := inPath;
   else
-    lastId := Absyn.pathLastIdent(inPath);
+    lastId := AbsynUtil.pathLastIdent(inPath);
     lastId := getRecordConstructorName(lastId);
-    outPath := Absyn.pathSetLastIdent(inPath, Absyn.makeIdentPathFromString(lastId));
+    outPath := AbsynUtil.pathSetLastIdent(inPath, AbsynUtil.makeIdentPathFromString(lastId));
   end if;
 end getRecordConstructorPath;
 

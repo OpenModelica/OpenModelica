@@ -45,6 +45,7 @@ encapsulated package SCodeUtil
   The SCode representation is then used as input to the Inst module"
 
 public import Absyn;
+public import AbsynUtil;
 public import SCode;
 
 protected
@@ -228,7 +229,7 @@ algorithm
     local
       SCode.Ident name,opname;
     case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_,_),opname)
-    then Absyn.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
+    then AbsynUtil.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
 
   end match;
 end getOperatorQualName;
@@ -511,7 +512,7 @@ algorithm
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
         cos = translateClassdefConstraints(parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
         scodeCmt = translateCommentList(ann, cmtString);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
@@ -520,7 +521,7 @@ algorithm
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating pder( " + Absyn.pathString(path) + ", vars)");
+        // fprintln(Flags.TRANSLATE, "translating pder( " + AbsynUtil.pathString(path) + ", vars)");
         scodeCmt = translateComment(cmt);
       then
         (SCode.PDER(path,vars),scodeCmt);
@@ -791,7 +792,7 @@ public function translateClassdefAlgorithmitems
   input list<Absyn.AlgorithmItem> inStatements;
   output list<SCode.Statement> outStatements;
 algorithm
-  outStatements := list(translateClassdefAlgorithmItem(stmt) for stmt guard Absyn.isAlgorithmItem(stmt) in inStatements);
+  outStatements := list(translateClassdefAlgorithmItem(stmt) for stmt guard AbsynUtil.isAlgorithmItem(stmt) in inStatements);
 end translateClassdefAlgorithmitems;
 
 protected function translateClassdefAlgorithmItem
@@ -1006,7 +1007,7 @@ algorithm
 
     case Absyn.ANNOTATION(elementArgs = args)
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
 
       then
         if SCode.isEmptyMod(m) then NONE() else SOME(SCode.ANNOTATION(m));
@@ -1198,15 +1199,15 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " + Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " + Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
         ann = translateAnnotation(absann);
       then
         {SCode.EXTENDS(path,vis,mod,ann,info)};
@@ -1309,11 +1310,11 @@ algorithm
 
     case (Absyn.GROUP_IMPORT_NAME(name=name),_,vis,_)
       equation
-        path = Absyn.joinPaths(prefix,Absyn.IDENT(name));
+        path = AbsynUtil.joinPaths(prefix,Absyn.IDENT(name));
       then SCode.IMPORT(Absyn.QUAL_IMPORT(path),vis,info);
     case (Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name),_,vis,_)
       equation
-        path = Absyn.joinPaths(prefix,Absyn.IDENT(name));
+        path = AbsynUtil.joinPaths(prefix,Absyn.IDENT(name));
       then SCode.IMPORT(Absyn.NAMED_IMPORT(rename,path),vis,info);
   end match;
 end translateGroupImport;
@@ -1384,7 +1385,7 @@ algorithm
         Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
       equation
         mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
-        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
         cc_cmt = translateComment(cmt);
       then
         SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
@@ -1556,7 +1557,7 @@ algorithm
       then SCode.COMMENT(ann,ostr);
     case (absann::anns,_)
       equation
-        absann = List.fold(anns, Absyn.mergeAnnotations, absann);
+        absann = List.fold(anns, AbsynUtil.mergeAnnotations, absann);
         ann = translateAnnotation(absann);
         ostr = Util.applyOption(inString,System.unescapedString);
       then SCode.COMMENT(ann,ostr);
@@ -1806,7 +1807,7 @@ algorithm
             Absyn.NOT_INNER_OUTER(), SOME(arg.redeclareKeywords), SCode.PUBLIC(),
             arg.elementSpec, arg.info);
 
-          sub := SCode.NAMEMOD(Absyn.elementSpecName(arg.elementSpec),
+          sub := SCode.NAMEMOD(AbsynUtil.elementSpecName(arg.elementSpec),
             SCode.REDECL(
               SCode.boolFinal(arg.finalPrefix),
               translateEach(arg.eachPrefix),
@@ -2006,7 +2007,7 @@ algorithm
     // do prefix if you have simple component references
     case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT()), _)
       equation
-        e = Absyn.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
+        e = AbsynUtil.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
       then
         e;
     // binary
@@ -2368,7 +2369,7 @@ algorithm
     // keep it
     case SOME(e)
       equation
-        {} = Absyn.getCrefFromExp(e, true, true);
+        {} = AbsynUtil.getCrefFromExp(e, true, true);
       then
         inBinding;
     // else
@@ -2447,8 +2448,8 @@ algorithm
     // if cref is not present keep the binding!
     case SOME(e)
       equation
-        crlst1 = Absyn.getCrefFromExp(e, true, true);
-        crlst2 = Absyn.removeCrefFromCrefs(crlst1, inCref);
+        crlst1 = AbsynUtil.getCrefFromExp(e, true, true);
+        crlst2 = AbsynUtil.removeCrefFromCrefs(crlst1, inCref);
         true = intEq(listLength(crlst1), listLength(crlst2));
       then
         inBinding;
@@ -2686,7 +2687,7 @@ algorithm
     case (Absyn.TPATH(),_) then ();
     case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs={ts2}),_)
       equation
-        str = Absyn.typeSpecString(ts);
+        str = AbsynUtil.typeSpecString(ts);
         Error.addSourceMessage(Error.TCOMPLEX_TUPLE_ONE_NAME,{str},info);
         checkTypeSpec(ts2,info);
       then ();
@@ -2702,7 +2703,7 @@ algorithm
     case (Absyn.TCOMPLEX(typeSpecs=tss),_)
       equation
         if listMember(ts.path, {Absyn.IDENT("list"),Absyn.IDENT("List"),Absyn.IDENT("array"),Absyn.IDENT("Array"),Absyn.IDENT("polymorphic"),Absyn.IDENT("Option")}) then
-          str = Absyn.typeSpecString(ts);
+          str = AbsynUtil.typeSpecString(ts);
           Error.addSourceMessage(Error.TCOMPLEX_MULTIPLE_NAMES,{str},info);
           List.map1_0(tss, checkTypeSpec, info);
         end if;

@@ -45,6 +45,7 @@ encapsulated package Dump
 
 // public imports
 import Absyn;
+import AbsynUtil;
 import File;
 import File.Escape;
 
@@ -1899,7 +1900,7 @@ public function printPath "Print a Path."
 protected
   String s;
 algorithm
-  s := Absyn.pathString(p);
+  s := AbsynUtil.pathString(p);
   Print.printBuf(s);
 end printPath;
 
@@ -1935,7 +1936,7 @@ protected function printPathStr "Print a Path."
   input Absyn.Path p;
   output String s;
 algorithm
-  s := Absyn.pathString(p);
+  s := AbsynUtil.pathString(p);
 end printPathStr;
 
 public function printExp "This function prints a complete expression to the Print buffer."

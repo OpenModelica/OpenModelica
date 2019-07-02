@@ -32,6 +32,7 @@
 encapsulated package NFApi
 
 import Absyn;
+import AbsynUtil;
 import SCode;
 import DAE;
 
@@ -171,7 +172,7 @@ algorithm
           info = info)
         algorithm
           // no need for the class if there are no crefs
-          if Absyn.onlyLiteralsInEqMod(eqmod) then
+          if AbsynUtil.onlyLiteralsInEqMod(eqmod) then
             (program, top) := mkTop(absynProgram);
             inst_cls := top;
           else
@@ -193,7 +194,7 @@ algorithm
           info = info)
         algorithm
           // no need for the class if there are no crefs
-          if Absyn.onlyLiteralsInAnnotationMod(mod) then
+          if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
             (program, top) := mkTop(absynProgram);
             inst_cls := top;
           else
@@ -201,10 +202,10 @@ algorithm
             (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          (stripped_mod, graphics_mod) := Absyn.stripGraphicsAndInteractionModification(mod);
+          (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
 
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
 
@@ -243,7 +244,7 @@ algorithm
           (program, top) := mkTop(absynProgram);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
           inst_anncls := NFInst.instantiate(anncls);
 
@@ -328,7 +329,7 @@ algorithm
    elArgs := matchcontinue i
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
         algorithm
-          el := Absyn.getAnnotationsFromItems(items, Absyn.getAnnotationsFromConstraintClass(cc));
+          el := AbsynUtil.getAnnotationsFromItems(items, AbsynUtil.getAnnotationsFromConstraintClass(cc));
         then
           listAppend(el, elArgs);
 
@@ -351,7 +352,7 @@ algorithm
           info = info)
         algorithm
           // no need for the class if there are no crefs
-          if Absyn.onlyLiteralsInEqMod(eqmod) then
+          if AbsynUtil.onlyLiteralsInEqMod(eqmod) then
             (program, top) := mkTop(absynProgram);
             inst_cls := top;
           else
@@ -373,7 +374,7 @@ algorithm
           info = info)
         algorithm
           // no need for the class if there are no crefs
-          if Absyn.onlyLiteralsInAnnotationMod(mod) then
+          if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
             (program, top) := mkTop(absynProgram);
             inst_cls := top;
           else
@@ -382,7 +383,7 @@ algorithm
           end if;
 
           smod := SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
 
@@ -413,7 +414,7 @@ algorithm
           (program, top) := mkTop(absynProgram);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
           inst_anncls := NFInst.instantiate(anncls);
 
@@ -459,7 +460,7 @@ protected
 algorithm
   // run the front-end front
   (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
-  cls := Lookup.lookupClassName(pathToQualify, inst_cls, Absyn.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
   qualPath := InstNode.scopePath(cls, true);
 end mkFullyQual;
 
@@ -477,7 +478,7 @@ algorithm
   cache := getGlobalRoot(Global.instNFInstCacheIndex);
   if not listEmpty(cache) then
     for i in cache loop
-      if Absyn.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+      if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
         if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
           (program, name, top, inst_cls) := Util.tuple22(i);
           return;
@@ -564,11 +565,11 @@ protected
 algorithm
   (program, top) := mkTop(absynProgram);
 
-  name := Absyn.pathString(classPath);
+  name := AbsynUtil.pathString(classPath);
   execStat("NFApi.mkTop("+ name +")");
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
   execStat("NFApi.lookup("+ name +")");
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 

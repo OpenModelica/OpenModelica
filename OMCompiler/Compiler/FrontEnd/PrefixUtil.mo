@@ -44,6 +44,7 @@ encapsulated package PrefixUtil
 
 
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import FCore;
 public import FGraph;
@@ -334,7 +335,7 @@ public function identAndPrefixToPath "Convert a Ident/Prefix to a String"
   input Prefix.Prefix inPrefix;
   output String str;
 algorithm
-  str := Absyn.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
+  str := AbsynUtil.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
 end identAndPrefixToPath;
 
 public function componentPrefixToPath "Convert a Prefix to a Path"
@@ -638,10 +639,10 @@ algorithm
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
-        //   if_(Absyn.isOuter(io), " [outer] ", " ") +
-        //   if_(Absyn.isInner(io), " [inner] ", " "));
-        true = Absyn.isInner(io);
-        false = Absyn.isOuter(io);
+        //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
+        //   if_(AbsynUtil.isInner(io), " [inner] ", " "));
+        true = AbsynUtil.isInner(io);
+        false = AbsynUtil.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
         // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " + ComponentReference.printComponentRefStr(newCref));
@@ -653,9 +654,9 @@ algorithm
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
-        //   if_(Absyn.isOuter(io), " [outer] ", " ") +
-        //   if_(Absyn.isInner(io), " [inner] ", " "));
-        true = Absyn.isOuter(io);
+        //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
+        //   if_(AbsynUtil.isInner(io), " [inner] ", " "));
+        true = AbsynUtil.isOuter(io);
         n = ComponentReference.crefLastIdent(cref);
         lastCref = Expression.crefIdent(cref);
         // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
@@ -674,7 +675,7 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_QUAL(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        true = Absyn.isOuter(io);
+        true = AbsynUtil.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
         // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " + ComponentReference.printComponentRefStr(newCref));
@@ -1406,7 +1407,7 @@ public function getPrefixInfo
 algorithm
   outInfo := match inPrefix
     case Prefix.PREFIX(compPre = Prefix.PRE(info = outInfo)) then outInfo;
-    else Absyn.dummyInfo;
+    else AbsynUtil.dummyInfo;
   end match;
 end getPrefixInfo;
 

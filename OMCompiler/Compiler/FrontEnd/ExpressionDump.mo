@@ -40,6 +40,7 @@ encapsulated package ExpressionDump
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import Graphviz;
 
@@ -81,7 +82,7 @@ algorithm
         res;
     case (DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit)))
       equation
-        res = Absyn.pathString(enum_lit);
+        res = AbsynUtil.pathString(enum_lit);
       then
         res;
   end match;
@@ -521,7 +522,7 @@ algorithm
 
     case (DAE.ENUM_LITERAL(name = lit), _, _, _)
       equation
-        s = Absyn.pathString(lit);
+        s = AbsynUtil.pathString(lit);
       then
         s;
 
@@ -613,7 +614,7 @@ algorithm
 
     case (DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
-        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
+        fs = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
         argstr = stringDelimitList(
           List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({fs, "(", argstr, ")"});
@@ -622,7 +623,7 @@ algorithm
 
     case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _, _)
       equation
-        fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
+        fs = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(fcn));
         argstr = stringDelimitList(
           List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"function ", fs, "(", argstr, ")"});
@@ -720,7 +721,7 @@ algorithm
 
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = riters), _, _, _)
       equation
-        fs = Absyn.pathStringNoQual(fcn);
+        fs = AbsynUtil.pathStringNoQual(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
         iterstr = stringDelimitList(List.map(riters, reductionIteratorStr),",");
         str = stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
@@ -777,7 +778,7 @@ algorithm
     // MetaModelica Uniontype Constructor
     case (DAE.METARECORDCALL(path = fcn, args=args), _, _, _)
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         argstr = stringDelimitList(
           List.map3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s = stringAppendList({fs, "(", argstr, ")"});
@@ -1082,7 +1083,7 @@ algorithm
 
     case (DAE.CALL(path = fcn,expLst = args))
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         argnodes = List.map(args, dumpExpGraphviz);
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
@@ -1158,7 +1159,7 @@ algorithm
 
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators = {DAE.REDUCTIONITER(exp=iterexp)}))
       equation
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         expt = dumpExpGraphviz(exp);
         itert = dumpExpGraphviz(iterexp);
       then
@@ -1240,7 +1241,7 @@ algorithm
     case (DAE.ENUM_LITERAL(name = fcn, index = i), level)
       equation
         gen_str = genStringNTime("   |", level);
-        s = Absyn.pathString(fcn);
+        s = AbsynUtil.pathString(fcn);
         istr = intString(i);
         res_str = stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", istr, "]", "\n"});
       then
@@ -1330,7 +1331,7 @@ algorithm
     case (DAE.CALL(path = fcn,expLst = args),level)
       equation
         gen_str = genStringNTime("   |", level);
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         new_level1 = level + 1;
         argnodes = List.map1(args, dumpExpStr, new_level1);
         argnodes_1 = stringAppendList(argnodes);
@@ -1341,7 +1342,7 @@ algorithm
     case (DAE.PARTEVALFUNCTION(path = fcn,expList = args),level)
       equation
         gen_str = genStringNTime("   |", level);
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         new_level1 = level + 1;
         argnodes = List.map1(args, dumpExpStr, new_level1);
         argnodes_1 = stringAppendList(argnodes);
@@ -1467,7 +1468,7 @@ algorithm
     case (DAE.RECORD(path=fcn, exps=args),level)
       equation
         gen_str = genStringNTime("   |", level);
-        fs = Absyn.pathString(fcn);
+        fs = AbsynUtil.pathString(fcn);
         new_level1 = level + 1;
         argnodes = List.map1(args, dumpExpStr, new_level1);
         argnodes_1 = stringAppendList(argnodes);
@@ -1622,7 +1623,7 @@ algorithm
 
     case DAE.DIM_ENUM(enumTypeName = p)
       equation
-        s = Absyn.pathString(p);
+        s = AbsynUtil.pathString(p);
       then
         s;
 

@@ -1105,7 +1105,7 @@ algorithm
     case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
-        cr = ComponentReference.toExpCref(Absyn.pathToCref(path));
+        cr = ComponentReference.toExpCref(AbsynUtil.pathToCref(path));
         if hasReplacement(repl,cr) then
           e1_1 = getReplacement(repl,cr);
           DAE.PARTEVALFUNCTION(path=path,expList = expl_1) = e1_1;

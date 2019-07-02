@@ -42,6 +42,7 @@ encapsulated package InstExtends
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import DAE;
 public import FCore;
@@ -121,7 +122,7 @@ algorithm
       // Instantiate a basic type base class.
       case SCode.EXTENDS()
         algorithm
-          Absyn.IDENT(cn) := Absyn.makeNotFullyQualified(el.baseClassPath);
+          Absyn.IDENT(cn) := AbsynUtil.makeNotFullyQualified(el.baseClassPath);
           true := InstUtil.isBuiltInClass(cn);
         then
           ();
@@ -132,11 +133,11 @@ algorithm
           emod := InstUtil.chainRedeclares(outMod, el.modifications);
 
           // Check if the extends is referencing the class we're instantiating.
-          base_first_id := Absyn.pathFirstIdent(el.baseClassPath);
-          eq_name := stringEq(inClassName, base_first_id) and Absyn.pathEqual(
+          base_first_id := AbsynUtil.pathFirstIdent(el.baseClassPath);
+          eq_name := stringEq(inClassName, base_first_id) and AbsynUtil.pathEqual(
             ClassInf.getStateName(inState),
-            Absyn.joinPaths(FGraph.getGraphName(outEnv),
-                            Absyn.makeIdentPathFromString(base_first_id)));
+            AbsynUtil.joinPaths(FGraph.getGraphName(outEnv),
+                            AbsynUtil.makeIdentPathFromString(base_first_id)));
 
           // Look up the base class.
           (outCache, ocls, cenv) :=
@@ -149,7 +150,7 @@ algorithm
             // Base class could not be found, print an error unless --permissive
             // is used.
             if Flags.getConfigBool(Flags.PERMISSIVE) then
-              bc_str := Absyn.pathString(el.baseClassPath);
+              bc_str := AbsynUtil.pathString(el.baseClassPath);
               scope_str := FGraph.printGraphPathStr(inEnv);
               Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
                 {bc_str, scope_str}, el.info);
@@ -311,7 +312,7 @@ algorithm
     // and look it up as normal.
     case (_, _)
       equation
-        path = Absyn.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
+        path = AbsynUtil.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
         (cache, elem, env) = Lookup.lookupClass(inCache, inEnv, path);
       then
         (cache, SOME(elem), env);
@@ -502,7 +503,7 @@ algorithm
       equation
         true = name1 == name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = Absyn.pathString(FGraph.getGraphName(inEnv));
+        env_path = AbsynUtil.pathString(FGraph.getGraphName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
 
@@ -525,7 +526,7 @@ algorithm
       equation
         true = name1 == name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = Absyn.pathString(FGraph.getGraphName(inEnv));
+        env_path = AbsynUtil.pathString(FGraph.getGraphName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
         SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
 
@@ -662,7 +663,7 @@ algorithm
         // fprintln(Flags.INST_TRACE, "DERIVED: " + FGraph.printGraphPathStr(env) + " el: " + SCodeDump.unparseElementStr(inClass) + " mods: " + Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, SOME(info));
         dmod = InstUtil.chainRedeclares(mod, dmod);
-        // false = Absyn.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
+        // false = AbsynUtil.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
         //daeDMOD = Mod.elabUntypedMod(dmod, Mod.DERIVED(tp));
         (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
@@ -1452,7 +1453,7 @@ algorithm
 
     case _
       equation
-        id = Absyn.pathFirstIdent(inPath);
+        id = AbsynUtil.pathFirstIdent(inPath);
         true = AvlSetString.hasKey(tree, id);
         path2 = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
       then path2;
@@ -1460,27 +1461,27 @@ algorithm
     // first indent is local in the inEnv, DO NOT QUALIFY!
     case _
       equation
-        //fprintln(Flags.DEBUG,"Try makeFullyQualified " + Absyn.pathString(path));
-        (_, _) = Lookup.lookupClassLocal(inEnv, Absyn.pathFirstIdent(inPath));
+        //fprintln(Flags.DEBUG,"Try makeFullyQualified " + AbsynUtil.pathString(path));
+        (_, _) = Lookup.lookupClassLocal(inEnv, AbsynUtil.pathFirstIdent(inPath));
         path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
-        //fprintln(Flags.DEBUG,"FullyQual: " + Absyn.pathString(path));
+        //fprintln(Flags.DEBUG,"FullyQual: " + AbsynUtil.pathString(path));
       then path;
 
     case _
       equation
         // isOutside = isPathOutsideScope(cache, inEnv, path);
-        //print("Try makeFullyQualified " + Absyn.pathString(path) + "\n");
+        //print("Try makeFullyQualified " + AbsynUtil.pathString(path) + "\n");
         (cache, path) = Inst.makeFullyQualified(arrayGet(inCache,1), inEnv, inPath);
         // path = if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, inEnv, false));
         path = FGraph.pathStripGraphScopePrefix(path, inEnv, false);
-        //print("FullyQual: " + Absyn.pathString(path) + "\n");
+        //print("FullyQual: " + AbsynUtil.pathString(path) + "\n");
         arrayUpdate(inCache, 1, cache);
       then path;
 
     else
       equation
         path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
-        //fprintln(Flags.DEBUG, "Path not fixed: " + Absyn.pathString(path) + "\n");
+        //fprintln(Flags.DEBUG, "Path not fixed: " + AbsynUtil.pathString(path) + "\n");
       then path;
 
   end matchcontinue;
@@ -1531,31 +1532,31 @@ algorithm
 
     case (env,cref)
       algorithm
-        id := Absyn.crefFirstIdent(cref);
+        id := AbsynUtil.crefFirstIdent(cref);
         true := AvlSetString.hasKey(tree, id);
         cref := FGraph.crefStripGraphScopePrefix(cref, env, false);
-        cref := if Absyn.crefEqual(cref, inCref) then inCref else cref;
+        cref := if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     // try lookup var (constant in a package?)
     case (env,cref)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         //fprintln(Flags.DEBUG,"Try lookupV " + id);
         (denv,id) = lookupVarNoErrorMessage(arrayGet(cache,1),env,id);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //fprintln(Flags.DEBUG, "Cref VAR fixed: " + Absyn.printComponentRefStr(cref));
-        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
+        //fprintln(Flags.DEBUG, "Cref VAR fixed: " + AbsynUtil.printComponentRefStr(cref));
+        cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     case (env,cref)
       equation
-        id = Absyn.crefFirstIdent(cref);
+        id = AbsynUtil.crefFirstIdent(cref);
         //print("Try lookupC " + id + "\n");
         (_,c,denv) = Lookup.lookupClassIdent(arrayGet(cache,1),env,id);
         // isOutside = FGraph.graphPrefixOf(denv, env);
@@ -1563,11 +1564,11 @@ algorithm
         id = SCode.getElementName(c);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //print("Cref CLASS fixed: " + Absyn.printComponentRefStr(cref) + "\n");
-        cref = if Absyn.crefEqual(cref, inCref) then inCref else cref;
+        //print("Cref CLASS fixed: " + AbsynUtil.printComponentRefStr(cref) + "\n");
+        cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     else inCref;
@@ -1665,7 +1666,7 @@ protected function fixExp
   input AvlSetString.Tree tree;
   output Absyn.Exp outExp;
 algorithm
-  (outExp,_) := Absyn.traverseExp(inExp,fixExpTraverse,(cache,inEnv,tree));
+  (outExp,_) := AbsynUtil.traverseExp(inExp,fixExpTraverse,(cache,inEnv,tree));
 end fixExp;
 
 protected function fixExpTraverse
@@ -1694,9 +1695,9 @@ algorithm
 
     case (Absyn.CALL(cref,fargs),(cache,env,tree))
       equation
-        // print("cref actual: " + Absyn.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
+        // print("cref actual: " + AbsynUtil.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
         cref1 = fixCref(cache,env,cref,tree);
-        // print("cref fixed : " + Absyn.crefString(cref) + "\n");
+        // print("cref fixed : " + AbsynUtil.crefString(cref) + "\n");
       then (if referenceEq(cref, cref1) then exp else Absyn.CALL(cref1,fargs));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,tree))

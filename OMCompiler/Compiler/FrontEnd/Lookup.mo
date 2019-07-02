@@ -44,6 +44,7 @@ encapsulated package Lookup
   lookupVar - to find a variable in the instance hierarchy."
 
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import DAE;
 public import FCore;
@@ -173,7 +174,7 @@ algorithm
     // Error for type not found
     case (_,env,path,SOME(info))
       equation
-        classname = Absyn.pathString(path);
+        classname = AbsynUtil.pathString(path);
         classname = stringAppend(classname," (its type) ");
         scope = FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {classname,scope}, info);
@@ -277,7 +278,7 @@ algorithm
       equation
         env_2 = FGraph.openScope(env_1, encflag, id, SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
         mod = Mod.getClassModifier(env_1, id);
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
@@ -333,7 +334,7 @@ algorithm
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,c)
       equation
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
         true = SCode.classIsExternalObject(c);
         (cache,env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -350,7 +351,7 @@ algorithm
     // up the type.
     case (cache,env_1,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
         (cache,env_2,_) =
         InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,id);
@@ -397,7 +398,7 @@ algorithm
     case (cache, _, {}, ht, acc) then (cache, ht, acc);
     case (cache, env, first::rest, ht, acc)
       equation
-        (cache,ht,acc) = lookupMetarecordsRecursive3(cache, env, first, Absyn.pathString(first), ht, acc);
+        (cache,ht,acc) = lookupMetarecordsRecursive3(cache, env, first, AbsynUtil.pathString(first), ht, acc);
         (cache,ht,acc) = lookupMetarecordsRecursive2(cache, env, rest, ht, acc);
       then (cache, ht, acc);
   end match;
@@ -432,7 +433,7 @@ algorithm
     case (cache, env, _, _, ht, acc)
       equation
         ht = BaseHashTable.add((str,path),ht);
-        (cache, ty, _) = lookupType(cache, env, path, SOME(Absyn.dummyInfo));
+        (cache, ty, _) = lookupType(cache, env, path, SOME(AbsynUtil.dummyInfo));
         acc = ty::acc;
         uniontypeTypes = Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
         uniontypePaths = List.flatten(List.map(uniontypeTypes, Types.getUniontypePaths));
@@ -459,7 +460,7 @@ algorithm
     /*
     case (_,_,_,_)
       equation
-        print("CL: " + Absyn.pathString(inPath) + " env: " + FGraph.printGraphPathStr(inEnv) + " msg: " + boolString(msg) + "\n");
+        print("CL: " + AbsynUtil.pathString(inPath) + " env: " + FGraph.printGraphPathStr(inEnv) + " msg: " + boolString(msg) + "\n");
       then
         fail();*/
 
@@ -524,7 +525,7 @@ algorithm
   else
     if isSome(inInfo) and errors == Error.getNumErrorMessages() then
       Error.addSourceMessage(Error.LOOKUP_ERROR,
-        {Absyn.pathString(inPath), FGraph.printGraphPathStr(inEnv)},
+        {AbsynUtil.pathString(inPath), FGraph.printGraphPathStr(inEnv)},
         Util.getOption(inInfo));
     end if;
     fail();
@@ -583,7 +584,7 @@ algorithm
     /*
     case (cache,env,p,_,_,_)
       equation
-        Debug.traceln("lookupClass failed " + Absyn.pathString(p) + " " + FGraph.printGraphPathStr(env));
+        Debug.traceln("lookupClass failed " + AbsynUtil.pathString(p) + " " + FGraph.printGraphPathStr(env));
       then fail();
     */
   end match;
@@ -666,7 +667,7 @@ algorithm
       equation
         env = FGraph.pushScopeRef(env, frame);
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,inInfo);
-        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " + FGraph.printGraphPathStr(env) + " path: " + AbsynUtil.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
 
     // class is an instance of a component
@@ -683,7 +684,7 @@ algorithm
       equation
         env = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
-        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + AbsynUtil.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
         mod = Mod.getClassModifier(inEnv, id);
         (cache,env,_,_,_) =
         Inst.partialInstClassIn(
@@ -750,11 +751,11 @@ algorithm
 
     case SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix =
         SCode.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(constrainingClass = cc_path)))))
-      then Absyn.pathString(cc_path);
+      then AbsynUtil.pathString(cc_path);
 
     case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = ts))
       algorithm
-        (_, el, env) := lookupClass(inCache, inEnv, Absyn.typeSpecPath(ts));
+        (_, el, env) := lookupClass(inCache, inEnv, AbsynUtil.typeSpecPath(ts));
       then
         getConstrainingClass(el, env, inCache);
 
@@ -804,7 +805,7 @@ algorithm
       // For imported simple name, e.g. A, not possible to assert sub-path package
     case (Absyn.QUAL_IMPORT(path = path) :: _, _)
       equation
-        id = Absyn.pathLastIdent(path);
+        id = AbsynUtil.pathLastIdent(path);
         true = id == ident;
       then ComponentReference.pathToCref(path);
 
@@ -956,13 +957,13 @@ algorithm
 
     case (cache,Absyn.QUAL_IMPORT(path = path) :: _,env,ident,_)
       equation
-        id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
+        id = AbsynUtil.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         true = id == ident;
         Mutable.update(inState,true);
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
-        // strippath = Absyn.stripLast(path);
+        // strippath = AbsynUtil.stripLast(path);
         // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Mutable.create(false),true);
         (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Mutable.create(false),inInfo);
       then
@@ -975,8 +976,8 @@ algorithm
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
-        // strippath = Absyn.stripLast(path);
-        // Debug.traceln("named import " + id + " is " + Absyn.pathString(path));
+        // strippath = AbsynUtil.stripLast(path);
+        // Debug.traceln("named import " + id + " is " + AbsynUtil.pathString(path));
         // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Mutable.create(false),true);
         (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Mutable.create(false),inInfo);
       then
@@ -1952,7 +1953,7 @@ algorithm
     /*
     case (cache,env,id,info)
       equation
-        print("Looking up: " + Absyn.pathString(id) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
+        print("Looking up: " + AbsynUtil.pathString(id) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
@@ -1985,7 +1986,7 @@ algorithm
     case (cache,env,id,_)
       equation
         env = FGraph.selectScope(env, id);
-        name = Absyn.pathLastIdent(id);
+        name = AbsynUtil.pathLastIdent(id);
         (cache, res) = lookupFunctionsInEnv(cache, env, Absyn.IDENT(name), inInfo);
       then
         (cache,res);
@@ -2041,7 +2042,7 @@ algorithm
     case (_,_,id,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("lookupFunctionsInEnv failed on: " + Absyn.pathString(id));
+        Debug.traceln("lookupFunctionsInEnv failed on: " + AbsynUtil.pathString(id));
       then
         fail();
 
@@ -2076,7 +2077,7 @@ algorithm
       then (cache,acc);
     case (_,env,id::_,_,_)
       equation
-        str = Absyn.pathString(id) + " not found in scope: " + FGraph.printGraphPathStr(env);
+        str = AbsynUtil.pathString(id) + " not found in scope: " + FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end matchcontinue;
@@ -3442,7 +3443,7 @@ algorithm
     case (_, {}, _) then {};
     case (_, l :: ls, _)
       equation
-        enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
+        enum_type_name = AbsynUtil.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
         expl = makeEnumLiteralIndices(enumTypeName, ls, enumIndex + 1);
       then
@@ -3535,7 +3536,7 @@ algorithm
   env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), id, SOME(FCore.CLASS_SCOPE()));
   // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + "\n");
   (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
-  path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
+  path := AbsynUtil.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(),

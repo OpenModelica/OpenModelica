@@ -178,9 +178,9 @@ protected
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-  a_cref := Absyn.pathToCref(className);
+  a_cref := AbsynUtil.pathToCref(className);
   if Config.simCodeTarget() ==  "omsic" then
-    fileDir := listHead(Absyn.pathToStringList(className))+".tmp";
+    fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
   else
     fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   end if;
@@ -228,7 +228,7 @@ protected
   list<tuple<String, String>> program;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-  a_cref := Absyn.pathToCref(className);
+  a_cref := AbsynUtil.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
@@ -278,7 +278,7 @@ algorithm
     BackendDump.dumpBackendDAEBipartiteGraph(inBackendDAE, "BipartiteGraph_CompleteDAE_"+filenamePrefix);
   end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-  a_cref := Absyn.pathToCref(className);
+  a_cref := AbsynUtil.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
@@ -972,14 +972,14 @@ algorithm
           case TranslateModelKind.NORMAL()
             algorithm
               if Flags.isSet(Flags.FAILTRACE) then
-                resstr := Absyn.pathStringNoQual(className);
+                resstr := AbsynUtil.pathStringNoQual(className);
                 resstr := stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
                 Error.addMessage(Error.INTERNAL_ERROR, {resstr});
               end if;
             then ();
           case TranslateModelKind.XML()
             algorithm
-              Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": The model ",Absyn.pathStringNoQual(className)," could not be translated to XML"});
+              Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": The model ",AbsynUtil.pathStringNoQual(className)," could not be translated to XML"});
             then ();
         end match;
         if state==State.frontend then
@@ -1110,7 +1110,7 @@ algorithm
         Flags.set(Flags.GEN, true);
       end if;
       true = Flags.isSet(Flags.FAILTRACE);
-      resstr = Absyn.pathStringNoQual(className);
+      resstr = AbsynUtil.pathStringNoQual(className);
       resstr = stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
       Error.addMessage(Error.INTERNAL_ERROR, {resstr});
     then fail();
@@ -1197,7 +1197,7 @@ algorithm
 
     // +++ create SimCode stuff +++
     // create SimCode functions
-    a_cref := Absyn.pathToCref(className);
+    a_cref := AbsynUtil.pathToCref(className);
     fileDir := CevalScriptBackend.getFileDir(a_cref, p);
     (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
 

@@ -48,6 +48,7 @@ encapsulated package Expression
 
 // public imports
 public import Absyn;
+public import AbsynUtil;
 public import DAE;
 public import DAEDump;
 
@@ -165,7 +166,7 @@ algorithm
     case (DAE.BCONST(bool = b)) then Absyn.BOOL(b);
     case (DAE.ENUM_LITERAL(name = path))
       equation
-        cr_1 = Absyn.pathToCref(path);
+        cr_1 = AbsynUtil.pathToCref(path);
       then Absyn.CREF(cr_1);
 
     case (DAE.CREF(componentRef = cr))
@@ -211,19 +212,19 @@ algorithm
     case (DAE.CALL(path,expl,_))
       equation
         aexpl = List.map(expl,unelabExp);
-        acref = Absyn.pathToCref(path);
+        acref = AbsynUtil.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case (DAE.RECORD(path = path,exps = expl))
       equation
         aexpl = List.map(expl,unelabExp);
-        acref = Absyn.pathToCref(path);
+        acref = AbsynUtil.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case(DAE.PARTEVALFUNCTION(path,expl,_,_))
       equation
         aexpl = List.map(expl,unelabExp);
-        acref = Absyn.pathToCref(path);
+        acref = AbsynUtil.pathToCref(path);
       then
         Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
@@ -294,7 +295,7 @@ algorithm
     case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType=iterType,path=path),expr=e1,iterators=riters)
       equation
       //print("unelab of reduction not impl. yet");
-      acref = Absyn.pathToCref(path);
+      acref = AbsynUtil.pathToCref(path);
       ae1 = unelabExp(e1);
       aiters = List.map(riters, unelabReductionIterator);
       then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters));
@@ -327,7 +328,7 @@ algorithm
 
     case (DAE.DIM_ENUM(enumTypeName = p))
       equation
-        c = Absyn.pathToCref(p);
+        c = AbsynUtil.pathToCref(p);
       then
         Absyn.SUBSCRIPT(Absyn.CREF(c));
 
@@ -486,14 +487,14 @@ algorithm
 
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),AbsynUtil.dummyInfo);
         e = crefExp(e_cref);
       then
         e;
 
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),AbsynUtil.dummyInfo);
         e = crefExp(e_cref);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
@@ -1595,7 +1596,7 @@ algorithm
       String s;
       Absyn.Path name;
     case DAE.SCONST(s) then s;
-    case DAE.ENUM_LITERAL(name) then Absyn.pathString(name);
+    case DAE.ENUM_LITERAL(name) then AbsynUtil.pathString(name);
   end match;
 end sconstEnumNameString;
 
@@ -2323,7 +2324,7 @@ algorithm
       then DAE.T_TUPLE(tys, NONE());
     case (DAE.META_OPTION()) then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
     case (DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars))
-      then DAE.T_METATYPE(DAE.T_METARECORD(p, Absyn.stripLast(p), typeVars, i, {}, false));
+      then DAE.T_METATYPE(DAE.T_METARECORD(p, AbsynUtil.stripLast(p), typeVars, i, {}, false));
     case (DAE.BOX(e))
       then DAE.T_METATYPE(DAE.T_METABOXED(typeof(e)));
     case (DAE.MATCHEXPRESSION(et=tp))
@@ -3551,7 +3552,7 @@ algorithm
 
     case DAE.CALL(path=p1,expLst=explst,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2))))
       equation
-        true = Absyn.pathEqual(p1,p2) "is record constructor";
+        true = AbsynUtil.pathEqual(p1,p2) "is record constructor";
         explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then
         DAE.CALL(p1,explst,attr);
@@ -3598,7 +3599,7 @@ algorithm
       then explst;
 
     case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
-      guard Absyn.pathEqual(p1,p2) "is record constructor"
+      guard AbsynUtil.pathEqual(p1,p2) "is record constructor"
       then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
 
     case(DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = incref)}), _)
@@ -8031,7 +8032,7 @@ algorithm
 
     case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false))) then isConstWorkList(ae);
     case (DAE.CALL(path=path, expLst=ae, attr=DAE.CALL_ATTR(builtin=true))) then
-      if listMember(Absyn.pathFirstIdent(path),
+      if listMember(AbsynUtil.pathFirstIdent(path),
         {"initial","terminal","sample" /* der/edge/change/pre belongs to this list usually, but if we optimize the expression, we might end up with pre of a constant expression... */}
         ) then false else isConstWorkList(ae);
 
@@ -9232,7 +9233,7 @@ algorithm
       then (r1 == r2);
     case (DAE.SCONST(string = s1),DAE.SCONST(string = s2)) then stringEq(s1, s2);
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2)) then boolEq(b1, b2);
-    case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2)) then Absyn.pathEqual(enum1, enum2);
+    case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2)) then AbsynUtil.pathEqual(enum1, enum2);
     case (DAE.CREF(),DAE.CREF()) then true;
 
     // binary ops
@@ -9291,20 +9292,20 @@ algorithm
     // function calls
     case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2))
       equation
-        b = Absyn.pathEqual(path1, path2);
+        b = AbsynUtil.pathEqual(path1, path2);
         b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
     case (DAE.RECORD(path = path1,exps = expl1),DAE.RECORD(path = path2,exps = expl2))
       equation
-        b = Absyn.pathEqual(path1, path2);
+        b = AbsynUtil.pathEqual(path1, path2);
         b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2))
       equation
-        b = Absyn.pathEqual(path1, path2);
+        b = AbsynUtil.pathEqual(path1, path2);
         b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
@@ -9423,7 +9424,7 @@ algorithm
 
     case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2))
       equation
-        b = Absyn.pathEqual(path1, path2);
+        b = AbsynUtil.pathEqual(path1, path2);
         b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
@@ -9669,7 +9670,7 @@ algorithm
       Absyn.Path p1,p2;
 
     case (DAE.USERDEFINED(fqName = p1),DAE.USERDEFINED(fqName = p2))
-      then Absyn.pathCompare(p1, p2);
+      then AbsynUtil.pathCompare(p1, p2);
     else Util.intCompare(valueConstructor(inOperator1), valueConstructor(inOperator2));
   end match;
 end operatorCompare;
@@ -10575,7 +10576,7 @@ protected
   list<Absyn.Path> enum_lit_names;
   list<DAE.Exp> enum_lit_expl;
 algorithm
-  enum_lit_names := List.map1r(inLiterals, Absyn.suffixPath, inTypeName);
+  enum_lit_names := List.map1r(inLiterals, AbsynUtil.suffixPath, inTypeName);
   (outLiterals, _) := List.mapFold(enum_lit_names, makeEnumLiteral, 1);
 end makeEnumLiterals;
 
@@ -10813,7 +10814,7 @@ algorithm
       then List.map1(vs,splitRecord2,cr);
     case (DAE.CALL(path=p1,expLst=exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
       equation
-        true = Absyn.pathEqual(p1,p2) "is record constructor";
+        true = AbsynUtil.pathEqual(p1,p2) "is record constructor";
       then exps;
     case (DAE.RECORD(exps=exps),_)
       then exps;
@@ -11057,7 +11058,7 @@ algorithm
  case(DAE.RCONST(r))                                then stringHashDjb2(realString(r));
  case(DAE.BCONST(b))                                then stringHashDjb2(boolString(b));
  case(DAE.SCONST(s))                                then stringHashDjb2(s);
- case(DAE.ENUM_LITERAL(name=path))                  then stringHashDjb2(Absyn.pathString(path));
+ case(DAE.ENUM_LITERAL(name=path))                  then stringHashDjb2(AbsynUtil.pathString(path));
  case(DAE.CREF(componentRef=cr))                    then ComponentReference.hashComponentRef(cr);
 
  case(DAE.BINARY(e1,op,e2))                         then 1 + hashExp(e1)+hashOp(op)+hashExp(e2);
@@ -11066,9 +11067,9 @@ algorithm
  case(DAE.LUNARY(op,e1))                            then 4 + hashOp(op)+hashExp(e1);
  case(DAE.RELATION(e1,op,e2,_,_))                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
  case(DAE.IFEXP(e1,e2,e3))                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case(DAE.CALL(path=path,expLst=expl))              then 7 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.RECORD(path=path,exps=expl))            then 8 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 9 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.CALL(path=path,expLst=expl))              then 7 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.RECORD(path=path,exps=expl))            then 8 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 9 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
  case(DAE.ARRAY(array=expl))                        then 10 + List.reduce(List.map(expl,hashExp),intAdd);
  case(DAE.MATRIX(matrix=mexpl))                     then 11 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
  case(DAE.RANGE(_,e1,SOME(e2),e3))                  then 12 + hashExp(e1)+hashExp(e2)+hashExp(e3);
@@ -11097,7 +11098,7 @@ algorithm
     Absyn.Path path;
 
     // TODO: complete hasing of all subexpressions
-    case (DAE.REDUCTIONINFO(path=path)) then 22 + stringHashDjb2(Absyn.pathString(path));
+    case (DAE.REDUCTIONINFO(path=path)) then 22 + stringHashDjb2(AbsynUtil.pathString(path));
   end match;
 end hashReductionInfo;
 
@@ -11155,7 +11156,7 @@ algorithm
     case(DAE.GREATEREQ(_))                              then 53;
     case(DAE.EQUAL(_))                                  then 54;
     case(DAE.NEQUAL(_))                                 then 55;
-    case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(Absyn.pathString(path)) ;
+    case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(AbsynUtil.pathString(path)) ;
     end match;
 end hashOp;
 
@@ -11358,7 +11359,7 @@ algorithm
 
     case (ae as Absyn.IFEXP())
       equation
-        Absyn.IFEXP(ifExp = cond, trueBranch = ae1, elseBranch = ae2) = Absyn.canonIfExp(ae);
+        Absyn.IFEXP(ifExp = cond, trueBranch = ae1, elseBranch = ae2) = AbsynUtil.canonIfExp(ae);
         e = fromAbsynExp(cond);
         e1 = fromAbsynExp(ae1);
         e2 = fromAbsynExp(ae2);
@@ -11369,7 +11370,7 @@ algorithm
     case (Absyn.CALL(acr, fargs))
       equation
         exps = fargsToExps(fargs);
-        p = Absyn.crefToPath(acr);
+        p = AbsynUtil.crefToPath(acr);
         e = DAE.CALL(p, exps, DAE.callAttrBuiltinOther);
       then
         e;
@@ -11377,7 +11378,7 @@ algorithm
     case (Absyn.PARTEVALFUNCTION(acr, fargs))
       equation
         exps = fargsToExps(fargs);
-        p = Absyn.crefToPath(acr);
+        p = AbsynUtil.crefToPath(acr);
         e = DAE.PARTEVALFUNCTION(p, exps, DAE.T_UNKNOWN_DEFAULT, DAE.T_UNKNOWN_DEFAULT);
       then
         e;
@@ -12298,7 +12299,7 @@ public function rangesToSubscripts
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
 algorithm
-  outSubslst := Util.allCombinations(inRangelist, NONE(), Absyn.dummyInfo);
+  outSubslst := Util.allCombinations(inRangelist, NONE(), AbsynUtil.dummyInfo);
 end rangesToSubscripts;
 
 public function expandSubscript
@@ -12908,7 +12909,7 @@ algorithm
     return;
   end if;
   outContinue := match inExp
-    case DAE.CALL() then Absyn.pathEqual(path,inExp.path);
+    case DAE.CALL() then AbsynUtil.pathEqual(path,inExp.path);
     else true;
   end match;
   if not outContinue then
@@ -13005,7 +13006,7 @@ algorithm
     case DAE.ENUM_LITERAL()
       algorithm
         DAE.ENUM_LITERAL(name = p) := inExp2;
-      then Absyn.pathCompare(inExp1.name, p);
+      then AbsynUtil.pathCompare(inExp1.name, p);
 
     case DAE.CREF()
       algorithm
@@ -13067,19 +13068,19 @@ algorithm
     case DAE.CALL()
       algorithm
         DAE.CALL(path = p, expLst = expl) := inExp2;
-        comp := Absyn.pathCompare(inExp1.path, p);
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
       then if 0==comp then compareList(inExp1.expLst, expl) else comp;
 
     case DAE.RECORD()
       algorithm
         DAE.RECORD(path = p, exps = expl) := inExp2;
-        comp := Absyn.pathCompare(inExp1.path, p);
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
       then if 0==comp then compareList(inExp1.exps, expl) else comp;
 
     case DAE.PARTEVALFUNCTION()
       algorithm
         DAE.PARTEVALFUNCTION(path = p, expList = expl) := inExp2;
-        comp := Absyn.pathCompare(inExp1.path, p);
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
       then if 0==comp then compareList(inExp1.expList, expl) else comp;
 
     case DAE.RANGE()
@@ -13158,7 +13159,7 @@ algorithm
     case DAE.METARECORDCALL()
       algorithm
         DAE.METARECORDCALL(path = p, args = expl) := inExp2;
-        comp := Absyn.pathCompare(inExp1.path, p);
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
       then if comp==0 then compareList(inExp1.args, expl) else comp;
 
     case DAE.MATCHEXPRESSION()

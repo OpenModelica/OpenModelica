@@ -40,6 +40,7 @@ encapsulated package FResolve
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import FCore;
 import FNode;
 import FLookup;
@@ -141,7 +142,7 @@ algorithm
         p = SCode.getBaseClassPath(e);
         _ = SCode.elementInfo(e);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ext_one: baseclass: " + Absyn.pathString(p) +
+        print("FResolve.ext_one: baseclass: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
@@ -217,7 +218,7 @@ algorithm
         true = FNode.isRefDerived(r);
         FCore.CL(e = SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)))) = FNode.refData(r);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.derived_one: baseclass: " + Absyn.pathString(p) +
+        print("FResolve.derived_one: baseclass: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
@@ -284,7 +285,7 @@ algorithm
         FCore.CO(e = e) = FNode.refData(r);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
         (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
-        // print("Resolving ty: " + Absyn.pathString(p) + " -> " + FNode.toStr(FNode.fromRef(rr)) + "\n");
+        // print("Resolving ty: " + AbsynUtil.pathString(p) + " -> " + FNode.toStr(FNode.fromRef(rr)) + "\n");
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -296,7 +297,7 @@ algorithm
         FCore.CO(e = e) = FNode.refData(r);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ty_one: component type path: " + Absyn.pathString(p) +
+        print("FResolve.ty_one: component type path: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
@@ -372,7 +373,7 @@ algorithm
         true = FNode.isRefConstrainClass(r);
         FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.refData(r);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cc_one: constrained class: " + Absyn.pathString(p) +
+        print("FResolve.cc_one: constrained class: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
@@ -520,7 +521,7 @@ algorithm
       equation
         true = FNode.isRefCref(r);
         FCore.CR(r = cr) = FNode.refData(r);
-        (g, rr) = FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
+        (g, rr) = FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -531,7 +532,7 @@ algorithm
         true = FNode.isRefCref(r);
         FCore.CR(r = cr) = FNode.refData(r);
         failure((_, _) = FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cr_one: component reference: " + Absyn.crefString(cr) +
+        print("FResolve.cr_one: component reference: " + AbsynUtil.crefString(cr) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);
@@ -598,8 +599,8 @@ algorithm
         true = FNode.isRefMod(r) and
                (not FNode.isRefModHolder(r)) and
                (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
-        cr = Absyn.pathToCref(Absyn.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
-        (g, rr) = FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
+        cr = AbsynUtil.pathToCref(AbsynUtil.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
+        (g, rr) = FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -610,9 +611,9 @@ algorithm
         true = FNode.isRefMod(r) and
                (not FNode.isRefModHolder(r)) and
                (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
-        cr = Absyn.pathToCref(Absyn.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
+        cr = AbsynUtil.pathToCref(AbsynUtil.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
         failure((_, _) = FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.mod_one: modifier: " + Absyn.crefString(cr) +
+        print("FResolve.mod_one: modifier: " + AbsynUtil.crefString(cr) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
         // put it in the graph as unresolved ref
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {}, r, g);

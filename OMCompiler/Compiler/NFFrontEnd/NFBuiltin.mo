@@ -42,6 +42,7 @@ encapsulated package NFBuiltin
 
 public
 import Absyn;
+import AbsynUtil;
 import SCode;
 import NFBinding;
 import NFClass.Class;
@@ -69,6 +70,7 @@ public
 encapsulated package Elements
   import SCode;
   import Absyn;
+  import AbsynUtil;
 
   // Default parts of the declarations for builtin elements and types:
   public constant Absyn.TypeSpec ENUMTYPE_SPEC =
@@ -78,37 +80,37 @@ encapsulated package Elements
   constant SCode.Element REAL = SCode.CLASS("Real",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element INTEGER = SCode.CLASS("Integer",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element STRING = SCode.CLASS("String",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element ENUMERATION = SCode.CLASS("enumeration",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element ANY = SCode.CLASS("polymorphic",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo);
+    SCode.noComment, AbsynUtil.dummyInfo);
 
   constant SCode.Element CLOCK = SCode.CLASS("Clock",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_PREDEFINED_CLOCK(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, Absyn.dummyInfo) "the Clock type";
+    SCode.noComment, AbsynUtil.dummyInfo) "the Clock type";
 
 end Elements;
 
@@ -391,7 +393,7 @@ constant InstNode TIME =
       NFComponent.INPUT_ATTR,
       NONE(),
       NONE(),
-      Absyn.dummyInfo)),
+      AbsynUtil.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 

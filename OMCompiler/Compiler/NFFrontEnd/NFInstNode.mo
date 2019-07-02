@@ -35,6 +35,7 @@ import NFComponent.Component;
 import NFClass.Class;
 import SCode;
 import Absyn;
+import AbsynUtil;
 import Type = NFType;
 import NFFunction.Function;
 import Pointer;
@@ -311,7 +312,7 @@ uniontype InstNode
     SCode.Visibility vis;
   algorithm
     SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
-    name := Absyn.pathLastIdent(base_path);
+    name := AbsynUtil.pathLastIdent(base_path);
     node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
       Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
       InstNodeType.BASE_CLASS(parent, definition));
@@ -863,7 +864,7 @@ uniontype InstNode
       case CLASS_NODE() then SCode.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
-      else Absyn.dummyInfo;
+      else AbsynUtil.dummyInfo;
     end matchcontinue;
   end info;
 
@@ -1061,7 +1062,7 @@ uniontype InstNode
     isInner := match node
       case COMPONENT_NODE() then Component.isInner(Pointer.access(node.component));
       case CLASS_NODE()
-        then Absyn.isInner(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isInner(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isInner(node.outerNode);
       else false;
     end match;
@@ -1074,7 +1075,7 @@ uniontype InstNode
     isOuter := match node
       case COMPONENT_NODE() then Component.isOuter(Pointer.access(node.component));
       case CLASS_NODE()
-        then Absyn.isOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOuter(node.outerNode);
       else false;
     end match;
@@ -1087,7 +1088,7 @@ uniontype InstNode
     isOuter := match node
       case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
       case CLASS_NODE()
-        then Absyn.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOnlyOuter(node.outerNode);
       else false;
     end match;

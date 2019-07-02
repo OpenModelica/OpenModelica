@@ -8,6 +8,7 @@ encapsulated package NFUnitCheck
 
 public
 import Absyn;
+import AbsynUtil;
 import DAE;
 import NFUnit;
 import System;
@@ -115,7 +116,7 @@ end parseFunctionList;
 
 public function getFunctionName
   input DAE.Function inFunction;
-  output String outString = Absyn.pathString(Absyn.makeNotFullyQualified(DAEUtil.functionName(inFunction)));
+  output String outString = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(DAEUtil.functionName(inFunction)));
 end getFunctionName;
 
 function getVars
@@ -379,7 +380,7 @@ algorithm
     case DAE.EQUATION(exp = DAE.Exp.TUPLE(PR = expl),
                       scalar = DAE.CALL(path = Absyn.FULLYQUALIFIED(path)))
       algorithm
-        s1 := Absyn.pathString(path);
+        s1 := AbsynUtil.pathString(path);
         s1 := System.trim(s1,".");
         (_, outvars, _, outunitlist) := getNamedUnitlist(s1, args);
         (htCr2U, htS2U, htU2S, expList2) :=
@@ -392,7 +393,7 @@ algorithm
     case DAE.EQUATION(exp = lhs,
                       scalar = DAE.CALL(path = Absyn.FULLYQUALIFIED(path)))
       algorithm
-        s1 := Absyn.pathString(path);
+        s1 := AbsynUtil.pathString(path);
         s1 := System.trim(s1,".");
         (_, outvars, _, outunitlist) := getNamedUnitlist(s1,args);
         (ut1, (htCr2U, htS2U, htU2S), _) :=
@@ -906,7 +907,7 @@ algorithm
 
     //user defined function CALL
     case (DAE.CALL(path=Absyn.FULLYQUALIFIED(path), expLst=ExpList), (HtCr2U, HtS2U, HtU2S), _) equation
-      s1 = Absyn.pathString(path);
+      s1 = AbsynUtil.pathString(path);
       s1 = System.trim(s1,".");
       (invars, _, inunitlist, _) = getNamedUnitlist(s1, inargs);
       (HtCr2U, HtS2U, HtU2S, expListList) = foldCallArg1(ExpList, HtCr2U, HtS2U, HtU2S, inUt, inunitlist, invars, s1);

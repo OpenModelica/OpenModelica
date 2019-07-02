@@ -41,6 +41,7 @@ public import HashTable2;
 public import BackendVarTransform;
 public import HashSetExp;
 
+protected import AbsynUtil;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -121,7 +122,7 @@ protected
    Boolean b;
 algorithm
   SIGNATURE(path=path,inputsVari=varis, canBeEvaluated=b) := signat;
-  str := Absyn.pathString(path)+"[ "+stringDelimitList(List.map(varis,VariabilityString)," | ")+" ] "+boolString(b);
+  str := AbsynUtil.pathString(path)+"[ "+stringDelimitList(List.map(varis,VariabilityString)," | ")+" ] "+boolString(b);
 end callSignatureStr;
 
 protected function VariabilityString "outputs a string representation for the Variability"
@@ -146,7 +147,7 @@ algorithm
   SIGNATURE(path=path1, inputsVari=vari1) := signat1;
   SIGNATURE(path=path2, inputsVari=vari2) := signat2;
   isEqual := false;
-  if Absyn.pathEqual(path1,path2) then
+  if AbsynUtil.pathEqual(path1,path2) then
     if List.isEqualOnTrue(vari1,vari2,VariabilityIsEqual) then
       isEqual := true;
     end if;
@@ -1565,21 +1566,21 @@ algorithm
       SCode.Visibility visibility;
     case (DAE.FUNCTION(path,_,typ,visibility,pP,iI,iType,source,comment),_,_,_,_)
       equation
-        //print("the pathname before: "+Absyn.pathString(path)+"\n");
+        //print("the pathname before: "+AbsynUtil.pathString(path)+"\n");
         //print("THE FUNCTION BEFORE \n"+DAEDump.dumpFunctionStr(funcIn)+"\n");
         // assemble the path-name
-        s = Absyn.pathString(path);
+        s = AbsynUtil.pathString(path);
         chars = stringListStringChar(s);
         chars = listDelete(chars, 1);
         s = stringCharListString(chars);
-        path = Absyn.stringPath(s+"_eval"+intString(idx));
+        path = AbsynUtil.stringPath(s+"_eval"+intString(idx));
         // update the type
         //print("the old type: "+Types.unparseType(typ)+"\n");
         typ = updateFunctionType(typ,outputs,origOutputs);
         //print("the new type: "+Types.unparseType(typ)+"\n");
         func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,visibility,pP,iI,iType,source,comment);
         //print("THE FUNCTION AFTER \n"+DAEDump.dumpFunctionStr(func)+"\n");
-        //print("the pathname after: "+Absyn.pathString(path)+"\n");
+        //print("the pathname after: "+AbsynUtil.pathString(path)+"\n");
       then (func,path);
     else
       equation

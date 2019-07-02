@@ -408,7 +408,7 @@ algorithm
                     SCode.defaultPrefixes,
                     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                    SCode.noComment, NONE(), Absyn.dummyInfo),
+                    SCode.noComment, NONE(), AbsynUtil.dummyInfo),
                   DAE.NOMOD(),
                  FCore.VAR_UNTYPED(),
                  empty_env);

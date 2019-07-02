@@ -119,7 +119,7 @@ algorithm
   if call_count > limit then
     Pointer.update(call_counter, 0);
     Error.addSourceMessage(Error.EVAL_RECURSION_LIMIT_REACHED,
-      {String(limit), Absyn.pathString(Function.name(fn))}, InstNode.info(fn.node));
+      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(fn.node));
     fail();
   end if;
 
@@ -176,7 +176,7 @@ algorithm
     else
       // External functions that we would need to generate code for and execute.
       Error.assertion(false, getInstanceName() +
-        " failed on " + Absyn.pathString(fn.path) +
+        " failed on " + AbsynUtil.pathString(fn.path) +
         ", evaluation of userdefined external functions not yet implemented", sourceInfo());
       fail();
     end try;

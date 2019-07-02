@@ -860,12 +860,14 @@ package Absyn
     end EXTERNALDECL;
   end ExternalDecl;
 
+end Absyn;
+
+package AbsynUtil
   function isClassdef
-    input Element inElement;
+    input Absyn.Element inElement;
     output Boolean b;
   end isClassdef;
-
-end Absyn;
+end AbsynUtil;
 
 package Config
   function acceptMetaModelicaGrammar

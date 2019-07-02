@@ -38,6 +38,7 @@ encapsulated package NFSCodeCheck
   This module checks the SCode representation for conformance "
 
 public import Absyn;
+public import AbsynUtil;
 public import NFInstTypes;
 public import SCode;
 public import NFSCodeEnv;
@@ -66,7 +67,7 @@ algorithm
 
     case (_, _, _ :: _, _)
       equation
-        ts_path = Absyn.typeSpecPath(inTypeSpec);
+        ts_path = AbsynUtil.typeSpecPath(inTypeSpec);
         ty_path = NFSCodeEnv.getEnvPath(inTypeEnv);
         false = isSelfReference(inTypeName, ty_path, ts_path);
       then
@@ -94,10 +95,10 @@ algorithm
       Absyn.Path p1, p2;
 
     case (_, p1, Absyn.FULLYQUALIFIED(p2))
-      then Absyn.pathEqual(Absyn.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
+      then AbsynUtil.pathEqual(AbsynUtil.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
 
     case (_, _, p2)
-      then stringEqual(Absyn.pathLastIdent(inTypePath), Absyn.pathFirstIdent(p2));
+      then stringEqual(AbsynUtil.pathLastIdent(inTypePath), AbsynUtil.pathFirstIdent(p2));
 
   end match;
 end isSelfReference;
@@ -161,7 +162,7 @@ algorithm
     case (SCode.CLASS(name = name,
         classDef = SCode.DERIVED(typeSpec = ty)), _, _)
       equation
-        ty_path = Absyn.typeSpecPath(ty);
+        ty_path = AbsynUtil.typeSpecPath(ty);
         false = isSelfReference(name, inBaseClass, ty_path);
       then
         ();
@@ -301,8 +302,8 @@ protected function checkCompRedeclarationReplaceable
 algorithm
   isValid := match inReplaceable
     case SCode.NOT_REPLACEABLE()
-      guard Absyn.pathEqual(Absyn.typeSpecPath(inType1),
-                            Absyn.typeSpecPath(inType2))
+      guard AbsynUtil.pathEqual(AbsynUtil.typeSpecPath(inType1),
+                            AbsynUtil.typeSpecPath(inType2))
       then
         true;
 

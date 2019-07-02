@@ -40,6 +40,7 @@ encapsulated package FInst
 // public imports
 public
 import Absyn;
+import AbsynUtil;
 import SCode;
 import DAE;
 import FCore;
@@ -117,14 +118,14 @@ algorithm
         //print("FGraph refs:    " + intString(listLength(FNode.dfs_filter(FGraph.top(g), FNode.isRefReference))) + "\n");
         print("Total time:     " + realString(List.fold(lst, realAdd, 0.0)) + "\n");
 
-        FGraphDump.dumpGraph(g, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.graphml");
+        FGraphDump.dumpGraph(g, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.graphml");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         _ = FGraph.clone(g);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FGraph->clone:  " + realString(listHead(lst)) + "\n");
 
-        // FGraphDump.dumpGraph(gclone, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.clone.graphml");
+        // FGraphDump.dumpGraph(gclone, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.clone.graphml");
       then
         DAE.emptyDae;
 
@@ -184,7 +185,7 @@ algorithm
         // print("FGraph nodes:   " + intString(FGraph.lastId(g)) + "\n");
         print("Total time:     " + realString(List.fold(lst, realAdd, 0.0)) + "\n");
 
-        FGraphDump.dumpGraph(g, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.graphml");
+        FGraphDump.dumpGraph(g, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.graphml");
       then
         DAE.emptyDae;
 

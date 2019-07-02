@@ -27,7 +27,7 @@ template programExternalHeaderFromTypes(list<DAE.Type> tys)
   #endif
   <%tys |> ty as T_METARECORD(__) =>
       let fieldsStr=(ty.fields |> var as TYPES_VAR(__) => '"<%var.name%>"'; separator=",")
-      let omcname='<%stringReplace(stringReplace(Absyn.pathString(path,"$",false),"_","__"), "$", "_")%>'
+      let omcname='<%stringReplace(stringReplace(AbsynUtil.pathString(path,"$",false),"_","__"), "$", "_")%>'
       let nElts = listLength(ty.fields)
       /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
       let fieldsDescription =
@@ -43,7 +43,7 @@ template programExternalHeaderFromTypes(list<DAE.Type> tys)
       <%fieldsDescription%>
       ADD_METARECORD_DEFINITIONS struct record_description <%omcname%>__desc = {
         "<%omcname%>",
-        "<%Absyn.pathString(path,".",false)%>",
+        "<%AbsynUtil.pathString(path,".",false)%>",
         <%omcname%>__desc__fields
       };
       #endif

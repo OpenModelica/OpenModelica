@@ -39,6 +39,7 @@ encapsulated package InstBinding
 "
 
 public import Absyn;
+public import AbsynUtil;
 public import ClassInf;
 public import DAE;
 public import FCore;
@@ -453,14 +454,14 @@ algorithm
     case (mod, index_list, bind_name)
       equation
         SOME(DAE.CALL(path = path, expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
-        true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
+        true = AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
     case (mod, index_list, bind_name)
       equation
         SOME(DAE.RECORD(path = path, exps = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
-        true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
+        true = AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
@@ -799,7 +800,7 @@ algorithm
   else
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln("- Inst.makeRecordBinding2 failed for " +
-        Absyn.pathString(inRecordName) + "." + name + "\n");
+        AbsynUtil.pathString(inRecordName) + "." + name + "\n");
     end if;
     fail();
   end try;

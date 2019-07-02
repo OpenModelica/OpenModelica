@@ -177,7 +177,7 @@ algorithm
         (cache,v) = Ceval.ceval(cache,env,exp,true,Absyn.MSG(info),0);
         Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
 
-        cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
+        cname_str = AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
         defaulSimOpt = CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(className, cname_str, defaultOption);
 
         (cache, startTime, stopTime, numberOfIntervals) =
@@ -343,7 +343,7 @@ algorithm
     case (cache,env,cr2 as Absyn.CREF_IDENT(),_,_,impl,_,_)
       equation
         ErrorExt.setCheckpoint("Scripting");
-        cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
+        cr = AbsynUtil.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
         (cache,exp_1,prop) = Static.elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,false,inPrefix,info);
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop);
@@ -370,8 +370,8 @@ algorithm
 
    case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
       equation
-        className = Absyn.crefToPath(cr);
-        cname_str = Absyn.pathString(className);
+        className = AbsynUtil.crefToPath(cr);
+        cname_str = AbsynUtil.pathString(className);
         (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype =
@@ -385,8 +385,8 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
       equation
-        className = Absyn.crefToPath(cr);
-        cname_str = Absyn.pathString(className);
+        className = AbsynUtil.crefToPath(cr);
+        cname_str = AbsynUtil.pathString(className);
         (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype =
@@ -400,8 +400,8 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
       equation
-        className = Absyn.crefToPath(cr);
-        cname_str = Absyn.pathString(className);
+        className = AbsynUtil.crefToPath(cr);
+        cname_str = AbsynUtil.pathString(className);
         (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
           DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype =
@@ -492,7 +492,7 @@ algorithm
 
     case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,_,_,_)
       equation
-        className = Absyn.crefToPath(cr);
+        className = AbsynUtil.crefToPath(cr);
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
@@ -504,7 +504,7 @@ algorithm
 
     case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,_,_,_)
       equation
-        className = Absyn.crefToPath(cr);
+        className = AbsynUtil.crefToPath(cr);
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then

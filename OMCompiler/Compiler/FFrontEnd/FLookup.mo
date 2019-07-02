@@ -39,6 +39,7 @@ encapsulated package FLookup
 
 public
 import Absyn;
+import AbsynUtil;
 import FCore;
 import FNode;
 
@@ -66,7 +67,7 @@ type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Msg = Option<SourceInfo>;
 
-constant Option<SourceInfo> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
+constant Option<SourceInfo> dummyLookupOption = NONE(); // SOME(AbsynUtil.dummyInfo);
 
 public uniontype Options
   record OPTIONS
@@ -277,9 +278,9 @@ algorithm
         failure((_, _) = name(g, r, rest, inOptions, inMsg));
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " + Absyn.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
+        s = "missing: " + AbsynUtil.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing path part
-        (g, r) = FGraphBuild.mkAssertNode(Absyn.pathFirstIdent(rest), s, r, g);
+        (g, r) = FGraphBuild.mkAssertNode(AbsynUtil.pathFirstIdent(rest), s, r, g);
       then
         (g, r);
 
@@ -293,7 +294,7 @@ algorithm
 
     case (_, _, _, _, SOME(_))
       equation
-        print("FLookup.name failed for: " + Absyn.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
+        print("FLookup.name failed for: " + AbsynUtil.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
 
@@ -555,9 +556,9 @@ algorithm
         true = FNode.isRefClass(r) or FNode.isRefComponent(r);
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " + Absyn.crefString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
+        s = "missing: " + AbsynUtil.crefString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing cref part
-        (g, r) = FGraphBuild.mkAssertNode(Absyn.crefFirstIdent(rest), s, r, g);
+        (g, r) = FGraphBuild.mkAssertNode(AbsynUtil.crefFirstIdent(rest), s, r, g);
       then
         (g, r);
 
@@ -572,7 +573,7 @@ algorithm
 
     case (_, _, _, _, SOME(_))
       equation
-        print("FLookup.cr failed for: " + Absyn.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
+        print("FLookup.cr failed for: " + AbsynUtil.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
 

@@ -42,6 +42,7 @@ encapsulated package DAE
 
 // public imports
 import Absyn;
+import AbsynUtil;
 import BaseAvlTree;
 import ClassInf;
 import SCode;
@@ -121,7 +122,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},Prefix.NOCOMPPRE(),{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{},Prefix.NOCOMPPRE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"
@@ -614,7 +615,7 @@ public
   redeclare type Value = Option<Function>;
   redeclare function extends keyStr
   algorithm
-    outString := Absyn.pathString(inKey);
+    outString := AbsynUtil.pathString(inKey);
   end keyStr;
   redeclare function extends valueStr
   algorithm
@@ -627,7 +628,7 @@ public
   end valueStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := Absyn.pathCompareNoQual(inKey1,inKey2);
+    outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
   end keyCompare;
 
   redeclare function addConflictDefault = addConflictReplace;
