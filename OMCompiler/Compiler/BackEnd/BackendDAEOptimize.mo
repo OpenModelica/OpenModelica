@@ -907,49 +907,34 @@ end protectedParametersFinder;
 //
 // =============================================================================
 public function removeEqualFunctionCalls "author: Frenkel TUD 2011-04
-  This function detects equal function calls of the form a=f(b) and c=f(b) in
+  This function detects equal function calls of the form a=<exp> and b=<exp> in
   BackendDAE.BackendDAE to get speed up."
-  input BackendDAE.BackendDAE dae;
-  output BackendDAE.BackendDAE odae;
+  input output BackendDAE.BackendDAE dae;
 algorithm
-  if Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL) then
-    // skip this module if cse module is activated
-    odae := dae;
-  else
-    odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
-  end if;
+  dae := BackendDAEUtil.mapEqSystem(dae, removeEqualFunctionCallsWork);
 end removeEqualFunctionCalls;
 
-protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04
-  This function detects equal function calls of the form a=f(b) and c=f(b) in
-  BackendDAE.BackendDAE to get speed up."
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+protected function removeEqualFunctionCallsWork
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.EquationArray eqns;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mT;
+  BackendDAE.Variables vars;
+  DAE.FunctionTree funcs;
+  list<Integer> changed;
 algorithm
-  (osyst,oshared) := match isyst
-    local
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      list<Integer> changed;
-      Boolean b;
-      BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
-
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)
-      algorithm
-        funcs := BackendDAEUtil.getFunctions(ishared);
-        (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-        // check equations
-        (m, (mT,_,_,changed)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}));
-        // update arrayeqns and algorithms, collect info for wrappers
-        syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
-        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed);
-      then (syst, ishared);
-  end match;
+  syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+  funcs := BackendDAEUtil.getFunctions(shared);
+  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+  // check equations
+  (m, (mT,_,_,changed)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT, vars, eqns, {}));
+  // update arrayeqns and algorithms, collect info for wrappers
+  syst.m := SOME(m);
+  syst.mT := SOME(mT);
+  syst.matching := BackendDAE.NO_MATCHING();
+  syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed);
 end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
@@ -970,13 +955,14 @@ algorithm
       AvlSetInt.Tree expvars;
       list<Integer> controleqns,expvars1;
       list<list<Integer>> expvarseqns;
+      BackendDAE.Equation eqn;
 
     case (_,_,(mT,vars,eqns,changed))
       equation
         // check number of vars in eqns
         _::_ = elem;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.get(eqns,pos);
-        // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
+        eqn as BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.get(eqns, pos);
+        //BackendDump.dumpEquationList({eqn}, "removeEqualFunctionCallFinder");
         (ecr,exp) = functionCallEqn(e1,e2,vars);
         // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
         // failure(DAE.CREF(componentRef=_) = exp);
@@ -1006,38 +992,40 @@ protected function functionCallEqn
   output DAE.Exp outECr;
   output DAE.Exp outExp;
 algorithm
-  (outECr,outExp) := match (ie1,ie2,inVars)
+  (outECr, outExp) := match (ie1, ie2)
       local
         DAE.ComponentRef cr;
-        DAE.Exp e1,e2;
+        DAE.Exp e1, e2;
         DAE.Operator op;
 
-      case (DAE.CREF(),DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),_)
-        then fail();
-      case (DAE.CREF(),DAE.CREF(),_)
-        then fail();
-      case (DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),DAE.CREF(),_)
-        then fail();
+      case (DAE.CREF(), DAE.CREF())
+      then fail();
+
+      case (DAE.CREF(), DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF()))
+      then fail();
+
+      case (DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF()), DAE.CREF())
+      then fail();
+
       // a = -f(...);
-      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(),exp=e2),_)
-        equation
-          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (DAE.UNARY(op,e1),e2);
+      case (e1 as DAE.CREF(componentRef=cr), DAE.UNARY(operator=op as DAE.UMINUS(), exp=e2)) equation
+        ((_::_), (_::_)) = BackendVariable.getVar(cr, inVars);
+      then (DAE.UNARY(op, e1), e2);
+
       // a = f(...);
-      case (e1 as DAE.CREF(componentRef = cr),e2,_)
-        equation
-          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (e1,e2);
+      case (e1 as DAE.CREF(componentRef=cr), e2) equation
+        ((_::_), (_::_)) = BackendVariable.getVar(cr, inVars);
+      then (e1, e2);
+
       // a = -f(...);
-      case (DAE.UNARY(operator=op as DAE.UMINUS(),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
-        equation
-          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (DAE.UNARY(op,e2),e1);
+      case (DAE.UNARY(operator=op as DAE.UMINUS(), exp=e1), e2 as DAE.CREF(componentRef=cr)) equation
+        ((_::_), (_::_)) = BackendVariable.getVar(cr, inVars);
+      then (DAE.UNARY(op, e2), e1);
+
       // f(...)=a;
-      case (e1,e2 as DAE.CREF(componentRef = cr),_)
-        equation
-          ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
-        then (e2,e1);
+      case (e1, e2 as DAE.CREF(componentRef=cr)) equation
+        ((_::_), (_::_)) = BackendVariable.getVar(cr, inVars);
+      then (e2, e1);
   end match;
 end functionCallEqn;
 
@@ -1084,31 +1072,32 @@ protected function removeEqualFunctionCall
   output BackendDAE.EquationArray outEqns;
   output list<Integer> outEqsLst;
 algorithm
-  (outEqns,outEqsLst):=
-  matchcontinue (inEqsLst,inExp,inECr,inEqns,ichanged)
+  (outEqns, outEqsLst) := matchcontinue (inEqsLst)
     local
       BackendDAE.EquationArray eqns;
-      BackendDAE.Equation eqn,eqn1;
-      Integer pos,i;
-      list<Integer> rest,changed;
-    case ({},_,_,_,_) then (inEqns,ichanged);
-    case (pos::rest,_,_,_,_)
-      equation
-        eqn = BackendEquation.get(inEqns,pos);
-        //BackendDump.printEquationList({eqn});
-        //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
-        (eqn1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
-        //BackendDump.printEquationList({eqn1});
-        //print("i="); print(intString(i)); print("\n");
-        true = intGt(i,0);
-        eqns =  BackendEquation.setAtIndex(inEqns,pos,eqn1);
-        changed = List.consOnTrue(not listMember(pos,ichanged),pos,ichanged);
-        (eqns,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,changed);
-      then (eqns,changed);
-    case (_::rest,_,_,_,_)
-      equation
-        (eqns,changed) = removeEqualFunctionCall(rest,inExp,inECr,inEqns,ichanged);
-      then (eqns,changed);
+      BackendDAE.Equation eqn, eqn1;
+      Integer pos, i;
+      list<Integer> rest, changed;
+
+    case ({})
+    then (inEqns, ichanged);
+
+    case (pos::rest) equation
+      eqn = BackendEquation.get(inEqns, pos);
+      //BackendDump.printEquationList({eqn});
+      //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
+      (eqn1, (_, _, i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr, inExp, 0));
+      //BackendDump.dumpEquationList({eqn1}, "removeEqualFunctionCall");
+      //print("i="); print(intString(i)); print("\n");
+      true = intGt(i, 0);
+      eqns =  BackendEquation.setAtIndex(inEqns, pos, eqn1);
+      changed = List.consOnTrue(not listMember(pos, ichanged), pos, ichanged);
+      (eqns, changed) = removeEqualFunctionCall(rest, inExp, inECr, eqns, changed);
+    then (eqns, changed);
+
+    case (_::rest) equation
+      (eqns, changed) = removeEqualFunctionCall(rest, inExp, inECr, inEqns, ichanged);
+    then (eqns, changed);
   end matchcontinue;
 end removeEqualFunctionCall;
 
