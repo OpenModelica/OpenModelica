@@ -3345,19 +3345,11 @@ algorithm
 end incidenceRowExp1withInput;
 
 public function updateIncidenceMatrix
-"author: PA
-  Takes a daelow and the incidence matrix and its transposed
-  represenation and a list of  equation indexes that needs to be updated.
-  First the BackendDAE.IncidenceMatrix is updated, i.e. the mapping from equations
-  to variables. Then, by collecting all variables in the list of equations
-  to update, a list of changed variables are retrieved. This is used to
-  update the BackendDAE.IncidenceMatrixT (transpose) mapping from variables to
-  equations. The function returns an updated incidence matrix.
-  inputs:  (BackendDAE,
-            IncidenceMatrix,
-            IncidenceMatrixT,
-            int list /* list of equations to update */)
-  outputs: (IncidenceMatrix, IncidenceMatrixT)"
+  "First the BackendDAE.IncidenceMatrix is updated, i.e. the mapping from
+  equations to variables. Then, by collecting all variables in the list of
+  equations to update, a list of changed variables are retrieved. This is used
+  to update the BackendDAE.IncidenceMatrixT (transpose) mapping from variables
+  to equations. The function returns an updated incidence matrix."
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
   input Option<DAE.FunctionTree> functionTree;
@@ -8174,8 +8166,7 @@ protected
 algorithm
   BackendDAE.DAE(systs, shared) := dae;
   (systs, shared) := List.map1Fold(systs, func, a, shared);
-  // Filter out empty systems
-  (systs, shared) := filterEmptySystems(systs, shared);
+  (systs, shared) := filterEmptySystems(systs, shared) "filter out empty systems";
   odae := BackendDAE.DAE(systs, shared);
 end mapEqSystem1;
 
