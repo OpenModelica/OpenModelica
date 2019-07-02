@@ -424,8 +424,8 @@ constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(125, "addDerAliases", false,
                 which helps in some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation.
                 Deprecated flag: Use --preOptModules+=introduceDerAlias instead."));
-constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(126, "disableComSubExp", false,
-  Util.gettext("Deactivates module 'comSubExp'\nDeprecated flag: Use --preOptModules-=comSubExp instead."));
+constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(126, "nfExpandFuncArgs", false,
+  Util.gettext("Expand all function arguments in the new frontend."));
 constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
 constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
@@ -546,8 +546,6 @@ constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(185, "disableFMIDependency", 
   Util.gettext("Disables the dependency analysis and generation for FMI 2.0."));
 constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(186, "warnMinMax", true,
   Util.gettext("Makes a warning assert from min/max variable attributes instead of error."));
-constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(187, "nfExpandFuncArgs", false,
-  Util.gettext("Expand all function arguments in the new frontend."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -680,7 +678,7 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_CSE,
   DUMP_CSE_VERBOSE,
   ADD_DER_ALIASES,
-  DISABLE_COMSUBEXP,
+  NF_EXPAND_FUNC_ARGS,
   NO_START_CALC,
   NO_PARTITIONING,
   CONSTJAC,
@@ -740,8 +738,7 @@ constant list<DebugFlag> allDebugFlags = {
   NF_API_DYNAMIC_SELECT,
   NF_API_NOISE,
   FMI20_DEPENDENCIES,
-  WARNING_MINMAX_ATTRIBUTES,
-  NF_EXPAND_FUNC_ARGS
+  WARNING_MINMAX_ATTRIBUTES
 };
 
 public
