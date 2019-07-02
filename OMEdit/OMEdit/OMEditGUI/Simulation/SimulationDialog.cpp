@@ -222,23 +222,6 @@ void SimulationDialog::setUpForm()
   pSimulationIntervalGridLayout->addWidget(mpIntervalTextBox, 3, 1);
   pSimulationIntervalGridLayout->addWidget(new Label(Helper::secs), 3, 2);
   mpSimulationIntervalGroupBox->setLayout(pSimulationIntervalGridLayout);
-  // interactive simulation
-  mpInteractiveSimulationGroupBox = new QGroupBox(tr("Interactive Simulation"));
-  mpInteractiveSimulationGroupBox->setCheckable(true);
-  mpInteractiveSimulationStepCheckBox = new QCheckBox(tr("Simulate with steps"));
-  mpInteractiveSimulationStepCheckBox->setToolTip(tr("Activates communication with the simulation remote every time step.\n"
-                                                     "Can cause high overhead but values will not be missed."));
-  mpInteractiveSimulationPortLabel = new Label(tr("Simulation server port: "));
-  mpInteractiveSimulationPortLabel->setToolTip(tr("Specifies the embedded server port."));
-  mpInteractiveSimulationPortNumberTextBox = new QLineEdit;
-  connect(mpInteractiveSimulationGroupBox, SIGNAL(toggled(bool)), SLOT(interactiveSimulation(bool)));
-  // interactive simulation layout
-  QGridLayout *pInteractiveSimulationLayout = new QGridLayout;
-  pInteractiveSimulationLayout->setColumnStretch(1, 1);
-  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationStepCheckBox, 0, 0);
-  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortLabel, 1, 0);
-  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortNumberTextBox, 1, 1);
-  mpInteractiveSimulationGroupBox->setLayout(pInteractiveSimulationLayout);
   // Integration
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
   mpMethodLabel = new Label(tr("Method:"));
@@ -333,26 +316,57 @@ void SimulationDialog::setUpForm()
   // Launch Animation
   mpLaunchAnimationCheckBox = new QCheckBox(tr("Launch Animation"));
 #endif
+  QGridLayout *pLaunchOptionsLayout = new QGridLayout;
+  pLaunchOptionsLayout->setAlignment(Qt::AlignTop);
+  pLaunchOptionsLayout->addWidget(mpBuildOnlyCheckBox, 0, 0);
+  pLaunchOptionsLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 0, 1);
+#if !defined(WITHOUT_OSG)
+  pLaunchOptionsLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 1, 0);
+  pLaunchOptionsLayout->addWidget(mpLaunchAnimationCheckBox, 1, 1);
+#else
+  pLaunchOptionsLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 1, 0, 1, 2);
+#endif
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
   pGeneralTabLayout->addWidget(mpSimulationIntervalGroupBox, 0, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpInteractiveSimulationGroupBox, 1, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 2, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpCflagsLabel, 3, 0);
-  pGeneralTabLayout->addWidget(mpCflagsTextBox, 3, 1, 1, 2);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 4, 0);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 4, 1);
-  pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 4, 2);
-  pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 5, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 6, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 7, 0, 1, 3);
-#if !defined(WITHOUT_OSG)
-  pGeneralTabLayout->addWidget(mpLaunchAnimationCheckBox, 8, 0, 1, 3);
-#endif
+  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 1, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpCflagsLabel, 2, 0);
+  pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1, 1, 2);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
+  pGeneralTabLayout->addLayout(pLaunchOptionsLayout, 4, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTabScrollArea, Helper::general);
+  // interactive simulation tab
+  mpInteractiveSimulationTab = new QWidget;
+  // interactive simulation
+  QString interactiveSimulationText = tr("Interactive Simulation");
+  mpInteractiveSimulationGroupBox = new QGroupBox(interactiveSimulationText);
+  mpInteractiveSimulationGroupBox->setCheckable(true);
+  mpInteractiveSimulationStepCheckBox = new QCheckBox(tr("Simulate with steps"));
+  mpInteractiveSimulationStepCheckBox->setToolTip(tr("Activates communication with the simulation remote every time step.\n"
+                                                     "Can cause high overhead but values will not be missed."));
+  mpInteractiveSimulationPortLabel = new Label(tr("Simulation server port: "));
+  mpInteractiveSimulationPortLabel->setToolTip(tr("Specifies the embedded server port."));
+  mpInteractiveSimulationPortNumberTextBox = new QLineEdit;
+  connect(mpInteractiveSimulationGroupBox, SIGNAL(toggled(bool)), SLOT(interactiveSimulation(bool)));
+  // interactive simulation layout
+  QGridLayout *pInteractiveSimulationLayout = new QGridLayout;
+  pInteractiveSimulationLayout->setColumnStretch(1, 1);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationStepCheckBox, 0, 0);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortLabel, 1, 0);
+  pInteractiveSimulationLayout->addWidget(mpInteractiveSimulationPortNumberTextBox, 1, 1);
+  mpInteractiveSimulationGroupBox->setLayout(pInteractiveSimulationLayout);
+  // set interactive simulation Tab Layout
+  QGridLayout *pInteractiveSimulationTabLayout = new QGridLayout;
+  pInteractiveSimulationTabLayout->setAlignment(Qt::AlignTop);
+  pInteractiveSimulationTabLayout->addWidget(mpInteractiveSimulationGroupBox, 0, 0);
+  mpInteractiveSimulationTab->setLayout(pInteractiveSimulationTabLayout);
+  // add interactive simulation Tab to Simulation TabWidget
+  mpSimulationTabWidget->addTab(mpInteractiveSimulationTab, interactiveSimulationText);
   // Translation Tab
   mpTranslationTab = new QWidget;
   mpTranslationFlagsWidget = new TranslationFlagsWidget(this);
@@ -2309,9 +2323,24 @@ void SimulationDialog::simulate()
         performSimulation();
       }
     }
-    saveDialogGeometry();
+    if (isVisible()) {
+      saveDialogGeometry();
+    }
     accept();
   }
+}
+
+/*!
+ * \brief SimulationDialog::reject
+ * Reimplementation of QDialog::reject().\n
+ * Save the dialog geometry and then calls QDialog::reject().
+ */
+void SimulationDialog::reject()
+{
+  if (isVisible()) {
+    saveDialogGeometry();
+  }
+  QDialog::reject();
 }
 
 /*!
