@@ -186,9 +186,11 @@ protected function resolveLoops_resolvePartitions "author:Waurich TUD 2014-02
 algorithm
   daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark)
     local
-      list<Integer> partition, eqCrossLst, varCrossLst;
+      Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping;
+      list<Integer> partition, eqCrossLst, varCrossLst, mapIndices;
       list<list<Integer>> rest, loops;
       BackendDAE.EquationArray eqs;
+      BackendDAE.AdjacencyMatrix map;
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation
         partition = List.filter1OnTrue(partition,arrayIsZeroAt,nonLoopEqMark);  //the eqs that are loops
@@ -201,15 +203,20 @@ algorithm
         // search the partitions for loops
         partition = List.filter1OnTrue(partition,arrayIsZeroAt,nonLoopEqMark);  //the eqs that are loops
         //print("\nanalyse the partition "+stringDelimitList(List.map(partition,intString),",")+"\n");
-        (loops,eqCrossLst,varCrossLst) = resolveLoops_findLoops({partition},mIn,mTIn);
+        (loops,eqCrossLst,varCrossLst,optStructureMapping) = resolveLoops_findLoops({partition},mIn,mTIn);
         loops = List.filterOnFalse(loops,listEmpty);
         //print("the loops in this partition: \n"+stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+"\n");
 
         // check if its worth to resolve the loops
-        loops = List.filter1OnTrue(loops,evaluateLoop,(m_uncut,mT_uncut,eqCrossLst));
+        if isSome(optStructureMapping) then
+          SOME((mapIndices,map,loops)) = optStructureMapping;
+          loops = List.filter1OnTrueAndUpdate(loops,evaluateTripleLoop,updateTripleLoop,(m_uncut,mT_uncut,eqCrossLst,mapIndices,map));
+        else
+          loops = List.filter1OnTrue(loops,evaluateLoop,(m_uncut,mT_uncut,eqCrossLst));
+        end if;
         //print("the loops that will be resolved: \n"+stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+"\n");
         // resolve the loops
-        (eqs,_) = resolveLoops_resolveAndReplace(loops,eqCrossLst,varCrossLst,mIn,mTIn,eqMap,varMap,daeEqs,daeVars,{});
+        (eqs,_) = resolveLoops_resolveAndReplace(loops,eqCrossLst,varCrossLst,mIn,mTIn,eqMap,varMap,daeEqs,daeVars,{}); //KAB4
         eqs = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,eqs,daeVars,nonLoopEqMark);
       then
         eqs;
@@ -366,10 +373,12 @@ public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   output list<list<Integer>> loopsOut = {};
   output list<Integer> crossEqsOut = {};
   output list<Integer> crossVarsOut = {};
+  output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping;
 protected
   list<list<Integer>> loops, eqVars;
   list<Integer> eqCrossLst, varCrossLst, partitionVars;
   AvlSetInt.Tree set;
+  tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>> structureMapping;
 algorithm
   for partition in partitionsIn loop
     try
@@ -384,7 +393,7 @@ algorithm
       varCrossLst := List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
 
       // search the partitions for loops
-      loops := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn,findExactlyOneLoop);
+      (loops,optStructureMapping) := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn,findExactlyOneLoop);
       if if findExactlyOneLoop then (not listEmpty(loops) and not listEmpty(loopsOut)) else false then
         fail();
       end if;
@@ -410,49 +419,65 @@ protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
   input BackendDAE.IncidenceMatrixT mTIn;
   input Boolean findExactlyOneLoop;
   output list<list<Integer>> loopsOut;
+  output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> structureMapping;
 algorithm
-  loopsOut := match(eqsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
+  (loopsOut,structureMapping) := match(eqsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
     local
       Boolean isNoSingleLoop;
       Integer replaceIdx,eqIdx,varIdx,parEqIdx,daeEqIdx;
-      list<Integer> varCrossLst, eqCrossLst, crossNodes, restNodes, adjCrossNodes, partition, partition2, replEqs, subLoop;
-      list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
+      list<Integer> varCrossLst, eqCrossLst, crossNodes, restNodes, adjCrossNodes, partition, partition2, replEqs, subLoop, mapIndices;
+      list<list<Integer>> paths, allPaths, simpleLoops, tripleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       BackendDAE.Equation resolvedEq, startEq;
       list<BackendDAE.Equation> eqLst;
       AvlSetInt.Tree eqCrossSet;
+      BackendDAE.AdjacencyMatrix minAdj,map;
+      tuple<list<Integer>,BackendDAE.AdjacencyMatrix> mapping;
+      Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optTripleMapping;
     case(_,_::_,{},_,_)
-      equation
+      equation //KAB1
         //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
         allPaths = getPathTillNextCrossEq(eqCrossLstIn,mIn,mTIn,eqCrossLstIn,{},{});
         allPaths = List.sort(allPaths,List.listIsLonger);
-          //print("all paths: \n"+stringDelimitList(List.map(allPaths,HpcOmTaskGraph.intLstString)," / ")+"\n");
+        //print("all paths: \n"+stringDelimitList(List.map(allPaths,HpcOmTaskGraph.intLstString)," / ")+"\n");
         paths1 = List.fold1(allPaths,getReverseDoubles,allPaths,{});   // all paths with just one direction
         paths0 = List.unique(paths1);  // only the paths between the eqs without concerning the vars in between
+
         simpleLoops = getDoubles(paths1,{});  // get 2 adjacent equations which form a simple loop i.e. they share 2 variables
-          //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
+        //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
         (_,paths,_) = List.intersection1OnTrue(paths1,simpleLoops,intLstIsEqual);
 
-        paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
-        (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
-        loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
-        simpleLoops = listAppend(simpleLoops,loopConnectors);
+        // special case to find more complex structures (arrays and triple loops)
+        if listEmpty(simpleLoops) then
+          (eqCrossLst,paths1,mapping,minAdj) = findEqualPathStructure(eqCrossLstIn,paths1);
+          //print("crossNodes: " + HpcOmTaskGraph.intLstString(eqCrossLst) + "\n");
+          (mapIndices,map) = mapping;
+          (tripleLoops,paths0) = getTriples(eqCrossLst,minAdj);
+          optTripleMapping = SOME((mapIndices,map,tripleLoops));
+          //print("all tripleLoop-paths after equal structure: \n"+stringDelimitList(List.map(tripleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
+        else
+          optTripleMapping = NONE();
+	        paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
+	        (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
+	        loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
+	        simpleLoops = listAppend(simpleLoops,loopConnectors);
 
-        //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
-        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
-        isNoSingleLoop = listEmpty(subLoop);
-        simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
-        paths0 = listAppend(simpleLoops,connectedPaths);
-        paths0 = sortPathsAsChain(paths0);
-        if findExactlyOneLoop then
-          if not listEmpty(paths0) then
-            {_} = paths0;
-          end if;
+	        //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
+	        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
+	        isNoSingleLoop = listEmpty(subLoop);
+	        simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
+	        paths0 = listAppend(simpleLoops,connectedPaths);
+	        paths0 = sortPathsAsChain(paths0);
+	        if findExactlyOneLoop then
+	          if not listEmpty(paths0) then
+	            {_} = paths0;
+	          end if;
+	        end if;
         end if;
 
         //print("all paths to be resolved: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
-        paths0;
+        (paths0, optTripleMapping);
     case(_,{},_::_,_,_)
       equation
           //print("partition has only varCrossNodes\n");
@@ -476,7 +501,7 @@ algorithm
             {_} = closedPaths;
           end if;
         end if;
-      then closedPaths;
+      then (closedPaths,NONE());
     case(_,{},{},_,_)
       algorithm
         // no crossNodes
@@ -488,7 +513,7 @@ algorithm
             break;
           end if;
         end for;
-      then {subLoop};
+      then ({subLoop},NONE());
     case(_,_::_,_::_,_,_)
       algorithm
         //print("there are both varCrossNodes and eqNodes\n");
@@ -503,7 +528,7 @@ algorithm
         paths := getShortPathsBetweenEqCrossNodes(AvlSetInt.listKeysReverse(eqCrossSet), eqCrossSet, mIn, mTIn, {}, findExactlyOneLoop);
         //
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
-      then paths;
+      then (paths,NONE());
     else
       equation
         Error.addInternalError("function resolveLoops_findLoops2 failed", sourceInfo());
@@ -511,6 +536,150 @@ algorithm
         fail();
   end match;
 end resolveLoops_findLoops2;
+
+protected function findEqualPathStructure //KAB2
+  "author: kabdelhak FHB 2019-06
+  Resolves seemingly hard structures mostly formed through array connectors.
+  By finding equally connected crossNodes and merging them to one single
+  node, the loop becomes way simpler. All merged nodes will get treated the
+  same as the super node. The mapping contains the information which nodes
+  got merged and which index contains the super node."
+  input output list<Integer> crossNodes;
+  input output list<list<Integer>> uniquePaths;
+  output tuple<list<Integer>,BackendDAE.AdjacencyMatrix> mapping;
+  output BackendDAE.AdjacencyMatrix minAdj;
+protected
+  list<Integer> mapIndices;
+  BackendDAE.AdjacencyMatrix map;
+algorithm
+  minAdj := getMinimalAdjacencyMatrix(crossNodes,uniquePaths);
+  (minAdj,uniquePaths,mapIndices,map,crossNodes) := removeEqualPaths(crossNodes,minAdj,uniquePaths,{},arrayCreate(max(cn for cn in crossNodes),{}));
+  mapping := (mapIndices,map);
+end findEqualPathStructure;
+
+protected function getMinimalAdjacencyMatrix
+  "author: kabdelhak FHB 2019-06
+  Returns the minimal adjacency matrix of connected equations in the partition.
+  NOTE: Rows AND Columns represent equations. No variables involved."
+  input list<Integer> crossNodes;
+  input list<list<Integer>> uniquePaths;
+  output BackendDAE.AdjacencyMatrix minAdj;
+algorithm
+    minAdj := arrayCreate(max(cn for cn in crossNodes),{});
+  for path in uniquePaths loop
+    _ := match path
+      local
+        Integer a, b;
+      case a::{b} algorithm // a::rest ?
+        minAdj := Array.appendToElement(a, {b}, minAdj);
+        minAdj := Array.appendToElement(b, {a}, minAdj);
+      then 0;
+      else 1;
+    end match;
+  end for;
+
+  //sort
+  for cn in crossNodes loop
+    arrayUpdate(minAdj,cn,List.sort(arrayGet(minAdj,cn),intGt));
+  end for;
+end getMinimalAdjacencyMatrix;
+
+protected function removeEqualPaths
+  "author: kabdelhak FHB 2019-06
+  Helper function for findEqualPathStructure. It removes the superfluous nodes
+  and declares the index first as super node."
+  input list<Integer> crossNodes;
+  input output BackendDAE.AdjacencyMatrix minAdj;
+  input output list<list<Integer>> uniquePaths;
+  input output list<Integer> mapIndices;
+  input output BackendDAE.AdjacencyMatrix map;
+  input output list<Integer> accCrossNodes = {};
+algorithm
+  (minAdj,uniquePaths,mapIndices,map,accCrossNodes) := match crossNodes
+    local
+      Integer cn1;
+      list<Integer> rest, assigned = {}, unassigned = {};
+    case cn1::rest algorithm
+      accCrossNodes:=cn1::accCrossNodes;
+      for cn2 in rest loop
+        if HpcOmTaskGraph.equalLists(arrayGet(minAdj,cn1),arrayGet(minAdj,cn2)) then
+          assigned := cn2::assigned;
+          arrayUpdate(minAdj,cn2,{});
+          uniquePaths := removeNode(cn2,uniquePaths);
+        else
+          unassigned := cn2::unassigned;
+          accCrossNodes := cn2::accCrossNodes;
+        end if;
+      end for;
+      if not listEmpty(assigned) then
+         mapIndices := cn1::mapIndices;
+         map := Array.appendToElement(cn1, assigned, map);
+      end if;
+      then removeEqualPaths(unassigned,minAdj,uniquePaths,mapIndices,map,accCrossNodes);
+    else (minAdj,uniquePaths,mapIndices,map,accCrossNodes);
+  end match;
+end removeEqualPaths;
+
+protected function removeNode
+  "author: kabdelhak FHB 2019-06
+  Helper function for findEqualPathStructure. It removes all paths containing
+  a specific node."
+  input Integer node;
+  input list<list<Integer>> inPaths;
+  input output list<list<Integer>> accPaths={};
+algorithm
+  accPaths:=matchcontinue inPaths
+    local
+      list<Integer> path;
+      list<list<Integer>> rest, acc;
+    case path::rest
+      algorithm
+        if not pathContainsNode(node,path) then
+          acc := path::accPaths;
+        else
+          acc := accPaths;
+        end if;
+      then removeNode(node,rest,acc);
+    case {}
+      then accPaths;
+  end matchcontinue;
+end removeNode;
+
+protected function pathContainsNode
+  "author: kabdelhak FHB 2019-06
+  Helper function for findEqualPathStructure. Returns true, if the node is contained
+  in given path."
+  input Integer node;
+  input list<Integer> inPath;
+  output Boolean c;
+algorithm
+  c := match inPath
+    local
+      Integer n;
+      list<Integer> rest;
+    case n::rest guard(intEq(n,node))
+      then true;
+    case _::rest
+      then pathContainsNode(node,rest);
+    case {}
+      then false;
+  end match;
+end pathContainsNode;
+
+
+
+ protected function listContains
+    input list<Integer> lst;
+    input Integer int;
+    output Boolean res = false;
+  algorithm
+    for i in lst loop
+      if intEq(i,int) then
+        res := true;
+        return;
+      end if;
+    end for;
+end listContains;
 
 protected function hasSameIntSortedExcept
   input list<Integer> inList1;
@@ -994,6 +1163,37 @@ algorithm
   end match;
 end getDoubles;
 
+protected function getTriples
+  "author: kabdelhak FHB 2019-07
+  function to get loops containing three eqCrossNodes."
+  input list<Integer> crossNodes;
+  input BackendDAE.AdjacencyMatrix minAdj;
+  output list<list<Integer>> tripleLoops = {};
+  output list<list<Integer>> allPaths = {};
+protected
+  list<Integer> path1, path2, path3;
+algorithm
+  for c0 in crossNodes loop
+    path1 := arrayGet(minAdj,c0);
+    for c1 in path1 loop
+      if intGt(c1,c0) then
+        path2 := arrayGet(minAdj,c1);
+        for c2 in path2 loop
+          if intGt(c2,c1) then
+            path3 := arrayGet(minAdj,c2);
+            if listContains(path3,c0) then
+              tripleLoops := {c0,c1,c2}::tripleLoops;
+              allPaths := {c1,c2}::allPaths;
+              allPaths := {c0,c2}::allPaths;
+              allPaths := {c0,c1}::allPaths;
+            end if;
+          end if;
+        end for;
+      end if;
+    end for;
+  end for;
+end getTriples;
+
 protected function getEqNodesForVarLoop "author: Waurich TUD 2013-01
   fold function to get the eqs in a loop that is given by the varNodes."
   input list<Integer> varIdcs;
@@ -1286,6 +1486,7 @@ algorithm
         then
           fail();
   end matchcontinue;
+  //KAB2
 end getPathTillNextCrossEq;
 
 protected function cons1
@@ -1384,6 +1585,58 @@ algorithm
   r2 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),2) then r2 else r1;
   resolve := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),3) then true else r2;
 end evaluateLoop;
+
+protected function evaluateTripleLoop
+  "author:kabdelhak FHB 2019-07
+  Special case for loops containing three eqCrossNodes"
+  input list<Integer> loopIn;
+  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
+  output Boolean resolve;
+protected
+  Boolean r1,r2;
+  Integer numInLoop,numOutLoop;
+  BackendDAE.IncidenceMatrix m,map;
+  list<Integer> mapIndices,loopFull,eqCrossLst,allVars,loopVars,nonLoopVars,loopEqs,nonLoopEqs;
+  list<list<Integer>> eqVars;
+algorithm
+  loopFull := loopIn;
+  (m,_,eqCrossLst,mapIndices,map) := tplIn;
+  for i in mapIndices loop
+    loopFull := listAppend(arrayGet(map,i),loopFull);
+  end for;
+
+  eqVars := List.map1(loopFull,Array.getIndexFirst,m);
+  allVars := List.flatten(eqVars);
+  loopVars := doubleEntriesInLst(allVars,{},{});
+  //print("loopVars : "+stringDelimitList(List.map(loopVars,intString),",")+"\n");
+
+  // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
+  (_,nonLoopVars,_) := List.intersection1OnTrue(allVars,loopVars,intEq);
+  //print("nonLoopVars : "+stringDelimitList(List.map(nonLoopVars,intString),",")+"\n");
+  eqCrossLst := List.intersectionOnTrue(loopVars,eqCrossLst,intEq);
+  numInLoop := listLength(loopVars);
+  numOutLoop := listLength(nonLoopVars);
+  r1 := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,10);
+  r2 := intGe(numInLoop,numOutLoop-2);
+  r1 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),1) then r1 else false;
+  r2 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),2) then r2 else r1;
+  resolve := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),3) then true else r2;
+end evaluateTripleLoop;
+
+protected function updateTripleLoop
+  "author:kabdelhak FHB 2019-07
+  Update function for special case including for loops containing three eqCrossNodes"
+  input output list<Integer> loopFull;
+  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
+protected
+  BackendDAE.IncidenceMatrix map;
+  list<Integer> mapIndices;
+algorithm
+  (_,_,_,mapIndices,map) := tplIn;
+  for i in mapIndices loop
+    loopFull := listAppend(arrayGet(map,i),loopFull);
+  end for;
+end updateTripleLoop;
 
 protected function sumUp2Equations "author:Waurich TUD 2013-12
   sums up or subtracts 2 equations, depending on the boolean (true=+, false =-)"
@@ -2244,7 +2497,6 @@ algorithm
       equation
         // start resolving the first 2 equations
         nextEq::rest = rest;
-        //BackendDump.dumpIncidenceMatrix(m);
         vars1 = List.map(arrayGet(me,startEq),Util.tuple31);
         vars2 = List.map(arrayGet(me,nextEq),Util.tuple31);
         vars1 = List.intersectionOnTrue(vars1,vars2,intEq);

@@ -4303,7 +4303,7 @@ algorithm
   inCompLstOut := List.replaceAt({}, iNodeIdx, inCompLstIn);
 end updateInComps2;
 
-protected function equalLists "author: Waurich TUD 2013-07
+public function equalLists "author: Waurich TUD 2013-07
   compares two lists and sets true if they are equal."
   input list<Integer> inList1;
   input list<Integer> inList2;
