@@ -5972,6 +5972,32 @@ algorithm
   outList := list(e for e guard(inFilterFunc(e, inArg1)) in inList);
 end filter1OnTrue;
 
+public function filter1OnTrueAndUpdate<T, ArgT1>
+  "Takes a list of values and a filter function over the values and returns a
+   sub list of values for which the matching function returns true. The
+   matching function may update the values.
+     Example:
+       filter1OnTrue({1, 2, 3, 1, 5}, intEq, 1) => {1, 1}"
+  input list<T> inList;
+  input FilterFunc inFilterFunc;
+  input UpdateFunc inUpdateFunc;
+  input ArgT1 inArg1;
+  output list<T> outList;
+
+  partial function FilterFunc
+    input T inElement;
+    input ArgT1 inArg1;
+    output Boolean outResult;
+  end FilterFunc;
+
+  partial function UpdateFunc
+    input output T inElement;
+    input ArgT1 inArg1;
+  end UpdateFunc;
+algorithm
+  outList := list(inUpdateFunc(e,inArg1) for e guard(inFilterFunc(e, inArg1)) in inList);
+end filter1OnTrueAndUpdate;
+
 public function filter1rOnTrue<T, ArgT1>
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function returns true.
