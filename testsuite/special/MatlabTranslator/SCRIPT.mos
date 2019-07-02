@@ -12,6 +12,7 @@ files := {
   //"Absyn.mo",
   "AbsynMat.mo",
   "../../../OMCompiler/Compiler/FrontEnd/Absyn.mo",
+  "../../../OMCompiler/Compiler/FrontEnd/AbsynUtil.mo",
   "../../../OMCompiler/Compiler/Util/Autoconf.mo",
   "../../../OMCompiler/Compiler/Util/Error.mo",
   "../../../OMCompiler/Compiler/Util/ErrorExt.mo",

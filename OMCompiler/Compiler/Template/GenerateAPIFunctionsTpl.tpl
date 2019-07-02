@@ -8,6 +8,7 @@ template getCevalScriptInterface(list<DAE.Type> tys)
   let funcs = tys |> ty as T_FUNCTION(__) => '<%getCevalScriptInterfaceFunc(pathLastIdent(path), ty.funcArg, ty.funcResultType)%><%\n%>'
   <<
   import Absyn;
+  import AbsynUtil;
   import CevalScript;
   import Parser;
   import SymbolTable;
@@ -62,7 +63,7 @@ template getOutValue(Text name, DAE.Type ty, Text &varDecl, Text &postMatch)
 
     case T_CODE(ty=C_TYPENAME(__)) then
       let &varDecl += 'Absyn.Path <%name%>_path;<%\n%>'
-      let &postMatch += '<%name%> := Absyn.pathString(<%name%>_path);<%\n%>'
+      let &postMatch += '<%name%> := AbsynUtil.pathString(<%name%>_path);<%\n%>'
       'Values.CODE(Absyn.C_TYPENAME(path=<%name%>_path))'
     else error(sourceInfo(), 'getOutValue failed for <%unparseType(ty)%>')
 end getOutValue;
