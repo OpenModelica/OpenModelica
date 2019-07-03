@@ -23,7 +23,7 @@ getErrorString();
 // ""
 // true
 // ""
-// "{{{q4[\\[FormalT]],q3[\\[FormalT]],q2[\\[FormalT]],q1[\\[FormalT]]},{q4[\\[FormalT]]==q1[\\[FormalT]],q1[\\[FormalT]]==q2[\\[FormalT]] + q3[\\[FormalT]]}},{{},{}},{\"None\",\"None\",\"None\",\"None\"}}"
+// "{{{q4[\\[FormalT]],q3[\\[FormalT]],q2[\\[FormalT]],q1[\\[FormalT]]},{q1[\\[FormalT]]==q4[\\[FormalT]],q1[\\[FormalT]]==q2[\\[FormalT]] + q3[\\[FormalT]]}},{{},{}},{\"None\",\"None\",\"None\",\"None\"}}"
 // ""
 // "{{{mHDNK[\\[FormalT]],mA5[\\[FormalT]],mA6[\\[FormalT]],mA7[\\[FormalT]],mHK[\\[FormalT]],mV[\\[FormalT]],mSPLL[\\[FormalT]],mSPL[\\[FormalT]],mFDKELL[\\[FormalT]],mFDKEL[\\[FormalT]]},{mFDKEL[\\[FormalT]] + (mFDKELL[\\[FormalT]] + (ToExpression[StringReplace[\"0.4\",\"e\"->\"*1.0*10^\"]] * mV[\\[FormalT]] + (-mSPLL[\\[FormalT]] - mSPL[\\[FormalT]])))==0,mSPL[\\[FormalT]] + (mSPLL[\\[FormalT]] + (-mA5[\\[FormalT]] - mHK[\\[FormalT]] - mA7[\\[FormalT]] - mV[\\[FormalT]] - mA6[\\[FormalT]]))==0,mA7[\\[FormalT]] + (mA6[\\[FormalT]] + (mA5[\\[FormalT]] - mHDNK[\\[FormalT]]))==0}},{{},{}},{\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\",\"None\"}}"
 // ""

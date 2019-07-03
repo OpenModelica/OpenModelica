@@ -257,7 +257,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// pre-optimization module removeSimpleEquations (simulation)
+// pre-optimization module comSubExp (simulation)
 // ########################################
 //
 //
@@ -285,7 +285,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// pre-optimization module comSubExp (simulation)
+// pre-optimization module removeSimpleEquations (simulation)
 // ########################################
 //
 //
