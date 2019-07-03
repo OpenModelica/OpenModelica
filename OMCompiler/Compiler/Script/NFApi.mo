@@ -118,10 +118,10 @@ function evaluateAnnotation
   input Absyn.Annotation inAnnotation;
   output String outString = "";
 protected
-  Boolean b = false;
+  Boolean b;
 algorithm
+  b := Flags.set(Flags.SCODE_INST, true);
   try
-    b := Flags.set(Flags.SCODE_INST, true);
     outString := evaluateAnnotation_dispatch(absynProgram, classPath, inAnnotation);
     Flags.set(Flags.SCODE_INST, b);
   else
@@ -282,10 +282,10 @@ function evaluateAnnotations
   input list<Absyn.Element> inElements;
   output list<String> outStringLst = {};
 protected
-  Boolean b = false;
+  Boolean b;
 algorithm
+  b := Flags.set(Flags.SCODE_INST, true);
   try
-    b := Flags.set(Flags.SCODE_INST, true);
     outStringLst := evaluateAnnotations_dispatch(absynProgram, classPath, inElements);
     Flags.set(Flags.SCODE_INST, b);
   else
@@ -457,11 +457,20 @@ protected
   InstNode top, inst_cls, cls;
   SCode.Program program;
   String name;
+  Boolean b;
 algorithm
-  // run the front-end front
-  (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
-  cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
-  qualPath := InstNode.scopePath(cls, true);
+  b := Flags.set(Flags.SCODE_INST, true);
+  try
+    // run the front-end front
+    (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+    cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+    qualPath := InstNode.scopePath(cls, true);
+    Flags.set(Flags.SCODE_INST, b);
+  else
+    // do not fail, just return the Absyn path
+    qualPath := pathToQualify;
+    Flags.set(Flags.SCODE_INST, b);
+  end try;
 end mkFullyQual;
 
 protected
