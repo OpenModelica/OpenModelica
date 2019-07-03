@@ -36,22 +36,15 @@ encapsulated package Absyn
   description: Abstract syntax
 
 
-  This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
+  This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC). It 
   contains uniontypes for constructing the abstract syntax tree
-  (AST), functions for building and altering AST nodes and a few functions
-  for printing the AST:
+  (AST).
 
   * Abstract Syntax Tree (Close to Modelica)
      - Complete Modelica 2.2, 3.1, 3.2, MetaModelica
      - Including annotations and comments
   * Primary AST for e.g. the Interactive module
      - Model editor related representations (must use annotations)
-  * Functions
-     - A few small functions, only working on Absyn types, e.g.:
-       - pathToCref(Path) => ComponentRef
-       - joinPaths(Path, Path) => (Path)
-       - etc.
-
 
   mo\'s constructors are primarily used by (Parser/Modelica.g).
 
