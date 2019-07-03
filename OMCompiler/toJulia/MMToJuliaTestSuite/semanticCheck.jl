@@ -35,12 +35,19 @@
 #    Behaves correctly for some simple functions
 =#
 
+module SemanticCheck
 include("OutputPrimitives/BoolTests.jl")
 include("OutputPrimitives/IntegerTests.jl")
 include("OutputPrimitives/RealTests.jl")
 include("./testsuiteUtil.jl")
-using MMToJuliaUtil
+using Test
+using .MMToJuliaTestSuiteUtil
 
-@testsuite Sematic tests begin
+#= Point of entry for semantic tests =#
+function semanticCheck(omc)
+  @testset "Sematic tests" begin
+
+  end
+end
 
 end
