@@ -36,7 +36,7 @@ end Tearing3;
 
 setDebugFlags("dumpCSE"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 --postOptModules+=cseBinary"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 // Result:
@@ -74,13 +74,13 @@ simulate(Tearing3); getErrorString();
 // ========================================
 // 1/1 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 // 2/2 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
-// 3/3 (1): $DER.uC = $DER.u0   [dynamic |0|0|0|0|]
+// 3/3 (1): 0.0 = $DER.u0 - $DER.uC   [unknown |0|0|0|0|]
 // 4/4 (1): u0 = u1 + uL   [dynamic |0|0|0|0|]
 // 5/5 (1): iC = C * $DER.uC   [dynamic |0|0|0|0|]
 // 6/6 (1): uL = L * der(iL)   [dynamic |0|0|0|0|]
 // 7/7 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
 // 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
-// 9/9 (1): uC = u0   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = u0 - uC   [unknown |0|0|0|0|]
 // 10/10 (1): u0 = sin(time)   [unknown |0|0|0|0|]
 // 11/11 (1): $DER.u0 = cos(time)   [unknown |0|0|0|0|]
 //
@@ -117,13 +117,13 @@ simulate(Tearing3); getErrorString();
 // ========================================
 // 1/1 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
 // 2/2 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
-// 3/3 (1): $DER.uC = $DER.u0   [dynamic |0|0|0|0|]
+// 3/3 (1): 0.0 = $DER.u0 - $DER.uC   [unknown |0|0|0|0|]
 // 4/4 (1): u0 = u1 + uL   [dynamic |0|0|0|0|]
 // 5/5 (1): iC = C * $DER.uC   [dynamic |0|0|0|0|]
 // 6/6 (1): uL = L * der(iL)   [dynamic |0|0|0|0|]
 // 7/7 (1): uL = R2 * i2   [dynamic |0|0|0|0|]
 // 8/8 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
-// 9/9 (1): uC = u0   [dynamic |0|0|0|0|]
+// 9/9 (1): 0.0 = u0 - uC   [unknown |0|0|0|0|]
 // 10/10 (1): u0 = sin(time)   [unknown |0|0|0|0|]
 // 11/11 (1): $DER.u0 = cos(time)   [unknown |0|0|0|0|]
 //
@@ -134,7 +134,5 @@ simulate(Tearing3); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Deprecated flag --cseBinary detected. Use --postOptModules+=cseBinary instead.
-// Warning: Deprecated flag --cseCall detected. Use --postOptModules+=wrapFunctionCalls instead.
-// "
+// ""
 // endResult

@@ -362,8 +362,8 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"6\" name=\"force1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
-// <bindExpression string=\"-force1.f\">
+// <variable id=\"6\" name=\"mass1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"force1.f\">
 // </bindExpression>
 // <attributesValues>
 // <quantity string=\"&quot;Force&quot;\">
@@ -372,8 +372,8 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"7\" name=\"mass1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
-// <bindExpression string=\"force1.f\">
+// <variable id=\"7\" name=\"force1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <bindExpression string=\"-force1.f\">
 // </bindExpression>
 // <attributesValues>
 // <quantity string=\"&quot;Force&quot;\">
