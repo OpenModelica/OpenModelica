@@ -2674,6 +2674,56 @@ algorithm
   outMatch := inCrefIndex1.index == inCrefIndex2.index;
 end removeVar2;
 
+public function isKnownAndParam
+"Returns true if all contained crefs are knownVariables and parameters"
+  input DAE.Exp inExp;
+  input BackendDAE.Variables knownVars;
+  output Boolean outBoolean;
+protected
+  tuple<Boolean,BackendDAE.Variables> tpl = (true,knownVars);
+algorithm
+  (_,(outBoolean,_)) := Expression.traverseExpBottomUp(inExp, isKnownAndParamWork, tpl);
+end isKnownAndParam;
+
+protected function isKnownAndParamWork
+  input output DAE.Exp inExp;
+  input output tuple<Boolean,BackendDAE.Variables> tpl;
+protected
+  Boolean outBoolean;
+  BackendDAE.Variables knownVars;
+algorithm
+  (outBoolean,knownVars) := tpl;
+  tpl := match (inExp, outBoolean)
+    local
+      DAE.ComponentRef cr;
+    case (_,false)
+      then (false,knownVars);
+    case (DAE.CREF(componentRef = cr),_)
+      then (BackendVariable.crefIsParam(cr,knownVars),knownVars);
+    else (true,knownVars);
+  end match;
+end isKnownAndParamWork;
+
+public function crefIsParam
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output Boolean outBool = true;
+protected
+  list<BackendDAE.Var> varlst;
+algorithm
+  try
+    varlst := getVar(inComponentRef, inVariables);
+    for var in varlst loop
+      outBool := isParam(var);
+      if not outBool then
+        return;
+      end if;
+    end for;
+  else
+    outBool := false;
+  end try;
+end crefIsParam;
+
 public function existsVar
 "author: PA
   Return true if a variable exists in the vector"

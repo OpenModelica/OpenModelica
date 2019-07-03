@@ -3988,6 +3988,7 @@ public function getAdjacencyMatrixEnhancedScalar
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input Boolean trytosolve "determine the solvability by solving for the variable instead of deriving, needed for 'Casual Tearing Set'";
+  input Boolean staticStateSelection = false "Consider states with stateSelect.never as always solvable. Only for index reduction.";
   output BackendDAE.AdjacencyMatrixEnhanced outIncidenceMatrix;
   output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceMatrixT;
   output array<list<Integer>> outMapEqnIncRow;
@@ -4016,7 +4017,7 @@ algorithm
          arrT = arrayCreate(numberofVars, {});
         // create the array to mark if a variable is allready found in the equation
         rowmark = arrayCreate(numberofVars, 0);
-        (arr,arrT,mapEqnIncRow,mapIncRowEqn,varsSolvedInWhenEqnsTupleList) = adjacencyMatrixDispatchEnhancedScalar(vars, eqns,arrT, numberOfEqs, rowmark,globalKnownVars ,trytosolve);
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn,varsSolvedInWhenEqnsTupleList) = adjacencyMatrixDispatchEnhancedScalar(vars, eqns,arrT, numberOfEqs, rowmark,globalKnownVars ,trytosolve, staticStateSelection);
       then
         (arr,arrT,mapEqnIncRow,mapIncRowEqn);
 
@@ -4097,6 +4098,7 @@ protected function adjacencyMatrixDispatchEnhancedScalar
   input array<Integer> rowmark;
   input BackendDAE.Variables globalKnownVars;
   input Boolean trytosolve;
+  input Boolean staticStateSelection;
   output array<list<Integer>> omapEqnIncRow;
   output array<Integer> omapIncRowEqn;
   output list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTupleListOut = {};
@@ -4114,7 +4116,7 @@ algorithm
     // get the equation
     e := BackendEquation.get(eqArr, i1);
     // compute the row
-    (row,size,varsSolvedInWhenEqnsTuple) := adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve);
+    (row,size,varsSolvedInWhenEqnsTuple) := adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve, staticStateSelection);
     rowindxs := List.intRange2(rowSize+1, rowSize+size);
     rowSize := rowSize + size;
     imapIncRowEqn := List.consN(size,i1,imapIncRowEqn);
@@ -4185,6 +4187,7 @@ protected function adjacencyMatrixDispatchEnhanced
   input array<Integer> rowmark;
   input BackendDAE.Variables globalKnownVars;
   input Boolean trytosolve;
+  input Boolean staticStateSelection = false;
   output BackendDAE.AdjacencyMatrixEnhanced outIncidenceArray;
   output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceArrayT;
 algorithm
@@ -4209,7 +4212,7 @@ algorithm
         // get the equation
         e = BackendEquation.get(eqArr, i1);
         // compute the row
-        (row,_,_) = adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve);
+        (row,_,_) = adjacencyRowEnhanced(vars, e, i1, rowmark, globalKnownVars, trytosolve,staticStateSelection);
         // put it in the arrays
         iArr = arrayUpdate(inIncidenceArray, i1, row);
         iArrT = fillincAdjacencyMatrixTEnhanced(row,{i1},inIncidenceArrayT);
@@ -4281,6 +4284,7 @@ protected function adjacencyRowEnhanced
   input array<Integer> rowmark;
   input BackendDAE.Variables globalKnownVars;
   input Boolean trytosolve;
+  input Boolean staticStateSelection;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
   output Integer size;
   output list<tuple<Integer,list<Integer>>> varsSolvedInWhenEqnsTuple={};
@@ -4307,7 +4311,7 @@ algorithm
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, mark, rowmark, {});
         lst = adjacencyRowExpEnhanced(e2, vars, mark, rowmark, lst);
-        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
       then
         (row,1);
     // COMPLEX_EQUATION
@@ -4315,7 +4319,7 @@ algorithm
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, mark, rowmark, {});
         lst = adjacencyRowExpEnhanced(e2, vars, mark, rowmark, lst);
-        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
       then
         (row,size);
     // ARRAY_EQUATION
@@ -4323,7 +4327,7 @@ algorithm
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, mark, rowmark, {});
         lst = adjacencyRowExpEnhanced(e2, vars, mark, rowmark, lst);
-        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
         size = List.fold(ds,intMul,1);
       then
         (row,size);
@@ -4334,21 +4338,21 @@ algorithm
         expCref = Expression.crefExp(cr);
         lst = adjacencyRowExpEnhanced(expCref, vars, mark, rowmark, {});
         lst = adjacencyRowExpEnhanced(e, vars, mark, rowmark, lst);
-        row = adjacencyRowEnhanced1(lst,expCref,e,vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowEnhanced1(lst,expCref,e,vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
       then
         (row,1);
     // RESIDUAL_EQUATION
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,_,_)
       equation
         lst = adjacencyRowExpEnhanced(e, vars, mark, rowmark, {});
-        row = adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row = adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
       then
         (row,1);
 
     // WHEN_EQUATION
     case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = elsewe),_,_,_)
       equation
-        (row,varsSolvedInWhenEqns) = adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, globalKnownVars, {}, {});
+        (row,varsSolvedInWhenEqns) = adjacencyRowWhenEnhanced(elsewe, mark, rowmark, vars, globalKnownVars, {}, {},staticStateSelection);
         varsSolvedInWhenEqnsTuple = {(mark,varsSolvedInWhenEqns)};
       then
         (row,size);
@@ -4371,7 +4375,7 @@ algorithm
     // special case for it initial() then ... else ... end if; only else branch needs to be checked
     case(_,BackendDAE.IF_EQUATION(conditions={DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={_},eqnsfalse=eqnselse),_,_,_)
       equation
-        (row,size) = adjacencyRowEnhancedEqnLst(eqnselse,inVariables,mark,rowmark,globalKnownVars,trytosolve);
+        (row,size) = adjacencyRowEnhancedEqnLst(eqnselse,inVariables,mark,rowmark,globalKnownVars,trytosolve,staticStateSelection);
       then
         (row,size);
 
@@ -4387,12 +4391,12 @@ algorithm
         // mark all negative because the when condition cannot used to solve a variable
         lst = List.fold3(expl, adjacencyRowExpEnhanced, vars, mark, rowmark, {});
         _ = List.fold1(lst,markNegativ,rowmark,mark);
-        row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve);
+        row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,staticStateSelection);
 
-        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve);
+        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,staticStateSelection);
         lst = List.map(row,Util.tuple31);
 
-        (lst, row, size) = List.fold5(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, (lst, row, size));
+        (lst, row, size) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, staticStateSelection, (lst, row, size));
 
         lstall = List.map(row, Util.tuple31);
         (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
@@ -4418,6 +4422,7 @@ protected function adjacencyRowEnhancedEqnLstIfBranches
   input array<Integer> rowmark;
   input BackendDAE.Variables globalKnownVars;
   input Boolean trytosolve;
+  input Boolean staticStateSelection;
   input tuple<list<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced,Integer> intpl;
   output tuple<list<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced,Integer> outtpl;
 protected
@@ -4427,7 +4432,7 @@ protected
 algorithm
   (inLstAllBranch,iRow,iSize) := intpl;
   for eqn in iEqns loop
-    (row,size,_) := adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, globalKnownVars, trytosolve);
+    (row,size,_) := adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, globalKnownVars, trytosolve,staticStateSelection);
     lst := List.map(row,Util.tuple31);
     inLstAllBranch := List.intersectionOnTrue(lst, inLstAllBranch,intEq);
     iSize := iSize + size;
@@ -4443,6 +4448,7 @@ protected function adjacencyRowEnhancedEqnLst
   input array<Integer> rowmark;
   input BackendDAE.Variables globalKnownVars;
   input Boolean trytosolve;
+  input Boolean staticStateSelection;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow = {};
   output Integer oSize = 0;
 protected
@@ -4450,7 +4456,7 @@ protected
   Integer size;
 algorithm
   for eqn in iEqns loop
-    (row,size,_) := adjacencyRowEnhanced(inVariables,eqn,mark,rowmark,globalKnownVars,trytosolve);
+    (row,size,_) := adjacencyRowEnhanced(inVariables,eqn,mark,rowmark,globalKnownVars,trytosolve,staticStateSelection);
     outRow := listAppend(row,outRow);
     oSize := oSize + size;
   end for;
@@ -4573,6 +4579,7 @@ protected function adjacencyRowWhenEnhanced
   input BackendDAE.Variables globalKnownVars;
   input list<Integer> iLst;
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  input Boolean staticStateSelection;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow = iRow;
   output list<Integer> varsSolvedInWhenEqns={};
 protected
@@ -4602,7 +4609,7 @@ algorithm
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         //leftexp = Expression.crefExp(left);
         lst = adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, lst);
-        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false);
+        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,staticStateSelection);
       then ();
 
       case BackendDAE.ASSIGN(leftexp, right) equation
@@ -4613,7 +4620,7 @@ algorithm
         // mark all negative because the when condition cannot used to solve a variable
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         lst = adjacencyRowExpEnhanced(leftexp, vars, mark, rowmark, lst);
-        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false);
+        outRow = adjacencyRowEnhanced1(lst,leftexp,right,vars,globalKnownVars,mark,rowmark,outRow,false,staticStateSelection);
       then ();
 
       else ();
@@ -4622,7 +4629,7 @@ algorithm
   end for;
   if isSome(oelsepart) then
     SOME(elsepart) := oelsepart;
-    outRow := adjacencyRowWhenEnhanced(elsepart, mark, rowmark, vars, globalKnownVars, lst, outRow);
+    outRow := adjacencyRowWhenEnhanced(elsepart, mark, rowmark, vars, globalKnownVars, lst, outRow, staticStateSelection);
   end if;
 end adjacencyRowWhenEnhanced;
 
@@ -4652,6 +4659,7 @@ protected function adjacencyRowEnhanced1
   input array<Integer> rowmark;
   input BackendDAE.AdjacencyMatrixElementEnhanced inRow;
   input Boolean trytosolve;
+  input Boolean staticStateSelection;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
 algorithm
   outRow := matchcontinue(lst,e1,e2,vars,globalKnownVars,mark,rowmark,inRow)
@@ -4664,7 +4672,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       Absyn.Path path,path1;
       list<DAE.Exp> explst,crexplst, explst2;
-      Boolean b,solved,derived;
+      Boolean b,b2,solved,derived;
       BackendDAE.Constraints cons;
     case({},_,_,_,_,_,_,_) then inRow;
 /*    case(r::rest,_,_,_,_,_,_,_)
@@ -4673,7 +4681,26 @@ algorithm
         true = intLt(r,0);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow,trytosolve);
-*/    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
+*/
+      // Consider vars with stateSelect.never as solvable. Only for staticStateSelection
+      case(r::rest,_,_,_,_,_,_,_)
+        guard(staticStateSelection)
+      equation
+        BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.NEVER())))) = BackendVariable.getVarAt(vars, intAbs(r));
+        de = Differentiate.differentiateExpSolve(e1, cr, NONE());
+        (de,_) = ExpressionSimplify.simplify(de);
+        (_,crlst) = Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
+        solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+        b = isSolvable(solvab,true);
+        de = Differentiate.differentiateExpSolve(e2, cr, NONE());
+        (de,_) = ExpressionSimplify.simplify(de);
+        (_,crlst) = Expression.traverseExpBottomUp(de, Expression.traversingComponentRefFinder, {});
+        solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,globalKnownVars);
+        b2 = isSolvable(solvab,true);
+        true = (b or b2) and not (b and b2); // either lhs or rhs is solvable
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_CONSTONE(),{})::inRow,trytosolve,staticStateSelection);
+      case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_,_)
       guard
         intGt(r,0)
       equation
@@ -4684,7 +4711,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasDerCref(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4695,7 +4722,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasDerCref(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4706,7 +4733,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4718,7 +4745,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, crarr);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4729,7 +4756,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4740,7 +4767,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4752,7 +4779,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, crarr);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4763,7 +4790,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4775,7 +4802,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, crarr);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4786,7 +4813,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4797,7 +4824,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4809,7 +4836,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, crarr);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4820,7 +4847,7 @@ algorithm
         true = ComponentReference.crefPrefixOf(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4831,7 +4858,7 @@ algorithm
         true = ComponentReference.crefPrefixOf(cr, cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_,_)
       equation
         true = AbsynUtil.pathEqual(path,path1);
@@ -4843,7 +4870,7 @@ algorithm
         true = expCrefLstHasCref(explst,cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr1);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_)
       equation
         true = AbsynUtil.pathEqual(path,path1);
@@ -4855,7 +4882,7 @@ algorithm
         true = expCrefLstHasCref(explst,cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr1);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(),_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4870,7 +4897,7 @@ algorithm
         true = expCrefLstHasCref(crexplst,cr1);
         false = Expression.expHasCrefNoPreorDer(e2,cr1);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,_,_,_,_,_,_)
       // case: state derivative
       equation
@@ -4899,7 +4926,7 @@ algorithm
           end if;
         end if;
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
@@ -4925,10 +4952,10 @@ algorithm
           end if;
         end if;
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve,staticStateSelection);
     case(r::rest,_,_,_,_,_,_,_)
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE(),{})::inRow,trytosolve);
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE(),{})::inRow,trytosolve,staticStateSelection);
   end matchcontinue;
 end adjacencyRowEnhanced1;
 
@@ -5053,6 +5080,22 @@ algorithm
    end if;
 end tryToSolveOrDerive;
 
+public function isSolvable
+  input BackendDAE.Solvability solvability;
+  input Boolean strict = false;
+  output Boolean solvable;
+algorithm
+  solvable := match solvability
+    local
+      Boolean b;
+    case BackendDAE.SOLVABILITY_NONLINEAR() then false;
+    case BackendDAE.SOLVABILITY_UNSOLVABLE() then false;
+    case BackendDAE.SOLVABILITY_CONST(b=b) then b;
+    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then b;
+    case BackendDAE.SOLVABILITY_LINEAR(b=b) then (b and not strict);
+    else true;
+  end match;
+end isSolvable;
 
 protected function getConstraints "
 author: ptaeuber
@@ -5286,7 +5329,7 @@ algorithm
         (e1,_) := Expression.traverseExpBottomUp(e, replaceVarWithValue, globalKnownVars);
         (e1,_) := ExpressionSimplify.simplify(e1);
         b := not Expression.isZeroOrAlmostZero(e1, nominal);
-        b_1 := Expression.isConst(e1);
+        b_1 := Expression.isConst(e1) or BackendVariable.isKnownAndParam(e1,globalKnownVars);
       then
        if b_1 then BackendDAE.SOLVABILITY_PARAMETER(b) else BackendDAE.SOLVABILITY_LINEAR(b);
     case(_,_,_,_,_,_,_)

@@ -1316,7 +1316,7 @@ protected
   array<Integer> mapIncRowEqn;
   BackendDAE.Variables vars;
   DAE.FunctionTree funcs;
-  Integer numFreeStates,numOrgEqs;
+  Integer numFreeStates,numNeverStates,numOrgEqs;
 algorithm
   (so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_) := inArg;
   if Array.arrayListsEmpty(orgEqnsLst) then
@@ -1335,9 +1335,11 @@ algorithm
       print("########################### STATE SELECTION ###########################\n");
     end if;
     // geth the number of states without stateSelect.always (free states), if the number of differentiated equations is equal to the number of free states no selection is necessary
+
     numFreeStates := BackendVariable.traverseBackendDAEVars(vars,countStateCandidates,0);
+    //numNeverStates := BackendVariable.traverseBackendDAEVars(vars,countStateCandidatesWithNever,0);
     numOrgEqs := countOrgEqns(orgEqnsLst,0);
-      //print("got "+intString(numFreeStates)+" free states and "+intString(numOrgEqs)+" orgeqns.\n");
+    //print("got "+ intString(numNeverStates) + " never states and " +  intString(numFreeStates)+" free states and "+intString(numOrgEqs)+" orgeqns.\n");
 
     // select dummy states
     (osyst,oshared,oHt,oSetIndex) := selectStates(numFreeStates,numOrgEqs,inSystem,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iHt,iSetIndex);
@@ -1350,14 +1352,14 @@ algorithm
 end dynamicStateSelectionWork;
 
 protected function countStateCandidates
-"author Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   count the number of states in variables"
   input BackendDAE.Var inVar;
   input Integer inCount;
-  output BackendDAE.Var outVar;
+  output BackendDAE.Var outVar = inVar;
   output Integer outCount;
 algorithm
-  (outVar,outCount) := match inVar
+  outCount := match inVar
     local
       Integer diffcount,statecount;
       Boolean b;
@@ -1366,14 +1368,14 @@ algorithm
         // do not count states with stateSelect.always
         b = varStateSelectAlways(inVar);
         statecount = if not b then inCount+1 else inCount;
-      then (inVar, statecount);
+      then statecount;
 
     case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_)))
       equation
         // do not count states with stateSelect.always, but ignore only higest state
         b = varStateSelectAlways(inVar);
         statecount = if b then inCount+1 else inCount;
-      then (inVar, statecount);
+      then statecount;
 
     case BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=NONE()))
       equation
@@ -1381,11 +1383,49 @@ algorithm
         // do not count states with stateSelect.always, but ignore only higest state
         b = varStateSelectAlways(inVar);
         statecount = if b then statecount-1 else statecount;
-      then (inVar, statecount);
+      then statecount;
 
-    else (inVar,inCount);
+    else inCount;
   end match;
 end countStateCandidates;
+
+protected function countStateCandidatesWithNever
+"author: kabdelhak FHB 2019-07
+  count the number of states with stateSelect.never"
+  input BackendDAE.Var inVar;
+  input Integer inCount;
+  output BackendDAE.Var outVar = inVar;
+  output Integer outCount;
+algorithm
+  outCount := match inVar
+    local
+      Integer diffcount,statecount;
+      Boolean b;
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))
+      equation
+        // do only count states with stateSelect.never
+        b = varStateSelectNever(inVar);
+        statecount = if b then inCount+1 else inCount;
+      then statecount;
+
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_)))
+      equation
+        // do only count states with stateSelect.never, but ignore only higest state
+        b = varStateSelectNever(inVar);
+        statecount = if not b then inCount+1 else inCount;
+      then statecount;
+
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=NONE()))
+      equation
+        statecount = diffcount + inCount;
+        // do only count states with stateSelect.never, but ignore only higest state
+        b = varStateSelectNever(inVar);
+        statecount = if not b then statecount-1 else statecount;
+      then statecount;
+
+    else inCount;
+  end match;
+end countStateCandidatesWithNever;
 
 protected function countOrgEqns
 "author: Frenkel TUD 2012-06
@@ -2012,7 +2052,7 @@ algorithm
         hovvars = BackendVariable.listVar1(statecandidates);
         eqns1 = BackendEquation.listEquation(eqnslst);
         syst = BackendDAEUtil.createEqSystem(hovvars, eqns1);
-        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
+        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false,true);
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
         mT1 = AdjacencyMatrix.transposeAdjacencyMatrix(m1,nfreeStates);
         //  BackendDump.printEqSystem(syst);
@@ -2073,7 +2113,7 @@ algorithm
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAEUtil.createEqSystem(vars, eqns);
         // get advanced incidence Matrix
-        (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
+        (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false,true);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
           print("\n");
@@ -3179,6 +3219,18 @@ algorithm
     else false;
   end match;
 end varStateSelectAlways;
+
+protected function varStateSelectNever
+"author: kabdelhak FHB 2019-07
+  return true if var is StateSelect.never else false"
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match(v)
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.NEVER())))) then true;
+    else false;
+  end match;
+end varStateSelectNever;
 
 protected function incidenceMatrixfromEnhanced2
 "author: Frenkel TUD 2012-11
