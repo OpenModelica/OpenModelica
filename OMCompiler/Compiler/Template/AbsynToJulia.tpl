@@ -67,9 +67,9 @@ match class
     '<%name%> = Function'
   case CLASS(body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
     let commentStr = dumpCommentStrOpt(parts.comment)
-    let returnType = (parts.classParts |> cp => dumpReturnTypeJL(Absyn.getElementItemsInClassPart(cp)))
-    let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(Absyn.getElementItemsInClassPart(cp), functionContext))%>'
-    let inputs_str = (parts.classParts |> cp => dumpInputsJL(Absyn.getElementItemsInClassPart(cp), functionContext))
+    let returnType = (parts.classParts |> cp => dumpReturnTypeJL(getElementItemsInClassPart(cp)))
+    let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(getElementItemsInClassPart(cp), functionContext))%>'
+    let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), functionContext))
     let header = dumpClassHeader(parts, restriction)
     let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
     <<

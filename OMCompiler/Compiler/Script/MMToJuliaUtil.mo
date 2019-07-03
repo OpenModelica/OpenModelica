@@ -33,6 +33,7 @@ encapsulated package MMToJuliaUtil
 protected
 import List;
 import Absyn;
+import AbsynUtil;
 public
 uniontype Context
   record FUNCTION
@@ -90,7 +91,7 @@ function filterOnDirection "Returns a list<ElementItem>, where the direction is 
   output list<Absyn.ElementItem> outputs = {};
 algorithm
   for i in inputs loop
-    if Absyn.directionEqual(direction, Absyn.getDirection(i)) then
+    if AbsynUtil.directionEqual(direction, AbsynUtil.getDirection(i)) then
       outputs := i :: outputs;
     end if;
   end for;

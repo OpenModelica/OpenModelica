@@ -5187,7 +5187,7 @@ algorithm
   end match;
 end getElementItemsInClass;
 
-protected function getElementItemsInClassPart
+public function getElementItemsInClassPart
   "Returns the public and protected elements in a class part."
   input ClassPart inClassPart;
   output list<ElementItem> outElements;
@@ -6343,7 +6343,6 @@ algorithm
   end match;
 end getTypeSpecFromElementItemOpt;
 
-
 public function getElementSpecificationFromElementItemOpt
   "@auhtor: johti
      Get a ComponentItem from an ElementItem if it has one"
@@ -6388,6 +6387,29 @@ algorithm
     else {};
   end match;
 end getComponentItemsFromElementItem;
+
+public function getDirection
+"@author johti
+  Get the direction if one exists otherwise returns BIDIR()"
+  input Absyn.ElementItem elementItem;
+  output Direction oDirection;
+algorithm
+  // oDirection:= match elementItem
+  //   local Element element;
+  //   case ELEMENTITEM(element = element) then match element
+  //     local ElementSpec specification;
+  //     case ELEMENT(specification=specification) then match specification
+  //       local ElementAttributes attributes;
+  //       case COMPONENTS(attributes=attributes) then match attributes
+  //         local Direction direction;
+  //         case ATTR(direction=direction) then direction;
+  //         else BIDIR();
+  //       end match;
+  //     end match;
+  //   end match;
+  // end match;
+  oDirection := BIDIR();
+end getDirection;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

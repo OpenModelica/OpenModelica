@@ -910,18 +910,6 @@ package Absyn
       Option<Annotation> annotation_;
     end EXTERNALDECL;
   end ExternalDecl;
-
-  function isClassdef
-    input Element inElement;
-    output Boolean b;
-  end isClassdef;
-
-  function getElementItemsInClassPart
-    "Returns the public and protected elements in a class part."
-    input ClassPart inClassPart;
-    output list<ElementItem> outElements;
-  end getElementItemsInClassPart;
-
 end Absyn;
 
 package Config
@@ -1050,6 +1038,14 @@ function getComponentItemsFromElementItem
   input Absyn.ElementItem inElementItem;
   output list<Absyn.ComponentItem> componentItems;
 end getComponentItemsFromElementItem;
+function isClassdef
+  input Absyn.Element inElement;
+  output Boolean b;
+end isClassdef;
+function getElementItemsInClassPart
+  input Absyn.ClassPart inClassPart;
+  output list<Absyn.ElementItem> outElements;
+end getElementItemsInClassPart;
 end AbsynUtil;
 
 package SCodeUtil
