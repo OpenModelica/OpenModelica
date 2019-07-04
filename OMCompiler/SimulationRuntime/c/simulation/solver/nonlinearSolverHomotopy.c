@@ -812,11 +812,11 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
-  for(i=0; i < jacobian->sparsePattern.maxColors; i++)
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
     /* activate seed variable for the corresponding color */
     for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
     ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, NULL);
@@ -825,10 +825,10 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j];
-        while(ii < jacobian->sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern->leadindex[j];
+        while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern.index[ii];
+          l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
           /* Calculate scaled difference quotient */
           jac[k] = jacobian->resultVars[l] * solverData->xScaling[j];
@@ -836,7 +836,7 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
         };
       }
       /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern.colorCols[j]-1 == i)
+      if(jacobian->sparsePattern->colorCols[j]-1 == i)
         jacobian->seedVars[j] = 0;
     }
   }

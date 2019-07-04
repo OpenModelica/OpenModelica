@@ -154,10 +154,10 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
   /* set all elements to zero */
   memset(jac, 0, (nrows*ncols*sizeof(double)));
 
-  for(i=0; i < jacobian->sparsePattern.maxColors; i++)
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
     for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
 /*
@@ -175,13 +175,13 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j];
+        ii = jacobian->sparsePattern->leadindex[j];
 
         /* infoStreamPrint(LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
 
-        while(ii < jacobian->sparsePattern.leadindex[j+1])
+        while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern.index[ii];
+          l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
           jac[k] = jacobian->resultVars[l];
           /* infoStreamPrint(LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, jacobian->resultVars[l]); */
@@ -190,7 +190,7 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
       }
     }
     for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 0;
   }
 

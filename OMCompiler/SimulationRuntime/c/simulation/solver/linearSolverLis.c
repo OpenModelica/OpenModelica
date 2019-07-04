@@ -152,25 +152,26 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   int nth = 0;
-  int nnz = jacobian->sparsePattern.numberOfNoneZeros;
+  int nnz = jacobian->sparsePattern->numberOfNoneZeros;
 
   for(i=0; i < jacobian->sizeRows; i++)
   {
     jacobian->seedVars[i] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, systemData->parentJacobian);
+    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j];
-        while(ii < jacobian->sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern->leadindex[j];
+        while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern.index[ii];
-          /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
+          l  = jacobian->sparsePattern->index[ii];
+          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
           systemData->setAElement(l, i, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;

@@ -225,10 +225,10 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
       h_index = s->indexABCD[index];
       /******************************/
       sizeCols = data->simulationInfo->analyticJacobians[h_index].sizeCols;
-      maxColors = data->simulationInfo->analyticJacobians[h_index].sparsePattern.maxColors + 1;
-      cC = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern.colorCols;
-      lindex = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern.leadindex;
-      pindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern.index;
+      maxColors = data->simulationInfo->analyticJacobians[h_index].sparsePattern->maxColors + 1;
+      cC = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern->colorCols;
+      lindex = (unsigned int*) data->simulationInfo->analyticJacobians[h_index].sparsePattern->leadindex;
+      pindex = data->simulationInfo->analyticJacobians[h_index].sparsePattern->index;
 
       s->seedVec[index] = (modelica_real **)malloc((maxColors)*sizeof(modelica_real*));
       /**********************/

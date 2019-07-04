@@ -2122,7 +2122,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          DATA *data = (DATA*) ((void**)dataIn[0]);
          threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'%>
+         <% if ls.partOfJac then
+           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'
+         %>
          ANALYTIC_JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
@@ -2844,7 +2846,7 @@ template generateStaticSparseData(String indexName, String systemType, list<tupl
       let sizeleadindex = listLength(sparsepattern)
       let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-      let colorString = genSPColors(colorList, "inSysData->sparsePattern.colorCols")
+      let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
       <<
       void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
       {
@@ -2853,20 +2855,21 @@ template generateStaticSparseData(String indexName, String systemType, list<tupl
         <%rowIndex%>
         /* sparsity pattern available */
         inSysData->isPatternAvailable = 'T';
-        inSysData->sparsePattern.leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        inSysData->sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
-        inSysData->sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
-        inSysData->sparsePattern.colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
-        inSysData->sparsePattern.maxColors = <%maxColor%>;
+        inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
+        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        inSysData->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
+        inSysData->sparsePattern->maxColors = <%maxColor%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(inSysData->sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
-          inSysData->sparsePattern.leadindex[i] += inSysData->sparsePattern.leadindex[i-1];
+          inSysData->sparsePattern->leadindex[i] += inSysData->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(inSysData->sparsePattern.index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
 
         /* write color array */
         <%colorString%>
@@ -4757,7 +4760,7 @@ match sparsepattern
       let sizeleadindex = listLength(sparsepattern)
       let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
-      let colorString = genSPColors(colorList, "jacobian->sparsePattern.colorCols")
+      let colorString = genSPColors(colorList, "jacobian->sparsePattern->colorCols")
       let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=n) => '<%n%>';separator="\n")
       let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
@@ -4777,20 +4780,21 @@ match sparsepattern
         jacobian->seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
         jacobian->resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
         jacobian->tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
-        jacobian->sparsePattern.leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        jacobian->sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
-        jacobian->sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
-        jacobian->sparsePattern.colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
-        jacobian->sparsePattern.maxColors = <%maxColor%>;
+        jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
+        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
+        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        jacobian->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
+        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
+        jacobian->sparsePattern->maxColors = <%maxColor%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(jacobian->sparsePattern.leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
-          jacobian->sparsePattern.leadindex[i] += jacobian->sparsePattern.leadindex[i-1];
+          jacobian->sparsePattern->leadindex[i] += jacobian->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(jacobian->sparsePattern.index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
 
         /* write color array */
         <%colorString%>
@@ -5394,7 +5398,10 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
     messageClose(LOG_DT);
   }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
-  <% if ls.partOfJac then 'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'%>
+  <% if ls.partOfJac then
+     'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'
+  %>
+
   retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
 
   /* check if solution process was successful */

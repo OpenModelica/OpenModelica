@@ -55,8 +55,7 @@ static void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n);
 /*! \fn allocate memory for linear system solver Klu
  *
  */
-int
-allocateKluData(int n_row, int n_col, int nz, void** voiddata)
+int allocateKluData(int n_row, int n_col, int nz, void** voiddata)
 {
   DATA_KLU* data = (DATA_KLU*) malloc(sizeof(DATA_KLU));
   assertStreamPrint(NULL, 0 != data, "Could not allocate data for linear solver Klu.");
@@ -69,7 +68,6 @@ allocateKluData(int n_row, int n_col, int nz, void** voiddata)
   data->nnz = nz;
 
   data->Ap = (int*) calloc((n_row+1),sizeof(int));
-
   data->Ai = (int*) calloc(nz,sizeof(int));
   data->Ax = (double*) calloc(nz,sizeof(double));
   data->work = (double*) calloc(n_col,sizeof(double));
@@ -86,8 +84,7 @@ allocateKluData(int n_row, int n_col, int nz, void** voiddata)
 /*! \fn free memory for linear system solver Klu
  *
  */
-int
-freeKluData(void **voiddata)
+int freeKluData(void **voiddata)
 {
   TRACE_PUSH
 
@@ -97,6 +94,7 @@ freeKluData(void **voiddata)
   free(data->Ai);
   free(data->Ax);
   free(data->work);
+
 
   if(data->symbolic)
     klu_free_symbolic(&data->symbolic, &data->common);
@@ -117,10 +115,11 @@ freeKluData(void **voiddata)
  *  \author wbraun
  *
  */
-static
-int getAnalyticalJacobian(DATA* data, threadData_t *threadData, int sysNumber)
+static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
+                                 int sysNumber)
 {
   int i,ii,j,k,l;
+
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
@@ -128,7 +127,7 @@ int getAnalyticalJacobian(DATA* data, threadData_t *threadData, int sysNumber)
   ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   int nth = 0;
-  int nnz = jacobian->sparsePattern.numberOfNoneZeros;
+  int nnz = jacobian->sparsePattern->numberOfNoneZeros;
 
   for(i=0; i < jacobian->sizeRows; i++)
   {
@@ -140,17 +139,16 @@ int getAnalyticalJacobian(DATA* data, threadData_t *threadData, int sysNumber)
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j];
-        while(ii < jacobian->sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern->leadindex[j];
+        while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern.index[ii];
+          l  = jacobian->sparsePattern->index[ii];
           systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
-        };
+        }
       }
-    };
-
+    }
     /* de-activate seed variable for the corresponding color */
     jacobian->seedVars[i] = 0;
   }
@@ -177,8 +175,7 @@ static int residual_wrapper(double* x, double* f, void** data, int sysNumber)
  *
  * author: wbraun
  */
-int
-solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
+int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
