@@ -53,6 +53,7 @@
 #include "simulation/solver/ida_solver.h"
 #include "simulation/solver/dassl.h"
 #include "simulation/solver/dae_mode.h"
+#include "simulation/solver/jacobianSymbolical.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -461,7 +462,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
       infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
       infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
-      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern.numberOfNoneZeros, jac->sparsePattern.maxColors);
+      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern->numberOfNoneZeros, jac->sparsePattern->maxColors);
       messageClose(LOG_SIMULATION);
     }
 
@@ -477,7 +478,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
     else
     {
-      idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern.numberOfNoneZeros;
+      idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNoneZeros;
       flag = IDAKLU(idaData->ida_mem, idaData->N, idaData->NNZ);
       /* to add a cj identety matrix */
       idaData->tmpJac = NewSparseMat(idaData->N, idaData->N, idaData->N);
@@ -601,8 +602,6 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
   }
 
-
-
   /* configure the sensitivities part */
   idaData->idaSmode = omc_flag[FLAG_IDAS] ? 1 : 0;
 
@@ -673,7 +672,6 @@ int
 ida_solver_deinitial(IDA_SOLVER *idaData){
   TRACE_PUSH
 
-
   free(idaData->simData);
   free(idaData->ysave);
   free(idaData->ypsave);
@@ -703,7 +701,6 @@ ida_solver_deinitial(IDA_SOLVER *idaData){
   TRACE_POP
   return 0;
 }
-
 
 int
 ida_event_update(DATA* data, threadData_t *threadData)
@@ -1338,7 +1335,6 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   return 0;
 }
 
-
 /*
  *  function calculates a jacobian matrix by
  *  numerical method finite differences with coloring
@@ -1385,7 +1381,7 @@ int jacColoredNumericalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, D
   }
   else
   {
-    sparsePattern = &(data->simulationInfo->analyticJacobians[index].sparsePattern);
+    sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   }
 
   setContext(data, &tt, CONTEXT_JACOBIAN);
@@ -1457,7 +1453,8 @@ int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, 
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,ii,j, nth;
   ANALYTIC_JACOBIAN* jacData = &(data->simulationInfo->analyticJacobians[index]);
-  SPARSE_PATTERN* sparsePattern = &(jacData->sparsePattern);
+  SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
+  long int N = idaData->N;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer(yy);
@@ -1467,7 +1464,7 @@ int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, 
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
-    for(ii=0; ii < idaData->N; ii++)
+    for(ii=0; ii < N; ii++)
     {
       if(sparsePattern->colorCols[ii]-1 == i)
       {
@@ -1478,7 +1475,7 @@ int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, 
     data->callback->functionJacA_column(data, threadData, jacData, NULL);
     increaseJacContext(data);
 
-    for(ii = 0; ii < idaData->N; ii++)
+    for(ii = 0; ii < N; ii++)
     {
       if(sparsePattern->colorCols[ii]-1 == i)
       {
@@ -1560,13 +1557,15 @@ static int callDenseJacobian(long int Neq, double tt, double cj,
 }
 
 /* Element function for sparse matrix set */
-static void setJacElementKluSparse(int row, int col, double value, int nth, SlsMat spJac)
+static void setJacElementKluSparse(int row, int col, int nth, double value, void* spJac, int rows)
 {
-  if (col > 0 && spJac->colptrs[col] == 0){
-      spJac->colptrs[col] = nth;
+  (void) rows; // Unused, needed to match genericColoredSymbolicJacobianEvaluation
+  SlsMat mat = (SlsMat)spJac;
+  if (col > 0 && mat->colptrs[col] == 0){
+      mat->colptrs[col] = nth;
   }
-  spJac->rowvals[nth] = row;
-  spJac->data[nth] = value;
+  mat->rowvals[nth] = row;
+  mat->data[nth] = value;
 }
 
 /* finish sparse matrix, by fixing colprts */
@@ -1633,7 +1632,7 @@ int jacoColoredNumericalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr,
   }
   else
   {
-    sparsePattern = &(data->simulationInfo->analyticJacobians[index].sparsePattern);
+    sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
   }
 
   /* it's needed to clear the matrix */
@@ -1686,12 +1685,12 @@ int jacoColoredNumericalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr,
         while(nth < sparsePattern->leadindex[ii+1])
         {
           j  =  sparsePattern->index[nth];
-          //setJacElementKluSparse(j, ii, (newdelta[j] - delta[j]) * delta_hh[ii], nth, Jac);
+          //setJacElementKluSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, -1);
           /* use row scaling for jacobian elements */
           if (idaData->disableScaling == 1 || !omc_flag[FLAG_IDA_SCALING]){
-            setJacElementKluSparse(j, ii, (newdelta[j] - delta[j]) * delta_hh[ii], nth, Jac);
+            setJacElementKluSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, -1);
           }else{
-            setJacElementKluSparse(j, ii, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], nth, Jac);
+            setJacElementKluSparse(j, ii, nth, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], Jac, -1);
           }
           nth++;
         };
@@ -1719,66 +1718,36 @@ int jacoColoredNumericalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr,
   return 0;
 }
 
-/* \fn jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
- *
- *
- * This function calculates symbolically the jacobian matrix and exploiting the coloring.
+/*
+ * This function calculates the jacobian matrix symbolically while exploiting coloring.
  */
-int
-jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
+int jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp,
+                               N_Vector rr, SlsMat Jac, double cj,
+                               void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->simData)->threadData);
-  void* ida_mem = idaData->ida_mem;
   const int index = data->callback->INDEX_JAC_A;
-  unsigned int i,ii,j,nth;
 
   /* prepare variables */
   double *states = N_VGetArrayPointer(yy);
   double *yprime = N_VGetArrayPointer(yp);
 
   ANALYTIC_JACOBIAN* jacData = &(data->simulationInfo->analyticJacobians[index]);
-  SPARSE_PATTERN* sparsePattern = &(jacData->sparsePattern);
+  SPARSE_PATTERN* sparsePattern = jacData->sparsePattern;
+  unsigned int columns = jacData->sizeCols;
+  unsigned int rows = jacData->sizeRows;
 
   /* it's needed to clear the matrix */
   SlsSetToZero(Jac);
 
   setContext(data, &tt, CONTEXT_SYM_JACOBIAN);
 
-  for(i = 0; i < sparsePattern->maxColors; i++)
-  {
-    for(ii=0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        jacData->seedVars[ii] = 1;
-      }
-    }
+  genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, jacData,
+                                           data, threadData, &setJacElementKluSparse);
 
-    data->callback->functionJacA_column(data, threadData, jacData, NULL);
-    increaseJacContext(data);
-
-    for(ii = 0; ii < idaData->N; ii++)
-    {
-      if(sparsePattern->colorCols[ii]-1 == i)
-      {
-        nth = sparsePattern->leadindex[ii];
-        while(nth < sparsePattern->leadindex[ii+1])
-        {
-          j  =  sparsePattern->index[nth];
-          setJacElementKluSparse(j, ii, jacData->resultVars[j], nth, Jac);
-          nth++;
-        };
-      }
-    }
-
-    for(ii=0; ii < idaData->N; ii++)
-    {
-      jacData->seedVars[ii] = 0;
-    }
-  }
   finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
   unsetContext(data);
 
@@ -1925,6 +1894,7 @@ int idaScaleVector(N_Vector vec, double* factors, unsigned int size)
   printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
   return 0;
 }
+
 static
 int idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
@@ -1965,7 +1935,6 @@ int idaReScaleData(IDA_SOLVER *idaData)
 
   return 0;
 }
-
 
 
 #endif

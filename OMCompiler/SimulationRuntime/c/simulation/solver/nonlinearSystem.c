@@ -392,7 +392,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (nonlinsys[i].isPatternAvailable)
     {
-      nnz = nonlinsys[i].sparsePattern.numberOfNoneZeros;
+      nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
 
       if(nnz/(double)(size*size)<=nonlinearSparseSolverMaxDensity && size >= nonlinearSparseSolverMinSize)
       {
@@ -552,6 +552,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     free(nonlinsys[i].min);
     free(nonlinsys[i].max);
     freeValueList(nonlinsys[i].oldValueList, 1);
+
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (data->simulationInfo->nlsCsvInfomation)

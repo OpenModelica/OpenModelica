@@ -105,7 +105,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].jacobianIndex = -1;
         throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
-      nnz = jacobian->sparsePattern.numberOfNoneZeros;
+      nnz = jacobian->sparsePattern->numberOfNoneZeros;
       linsys[i].nnz = nnz;
     }
 
@@ -487,7 +487,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
           success=2;
           linsys->failed = 0;
         }
-        else{
+        else {
           linsys->failed = 1;
         }
       }
@@ -502,7 +502,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
         warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
         success = solveTotalPivot(data, threadData, sysNumber, aux_x);
         linsys->failed = 1;
-      }else{
+      } else {
         linsys->failed = 0;
       }
       }
@@ -691,4 +691,6 @@ static void setAElementKlu(int row, int col, double value, int nth, void *data, 
   sData->Ai[nth] = col;
   sData->Ax[nth] = value;
 }
+
+
 #endif

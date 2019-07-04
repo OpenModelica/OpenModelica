@@ -102,7 +102,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;
   }
-  printSparseStructure(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern),
+  printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
       data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
       data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
       LOG_SOLVER, "ODE sparse pattern");
@@ -113,7 +113,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   sData = (SIMULATION_DATA*)data->localData[0];
   state = sData->realVars;
   stateDer = sData->realVars + data->modelData->nStates;
-  pattern = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
+  pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
   ROWS = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows;
   STATES = data->modelData->nStates;
   numDer = 0;  /* number of derivatives influenced by state k */

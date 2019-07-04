@@ -360,7 +360,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
   if (!compiledInDAEMode)
   {
-    printSparseStructure(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern),
+    printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
         data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
         data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
         LOG_SOLVER, "ODE sparse pattern");

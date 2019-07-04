@@ -820,14 +820,14 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const int h_index = optData->s.indexABCD[index];
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[h_index]);
   const long double * scaldt = optData->bounds.scaldt[m];
-  const unsigned int * const cC = jacobian->sparsePattern.colorCols;
-  const unsigned int * const lindex  = jacobian->sparsePattern.leadindex;
+  const unsigned int * const cC = jacobian->sparsePattern->colorCols;
+  const unsigned int * const lindex  = jacobian->sparsePattern->leadindex;
   const int nx = jacobian->sizeCols;
-  const int Cmax = jacobian->sparsePattern.maxColors + 1;
+  const int Cmax = jacobian->sparsePattern->maxColors + 1;
   const int dnx = optData->dim.nx;
   const int dnxnc = optData->dim.nJ;
   const modelica_real * const resultVars = jacobian->resultVars;
-  const unsigned int * const sPindex = jacobian->sparsePattern.index;
+  const unsigned int * const sPindex = jacobian->sparsePattern->index;
   long double  scalb = optData->bounds.scalb[m][n];
 
   const int * index_J = (index == 3)? optData->s.indexJ3 : optData->s.indexJ2;
@@ -881,12 +881,12 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     const int index = 4;
     const int h_index = optData->s.indexABCD[index];
     ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[h_index]);
-    const unsigned int * const cC = jacobian->sparsePattern.colorCols;
-    const unsigned int * const lindex  = jacobian->sparsePattern.leadindex;
+    const unsigned int * const cC = jacobian->sparsePattern->colorCols;
+    const unsigned int * const lindex  = jacobian->sparsePattern->leadindex;
     const int nx = jacobian->sizeCols;
-    const int Cmax = jacobian->sparsePattern.maxColors + 1;
+    const int Cmax = jacobian->sparsePattern->maxColors + 1;
     const modelica_real * const resultVars = jacobian->resultVars;
-    const unsigned int * const sPindex = jacobian->sparsePattern.index;
+    const unsigned int * const sPindex = jacobian->sparsePattern->index;
 
     modelica_real **sV = optData->s.seedVec[index];
 

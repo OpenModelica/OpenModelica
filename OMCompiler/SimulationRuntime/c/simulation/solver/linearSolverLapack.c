@@ -109,33 +109,34 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
 
   memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
-  for(i=0; i < jacobian->sparsePattern.maxColors; i++)
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
     /* activate seed variable for the corresponding color */
     for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, systemData->parentJacobian);
+    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern.leadindex[j];
-        while(ii < jacobian->sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern->leadindex[j];
+        while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern.index[ii];
+          l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
           jac[k] = -jacobian->resultVars[l];
           ii++;
         };
       }
       /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern.colorCols[j]-1 == i)
+      if(jacobian->sparsePattern->colorCols[j]-1 == i)
         jacobian->seedVars[j] = 0;
     }
   }
@@ -182,7 +183,6 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
          eqSystemNumber, (int) systemData->size,
          data->localData[0]->timeValue);
 
-
   /* set data */
   _omc_setVectorData(solverData->x, aux_x);
   _omc_setVectorData(solverData->b, systemData->b);
@@ -194,7 +194,6 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     if (!reuseMatrixJac){
       /* reset matrix A */
       memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
-
       /* update matrix A */
       systemData->setA(data, threadData, systemData);
     }
@@ -202,7 +201,6 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     /* update vector b (rhs) */
     systemData->setb(data, threadData, systemData);
   } else {
-
     if (!reuseMatrixJac){
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1){
@@ -211,9 +209,9 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }
     }
-
     /* calculate vector b (rhs) */
     _omc_copyVector(solverData->work, solverData->x);
+
     wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, dataAndThreadData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));

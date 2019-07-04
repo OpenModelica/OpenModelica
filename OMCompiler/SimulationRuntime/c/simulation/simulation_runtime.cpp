@@ -50,7 +50,6 @@
   #include <regex.h>
 #endif
 
-
 /* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
  *
  */
