@@ -120,6 +120,8 @@ typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_
  * sizeofIndex contain number of elements in index
  * colorsCols contain color of colored columns
  *
+ * Use freeSparsePattern(SPARSE_PATTERM *spp) for "destruction" (see util/jacobian_util.c/h).
+ *
  */
 typedef struct SPARSE_PATTERN
 {
@@ -142,6 +144,7 @@ typedef struct SPARSE_PATTERN
  * resultVars contain result of one column to the corresponding jacobian
  * jacobian contains dense jacobian elements
  *
+ * Use freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) for "destruction" (see util/jacobian_util.c/h).
  */
 typedef struct ANALYTIC_JACOBIAN
 {
@@ -309,6 +312,28 @@ typedef struct NONLINEAR_SYSTEM_DATA
 typedef void* NONLINEAR_SYSTEM_DATA;
 #endif
 
+typedef struct LINEAR_SYSTEM_THREAD_DATA
+{
+  void *solverData[2];                  /* [1] is the totalPivot solver
+                                           [0] holds other solvers
+                                           both are used for the default solver */
+  modelica_real *x;                     /* solution vector x */
+  modelica_real *A;                     /* matrix A */
+  modelica_real *b;                     /* vector b */
+
+  modelica_real residualError;          /* not used yet*/
+
+  ANALYTIC_JACOBIAN* parentJacobian;    /* if != NULL then it's the parent jacobian matrix */
+  ANALYTIC_JACOBIAN* jacobian;          /* jacobian */
+
+  /* Statistics for each thread */
+  unsigned long numberOfCall;           /* number of solving calls of this system */
+  unsigned long numberOfJEval;          /* number of jacobian evaluations of this system */
+  double totalTime;                     /* save the totalTime */
+  rtclock_t totalTimeClock;             /* time clock for the totalTime  */
+  double jacobianTime;                  /* save the time to calculate jacobians */
+}LINEAR_SYSTEM_THREAD_DATA;
+
 #if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
 typedef struct LINEAR_SYSTEM_DATA
 {
@@ -322,7 +347,6 @@ typedef struct LINEAR_SYSTEM_DATA
 
   int (*analyticalJacobianColumn)(void*, threadData_t*, ANALYTIC_JACOBIAN*, ANALYTIC_JACOBIAN* parentJacobian);
   int (*initialAnalyticalJacobian)(void*, threadData_t*, ANALYTIC_JACOBIAN*);
-  modelica_integer jacobianIndex;
 
   void (*residualFunc)(void**, const double*, double*, const int*);
   void (*initializeStaticLSData)(void*, threadData_t *threadData, void*);
@@ -337,19 +361,18 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_integer nnz;                 /* number of nonzero entries */
   modelica_integer size;
   modelica_integer equationIndex;       /* index for EQUATION_INFO */
-
-  void *solverData[2]; /* [1] is the totalPivot solver; [0] holds other solvers ; both are used for the default solver */
-  modelica_real *x;                     /* solution vector x */
-  modelica_real *A;                     /* matrix A */
-  modelica_real *b;                     /* vector b */
+  modelica_integer jacobianIndex;
 
   modelica_integer method;              /* not used yet*/
-  modelica_real residualError;          /* not used yet*/
+  modelica_boolean useSparseSolver;     /* 1: use sparse solver, - else any solver */
+
+  LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
+
+  // ToDo: Gather information from all threads if in parallel region
   modelica_boolean solved;              /* 1: solved in current step - else not */
   modelica_boolean failed;              /* 1: failed while last try with lapack - else not */
-  modelica_boolean useSparseSolver;     /* 1: use sparse solver, - else any solver */
-  ANALYTIC_JACOBIAN* parentJacobian;    /* if != NULL then it's the parent jacobian matrix */
 
+  // ToDo: Gather information from all threads if in parallel region
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */
   unsigned long numberOfJEval;          /* number of jacobian evaluations of this system */
@@ -377,7 +400,7 @@ typedef struct MIXED_SYSTEM_DATA
   modelica_boolean** iterationPreVarsPtr;
   void *solverData;
 
-  modelica_integer method;          /* not used yet*/
+  modelica_integer method;          /* not used yet */
   modelica_boolean solved;          /* 1: solved in current step - else not */
 }MIXED_SYSTEM_DATA;
 #else
@@ -659,7 +682,7 @@ typedef struct SIMULATION_INFO
   modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode  */
   int* sensitivityParList;             /* used by integrator for sensitivity mode  */
 
-  ANALYTIC_JACOBIAN* analyticJacobians;
+  ANALYTIC_JACOBIAN* analyticJacobians;   // ToDo Only store informations for Jacobian used by integrator here
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
   int currentNonlinearSystemIndex;

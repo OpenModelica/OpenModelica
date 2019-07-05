@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,33 +28,31 @@
  *
  */
 
-/*! \file linearSystem.h
+/*! File jacobian_util.h
  */
 
+#ifndef OMC_JACOBIAN_UTIL_H
+#define OMC_JACOBIAN_UTIL_H
 
-#ifndef _LINEARSYSTEM_H_
-#define _LINEARSYSTEM_H_
-
-#include "../../simulation_data.h"
-#include "../../util/simulation_options.h"
+#include "../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef VOID
-#undef VOID
-#endif
+/**
+ * \brief Free struct ANALYTIC_JACOBIAN
+ *
+ * Frees dynamically allocated memory and sets pointers to NULL.
+ */
+void freeAnalyticJacobian(ANALYTIC_JACOBIAN* jac);
 
-typedef void* LS_SOLVER_DATA;
-
-int initializeLinearSystems(DATA *data, threadData_t *threadData);
-int allocLinSystThreadData(LINEAR_SYSTEM_DATA *linsys);
-int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
-int freeLinearSystems(DATA *data, threadData_t *threadData);
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
-int check_linear_solutions(DATA *data, int printFailingSystems);
-void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
+/**
+ * \brief Free struct SPARSE_PATTERN
+ *
+ * Frees dynamically allocated memory and sets pointers to NULL.
+ */
+void freeSparsePattern(SPARSE_PATTERN *spp);
 
 #ifdef __cplusplus
 }

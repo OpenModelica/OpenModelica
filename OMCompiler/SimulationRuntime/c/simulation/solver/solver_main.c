@@ -43,6 +43,7 @@
 #include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
+#include "util/parallel_helper.h"
 #include "util/varinfo.h"
 #include "radau.h"
 #include "model_help.h"
@@ -360,6 +361,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int retValue = 0;
   int i;
 
+  freeList(solverInfo->eventLst);
   /* free solver statistics */
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
@@ -589,6 +591,15 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
       infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats[3]);
       infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats[4]);
+      infoStreamPrint(LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
+#ifdef USE_PARJAC
+      infoStreamPrint(LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
+      int chunk_size;
+      omp_sched_t kind;
+      omp_get_schedule(&kind, &chunk_size);
+      infoStreamPrint(LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
+#endif
+
       messageClose(LOG_STATS);
     }
 

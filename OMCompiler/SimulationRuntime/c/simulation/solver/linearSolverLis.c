@@ -38,6 +38,7 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "util/parallel_helper.h"
 #include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
@@ -151,25 +152,20 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   int nth = 0;
   int nnz = jacobian->sparsePattern->numberOfNoneZeros;
 
-  for(i=0; i < jacobian->sizeRows; i++)
-  {
+  for(i=0; i < jacobian->sizeRows; i++) {
     jacobian->seedVars[i] = 1;
-
     ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
+    for(j = 0; j < jacobian->sizeCols; j++) {
+      if(jacobian->seedVars[j] == 1) {
         ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
+        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
           l  = jacobian->sparsePattern->index[ii];
           /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
           systemData->setAElement(l, i, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
@@ -206,7 +202,8 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LIS* solverData = (DATA_LIS*)systemData->solverData[0];
+  DATA_LIS* solverData = (DATA_LIS*)systemData->parDynamicData[omc_get_thread_num()].solverData[0];
+
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
   LIS_INT err;
@@ -246,10 +243,11 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_lis(solverData->work, systemData->b, dataAndThreadData, sysNumber);
-    /* set b vector */
-    for(i=0; i<n; i++){
-      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
+    wrapper_fvec_lis(solverData->work, systemData->parDynamicData[omc_get_thread_num()].b, dataAndThreadData, sysNumber);
+
+	/* set b vector */
+    for(i=0; i<n; i++) {
+      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->parDynamicData[omc_get_thread_num()].b[i], solverData->b);
     }
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));

@@ -86,6 +86,7 @@
 #include "simulation/solver/initialization/initialization.h"
 #include "simulation/solver/dae_mode.h"
 #include "dataReconciliation/dataReconciliation.h"
+#include "util/parallel_helper.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -939,6 +940,36 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   read_input_xml(data->modelData, data->simulationInfo);
   data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
   rt_accumulate(SIM_TIMER_INIT_XML);
+
+  /* Set the maximum number of threads prior to any allocation w.r.t.
+   * linear systems and Jacobians in order to avoid memory leaks.
+   */
+#ifdef USE_PARJAC
+  int num_threads = omc_get_max_threads();
+  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
+    int num_threads_tmp = atoi(omc_flagValue[FLAG_JACOBIAN_THREADS]);
+    infoStreamPrint(LOG_STDOUT, 0,
+         "Number of threads passed via -jacobianThreads: %d",
+         num_threads_tmp);
+    if (0 >= num_threads_tmp) {
+      warningStreamPrint(LOG_STDOUT, 0,
+          "Number of desired OpenMP threads for parallel Jacobian evaluation is <= 0.");
+      warningStreamPrint(LOG_STDOUT, 0, "Use omp_get_max_threads().");
+    } else {
+      num_threads = num_threads_tmp;
+    }
+  }
+  omp_set_num_threads(num_threads);
+
+  infoStreamPrint(LOG_STDOUT, 0,
+      "Number of OpenMP threads for parallel Jacobian evaluation: %d",
+      omc_get_max_threads());
+#else
+  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
+      warningStreamPrint(LOG_STDOUT, 0,
+          "Simulation flag jacobianThreads not available. Make sure you have configured omc with \"--enable-parjac\" and build with a compiler supporting OpenMP.");
+  }
+#endif
 
   /* initialize static data of mixed/linear/non-linear system solvers */
   initializeMixedSystems(data, threadData);

@@ -91,11 +91,13 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./util/ModelicaUtilities.c\" />
 //       <File name=\"./util/omc_msvc.c\" />
+//       <File name=\"./util/parallel_helper.c\" />
 //       <File name=\"./util/simulation_options.c\" />
 //       <File name=\"./util/rational.c\" />
 //       <File name=\"./util/modelica_string_lit.c\" />
 //       <File name=\"./util/omc_init.c\" />
 //       <File name=\"./util/omc_mmap.c\" />
+//       <File name=\"./util/jacobian_util.c\" />
 //       <File name=\"./math-support/pivot.c\" />
 //       <File name=\"./simulation/simulation_info_json.c\" />
 //       <File name=\"./simulation/options.c\" />

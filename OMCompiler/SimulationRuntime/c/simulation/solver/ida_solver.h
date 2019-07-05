@@ -107,24 +107,26 @@ typedef struct IDA_SOLVER
   N_Vector* ySp;
   N_Vector* ySResult;
 
+#ifdef USE_PARJAC
+  ANALYTIC_JACOBIAN* jacColumns;
+#endif
+  int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
+
 }IDA_SOLVER;
 
-/* initial main ida Data */
-int
-ida_solver_initial(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo, IDA_SOLVER *idaData);
+/* initialize main ida Data */
+int ida_solver_initial(DATA* data, threadData_t *threadData,
+                       SOLVER_INFO* solverInfo, IDA_SOLVER *idaData);
 
-/* deinitial main ida Data */
-int
-ida_solver_deinitial(IDA_SOLVER *idaData);
+/* deinitialize main ida Data */
+int ida_solver_deinitial(IDA_SOLVER *idaData);
 
 /* main ida function to make a step */
-int
-ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
+int ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 /* event handing reinitialization function  */
-int
-ida_event_update(DATA* data, threadData_t *threadData);
+int ida_event_update(DATA* data, threadData_t *threadData);
 
-#endif
+#endif  /* #ifdef WITH_SUNDIALS */
 
-#endif
+#endif  /* #ifndef OMC_IDA_SOLVER_H*/

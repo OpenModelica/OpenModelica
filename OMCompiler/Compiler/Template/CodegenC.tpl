@@ -117,6 +117,7 @@ end translateModel;
     #include "simulation/simulation_info_json.h"
     #include "simulation/simulation_runtime.h"
     #include "util/omc_error.h"
+    #include "util/parallel_helper.h"
     #include "simulation/solver/model_help.h"
     #include "simulation/solver/delay.h"
     #include "simulation/solver/linearSystem.h"
@@ -1957,7 +1958,6 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
            >>
          case SOME(__) then
            let size = listLength(ls.vars)
@@ -1976,10 +1976,9 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
            >>
          else
          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%>.')
@@ -2006,7 +2005,6 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
 
            assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
            linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
@@ -2017,7 +2015,6 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
            linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
            >>
          case SOME(__) then
@@ -2043,9 +2040,8 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
            linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
+           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
 
            assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
@@ -2058,9 +2054,8 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%at.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
            linearSystemData[<%at.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
            linearSystemData[<%at.indexLinearSystem%>].jacobianIndex = <%jacIndex2%>;
-           linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = NULL;
-           linearSystemData[<%at.indexLinearSystem%>].setA = NULL;//setLinearMatrixA<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].setb = NULL; //setLinearVectorb<%at.index%>;
+           linearSystemData[<%at.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%at.index%>;
+           linearSystemData[<%at.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
            >>
@@ -2131,7 +2126,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
-           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'
+           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
          ANALYTIC_JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
@@ -2182,7 +2177,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
@@ -2192,7 +2187,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
@@ -2270,7 +2265,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          DATA *data = (DATA*) ((void**)dataIn[0]);
          threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'%>
+         <% if ls.partOfJac then
+           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+         %>
          ANALYTIC_JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
@@ -2299,7 +2296,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          DATA *data = (DATA*) ((void**)dataIn[0]);
          threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
          const int equationIndexes[2] = {1,<%at.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian;'%>
+         <% if ls.partOfJac then
+           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+         %>
          ANALYTIC_JACOBIAN* jacobian = NULL;
          <%varDeclsRes2%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
@@ -2373,7 +2372,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
@@ -2383,7 +2382,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%ls.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
@@ -2403,7 +2402,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%at.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls3%>
          <%MatrixA2%>
        }
@@ -2413,7 +2412,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          const int equationIndexes[2] = {1,<%at.index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parentJacobian;'%>
+         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls4%>
          <%vectorb2%>
        }
@@ -5585,7 +5584,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <% if ls.partOfJac then
-     'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'
+     'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian = jacobian;'
   %>
 
   retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
@@ -5599,6 +5598,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* write solution */
   <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCref(name, context, auxFunctions)%> = aux_x[<%i0%>];' ;separator="\n"%>
   <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
+
   <%returnval%>
   >>
 end equationLinear;

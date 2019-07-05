@@ -103,6 +103,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/generic_array.h \
 ./util/index_spec.h \
 ./util/integer_array.h \
+./util/jacobian_util.h \
 ./util/java_interface.h \
 ./util/modelica.h \
 ./util/modelica_string.h \
@@ -111,6 +112,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_mmap.h \
 ./util/omc_msvc.h \
 ./util/omc_spinlock.h \
+./util/parallel_helper.h \
 ./util/read_matlab4.c \
 ./util/read_matlab4.h \
 ./util/read_csv.c \

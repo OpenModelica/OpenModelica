@@ -41,13 +41,13 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "util/parallel_helper.h"
 #include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverUmfpack.h"
-
 
 void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n);
 void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n);
@@ -138,8 +138,8 @@ int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNu
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   int nth = 0;
   int nnz = jacobian->sparsePattern->numberOfNoneZeros;
@@ -197,7 +197,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData[0];
+  DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->parDynamicData[omc_get_thread_num()].solverData[0];
   _omc_scalar residualNorm = 0;
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
@@ -236,7 +236,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
-    wrapper_fvec_umfpack(solverData->work, systemData->b, dataAndThreadData, sysNumber);
+    wrapper_fvec_umfpack(solverData->work, systemData->parDynamicData[omc_get_thread_num()].b, dataAndThreadData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
@@ -258,14 +258,15 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     }
     messageClose(LOG_LS_V);
 
-    for (i=0; i<solverData->n_row; i++)
-      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->b[i]);
+    for (i=0; i<solverData->n_row; i++) {
+      // ToDo Rework stream prints like this one to work in parallel regions
+      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
+    }
   }
   rt_ext_tp_tick(&(solverData->timeClock));
 
   /* symbolic pre-ordering of A to reduce fill-in of L and U */
-  if (0 == solverData->numberSolving)
-  {
+  if (0 == solverData->numberSolving) {
     status = umfpack_di_symbolic(solverData->n_col, solverData->n_row, solverData->Ap, solverData->Ai, solverData->Ax, &(solverData->symbolic), solverData->control, solverData->info);
   }
 
@@ -281,9 +282,9 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
   if (0 == status){
     if (1 == systemData->method){
-      status = umfpack_di_wsolve(UMFPACK_A, solverData->Ap, solverData->Ai, solverData->Ax, aux_x, systemData->b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
+      status = umfpack_di_wsolve(UMFPACK_A, solverData->Ap, solverData->Ai, solverData->Ax, aux_x, systemData->parDynamicData[omc_get_thread_num()].b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
     } else {
-      status = umfpack_di_wsolve(UMFPACK_Aat, solverData->Ap, solverData->Ai, solverData->Ax, aux_x, systemData->b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
+      status = umfpack_di_wsolve(UMFPACK_Aat, solverData->Ap, solverData->Ai, solverData->Ax, aux_x, systemData->parDynamicData[omc_get_thread_num()].b, solverData->numeric, solverData->control, solverData->info, solverData->Wi, solverData->W);
     }
   }
 
@@ -371,8 +372,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
  */
 int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
 {
-
-  DATA_UMFPACK* solverData = (DATA_UMFPACK*) systemData->solverData[0];
+  DATA_UMFPACK* solverData = (DATA_UMFPACK*) systemData->parDynamicData[omc_get_thread_num()].solverData[0];
   double *Ux, *Rs, r_ii, *b, sum, *y, *z;
   int *Up, *Ui, *Q, do_recip, rank = 0, current_rank, current_unz, i, j, k, l,
       success = 0, status, stop = 0;
@@ -411,14 +411,13 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
   {
     for (i = 0; i < solverData->n_row; i++)
     {
-      b[i] = systemData->b[i] / Rs[i];
+      b[i] = systemData->parDynamicData[omc_get_thread_num()].b[i] / Rs[i];
     }
   }
   else
   {
-    for (i = 0; i < solverData->n_row; i++)
-    {
-      b[i] = systemData->b[i] * Rs[i];
+    for (i = 0; i < solverData->n_row; i++) {
+      b[i] = systemData->parDynamicData[omc_get_thread_num()].b[i] * Rs[i];
     }
   }
 
