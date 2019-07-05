@@ -160,15 +160,55 @@ void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs)
 
 static const char *PATH_NOT_IN_FMU_RESOURCES = "Returning path (%s) not in the resources directory. The FMU might not work as expected if you send it to a different system";
 
+static int isWindows(void)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return 1;
+#else /* not windows */
+  return 0;
+#endif
+}
+
+static int isMinGW(void)
+{
+#if defined(__MINGW32__)
+  return 1;
+#else /* not MinGW */
+  return 0;
+#endif
+}
+
+static int isDriveLetter(char c)
+{
+  return isWindows() && ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
+}
+
+static int isPathSeparator(char c)
+{
+  return (c == '/') || (isWindows() && (c == '\\'));
+}
+
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
 {
   FILE_INFO info = omc_dummyFileInfo;
   struct stat stat_buf;
-  size_t len;
+  size_t len, i, j = 0;
   int uriExists = 0==stat(uri, &stat_buf);
   if (resourcesDir) {
     if (strlen(resourcesDir)+strlen(uri)+2 < PATH_MAX) {
-      sprintf(buf, "%s/%s", resourcesDir, uri);
+      if (isWindows()) {
+        sprintf(buf, "%s/", resourcesDir);
+        len = strlen(buf);
+        for (i = 0; i < strlen(uri); i++)
+          if (uri[i] != ':')
+          {
+              buf[len+j] = (uri[i] == '\\') ? '/' : uri[i];
+              j++;
+          }
+        buf[len+j]='\0';
+      } else {
+        sprintf(buf, "%s/%s", resourcesDir, uri);
+      }
       if (!uriExists || 0==stat(buf, &stat_buf)) {
         /* The path with resources prepended either exists or the path without resources does not exist
          * So re-run uriToFilenameRegularPaths with resourcesDir prepended to the URI
@@ -206,7 +246,7 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
     return (0==strcmp(uri, buf) && uri_om) ? uri_om : mmc_mk_scon(buf);
   }
 
-  if (uri[0]=='/') {
+  if (uri[0]=='/' || (strlen(uri) > 2 && isDriveLetter(uri[0]) && uri[1]==':' && isPathSeparator(uri[2]))) {
     /* Absolute path */
     return uri_om ? uri_om : mmc_mk_scon(uri);
   }
