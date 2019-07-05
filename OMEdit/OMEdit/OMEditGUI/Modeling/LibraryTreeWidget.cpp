@@ -86,6 +86,7 @@ LibraryTreeItem::LibraryTreeItem()
   setOMSBusConnector(0);
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
+  setExternalTLMModelInfo(0);
   setSubModelPath("");
   setModelState(oms_modelState_virgin);
 }
@@ -132,6 +133,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setOMSBusConnector(0);
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
+  setExternalTLMModelInfo(0);
   setSubModelPath("");
   setModelState(oms_modelState_virgin);
 }
@@ -2769,6 +2771,11 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
         pLibraryTreeItem->setFMUInfo(pFMUInfo);
         pLibraryTreeItem->setSubModelPath(QString(pFMUInfo->path));
       }
+    } else if (pLibraryTreeItem->isExternalTLMModelComponent()) {
+        const oms_external_tlm_model_info_t *pExternalTLMModelInfo;
+        if(OMSProxy::instance()->getExternalTLMModelInfo(pLibraryTreeItem->getNameStructure(), &pExternalTLMModelInfo)) {
+            pLibraryTreeItem->setExternalTLMModelInfo(pExternalTLMModelInfo);
+        }
     } else if (pLibraryTreeItem->isTableComponent()) {
       QString path;
       if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {

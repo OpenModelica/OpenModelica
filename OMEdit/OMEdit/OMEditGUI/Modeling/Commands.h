@@ -430,13 +430,14 @@ private:
 class AddSubModelCommand : public UndoCommand
 {
 public:
-  AddSubModelCommand(QString name, QString path, LibraryTreeItem *pLibraryTreeItem, QString annotation, bool openingClass,
+  AddSubModelCommand(QString name, QString path, QString startScript, LibraryTreeItem *pLibraryTreeItem, QString annotation, bool openingClass,
                      GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   QString mName;
   QString mPath;
+  QString mStartScript;
   LibraryTreeItem *mpLibraryTreeItem;
   QString mAnnotation;
   bool mOpeningClass;

@@ -1841,12 +1841,13 @@ void AddSystemCommand::undo()
  * \param pGraphicsView
  * \param pParent
  */
-AddSubModelCommand::AddSubModelCommand(QString name, QString path, LibraryTreeItem *pLibraryTreeItem, QString annotation,
+AddSubModelCommand::AddSubModelCommand(QString name, QString path, QString startScript, LibraryTreeItem *pLibraryTreeItem, QString annotation,
                                        bool openingClass, GraphicsView *pGraphicsView, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mName = name;
   mPath = path;
+  mStartScript = startScript;
   mpLibraryTreeItem = pLibraryTreeItem;
   mAnnotation = annotation;
   mOpeningClass = openingClass;
@@ -1864,9 +1865,17 @@ void AddSubModelCommand::redoInternal()
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
     QFileInfo fileInfo(mPath);
-    if (!OMSProxy::instance()->addSubModel(nameStructure, fileInfo.absoluteFilePath())) {
-      setFailed(true);
-      return;
+    if(mStartScript.isEmpty()) {
+      if (!OMSProxy::instance()->addSubModel(nameStructure, fileInfo.absoluteFilePath())) {
+        setFailed(true);
+        return;
+      }
+    }
+    else {
+      if (!OMSProxy::instance()->addExternalTLMModel(nameStructure, mStartScript, fileInfo.absoluteFilePath())) {
+        setFailed(true);
+        return;
+      }
     }
     //mpGraphicsView->addSubModel(mName, mPath);
   }

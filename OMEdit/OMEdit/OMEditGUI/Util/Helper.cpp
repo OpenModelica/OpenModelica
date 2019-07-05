@@ -158,6 +158,7 @@ QString Helper::output;
 QString Helper::parameters;
 QString Helper::inputs;
 QString Helper::name;
+QString Helper::startScript;
 QString Helper::comment;
 QString Helper::path;
 QString Helper::type;
@@ -450,6 +451,7 @@ void Helper::initHelperVariables()
   Helper::parameters = tr("Parameters");
   Helper::inputs = tr("Inputs");
   Helper::name = tr("Name:");
+  Helper::startScript = tr("Start Script:");
   Helper::comment = tr("Comment:");
   Helper::path = tr("Path:");
   Helper::type = tr("Type");
@@ -846,6 +848,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Following error has occurred <b>%1</b> GDB arguments are <b>\"%2\"</b>");
     case INVALID_INSTANCE_NAME:
       return tr("Name <b>%1</b> is not a valid identifier.<br />A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.");
+    case ENTER_SCRIPT:
+      return tr("Please enter a script file.");
     default:
       return "";
   }

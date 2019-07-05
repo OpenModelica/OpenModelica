@@ -282,6 +282,9 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
   mpBrowsePathButton = new QPushButton(Helper::browse);
   mpBrowsePathButton->setAutoDefault(false);
   connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
+  // start script
+  mpStartScriptLabel = new Label(Helper::startScript);
+  mpStartScriptTextBox = new QLineEdit;
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -303,7 +306,11 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
   pMainLayout->addWidget(mpPathLabel, 3, 0);
   pMainLayout->addWidget(mpPathTextBox, 3, 1);
   pMainLayout->addWidget(mpBrowsePathButton, 3, 2);
-  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+    pMainLayout->addWidget(mpStartScriptLabel, 4, 0);
+    pMainLayout->addWidget(mpStartScriptTextBox, 4, 1, 1, 2);
+  }
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -314,8 +321,12 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
  */
 void AddSubModelDialog::browseSubModelPath()
 {
+  QString fileTypes;
+  if(!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+      fileTypes = Helper::subModelFileTypes;
+  }
   mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile),
-                                                        NULL, Helper::subModelFileTypes, NULL));
+                                                        NULL, fileTypes, NULL));
 }
 
 /*!
@@ -329,6 +340,13 @@ void AddSubModelDialog::addSubModel()
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), Helper::ok);
     return;
   }
+
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem() && mpStartScriptTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), Helper::ok);
+      return;
+  }
+
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -347,7 +365,7 @@ void AddSubModelDialog::addSubModel()
     }
   }
   QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
-  AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(mpNameTextBox->text(), mpPathTextBox->text(), 0,
+  AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(mpNameTextBox->text(), mpPathTextBox->text(), mpStartScriptTextBox->text(), 0,
                                                                    annotation, false, mpGraphicsView);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelCommand);
   mpGraphicsView->getModelWidget()->updateModelText();

@@ -70,6 +70,13 @@ ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget 
    * And then fix the OMSRenameCommand accordingly.
    */
   mpNameTextBox->setDisabled(true);
+
+  if(mpComponent->getLibraryTreeItem()->getExternalTLMModelInfo()) {
+      const oms_external_tlm_model_info_t *pExternalTLMModelInfo = mpComponent->getLibraryTreeItem()->getExternalTLMModelInfo();
+      mpStartScriptLabel = new Label(Helper::startScript);
+      mpStartScriptTextBox = new QLineEdit(QString(pExternalTLMModelInfo->startScript));
+      mpStartScriptTextBox->setDisabled(true); //! @todo Enable this to make start script changeable
+  }
   // tab widget
   mpTabWidget = new QTabWidget;
   // info tab
@@ -318,10 +325,14 @@ ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget 
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
   pMainLayout->addWidget(mpNameLabel, 2, 0);
   pMainLayout->addWidget(mpNameTextBox, 2, 1);
-  if (mpComponent->getLibraryTreeItem()->getFMUInfo() || hasParameter || hasInput) {
-    pMainLayout->addWidget(mpTabWidget, 3, 0, 1, 2);
+  if(mpComponent->getLibraryTreeItem()->isExternalTLMModelComponent()) {
+      pMainLayout->addWidget(mpStartScriptLabel, 3, 0);
+      pMainLayout->addWidget(mpStartScriptTextBox, 3, 1);
   }
-  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 2, Qt::AlignRight);
+  if (mpComponent->getLibraryTreeItem()->getFMUInfo() || hasParameter || hasInput) {
+      pMainLayout->addWidget(mpTabWidget, 4, 0, 1, 2);
+  }
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 

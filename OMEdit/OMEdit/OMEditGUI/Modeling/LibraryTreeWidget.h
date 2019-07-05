@@ -133,6 +133,7 @@ public:
   bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
   bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
   bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
+  bool isExternalTLMModelComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_external));}
   bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
@@ -150,6 +151,8 @@ public:
   oms_tlmbusconnector_t* getOMSTLMBusConnector() const {return mpOMSTLMBusConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
+  void setExternalTLMModelInfo(const oms_external_tlm_model_info_t *pExternalTLMModelInfo) { mpExternalTLMModelInfo = pExternalTLMModelInfo;}
+  const oms_external_tlm_model_info_t* getExternalTLMModelInfo() const {return mpExternalTLMModelInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
   oms_modelState_enu_t getModelState() const {return mModelState;}
@@ -224,6 +227,7 @@ private:
   oms_busconnector_t *mpOMSBusConnector;
   oms_tlmbusconnector_t *mpOMSTLMBusConnector;
   const oms_fmu_info_t *mpFMUInfo;
+  const oms_external_tlm_model_info_t *mpExternalTLMModelInfo;
   QString mSubModelPath;
   oms_modelState_enu_t mModelState;
 signals:
