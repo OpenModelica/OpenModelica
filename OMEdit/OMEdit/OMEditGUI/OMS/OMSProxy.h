@@ -78,6 +78,7 @@ public:
   bool addConnectorToBus(QString busCref, QString connectorCref);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
   bool addSubModel(QString cref, QString fmuPath);
+  bool addExternalTLMModel(QString cref, QString startScript, QString modelPath);
   bool addSystem(QString cref, oms_system_enu_t type);
   bool addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation);
   bool addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance);
@@ -92,6 +93,7 @@ public:
   bool getConnector(QString cref, oms_connector_t **pConnector);
   bool getElement(QString cref, oms_element_t **pElement);
   bool getElements(QString cref, oms_element_t ***pElements);
+  bool getExternalTLMModelInfo(QString cref, const oms_external_tlm_model_info_t** pExternalTLMModelInfo);
   bool getFixedStepSize(QString cref, double* stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int* value);

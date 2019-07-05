@@ -3180,8 +3180,6 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
           menu.addSeparator();
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
           menu.addSeparator();
-          menu.addAction(MainWindow::instance()->getAddSubModelAction());
-          menu.addSeparator();
           menu.addAction(mpPropertiesAction);
         }
       }
@@ -6328,7 +6326,7 @@ void ModelWidget::drawOMSModelDiagramElements()
                                                                      pChildLibraryTreeItem->getSystemType());
           mpUndoStack->push(pAddSystemCommand);
         } else if (pChildLibraryTreeItem->isComponentElement()) {
-          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
+          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", "", pChildLibraryTreeItem,
                                                                            annotation, true, mpDiagramGraphicsView);
           mpUndoStack->push(pAddSubModelCommand);
         }

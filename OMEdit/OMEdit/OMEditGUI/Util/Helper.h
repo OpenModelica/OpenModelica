@@ -160,6 +160,7 @@ public:
   static QString parameters;
   static QString inputs;
   static QString name;
+  static QString startScript;
   static QString comment;
   static QString path;
   static QString type;
@@ -365,6 +366,7 @@ public:
   static QString addSystem;
   static QString addSystemTip;
   static QString addSubModel;
+  static QString addExternalTLMModel;
   static QString addSubModelTip;
   static QString addBus;
   static QString addBusTip;
@@ -484,7 +486,8 @@ public:
     INVALID_TRANSITION_CONDITION,
     MULTIPLE_DECLARATIONS_COMPONENT,
     GDB_ERROR,
-    INVALID_INSTANCE_NAME
+    INVALID_INSTANCE_NAME,
+    ENTER_SCRIPT
   };
 
   static QString getMessage(int type);

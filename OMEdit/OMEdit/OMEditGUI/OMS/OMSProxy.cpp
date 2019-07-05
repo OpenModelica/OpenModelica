@@ -453,6 +453,17 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   return statusToBool(status);
 }
 
+bool OMSProxy::addExternalTLMModel(QString cref, QString startScript, QString modelPath)
+{
+    QString command = "oms_addExternalModel";
+    QStringList args;
+    args << "\"" + cref + "\"" << modelPath << "\"" << startScript;
+    LOG_COMMAND(command, args);
+    oms_status_enu_t status = oms_addExternalModel(cref.toUtf8().constData(), modelPath.toUtf8().constData(), startScript.toUtf8().constData());
+    logResponse(command, status, &commandTime);
+    return statusToBool(status);
+}
+
 /*!
  * \brief OMSProxy::addSystem
  * Adds a system to a model.
@@ -744,6 +755,24 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_getFMUInfo(cref.toUtf8().constData(), pFmuInfo);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getFMUInfo
+ * Gets the FMU info.
+ * \param cref
+ * \param pFmuInfo
+ * \return
+ */
+bool OMSProxy::getExternalTLMModelInfo(QString cref, const oms_external_tlm_model_info_t** pExternalTLMModelInfo)
+{
+  QString command = "getExternalTLMModelInfo";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getExternalModelInfo(cref.toUtf8().constData(), pExternalTLMModelInfo);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

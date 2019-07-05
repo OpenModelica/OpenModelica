@@ -56,6 +56,8 @@ private:
   QFrame *mpHorizontalLine;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
+  Label *mpStartScriptLabel;
+  QLineEdit *mpStartScriptTextBox;
   QTabWidget *mpTabWidget;
   QGroupBox *mpGeneralGroupBox;
   Label *mpDescriptionLabel;
