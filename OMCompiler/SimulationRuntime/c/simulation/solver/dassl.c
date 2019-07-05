@@ -62,29 +62,49 @@ extern "C" {
 int RHSFinalFlag;
 
 /* provides a dummy Jacobian to be used with DASSL */
-static int
-dummy_Jacobian(double *t, double *y, double *yprime, double *deltaD,
-    double *delta, double *cj, double *h, double *wt, double *rpar, int* ipar) {
-  return 0;
-}
-static int
-dummy_zeroCrossing(int *neqm, double *t, double *y, double *yp,
-                   int *ng, double *gout, double *rpar, int* ipar) {
+static int dummy_Jacobian(double *t, double *y, double *yprime,double *deltaD,
+                          double *delta, double *cj, double *h, double *wt,
+                          double *rpar, int* ipar) {
   return 0;
 }
 
-static int callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar);
-static int jacA_num(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar);
-static int jacA_numColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar);
-static int jacA_sym(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-       double *rpar, int* ipar);
-static int jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-       double *rpar, int* ipar);
+/* provides a dummy zero crossing function to be used with DASSL */
+static int dummy_zeroCrossing(int *neqm, double *t, double *y, double *yp,
+                              int *ng, double *gout, double *rpar, int* ipar) {
+  return 0;
+}
 
-static void setJacElementDasslSparse(int l, int k, int nth, double val, void* matrixA, int rows);
+/* provides a dumm precondition function to be used with DASSL */
+static int dummy_precondition(int *neq, double *t, double *y, double *yprime,
+                              double *savr, double *pwk, double *cj,
+                              double *wt, double *wp, int *iwp, double *b,
+                              double eplin, int* ires, double *rpar, int* ipar){
+    return 0;
+}
+
+/* Function prototypes */
+static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
+                        double *pd, double *cj, double *h, double *wt,
+                        double *rpar, int* ipar);
+
+static int jacA_num(double *t, double *y, double *yprime, double *deltaD,
+                    double *pd, double *cj, double *h, double *wt,
+                    double *rpar, int* ipar);
+
+static int jacA_numColored(double *t, double *y, double *yprime,
+                           double *deltaD, double *pd, double *cj, double *h,
+                           double *wt, double *rpar, int* ipar);
+
+static int jacA_sym(double *t, double *y, double *yprime, double *deltaD,
+                    double *pd, double *cj, double *h, double *wt,
+                    double *rpar, int* ipar);
+
+static int jacA_symColored(double *t, double *y, double *yprime,
+                           double *deltaD, double *pd, double *cj, double *h,
+                           double *wt, double *rpar, int* ipar);
+
+static void setJacElementDasslSparse(int l, int k, int nth, double val,
+                                     void* matrixA, int rows);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -110,21 +130,35 @@ void  DDASKR(
     int *jroot
 );
 
-static int
-dummy_precondition(int *neq, double *t, double *y, double *yprime, double *savr, double *pwk, double *cj, double *wt, double *wp, int *iwp, double *b, double eplin, int* ires, double *rpar, int* ipar){
-    return 0;
-}
-
 static int continue_DASSL(int* idid, double* tolarence);
 
 /* function for calculating state values on residual form */
-static int functionODE_residual(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
+static int functionODE_residual(double *t, double *x, double *xprime,
+                                double *cj, double *delta, int *ires,
+                                double *rpar, int* ipar);
+
 /* function for calculating zeroCrossings */
-static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
-        int *ng, double *gout, double *rpar, int* ipar);
+static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y,
+                                       double *yp, int *ng, double *gout,
+                                       double *rpar, int* ipar);
 
 
-int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
+/*
+ * \brief Configure DASSL solver
+ *
+ * Allocate memory for intern data of `dasslData`.
+ * Configures DASSL:
+ *   - Set relative and absolute tolerance
+ *   - Set maximum step size, initial step size
+ *   - Set maximum integration order
+ *   - Set time grid
+ *   - Set method for jacobian computation
+ *   - Set root finding method
+ *   - Set event handling and restart option
+ *
+ */
+int dassl_initial(DATA* data, threadData_t *threadData,
+                  SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
   TRACE_PUSH
   /* work arrays for DASSL */
@@ -386,6 +420,10 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   return 0;
 }
 
+
+/*
+ * \brief Deallocates `DASSL_DATA`
+ */
 int dassl_deinitial(DASSL_DATA *dasslData)
 {
   TRACE_PUSH
@@ -675,8 +713,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   return retVal;
 }
 
-static int
-continue_DASSL(int* idid, double* atol)
+static int continue_DASSL(int* idid, double* atol)
 {
   TRACE_PUSH
   int retValue = -1;
@@ -739,8 +776,8 @@ continue_DASSL(int* idid, double* atol)
   return retValue;
 }
 
-int functionODE_residual(double *t, double *y, double *yd, double* cj, double *delta,
-                         int *ires, double *rpar, int *ipar)
+int functionODE_residual(double *t, double *y, double *yd, double* cj,
+                         double *delta, int *ires, double *rpar, int *ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)((double**)rpar)[0];
@@ -812,7 +849,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 }
 
 int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
-        int *ng, double *gout, double *rpar, int* ipar)
+                                int *ng, double *gout, double *rpar, int* ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -858,7 +895,6 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
   return 0;
 }
 
-
 /*
  * Sets element (l,j) in matrixA to given value val.
  */
@@ -875,7 +911,9 @@ void setJacElementDasslSparse(int l, int j, int nth, double val, void* matrixA,
  *
  * This function calculates symbolically the jacobian matrix and exploiting the coloring.
  */
-int jacA_symColored(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
+int jacA_symColored(double *t, double *y, double *yprime, double *delta,
+                    double *matrixA, double *cj, double *h, double *wt,
+                    double *rpar, int *ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -902,7 +940,9 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta, double 
  *
  * This function calculates symbolically the jacobian matrix.
  */
-int jacA_sym(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
+int jacA_sym(double *t, double *y, double *yprime, double *delta,
+             double *matrixA, double *cj, double *h, double *wt, double *rpar,
+             int *ipar)
 {
   TRACE_PUSH
 
@@ -941,7 +981,9 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta, double *matrix
  * This function calculates a jacobian matrix by
  * numerical with forward finite differences.
  */
-int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
+int jacA_num(double *t, double *y, double *yprime, double *delta,
+             double *matrixA, double *cj, double *h, double *wt, double *rpar,
+             int *ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
@@ -996,7 +1038,9 @@ int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrix
  * This function calculates a jacobian matrix by
  * numerical with forward finite differences and exploiting the coloring.
  */
-int jacA_numColored(double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, int *ipar)
+int jacA_numColored(double *t, double *y, double *yprime, double *delta,
+                    double *matrixA, double *cj, double *h, double *wt,
+                    double *rpar, int *ipar)
 {
   TRACE_PUSH
 
@@ -1069,8 +1113,9 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta, double 
  * This function is called by dassl to calculate the jacobian matrix.
  *
  */
-static int callJacobian(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar)
+static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
+                        double *pd, double *cj, double *h, double *wt,
+                        double *rpar, int* ipar)
 {
   TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
