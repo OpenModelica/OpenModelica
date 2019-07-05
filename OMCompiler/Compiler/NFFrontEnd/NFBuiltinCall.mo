@@ -1801,6 +1801,8 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     callExp := typeActualInStreamCall2(name, fn, arg, var, info);
+
+    System.setHasStreamConnectors(true);
   end typeActualInStreamCall;
 
   function typeActualInStreamCall2

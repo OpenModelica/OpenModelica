@@ -2159,14 +2159,6 @@ algorithm
           typeComponentSections(InstNode.resolveOuter(c), origin);
         end for;
 
-        // we need to update the ClassTree and add the expandable virtual components from the connects
-        if System.getHasExpandableConnectors() then
-          // collect the expandable virtual components from the connect equations
-
-          // create the components inside the existing expandable connectors
-        end if;
-
-
         InstNode.updateClass(typed_cls, classNode);
       then
         ();
