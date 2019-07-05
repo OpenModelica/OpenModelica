@@ -67,7 +67,6 @@ typedef struct DASSL_DATA{
 
   /* variables used in jacobian calculation */
   double *ysave;
-  double *ypsave;
   double *delta_hh;
   double *newdelta;
   double *stateDer;
@@ -81,6 +80,10 @@ typedef struct DASSL_DATA{
                           double *rpar, int* ipar);
   void* zeroCrossingFunction;
 
+#ifdef USE_PARJAC
+  ANALYTIC_JACOBIAN* jacColumns;    /* thread local analytic jacobians */
+#endif
+  int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } DASSL_DATA;
 
 /* main dassl function to make a step */

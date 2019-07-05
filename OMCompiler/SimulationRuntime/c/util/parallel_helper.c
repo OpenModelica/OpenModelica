@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,36 +28,37 @@
  *
  */
 
-/*! \file linearSystem.h
+/*! File parallel_helper.c
  */
 
+#include "parallel_helper.h"
 
-#ifndef _LINEARSYSTEM_H_
-#define _LINEARSYSTEM_H_
-
-#include "../../simulation_data.h"
-#include "../../util/simulation_options.h"
-
-#ifdef __cplusplus
-extern "C" {
+/**
+ * \brief Wrapper for OpenMP function omp_get_thread_num
+ *
+ * If OpenMP is available return thread number, otherwise 0.
+ */
+int omc_get_thread_num(void)
+{
+#ifdef USE_PARJAC
+  return omp_get_thread_num();
+#else
+  return 0;
 #endif
-
-#ifdef VOID
-#undef VOID
-#endif
-
-typedef void* LS_SOLVER_DATA;
-
-int initializeLinearSystems(DATA *data, threadData_t *threadData);
-int allocLinSystThreadData(LINEAR_SYSTEM_DATA *linsys);
-int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
-int freeLinearSystems(DATA *data, threadData_t *threadData);
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
-int check_linear_solutions(DATA *data, int printFailingSystems);
-void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-
-#ifdef __cplusplus
 }
-#endif
 
+/**
+ * \brief Wrapper for OpenMP function omc_get_max_threads
+ *
+ * If OpenMP is available return maximum number of threads,
+ * otherwise 1.
+ */
+int omc_get_max_threads(void)
+{
+#ifdef USE_PARJAC
+  return omp_get_max_threads();
+#else
+  return 1;
 #endif
+}
+

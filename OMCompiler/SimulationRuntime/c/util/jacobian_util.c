@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,36 +28,21 @@
  *
  */
 
-/*! \file linearSystem.h
+/*! File jac_util.c
  */
 
+#include "jacobian_util.h"
 
-#ifndef _LINEARSYSTEM_H_
-#define _LINEARSYSTEM_H_
-
-#include "../../simulation_data.h"
-#include "../../util/simulation_options.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef VOID
-#undef VOID
-#endif
-
-typedef void* LS_SOLVER_DATA;
-
-int initializeLinearSystems(DATA *data, threadData_t *threadData);
-int allocLinSystThreadData(LINEAR_SYSTEM_DATA *linsys);
-int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
-int freeLinearSystems(DATA *data, threadData_t *threadData);
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
-int check_linear_solutions(DATA *data, int printFailingSystems);
-void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-
-#ifdef __cplusplus
+void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
+  free(jac->seedVars); jac->seedVars = NULL;
+  free(jac->tmpVars); jac->tmpVars = NULL;
+  free(jac->resultVars); jac->resultVars = NULL;
+  freeSparsePattern(jac->sparsePattern);
+  free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
-#endif
 
-#endif
+void freeSparsePattern(SPARSE_PATTERN *spp) {
+  free(spp->index); spp->index = NULL;
+  free(spp->colorCols); spp->colorCols = NULL;
+  free(spp->leadindex); spp->leadindex = NULL;
+}

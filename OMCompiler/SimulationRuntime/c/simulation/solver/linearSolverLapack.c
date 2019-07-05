@@ -38,6 +38,7 @@
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_error.h"
+#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
@@ -45,6 +46,9 @@
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 
+#ifdef USE_PARJAC
+  #include <omp.h>
+#endif
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
@@ -87,7 +91,7 @@ int freeLapackData(void **voiddata)
   _omc_destroyMatrix(data->A);
 
   free(data);
-  voiddata[0] = 0;
+  voiddata[0] = NULL;
 
   return 0;
 }
@@ -108,13 +112,12 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[currentSys]);
 
   const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++) {
     /* activate seed variable for the corresponding color */
     for(ii=0; ii < jacobian->sizeCols; ii++)
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
@@ -122,13 +125,10 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
 
     ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
+    for(j = 0; j < jacobian->sizeCols; j++) {
+      if(jacobian->seedVars[j] == 1) {
         ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
+        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
           l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
           jac[k] = -jacobian->resultVars[l];
@@ -167,8 +167,8 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   void *dataAndThreadData[2] = {data, threadData};
   int i, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData[0];
 
+  DATA_LAPACK* solverData = (DATA_LAPACK*) systemData->parDynamicData[omc_get_thread_num()].solverData[0];
   int success = 1;
 
   /* We are given the number of the linear system.
@@ -185,15 +185,16 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
 
   /* set data */
   _omc_setVectorData(solverData->x, aux_x);
-  _omc_setVectorData(solverData->b, systemData->b);
-  _omc_setMatrixData(solverData->A, systemData->A);
+  _omc_setVectorData(solverData->b, systemData->parDynamicData[omc_get_thread_num()].b);
+  _omc_setMatrixData(solverData->A, systemData->parDynamicData[omc_get_thread_num()].A);
 
+  // ToDo: Make time variables thread safe as this can be called in a parallel region
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
-    if (!reuseMatrixJac){
+    if (!reuseMatrixJac) {
       /* reset matrix A */
-      memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
+      memset(systemData->parDynamicData[omc_get_thread_num()].A, 0, (systemData->size)*(systemData->size)*sizeof(double));
       /* update matrix A */
       systemData->setA(data, threadData, systemData);
     }
@@ -201,9 +202,9 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     /* update vector b (rhs) */
     systemData->setb(data, threadData, systemData);
   } else {
-    if (!reuseMatrixJac){
+    if (!reuseMatrixJac) {
       /* calculate jacobian -> matrix A*/
-      if(systemData->jacobianIndex != -1){
+      if(systemData->jacobianIndex != -1) {
         getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
