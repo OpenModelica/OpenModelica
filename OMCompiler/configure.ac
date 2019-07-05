@@ -468,6 +468,30 @@ AC_MSG_RESULT([$RUNTIMECFLAGS])
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
+dnl Parallel Jacobian evaluation in C runtime
+dnl OpenMP needs to be available
+dnl If enabled, model needs to be compiled using -DUSE_PARJAC (add to RUNTIMECFLAGS)
+AC_ARG_ENABLE(
+  [parjac],
+  AS_HELP_STRING([--enable-parjac],
+                 [enable parallel symbolical Jacobian evaluation in C runtime]),
+  [want_parjac=$enableval],
+  [want_parjac=no]
+)
+USE_PARJAC="no"
+if test x$want_parjac = xyes; then
+  AC_MSG_CHECKING([for parallel Jacobian evaluation])
+  if test "$CONFIG_WITH_OPENMP=1"; then
+    USE_PARJAC="yes"
+    RUNTIMECFLAGS="$RUNTIMECFLAGS $OMPCFLAGS -DUSE_PARJAC"
+  else
+    AC_MSG_WARN([========= OpenMP is not available, not define par. jac])
+  fi
+fi
+AC_MSG_RESULT([$USE_PARJAC])
+AC_SUBST(USE_PARJAC)
+
+
 LIBS=""
 AC_SEARCH_LIBS(dlopen,dl)
 LIBDL="$LIBS"
