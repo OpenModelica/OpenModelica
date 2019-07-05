@@ -64,7 +64,14 @@ static char* winPath = NULL;
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
-  char *tmp;
+  char *tmp = NULL;
+  /* adrpo: if the path does not contain "bin" or "lib" exit gracefully as otherwise the assertion will trigger */
+  if (strstr(omhome, "bin") == NULL && strstr(omhome, "lib") == NULL)
+  {
+    fprintf(stderr, "could not deduce the OpenModelica installation directory from executable path: [%s], please set OPENMODELICAHOME", omhome);
+    exit(EXIT_FAILURE);
+  }
+
   do {
     assert(tmp = strrchr(omhome,'/'));
     *tmp = '\0';
@@ -86,14 +93,21 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   struct stat sb;
   static char omhome[PATH_MAX];
+  const char *omhome_env = getenv("OPENMODELICAHOME");
   static int init = 0;
   ssize_t r;
   /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
    * because that FS is not POSIX-compliant.
    */
+  if (omhome_env != NULL) {
+    strcpy(omhome, omhome_env);
+    return omhome;
+  }
+
   if (init) {
     return omhome;
   }
+
   r = readlink("/proc/self/exe", omhome, sizeof(omhome)-1);
   if (r < 0) {
     perror("readlink");
@@ -113,9 +127,9 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
   pid_t pid;
-  static char *omhome;
+  static char *omhome = getenv("OPENMODELICAHOME");
   static int init = 0;
-  if (init) {
+  if (init || omhome != NULL) {
     return omhome;
   }
 
@@ -143,9 +157,16 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
   pid_t pid;
   static char omhome[PROC_PIDPATHINFO_MAXSIZE];
+  const char* omhome_env  = getenv("OPENMODELICAHOME");
   static int init = 0;
-  if (init) {
+  if (omhome_env != NULL) {
+    strcpy(omhome, omhome_env);
     return omhome;
+  }
+
+  if (init)
+  {
+     return omhome;
   }
 
   pid = getpid();
