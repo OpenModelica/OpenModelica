@@ -126,6 +126,8 @@ algorithm
   end if;
 
   System.setUsesCardinality(false);
+  System.setHasOverconstrainedConnectors(false);
+  System.setHasStreamConnectors(false);
 
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);

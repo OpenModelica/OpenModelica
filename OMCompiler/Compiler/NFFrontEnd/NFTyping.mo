@@ -395,6 +395,10 @@ algorithm
     end for;
 
     connectorTy := ComplexType.CONNECTOR(pots, flows, streams);
+
+    if not listEmpty(streams) then
+      System.setHasStreamConnectors(true);
+    end if;
   end if;
 end makeConnectorType;
 
@@ -2158,14 +2162,6 @@ algorithm
         for c in components loop
           typeComponentSections(InstNode.resolveOuter(c), origin);
         end for;
-
-        // we need to update the ClassTree and add the expandable virtual components from the connects
-        if System.getHasExpandableConnectors() then
-          // collect the expandable virtual components from the connect equations
-
-          // create the components inside the existing expandable connectors
-        end if;
-
 
         InstNode.updateClass(typed_cls, classNode);
       then
