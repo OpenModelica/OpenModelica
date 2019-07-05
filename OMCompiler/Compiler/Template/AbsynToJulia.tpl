@@ -739,6 +739,7 @@ match path
       case "Boolean" then 'Bool'
       case "list" then 'List'
       case "array" then 'Array'
+      case "tuple" then 'Tuple'
       else '<%name%>'
   else
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
@@ -851,11 +852,11 @@ match exp
     '@ExtendedAnonFunction <%func_str%>(<%args_str%>)'
   case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur... Probably not used so can be ignored */ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
-    '(<%array_str%>)'
+    'list(<%array_str%>)'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
-    '[<%matrix_str%>] postumus'
+    '[<%matrix_str%>]'
   case e as RANGE(step = SOME(step)) then
     let start_str = dumpOperand(start, e, false, context)
     let step_str = dumpOperand(step, e, false, context)

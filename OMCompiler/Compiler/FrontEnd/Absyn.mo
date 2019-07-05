@@ -396,6 +396,11 @@ uniontype GroupImport
 end GroupImport;
 
 public
+type ComponentCondition = Exp "A componentItem can have a condition that must be fulfilled if
+  the component should be instantiated.
+" ;
+
+public
 uniontype ComponentItem "Collection of component and an optional comment"
   record COMPONENTITEM
     Component component "component" ;
@@ -404,11 +409,6 @@ uniontype ComponentItem "Collection of component and an optional comment"
   end COMPONENTITEM;
 
 end ComponentItem;
-
-public
-type ComponentCondition = Exp "A componentItem can have a condition that must be fulfilled if
-  the component should be instantiated.
-" ;
 
 public
 uniontype Component "Some kind of Modelica entity (object or variable)"
