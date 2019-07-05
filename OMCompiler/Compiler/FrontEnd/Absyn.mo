@@ -804,7 +804,8 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end LIST;
 
   record DOT "exp.index"
-    Exp exp, index;
+    Exp exp;
+    Exp index;
   end DOT;
 
 end Exp;
