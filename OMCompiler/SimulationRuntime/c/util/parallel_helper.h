@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,33 +28,23 @@
  *
  */
 
-/*! \file linearSystem.h
+/*! File parallel_helper.h
  */
 
+#ifndef OMC_PARALLEL_HELPER_H
+#define OMC_PARALLEL_HELPER_H
 
-#ifndef _LINEARSYSTEM_H_
-#define _LINEARSYSTEM_H_
-
-#include "../../simulation_data.h"
-#include "../../util/simulation_options.h"
+#ifdef USE_PARJAC
+  #include <omp.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef VOID
-#undef VOID
-#endif
-
-typedef void* LS_SOLVER_DATA;
-
-int initializeLinearSystems(DATA *data, threadData_t *threadData);
-int allocLinSystThreadData(LINEAR_SYSTEM_DATA *linsys);
-int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
-int freeLinearSystems(DATA *data, threadData_t *threadData);
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
-int check_linear_solutions(DATA *data, int printFailingSystems);
-void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
+// TODO Add DLL_export to work on windows?
+extern int omc_get_thread_num(void);
+extern int omc_get_max_threads(void);
 
 #ifdef __cplusplus
 }

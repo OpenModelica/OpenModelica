@@ -485,10 +485,10 @@ if test x$want_parjac = xyes; then
     USE_PARJAC="yes"
     RUNTIMECFLAGS="$RUNTIMECFLAGS $OMPCFLAGS -DUSE_PARJAC"
   else
-    AC_MSG_WARN([========= OpenMP is not available, not define par. jac])
+    AC_MSG_WARN([========= OpenMP is not available, will evaluate jacobians sequentially])
   fi
+  AC_MSG_RESULT([$USE_PARJAC])
 fi
-AC_MSG_RESULT([$USE_PARJAC])
 AC_SUBST(USE_PARJAC)
 
 

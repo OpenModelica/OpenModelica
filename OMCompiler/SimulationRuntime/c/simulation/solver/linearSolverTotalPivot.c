@@ -38,13 +38,13 @@
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_error.h"
+#include "../../util/parallel_helper.h"
 #include "omc_math.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverTotalPivot.h"
-
 
 void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, int m)
 {
@@ -304,7 +304,7 @@ int freeTotalPivotData(void** voiddata)
   free(data->indCol);
 
   free(voiddata[1]);
-  voiddata[1] = 0;
+  voiddata[1] = NULL;
 
   return 0;
 }
@@ -326,8 +326,8 @@ int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double
 
   const int index = systemData->jacobianIndex;
 
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
@@ -390,7 +390,8 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   void *dataAndThreadData[2] = {data, threadData};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->solverData[1];
+  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->parDynamicData[omc_get_thread_num()].solverData[1];
+
   int n = systemData->size, status;
   double fdeps = 1e-8;
   double xTol = 1e-8;
@@ -413,19 +414,18 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   debugVectorDoubleLS(LOG_LS_V,"Old VALUES",aux_x,n);
 
   rt_ext_tp_tick(&(solverData->timeClock));
-  if (0 == systemData->method){
+  if (0 == systemData->method) {
 
     /* reset matrix A */
-    vecConstLS(n*n, 0.0, systemData->A);
+    vecConstLS(n*n, 0.0, systemData->parDynamicData[omc_get_thread_num()].A);
     /* update matrix A -> first n columns of matrix Ab*/
     systemData->setA(data, threadData, systemData);
-    vecCopyLS(n*n, systemData->A, solverData->Ab);
+    vecCopyLS(n*n, systemData->parDynamicData[omc_get_thread_num()].A, solverData->Ab);
 
     /* update vector b (rhs) -> -b is last column of matrix Ab*/
     rt_ext_tp_tick(&(solverData->timeClock));
     systemData->setb(data, threadData, systemData);
-    vecScalarMultLS(n, systemData->b, -1.0, solverData->Ab + n*n);
-
+    vecScalarMultLS(n, systemData->parDynamicData[omc_get_thread_num()].b, -1.0, solverData->Ab + n*n);
   } else {
 
     /* calculate jacobian -> first n columns of matrix Ab*/
@@ -446,14 +446,18 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   status = solveSystemWithTotalPivotSearchLS(n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank);
   infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
-  if (status != 0)
-  {
+  if (status != 0) {
+    // ToDo Rework stream prints like this one to work in parallel regions
+#ifdef USE_PARJAC
+    warningStreamPrint(LOG_STDOUT, 0, "Thread %u: Error solving linear system of equations (no. %d) at time %f.", omc_get_thread_num(), (int)systemData->equationIndex, data->localData[0]->timeValue);
+    success = 0;
+#else
     warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
+#endif
   } else {
-
     debugVectorDoubleLS(LOG_LS_V, "SOLUTION:", solverData->x, n+1);
-    if (1 == systemData->method){
+    if (1 == systemData->method) {
       /* add the solution to old solution vector*/
       vecAddLS(n, aux_x, solverData->x, aux_x);
       wrapper_fvec_totalpivot(aux_x, solverData->b, dataAndThreadData, sysNumber);
@@ -462,7 +466,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
        vecCopyLS(n, solverData->x, aux_x);
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V)){
+    if (ACTIVE_STREAM(LOG_LS_V)) {
       if (1 == systemData->method) {
         infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       } else {

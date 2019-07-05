@@ -41,13 +41,13 @@
 #include "simulation_data.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "util/parallel_helper.h"
 #include "omc_math.h"
 #include "util/varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverKlu.h"
-
 
 static void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n);
 static void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n);
@@ -123,8 +123,8 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
   int nth = 0;
   int nnz = jacobian->sparsePattern->numberOfNoneZeros;
@@ -179,7 +179,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_KLU* solverData = (DATA_KLU*)systemData->solverData[0];
+  DATA_KLU* solverData = (DATA_KLU*)systemData->parDynamicData[omc_get_thread_num()].solverData[0];
   _omc_scalar residualNorm = 0;
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
@@ -217,7 +217,8 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
-    residual_wrapper(solverData->work, systemData->b, dataAndThreadData, sysNumber);
+
+  residual_wrapper(solverData->work, systemData->parDynamicData[omc_get_thread_num()].b, dataAndThreadData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
@@ -240,10 +241,12 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     messageClose(LOG_LS_V);
 
     for (i=0; i<solverData->n_row; i++)
-      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->b[i]);
+    {
+      // ToDo Rework stream prints like this one to work in parallel regions
+      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
+    }
   }
   rt_ext_tp_tick(&(solverData->timeClock));
-
 
   /* symbolic pre-ordering of A to reduce fill-in of L and U */
   if (0 == solverData->numberSolving)
@@ -276,11 +279,11 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
   if (0 == solverData->common.status){
     if (1 == systemData->method){
-      if (klu_solve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->b, &solverData->common)){
+      if (klu_solve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->parDynamicData[omc_get_thread_num()].b, &solverData->common)){
         success = 1;
       }
     } else {
-      if (klu_tsolve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->b, &solverData->common)){
+      if (klu_tsolve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->parDynamicData[omc_get_thread_num()].b, &solverData->common)){
         success = 1;
       }
     }
@@ -294,7 +297,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     if (1 == systemData->method){
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)
-        aux_x[i] += systemData->b[i];
+        aux_x[i] += systemData->parDynamicData[omc_get_thread_num()].b[i];
 
       /* update inner equations */
       residual_wrapper(aux_x, solverData->work, dataAndThreadData, sysNumber);
@@ -308,7 +311,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       }
     } else {
       /* the solution is automatically in x */
-      memcpy(aux_x, systemData->b, sizeof(double)*systemData->size);
+      memcpy(aux_x, systemData->parDynamicData[omc_get_thread_num()].b, sizeof(double)*systemData->size);
     }
 
     if (ACTIVE_STREAM(LOG_LS_V))

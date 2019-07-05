@@ -52,6 +52,10 @@
 #include "stateset.h"
 #include "../../meta/meta_modelica.h"
 
+#ifdef USE_PARJAC
+  #include <omp.h>
+#endif
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = 201;
