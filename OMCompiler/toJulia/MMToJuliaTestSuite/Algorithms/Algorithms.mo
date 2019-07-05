@@ -131,6 +131,12 @@ algorithm
   N := if N < 2 then N else fibonacci(N-1) + fibonacci(N-2);
 end fibonacci;
 
+function factorial
+  input output Integer N;
+algorithm
+  N := if N < 0 then 1 else N * factorial(N - 1);
+end factorial;
+
 function realSummation
   output Real result;
 protected
