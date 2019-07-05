@@ -36,9 +36,6 @@
 =#
 
 module SemanticCheck
-include("OutputPrimitives/BoolTests.jl")
-include("OutputPrimitives/IntegerTests.jl")
-include("OutputPrimitives/RealTests.jl")
 include("./testsuiteUtil.jl")
 using Test
 using .MMToJuliaTestSuiteUtil
@@ -46,7 +43,21 @@ using .MMToJuliaTestSuiteUtil
 #= Point of entry for semantic tests =#
 function semanticCheck(omc)
   @testset "Sematic tests" begin
-
+    @testset "Test primitives" begin
+      include("./SemanticCheckPrimitives/testBooleanSemantics.jl")
+      include("./SemanticCheckPrimitives/testIntegerSemantics.jl")
+      include("./SemanticCheckPrimitives/testRealSemantics.jl")
+    end
+    #= TODO =#
+    @testset "Test standalone algorithms" begin
+      #= Failing on purpose=#
+      @test_skip
+    end
+    #= TODO =#
+    @testset "Test compiler sources" begin
+      #= Failing on purpose=#
+      @test_skip
+    end
   end
 end
 

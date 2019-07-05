@@ -27,15 +27,15 @@
  #
  # See the full OSMC Public License conditions for more details.
  #
+=#
 
-# Please do export OMC_EXEC=~/OpenModelica/build/bin/omc or something else before running the tests.
-# Otherwise we will invoke OMCSession with whatever standard omc you have
+" Runs all the defined tests "
+module AllTests
+using Test
 
-allTests :
-	julia runAllTests.jl ${OMC_EXEC}
-syntaxTest :
-	julia runSyntaxCheck.jl ${OMC_EXEC}
-semanticTest : syntaxTest
-	julia runSemanticCheck.jl ${OMC_EXEC}
-clean :
-	rm ./OutputPrimitives/*.jl* ./OutputAlgorithms/*.jl* ./OutputEquations/*.jl* *~ \#* .\# .#*
+@testset "All tests" begin
+  include("runSyntaxCheck.jl")
+  include("runSemanticCheck.jl")
+end
+
+end

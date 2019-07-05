@@ -31,24 +31,41 @@
 
 module MMToJuliaTestSuiteUtil
 
-#= Macro that returns true if a function does not throw =#
-macro false_if_throw(expr)
+"""
+           test_nothrow_nowarn(expr)
+           Attempts @test_nowarn on failure
+"""
+macro test_nothrow_nowarn(expr)
   quote
     try
-      $expr
-      true
-    catch e
-      false
+      @test_nowarn $expr
+    catch E
+      @test false
+      println("The test throw an exception: $E")
     end
   end |> esc
 end
 
-macro test_nothrow_nowarn(expr)
+
+"""
+           Generates both @test_nowarn and @test
+           Attempts @test_nowarn if successful:
+           Attempts @test
+           On failure generates a always failing test
+"""
+macro test_nothrow_nowarn_test(expr)
   quote
-    @test_nowarn $expr
+    try
+      @test_nowarn $expr
+      @test $expr
+    catch E
+      @test false
+      println("The test throw an exception: $E")
+    end
   end |> esc
 end
 
 export @test_nothrow_nowarn
+export @test_nothrow_nowarn_test
 
 end
