@@ -50,13 +50,12 @@ function semanticCheck(omc)
     end
     #= TODO =#
     @testset "Test standalone algorithms" begin
-      #= Failing on purpose=#
-      @test_skip
+      include("./SemanticCheckPrimitives/testAlgorithms.jl")
     end
     #= TODO =#
     @testset "Test compiler sources" begin
       #= Failing on purpose=#
-      @test_skip
+      println("Implement test for compiler sources\n")
     end
   end
 end
