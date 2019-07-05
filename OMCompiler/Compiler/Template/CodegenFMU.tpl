@@ -490,7 +490,7 @@ template initValDefault(SimVar var) ::=
           case T_REAL(__)
           case T_ENUMERATION(__)
           case T_BOOL(__) then '0'
-          case T_STRING(__) then '""'
+          case T_STRING(__) then 'mmc_mk_scon("")'
           else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
 end initValDefault;
 
@@ -3120,7 +3120,7 @@ template optInitValFMU(Option<Exp> exp, String default)
   match e
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case SCONST(__) then 'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
   case BCONST(__) then if bool then 1 else 0
   case ENUM_LITERAL(__) then '<%index%>'
   else default // error(sourceInfo(), 'initial value of unknown type: <%printExpStr(e)%>')
@@ -3157,7 +3157,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       >>
     case T_STRING(__) then
       <<
-      <%attrstr%>.start = <%optInitValFMU(startValue,"\"\"")%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"mmc_mk_scon(\"\")")%>;
       >>
     case T_ENUMERATION(__) then
       <<
