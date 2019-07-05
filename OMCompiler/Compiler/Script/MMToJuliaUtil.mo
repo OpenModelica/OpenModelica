@@ -78,6 +78,12 @@ algorithm
   direction := Absyn.OUTPUT();
 end makeOutputDirection;
 
+function makeInputOutputDirection
+  output Absyn.Direction direction;
+algorithm
+  direction := Absyn.INPUT_OUTPUT();
+end makeInputOutputDirection;
+
 function isFunctionContext
   input Context givenCTX;
   output Boolean isFuncCTX = false;
@@ -85,13 +91,18 @@ algorithm
   isFuncCTX := match givenCTX case FUNCTION(__) then true; else false; end match;
 end isFunctionContext;
 
-function filterOnDirection "Returns a list<ElementItem>, where the direction is equal to the supplied direction"
+function filterOnDirection
+"Returns a list<ElementItem>, where the direction is equal to the supplied direction or input-output direction"
   input list<Absyn.ElementItem> inputs;
   input Absyn.Direction direction;
   output list<Absyn.ElementItem> outputs = {};
+protected
+  Absyn.Direction ioDirection = makeInputOutputDirection();
+  Boolean directionEQ = false;
 algorithm
   for i in inputs loop
-    if AbsynUtil.directionEqual(direction, AbsynUtil.getDirection(i)) then
+  directionEQ := AbsynUtil.directionEqual(direction, AbsynUtil.getDirection(i)) or AbsynUtil.directionEqual(ioDirection, AbsynUtil.getDirection(i));
+    if directionEQ then
       outputs := i :: outputs;
     end if;
   end for;

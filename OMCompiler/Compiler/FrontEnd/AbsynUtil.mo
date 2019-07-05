@@ -6394,21 +6394,20 @@ public function getDirection
   input Absyn.ElementItem elementItem;
   output Direction oDirection;
 algorithm
-  // oDirection:= match elementItem
-  //   local Element element;
-  //   case ELEMENTITEM(element = element) then match element
-  //     local ElementSpec specification;
-  //     case ELEMENT(specification=specification) then match specification
-  //       local ElementAttributes attributes;
-  //       case COMPONENTS(attributes=attributes) then match attributes
-  //         local Direction direction;
-  //         case ATTR(direction=direction) then direction;
-  //         else BIDIR();
-  //       end match;
-  //     end match;
-  //   end match;
-  // end match;
-  oDirection := BIDIR();
+  oDirection:= match elementItem
+    local Element element;
+    case ELEMENTITEM(element = element) then match element
+      local ElementSpec specification;
+      case ELEMENT(specification=specification) then match specification
+        local ElementAttributes attributes;
+        case COMPONENTS(attributes=attributes) then match attributes
+          local Direction direction;
+          case ATTR(direction=direction) then direction;
+        end match;
+      end match;
+    end match;
+    else BIDIR();
+  end match;
 end getDirection;
 
 annotation(__OpenModelica_Interface="frontend");

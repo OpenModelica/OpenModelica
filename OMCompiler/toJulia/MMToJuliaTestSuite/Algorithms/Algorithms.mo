@@ -132,9 +132,10 @@ algorithm
 end fibonacci;
 
 function factorial
-  input output Integer N;
+  input Integer N;
+  output Integer NO;
 algorithm
-  N := if N < 0 then 1 else N * factorial(N - 1);
+  NO := if N < 0 then 1 else N * factorial(N - 1);
 end factorial;
 
 function realSummation

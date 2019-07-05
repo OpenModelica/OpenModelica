@@ -179,6 +179,17 @@ uniontype ClassDef
 end ClassDef;
 
 public
+type ArrayDim = list<Subscript> "Component attributes are
+  properties of components which are applied by type prefixes.
+  As an example, declaring a component as `input Real x;\' will
+  give the attributes `ATTR({},false,VAR,INPUT)\'.
+  Components in Modelica can be scalar or arrays with one or more
+  dimensions. This type is used to indicate the dimensionality
+  of a component or a type definition.
+- Array dimensions" ;
+
+
+public
 uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
   record TPATH
     Path path;
@@ -671,15 +682,6 @@ uniontype Direction "Direction"
   end INPUT_OUTPUT;
 end Direction;
 
-public
-type ArrayDim = list<Subscript> "Component attributes are
-  properties of components which are applied by type prefixes.
-  As an example, declaring a component as `input Real x;\' will
-  give the attributes `ATTR({},false,VAR,INPUT)\'.
-  Components in Modelica can be scalar or arrays with one or more
-  dimensions. This type is used to indicate the dimensionality
-  of a component or a type definition.
-- Array dimensions" ;
 
 public
 uniontype Exp "The Exp uniontype is the container of a Modelica expression.

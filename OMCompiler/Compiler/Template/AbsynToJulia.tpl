@@ -26,6 +26,7 @@ match program
 end dumpProgram;
 
 template dumpSCodeElements(list<SCode.Element> elements)
+"Dumps forward declaration of uniontypes unless elements is empty"
 ::= dumpSCodeElements2(filterElements(elements, defaultOptions))
 end dumpSCodeElements;
 
@@ -38,7 +39,10 @@ template dumpSCodeElements2(list<SCode.Element> elements)
         '@UniontypeDecl <%name%> <%\n%>'
       else ''
   )
-  '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types=#<%\n%><%str%>'
+  if str then
+  '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#<%\n%><%str%>'
+  else
+    ''
 end dumpSCodeElements2;
 
 template dumpClass(Absyn.Class cls, DumpOptions options)
@@ -47,6 +51,7 @@ template dumpClass(Absyn.Class cls, DumpOptions options)
 end dumpClass;
 
 template dumpClassElement(Absyn.Class class, DumpOptions options, Context context)
+"TODO handle input_output parameters correctly"
 ::=
 match class
   case CLASS(body=parts as PARTS(__),restriction=R_UNIONTYPE(__)) then
@@ -411,7 +416,7 @@ template dumpCommentOpt(Option<Absyn.Comment> ocmt, Context context)
 end dumpCommentOpt;
 
 template dumpCommentStrOpt(Option<String> comment)
-::=match comment case SOME(cmt) then dumpCommentStr(cmt)
+::= match comment case SOME(cmt) then dumpCommentStr(cmt)
 end dumpCommentStrOpt;
 
 template dumpCommentStr(String comment)
@@ -496,6 +501,8 @@ match specification
                     ;separator=", ")
     //TODO more check for more complex variables..
     //This must be local variables. Output and protected variables should be dumped here..
+    //Observe that input output variables need to be treated a bit different and should not be dumped here
+    //See logic in dumoCompstr
     match context
       case FUNCTION(__) then
         'local <%comps_str%>'
@@ -673,7 +680,7 @@ match alg
   case ALG_BREAK(__) then "break"
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ, context) else "..."
-    '@failure(<%arg_str%>)' //We could simply use throw or we can define a macro for this
+    'failure(<%arg_str%>)' //We could simply use throw or we can define a macro for this
   case ALG_TRY(__) then
     let arg1 = dumpAlgorithmItems(body, context)
     let arg2 = dumpAlgorithmItems(elseBody, context)
@@ -722,8 +729,8 @@ match path
   /*
     ModelicaReal = Union {Signed, AbstractFloat}
     ModelicaInteger is represented as it's own type.
-    Bool should not require any change if the above is kept
-    Clock e.t.c are probably not necessary to add
+    Bool "should" not require any change
+    Clock e.t.c are probably not necessary to add since it is pure Modelica only.
   */
   case IDENT(__) then
     match name
@@ -751,6 +758,7 @@ template dumpTypeSpecOpt(Option<Absyn.TypeSpec> typespecOpt, Context context)
 end dumpTypeSpecOpt;
 
 template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
+"Dumps the type specification"
 ::=
 match typeSpec
   case TPATH(__) then
@@ -763,6 +771,19 @@ match typeSpec
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
     '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
+
+template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
+"Not in use"
+::= match arraydim case SOME(ad) then dumpSubscriptsTypeSpec(ad, context)
+end dumpArrayDimOptTypeSpec;
+
+template dumpSubscriptsTypeSpec(list<Subscript> subscripts, Context context)
+"Not in use"
+::=
+  if subscripts then
+    let sub_str = (subscripts |> s => 'Array' ;separator=", ")
+    'Array{<%sub_str%>}'
+end dumpSubscriptsTypeSpec;
 
 template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim, Context context)
 ::= match arraydim case SOME(ad) then dumpSubscripts(ad, context)
@@ -828,13 +849,13 @@ match exp
         We pass a function and change the parameters
     */
     '@ExtendedAnonFunction <%func_str%>(<%args_str%>)'
-  case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur...*/ then
+  case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur... Probably not used so can be ignored */ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
     '(<%array_str%>)'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
-    '[<%matrix_str%>]'
+    '[<%matrix_str%>] postumus'
   case e as RANGE(step = SOME(step)) then
     let start_str = dumpOperand(start, e, false, context)
     let step_str = dumpOperand(step, e, false, context)
