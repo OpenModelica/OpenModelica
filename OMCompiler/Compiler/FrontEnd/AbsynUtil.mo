@@ -6403,8 +6403,11 @@ algorithm
         case COMPONENTS(attributes=attributes) then match attributes
           local Direction direction;
           case ATTR(direction=direction) then direction;
+          else BIDIR();
         end match;
+        else BIDIR();
       end match;
+      else BIDIR();
     end match;
     else BIDIR();
   end match;

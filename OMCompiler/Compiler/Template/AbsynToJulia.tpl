@@ -687,7 +687,7 @@ match alg
     <<
     try
       <%arg1%>
-    catch Exception //MM does not really have specialised exceptions
+    catch
       <%arg2%>
     end
     >>
