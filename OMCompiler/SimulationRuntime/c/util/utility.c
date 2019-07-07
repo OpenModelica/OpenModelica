@@ -160,32 +160,12 @@ void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs)
 
 static const char *PATH_NOT_IN_FMU_RESOURCES = "Returning path (%s) not in the resources directory. The FMU might not work as expected if you send it to a different system";
 
-static int isWindows(void)
+/* if uri starts with X:\ or X:/ */
+static int hasDriveLetter(const char* uri)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  return 1;
-#else /* not windows */
-  return 0;
-#endif
-}
-
-static int isMinGW(void)
-{
-#if defined(__MINGW32__)
-  return 1;
-#else /* not MinGW */
-  return 0;
-#endif
-}
-
-static int isDriveLetter(char c)
-{
-  return isWindows() && ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
-}
-
-static int isPathSeparator(char c)
-{
-  return (c == '/') || (isWindows() && (c == '\\'));
+  return strlen(uri) > 2 &&
+         ((uri[0] >= 'A' && uri[0] <= 'Z') || (uri[0] >= 'a' && uri[0] <= 'z')) &&
+         uri[1]==':' && (uri[2] == '/' || uri[2] == '\\');
 }
 
 static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri, const char *resourcesDir)
@@ -196,7 +176,7 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
   int uriExists = 0==stat(uri, &stat_buf);
   if (resourcesDir) {
     if (strlen(resourcesDir)+strlen(uri)+2 < PATH_MAX) {
-      if (isWindows()) {
+      if (hasDriveLetter(uri)) {
         sprintf(buf, "%s/", resourcesDir);
         len = strlen(buf);
         for (i = 0; i < strlen(uri); i++)
@@ -246,7 +226,7 @@ static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const c
     return (0==strcmp(uri, buf) && uri_om) ? uri_om : mmc_mk_scon(buf);
   }
 
-  if (uri[0]=='/' || (strlen(uri) > 2 && isDriveLetter(uri[0]) && uri[1]==':' && isPathSeparator(uri[2]))) {
+  if (uri[0]=='/' || hasDriveLetter(uri)) {
     /* Absolute path */
     return uri_om ? uri_om : mmc_mk_scon(uri);
   }
