@@ -1027,6 +1027,18 @@ package MMToJuliaUtil
     input list<Absyn.AlgorithmItem> contents;
     output Boolean existsReturn;
   end algorithmItemsContainsReturn;
+  function elementSpecIsBIDIR
+    input Absyn.ElementSpec spec;
+    output Boolean isBidr;
+  end elementSpecIsBIDIR;
+  function elementSpecIsOUTPUT
+    input Absyn.ElementSpec spec;
+    output Boolean isOutput;
+  end elementSpecIsOUTPUT;
+  function elementSpecIsOUTPUT_OR_BIDIR
+    input Absyn.ElementSpec spec;
+    output Boolean isOutput;
+  end elementSpecIsOUTPUT_OR_BIDIR;
 end MMToJuliaUtil;
 
 package AbsynUtil

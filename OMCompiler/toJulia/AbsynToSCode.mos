@@ -1,0 +1,18 @@
+//Translating Absyn, to generate a syntax tree
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Absyn.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Absyn.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Absyn);getErrorString();
+//Translating AbsynUtil
+loadFile("Compiler/FrontEnd/AbsynUtil.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(AbsynUtil);getErrorString();
+// Translating SCode
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/SCode.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCode);getErrorString();
+//Translating SCodeUtil
+loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ScodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeUtil);getErrorString();

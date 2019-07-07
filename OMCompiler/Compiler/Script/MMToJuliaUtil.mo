@@ -84,6 +84,13 @@ algorithm
   direction := Absyn.INPUT_OUTPUT();
 end makeInputOutputDirection;
 
+function makeBDirection
+  output Absyn.Direction direction;
+algorithm
+  direction := Absyn.BIDIR();
+end makeBDirection;
+
+
 function isFunctionContext
   input Context givenCTX;
   output Boolean isFuncCTX = false;
@@ -92,7 +99,8 @@ algorithm
 end isFunctionContext;
 
 function filterOnDirection
-"Returns a list<ElementItem>, where the direction is equal to the supplied direction or input-output direction"
+"@author johti17
+Returns a list<ElementItem>, where the direction is equal to the supplied direction or input-output direction"
   input list<Absyn.ElementItem> inputs;
   input Absyn.Direction direction;
   output list<Absyn.ElementItem> outputs = {};
@@ -101,12 +109,53 @@ protected
   Boolean directionEQ = false;
 algorithm
   for i in inputs loop
-  directionEQ := AbsynUtil.directionEqual(direction, AbsynUtil.getDirection(i)) or AbsynUtil.directionEqual(ioDirection, AbsynUtil.getDirection(i));
+    directionEQ := AbsynUtil.directionEqual(direction, AbsynUtil.getDirection(i))
+      or AbsynUtil.directionEqual(ioDirection, AbsynUtil.getDirection(i));
     if directionEQ then
       outputs := i :: outputs;
     end if;
   end for;
 end filterOnDirection;
+
+function elementSpecIsBIDIR
+ "@author:johti17"
+  input Absyn.ElementSpec spec;
+  output Boolean isBidir;
+algorithm
+  isBidir := match spec
+    local Absyn.ElementAttributes attributes;
+    case Absyn.COMPONENTS(attributes=attributes) then
+      match attributes.direction
+        case Absyn.BIDIR() then true;
+        else false;
+      end match;
+    else false;
+  end match;
+end elementSpecIsBIDIR;
+
+function elementSpecIsOUTPUT
+ "@author:johti17"
+  input Absyn.ElementSpec spec;
+  output Boolean isOutput;
+algorithm
+  isOutput := match spec
+    local Absyn.ElementAttributes attributes;
+    case Absyn.COMPONENTS(attributes=attributes) then
+      match attributes.direction
+        case Absyn.OUTPUT() then true;
+        else false;
+      end match;
+    else false;
+  end match;
+end elementSpecIsOUTPUT;
+
+function elementSpecIsOUTPUT_OR_BIDIR
+ "@author:johti17"
+  input Absyn.ElementSpec spec;
+  output Boolean isOutput;
+algorithm
+  isOutput := elementSpecIsOUTPUT(spec) or elementSpecIsBIDIR(spec);
+end elementSpecIsOUTPUT_OR_BIDIR;
 
 function explicitReturnInClassPart
   "@author:johti17

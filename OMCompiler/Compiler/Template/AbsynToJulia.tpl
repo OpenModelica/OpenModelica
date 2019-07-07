@@ -8,6 +8,8 @@ TODO:Public/Private semantics
    Simple go through all classes and export the public classes, not efficient but it should work..
    Ignore all protected.
 
+  input output should be a function argument but not appear on local variables!
+
 */
 
 import interface AbsynToJuliaTV;
@@ -77,6 +79,10 @@ match class
     let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), functionContext))
     let header = dumpClassHeader(parts, restriction)
     let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
+    /*
+      Input output variables are treated as parameters
+      output and bidirectional variables occurs as local variables in Julia
+    */
     <<
     <%commentStr%>
     <%header%>
@@ -277,10 +283,7 @@ match class_part
       <%el_str%>
     >>
   case CONSTRAINTS(__) then
-    <<
-    constraint
-      <%(contents |> exp => dumpExp(exp, context) ;separator=" ")%>
-    >>
+    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: CONSTRAINTS(__) not supported.")
   case EQUATIONS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EQUATIONS(__) not supported.")
   case INITIALEQUATIONS(__) then
@@ -495,17 +498,20 @@ match specification
   case COMPONENTS(__) then
     let ty_str = dumpTypeSpec(typeSpec, context)
     let attr_str = dumpElementAttr(attributes)
-    let comps_str = (components |> comp =>
-                    let comp_str = dumpComponentItem(comp, context)
-                    '<%comp_str%>::<%ty_str%>'
-                    ;separator=", ")
+    /* Remove all items with input-output specification. They are handled earlier and separate! */
+    let comps_str = if elementSpecIsOUTPUT_OR_BIDIR(specification) then
+                      (components |> comp =>
+                        let comp_str = dumpComponentItem(comp, context)
+                          '<%comp_str%>::<%ty_str%>'
+                      ;separator=", ")
+                    else ''
     //TODO more check for more complex variables..
-    //This must be local variables. Output and protected variables should be dumped here..
-    //Observe that input output variables need to be treated a bit different and should not be dumped here
-    //See logic in dumoCompstr
     match context
       case FUNCTION(__) then
-        'local <%comps_str%>'
+        /* No local decl if we do not have a comps_str! */
+        if comps_str then
+          'local <%comps_str%>'
+        else ''
       case UNIONTYPE(__) then
         '<%comps_str%>'
       case PACKAGE(__) then

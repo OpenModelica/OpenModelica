@@ -55,7 +55,7 @@ function semanticCheck(omc)
     #= TODO =#
     @testset "Test compiler sources" begin
       #= Failing on purpose=#
-      println("Implement test for compiler sources\n")
+      println("TODO: Implement test for compiler sources\n")
     end
   end
 end
