@@ -1710,7 +1710,20 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     QPainter libraryPainter(&libraryPixmap);
     libraryPainter.setRenderHint(QPainter::Antialiasing);
     libraryPainter.setRenderHint(QPainter::SmoothPixmapTransform);
-    libraryPainter.setWindow(rectangle.toRect());
+    /* Ticket #5554
+     * Create an equal size square for rendering the scene.
+     * Don't stretch to fit a square.
+     */
+    QRect windowRect;
+    windowRect = rectangle.toRect();
+    if (rectangle.width() != rectangle.height()) {
+      int x = qMax(rectangle.width(), rectangle.height());
+      windowRect.setX(-x/2);
+      windowRect.setY(-x/2);
+      windowRect.setWidth(x);
+      windowRect.setHeight(x);
+    }
+    libraryPainter.setWindow(windowRect);
     libraryPainter.scale(1.0, -1.0);
     // drag pixmap
     QPixmap dragPixmap(QSize(50, 50));
@@ -1718,7 +1731,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     QPainter dragPainter(&dragPixmap);
     dragPainter.setRenderHint(QPainter::Antialiasing);
     dragPainter.setRenderHint(QPainter::SmoothPixmapTransform);
-    dragPainter.setWindow(rectangle.toRect());
+    dragPainter.setWindow(windowRect);
     dragPainter.scale(1.0, -1.0);
     pGraphicsView->setRenderingLibraryPixmap(true);
     // render library pixmap
@@ -1796,8 +1809,8 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
     pLibraryTreeItem->setModelWidget(pModelWidget);
   }
   /* Ticket #3797
-     * Only show the class Name as window title instead of full path
-     */
+   * Only show the class Name as window title instead of full path
+   */
   pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
   if (show) {
     MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
