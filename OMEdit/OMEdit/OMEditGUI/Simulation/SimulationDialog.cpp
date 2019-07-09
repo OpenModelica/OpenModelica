@@ -2037,41 +2037,41 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     if (list.size() > 0) {
-      if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
-        bool showPlotWindow = true;
+      bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
-        // if simulated with animation then open the animation directly.
-        if (mpLaunchAnimationCheckBox->isChecked()) {
-          showPlotWindow = false;
-          if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
-            MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
-            AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
-            if (pAnimationWindow) {
-              pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
-            }
-          } else {
-            QString msg = tr("Animation is only supported with mat result files.");
-            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                                  Helper::notificationLevel));
+      // if simulated with animation then open the animation directly.
+      if (mpLaunchAnimationCheckBox->isChecked()) {
+        showPlotWindow = false;
+        if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
+          MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+          AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
+          if (pAnimationWindow) {
+            pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
           }
         } else {
-          showPlotWindow = true;
+          QString msg = tr("Animation is only supported with mat result files.");
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
+                                                                Helper::notificationLevel));
         }
+      } else {
+        showPlotWindow = true;
+      }
 #endif
-        MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
-        if (showPlotWindow) {
-          QList<QMdiSubWindow*> subWindowsList = MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::ActivationHistoryOrder);
-          if (!subWindowsList.isEmpty() && subWindowsList.last()->widget()->objectName().compare("diagramWindow") != 0) {
-            OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
-            if (pPlotWindow) {
-              MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
-            }
+      if (showPlotWindow) {
+        QList<QMdiSubWindow*> subWindowsList = MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::ActivationHistoryOrder);
+        if (!subWindowsList.isEmpty() && subWindowsList.last()->widget()->objectName().compare("diagramWindow") != 0) {
+          OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
+          if (pPlotWindow) {
+            MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
           }
         }
-        /* ticket:5234 Make sure we always set the MainWindow as active after the simulation. */
-        MainWindow::instance()->raise();
-        MainWindow::instance()->activateWindow();
-        MainWindow::instance()->setWindowState(MainWindow::instance()->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+      }
+      /* ticket:5234 Make sure we always set the MainWindow as active after the simulation. */
+      MainWindow::instance()->raise();
+      MainWindow::instance()->activateWindow();
+      MainWindow::instance()->setWindowState(MainWindow::instance()->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+      if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+        MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
       } else {
         // stay in current perspective and show variables browser
         MainWindow::instance()->getVariablesDockWidget()->show();
