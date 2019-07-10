@@ -2307,7 +2307,14 @@ external "builtin";
 annotation(preferredView="text");
 end saveModel;
 
-function saveTotalModel
+function saveTotalModel "Save the className model in a single file, together with all
+   the other classes that it depends upon, directly and indirectly.
+   This file can be later reloaded with the loadFile() API function,
+   which loads className and all the other needed classes into memory.
+   This is useful to allow third parties to run a certain model (e.g. for debugging)
+   without worrying about all the library dependencies.
+   Please note that SaveTotal file is not a valid Modelica .mo file according to the 
+   specification, and cannot be loaded in OMEdit - it can only be loaded with loadFile()."
   input String fileName;
   input TypeName className;
   input Boolean stripAnnotations = false;
