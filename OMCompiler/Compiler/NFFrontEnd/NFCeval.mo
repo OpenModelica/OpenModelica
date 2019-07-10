@@ -63,6 +63,7 @@ import NFClass.Class;
 import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
 import ElementSource;
+import Flags;
 
 public
 uniontype EvalTarget
@@ -1641,7 +1642,7 @@ algorithm
     case "transpose" then evalBuiltinTranspose(listHead(args));
     case "vector" then evalBuiltinVector(listHead(args));
     case "zeros" then evalBuiltinZeros(args);
-    case "OpenModelica_uriToFilename" then evalUriToFilename(listHead(args));
+    case "OpenModelica_uriToFilename" then evalUriToFilename(fn, args, target);
     case "intBitAnd" then evalIntBitAnd(args);
     case "intBitOr" then evalIntBitOr(args);
     case "intBitXor" then evalIntBitXor(args);
@@ -2593,12 +2594,26 @@ algorithm
 end evalBuiltinZeros;
 
 function evalUriToFilename
-  input Expression arg;
+  input Function fn;
+  input list<Expression> args;
+  input EvalTarget target;
   output Expression result;
+protected
+  Expression e, arg;
+  String s;
+  Function f;
 algorithm
+  arg := listHead(args);
   result := match arg
     case Expression.STRING()
-      then Expression.STRING(OpenModelica.Scripting.uriToFilename(arg.value));
+      algorithm
+        s := OpenModelica.Scripting.uriToFilename(arg.value);
+        e := Expression.STRING(s);
+        if Flags.getConfigBool(Flags.BUILDING_FMU) then
+          f := Function.setName(Absyn.IDENT("OpenModelica_fmuLoadResource"), fn);
+          e := Expression.CALL(Call.makeTypedCall(f, {e}, Variability.PARAMETER, Expression.typeOf(e)));
+        end if;
+      then e;
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
