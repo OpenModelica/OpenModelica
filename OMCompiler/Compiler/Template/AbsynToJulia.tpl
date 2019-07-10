@@ -1,14 +1,7 @@
 package AbsynToJulia
 /* TODOS:
 
-TODO:Public/Private semantics
-   Add export for all public functions in the module.
-   Just do not export private modules. This should solve public and private for MetaModelica
-   and keep the semantics the same.
-   Simple go through all classes and export the public classes, not efficient but it should work..
-   Ignore all protected.
-
-  input output should be a function argument but not appear on local variables!
+TODO: Public/Private semantics : (
 
 */
 
@@ -85,8 +78,7 @@ match class
     */
     <<
     <%commentStr%>
-    <%header%>
-    function <%name%>(<%inputs_str%>)<%returnType%>
+    function <%name%>(<%inputs_str%>)<%returnType%> <%header%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -181,7 +173,7 @@ match restriction
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
   /*Not pretty. But should solve generic functions scathered here and there*/
   case R_FUNCTION(__) then
-    (if typeVars then (typeVars |> tv => (tv + " = Any") ; separator="\n"))
+    (if typeVars then "where {" + (typeVars |> tv => (tv + "<: Any") ; separator=",") + "}")
   else ""
 end dumpClassTypeTypeVars;
 
@@ -873,8 +865,11 @@ match exp
     let stop_str = dumpOperand(stop, e, false, context)
     '<%start_str%>:<%stop_str%>'
   case TUPLE(__) then
+   /* Paranthesis does not seem to be needed for tuples in Julia and gives parse errors..*/
     let tuple_str = (expressions |> e => dumpExp(e,context); separator=", " ;empty)
-    '(<%tuple_str%>)'
+    if tuple_str then '<%tuple_str%>'
+    /* Just use underscore and hope nothing breaks */
+    else '_'
   case END(__) then 'end'
   case CODE(__) then '$Code(<%dumpCodeNode(code, context)%>)'
   case AS(__) then
@@ -976,7 +971,7 @@ match if_exp
     let true_branch_str = dumpExp(trueBranch, context)
     let else_branch_str = dumpExp(elseBranch, context)
     let else_if_str = dumpElseIfExp(elseIfBranch, context)
-    'if (<%cond_str%>) <%true_branch_str%><%else_if_str%> else <%else_branch_str%> end'
+    'if <%cond_str%> <%true_branch_str%><%else_if_str%> else <%else_branch_str%> end'
 end dumpIfExp;
 
 template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context context)
@@ -1057,7 +1052,7 @@ template dumpMatchCase(Absyn.Case c, Context context)
 match c
   case CASE(__) then
     let pattern_str = dumpPattern(pattern)
-    let guard_str = match patternGuard case SOME(g) then 'guard <%dumpExp(g, context)%> '
+    let guard_str = match patternGuard case SOME(g) then 'where <%dumpExp(g, context)%> '
     let eql_str = dumpMatchContents(classPart)
     let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
@@ -1111,7 +1106,13 @@ match args
   case FOR_ITER_FARG(__) then
     let exp_str = dumpExp(exp, context)
     let iter_str = (iterators |> i => dumpForIterator(i, context) ;separator=", ")
-    '<%exp_str%> <%match iterType case THREAD(__) then "threaded "%>for <%iter_str%>'
+    let iter_names = (iterators |> i => dumpForIteratorName(i, context) ;separator=", ")
+    let iter_ranges = (iterators |> i => dumpForIteratorRanges(i, context) ;separator=", ")
+   match iterType
+      case THREAD(__) then
+          '@do_threaded_for <%exp_str%> (<%iter_names%>) (<%iter_ranges%>)'
+      else
+          '<%exp_str%> for <%iter_str%>'
 end dumpFunctionArgs;
 
 template dumpNamedArg(Absyn.NamedArg narg, Context context)
@@ -1130,9 +1131,26 @@ template dumpForIterator(Absyn.ForIterator iterator, Context context)
 match iterator
   case ITERATOR(__) then
     let range_str = match range case SOME(r) then ' in <%dumpExp(r, context)%>'
-    let guard_str = match guardExp case SOME(g) then ' guard <%dumpExp(g, context)%>'
-    '<%name%><%guard_str%><%range_str%>'
+    let guard_str = match guardExp case SOME(g) then ' if <%dumpExp(g, context)%>'
+    '<%name%><%range_str%><%guard_str%>'
 end dumpForIterator;
+
+
+template dumpForIteratorRanges(Absyn.ForIterator iterator, Context context)
+::=
+match iterator
+  case ITERATOR(__) then
+    let range_str = match range case SOME(r) then '<%dumpExp(r, context)%>'
+    let guard_str = match guardExp case SOME(g) then ' if <%dumpExp(g, context)%>'
+    '<%range_str%><%guard_str%>'
+end dumpForIteratorRanges;
+
+template dumpForIteratorName(Absyn.ForIterator iterator, Context context)
+::=
+match iterator
+  case ITERATOR(__) then
+    '<%name%>'
+end dumpForIteratorName;
 
 template dumpOutputsJL(list<ElementItem> elements)
 ::=
