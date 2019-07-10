@@ -269,6 +269,7 @@ try
       DAE.ComponentRef cref;
       DAE.ElementSource source;
       Integer size;
+      Option<Integer> recordSize;
       list<DAE.Exp> out1, expExpLst, expExpLst1;
       DAE.Type exptyp;
       list<Integer> dimSize;
@@ -347,7 +348,7 @@ try
         (BackendDAE.COMPLEX_EQUATION(size, e1_1, e2_1, source, eqAttr), funcs);
 
     // Array Equations
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=eqAttr)
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=eqAttr, recordSize=recordSize)
       equation
         (e1_1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, defaultMaxIter);
         (e1_1, _) = ExpressionSimplify.simplify(e1_1);
@@ -360,7 +361,7 @@ try
         source = List.foldr({op1, op2}, ElementSource.addSymbolicTransformation, source);
 
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr), funcs);
+        (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr, recordSize), funcs);
 
     // differentiate algorithm
     case BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst=statementLst), source=source, expand=expand, attr=eqAttr)

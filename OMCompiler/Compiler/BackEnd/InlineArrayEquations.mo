@@ -190,10 +190,11 @@ protected function generateScalarArrayEqns2
   input tuple<Integer /* current index; for the symbolic trace */, list<BackendDAE.Equation>> iEqns;
   output tuple<Integer, list<BackendDAE.Equation>> oEqns;
 algorithm
-  oEqns := matchcontinue(inExp1, inExp2, inSource, eqAttr, eqExp, iEqns)
+  oEqns := matchcontinue iEqns
     local
       DAE.Type tp;
       Integer size, i;
+      Option<Integer> recordSize;
       DAE.Dimensions dims;
       list<Integer> ds;
       Boolean b1, b2;
@@ -201,7 +202,7 @@ algorithm
       DAE.ElementSource source;
 
     // complex types to complex equations
-    case (_, _, _, _, _, (i, eqns)) equation
+    case (i, eqns) equation
       tp = Expression.typeof(inExp1);
       true = DAEUtil.expTypeComplex(tp);
       size = Expression.sizeOf(tp);
@@ -209,16 +210,22 @@ algorithm
     then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, eqAttr)::eqns));
 
     // array types to array equations
-    case (_, _, _, _, _, (i, eqns)) equation
+    case (i, eqns) equation
       tp = Expression.typeof(inExp1);
       true = DAEUtil.expTypeArray(tp);
       dims = Expression.arrayDimension(tp);
+      tp = DAEUtil.expTypeElementType(tp);
+      if DAEUtil.expTypeComplex(tp) then
+        recordSize = SOME(Expression.sizeOf(tp));
+      else
+        recordSize = NONE();
+      end if;
       ds = Expression.dimensionsSizes(dims);
       source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
-    then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, eqAttr)::eqns));
+    then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, eqAttr, recordSize)::eqns));
 
     // other types
-    case (_, _, _, _, _, (i, eqns)) equation
+    case (i, eqns) equation
       tp = Expression.typeof(inExp1);
       b1 = DAEUtil.expTypeComplex(tp);
       b2 = DAEUtil.expTypeArray(tp);

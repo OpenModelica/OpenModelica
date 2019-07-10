@@ -701,9 +701,11 @@ algorithm
       DAE.ElementSource src;
       DAE.Exp e1, e2;
       DAE.Dimensions dims;
+      DAE.Type tp;
       BackendDAE.EquationAttributes attr;
       BackendDAE.Var var;
       list<BackendDAE.Equation> assert_eqs;
+      Option<Integer> recordSize;
 
     // external object variables
     case DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))
@@ -719,11 +721,17 @@ algorithm
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
         e1 := Expression.crefExp(cr);
         attr := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
-        (_, dims) := ComponentReference.crefTypeFull2(cr);
+        (tp, dims) := ComponentReference.crefTypeFull2(cr);
+        tp := DAEUtil.expTypeElementType(tp);
+        if DAEUtil.expTypeComplex(tp) then
+          recordSize := SOME(Expression.sizeOf(tp));
+        else
+          recordSize := NONE();
+        end if;
         if listEmpty(dims) then
           outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
         else
-          outEqns := BackendDAE.ARRAY_EQUATION(Expression.dimensionsSizes(dims), e1, e2, src, attr) :: outEqns;
+          outEqns := BackendDAE.ARRAY_EQUATION(Expression.dimensionsSizes(dims), e1, e2, src, attr, recordSize) :: outEqns;
         end if;
       then
         ();
@@ -1840,40 +1848,26 @@ protected function lowerArrayEqn "author: Frenkel TUD 2012-06"
   input BackendDAE.EquationAttributes inEqAttributes;
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEqsLst;
+protected
+  list<Integer> dimensions;
+  list<DAE.Exp> ea1,ea2;
+  DAE.Type tp;
+  Integer recordSize;
 algorithm
-  outEqsLst := matchcontinue (dims, e1, e2, source, inEqAttributes, iAcc)
-    local
-      list<DAE.Exp> ea1, ea2;
-      list<Integer> ds;
-      DAE.Type tp;
-      Integer i;
-
-    // array type with record
-    case (_, _, _, _, _, _)
-      equation
-        tp = Expression.typeof(e1);
-        tp = DAEUtil.expTypeElementType(tp);
-        true = DAEUtil.expTypeComplex(tp);
-        i = Expression.sizeOf(tp);
-        ds = Expression.dimensionsSizes(dims);
-        ds = List.map1(ds, intMul, i);
-        //For COMPLEX_EQUATION
-        //i = List.fold(ds, intMul, 1);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, inEqAttributes)::iAcc;
-
-    case (_, _, _, _, _, _)
-      equation
-        true = Expression.isArray(e1) or Expression.isMatrix(e1);
-        true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ea1 = Expression.flattenArrayExpToList(e1);
-        ea2 = Expression.flattenArrayExpToList(e2);
-      then generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
-
-    case (_, _, _, _, _, _)
-      equation
-        ds = Expression.dimensionsSizes(dims);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, inEqAttributes)::iAcc;
-  end matchcontinue;
+  tp := Expression.typeof(e1);
+  tp := DAEUtil.expTypeElementType(tp);
+  if DAEUtil.expTypeComplex(tp) then
+    recordSize := Expression.sizeOf(tp);
+    dimensions := Expression.dimensionsSizes(dims);
+    outEqsLst := BackendDAE.ARRAY_EQUATION(dimensions, e1, e2, source, inEqAttributes,SOME(recordSize))::iAcc;
+  elseif (Expression.isArray(e1) or Expression.isMatrix(e1)) and (Expression.isArray(e2) or Expression.isMatrix(e2)) then
+    ea1 := Expression.flattenArrayExpToList(e1);
+    ea2 := Expression.flattenArrayExpToList(e2);
+    outEqsLst := generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
+  else
+    dimensions := Expression.dimensionsSizes(dims);
+    outEqsLst := BackendDAE.ARRAY_EQUATION(dimensions, e1, e2, source, inEqAttributes, NONE())::iAcc;
+  end if;
 end lowerArrayEqn;
 
 protected function generateEquations "author: Frenkel TUD 2012-06"

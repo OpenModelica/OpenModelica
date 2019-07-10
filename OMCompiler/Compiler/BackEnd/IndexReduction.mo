@@ -1619,6 +1619,7 @@ protected
  DAE.ComponentRef crA,set,crJ;
  DAE.Type tp, tyExpCrStates;
  Integer rang,nStates,nStateCandidates,nUnassignedEquations,setIndex,level;
+ Option<Integer> recordSize;
 
  DAE.Exp expcrA,mulAstates,mulAdstates,expset,expderset,expsetstart;
  list<DAE.Exp> expcrstates,expcrdstates,expcrset,expcrdset,expcrstatesstart;
@@ -1658,11 +1659,20 @@ algorithm
     expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrset) else listHead(expcrset);
     expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrdset) else listHead(expcrdset);
     source := DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},Prefix.NOCOMPPRE(),{},{},{},{});
+
+    tp := ComponentReference.crefTypeFull(crA);
+    tp := DAEUtil.expTypeElementType(tp);
+    if DAEUtil.expTypeComplex(tp) then
+      recordSize := SOME(Expression.sizeOf(tp));
+    else
+      recordSize := NONE();
+    end if;
+
     // set.x = set.A*set.statecandidates
-    eqn := if b then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+    eqn := if b then BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,recordSize)
                                 else BackendDAE.EQUATION(expset,mulAstates,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     // der(set.x) = set.A*der(set.candidates)
-    deqn := if b then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)
+    deqn := if b then BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,recordSize)
                                  else BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
     // start values for the set
     expsetstart := DAE.BINARY(expcrA,op,DAE.ARRAY(tyExpCrStates,true,expcrstatesstart));
