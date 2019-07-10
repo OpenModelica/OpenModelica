@@ -55,6 +55,7 @@ private:
 
   Plot *mpParentPlot;
   QwtPlotDirectPainter *mpPlotDirectPainter;
+  QwtPlotMarker *mpPointMarker;
 public:
   PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent);
   ~PlotCurve();
@@ -99,6 +100,7 @@ public:
   void toggleVisibility();
   void setData(const double* xData, const double* yData, int size);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
+  QwtPlotMarker* getPointMarker() const {return mpPointMarker;}
 #if QWT_VERSION < 0x060000
   virtual void updateLegend(QwtLegend *legend) const;
 #endif

@@ -42,11 +42,10 @@ class PlotPicker : public QwtPlotPicker
 {
 public:
   PlotPicker(QWidget *pCanvas, Plot *pPlot);
-  bool curveAtPosition(const QPoint pos, PlotCurve *&pPlotCurve, int &index) const;
+  QList<PlotCurve*> curvesAtPosition(const QPoint pos, QList<int> *indexes) const;
   virtual QwtText trackerText(const QPoint &pos) const;
 private:
   Plot *mpPlot;
-  QwtPlotMarker *mpPointMarker;
 };
 }
 

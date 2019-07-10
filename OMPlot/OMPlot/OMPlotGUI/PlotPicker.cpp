@@ -88,27 +88,26 @@ PlotPicker::PlotPicker(QWidget *pCanvas, Plot *pPlot)
   : QwtPlotPicker(pCanvas)
 {
   mpPlot = pPlot;
-  mpPointMarker = new QwtPlotMarker();
-  mpPointMarker->attach(mpPlot);
-  mpPointMarker->setVisible(false);
-  mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
 }
 
 /*!
- * \brief PlotPicker::curveAtPosition
- * Checks the curve at the mouse position.
- * Finds the closest point on the curve and then checks if this point is close enough to our mouse position.
+ * \brief PlotPicker::curvesAtPosition
+ * Checks the curves at the mouse position.
+ * Finds the closest point on the curves and then checks if this point is close enough to our mouse position.
  * \param pos
- * \param pPlotCurve
- * \param index
+ * \param indexes
  * \return
  */
-bool PlotPicker::curveAtPosition(const QPoint pos, PlotCurve *&pPlotCurve, int &index) const
+QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *indexes) const
 {
   QPointF posF = invTransform(pos);
+  int index = -1;
+  QList<PlotCurve*> plotCurvesList;
+  PlotCurve *pPlotCurve = 0;
   const QwtPlotItemList plotCurves = plot()->itemList(QwtPlotItem::Rtti_PlotCurve);
   for (int i = 0 ; i < plotCurves.size() ; i++) {
     pPlotCurve = static_cast<PlotCurve*>(plotCurves[i]);
+    pPlotCurve->getPointMarker()->setVisible(false);
     if (pPlotCurve->isVisible()) {
       // find the closest point
       index = pPlotCurve->closestPoint(pos);
@@ -140,13 +139,14 @@ bool PlotPicker::curveAtPosition(const QPoint pos, PlotCurve *&pPlotCurve, int &
           QPointF curvePointA(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
           QPointF curvePointB(pPlotCurve->mXAxisVector.at(index1), pPlotCurve->mYAxisVector.at(index1));
           if (containsPoint(posF, curvePointA, curvePointB, x, y)) {
-            return true;
+            plotCurvesList.append(pPlotCurve);
+            indexes->append(index);
           }
         }
       }
     }
   }
-  return false;
+  return plotCurvesList;
 }
 
 /*!
@@ -158,24 +158,32 @@ bool PlotPicker::curveAtPosition(const QPoint pos, PlotCurve *&pPlotCurve, int &
  */
 QwtText PlotPicker::trackerText(const QPoint &pos) const
 {
-  int index = -1;
-  PlotCurve *pPlotCurve = 0;
-  if (curveAtPosition(pos, pPlotCurve, index)) {
-    mpPointMarker->setValue(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
-    mpPointMarker->setVisible(true);
+  QList<int> indexes;
+  QList<PlotCurve*> plotCurves = curvesAtPosition(pos, &indexes);
+  if (!plotCurves.isEmpty()) {
     QString timeUnit = "";
     if (!mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
       timeUnit = QString("%1").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
     }
-    QString toolTip = QString("Name: <b>%1</b> %2<br />Value: <b>%3</b> at <b>%4</b> %5<br />Filename: <b>%6</b>")
-        .arg(pPlotCurve->getName()).arg(pPlotCurve->getDisplayUnit())
-        .arg(pPlotCurve->mYAxisVector.at(index))
-        .arg(pPlotCurve->mXAxisVector.at(index))
-        .arg(timeUnit)
-        .arg(pPlotCurve->getFileName());
+    QString toolTip;
+    for (int i = 0 ; i < plotCurves.size() ; i++) {
+      PlotCurve *pPlotCurve = plotCurves.at(i);
+      int index = indexes.at(i);
+      pPlotCurve->getPointMarker()->setValue(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
+      pPlotCurve->getPointMarker()->setVisible(true);
+
+      if (i > 0) {
+        toolTip += QString("<br /><br />");
+      }
+      toolTip += QString("Name: <b>%1</b> %2<br />Value: <b>%3</b> at <b>%4</b> %5<br />Filename: <b>%6</b>")
+                 .arg(pPlotCurve->getName()).arg(pPlotCurve->getDisplayUnit())
+                 .arg(pPlotCurve->mYAxisVector.at(index))
+                 .arg(pPlotCurve->mXAxisVector.at(index))
+                 .arg(timeUnit)
+                 .arg(pPlotCurve->getFileName());
+    }
     QToolTip::showText(canvas()->mapToGlobal(pos), toolTip, nullptr);
   } else {
-    mpPointMarker->setVisible(false);
     QToolTip::hideText();
   }
   return QString("");
