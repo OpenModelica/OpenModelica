@@ -62,6 +62,10 @@ PlotCurve::PlotCurve(QString fileName, QString name, QString xVariableName, QStr
   setLegendIconSize(QSize(30, 30));
 #endif
   mpPlotDirectPainter = new QwtPlotDirectPainter();
+  mpPointMarker = new QwtPlotMarker();
+  mpPointMarker->attach(mpParentPlot);
+  mpPointMarker->setVisible(false);
+  mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
 }
 
 PlotCurve::~PlotCurve()
