@@ -183,6 +183,7 @@ algorithm
     local
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       Integer size;
+      Option<Integer> recordSize;
       list<DAE.Exp> explst;
       DAE.ComponentRef cref;
       BackendDAE.WhenEquation weq,weq_1;
@@ -205,7 +206,7 @@ algorithm
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,attr),true);
 
-    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize),_)
       equation
         (e1_1,source,b1,_) = Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) = Inline.inlineExp(e2,fns,source);
@@ -213,7 +214,7 @@ algorithm
         eqn = match (e1_1, e2_1)
           case (DAE.ARRAY(array = {e1}), DAE.ARRAY(array = {e2}))
           then BackendDAE.EQUATION(e1,e2,source,attr); // flatten if size==1
-          else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr);
+          else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr,recordSize);
         end match;
       then
         (eqn, true);

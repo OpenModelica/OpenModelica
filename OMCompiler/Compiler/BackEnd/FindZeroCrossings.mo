@@ -641,7 +641,7 @@ algorithm
       list<DAE.Statement> stmts, stmts_1;
       DAE.ComponentRef cref;
       list<BackendDAE.WhenOperator> whenOperations;
-      Option<Integer> elseClause_;
+      Option<Integer> elseClause_, recordSize;
       list<Integer> dimsize;
       BackendDAE.WhenEquation weqn;
       Boolean diffed;
@@ -684,11 +684,11 @@ algorithm
       (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, globalKnownVars, xs, eq_count, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
     then (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst);
 
-    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimsize, left=e1, right=e2, source=source, attr=eqAttr))::xs) equation
+    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimsize, left=e1, right=e2, source=source, attr=eqAttr, recordSize=recordSize))::xs) equation
       eq_count = inEqnCount + 1;
       (eres1, countMathFunctions, zcs1, relationsLst, sampleLst) = findZeroCrossings3(e1, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfMathFunctions, eq_count, -1, inVariables1, globalKnownVars);
       (eres2, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e2, zcs1, relationsLst, sampleLst, countMathFunctions, eq_count, -1, inVariables1, globalKnownVars);
-      eqnsAccum = BackendDAE.ARRAY_EQUATION(dimsize, eres1, eres2, source, eqAttr)::inEquationLstAccum;
+      eqnsAccum = BackendDAE.ARRAY_EQUATION(dimsize, eres1, eres2, source, eqAttr, recordSize)::inEquationLstAccum;
       (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, globalKnownVars, xs, eq_count, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
     then (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst);
 

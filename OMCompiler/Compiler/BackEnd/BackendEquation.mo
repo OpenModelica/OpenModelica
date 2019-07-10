@@ -813,68 +813,76 @@ public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
     input output T inoutTypeA;
   end FuncExpType;
 algorithm
-  (outEquation, outTypeA) := match(inEquation)
+  (outEquation, outTypeA) := match inEquation
     local
-      DAE.Exp e1, e2, e_1, e_2, start, stop, iter;
-      list<DAE.Exp> expl;
-      DAE.Type tp;
+      BackendDAE.Equation eqn, eqn1;
+      BackendDAE.WhenEquation whenEquation;
+      DAE.Exp e1;
       DAE.ComponentRef cr, cr1;
-      BackendDAE.Equation eqn;
-      BackendDAE.WhenEquation we, we_1;
-      DAE.ElementSource source;
-      Integer size;
       T extArg;
-      list<Integer> dimSize;
-      DAE.Algorithm alg;
-      list<DAE.Statement> stmts, stmts1;
-      list<BackendDAE.Equation> eqns;
-      list<list<BackendDAE.Equation>> eqnslst;
-      DAE.Expand crefExpand;
-      BackendDAE.EquationAttributes attr;
+      list<DAE.Statement> stmts;
+      list<DAE.Exp> conditions;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse;
 
-    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) equation
-      (e_1, extArg) = inFunc(e1, inTypeA);
-      (e_2, extArg) = inFunc(e2, extArg);
-    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.EQUATION(e_1, e_2, source, attr), extArg);
 
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=attr) equation
-      (e_1, extArg) = inFunc(e1, inTypeA);
-      (e_2, extArg) = inFunc(e2, extArg);
-    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.ARRAY_EQUATION(dimSize, e_1, e_2, source, attr), extArg);
+    case eqn as BackendDAE.EQUATION() algorithm
+      (e1, extArg) := inFunc(eqn.exp, inTypeA);
+      eqn.exp := e1;
+      (e1, extArg) := inFunc(eqn.scalar, extArg);
+      eqn.scalar := e1;
+    then (eqn, extArg);
 
-    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
+    case eqn as BackendDAE.ARRAY_EQUATION() equation
+      (e1, extArg) = inFunc(eqn.left, inTypeA);
+      eqn.left = e1;
+      (e1, extArg) = inFunc(eqn.right, extArg);
+      eqn.right = e1;
+    then (eqn, extArg);
+
+    case eqn as BackendDAE.SOLVED_EQUATION(componentRef = cr) equation
+      e1 = Expression.makeCrefExp(cr, Expression.typeof(eqn.exp));
       (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
-      (e_2, extArg) = inFunc(e2, extArg);
-    then (if referenceEq(cr,cr1) and referenceEq(e2,e_2) then inEquation else BackendDAE.SOLVED_EQUATION(cr1, e_2, source, attr), extArg);
+      eqn.componentRef = cr1;
+      (e1, extArg) = inFunc(eqn.exp, extArg);
+      eqn.exp = e1;
+    then (eqn, extArg);
 
-    case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=attr) equation
-      (e_1, extArg) = inFunc(e1, inTypeA);
-    then (if referenceEq(e1,e_1) then inEquation else BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), extArg);
+    case eqn as BackendDAE.RESIDUAL_EQUATION() equation
+      (e1, extArg) = inFunc(eqn.exp, inTypeA);
+      eqn.exp = e1;
+    then (eqn, extArg);
 
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation= we, source=source, attr=attr) equation
-      (we_1, extArg) = traverseExpsOfWhenEquation(we, inFunc, inTypeA);
-    then (if referenceEq(we,we_1) then inEquation else BackendDAE.WHEN_EQUATION(size, we_1, source, attr), extArg);
+    case eqn as BackendDAE.WHEN_EQUATION() equation
+      (whenEquation, extArg) = traverseExpsOfWhenEquation(eqn.whenEquation, inFunc, inTypeA);
+      eqn.whenEquation = whenEquation;
+    then (eqn, extArg);
 
-    case BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
-      (stmts1, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
-    then (if referenceEq(stmts,stmts1) then inEquation else BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts1), source, crefExpand, attr), extArg);
+    case eqn as BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst = stmts)) equation
+      (stmts, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
+      eqn.alg = DAE.ALGORITHM_STMTS(stmts);
+    then (eqn, extArg);
 
-    case BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=attr) equation
-      (e_1, extArg) = inFunc(e1, inTypeA);
-      (e_2, extArg) = inFunc(e2, extArg);
-    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.COMPLEX_EQUATION(size, e_1, e_2, source, attr), extArg);
+    case eqn as BackendDAE.COMPLEX_EQUATION() equation
+      (e1, extArg) = inFunc(eqn.left, inTypeA);
+      eqn.left = e1;
+      (e1, extArg) = inFunc(eqn.right, extArg);
+      eqn.right = e1;
+    then (eqn, extArg);
 
-    case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=attr) equation
-      (expl, extArg) = traverseExpsOfExpList(expl, inFunc, inTypeA);
-      (eqnslst, extArg) = List.map1Fold(eqnslst, traverseExpsOfEquationList, inFunc, extArg);
-      (eqns, extArg) = List.map1Fold(eqns, traverseExpsOfEquation, inFunc, extArg);
-    then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), extArg);
+    case eqn as BackendDAE.IF_EQUATION() equation
+      (conditions, extArg) = traverseExpsOfExpList(eqn.conditions, inFunc, inTypeA);
+      eqn.conditions = conditions;
+      (eqnstrue, extArg) = List.map1Fold(eqn.eqnstrue, traverseExpsOfEquationList, inFunc, extArg);
+      eqn.eqnstrue = eqnstrue;
+      (eqnsfalse, extArg) = List.map1Fold(eqn.eqnsfalse, traverseExpsOfEquation, inFunc, extArg);
+      eqn.eqnsfalse = eqnsfalse;
+    then (eqn, extArg);
 
-    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, source = source, attr = attr) equation
-      (eqn, extArg) = traverseExpsOfEquation(inEquation.body, inFunc, inTypeA);
-    then (BackendDAE.FOR_EQUATION(iter, start, stop, eqn, source, attr), extArg);
+    case eqn as BackendDAE.FOR_EQUATION() equation
+      (eqn1, extArg) = traverseExpsOfEquation(eqn.body, inFunc, inTypeA);
+      eqn.body = eqn1;
+    then (eqn, extArg);
   end match;
 end traverseExpsOfEquation;
 
@@ -1727,13 +1735,17 @@ algorithm
   osize := match eq
     local
       list<Integer> ds;
-      Integer size, start, stop;
+      Integer size, start, stop, recordSize;
       list<BackendDAE.Equation> eqnsfalse;
 
     case BackendDAE.EQUATION()
     then 1;
 
-    case BackendDAE.ARRAY_EQUATION(dimSize=ds) equation
+    case BackendDAE.ARRAY_EQUATION(dimSize=ds,recordSize=SOME(recordSize)) equation
+      size = List.fold(ds, intMul, 1) * recordSize;
+    then size;
+
+    case BackendDAE.ARRAY_EQUATION(dimSize=ds,recordSize=NONE()) equation
       size = List.fold(ds, intMul, 1);
     then size;
 
@@ -1959,12 +1971,13 @@ public function generateEquation "author Frenkel TUD 2012-12
   input BackendDAE.EquationAttributes inEqAttr = BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN;
   output BackendDAE.Equation outEqn;
 protected
-  DAE.Type ty;
+  DAE.Type ty,tp;
 algorithm
   ty := Expression.typeof(lhs);
   outEqn := match ()
     local
       Integer size;
+      Option<Integer> recordSize;
       DAE.Dimensions dims;
       list<Integer> ds;
       Boolean b1, b2;
@@ -1980,9 +1993,16 @@ algorithm
     case () guard
       DAEUtil.expTypeArray(ty)
     equation
+      tp = Expression.typeof(lhs);
+      tp = DAEUtil.expTypeElementType(tp);
+      if DAEUtil.expTypeComplex(tp) then
+        recordSize = SOME(Expression.sizeOf(tp));
+      else
+        recordSize = NONE();
+      end if;
       dims = Expression.arrayDimension(ty);
       ds = Expression.dimensionsSizes(dims);
-    then BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, inEqAttr);
+    then BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, inEqAttr, recordSize);
 
     // other types
     case () guard
@@ -2046,6 +2066,7 @@ algorithm
       DAE.Exp rhs;
       DAE.ComponentRef componentRef;
       Integer size;
+      Option<Integer> recordSize;
       DAE.Algorithm alg;
       DAE.Expand expand;
       BackendDAE.WhenEquation whenEquation;
@@ -2056,8 +2077,8 @@ algorithm
     case (BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), _)
     then BackendDAE.EQUATION(lhs, rhs, source, inAttr);
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source), _)
-    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr);
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source, recordSize=recordSize), _)
+    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr, recordSize);
 
     case (BackendDAE.FOR_EQUATION(), _)
     then BackendDAE.FOR_EQUATION(inEqn.iter, inEqn.start, inEqn.stop, inEqn.body, inEqn.source, inAttr);
@@ -2096,67 +2117,49 @@ public function setEquationLHS
 algorithm
   outEqn := match inEqn
     local
-      DAE.ElementSource source;
-      list<Integer> dimSize;
-      DAE.Exp rhs;
-      DAE.ComponentRef componentRef;
-      Integer size;
-      DAE.Algorithm alg;
-      DAE.Expand expand;
-      BackendDAE.WhenEquation whenEquation;
-      list< .DAE.Exp> conditions;
-      list<list<BackendDAE.Equation>> eqnstrue;
-      list<BackendDAE.Equation> eqnsfalse;
-      BackendDAE.EquationAttributes attr;
+      BackendDAE.Equation eqn;
 
-    case BackendDAE.EQUATION(scalar=rhs, source=source, attr=attr)
-    then BackendDAE.EQUATION(lhs, rhs, source, attr);
+    case eqn as BackendDAE.EQUATION() algorithm
+      eqn.exp := lhs;
+    then eqn;
 
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, right=rhs, source=source, attr=attr)
-    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, attr);
+    case eqn as BackendDAE.ARRAY_EQUATION() algorithm
+      eqn.left := lhs;
+    then eqn;
 
-    else equation
+    else algorithm
       Error.addInternalError("function setEquationLHS failed", sourceInfo());
     then fail();
   end match;
 end setEquationLHS;
 
 public function setEquationRHS
-"
-  sets the right hand side expression of an equation.
-"
+"sets the right hand side expression of an equation."
   input BackendDAE.Equation inEqn;
   input DAE.Exp rhs;
   output BackendDAE.Equation outEqn;
 algorithm
   outEqn := match inEqn
     local
-      DAE.ElementSource source;
-      list<Integer> dimSize;
-      DAE.Exp lhs;
-      DAE.ComponentRef componentRef;
-      Integer size;
-      DAE.Algorithm alg;
-      DAE.Expand expand;
-      BackendDAE.WhenEquation whenEquation;
-      list< .DAE.Exp> conditions;
-      list<list<BackendDAE.Equation>> eqnstrue;
-      list<BackendDAE.Equation> eqnsfalse;
-      BackendDAE.EquationAttributes attr;
+      BackendDAE.Equation eqn;
 
-    case BackendDAE.EQUATION(exp=lhs, source=source, attr=attr)
-    then BackendDAE.EQUATION(lhs, rhs, source, attr);
+    case eqn as BackendDAE.EQUATION() algorithm
+      eqn.scalar := rhs;
+    then eqn;
 
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, source=source, attr=attr)
-    then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, attr);
+    case eqn as BackendDAE.ARRAY_EQUATION() algorithm
+      eqn.right := rhs;
+    then eqn;
 
-    case BackendDAE.SOLVED_EQUATION(componentRef=componentRef, source=source, attr=attr)
-    then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, attr);
+    case eqn as BackendDAE.SOLVED_EQUATION() algorithm
+      eqn.exp := rhs;
+    then eqn;
 
-    case BackendDAE.RESIDUAL_EQUATION(source=source, attr=attr)
-    then BackendDAE.RESIDUAL_EQUATION(rhs, source, attr);
+    case eqn as BackendDAE.RESIDUAL_EQUATION() algorithm
+      eqn.exp := rhs;
+    then eqn;
 
-    else equation
+    else algorithm
       Error.addInternalError("function setEquationRHS failed", sourceInfo());
     then fail();
   end match;
@@ -2396,7 +2399,8 @@ public function solveEquation "author: wbraun
   input Option<DAE.FunctionTree> functions;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := matchcontinue (eqn, crefExp, functions)
+  // kabdelhak: Why does every kind of equation produce a regular equation?
+  outEqn := matchcontinue eqn
     local
       DAE.Exp e1, e2;
       DAE.Exp res;
@@ -2406,20 +2410,20 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), _, _) equation
+    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr) equation
+      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
+    then BackendDAE.EQUATION(crefExp, res, source, eqAttr);
+
+    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr) equation
       (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
-      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
-    then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
-
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _,_) equation
+    case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr) equation
       cr = Expression.expCref(crefExp);
       true = ComponentReference.crefEqual(cref, cr);
     then (BackendDAE.EQUATION(crefExp, e2, source, eqAttr));
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _, _) equation
+    case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr)  equation
       // already checked in rule above:
       //cr = Expression.expCref(crefExp);
       //false = ComponentReference.crefEqual(cref, cr);
@@ -2427,23 +2431,18 @@ algorithm
       (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr), _, _) equation
+    case BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr) equation
       e1 = Expression.makeConstZero(Expression.typeof(e2));
       (res, _, {}, {}) = ExpressionSolve.solve2(e2, e1, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr) equation
       (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
-/*
-    case (eq as BackendDAE.ALGORITHM(alg=_), _)
-    then eq;
-
-    case (eq as BackendDAE.WHEN_EQUATION(size=_), _)
-    then eq;
-
-    case (eq as BackendDAE.IF_EQUATION(conditions=_), _)
-    then eq;
+/* These won't get solved
+    BackendDAE.ALGORITHM
+    BackendDAE.WHEN_EQUATION
+    BackendDAE.IF_EQUATION
 */
     else equation
       BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
@@ -2886,52 +2885,41 @@ public function addOperation "
   input DAE.SymbolicOperation inSymOp;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := match (inEqn, inSymOp)
+  outEqn := match inEqn
     local
-      Integer size;
-      DAE.Exp e1, e2;
-      list<DAE.Exp> conditions;
-      DAE.ElementSource source;
-      BackendDAE.WhenEquation whenEquation;
-      DAE.ComponentRef cr1;
-      list<BackendDAE.Equation> eqnsfalse;
-      list<list<BackendDAE.Equation>> eqnstrue;
-      list<Integer> ds;
-      DAE.Algorithm alg;
-      DAE.Expand crefExpand;
-      BackendDAE.EquationAttributes eqAttr;
+      BackendDAE.Equation eqn;
 
-    case (BackendDAE.EQUATION(e1, e2, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.EQUATION(e1, e2, source, eqAttr);
+    case eqn as BackendDAE.EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, eqAttr);
+    case eqn as BackendDAE.ARRAY_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.SOLVED_EQUATION(cr1, e1, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.SOLVED_EQUATION(cr1, e1, source, eqAttr);
+    case eqn as BackendDAE.SOLVED_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.RESIDUAL_EQUATION(e1, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.RESIDUAL_EQUATION(e1, source, eqAttr);
+    case eqn as BackendDAE.RESIDUAL_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.ALGORITHM(size, alg, source, crefExpand, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.ALGORITHM(size, alg, source, crefExpand, eqAttr);
+    case eqn as BackendDAE.ALGORITHM() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.WHEN_EQUATION(size, whenEquation, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.WHEN_EQUATION(size, whenEquation, source, eqAttr);
+    case eqn as BackendDAE.WHEN_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr);
+    case eqn as BackendDAE.COMPLEX_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
-    case (BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr), _) equation
-      source = ElementSource.addSymbolicTransformation(source, inSymOp);
-    then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr);
+    case eqn as BackendDAE.IF_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
 
     else equation
       Error.addInternalError("BackendEquation.addOperation failed", sourceInfo());
@@ -3047,35 +3035,27 @@ public function markDifferentiated"sets differentiated=true in EquationAttribute
 algorithm
   outEqn := match (inEqn)
     local
-      DAE.Exp e1, e2;
-      DAE.ComponentRef cr;
-      DAE.ElementSource source;
-      Integer size;
-      list<Integer> dimSize;
-      list<DAE.Exp> conditions;
-      list<list<BackendDAE.Equation>> eqnstrue;
-      list<BackendDAE.Equation> eqnsfalse;
-      BackendDAE.EquationAttributes eqAttr;
+      BackendDAE.Equation eqn;
 
-    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-    then BackendDAE.EQUATION(e1, e2, source, eqAttr);
+    case eqn as BackendDAE.EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+    then eqn;
 
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-    then BackendDAE.ARRAY_EQUATION(dimSize, e1, e2, source, eqAttr);
+    case eqn as BackendDAE.ARRAY_EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+    then eqn;
 
-    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-    then BackendDAE.SOLVED_EQUATION(cr, e2, source, eqAttr);
+    case eqn as BackendDAE.SOLVED_EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+    then eqn;
 
-    case BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-    then BackendDAE.RESIDUAL_EQUATION(e2, source, eqAttr);
+    case eqn as BackendDAE.RESIDUAL_EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+    then eqn;
 
-    case BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-    then BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr);
+    case eqn as BackendDAE.COMPLEX_EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+    then eqn;
 
     case BackendDAE.ALGORITHM()
     then inEqn;
@@ -3083,11 +3063,11 @@ algorithm
     case BackendDAE.WHEN_EQUATION()
     then inEqn;
 
-    case BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source, attr=eqAttr) equation
-      eqAttr = markDifferentiated2(eqAttr);
-      eqnstrue = List.mapList(eqnstrue, markDifferentiated);
-      eqnsfalse = List.map(eqnsfalse, markDifferentiated);
-    then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr);
+    case eqn as BackendDAE.IF_EQUATION() equation
+      eqn.attr = markDifferentiated2(eqn.attr);
+      eqn.eqnstrue = List.mapList(eqn.eqnstrue, markDifferentiated);
+      eqn.eqnsfalse = List.map(eqn.eqnsfalse, markDifferentiated);
+    then eqn;
   end match;
 end markDifferentiated;
 

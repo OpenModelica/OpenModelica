@@ -568,6 +568,7 @@ algorithm
       DAE.Exp iter, start, stop;
       DAE.ComponentRef cr, cr1;
       Integer size;
+      Option<Integer> recordSize;
       list<DAE.Exp> expl;
       BackendDAE.Equation eqn;
       BackendDAE.WhenEquation elsepartRes;
@@ -591,11 +592,11 @@ algorithm
     then (BackendDAE.EQUATION(e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     // Array equation
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = source, attr=eqAttr) equation
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = source, attr=eqAttr, recordSize=recordSize) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
       (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
       source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
-    then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr), ext_arg_2);
+    then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr, recordSize), ext_arg_2);
 
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn, source = source, attr = eqAttr) equation
       (eqn, outTypeA) = traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);

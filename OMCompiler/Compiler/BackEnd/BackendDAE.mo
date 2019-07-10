@@ -362,6 +362,7 @@ uniontype Equation
     .DAE.Exp right "rhs";
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
+    Option<Integer> recordSize "NONE() if not a record";
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION

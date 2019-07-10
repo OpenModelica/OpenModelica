@@ -1665,6 +1665,7 @@ algorithm
       BackendDAE.Equation a;
       DAE.ComponentRef cr;
       Integer size;
+      Option<Integer> recordSize;
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source;
@@ -1679,7 +1680,7 @@ algorithm
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=eqAttr),repl,_,_,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=eqAttr, recordSize=recordSize),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1688,7 +1689,7 @@ algorithm
         source = ElementSource.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,eqAttr)::inAcc,true);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,eqAttr,recordSize)::inAcc,true);
 
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=eqAttr),repl,_,_,_)
       equation

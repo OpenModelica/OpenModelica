@@ -2116,6 +2116,7 @@ protected function collectInitialStateSets "author: kabdelhak
   list<BackendDAE.Var> statesToFix = {}, unfixedStates = {}, VarsF, oInitSetVars;
   DAE.Type tp, tyExpCrStates;
   Integer toFix, setsize, nCandidates;
+  Option<Integer> recordSize;
   Boolean b;
   DAE.Operator op;
   DAE.ElementSource source;
@@ -2124,6 +2125,13 @@ algorithm
   for stateSet in stateSets loop
     oVars := BackendVariable.addVars(stateSet.varA, oVars);
     lhs := Expression.crefToExp(stateSet.crA);
+    tp := ComponentReference.crefTypeFull(stateSet.crA);
+    tp := DAEUtil.expTypeElementType(tp);
+    if DAEUtil.expTypeComplex(tp) then
+      recordSize := SOME(Expression.sizeOf(tp));
+    else
+      recordSize := NONE();
+    end if;
 
     expLst:={};
 
@@ -2132,7 +2140,7 @@ algorithm
     expLst := DAE.ICONST(integer=stateSet.index-1)::expLst;
 
     rhs := DAE.CALL(path=Absyn.IDENT(name="$stateSelectionSet"),expLst=expLst,attr=DAE.callAttrBuiltinOther);
-    eqn := BackendDAE.ARRAY_EQUATION(dimSize={listLength(stateSet.varA)}, left=lhs, right=rhs,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+    eqn := BackendDAE.ARRAY_EQUATION(dimSize={listLength(stateSet.varA)}, left=lhs, right=rhs,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_INITIAL, recordSize=recordSize);
     oEqns := ExpandableArray.add(eqn,oEqns);
 
     if Flags.isSet(Flags.BLT_DUMP) or Flags.isSet(Flags.INITIALIZATION) then

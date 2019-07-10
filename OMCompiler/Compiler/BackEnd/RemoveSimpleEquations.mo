@@ -1305,12 +1305,14 @@ algorithm
     local
       Integer size;
       DAE.Dimensions dims;
+      DAE.Type tp;
       list<Integer> ds;
       BackendDAE.Variables v;
       BackendDAE.Shared s;
       list<BackendDAE.Equation> eqns;
       list<SimpleContainer> seqns;
       Integer index;
+      Option<Integer> recordSize;
       array<list<Integer>> mT;
       Boolean b, b1, b2;
       DAE.ElementSource source;
@@ -1332,9 +1334,15 @@ algorithm
       equation
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
+        tp = DAEUtil.expTypeElementType(ty);
+        if DAEUtil.expTypeComplex(tp) then
+          recordSize = SOME(Expression.sizeOf(tp));
+        else
+          recordSize = NONE();
+        end if;
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) + "\n");
       then
-        ((v, s, BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
+        ((v, s, BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, eqAttr, recordSize)::eqns, seqns, index, mT, b));
     // other types
     case (_, _, _, (source, eqAttr), (v, s, eqns, seqns, index, mT, b))
       equation
