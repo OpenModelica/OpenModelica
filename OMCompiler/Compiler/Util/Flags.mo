@@ -798,7 +798,6 @@ public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "normalInlineFunction",
-    "evaluateParameters",
     "simplifyIfEquations",
     "expandDerOperator",
     "clockPartitioning",
