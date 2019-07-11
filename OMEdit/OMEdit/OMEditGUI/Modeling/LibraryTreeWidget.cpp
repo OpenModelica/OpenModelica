@@ -4699,7 +4699,7 @@ bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, cons
     */
   if (classesList.size() > 1) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-    pMessageBox->setWindowTitle(QString("%1 - %2)").arg(Helper::applicationName, Helper::error));
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
     pMessageBox->setIcon(QMessageBox::Critical);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
