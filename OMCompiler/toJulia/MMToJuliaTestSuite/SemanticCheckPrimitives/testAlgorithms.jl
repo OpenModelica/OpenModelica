@@ -14,8 +14,7 @@ using .MMToJuliaTestSuiteUtil
   @test_nothrow_nowarn Algorithms.realSummation() == 32000000
   @test_nothrow_nowarn Algorithms.fibonacci(10) == 55
   @test_nothrow_nowarn Algorithms.tak(5,5,5) == 5
-  size(Algorithms.createTestArray2(10), 1)
-  using MetaModelica
+  @test_nothrow_nowarn length(Algorithms.createTestArray2(10)) == 10
 end #= End testset =#
 
 end

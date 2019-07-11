@@ -1082,6 +1082,8 @@ uniontype Element
   record CLASS
     Ident   name;
     Restriction restriction;
+    Partial partialPrefix;
+    ClassDef classDef;
   end CLASS;
   record COMPONENT
   end COMPONENT;
@@ -1089,6 +1091,21 @@ uniontype Element
   end DEFINEUNIT;
 end Element;
 
+uniontype ClassDef
+  record PARTS
+    list<Element> elementLst;
+  end PARTS;
+  record CLASS_EXTENDS
+  end CLASS_EXTENDS;
+  record DERIVED
+  end DERIVED;
+  record ENUMERATION
+  end ENUMERATION;
+  record OVERLOAD
+  end OVERLOAD;
+  record PDER
+  end PDER;
+end ClassDef;
 uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_OPTIMIZATION end R_OPTIMIZATION;
@@ -1115,6 +1132,12 @@ uniontype Restriction
   record R_UNIONTYPE
   end R_UNIONTYPE;
 end Restriction;
+
+uniontype Partial "the partial prefix"
+  record PARTIAL     "a partial prefix"     end PARTIAL;
+  record NOT_PARTIAL "a non partial prefix" end NOT_PARTIAL;
+end Partial;
+
 end SCode;
 
 package SCodeDump

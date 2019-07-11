@@ -163,4 +163,91 @@ algorithm
   result := r1+r2+r3+r4;
 end realSummation;
 
+public function append_reverse<T>
+  "Appends the elements from list1 in reverse order to list2."
+  input list<T> inList1;
+  input list<T> inList2;
+  output list<T> outList=inList2;
+algorithm
+  for e in inList1 loop
+    outList := e::outList;
+  end for;
+end append_reverse;
+
+protected function merge<T>
+  "Helper function to sort, merges two sorted lists."
+  input list<T> inLeft;
+  input list<T> inRight;
+  input CompareFunc inCompFunc;
+  input list<T> acc;
+  output list<T> outList;
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  outList := match (inLeft, inRight)
+    local
+      Boolean b;
+      T l, r, el;
+      list<T> l_rest, r_rest, res;
+    /* Tail recursive version */
+    case (l :: l_rest, r :: r_rest)
+      algorithm
+        if inCompFunc(r, l) then
+          r_rest := inRight;
+          el := l;
+        else
+          l_rest := inLeft;
+          el := r;
+        end if;
+      then
+        merge(l_rest, r_rest, inCompFunc, el :: acc);
+    case ({}, {}) then listReverse(acc);
+    case ({}, _) then append_reverse(acc,inRight);
+    case (_, {}) then append_reverse(acc,inLeft);
+  end match;
+end merge;
+
+function sort<T>
+  "The merge sort algorithm from the compiler.
+   Sorts a list given an ordering function with the mergesort algorithm.
+    Example:
+      sort({2, 1, 3}, intGt) => {1, 2, 3}
+      sort({2, 1, 3}, intLt) => {3, 2, 1}"
+  input list<T> inList;
+  input CompareFunc inCompFunc;
+  output list<T> outList= {};
+
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean inRes;
+  end CompareFunc;
+protected
+  list<T> rest = inList;
+  T e1, e2;
+  list<T> left, right;
+  Integer middle;
+algorithm
+  if not listEmpty(rest) then
+    e1 :: rest := rest;
+    if listEmpty(rest) then
+      outList := inList;
+    else
+      e2 :: rest := rest;
+      if listEmpty(rest) then
+        outList := if inCompFunc(e2, e1) then inList else {e2,e1};
+      else
+        middle := intDiv(listLength(inList), 2);
+        (left, right) := split(inList, middle);
+        left := sort(left, inCompFunc);
+        right := sort(right, inCompFunc);
+        outList := merge(left, right, inCompFunc, {});
+      end if;
+    end if;
+  end if;
+end sort;
+
 end Algorithms;

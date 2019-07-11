@@ -21,7 +21,9 @@ match program
 end dumpProgram;
 
 template dumpSCodeElements(list<SCode.Element> elements)
-"Dumps forward declaration of uniontypes unless elements is empty"
+"
+       Dumps forward declaration of uniontypes and partial functions unless elements is empty.
+       Recursion needed to find all partial functions!. This should be call on a per module basis"
 ::= dumpSCodeElements2(filterElements(elements, defaultOptions))
 end dumpSCodeElements;
 
@@ -32,12 +34,15 @@ template dumpSCodeElements2(list<SCode.Element> elements)
     match el
       case CLASS(restriction=SCode.R_UNIONTYPE(__)) then
         '@UniontypeDecl <%name%> <%\n%>'
+      case CLASS(classDef = parts as SCode.PARTS(__), partialPrefix = SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
+      dumpSCodeElements2(parts.elementLst)
+      case CLASS(partialPrefix = SCode.PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
+       '<%name%> = Function<%\n%>'
       else ''
   )
   if str then
-  '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#<%\n%><%str%>'
-  else
-    ''
+  '<%\n%><%str%>'
+  else ''
 end dumpSCodeElements2;
 
 template dumpClass(Absyn.Class cls, DumpOptions options)
@@ -46,10 +51,13 @@ template dumpClass(Absyn.Class cls, DumpOptions options)
 end dumpClass;
 
 template dumpClassElement(Absyn.Class class, DumpOptions options, Context context)
-"TODO handle input_output parameters correctly"
+"
+  Note that partial functions are not handled here. They cannot really be translated to Julia in the way they are used in MetaModelica
+  they are dumped as forward declartions along with Uniontypes within the packages they occur.
+"
 ::=
 match class
-  case CLASS(body=parts as PARTS(__),restriction=R_UNIONTYPE(__)) then
+  case CLASS(body=parts as PARTS(__), restriction=R_UNIONTYPE(__)) then
       /*
         In Julia we treat uniontypes as declarations. They do not have a direct definition
         I use a uniontype macro for short here so things that belong together are grouped together..
@@ -62,10 +70,9 @@ match class
        <%class_def_str%>
       end
      >>
-  case CLASS(partialPrefix=true, restriction=R_FUNCTION(__)) then
-    /* Julia does not really support types of higher-order functions */
-    '<%name%> = Function'
-  case CLASS(body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
+  /* We need to forward declare partial functions in Julia */
+  case CLASS(partialPrefix=true, restriction=R_FUNCTION(__)) then ''
+  case CLASS(partialPrefix=false, body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
     let commentStr = dumpCommentStrOpt(parts.comment)
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(getElementItemsInClassPart(cp)))
     let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(getElementItemsInClassPart(cp), functionContext))%>'
@@ -89,11 +96,15 @@ match class
     let class_type_str = dumpClassType(restriction)
     let cdef_str1 = dumpClassDef(parts, packageContext, options)
     let forwardDeclarations = dumpSCodeElements(SCodeUtil.translateClassdefElements(parts.classParts))
-    let cdef_str2 = match restriction /*What about nested packages*/
+    let inform  = if forwardDeclarations then
+                    '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#'
+                  else ''
+    let cdef_str2 = match restriction
       case R_PACKAGE(__) then
         <<
         <%\n%>
         using MetaModelica
+        <%inform%>
         <%forwardDeclarations%>
         <%\n%>
         <%cdef_str1%>
