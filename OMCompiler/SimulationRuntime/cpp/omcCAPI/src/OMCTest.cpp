@@ -14,11 +14,12 @@
 
 void runTest(std::string testfolder, std::string omhome)
 {
-
+  InitMetaOMC();
+  /*threads test disabled:
   GC_stack_base sb;
   GC_get_stack_base(&sb);
   GC_register_my_thread(&sb);
-
+  */
   int status = 0;
   char *change_dir_results = 0, *mkDirResults = 0, *version = 0, *errorMsg2 = 0, *simulateResult = 0, *clear = 0;
 
@@ -118,20 +119,21 @@ void runTest(std::string testfolder, std::string omhome)
   else
     std::cout << "..failed" << std::endl;
 
-  GC_unregister_my_thread();
+  /*threads test disabled: GC_unregister_my_thread(); */
 }
 
 #define MAX_THREADS 4
 
 int main(int argc, const char* argv[])
 {
-  std::thread threads[MAX_THREADS];
+  //threads test disabled: std::thread threads[MAX_THREADS];
   int i = 0;
 
   std::cout << "Test OMC C-API dll ..." << std::endl;
   InitMetaOMC();
-  GC_allow_register_threads();
+  //threads test disabled: GC_allow_register_threads();
 
+  /*threads test disabled:
   for (i = 0; i < MAX_THREADS; i++)
   {
     std::string dir = std::string("./tmp") + std::to_string(i);
@@ -141,5 +143,8 @@ int main(int argc, const char* argv[])
   for (i = 0; i < MAX_THREADS; i++)
     if (threads[i].joinable())
       threads[i].join();
+  
+  */
+  runTest("./tmp", "");
 }
 
