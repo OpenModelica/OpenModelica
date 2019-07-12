@@ -78,6 +78,7 @@ Ticket4674.mos \
 UsesAnnotation1.mos \
 Ticket5506.mos \
 Ticket5548.mos \
+Ticket5571.mos
 
 
 # test that currently fail. Move up when fixed.
