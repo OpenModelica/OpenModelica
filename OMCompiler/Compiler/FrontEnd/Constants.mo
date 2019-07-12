@@ -350,7 +350,7 @@ record Bitmap
 
   Real extent[2,2]/*(each final unit=\"mm\")*/;
   String fileName = \"\" \"Name of bitmap file\";
-  String imageSource \"Base64 representation of bitmap\";
+  String imageSource =  \"\" \"Base64 representation of bitmap\";
 end Bitmap;
 
 // dynamic annotations
