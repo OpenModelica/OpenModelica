@@ -1040,7 +1040,13 @@ algorithm
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
         if (access >= 4) then // i.e., Access.diagram
           nargs := getApiFunctionNamedArgs(inStatement);
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getComponents");
+          end if;
           outResult := getComponents(cr, useQuotes(nargs));
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getComponents");
+           end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1061,12 +1067,16 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
         if (access >= 4) then // i.e., Access.diagram
-          ErrorExt.setCheckpoint("getComponentAnnotations");
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getComponentAnnotations");
+          end if;
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           Config.setEvaluateParametersInAnnotations(true);
           outResult := getComponentAnnotations(cr, p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          ErrorExt.rollBack("getComponentAnnotations");
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getComponentAnnotations");
+          end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1077,12 +1087,16 @@ algorithm
     case "getNthComponentAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        ErrorExt.setCheckpoint("getNthComponentAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getNthComponentAnnotation");
+        end if;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthComponentAnnotation(cr, p, n);
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNthComponentAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getNthComponentAnnotation");
+        end if;
       then
         outResult;
 
@@ -1174,12 +1188,16 @@ algorithm
     case "getNthConnectorIconAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
+        end if;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthConnectorIconAnnotation(AbsynUtil.crefToPath(cr), p, n);
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNthConnectorIconAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getNthConnectorIconAnnotation");
+        end if;
       then
         outResult;
 
@@ -1188,9 +1206,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
         if (access >= 2) then // i.e., Access.icon
-          //if not Flags.isSet(Flags.NF_API_NOISE) then
-          //  ErrorExt.setCheckpoint("getIconAnnotation");
-          //end if;
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getIconAnnotation");
+          end if;
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           graphicsExpMode := Config.getGraphicsExpMode();
           Config.setEvaluateParametersInAnnotations(true);
@@ -1198,9 +1216,9 @@ algorithm
           outResult := getIconAnnotation(AbsynUtil.crefToPath(cr), p);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           Config.setGraphicsExpMode(graphicsExpMode);
-          //if not Flags.isSet(Flags.NF_API_NOISE) then
-          //  ErrorExt.rollBack("getIconAnnotation");
-          //end if;
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getIconAnnotation");
+          end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1236,24 +1254,32 @@ algorithm
     case "getNthInheritedClassIconMapAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
+        end if;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "IconMap");
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
+        end if;
       then
         outResult;
 
     case "getNthInheritedClassDiagramMapAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
+        end if;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "DiagramMap");
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
+        end if;
       then
         outResult;
 
@@ -1261,13 +1287,17 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
-        ErrorExt.setCheckpoint("getNamedAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getNamedAnnotation");
+        end if;
         evalParamAnn := Config.getEvaluateParametersInAnnotations();
         Config.setEvaluateParametersInAnnotations(true);
         outResult := getNamedAnnotation(AbsynUtil.crefToPath(cr), p,
             Absyn.IDENT(name), SOME("{}"), getAnnotationValue);
         Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNamedAnnotation");
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getNamedAnnotation");
+        end if;
       then
         outResult;
 
