@@ -62,7 +62,6 @@ import BackendDAEOptimize;
 import BackendDAETransform;
 import BackendDump;
 import BackendEquation;
-import BackendDAEEXT;
 import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
@@ -7647,74 +7646,42 @@ end selectIndexReductionMethod;
  * matching Algorithm Selection
  ************************************************/
 
-public function getMatchingAlgorithmString
-" function: getMatchingAlgorithmString"
-  output String strMatchingAlgorithm;
-algorithm
-  strMatchingAlgorithm := Config.getMatchingAlgorithm();
-end getMatchingAlgorithmString;
-
 public function getMatchingAlgorithm
-" function: getIndexReductionMethod"
   input Option<String> ostrMatchingAlgorithm;
-  output tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
+  output tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
 protected
-  list<tuple<BackendDAEFunc.matchingAlgorithmFunc,String>> allMatchingAlgorithms;
+  list<tuple<BackendDAEFunc.matchingAlgorithmFunc, String>> allMatchingAlgorithms;
   String strMatchingAlgorithm;
 algorithm
- allMatchingAlgorithms := {(Matching.BFSB,"BFSB"),
-                           (Matching.DFSB,"DFSB"),
-                           (Matching.MC21A,"MC21A"),
-                           (Matching.PF,"PF"),
-                           (Matching.PFPlus,"PFPlus"),
-                           (Matching.HK,"HK"),
-                           (Matching.HKDW,"HKDW"),
-                           (Matching.ABMP,"ABMP"),
-                           (Matching.PR_FIFO_FAIR,"PR"),
-                           (Matching.DFSBExternal,"DFSBExt"),
-                           (Matching.BFSBExternal,"BFSBExt"),
-                           (Matching.MC21AExternal,"MC21AExt"),
-                           (Matching.PFExternal,"PFExt"),
-                           (Matching.PFPlusExternal,"PFPlusExt"),
-                           (Matching.HKExternal,"HKExt"),
-                           (Matching.HKDWExternal,"HKDWExt"),
-                           (Matching.ABMPExternal,"ABMPExt"),
-                           (Matching.PR_FIFO_FAIRExternal,"PRExt"),
-                           (Matching.BBMatching,"BB")};
- strMatchingAlgorithm := getMatchingAlgorithmString();
- strMatchingAlgorithm := Util.getOptionOrDefault(ostrMatchingAlgorithm,strMatchingAlgorithm);
- matchingAlgorithm := selectMatchingAlgorithm(strMatchingAlgorithm,allMatchingAlgorithms);
+ allMatchingAlgorithms := {(Matching.Matching, "default")};
+ strMatchingAlgorithm := Config.getMatchingAlgorithm();
+ strMatchingAlgorithm := Util.getOptionOrDefault(ostrMatchingAlgorithm, strMatchingAlgorithm);
+ matchingAlgorithm := selectMatchingAlgorithm(strMatchingAlgorithm, allMatchingAlgorithms);
 end getMatchingAlgorithm;
 
 protected function selectMatchingAlgorithm
-" function: selectMatchingAlgorithm"
   input String strMatchingAlgorithm;
-  input list<tuple<Type_a,String>> inMatchingAlgorithms;
-  output tuple<Type_a,String> outMatchingAlgorithm;
-  replaceable type Type_a subtypeof Any;
+  input list<tuple<BackendDAEFunc.matchingAlgorithmFunc, String>> inMatchingAlgorithms;
+  output tuple<BackendDAEFunc.matchingAlgorithmFunc, String> outMatchingAlgorithm;
 algorithm
-  outMatchingAlgorithm:=
-  matchcontinue (strMatchingAlgorithm,inMatchingAlgorithms)
+  outMatchingAlgorithm := matchcontinue (inMatchingAlgorithms)
     local
-      String name,str;
-      tuple<Type_a,String> method;
-      list<tuple<Type_a,String>> methods;
-    case (_,(method as (_,name))::_)
-      guard
-        stringEqual(strMatchingAlgorithm,name)
-      then
-        method;
-    case (_,_::methods)
-      equation
-        method = selectMatchingAlgorithm(strMatchingAlgorithm,methods);
-      then
-        method;
-    else
-      equation
-        str = stringAppendList({"Selection of Matching Algorithm ",strMatchingAlgorithm," failed."});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then
-        fail();
+      String name, str;
+      tuple<BackendDAEFunc.matchingAlgorithmFunc, String> method;
+      list<tuple<BackendDAEFunc.matchingAlgorithmFunc, String>> methods;
+
+    case (method as (_,name))::_ guard stringEqual(strMatchingAlgorithm,name)
+    then method;
+
+    case _::methods
+    equation
+      method = selectMatchingAlgorithm(strMatchingAlgorithm,methods);
+    then method;
+
+    else equation
+      str = stringAppendList({"Selection of Matching Algorithm ",strMatchingAlgorithm," failed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
   end matchcontinue;
 end selectMatchingAlgorithm;
 
@@ -9115,11 +9082,7 @@ algorithm
   (m, mT) := BackendDAEUtil.incidenceMatrixDispatch(BackendVariable.listVar1(varLstIn), BackendEquation.listEquation(eqs), BackendDAE.ABSOLUTE(), NONE());
   nVars := listLength(varLstIn);
   nEqs := listLength(eqs);
-  ass1 := arrayCreate(nVars, -1);
-  ass2 := arrayCreate(nEqs, -1);
-  Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
-  BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
-  BackendDAEEXT.getAssignment(ass2, ass1);
+  (ass1, ass2, _) := Matching.RegularMatching(m, nVars, nEqs);
   comps := Sorting.TarjanTransposed(mT, ass2);
 end causalizeVarBindSystem;
 

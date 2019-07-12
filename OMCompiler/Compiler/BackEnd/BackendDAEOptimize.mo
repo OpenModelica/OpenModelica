@@ -55,7 +55,6 @@ import BackendDAETransform;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
-import BackendDAEEXT;
 import BackendInline;
 import BackendVarTransform;
 import BackendVariable;
@@ -5919,11 +5918,7 @@ algorithm
       syst.mT := SOME(mT);
       nVars := listLength(varLstNew);
       nEqs := listLength(eqLstNew);
-      ass1 := arrayCreate(nVars, -1);
-      ass2 := arrayCreate(nEqs, -1);
-      Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
-      BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
-      BackendDAEEXT.getAssignment(ass2, ass1);
+      (ass1, ass2, _) := Matching.RegularMatching(m, nVars, nEqs);
       matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
       syst.matching := matching;
 

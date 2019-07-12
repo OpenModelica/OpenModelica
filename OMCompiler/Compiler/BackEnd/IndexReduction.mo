@@ -45,7 +45,6 @@ protected
 import Absyn;
 import AdjacencyMatrix;
 import Array;
-import BackendDAEEXT;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
@@ -1335,12 +1334,10 @@ algorithm
       print("########################### STATE SELECTION ###########################\n");
     end if;
     // geth the number of states without stateSelect.always (free states), if the number of differentiated equations is equal to the number of free states no selection is necessary
-
     numFreeStates := BackendVariable.traverseBackendDAEVars(vars,countStateCandidates,0);
     //numNeverStates := BackendVariable.traverseBackendDAEVars(vars,countStateCandidatesWithNever,0);
     numOrgEqs := countOrgEqns(orgEqnsLst,0);
     //print("got "+ intString(numNeverStates) + " never states and " +  intString(numFreeStates)+" free states and "+intString(numOrgEqs)+" orgeqns.\n");
-
     // select dummy states
     (osyst,oshared,oHt,oSetIndex) := selectStates(numFreeStates,numOrgEqs,inSystem,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iHt,iSetIndex);
   else
@@ -1348,7 +1345,6 @@ algorithm
     fail();
   end try;
   end if;
-
 end dynamicStateSelectionWork;
 
 protected function countStateCandidates
@@ -1752,9 +1748,9 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
       BackendDAE.StateOrder so;
+
     // number of free states and differentiated equations equal -> no state selection necessary
-    case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))
-      guard intEq(nfreeStates,nOrgEqns)
+    case BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) guard intEq(nfreeStates, nOrgEqns)
       equation
         // add the original equations to the systems
         eqnslst = List.flatten(arrayList(orgEqnsLst));
@@ -1763,22 +1759,20 @@ algorithm
         (syst,ht) = addAllDummyStates(syst,iSo,iHt);
         // update IncidenceMatrix
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
+        (syst, m, _, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
         // expand the matching
-        ass1 = Array.expand(nfreeStates,ass1,-1);
-        ass2 = Array.expand(nOrgEqns,ass2,-1);
+        ass1 = Array.expand(nfreeStates, ass1, -1);
+        ass2 = Array.expand(nOrgEqns, ass2, -1);
         nv = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne = BackendDAEUtil.systemSize(syst);
-        true = BackendDAEEXT.setAssignment(ne,nv,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(nv, ne, m);
-        BackendDAEEXT.matching(nv, ne, 5, -1, 0.0, 0);
-        BackendDAEEXT.getAssignment(ass2, ass1);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
+        (ass1, ass2, _) = Matching.ContinueMatching(m, nv, ne, ass1, ass2);
+        syst = BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(ass1, ass2, {}));
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpEquationList(eqnslst, "No state selection needed for following equations:");
         end if;
       then
         (syst,inShared,ht,iSetIndex);
+
     // select states
     case _
       equation
@@ -1796,16 +1790,14 @@ algorithm
         // do state selection for each level
           //BackendDump.dumpVarList(hov,"HOV");
           //print("ORGEQNS "+BackendDump.constraintEquationString(orgEqnsLst)+"\n");
-
         (syst,shared,ht,setIndex) = selectStatesWork(1,hov,syst,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iHt,iSetIndex);
         ErrorExt.rollBack("DynamicStateSelection");
       then
         (syst,shared,ht,setIndex);
-    else
-      equation
-        ErrorExt.delCheckpoint("DynamicStateSelection");
-      then
-        fail();
+
+    else equation
+      ErrorExt.delCheckpoint("DynamicStateSelection");
+    then fail();
   end matchcontinue;
 end selectStates;
 
@@ -1828,8 +1820,7 @@ protected function selectStatesWork
   output HashTableCrIntToExp.HashTable oHt;
   output Integer oSetIndex=iSetIndex;
 algorithm
-  (osyst,oshared,oHt,oSetIndex) :=
-  matchcontinue (inSystem, iOrgEqnsLst)
+  (osyst,oshared,oHt,oSetIndex) := match (inSystem)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -1846,11 +1837,11 @@ algorithm
       BackendDAE.ConstraintEquations orgEqnsLst;
       HashTableCrIntToExp.HashTable ht;
       HashTable2.HashTable repl;
-    case (_,_)
-      equation
-        true = Array.arrayListsEmpty(iOrgEqnsLst);
-      then (inSystem,inShared,iHt,iSetIndex);
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_)
+
+    case _ guard Array.arrayListsEmpty(iOrgEqnsLst)
+    then (inSystem, inShared, iHt, iSetIndex);
+
+    case BackendDAE.EQSYSTEM(orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))
       equation
         // get orgequations of that level
         (eqnslst1,orgEqnsLst) = removeFirstOrgEqns(iOrgEqnsLst);
@@ -1904,17 +1895,14 @@ algorithm
         ne1 = BackendDAEUtil.systemSize(syst);
         ass1 = Array.expand(nv1-nv,ass1,-1);
         ass2 = Array.expand(ne1-ne,ass2,-1);
-        true = BackendDAEEXT.setAssignment(ne1,nv1,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(nv1, ne1, m);
-        BackendDAEEXT.matching(nv1, ne1, 5, -1, 0.0, 0);
-        BackendDAEEXT.getAssignment(ass2, ass1);
+        (ass1, ass2, _) = Matching.ContinueMatching(m, nv1, ne1, ass1, ass2);
         syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
         //  BackendDump.dumpEqSystem(syst,"Next Level");
         // next level
         (syst,shared,ht,setIndex) = selectStatesWork(level+1,lov,syst,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ht,setIndex);
       then
         (syst,shared,ht,setIndex);
-  end matchcontinue;
+  end match;
 end selectStatesWork;
 
 protected function removeFirstOrderDerivatives
@@ -2096,12 +2084,9 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(inShared);
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
         // match the variables not the equations, to have preferred states unmatched
-        vec1 = Array.expand(nfreeStates,ass1,-1);
-        vec2 = Array.expand(neqns,ass2,-1);
-        true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
-        Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
-        BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
-        BackendDAEEXT.getAssignment(vec1, vec2);
+        vec1 = Array.expand(nfreeStates, ass1, -1);
+        vec2 = Array.expand(neqns, ass2, -1);
+        (vec2, vec1, _) = Matching.ContinueMatching(mT1, ne1, nv1, vec2, vec1);
         comps = Sorting.TarjanTransposed(mT1, vec2);
         // remove blocks without differentiated equations
         comps = List.select1(comps, selectBlock, ne);
@@ -2135,11 +2120,7 @@ algorithm
         ne = BackendEquation.equationArraySize(eqns);
         mT = AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
         // match the variables not the equations, to have preferred states unmatched
-        Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
-        BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
-        vec1 = arrayCreate(nv,-1);
-        vec2 = arrayCreate(ne,-1);
-        BackendDAEEXT.getAssignment(vec1,vec2);
+        (vec2, vec1, _) = Matching.RegularMatching(mT, ne, nv);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("\n");
           BackendDump.dumpMatching(vec1);
@@ -3935,11 +3916,7 @@ algorithm
   // match the equations, umatched are constrained equations
   nv := BackendVariable.varsSize(vars);
   ne := BackendEquation.equationArraySize(eqns);
-  vec1 := arrayCreate(nv,-1);
-  vec2 := arrayCreate(ne,-1);
-  Matching.matchingExternalsetIncidenceMatrix(nv,ne,m);
-  BackendDAEEXT.matching(nv,ne,5,-1,1.0,1);
-  BackendDAEEXT.getAssignment(vec2,vec1);
+  (vec1, vec2, _) := Matching.RegularMatching(m, nv, ne);
   unassigned := Matching.getUnassigned(ne, vec2, {});
   assigned := Matching.getAssigned(ne, vec2, {});
   unassigned := List.map1r(unassigned,arrayGet,mapIncRowEqn);

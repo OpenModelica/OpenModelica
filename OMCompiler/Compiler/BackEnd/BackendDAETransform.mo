@@ -33,13 +33,7 @@ encapsulated package BackendDAETransform
 " file:        BackendDAETransform.mo
   package:     BackendDAETransform
   description: BackendDAETransform contains functions that are needed to perform
-               a transformation to a Block-Lower-Triangular-DAE.
-               - matchingAlgorithm
-               - strongComponents
-               - reduceIndexDummyDer
-
-
-"
+               a transformation to a Block-Lower-Triangular-DAE."
 
 public
   import BackendDAE;

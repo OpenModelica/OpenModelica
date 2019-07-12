@@ -853,27 +853,8 @@ constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgo
     Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));
 
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
-  NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
-  SOME(STRING_DESC_OPTION({
-    ("BFSB", Util.gettext("Breadth First Search based algorithm.")),
-    ("DFSB", Util.gettext("Depth First Search based algorithm.")),
-    ("MC21A", Util.gettext("Depth First Search based algorithm with look ahead feature.")),
-    ("PF", Util.gettext("Depth First Search based algorithm with look ahead feature.")),
-    ("PFPlus", Util.gettext("Depth First Search based algorithm with look ahead feature and fair row traversal.")),
-    ("HK", Util.gettext("Combined BFS and DFS algorithm.")),
-    ("HKDW", Util.gettext("Combined BFS and DFS algorithm.")),
-    ("ABMP", Util.gettext("Combined BFS and DFS algorithm.")),
-    ("PR", Util.gettext("Matching algorithm using push relabel mechanism.")),
-    ("DFSBExt", Util.gettext("Depth First Search based Algorithm external c implementation.")),
-    ("BFSBExt", Util.gettext("Breadth First Search based Algorithm external c implementation.")),
-    ("MC21AExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")),
-    ("PFExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")),
-    ("PFPlusExt", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation.")),
-    ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
-    ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
-    ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
-    ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation.")),
-    ("BB", Util.gettext("BBs try."))})),
+  NONE(), EXTERNAL(), STRING_FLAG("default"),
+  SOME(STRING_DESC_OPTION({("default", Util.gettext("Default matching algorithm"))})),
     Util.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",

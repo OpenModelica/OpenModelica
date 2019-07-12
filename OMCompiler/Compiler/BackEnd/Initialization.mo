@@ -46,7 +46,6 @@ import Util;
 
 protected
 import Array;
-import BackendDAEEXT;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
@@ -1345,12 +1344,6 @@ algorithm
     m := fixOverDeterminedSystem(m, inEqSystem.orderedEqs, nVars, nAddVars);
 
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
-    //ass1 := arrayCreate(nVars+nAddVars, -1);
-    //ass2 := arrayCreate(nEqns+nAddEqs, -1);
-    //Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
-    //BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
-    //BackendDAEEXT.getAssignment(ass2, ass1);
-    //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
     (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
     if debug then
       BackendDump.dumpMatchingVars(ass1);

@@ -210,14 +210,6 @@ algorithm
   end match;
 end getOtherEqSysAdjacencyMatrix;
 
-protected function isAssigned
-  input array<Integer> ass;
-  input Integer i;
-  output Boolean b;
-algorithm
-  b := intGt(ass[i], 0);
-end isAssigned;
-
 public function transposeAdjacencyMatrix
   "Calculates the transpose of the incidence matrix,
   i.e. which equations each variable is present in."

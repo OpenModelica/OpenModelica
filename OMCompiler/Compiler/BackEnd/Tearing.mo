@@ -44,7 +44,6 @@ import DAE;
 protected
 import AdjacencyMatrix;
 import Array;
-import BackendDAEEXT;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
@@ -735,11 +734,7 @@ algorithm
   map := listArray(maplst);
   // get for each residual a tvar
   size := arrayLength(map);
-  Matching.matchingExternalsetIncidenceMatrix(size,size,map);
-  BackendDAEEXT.matching(size,size,5,-1,1.0,1);
-  v1 := arrayCreate(size,-1);
-  v2 := arrayCreate(size,-1);
-  BackendDAEEXT.getAssignment(v2,v1);
+  (v1, v2, _) := Matching.RegularMatching(map, size, size);
   //  BackendDump.dumpIncidenceMatrix(map);
   //  BackendDump.dumpMatching(v1);
   //  BackendDump.dumpMatching(v2);

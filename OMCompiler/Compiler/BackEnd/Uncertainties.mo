@@ -47,7 +47,6 @@ protected
 import AdjacencyMatrix;
 import Algorithm;
 import BackendDAECreate;
-import BackendDAEEXT;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
@@ -2245,7 +2244,6 @@ algorithm
     array<Integer> ass1,ass2;
     list<Integer> vars;
   case(_,_,{})
-    equation
     then ({},{});
   case(_,_,_)
     equation
@@ -2256,12 +2254,7 @@ algorithm
 
         ne=listLength(yEqMap);
         nv=listLength(yVarMap);
-        ass1=arrayCreate(ne,-1);
-        ass2=arrayCreate(nv,-1);
-        true = BackendDAEEXT.setAssignment(ne,nv,ass1,ass2);
-        Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
-        BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
-        BackendDAEEXT.getAssignment(ass1,ass2);
+        (ass2, ass1, _) = Matching.RegularMatching(my, nv, ne);
         //printIntList(arrayList(ass1));
         //printIntList(arrayList(ass2));
         vars = yVarMap;
@@ -2328,16 +2321,9 @@ algorithm
         nxEqMap = listLength(xEqMap);
         size=if nxEqMap>nxVarMap then nxEqMap else nxVarMap;
         //print("Final matching of "+intString(nxEqMap)+" equations and "+intString(nxVarMap)+" variables \n");
-        Matching.matchingExternalsetIncidenceMatrix(size,size,mx);
 
         //BackendDump.dumpIncidenceMatrix(mx);
-        ass1=arrayCreate(size,0);
-        ass2=arrayCreate(size,0);
-
-        true = BackendDAEEXT.setAssignment(size,size,ass2,ass1);
-        BackendDAEEXT.matching(size,size,1,-1,1.0,0);
-
-        BackendDAEEXT.getAssignment(ass1,ass2);
+        (ass2, ass1, _) = Matching.RegularMatching(mx, size, size);
 
         //printIntList(arrayList(ass1));
         //printIntList(arrayList(ass2));

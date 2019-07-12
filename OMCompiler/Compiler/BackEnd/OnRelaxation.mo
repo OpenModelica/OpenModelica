@@ -41,7 +41,6 @@ public import DAE;
 protected
 import AdjacencyMatrix;
 import Array;
-import BackendDAEEXT;
 import BackendDAETransform;
 import BackendDAEUtil;
 import BackendDump;
@@ -158,10 +157,7 @@ algorithm
         // Vector matching
         m1 = arrayCreate(size, {});
         transformJacToIncidenceMatrix2(jac, m1, mapIncRowEqn, eqns, ass1, ass2, isConstOneMinusOne);
-        Matching.matchingExternalsetIncidenceMatrix(size, size, m1);
-        true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
-        BackendDAEEXT.matching(size, size, 5, -1, 1.0, 0);
-        BackendDAEEXT.getAssignment(ass2, ass1);
+        (ass1, ass2, _) = Matching.ContinueMatching(m1, size, size, ass1, ass2);
 
         // Natural Matching - seems not to be good enough
         //((_, ass1, ass2)) = List.fold1(eqn_lst, naturalMatching, vars, (1, ass1, ass2));
@@ -200,10 +196,7 @@ algorithm
         //  BackendDump.dumpIncidenceMatrix(m1);
         //  BackendDump.dumpIncidenceMatrixT(mt1);
         //transformJacToIncidenceMatrix(jac, 1, 1, size, m1, mt1, isConstOneMinusOne);
-        Matching.matchingExternalsetIncidenceMatrix(size, size, m1);
-        true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
-        BackendDAEEXT.matching(size, size, 1, -1, 1.0, 0);
-        BackendDAEEXT.getAssignment(ass2, ass1);
+        (ass1, ass2, _) = Matching.ContinueMatching(m1, size, size, ass1, ass2);
 
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst, BackendDAE.MATCHING(ass1, ass2, {}));
         //  DumpGraphML.dumpSystem(subsyst, shared, NONE(), intString(size) + "SystemOneMatching.graphml");
