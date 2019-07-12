@@ -786,6 +786,8 @@ algorithm
     case "derivative" then true;
     case "inverse" then true;
     case "smoothOrder" then true;
+    case "InlineAfterIndexReduction" then true;
+    case "GenerateEvents" then true;
     else false;
   end match;
 end filterStructuralMod;
