@@ -16,3 +16,7 @@ deleteClass(SCode);getErrorString();
 loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
 writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 deleteClass(SCodeUtil);getErrorString();
+
+loadFile("Compiler/Util/List.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/List.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(List);getErrorString();

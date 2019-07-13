@@ -2,6 +2,108 @@
 
 
     using MetaModelica
+    #= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#
+
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncTplToTpl = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncTplToTpl = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    ModFunc = Function
+
+    ModFunc = Function
+
+    MapFunc = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncT = Function
+
+    FuncT = Function
+
+    FuncT = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
+
+    FuncType = Function
 
          #= /*
          * This file is part of OpenModelica.
@@ -48,11 +150,11 @@
 
         import Util
 
-        dummyParts = PARTS(list(), list(), list(), list(), NONE())::ClassDef
+         dummyParts = PARTS(list(), list(), list(), list(), NONE())::ClassDef
 
-        dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::Info
+         dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::Info
 
-        dummyProgram = PROGRAM(list(), TOP())::Program
+         dummyProgram = PROGRAM(list(), TOP())::Program
          #=  stefan
          =#
 
@@ -62,14 +164,28 @@
               local outTpl::Tuple{Equation, TypeA}
 
               outTpl = begin
-                  local arg::TypeA, arg_1::TypeA, arg_2::TypeA, arg_3::TypeA, arg_4::TypeA
-                  local eq::Equation, eq_1::Equation
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local arg_2::TypeA
+                  local arg_3::TypeA
+                  local arg_4::TypeA
+                  local eq::Equation
+                  local eq_1::Equation
                   local rel::FuncTplToTpl
-                  local e::Exp, e_1::Exp
-                  local eqilst::List{EquationItem}, eqilst1::List{EquationItem}, eqilst2::List{EquationItem}, eqilst_1::List{EquationItem}, eqilst1_1::List{EquationItem}, eqilst2_1::List{EquationItem}
-                  local eeqitlst::List{Tuple{Exp, List{EquationItem}}}, eeqitlst_1::List{Tuple{Exp, List{EquationItem}}}
-                  local fis::ForIterators, fis_1::ForIterators
-                  local ei::EquationItem, ei_1::EquationItem
+                  local e::Exp
+                  local e_1::Exp
+                  local eqilst::List{EquationItem}
+                  local eqilst1::List{EquationItem}
+                  local eqilst2::List{EquationItem}
+                  local eqilst_1::List{EquationItem}
+                  local eqilst1_1::List{EquationItem}
+                  local eqilst2_1::List{EquationItem}
+                  local eeqitlst::List{Tuple{Exp, List{EquationItem}}}
+                  local eeqitlst_1::List{Tuple{Exp, List{EquationItem}}}
+                  local fis::ForIterators
+                  local fis_1::ForIterators
+                  local ei::EquationItem
+                  local ei_1::EquationItem
                 @matchcontinue inEquation, inFunc, inTypeA begin
                   (eq = EQ_IF(e, eqilst1, eeqitlst, eqilst2), rel, arg)  => begin
                       eqilst1_1, arg_1 = traverseEquationItemList(eqilst1, rel, arg)
@@ -117,8 +233,10 @@
               outTpl = begin
                   local ei::EquationItem
                   local rel::FuncTplToTpl
-                  local arg::TypeA, arg_1::TypeA
-                  local eq::Equation, eq_1::Equation
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local eq::Equation
+                  local eq_1::Equation
                   local oc::Option{Comment}
                   local info::Info
                 @matchcontinue inEquationItem, inFunc, inTypeA begin
@@ -142,10 +260,11 @@
         function traverseEquationItemList(inEquationItemList::List{EquationItem}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{EquationItem}, TypeA}
               local outTpl::Tuple{List{EquationItem}, TypeA}
 
-              local arg2 = inTypeA::TypeA
+              local arg2::TypeA = inTypeA
 
               outTpl = list(begin
-                  local ei::EquationItem, ei_1::EquationItem
+                  local ei::EquationItem
+                  local ei_1::EquationItem
                 @match el begin
                   ei  => begin
                       ei_1, arg2 = traverseEquationItem(ei, inFunc, arg2)
@@ -164,11 +283,12 @@
         function traverseExpEqItemTupleList(inList::List{Tuple{Exp, List{EquationItem}}}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{Tuple{Exp, List{EquationItem}}}, TypeA}
               local outTpl::Tuple{List{Tuple{Exp, List{EquationItem}}}, TypeA}
 
-              local arg2 = inTypeA::TypeA
+              local arg2::TypeA = inTypeA
 
               outTpl = list(begin
                   local e::Exp
-                  local eilst::List{EquationItem}, eilst_1::List{EquationItem}
+                  local eilst::List{EquationItem}
+                  local eilst_1::List{EquationItem}
                 @match el begin
                   (e, eilst)  => begin
                       eilst_1, arg2 = traverseEquationItemList(eilst, inFunc, arg2)
@@ -188,14 +308,31 @@
               local outTpl::Tuple{Algorithm, TypeA}
 
               outTpl = begin
-                  local arg::TypeA, arg_1::TypeA, arg1_1::TypeA, arg2_1::TypeA, arg3_1::TypeA
-                  local alg::Algorithm, alg_1::Algorithm, alg1_1::Algorithm, alg2_1::Algorithm, alg3_1::Algorithm
-                  local ailst::List{AlgorithmItem}, ailst1::List{AlgorithmItem}, ailst2::List{AlgorithmItem}, ailst_1::List{AlgorithmItem}, ailst1_1::List{AlgorithmItem}, ailst2_1::List{AlgorithmItem}
-                  local eaitlst::List{Tuple{Exp, List{AlgorithmItem}}}, eaitlst_1::List{Tuple{Exp, List{AlgorithmItem}}}
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local arg1_1::TypeA
+                  local arg2_1::TypeA
+                  local arg3_1::TypeA
+                  local alg::Algorithm
+                  local alg_1::Algorithm
+                  local alg1_1::Algorithm
+                  local alg2_1::Algorithm
+                  local alg3_1::Algorithm
+                  local ailst::List{AlgorithmItem}
+                  local ailst1::List{AlgorithmItem}
+                  local ailst2::List{AlgorithmItem}
+                  local ailst_1::List{AlgorithmItem}
+                  local ailst1_1::List{AlgorithmItem}
+                  local ailst2_1::List{AlgorithmItem}
+                  local eaitlst::List{Tuple{Exp, List{AlgorithmItem}}}
+                  local eaitlst_1::List{Tuple{Exp, List{AlgorithmItem}}}
                   local rel::FuncTplToTpl
-                  local ai::AlgorithmItem, ai_1::AlgorithmItem
-                  local e::Exp, e_1::Exp
-                  local fis::ForIterators, fis_1::ForIterators
+                  local ai::AlgorithmItem
+                  local ai_1::AlgorithmItem
+                  local e::Exp
+                  local e_1::Exp
+                  local fis::ForIterators
+                  local fis_1::ForIterators
                 @matchcontinue inAlgorithm, inFunc, inTypeA begin
                   (alg = ALG_IF(_, ailst1, eaitlst, ailst2), rel, arg)  => begin
                       ailst1_1, arg1_1 = traverseAlgorithmItemList(ailst1, rel, arg)
@@ -249,8 +386,10 @@
 
               outTpl = begin
                   local rel::FuncTplToTpl
-                  local arg::TypeA, arg_1::TypeA
-                  local alg::Algorithm, alg_1::Algorithm
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local alg::Algorithm
+                  local alg_1::Algorithm
                   local oc::Option{Comment}
                   local ai::AlgorithmItem
                   local info::Info
@@ -277,18 +416,22 @@
 
               outTpl = begin
                   local rel::FuncTplToTpl
-                  local arg::TypeA, arg_1::TypeA, arg_2::TypeA
-                  local ai::AlgorithmItem, ai_1::AlgorithmItem
-                  local cdr::List{AlgorithmItem}, cdr_1::List{AlgorithmItem}
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local arg_2::TypeA
+                  local ai::AlgorithmItem
+                  local ai_1::AlgorithmItem
+                  local cdr::List{AlgorithmItem}
+                  local cdr_1::List{AlgorithmItem}
                 @match inAlgorithmItemList, inFunc, inTypeA begin
-                  ( Nil(), _, arg)  => begin
+                  ( nil(), _, arg)  => begin
                     list(), arg
                   end
 
-                  (ai => cdr, rel, arg)  => begin
+                  (ai <| cdr, rel, arg)  => begin
                       ai_1, arg_1 = traverseAlgorithmItem(ai, rel, arg)
                       cdr_1, arg_2 = traverseAlgorithmItemList(cdr, rel, arg_1)
-                    ai_1 => cdr_1, arg_2
+                    ai_1 <| cdr_1, arg_2
                   end
                 end
               end
@@ -305,19 +448,23 @@
 
               outTpl = begin
                   local rel::FuncTplToTpl
-                  local arg::TypeA, arg_1::TypeA, arg_2::TypeA
-                  local cdr::List{Tuple{Exp, List{AlgorithmItem}}}, cdr_1::List{Tuple{Exp, List{AlgorithmItem}}}
+                  local arg::TypeA
+                  local arg_1::TypeA
+                  local arg_2::TypeA
+                  local cdr::List{Tuple{Exp, List{AlgorithmItem}}}
+                  local cdr_1::List{Tuple{Exp, List{AlgorithmItem}}}
                   local e::Exp
-                  local ailst::List{AlgorithmItem}, ailst_1::List{AlgorithmItem}
+                  local ailst::List{AlgorithmItem}
+                  local ailst_1::List{AlgorithmItem}
                 @match inList, inFunc, inTypeA begin
-                  ( Nil(), _, arg)  => begin
+                  ( nil(), _, arg)  => begin
                     list(), arg
                   end
 
-                  ((e, ailst) => cdr, rel, arg)  => begin
+                  ((e, ailst) <| cdr, rel, arg)  => begin
                       ailst_1, arg_1 = traverseAlgorithmItemList(ailst, rel, arg)
                       cdr_1, arg_2 = traverseExpAlgItemTupleList(cdr, rel, arg_1)
-                    e, ailst_1 => cdr_1, arg_2
+                    e, ailst_1 <| cdr_1, arg_2
                   end
                 end
               end
@@ -389,7 +536,8 @@
               local outExp::Option{Exp}
 
               outExp, arg = begin
-                  local e1::Exp, e2::Exp
+                  local e1::Exp
+                  local e2::Exp
                   local tup::Tuple{FuncType, FuncType, Argument}
                 @match inExp, enterFunc, exitFunc, inArg begin
                   (SOME(e1), _, _, _)  => begin
@@ -412,17 +560,29 @@
               local e::Exp
 
               e, arg = begin
-                  local e1::Exp, e1m::Exp, e2::Exp, e2m::Exp, e3::Exp, e3m::Exp
-                  local oe1::Option{Exp}, oe1m::Option{Exp}
+                  local e1::Exp
+                  local e1m::Exp
+                  local e2::Exp
+                  local e2m::Exp
+                  local e3::Exp
+                  local e3m::Exp
+                  local oe1::Option{Exp}
+                  local oe1m::Option{Exp}
                   local tup::Tuple{FuncType, FuncType, Argument}
                   local op::Operator
-                  local cref::ComponentRef, crefm::ComponentRef
-                  local else_ifs1::List{Tuple{Exp, Exp}}, else_ifs2::List{Tuple{Exp, Exp}}
-                  local expl1::List{Exp}, expl2::List{Exp}
+                  local cref::ComponentRef
+                  local crefm::ComponentRef
+                  local else_ifs1::List{Tuple{Exp, Exp}}
+                  local else_ifs2::List{Tuple{Exp, Exp}}
+                  local expl1::List{Exp}
+                  local expl2::List{Exp}
                   local mat_expl::List{List{Exp}}
-                  local fargs1::FunctionArgs, fargs2::FunctionArgs
+                  local fargs1::FunctionArgs
+                  local fargs2::FunctionArgs
                   local error_msg::String
-                  local id::Ident, enterName::Ident, exitName::Ident
+                  local id::Ident
+                  local enterName::Ident
+                  local exitName::Ident
                   local match_ty::MatchType
                   local match_decls::List{ElementItem}
                   local match_cases::List{Case}
@@ -574,8 +734,10 @@
 
               outCref, arg = begin
                   local name::Ident
-                  local cr1::ComponentRef, cr2::ComponentRef
-                  local subs1::List{Subscript}, subs2::List{Subscript}
+                  local cr1::ComponentRef
+                  local cr2::ComponentRef
+                  local subs1::List{Subscript}
+                  local subs2::List{Subscript}
                   local tup::Tuple{FuncType, FuncType, Argument}
                 @match inCref, enterFunc, exitFunc, inArg begin
                   (CREF_FULLYQUALIFIED(componentRef = cr1), _, _, arg)  => begin
@@ -613,7 +775,8 @@
               local outSubscript::Subscript
 
               outSubscript, arg = begin
-                  local e1::Exp, e2::Exp
+                  local e1::Exp
+                  local e2::Exp
                 @match inSubscript, enterFunc, exitFunc, inArg begin
                   (SUBSCRIPT(subscript = e1), _, _, arg)  => begin
                       e2, arg = traverseExpBidir(e1, enterFunc, exitFunc, inArg)
@@ -634,7 +797,8 @@
               local arg::Argument
               local outElseIf::Tuple{Exp, Exp}
 
-              local e1::Exp, e2::Exp
+              local e1::Exp
+              local e2::Exp
               local tup::Tuple{FuncType, FuncType, Argument}
 
               e1, e2 = inElseIf
@@ -651,10 +815,14 @@
               local outArgs::FunctionArgs
 
               outArgs, outArg = begin
-                  local e1::Exp, e2::Exp
-                  local expl1::List{Exp}, expl2::List{Exp}
-                  local named_args1::List{NamedArg}, named_args2::List{NamedArg}
-                  local iters1::ForIterators, iters2::ForIterators
+                  local e1::Exp
+                  local e2::Exp
+                  local expl1::List{Exp}
+                  local expl2::List{Exp}
+                  local named_args1::List{NamedArg}
+                  local named_args2::List{NamedArg}
+                  local iters1::ForIterators
+                  local iters2::ForIterators
                   local arg::Argument
                   local iterType::ReductionIterType
                 @match inArgs, enterFunc, exitFunc, inArg begin
@@ -681,7 +849,8 @@
               local outArg::NamedArg
 
               local name::Ident
-              local value1::Exp, value2::Exp
+              local value1::Exp
+              local value2::Exp
 
               NAMEDARG(name, value1) = inArg
               value2, outExtra = traverseExpBidir(value1, enterFunc, exitFunc, inExtra)
@@ -696,7 +865,10 @@
               local outIterator::ForIterator
 
               local name::Ident
-              local guardExp1::Option{Exp}, guardExp2::Option{Exp}, range1::Option{Exp}, range2::Option{Exp}
+              local guardExp1::Option{Exp}
+              local guardExp2::Option{Exp}
+              local range1::Option{Exp}
+              local range2::Option{Exp}
 
               ITERATOR(name = name, guardExp = guardExp1, range = range1) = inIterator
               guardExp2, outArg = traverseExpOptBidir(guardExp1, enterFunc, exitFunc, inArg)
@@ -711,8 +883,11 @@
 
               outMatchCase, outArg = begin
                   local arg::Argument
-                  local pattern::Exp, result::Exp
-                  local info::Info, resultInfo::Info, pinfo::Info
+                  local pattern::Exp
+                  local result::Exp
+                  local info::Info
+                  local resultInfo::Info
+                  local pinfo::Info
                   local ldecls::List{ElementItem}
                   local cp::ClassPart
                   local cmt::Option{String}
@@ -823,10 +998,13 @@
 
               outEquation, outArg = begin
                   local arg::Argument
-                  local e1::Exp, e2::Exp
-                  local eqil1::List{EquationItem}, eqil2::List{EquationItem}
+                  local e1::Exp
+                  local e2::Exp
+                  local eqil1::List{EquationItem}
+                  local eqil2::List{EquationItem}
                   local else_branch::List{Tuple{Exp, List{EquationItem}}}
-                  local cref1::ComponentRef, cref2::ComponentRef
+                  local cref1::ComponentRef
+                  local cref2::ComponentRef
                   local iters::ForIterators
                   local func_args::FunctionArgs
                   local eq::EquationItem
@@ -920,10 +1098,13 @@
 
               outAlg, outArg = begin
                   local arg::Argument
-                  local e1::Exp, e2::Exp
-                  local algs1::List{AlgorithmItem}, algs2::List{AlgorithmItem}
+                  local e1::Exp
+                  local e2::Exp
+                  local algs1::List{AlgorithmItem}
+                  local algs2::List{AlgorithmItem}
                   local else_branch::List{Tuple{Exp, List{AlgorithmItem}}}
-                  local cref1::ComponentRef, cref2::ComponentRef
+                  local cref1::ComponentRef
+                  local cref2::ComponentRef
                   local iters::ForIterators
                   local func_args::FunctionArgs
                   local alg::AlgorithmItem
@@ -1054,7 +1235,7 @@
                     n
                   end
 
-                  COMPONENTS(components = COMPONENTITEM(component = COMPONENT(name = n)) =>  Nil())  => begin
+                  COMPONENTS(components = COMPONENTITEM(component = COMPONENT(name = n)) <|  nil())  => begin
                     n
                   end
                 end
@@ -1140,7 +1321,8 @@
               local ostring::String
 
               ostring = begin
-                  local s1::String, s2::String
+                  local s1::String
+                  local s2::String
                   local child::ComponentRef
                 @match cr begin
                   CREF_IDENT(s1, _)  => begin
@@ -1176,9 +1358,11 @@
               local outBoolean::Bool
 
               outBoolean = begin
-                  local id1::String, id2::String
+                  local id1::String
+                  local id2::String
                   local res::Bool
-                  local path1::Path, path2::Path
+                  local path1::Path
+                  local path2::Path
                    #=  fully qual vs. path
                    =#
                 @match inPath1, inPath2 begin
@@ -1221,24 +1405,29 @@
               local ob::Bool
 
               ob = begin
-                  local p1::Path, p2::Path
-                  local oad1::Option{ArrayDim}, oad2::Option{ArrayDim}
-                  local lst1::List{TypeSpec}, lst2::List{TypeSpec}
-                  local i1::Ident, i2::Ident
-                  local pos1::ModelicaInteger, pos2::ModelicaInteger
+                  local p1::Path
+                  local p2::Path
+                  local oad1::Option{ArrayDim}
+                  local oad2::Option{ArrayDim}
+                  local lst1::List{TypeSpec}
+                  local lst2::List{TypeSpec}
+                  local i1::Ident
+                  local i2::Ident
+                  local pos1::ModelicaInteger
+                  local pos2::ModelicaInteger
                    #=  first try full equality
                    =#
                 @matchcontinue a, b begin
                   (TPATH(p1, oad1), TPATH(p2, oad2))  => begin
-                      true = pathEqual(p1, p2)
-                      true = optArrayDimEqual(oad1, oad2)
+                      @assert true == (pathEqual(p1, p2))
+                      @assert true == (optArrayDimEqual(oad1, oad2))
                     true
                   end
 
                   (TCOMPLEX(p1, lst1, oad1), TCOMPLEX(p2, lst2, oad2))  => begin
-                      true = pathEqual(p1, p2)
-                      true = List.isEqualOnTrue(lst1, lst2, typeSpecEqual)
-                      true = optArrayDimEqual(oad1, oad2)
+                      @assert true == (pathEqual(p1, p2))
+                      @assert true == (List.isEqualOnTrue(lst1, lst2, typeSpecEqual))
+                      @assert true == (optArrayDimEqual(oad1, oad2))
                     true
                   end
 
@@ -1256,10 +1445,11 @@
               local b::Bool
 
               b = begin
-                  local ad1::List{Subscript}, ad2::List{Subscript}
+                  local ad1::List{Subscript}
+                  local ad2::List{Subscript}
                 @matchcontinue oad1, oad2 begin
                   (SOME(ad1), SOME(ad2))  => begin
-                      true = List.isEqualOnTrue(ad1, ad2, subscriptEqual)
+                      @assert true == (List.isEqualOnTrue(ad1, ad2, subscriptEqual))
                     true
                   end
 
@@ -1337,11 +1527,14 @@
         end
 
          #= This function simply converts a Path to a string. =#
-        function pathString(path::Path, delimiter = "."::String, usefq = true::Bool, reverse = false::Bool)::String
+        function pathString(path::Path, delimiter::String, usefq::Bool, reverse::Bool)::String
               local s::String
 
-              local p1::Path, p2::Path
-              local count = 0::ModelicaInteger, len = 0::ModelicaInteger, dlen = stringLength(delimiter)::ModelicaInteger
+              local p1::Path
+              local p2::Path
+              local count::ModelicaInteger = 0
+              local len::ModelicaInteger = 0
+              local dlen::ModelicaInteger = stringLength(delimiter)
               local b::Bool
 
                #=  First, calculate the length of the string to be generated
@@ -1386,14 +1579,14 @@
         end
 
         function pathStringWork(inPath::Path, len::ModelicaInteger, delimiter::String, dlen::ModelicaInteger, reverse::Bool)::String
-              local s = ""::String
+              local s::String = ""
 
-              local p = inPath::Path
-              local b = true::Bool
-              local count = 0::ModelicaInteger
+              local p::Path = inPath
+              local b::Bool = true
+              local count::ModelicaInteger = 0
                #=  Allocate a string of the exact required length
                =#
-              local sb = System.StringAllocator(len)::System.StringAllocator
+              local sb::System.StringAllocator = System.StringAllocator(len)
 
                #=  Fill the string
                =#
@@ -1421,14 +1614,14 @@
                #=  Return the string
                =#
               s = System.stringAllocatorResult(sb, s)
-          s = ""
+          s
         end
 
           @ExtendedFunction pathStringNoQual pathString()
 
         function pathStringDefault(path::Path)::String
-              local s = pathString(path)::String
-          s = pathString(path)
+              local s::String = pathString(path)
+          s
         end
 
         function classNameCompare(c1, c2::Class)::ModelicaInteger
@@ -1449,8 +1642,10 @@
               local o::ModelicaInteger
 
               o = begin
-                  local p1::Path, p2::Path
-                  local i1::String, i2::String
+                  local p1::Path
+                  local p2::Path
+                  local i1::String
+                  local i2::String
                 @match ip1, ip2 begin
                   (FULLYQUALIFIED(p1), FULLYQUALIFIED(p2))  => begin
                     pathCompare(p1, p2)
@@ -1490,8 +1685,10 @@
               local o::ModelicaInteger
 
               o = begin
-                  local p1::Path, p2::Path
-                  local i1::String, i2::String
+                  local p1::Path
+                  local p2::Path
+                  local i1::String
+                  local i2::String
                 @match ip1, ip2 begin
                   (FULLYQUALIFIED(p1), p2)  => begin
                     pathCompareNoQual(p1, p2)
@@ -1546,7 +1743,8 @@
               hash = begin
                   local p::Path
                   local s::String
-                  local i::ModelicaInteger, i2::ModelicaInteger
+                  local i::ModelicaInteger
+                  local i2::ModelicaInteger
                 @match path, acc begin
                   (FULLYQUALIFIED(p), _)  => begin
                     pathHashModWork(p, acc * 31 + 46)
@@ -1629,15 +1827,15 @@
                   local rest_str::List{String}
                   local p::Path
                 @matchcontinue paths begin
-                   Nil()  => begin
+                   nil()  => begin
                     fail()
                   end
 
-                  str =>  Nil()  => begin
+                  str <|  nil()  => begin
                     IDENT(str)
                   end
 
-                  str => rest_str  => begin
+                  str <| rest_str  => begin
                       p = stringListPath(rest_str)
                     QUALIFIED(str, p)
                   end
@@ -1655,7 +1853,7 @@
               local rest_str::List{String}
               local path::Path
 
-              id => rest_str = inStrings
+              id, rest_str = listHead(inStrings), listRest(inStrings)
               path = IDENT(id)
               outPath = stringListPathReversed2(rest_str, path)
           outPath
@@ -1669,11 +1867,11 @@
                   local rest_str::List{String}
                   local path::Path
                 @match inStrings, inAccumPath begin
-                  ( Nil(), _)  => begin
+                  ( nil(), _)  => begin
                     inAccumPath
                   end
 
-                  (id => rest_str, _)  => begin
+                  (id <| rest_str, _)  => begin
                       path = QUALIFIED(id, inAccumPath)
                     stringListPathReversed2(rest_str, path)
                   end
@@ -1843,13 +2041,15 @@
               local outPath::Absyn.Path
 
               outPath = begin
-                  local ident1::Ident, ident2::Ident
-                  local path1::Absyn.Path, path2::Absyn.Path
+                  local ident1::Ident
+                  local ident2::Ident
+                  local path1::Absyn.Path
+                  local path2::Absyn.Path
                 @matchcontinue inPath1, inPath2 begin
                   (_, _)  => begin
                       ident1 = pathFirstIdent(inPath1)
                       ident2 = pathFirstIdent(inPath2)
-                      true = stringEq(ident1, ident2)
+                      @assert true == (stringEq(ident1, ident2))
                       path1 = stripFirst(inPath1)
                       path2 = stripFirst(inPath2)
                     pathStripSamePrefix(path1, path2)
@@ -1950,7 +2150,7 @@
                   local p::Path
                 @matchcontinue suffix_path, path begin
                   (_, _)  => begin
-                      true = pathEqual(suffix_path, path)
+                      @assert true == (pathEqual(suffix_path, path))
                     true
                   end
 
@@ -1994,7 +2194,7 @@
                   local strings::List{String}
                 @match path, acc begin
                   (IDENT(name = n), _)  => begin
-                    n => acc
+                    n <| acc
                   end
 
                   (FULLYQUALIFIED(path = p), _)  => begin
@@ -2002,7 +2202,7 @@
                   end
 
                   (QUALIFIED(name = n, path = p), _)  => begin
-                    pathToStringListWork(p, n => acc)
+                    pathToStringListWork(p, n <| acc)
                   end
                 end
               end
@@ -2071,7 +2271,8 @@
 
               outCref = begin
                   local subs::List{Subscript}
-                  local cr::ComponentRef, cref::ComponentRef
+                  local cr::ComponentRef
+                  local cref::ComponentRef
                 @match icref, replPath begin
                   (CREF_FULLYQUALIFIED(componentRef = cr), _)  => begin
                       cr = crefReplaceFirstIdent(cr, replPath)
@@ -2099,8 +2300,10 @@
               local isPrefix::Bool
 
               isPrefix = begin
-                  local p::Path, p2::Path
-                  local id::String, id2::String
+                  local p::Path
+                  local p2::Path
+                  local id::String
+                  local id2::String
                 @matchcontinue prefixPath, path begin
                   (FULLYQUALIFIED(p), p2)  => begin
                     pathPrefixOf(p, p2)
@@ -2119,8 +2322,8 @@
                   end
 
                   (QUALIFIED(id, p), QUALIFIED(id2, p2))  => begin
-                      true = stringEq(id, id2)
-                      true = pathPrefixOf(p, p2)
+                      @assert true == (stringEq(id, id2))
+                      @assert true == (pathPrefixOf(p, p2))
                     true
                   end
 
@@ -2143,7 +2346,7 @@
               out = begin
                 @matchcontinue prefixCr, cr begin
                   (_, _)  => begin
-                      true = crefEqualNoSubs(prefixCr, cr)
+                      @assert true == (crefEqualNoSubs(prefixCr, cr))
                     true
                   end
 
@@ -2164,8 +2367,10 @@
               local newPath::Path
 
               newPath = begin
-                  local p::Path, p2::Path
-                  local id1::Ident, id2::Ident
+                  local p::Path
+                  local p2::Path
+                  local id1::Ident
+                  local id2::Ident
                    #=  fullyqual path
                    =#
                 @match prefix_path, path begin
@@ -2174,12 +2379,12 @@
                   end
 
                   (QUALIFIED(name = id1, path = p), QUALIFIED(name = id2, path = p2))  => begin
-                      true = stringEq(id1, id2)
+                      @assert true == (stringEq(id1, id2))
                     removePrefix(p, p2)
                   end
 
                   (IDENT(id1), QUALIFIED(name = id2, path = p2))  => begin
-                      true = stringEq(id1, id2)
+                      @assert true == (stringEq(id1, id2))
                     p2
                   end
                 end
@@ -2237,8 +2442,10 @@
               local out::ComponentRef
 
               out = begin
-                  local prefixIdent::Ident, ident::Ident
-                  local prefixRestCr::ComponentRef, restCr::ComponentRef
+                  local prefixIdent::Ident
+                  local ident::Ident
+                  local prefixRestCr::ComponentRef
+                  local restCr::ComponentRef
                    #=  fqual
                    =#
                 @match prefixCr, cr begin
@@ -2247,17 +2454,17 @@
                   end
 
                   (CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr))  => begin
-                      true = stringEq(prefixIdent, ident)
+                      @assert true == (stringEq(prefixIdent, ident))
                     crefRemovePrefix(prefixRestCr, restCr)
                   end
 
                   (CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr))  => begin
-                      true = stringEq(prefixIdent, ident)
+                      @assert true == (stringEq(prefixIdent, ident))
                     restCr
                   end
 
                   (CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident))  => begin
-                      true = stringEq(prefixIdent, ident)
+                      @assert true == (stringEq(prefixIdent, ident))
                     CREF_IDENT("", list())
                   end
                 end
@@ -2277,9 +2484,11 @@
               local b::Bool
 
               b = begin
-                  local str1::String, str2::String
+                  local str1::String
+                  local str2::String
                   local qp::Path
-                  local b1::Bool, b2::Bool
+                  local b1::Bool
+                  local b2::Bool
                 @match fullPath, pathId begin
                   (IDENT(str1), IDENT(str2))  => begin
                     stringEq(str1, str2)
@@ -2306,9 +2515,12 @@
               local b::Bool
 
               b = begin
-                  local str1::String, searchStr::String
+                  local str1::String
+                  local searchStr::String
                   local qp::Path
-                  local b1::Bool, b2::Bool, b3::Bool
+                  local b1::Bool
+                  local b2::Bool
+                  local b3::Bool
                 @match p1, str begin
                   (IDENT(str1), searchStr)  => begin
                       b1 = System.stringFind(str1, searchStr) != (-1)
@@ -2342,12 +2554,13 @@
 
               completePath = begin
                   local ident::Ident
-                  local newPath::Path, newSubPath::Path
+                  local newPath::Path
+                  local newSubPath::Path
                    #=  A suffix, e.g. C.D in A.B.C.D
                    =#
                 @matchcontinue subPath, path begin
                   (_, _)  => begin
-                      true = pathSuffixOf(subPath, path)
+                      @assert true == (pathSuffixOf(subPath, path))
                     path
                   end
 
@@ -2383,15 +2596,15 @@
                   local exp::Exp
                   local subs::List{Subscript}
                 @match isubs, includeSubs, includeFunctions begin
-                  ( Nil(), _, _)  => begin
+                  ( nil(), _, _)  => begin
                     list()
                   end
 
-                  (NOSUB() => subs, _, _)  => begin
+                  (NOSUB() <| subs, _, _)  => begin
                     getCrefsFromSubs(subs, includeSubs, includeFunctions)
                   end
 
-                  (SUBSCRIPT(exp) => subs, _, _)  => begin
+                  (SUBSCRIPT(exp) <| subs, _, _)  => begin
                       crefs1 = getCrefsFromSubs(subs, includeSubs, includeFunctions)
                       crefs = getCrefFromExp(exp, includeSubs, includeFunctions)
                     listAppend(crefs, crefs1)
@@ -2408,8 +2621,12 @@
 
               outComponentRefLst = begin
                   local cr::ComponentRef
-                  local l1::List{ComponentRef}, l2::List{ComponentRef}, res::List{ComponentRef}
-                  local e1::ComponentCondition, e2::ComponentCondition, e3::ComponentCondition
+                  local l1::List{ComponentRef}
+                  local l2::List{ComponentRef}
+                  local res::List{ComponentRef}
+                  local e1::ComponentCondition
+                  local e2::ComponentCondition
+                  local e3::ComponentCondition
                   local op::Operator
                   local e4::List{Tuple{ComponentCondition, ComponentCondition}}
                   local farg::FunctionArgs
@@ -2450,7 +2667,7 @@
                   (CREF(componentRef = cr), true, _)  => begin
                       subs = getSubsFromCref(cr, includeSubs, includeFunctions)
                       l1 = getCrefsFromSubs(subs, includeSubs, includeFunctions)
-                    cr => l1
+                    cr <| l1
                   end
 
                   (BINARY(exp1 = e1, exp2 = e2), _, _)  => begin
@@ -2490,13 +2707,13 @@
 
                   (CALL(function_ = cr, functionArgs = farg), _, _)  => begin
                       res = getCrefFromFarg(farg, includeSubs, includeFunctions)
-                      res = if includeFunctions cr => res else res end
+                      res = if includeFunctions cr <| res else res end
                     res
                   end
 
                   (PARTEVALFUNCTION(function_ = cr, functionArgs = farg), _, _)  => begin
                       res = getCrefFromFarg(farg, includeSubs, includeFunctions)
-                      res = if includeFunctions cr => res else res end
+                      res = if includeFunctions cr <| res else res end
                     res
                   end
 
@@ -2585,8 +2802,12 @@
               local outComponentRefLst::List{ComponentRef}
 
               outComponentRefLst = begin
-                  local l1::List{List{ComponentRef}}, l2::List{List{ComponentRef}}
-                  local fl1::List{ComponentRef}, fl2::List{ComponentRef}, fl3::List{ComponentRef}, res::List{ComponentRef}
+                  local l1::List{List{ComponentRef}}
+                  local l2::List{List{ComponentRef}}
+                  local fl1::List{ComponentRef}
+                  local fl2::List{ComponentRef}
+                  local fl3::List{ComponentRef}
+                  local res::List{ComponentRef}
                   local expl::List{ComponentCondition}
                   local nargl::List{NamedArg}
                   local iterators::ForIterators
@@ -2651,13 +2872,13 @@
                   local slst::List{String}
                   local elst::List{Exp}
                 @match inNamedArgList begin
-                   Nil()  => begin
+                   nil()  => begin
                     list(), list()
                   end
 
-                  NAMEDARG(argName = s, argValue = e) => cdr  => begin
+                  NAMEDARG(argName = s, argValue = e) <| cdr  => begin
                       slst, elst = getNamedFuncArgNamesAndValues(cdr)
-                    s => slst, e => elst
+                    s <| slst, e <| elst
                   end
                 end
               end
@@ -2688,7 +2909,9 @@
 
               outPath = begin
                   local str::Ident
-                  local p2::Path, p_1::Path, p::Path
+                  local p2::Path
+                  local p_1::Path
+                  local p::Path
                 @match inPath1, inPath2 begin
                   (IDENT(name = str), p2)  => begin
                     QUALIFIED(str, p2)
@@ -2774,18 +2997,20 @@
               local outPath::Path
 
               outPath = begin
-                  local path::Path, res_path::Path, first::Path
+                  local path::Path
+                  local res_path::Path
+                  local first::Path
                   local rest::List{Path}
                 @match inPathLst begin
-                   Nil()  => begin
+                   nil()  => begin
                     IDENT("")
                   end
 
-                  path =>  Nil()  => begin
+                  path <|  nil()  => begin
                     path
                   end
 
-                  first => rest  => begin
+                  first <| rest  => begin
                       path = pathAppendList(rest)
                       res_path = joinPaths(first, path)
                     res_path
@@ -2848,7 +3073,8 @@
 
               outCref = begin
                   local str::Ident
-                  local c_1::ComponentRef, c::ComponentRef
+                  local c_1::ComponentRef
+                  local c::ComponentRef
                   local subs::List{Subscript}
                 @match inCref begin
                   CREF_IDENT()  => begin
@@ -2883,8 +3109,11 @@
               local outPath1::Path
 
               outPath1, outPath2 = begin
-                  local qPath::Path, curPath::Path, identPath::Path
-                  local s1::String, s2::String
+                  local qPath::Path
+                  local curPath::Path
+                  local identPath::Path
+                  local s1::String
+                  local s2::String
                 @match inPath begin
                   QUALIFIED(name = s1, path = IDENT(name = s2))  => begin
                     IDENT(s1), IDENT(s2)
@@ -2934,11 +3163,11 @@
                   local p::Path
                   local c::ComponentRef
                 @match inComponentRef begin
-                  CREF_IDENT(name = i, subscripts =  Nil())  => begin
+                  CREF_IDENT(name = i, subscripts =  nil())  => begin
                     IDENT(i)
                   end
 
-                  CREF_QUAL(name = i, subscripts =  Nil(), componentRef = c)  => begin
+                  CREF_QUAL(name = i, subscripts =  nil(), componentRef = c)  => begin
                       p = crefToPath(c)
                     QUALIFIED(i, p)
                   end
@@ -3083,11 +3312,11 @@
                   local id::Ident
                   local cr::ComponentRef
                 @match inCref begin
-                  CREF_IDENT(name = id, subscripts =  Nil())  => begin
+                  CREF_IDENT(name = id, subscripts =  nil())  => begin
                     id
                   end
 
-                  CREF_QUAL(name = id, subscripts =  Nil())  => begin
+                  CREF_QUAL(name = id, subscripts =  nil())  => begin
                     id
                   end
 
@@ -3145,7 +3374,8 @@
 
               outSubscriptLst = begin
                   local id::Ident
-                  local subs::List{Subscript}, res::List{Subscript}
+                  local subs::List{Subscript}
+                  local res::List{Subscript}
                   local cr::ComponentRef
                 @match inComponentRef begin
                   CREF_IDENT(subscripts = subs)  => begin
@@ -3167,7 +3397,7 @@
         end
 
         function crefSetLastSubs(inCref::ComponentRef, inSubscripts::List{Subscript})::ComponentRef
-              local outCref = inCref::ComponentRef
+              local outCref::ComponentRef = inCref
 
               outCref = begin
                 @match outCref begin
@@ -3187,7 +3417,7 @@
                   end
                 end
               end
-          outCref = inCref
+          outCref
         end
 
          #= This function finds if a cref has subscripts =#
@@ -3200,7 +3430,7 @@
                     ! listEmpty(cref.subscripts)
                   end
 
-                  CREF_QUAL(subscripts =  Nil())  => begin
+                  CREF_QUAL(subscripts =  nil())  => begin
                     crefHasSubscripts(cref.componentRef)
                   end
 
@@ -3261,7 +3491,8 @@
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
-                  local cref::ComponentRef, cref_1::ComponentRef
+                  local cref::ComponentRef
+                  local cref_1::ComponentRef
                   local id::Ident
                   local subs::List{Subscript}
                 @match inComponentRef begin
@@ -3289,8 +3520,10 @@
 
               outComponentRef = begin
                   local id::Ident
-                  local subs::List{Subscript}, s::List{Subscript}
-                  local cr_1::ComponentRef, cr::ComponentRef
+                  local subs::List{Subscript}
+                  local s::List{Subscript}
+                  local cr_1::ComponentRef
+                  local cr::ComponentRef
                 @match inComponentRef begin
                   CREF_IDENT(name = id)  => begin
                     CREF_IDENT(id, list())
@@ -3317,7 +3550,9 @@
               outComponentRef = begin
                   local id::Ident
                   local sub::List{Subscript}
-                  local cr2::ComponentRef, cr_1::ComponentRef, cr::ComponentRef
+                  local cr2::ComponentRef
+                  local cr_1::ComponentRef
+                  local cr::ComponentRef
                 @match inComponentRef1, inComponentRef2 begin
                   (CREF_IDENT(name = id, subscripts = sub), cr2)  => begin
                       failure(CREF_FULLYQUALIFIED() = cr2)
@@ -3588,7 +3823,7 @@
          #= author: BZ
           Sets the name of the class =#
         function setClassName(inClass::Class, newName::String)::Class
-              local outClass = inClass::Class
+              local outClass::Class = inClass
 
               outClass = begin
                 @match outClass begin
@@ -3598,11 +3833,11 @@
                   end
                 end
               end
-          outClass = inClass
+          outClass
         end
 
         function setClassBody(inClass::Class, inBody::ClassDef)::Class
-              local outClass = inClass::Class
+              local outClass::Class = inClass
 
               outClass = begin
                 @match outClass begin
@@ -3612,7 +3847,7 @@
                   end
                 end
               end
-          outClass = inClass
+          outClass
         end
 
          #=  Checks if the name of a ComponentRef is
@@ -3622,20 +3857,23 @@
               local outBoolean::Bool
 
               outBoolean = begin
-                  local id::Ident, id2::Ident
-                  local ss1::List{Subscript}, ss2::List{Subscript}
-                  local cr1::ComponentRef, cr2::ComponentRef
+                  local id::Ident
+                  local id2::Ident
+                  local ss1::List{Subscript}
+                  local ss2::List{Subscript}
+                  local cr1::ComponentRef
+                  local cr2::ComponentRef
                 @matchcontinue iCr1, iCr2 begin
                   (CREF_IDENT(name = id, subscripts = ss1), CREF_IDENT(name = id2, subscripts = ss2))  => begin
-                      true = stringEq(id, id2)
-                      true = subscriptsEqual(ss1, ss2)
+                      @assert true == (stringEq(id, id2))
+                      @assert true == (subscriptsEqual(ss1, ss2))
                     true
                   end
 
                   (CREF_QUAL(name = id, subscripts = ss1, componentRef = cr1), CREF_QUAL(name = id2, subscripts = ss2, componentRef = cr2))  => begin
-                      true = stringEq(id, id2)
-                      true = subscriptsEqual(ss1, ss2)
-                      true = crefEqual(cr1, cr2)
+                      @assert true == (stringEq(id, id2))
+                      @assert true == (subscriptsEqual(ss1, ss2))
+                      @assert true == (crefEqual(cr1, cr2))
                     true
                   end
 
@@ -3665,7 +3903,8 @@
               local outIsEqual::Bool
 
               outIsEqual = begin
-                  local e1::Exp, e2::Exp
+                  local e1::Exp
+                  local e2::Exp
                 @match inSubscript1, inSubscript2 begin
                   (NOSUB(), NOSUB())  => begin
                     true
@@ -3698,17 +3937,19 @@
               local outBoolean::Bool
 
               outBoolean = begin
-                  local rest1::ComponentRef, rest2::ComponentRef
-                  local id::Ident, id2::Ident
+                  local rest1::ComponentRef
+                  local rest2::ComponentRef
+                  local id::Ident
+                  local id2::Ident
                 @matchcontinue cr1, cr2 begin
                   (CREF_IDENT(name = id), CREF_IDENT(name = id2))  => begin
-                      true = stringEq(id, id2)
+                      @assert true == (stringEq(id, id2))
                     true
                   end
 
                   (CREF_QUAL(name = id, componentRef = rest1), CREF_QUAL(name = id2, componentRef = rest2))  => begin
-                      true = stringEq(id, id2)
-                      true = crefEqualNoSubs(rest1, rest2)
+                      @assert true == (stringEq(id, id2))
+                      @assert true == (crefEqualNoSubs(rest1, rest2))
                     true
                   end
 
@@ -3766,7 +4007,8 @@
 
               equal = begin
                   local b::Bool
-                  local x::Exp, y::Exp
+                  local x::Exp
+                  local y::Exp
                   local i::ModelicaInteger
                   local r::String
                    #=  real vs. integer
@@ -3819,7 +4061,8 @@
               local equal::Bool
 
               equal = begin
-                  local expl1::List{Exp}, expl2::List{Exp}
+                  local expl1::List{Exp}
+                  local expl2::List{Exp}
                 @match args1, args2 begin
                   (FUNCTIONARGS(args = expl1), FUNCTIONARGS(args = expl2))  => begin
                     List.isEqualOnTrue(expl1, expl2, expEqual)
@@ -3847,7 +4090,7 @@
          #= Find all crefs in an expression which are subscripted with the given
            iterator, and return a list of cref-Integer tuples, where the cref is the
            index of the subscript. =#
-        function findIteratorIndexedCrefs(inExp::Exp, inIterator::String, inCrefs = list()::List{IteratorIndexedCref})::List{IteratorIndexedCref}
+        function findIteratorIndexedCrefs(inExp::Exp, inIterator::String, inCrefs::List{IteratorIndexedCref})::List{IteratorIndexedCref}
               local outCrefs::List{IteratorIndexedCref}
 
               _, outCrefs = traverseExp(inExp, @ExtendedAnonFunction findIteratorIndexedCrefs_traverser(inIterator = inIterator), list())
@@ -3859,7 +4102,7 @@
            which are subscripted by a given iterator. =#
         function findIteratorIndexedCrefs_traverser(inExp::Exp, inCrefs::List{IteratorIndexedCref}, inIterator::String)::Tuple{List{IteratorIndexedCref}, Exp}
               local outCrefs::List{IteratorIndexedCref}
-              local outExp = inExp::Exp
+              local outExp::Exp = inExp
 
               outCrefs = begin
                   local cref::ComponentRef
@@ -3873,15 +4116,17 @@
                   end
                 end
               end
-          (outCrefs, outExp = inExp)
+          (outCrefs, outExp)
         end
 
          #= Checks whether two cref-index pairs are equal. =#
         function iteratorIndexedCrefsEqual(inCref1::IteratorIndexedCref, inCref2::IteratorIndexedCref)::Bool
               local outEqual::Bool
 
-              local cr1::ComponentRef, cr2::ComponentRef
-              local idx1::ModelicaInteger, idx2::ModelicaInteger
+              local cr1::ComponentRef
+              local cr2::ComponentRef
+              local idx1::ModelicaInteger
+              local idx2::ModelicaInteger
 
               cr1, idx1 = inCref1
               cr2, idx2 = inCref2
@@ -3896,14 +4141,15 @@
            iterator i:
              a[i] => (a, 1), b[1, i] => (b, 2), c[i+1] => (), d[2].e[i] => (d[2].e, 1) =#
         function getIteratorIndexedCrefs(inCref::ComponentRef, inIterator::String, inCrefs::List{IteratorIndexedCref})::List{IteratorIndexedCref}
-              local outCrefs = inCrefs::List{IteratorIndexedCref}
+              local outCrefs::List{IteratorIndexedCref} = inCrefs
 
               local crefs::List{Tuple{ComponentRef, ModelicaInteger}}
 
               outCrefs = begin
                   local subs::List{Subscript}
                   local idx::ModelicaInteger
-                  local name::String, id::String
+                  local name::String
+                  local id::String
                   local cref::ComponentRef
                 @match inCref begin
                   CREF_IDENT(name = id, subscripts = subs)  => begin
@@ -3915,9 +4161,9 @@
                       for sub in subs
                         _ = begin
                           @match sub begin
-                            SUBSCRIPT(subscript = CREF(componentRef = CREF_IDENT(name = name, subscripts =  Nil())))  => begin
+                            SUBSCRIPT(subscript = CREF(componentRef = CREF_IDENT(name = name, subscripts =  nil())))  => begin
                                 if name == inIterator
-                                  outCrefs = CREF_IDENT(id, list()), idx => outCrefs
+                                  outCrefs = CREF_IDENT(id, list()), idx <| outCrefs
                                 end
                               _
                             end
@@ -3940,7 +4186,7 @@
                        =#
                       for cr in crefs
                         cref, idx = cr
-                        outCrefs = CREF_QUAL(id, subs, cref), idx => outCrefs
+                        outCrefs = CREF_QUAL(id, subs, cref), idx <| outCrefs
                       end
                     getIteratorIndexedCrefs(CREF_IDENT(id, subs), inIterator, outCrefs)
                   end
@@ -3951,7 +4197,7 @@
                        =#
                       for cr in crefs
                         cref, idx = cr
-                        outCrefs = CREF_FULLYQUALIFIED(cref), idx => outCrefs
+                        outCrefs = CREF_FULLYQUALIFIED(cref), idx <| outCrefs
                       end
                     outCrefs
                   end
@@ -3961,7 +4207,7 @@
                   end
                 end
               end
-          outCrefs = inCrefs
+          outCrefs
         end
 
         function pathReplaceIdent(path::Path, last::String)::Path
@@ -3969,7 +4215,8 @@
 
               out = begin
                   local p::Path
-                  local n::String, s::String
+                  local n::String
+                  local s::String
                 @match path, last begin
                   (FULLYQUALIFIED(p), s)  => begin
                       p = pathReplaceIdent(p, s)
@@ -4186,22 +4433,24 @@
               local outBoolean::Bool
 
               outBoolean = begin
-                  local id::Ident, id2::Ident
-                  local p1::Path, p2::Path
+                  local id::Ident
+                  local id2::Ident
+                  local p1::Path
+                  local p2::Path
                 @matchcontinue im1, im2 begin
                   (NAMED_IMPORT(name = id, path = p1), NAMED_IMPORT(name = id2, path = p2))  => begin
-                      true = stringEq(id, id2)
-                      true = pathEqual(p1, p2)
+                      @assert true == (stringEq(id, id2))
+                      @assert true == (pathEqual(p1, p2))
                     true
                   end
 
                   (QUAL_IMPORT(path = p1), QUAL_IMPORT(path = p2))  => begin
-                      true = pathEqual(p1, p2)
+                      @assert true == (pathEqual(p1, p2))
                     true
                   end
 
                   (UNQUAL_IMPORT(path = p1), UNQUAL_IMPORT(path = p2))  => begin
-                      true = pathEqual(p1, p2)
+                      @assert true == (pathEqual(p1, p2))
                     true
                   end
 
@@ -4218,14 +4467,19 @@
               local outExp::Exp
 
               outExp = begin
-                  local cond::Exp, tb::Exp, eb::Exp, ei_cond::Exp, ei_tb::Exp, e::Exp
+                  local cond::Exp
+                  local tb::Exp
+                  local eb::Exp
+                  local ei_cond::Exp
+                  local ei_tb::Exp
+                  local e::Exp
                   local eib::List{Tuple{Exp, Exp}}
                 @match inExp begin
-                  IFEXP(elseIfBranch =  Nil())  => begin
+                  IFEXP(elseIfBranch =  nil())  => begin
                     inExp
                   end
 
-                  IFEXP(ifExp = cond, trueBranch = tb, elseBranch = eb, elseIfBranch = (ei_cond, ei_tb) => eib)  => begin
+                  IFEXP(ifExp = cond, trueBranch = tb, elseBranch = eb, elseIfBranch = (ei_cond, ei_tb) <| eib)  => begin
                       e = canonIfExp(IFEXP(ei_cond, ei_tb, eb, eib))
                     IFEXP(cond, tb, e, list())
                   end
@@ -4240,20 +4494,24 @@
               local onlyLiterals::Bool
 
               onlyLiterals = begin
-                  local dive::List{ElementArg}, rest::List{ElementArg}
+                  local dive::List{ElementArg}
+                  local rest::List{ElementArg}
                   local eqMod::EqMod
-                  local b1::Bool, b2::Bool, b3::Bool, b::Bool
+                  local b1::Bool
+                  local b2::Bool
+                  local b3::Bool
+                  local b::Bool
                 @matchcontinue inMod begin
-                   Nil()  => begin
+                   nil()  => begin
                     true
                   end
 
-                  MODIFICATION(path = IDENT(name = "interaction")) => rest  => begin
+                  MODIFICATION(path = IDENT(name = "interaction")) <| rest  => begin
                       b = onlyLiteralsInAnnotationMod(rest)
                     b
                   end
 
-                  MODIFICATION(modification = SOME(CLASSMOD(dive, eqMod))) => rest  => begin
+                  MODIFICATION(modification = SOME(CLASSMOD(dive, eqMod))) <| rest  => begin
                       b1 = onlyLiteralsInEqMod(eqMod)
                       b2 = onlyLiteralsInAnnotationMod(dive)
                       b3 = onlyLiteralsInAnnotationMod(rest)
@@ -4261,7 +4519,7 @@
                     b
                   end
 
-                  _ => rest  => begin
+                  _ <| rest  => begin
                       b = onlyLiteralsInAnnotationMod(rest)
                     b
                   end
@@ -4295,7 +4553,7 @@
                   end
 
                   EQMOD(exp = exp)  => begin
-                      _, lst => list() = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, list() => list())
+                      _, lst, list() = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, list() <| list())
                       b = listEmpty(lst)
                     b
                   end
@@ -4326,14 +4584,14 @@
                    #=  FillPattern.*, Smooth.*, TextAlignment.*, etc!
                    =#
                 @match inExp, inLst begin
-                  (e = CREF(CREF_QUAL(name = name)), lst => rest)  => begin
+                  (e = CREF(CREF_QUAL(name = name)), lst <| rest)  => begin
                       b = listMember(name, list("LinePattern", "Arrow", "FillPattern", "BorderPattern", "TextStyle", "Smooth", "TextAlignment"))
                       lst = List.consOnTrue(! b, e, lst)
-                    inExp, lst => rest
+                    inExp, lst <| rest
                   end
 
-                  (CREF(), lst => rest)  => begin
-                    inExp, inExp => lst => rest
+                  (CREF(), lst <| rest)  => begin
+                    inExp, inExp <| lst <| rest
                   end
 
                   _  => begin
@@ -4470,7 +4728,8 @@
               local b::Bool
 
               b = begin
-                  local p1::Path, p2::Path
+                  local p1::Path
+                  local p2::Path
                 @match within1, within2 begin
                   (TOP(), TOP())  => begin
                     true
@@ -4572,7 +4831,8 @@
               local outExp::Exp
 
               outExp, outLst = begin
-                  local cref::ComponentRef, cref2::ComponentRef
+                  local cref::ComponentRef
+                  local cref2::ComponentRef
                   local subs::List{List{Subscript}}
                   local e::Exp
                 @matchcontinue inExp, inLst begin
@@ -4594,20 +4854,21 @@
               local outCref::ComponentRef
 
               outCref = begin
-                  local cref::ComponentRef, cref2::ComponentRef
+                  local cref::ComponentRef
+                  local cref2::ComponentRef
                   local n::Ident
                   local subs::List{List{Subscript}}
                   local s::List{Subscript}
                 @matchcontinue inCref, inSubs begin
-                  (cref,  Nil())  => begin
+                  (cref,  nil())  => begin
                     cref
                   end
 
-                  (CREF_IDENT(name = n), s =>  Nil())  => begin
+                  (CREF_IDENT(name = n), s <|  nil())  => begin
                     CREF_IDENT(n, s)
                   end
 
-                  (CREF_QUAL(name = n, componentRef = cref), s => subs)  => begin
+                  (CREF_QUAL(name = n, componentRef = cref), s <| subs)  => begin
                       cref2 = crefInsertSubscriptLstLst2(cref, subs)
                     CREF_QUAL(n, s, cref2)
                   end
@@ -4660,7 +4921,7 @@
 
               b = begin
                 @match exp begin
-                  CALL(CREF_IDENT("der",  Nil()), FUNCTIONARGS(CREF() =>  Nil(),  Nil()))  => begin
+                  CALL(CREF_IDENT("der",  nil()), FUNCTIONARGS(CREF() <|  nil(),  nil()))  => begin
                     true
                   end
 
@@ -4720,21 +4981,22 @@
               hasUnknownDimensions, outExps = begin
                   local rest::List{Subscript}
                   local e::Exp
-                  local exps::List{Exp}, acc::List{Exp}
+                  local exps::List{Exp}
+                  local acc::List{Exp}
                   local b::Bool
                    #=  handle empty list
                    =#
                 @match inAd, inAccumulator begin
-                  ( Nil(), acc)  => begin
+                  ( nil(), acc)  => begin
                     false, listReverse(acc)
                   end
 
-                  (SUBSCRIPT(e) => rest, acc)  => begin
-                      b, exps = getExpsFromArrayDim_tail(rest, e => acc)
+                  (SUBSCRIPT(e) <| rest, acc)  => begin
+                      b, exps = getExpsFromArrayDim_tail(rest, e <| acc)
                     b, exps
                   end
 
-                  (NOSUB() => rest, acc)  => begin
+                  (NOSUB() <| rest, acc)  => begin
                       _, exps = getExpsFromArrayDim_tail(rest, acc)
                     true, exps
                   end
@@ -4750,7 +5012,7 @@
          #= @author: adrpo
          returns true if the given direction is input or output =#
         function isInputOrOutput(direction::Direction)::Bool
-              local isIorO #= input or output only =#::Bool
+              local isIorO::Bool #= input or output only =#
 
               isIorO = begin
                 @match direction begin
@@ -4886,7 +5148,9 @@
 
               o = begin
                   local name::Ident
-                  local pa::Bool, fi::Bool, en::Bool
+                  local pa::Bool
+                  local fi::Bool
+                  local en::Bool
                   local re::Restriction
                   local body::ClassDef
                   local info::Info
@@ -4965,7 +5229,9 @@
 
               o = begin
                   local name::Ident
-                  local partialPrefix::Bool, finalPrefix::Bool, encapsulatedPrefix::Bool
+                  local partialPrefix::Bool
+                  local finalPrefix::Bool
+                  local encapsulatedPrefix::Bool
                   local info::Info
                   local typeVars::List{String}
                   local classParts::List{ClassPart}
@@ -4974,8 +5240,8 @@
                   local classAttr::List{NamedArg}
                 @match cl begin
                   CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, classParts, _, _), info)  => begin
-                      elts = _ => _ = List.fold(listReverse(classParts), getFunctionInterfaceParts, list())
-                    CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, PUBLIC(elts) => list(), list(), NONE()), info)
+                      @assert elts = _, _ == (List.fold(listReverse(classParts), getFunctionInterfaceParts, list()))
+                    CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, PUBLIC(elts) <| list(), list(), NONE()), info)
                   end
                 end
               end
@@ -4986,7 +5252,8 @@
               local oelts::List{ElementItem}
 
               oelts = begin
-                  local elts1::List{ElementItem}, elts2::List{ElementItem}
+                  local elts1::List{ElementItem}
+                  local elts2::List{ElementItem}
                 @match part, elts begin
                   (PUBLIC(elts1), elts2)  => begin
                       elts1 = List.filterOnTrue(elts1, filterAnnotationItem)
@@ -5024,7 +5291,9 @@
 
               o = begin
                   local name::Ident
-                  local partialPrefix::Bool, finalPrefix::Bool, encapsulatedPrefix::Bool
+                  local partialPrefix::Bool
+                  local finalPrefix::Bool
+                  local encapsulatedPrefix::Bool
                   local restriction::Restriction
                   local typeVars::List{String}
                   local classAttrs::List{NamedArg}
@@ -5034,7 +5303,7 @@
                   local info::Info
                 @match cl begin
                   CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, PARTS(typeVars, classAttrs, classParts, annotations, comment), info)  => begin
-                      classParts = _ => _ = List.fold(listReverse(classParts), filterNestedClassesParts, list())
+                      @assert classParts = _, _ == (List.fold(listReverse(classParts), filterNestedClassesParts, list()))
                     CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, PARTS(typeVars, classAttrs, classParts, annotations, comment), info)
                   end
 
@@ -5056,16 +5325,16 @@
                 @match classPart, inClassParts begin
                   (PUBLIC(elts), classParts)  => begin
                       classPart.contents = List.filterOnFalse(elts, isElementItemClass)
-                    classPart => classParts
+                    classPart <| classParts
                   end
 
                   (PROTECTED(elts), classParts)  => begin
                       classPart.contents = List.filterOnFalse(elts, isElementItemClass)
-                    classPart => classParts
+                    classPart <| classParts
                   end
 
                   _  => begin
-                      classPart => inClassParts
+                      classPart <| inClassParts
                   end
                 end
               end
@@ -5300,10 +5569,11 @@
               local outAnnotation::Annotation
 
               outAnnotation = begin
-                  local oldmods::List{ElementArg}, newmods::List{ElementArg}
+                  local oldmods::List{ElementArg}
+                  local newmods::List{ElementArg}
                   local a::Annotation
                 @match inAnnotation1, inAnnotation2 begin
-                  (ANNOTATION(elementArgs =  Nil()), a)  => begin
+                  (ANNOTATION(elementArgs =  nil()), a)  => begin
                     a
                   end
 
@@ -5316,12 +5586,13 @@
         end
 
         function mergeAnnotations2(oldmods::List{ElementArg}, newmods::List{ElementArg})::List{ElementArg}
-              local res = listReverse(oldmods)::List{ElementArg}
+              local res::List{ElementArg} = listReverse(oldmods)
 
               local mods::List{ElementArg}
               local b::Bool
               local p::Path
-              local mod1::ElementArg, mod2::ElementArg
+              local mod1::ElementArg
+              local mod2::ElementArg
 
               for mod in newmods
                 MODIFICATION(path = p) = mod
@@ -5330,11 +5601,11 @@
                   mod1 = subModsInSameOrder(mod2, mod)
                   res, true = List.replaceOnTrue(mod1, res, @ExtendedAnonFunction isModificationOfPath(path = p))
                 catch
-                  res = mod => res
+                  res = mod <| res
                 end
               end
               res = listReverse(res)
-          res = listReverse(oldmods)
+          res
         end
 
          #= Merges an annotation into a Comment option. =#
@@ -5372,7 +5643,8 @@
               local yes::Bool
 
               yes = begin
-                  local id1::String, id2::String
+                  local id1::String
+                  local id2::String
                 @match mod, path begin
                   (MODIFICATION(path = IDENT(name = id1)), IDENT(name = id2))  => begin
                     id1 == id2
@@ -5390,9 +5662,12 @@
               local mod::ElementArg
 
               mod = begin
-                  local args1::List{ElementArg}, args2::List{ElementArg}, res::List{ElementArg}
+                  local args1::List{ElementArg}
+                  local args2::List{ElementArg}
+                  local res::List{ElementArg}
                   local arg2::ElementArg
-                  local eq1::EqMod, eq2::EqMod
+                  local eq1::EqMod
+                  local eq2::EqMod
                   local p::Path
                    #=  mod1 or mod2 has no submods
                    =#
@@ -5414,7 +5689,7 @@
                       for arg1 in args1
                         MODIFICATION(path = p) = arg1
                         if List.exist(args2, @ExtendedAnonFunction isModificationOfPath(path = p))
-                          res = arg1 => res
+                          res = arg1 <| res
                         end
                       end
                       res = listReverse(res)
@@ -5461,7 +5736,11 @@
               local outStr::String
 
               outStr = begin
-                  local str::Ident, s::Ident, str1::Ident, str2::Ident, str3::Ident
+                  local str::Ident
+                  local s::Ident
+                  local str1::Ident
+                  local str2::Ident
+                  local str3::Ident
                   local path::Path
                   local adim::Option{List{Subscript}}
                   local typeSpecLst::List{TypeSpec}
@@ -5583,33 +5862,36 @@
               local outAbsynComponentRefLst::List{ComponentRef}
 
               outAbsynComponentRefLst = begin
-                  local n1::String, n2::String
-                  local rest_1::List{ComponentRef}, rest::List{ComponentRef}
-                  local cr1::ComponentRef, cr2::ComponentRef
+                  local n1::String
+                  local n2::String
+                  local rest_1::List{ComponentRef}
+                  local rest::List{ComponentRef}
+                  local cr1::ComponentRef
+                  local cr2::ComponentRef
                 @matchcontinue inAbsynComponentRefLst, inComponentRef begin
-                  ( Nil(), _)  => begin
+                  ( nil(), _)  => begin
                     list()
                   end
 
-                  (cr1 => rest, cr2)  => begin
+                  (cr1 <| rest, cr2)  => begin
                       CREF_IDENT(name = n1, subscripts = list()) = cr1
                       CREF_IDENT(name = n2, subscripts = list()) = cr2
-                      true = stringEq(n1, n2)
+                      @assert true == (stringEq(n1, n2))
                       rest_1 = removeCrefFromCrefs(rest, cr2)
                     rest_1
                   end
 
-                  (cr1 => rest, cr2)  => begin
+                  (cr1 <| rest, cr2)  => begin
                       CREF_QUAL(name = n1) = cr1
                       CREF_IDENT(name = n2) = cr2
-                      true = stringEq(n1, n2)
+                      @assert true == (stringEq(n1, n2))
                       rest_1 = removeCrefFromCrefs(rest, cr2)
                     rest_1
                   end
 
-                  (cr1 => rest, cr2)  => begin
+                  (cr1 <| rest, cr2)  => begin
                       rest_1 = removeCrefFromCrefs(rest, cr2)
-                    cr1 => rest_1
+                    cr1 <| rest_1
                   end
                 end
               end
@@ -5623,7 +5905,8 @@
               local outString::Option{TypeA}
 
               outString = begin
-                  local str::TypeA, res::TypeA
+                  local str::TypeA
+                  local res::TypeA
                   local parts::List{ClassPart}
                   local annlst::List{ElementArg}
                   local ann::List{Annotation}
@@ -5672,21 +5955,22 @@
                   local ann::ElementArg
                   local mod::Option{Modification}
                   local xs::List{ElementArg}
-                  local id1::Ident, id2::Ident
+                  local id1::Ident
+                  local id2::Ident
                   local rest::Path
                 @matchcontinue inAbsynElementArgLst, id, f begin
-                  (MODIFICATION(path = IDENT(name = id1), modification = mod) => _, IDENT(id2), _)  => begin
-                      true = stringEq(id1, id2)
+                  (MODIFICATION(path = IDENT(name = id1), modification = mod) <| _, IDENT(id2), _)  => begin
+                      @assert true == (stringEq(id1, id2))
                       str = f(mod)
                     SOME(str)
                   end
 
-                  (MODIFICATION(path = IDENT(name = id1), modification = SOME(CLASSMOD(elementArgLst = xs))) => _, QUALIFIED(name = id2, path = rest), _)  => begin
-                      true = stringEq(id1, id2)
+                  (MODIFICATION(path = IDENT(name = id1), modification = SOME(CLASSMOD(elementArgLst = xs))) <| _, QUALIFIED(name = id2, path = rest), _)  => begin
+                      @assert true == (stringEq(id1, id2))
                     getNamedAnnotationStr(xs, rest, f)
                   end
 
-                  (_ => xs, _, _)  => begin
+                  (_ <| xs, _, _)  => begin
                     getNamedAnnotationStr(xs, id, f)
                   end
                 end
@@ -5794,16 +6078,16 @@
                   local e::Element
                   local rest::List{ElementItem}
                 @matchcontinue elts begin
-                   Nil()  => begin
+                   nil()  => begin
                     list()
                   end
 
-                  ELEMENTITEM(e = DEFINEUNIT()) => rest  => begin
+                  ELEMENTITEM(e = DEFINEUNIT()) <| rest  => begin
                       outElts = getDefineUnitsInElements(rest)
-                    e => outElts
+                    e <| outElts
                   end
 
-                  _ => rest  => begin
+                  _ <| rest  => begin
                     getDefineUnitsInElements(rest)
                   end
                 end
@@ -5857,9 +6141,9 @@
           outElements
         end
 
-        function traverseClassComponents(inClass::Class, inFunc::FuncType, inArg::ArgT)::Tuple{ArgT, Class} where {ArgT<: Any}
+        function traverseClassComponents(inClass::Class, inFunc::FuncType, inArg::ArgT)::Tuple{ArgT, Class} where {ArgT <: Any}
               local outArg::ArgT
-              local outClass = inClass::Class
+              local outClass::Class = inClass
 
               outClass = begin
                   local body::ClassDef
@@ -5873,23 +6157,25 @@
                   end
                 end
               end
-          (outArg, outClass = inClass)
+          (outArg, outClass)
         end
 
-        function traverseListGeneric(inList::List{T}, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, List{T}} where {T<: Any,ArgT<: Any}
-              local outContinue = true::Bool
-              local outArg = inArg::ArgT
-              local outList = list()::List{T}
+        function traverseListGeneric(inList::List{T}, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, List{T}} where {T <: Any,ArgT <: Any}
+              local outContinue::Bool = true
+              local outArg::ArgT = inArg
+              local outList::List{T} = list()
 
-              local eq::Bool, changed = false::Bool
-              local e::T, new_e::T
-              local rest_e = inList::List{T}
+              local eq::Bool
+              local changed::Bool = false
+              local e::T
+              local new_e::T
+              local rest_e::List{T} = inList
 
               while ! listEmpty(rest_e)
-                e => rest_e = rest_e
+                e, rest_e = listHead(rest_e), listRest(rest_e)
                 new_e, outArg, outContinue = inFunc(e, outArg)
                 eq = referenceEq(new_e, e)
-                outList = if eq e else new_e end => outList
+                outList = if eq e else new_e end <| outList
                 changed = changed || ! eq
                 if ! outContinue
                   break
@@ -5900,13 +6186,13 @@
               else
                 outList = inList
               end
-          (outContinue = true, outArg = inArg, outList = list())
+          (outContinue, outArg, outList)
         end
 
-        function traverseClassPartComponents(inClassPart::ClassPart, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ClassPart} where {ArgT<: Any}
-              local outContinue = true::Bool
-              local outArg = inArg::ArgT
-              local outClassPart = inClassPart::ClassPart
+        function traverseClassPartComponents(inClassPart::ClassPart, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ClassPart} where {ArgT <: Any}
+              local outContinue::Bool = true
+              local outArg::ArgT = inArg
+              local outClassPart::ClassPart = inClassPart
 
               _ = begin
                   local items::List{ElementItem}
@@ -5928,10 +6214,10 @@
                   end
                 end
               end
-          (outContinue = true, outArg = inArg, outClassPart = inClassPart)
+          (outContinue, outArg, outClassPart)
         end
 
-        function traverseElementItemComponents(inItem::ElementItem, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ElementItem} where {ArgT<: Any}
+        function traverseElementItemComponents(inItem::ElementItem, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ElementItem} where {ArgT <: Any}
               local outContinue::Bool
               local outArg::ArgT
               local outItem::ElementItem
@@ -5953,10 +6239,10 @@
           (outContinue, outArg, outItem)
         end
 
-        function traverseElementComponents(inElement::Element, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, Element} where {ArgT<: Any}
+        function traverseElementComponents(inElement::Element, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, Element} where {ArgT <: Any}
               local outContinue::Bool
               local outArg::ArgT
-              local outElement = inElement::Element
+              local outElement::Element = inElement
 
               outElement, outArg, outContinue = begin
                   local spec::ElementSpec
@@ -5974,13 +6260,13 @@
                   end
                 end
               end
-          (outContinue, outArg, outElement = inElement)
+          (outContinue, outArg, outElement)
         end
 
-        function traverseElementSpecComponents(inSpec::ElementSpec, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ElementSpec} where {ArgT<: Any}
+        function traverseElementSpecComponents(inSpec::ElementSpec, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ElementSpec} where {ArgT <: Any}
               local outContinue::Bool
               local outArg::ArgT
-              local outSpec = inSpec::ElementSpec
+              local outSpec::ElementSpec = inSpec
 
               outSpec, outArg, outContinue = begin
                   local cls::Class
@@ -5999,13 +6285,13 @@
                   end
                 end
               end
-          (outContinue, outArg, outSpec = inSpec)
+          (outContinue, outArg, outSpec)
         end
 
-        function traverseClassDef(inClassDef::ClassDef, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ClassDef} where {ArgT<: Any}
-              local outContinue = true::Bool
-              local outArg = inArg::ArgT
-              local outClassDef = inClassDef::ClassDef
+        function traverseClassDef(inClassDef::ClassDef, inFunc::FuncType, inArg::ArgT)::Tuple{Bool, ArgT, ClassDef} where {ArgT <: Any}
+              local outContinue::Bool = true
+              local outArg::ArgT = inArg
+              local outClassDef::ClassDef = inClassDef
 
               _ = begin
                   local parts::List{ClassPart}
@@ -6027,7 +6313,7 @@
                   end
                 end
               end
-          (outContinue = true, outArg = inArg, outClassDef = inClassDef)
+          (outContinue, outArg, outClassDef)
         end
 
         function isEmptyMod(inMod::Modification)::Bool
@@ -6035,11 +6321,11 @@
 
               outIsEmpty = begin
                 @match inMod begin
-                  CLASSMOD( Nil(), NOMOD())  => begin
+                  CLASSMOD( nil(), NOMOD())  => begin
                     true
                   end
 
-                  CLASSMOD( Nil(), EQMOD(exp = TUPLE(expressions =  Nil())))  => begin
+                  CLASSMOD( nil(), EQMOD(exp = TUPLE(expressions =  nil())))  => begin
                     true
                   end
 
@@ -6090,7 +6376,8 @@
         function elementArgEqualName(inArg1::ElementArg, inArg2::ElementArg)::Bool
               local outEqual::Bool
 
-              local name1::Path, name2::Path
+              local name1::Path
+              local name2::Path
 
               outEqual = begin
                 @match inArg1, inArg2 begin
@@ -6122,13 +6409,13 @@
         end
 
          #= Splits a cref into parts. =#
-        function crefExplode(inCref::ComponentRef, inAccum = list()::List{ComponentRef})::List{ComponentRef}
+        function crefExplode(inCref::ComponentRef, inAccum::List{ComponentRef})::List{ComponentRef}
               local outCrefParts::List{ComponentRef}
 
               outCrefParts = begin
                 @match inCref begin
                   CREF_QUAL()  => begin
-                    crefExplode(inCref.componentRef, crefFirstCref(inCref) => inAccum)
+                    crefExplode(inCref.componentRef, crefFirstCref(inCref) <| inAccum)
                   end
 
                   CREF_FULLYQUALIFIED()  => begin
@@ -6136,7 +6423,7 @@
                   end
 
                   _  => begin
-                      listReverse(inCref => inAccum)
+                      listReverse(inCref <| inAccum)
                   end
                 end
               end
@@ -6145,11 +6432,12 @@
 
          #= Calls the given function on each subexpression (non-recursively) of the given
            expression, sending in the extra argument to each call. =#
-        function traverseExpShallow(inExp::Exp, inArg::ArgT, inFunc::FuncT)::Exp where {ArgT<: Any}
-              local outExp = inExp::Exp
+        function traverseExpShallow(inExp::Exp, inArg::ArgT, inFunc::FuncT)::Exp where {ArgT <: Any}
+              local outExp::Exp = inExp
 
               _ = begin
-                  local e1::Exp, e2::Exp
+                  local e1::Exp
+                  local e2::Exp
                 @match outExp begin
                   BINARY()  => begin
                       outExp.exp1 = inFunc(outExp.exp1, inArg)
@@ -6246,11 +6534,11 @@
                   end
                 end
               end
-          outExp = inExp
+          outExp
         end
 
-        function traverseExpShallowFuncArgs(inArgs::FunctionArgs, inArg::ArgT, inFunc::FuncT)::FunctionArgs where {ArgT<: Any}
-              local outArgs = inArgs::FunctionArgs
+        function traverseExpShallowFuncArgs(inArgs::FunctionArgs, inArg::ArgT, inFunc::FuncT)::FunctionArgs where {ArgT <: Any}
+              local outArgs::FunctionArgs = inArgs
 
               outArgs = begin
                 @match outArgs begin
@@ -6266,14 +6554,15 @@
                   end
                 end
               end
-          outArgs = inArgs
+          outArgs
         end
 
-        function traverseExpShallowIterator(inIterator::ForIterator, inArg::ArgT, inFunc::FuncT)::ForIterator where {ArgT<: Any}
+        function traverseExpShallowIterator(inIterator::ForIterator, inArg::ArgT, inFunc::FuncT)::ForIterator where {ArgT <: Any}
               local outIterator::ForIterator
 
               local name::String
-              local guard_exp::Option{Exp}, range_exp::Option{Exp}
+              local guard_exp::Option{Exp}
+              local range_exp::Option{Exp}
 
               ITERATOR(name, guard_exp, range_exp) = inIterator
               guard_exp = Util.applyOption1(guard_exp, inFunc, inArg)
@@ -6356,31 +6645,31 @@
 
               outIsEmpty = begin
                 @match inClassPart begin
-                  PUBLIC(contents =  Nil())  => begin
+                  PUBLIC(contents =  nil())  => begin
                     true
                   end
 
-                  PROTECTED(contents =  Nil())  => begin
+                  PROTECTED(contents =  nil())  => begin
                     true
                   end
 
-                  CONSTRAINTS(contents =  Nil())  => begin
+                  CONSTRAINTS(contents =  nil())  => begin
                     true
                   end
 
-                  EQUATIONS(contents =  Nil())  => begin
+                  EQUATIONS(contents =  nil())  => begin
                     true
                   end
 
-                  INITIALEQUATIONS(contents =  Nil())  => begin
+                  INITIALEQUATIONS(contents =  nil())  => begin
                     true
                   end
 
-                  ALGORITHMS(contents =  Nil())  => begin
+                  ALGORITHMS(contents =  nil())  => begin
                     true
                   end
 
-                  INITIALALGORITHMS(contents =  Nil())  => begin
+                  INITIALALGORITHMS(contents =  nil())  => begin
                     true
                   end
 
@@ -6481,7 +6770,7 @@
         end
 
          #= Returns the number of parts a path consists of, e.g. A.B.C gives 3. =#
-        function pathPartCount(path::Path, partsAccum = 0::ModelicaInteger)::ModelicaInteger
+        function pathPartCount(path::Path, partsAccum::ModelicaInteger)::ModelicaInteger
               local parts::ModelicaInteger
 
               parts = begin
@@ -6521,7 +6810,7 @@
         end
 
         function getAnnotationsFromItems(inComponentItems::List{ComponentItem}, ccAnnotations::List{ElementArg})::List{List{ElementArg}}
-              local outLst = list()::List{List{ElementArg}}
+              local outLst::List{List{ElementArg}} = list()
 
               local annotations::List{Absyn.ElementArg}
               local res::List{String}
@@ -6539,9 +6828,9 @@
                     end
                   end
                 end
-                outLst = annotations => outLst
+                outLst = annotations <| outLst
               end
-          outLst = list()
+          outLst
         end
 
          #=  This function strips out the `graphics\\' modification from an ElementArg
@@ -6553,32 +6842,34 @@
 
               outAbsynElementArgLst1, outAbsynElementArgLst2 = begin
                   local mod::Absyn.ElementArg
-                  local rest::List{Absyn.ElementArg}, l1::List{Absyn.ElementArg}, l2::List{Absyn.ElementArg}
+                  local rest::List{Absyn.ElementArg}
+                  local l1::List{Absyn.ElementArg}
+                  local l2::List{Absyn.ElementArg}
                    #=  handle empty
                    =#
                 @matchcontinue inAbsynElementArgLst begin
-                   Nil()  => begin
+                   nil()  => begin
                     list(), list()
                   end
 
-                  Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction")) => rest  => begin
+                  Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction")) <| rest  => begin
                       l1, l2 = stripGraphicsAndInteractionModification(rest)
                     l1, l2
                   end
 
-                  Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics")) => rest  => begin
+                  Absyn.MODIFICATION(modification = NONE(), path = Absyn.IDENT(name = "graphics")) <| rest  => begin
                       l1, l2 = stripGraphicsAndInteractionModification(rest)
                     l1, l2
                   end
 
-                  mod = Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics")) => rest  => begin
+                  mod = Absyn.MODIFICATION(modification = SOME(_), path = Absyn.IDENT(name = "graphics")) <| rest  => begin
                       l1, l2 = stripGraphicsAndInteractionModification(rest)
-                    l1, mod => l2
+                    l1, mod <| l2
                   end
 
-                  mod = Absyn.MODIFICATION() => rest  => begin
+                  mod = Absyn.MODIFICATION() <| rest  => begin
                       l1, l2 = stripGraphicsAndInteractionModification(rest)
-                    mod => l1, l2
+                    mod <| l1, l2
                   end
                 end
               end
@@ -6609,8 +6900,10 @@
 
               outTpl = begin
                   local classes::List{Absyn.Class}
-                  local pa_1::Option{Absyn.Path}, pa::Option{Absyn.Path}
-                  local args_1::Type_a, args::Type_a
+                  local pa_1::Option{Absyn.Path}
+                  local pa::Option{Absyn.Path}
+                  local args_1::Type_a
+                  local args::Type_a
                   local within_::Absyn.Within
                   local visitor::FuncType
                   local traverse_prot::Bool
@@ -6631,37 +6924,46 @@
               local outTpl::Tuple{List{Absyn.Class}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
-                  local pa::Option{Absyn.Path}, pa_1::Option{Absyn.Path}, pa_2::Option{Absyn.Path}, pa_3::Option{Absyn.Path}
+                  local pa::Option{Absyn.Path}
+                  local pa_1::Option{Absyn.Path}
+                  local pa_2::Option{Absyn.Path}
+                  local pa_3::Option{Absyn.Path}
                   local visitor::FuncType
-                  local args::Type_a, args_1::Type_a, args_2::Type_a, args_3::Type_a
-                  local class_1::Absyn.Class, class_2::Absyn.Class, class_::Absyn.Class
-                  local classes_1::List{Absyn.Class}, classes::List{Absyn.Class}
+                  local args::Type_a
+                  local args_1::Type_a
+                  local args_2::Type_a
+                  local args_3::Type_a
+                  local class_1::Absyn.Class
+                  local class_2::Absyn.Class
+                  local class_::Absyn.Class
+                  local classes_1::List{Absyn.Class}
+                  local classes::List{Absyn.Class}
                   local traverse_prot::Bool
                 @matchcontinue inClasses, inPath, inFunc, inArg, inVisitProtected begin
-                  ( Nil(), pa, _, args, _)  => begin
+                  ( nil(), pa, _, args, _)  => begin
                     list(), pa, args
                   end
 
-                  (class_ => classes, pa, visitor, args, traverse_prot)  => begin
+                  (class_ <| classes, pa, visitor, args, traverse_prot)  => begin
                       class_1, _, args_1 = visitor(class_, pa, args)
                       class_2, _, args_2 = traverseInnerClass(class_1, pa, visitor, args_1, traverse_prot)
                       classes_1, pa_3, args_3 = traverseClasses2(classes, pa, visitor, args_2, traverse_prot)
-                    class_2 => classes_1, pa_3, args_3
+                    class_2 <| classes_1, pa_3, args_3
                   end
 
-                  (class_ => classes, pa, visitor, args, traverse_prot)  => begin
+                  (class_ <| classes, pa, visitor, args, traverse_prot)  => begin
                       class_2, _, args_2 = traverseInnerClass(class_, pa, visitor, args, traverse_prot)
-                      true = classHasLocalClasses(class_2)
+                      @assert true == (classHasLocalClasses(class_2))
                       classes_1, pa_3, args_3 = traverseClasses2(classes, pa, visitor, args_2, traverse_prot)
-                    class_2 => classes_1, pa_3, args_3
+                    class_2 <| classes_1, pa_3, args_3
                   end
 
-                  (_ => classes, pa, visitor, args, traverse_prot)  => begin
+                  (_ <| classes, pa, visitor, args, traverse_prot)  => begin
                       classes_1, pa_3, args_3 = traverseClasses2(classes, pa, visitor, args, traverse_prot)
                     classes_1, pa_3, args_3
                   end
 
-                  (class_ => _, _, _, _, _)  => begin
+                  (class_ <| _, _, _, _, _)  => begin
                       print("-traverse_classes2 failed on class:")
                       print(AbsynUtil.pathString(AbsynUtil.className(class_)))
                       print("\n")
@@ -6708,17 +7010,17 @@
                   local elts::List{Absyn.ElementItem}
                   local parts::List{Absyn.ClassPart}
                 @matchcontinue inParts begin
-                  Absyn.PUBLIC(elts) => _  => begin
-                      true = eltsHasLocalClass(elts)
+                  Absyn.PUBLIC(elts) <| _  => begin
+                      @assert true == (eltsHasLocalClass(elts))
                     true
                   end
 
-                  Absyn.PROTECTED(elts) => _  => begin
-                      true = eltsHasLocalClass(elts)
+                  Absyn.PROTECTED(elts) <| _  => begin
+                      @assert true == (eltsHasLocalClass(elts))
                     true
                   end
 
-                  _ => parts  => begin
+                  _ <| parts  => begin
                     partsHasLocalClass(parts)
                   end
 
@@ -6737,11 +7039,11 @@
               res = begin
                   local elts::List{Absyn.ElementItem}
                 @matchcontinue inElts begin
-                  Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF())) => _  => begin
+                  Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF())) <| _  => begin
                     true
                   end
 
-                  _ => elts  => begin
+                  _ <| elts  => begin
                     eltsHasLocalClass(elts)
                   end
 
@@ -6758,12 +7060,19 @@
               local outTpl::Tuple{Absyn.Class, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
-                  local tmp_pa::Absyn.Path, pa::Absyn.Path
-                  local parts_1::List{Absyn.ClassPart}, parts::List{Absyn.ClassPart}
+                  local tmp_pa::Absyn.Path
+                  local pa::Absyn.Path
+                  local parts_1::List{Absyn.ClassPart}
+                  local parts::List{Absyn.ClassPart}
                   local pa_1::Option{Absyn.Path}
-                  local args_1::Type_a, args::Type_a
-                  local name::String, bcname::String
-                  local p::Bool, f::Bool, e::Bool, visit_prot::Bool
+                  local args_1::Type_a
+                  local args::Type_a
+                  local name::String
+                  local bcname::String
+                  local p::Bool
+                  local f::Bool
+                  local e::Bool
+                  local visit_prot::Bool
                   local r::Absyn.Restriction
                   local str_opt::Option{String}
                   local file_info::SourceInfo
@@ -6823,33 +7132,39 @@
               local outTpl::Tuple{List{Absyn.ClassPart}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
-                  local pa::Option{Absyn.Path}, pa_1::Option{Absyn.Path}, pa_2::Option{Absyn.Path}
-                  local args::Type_a, args_1::Type_a, args_2::Type_a
-                  local elts_1::List{Absyn.ElementItem}, elts::List{Absyn.ElementItem}
-                  local parts_1::List{Absyn.ClassPart}, parts::List{Absyn.ClassPart}
+                  local pa::Option{Absyn.Path}
+                  local pa_1::Option{Absyn.Path}
+                  local pa_2::Option{Absyn.Path}
+                  local args::Type_a
+                  local args_1::Type_a
+                  local args_2::Type_a
+                  local elts_1::List{Absyn.ElementItem}
+                  local elts::List{Absyn.ElementItem}
+                  local parts_1::List{Absyn.ClassPart}
+                  local parts::List{Absyn.ClassPart}
                   local visitor::FuncType
                   local visit_prot::Bool
                   local part::Absyn.ClassPart
                 @matchcontinue inClassParts, inPath, inFunc, inArg, inVisitProtected begin
-                  ( Nil(), pa, _, args, _)  => begin
+                  ( nil(), pa, _, args, _)  => begin
                     list(), pa, args
                   end
 
-                  (Absyn.PUBLIC(contents = elts) => parts, pa, visitor, args, visit_prot)  => begin
+                  (Absyn.PUBLIC(contents = elts) <| parts, pa, visitor, args, visit_prot)  => begin
                       elts_1, _, args_1 = traverseInnerClassElements(elts, pa, visitor, args, visit_prot)
                       parts_1, pa_2, args_2 = traverseInnerClassParts(parts, pa, visitor, args_1, visit_prot)
-                    Absyn.PUBLIC(elts_1) => parts_1, pa_2, args_2
+                    Absyn.PUBLIC(elts_1) <| parts_1, pa_2, args_2
                   end
 
-                  (Absyn.PROTECTED(contents = elts) => parts, pa, visitor, args, true)  => begin
+                  (Absyn.PROTECTED(contents = elts) <| parts, pa, visitor, args, true)  => begin
                       elts_1, _, args_1 = traverseInnerClassElements(elts, pa, visitor, args, true)
                       parts_1, pa_2, args_2 = traverseInnerClassParts(parts, pa, visitor, args_1, true)
-                    Absyn.PROTECTED(elts_1) => parts_1, pa_2, args_2
+                    Absyn.PROTECTED(elts_1) <| parts_1, pa_2, args_2
                   end
 
-                  (part => parts, pa, visitor, args, true)  => begin
+                  (part <| parts, pa, visitor, args, true)  => begin
                       parts_1, pa_1, args_1 = traverseInnerClassParts(parts, pa, visitor, args, true)
-                    part => parts_1, pa_1, args_1
+                    part <| parts_1, pa_1, args_1
                   end
                 end
               end
@@ -6861,11 +7176,18 @@
               local outTpl::Tuple{List{Absyn.ElementItem}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
-                  local pa::Option{Absyn.Path}, pa_1::Option{Absyn.Path}, pa_2::Option{Absyn.Path}
-                  local args::Type_a, args_1::Type_a, args_2::Type_a
-                  local elt_spec_1::Absyn.ElementSpec, elt_spec::Absyn.ElementSpec
-                  local elts_1::List{Absyn.ElementItem}, elts::List{Absyn.ElementItem}
-                  local f::Bool, visit_prot::Bool
+                  local pa::Option{Absyn.Path}
+                  local pa_1::Option{Absyn.Path}
+                  local pa_2::Option{Absyn.Path}
+                  local args::Type_a
+                  local args_1::Type_a
+                  local args_2::Type_a
+                  local elt_spec_1::Absyn.ElementSpec
+                  local elt_spec::Absyn.ElementSpec
+                  local elts_1::List{Absyn.ElementItem}
+                  local elts::List{Absyn.ElementItem}
+                  local f::Bool
+                  local visit_prot::Bool
                   local r::Option{Absyn.RedeclareKeywords}
                   local io::Absyn.InnerOuter
                   local info::SourceInfo
@@ -6875,31 +7197,31 @@
                   local repl::Bool
                   local cl::Absyn.Class
                 @matchcontinue inElements, inPath, inFuncType, inArg, inVisitProtected begin
-                  ( Nil(), pa, _, args, _)  => begin
+                  ( nil(), pa, _, args, _)  => begin
                     list(), pa, args
                   end
 
-                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = io, specification = elt_spec, info = info, constrainClass = constr)) => elts, pa, visitor, args, visit_prot)  => begin
+                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = io, specification = elt_spec, info = info, constrainClass = constr)) <| elts, pa, visitor, args, visit_prot)  => begin
                       elt_spec_1, _, args_1 = traverseInnerClassElementspec(elt_spec, pa, visitor, args, visit_prot)
                       elts_1, pa_2, args_2 = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot)
-                    Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, io, elt_spec_1, info, constr)) => elts_1, pa_2, args_2
+                    Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, io, elt_spec_1, info, constr)) <| elts_1, pa_2, args_2
                   end
 
-                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = io, specification = Absyn.CLASSDEF(repl, cl), info = info, constrainClass = constr)) => elts, pa, visitor, args, visit_prot)  => begin
+                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = io, specification = Absyn.CLASSDEF(repl, cl), info = info, constrainClass = constr)) <| elts, pa, visitor, args, visit_prot)  => begin
                       cl, _, args_1 = traverseInnerClass(cl, pa, visitor, args, visit_prot)
-                      true = classHasLocalClasses(cl)
+                      @assert true == (classHasLocalClasses(cl))
                       elts_1, pa_2, args_2 = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot)
-                    Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, io, Absyn.CLASSDEF(repl, cl), info, constr)) => elts_1, pa_2, args_2
+                    Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, io, Absyn.CLASSDEF(repl, cl), info, constr)) <| elts_1, pa_2, args_2
                   end
 
-                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT()) => elts, pa, visitor, args, visit_prot)  => begin
+                  (Absyn.ELEMENTITEM(element = Absyn.ELEMENT()) <| elts, pa, visitor, args, visit_prot)  => begin
                       elts_1, pa_2, args_2 = traverseInnerClassElements(elts, pa, visitor, args, visit_prot)
                     elts_1, pa_2, args_2
                   end
 
-                  (elt => elts, pa, visitor, args, visit_prot)  => begin
+                  (elt <| elts, pa, visitor, args, visit_prot)  => begin
                       elts_1, pa_1, args_1 = traverseInnerClassElements(elts, pa, visitor, args, visit_prot)
-                    elt => elts_1, pa_1, args_1
+                    elt <| elts_1, pa_1, args_1
                   end
                 end
               end
@@ -6913,10 +7235,17 @@
               local outTpl::Tuple{Absyn.ElementSpec, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
-                  local class_1::Absyn.Class, class_2::Absyn.Class, class_::Absyn.Class
-                  local pa_1::Option{Absyn.Path}, pa_2::Option{Absyn.Path}, pa::Option{Absyn.Path}
-                  local args_1::Type_a, args_2::Type_a, args::Type_a
-                  local repl::Bool, visit_prot::Bool
+                  local class_1::Absyn.Class
+                  local class_2::Absyn.Class
+                  local class_::Absyn.Class
+                  local pa_1::Option{Absyn.Path}
+                  local pa_2::Option{Absyn.Path}
+                  local pa::Option{Absyn.Path}
+                  local args_1::Type_a
+                  local args_2::Type_a
+                  local args::Type_a
+                  local repl::Bool
+                  local visit_prot::Bool
                   local visitor::FuncType
                   local elt_spec::Absyn.ElementSpec
                 @match inElementSpec, inPath, inFuncType, inArg, inVisitProtected begin

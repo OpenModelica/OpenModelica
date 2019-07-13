@@ -1,4 +1,8 @@
 package AbsynToJulia
+"
+ Translates Absyn to Julia.
+ @Authors: John Tinnerholm & Martin Sjoelund
+"
 /* TODOS:
 
 TODO: Public/Private semantics : (
@@ -85,7 +89,8 @@ match class
     */
     <<
     <%commentStr%>
-    function <%name%>(<%inputs_str%>)<%returnType%> <%header%>
+    function <%name%>(<%inputs_str%>)<%returnType%>
+      <%header%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -184,7 +189,7 @@ match restriction
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
   /*Not pretty. But should solve generic functions scathered here and there*/
   case R_FUNCTION(__) then
-    (if typeVars then "where {" + (typeVars |> tv => (tv + "<: Any") ; separator=",") + "}")
+    (if typeVars then ((typeVars |> tv => tv + " = Any " ; separator=",")))
   else ""
 end dumpClassTypeTypeVars;
 
@@ -211,7 +216,7 @@ template dumpInputsJL(list<ElementItem> inputs, Context context)
 ::=
   let inputStr = (listReverse((MMToJuliaUtil.filterOnDirection(inputs, MMToJuliaUtil.makeInputDirection())))
     |> ei
-      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), context)%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), context)%>'
+      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), context)%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), inputContext)%>'
       ;separator=", ")
  '<%inputStr%>'
 
@@ -499,26 +504,36 @@ match specification
     let ann_str = dumpAnnotationOptSpace(annotationOpt, context)
     'extends <%bc_str%><%mod_str%><%ann_str%>'
   case COMPONENTS(__) then
-    let ty_str = dumpTypeSpec(typeSpec, context)
     let attr_str = dumpElementAttr(attributes)
     /* Remove all items with input-output specification. They are handled earlier and separate! */
+    let ty_str = dumpTypeSpec(typeSpec, context)
     let comps_str = if elementSpecIsOUTPUT_OR_BIDIR(specification) then
                       (components |> comp =>
-                        let comp_str = dumpComponentItem(comp, context)
-                          '<%comp_str%>::<%ty_str%>'
-                      ;separator=", ")
+                        let comp_str = dumpComponentItem(comp, makeFunctionReturnContext("",ty_str))
+                          'local <%comp_str%>'
+                      ;separator="\n")
                     else ''
-    //TODO more check for more complex variables..
+    let comps_str_no_local = if elementSpecIsOUTPUT_OR_BIDIR(specification) then
+                      (components |> comp =>
+                        let comp_str = dumpComponentItem(comp, noContext)
+                          ' <%comp_str%>::<%ty_str%>'
+                      ;separator="\n")
+                    else ''
+   /*If our context is a function context we need to redefine comps_str*/
+   let rStr = match context
+     case FUNCTION(__) then
+       '<%retValsStr%>'
+     else''
+   /* No local decl if we do not have a comps_str! */
     match context
       case FUNCTION(__) then
-        /* No local decl if we do not have a comps_str! */
         if comps_str then
-          'local <%comps_str%>'
+          '<%comps_str%>'
         else ''
       case UNIONTYPE(__) then
-        '<%comps_str%>'
+        '<%comps_str_no_local%>'
       case PACKAGE(__) then
-        '<%comps_str%>'
+        '<%comps_str_no_local%>'
       else 'ERROR'
   case IMPORT(__) then
     let imp_str = dumpImport(import_)
@@ -576,7 +591,7 @@ match comp
     let comp_str = dumpComponent(component, context)
     let cond_str = dumpComponentCondition(condition, context) //TODO. This will complicate things...
     let cmt = dumpCommentOpt(comment, context)
-    '<%comp_str%><%cond_str%><%cmt%>'
+      '<%comp_str%><%cond_str%><%cmt%>'
 end dumpComponentItem;
 
 template dumpComponentItemWithoutCondString(Absyn.ComponentItem comp, Context context)
@@ -594,7 +609,12 @@ match comp
   case COMPONENT(__) then
     let dim_str = dumpSubscripts(arrayDim, context)
     let mod_str = match modification case SOME(mod) then dumpModification(mod, context)
-    '<%name%><%dim_str%><%mod_str%>'
+    let component_name = '<%name%>'
+    /*REFACTOR INVERSE NAME INVERSE MEANING!*/
+    match context
+      case FUNCTION_RETURN_CONTEXT(__) then '<%component_name%>::<%ty_str%><%dim_str%><%mod_str%>'
+      case FUNCTION(__) then '<%component_name%>'
+      else '<%component_name%><%dim_str%><%mod_str%>'
 end dumpComponent;
 
 template dumpComponentCondition(Option<Absyn.ComponentCondition> cond, Context context)
@@ -646,9 +666,16 @@ template dumpAlgorithm(Absyn.Algorithm alg, Context context)
 ::=
 match alg
   case ALG_ASSIGN(__) then
-    let lhs_str = dumpLhsExp(assignComponent, context)
+    let lhs_str = dumpLhsExp(assignComponent, makeFunctionContext("listMatchAssign"))
     let rhs_str = dumpExp(value, context)
-    '<%lhs_str%> = <%rhs_str%>'
+    /* Somtimes assignments are used as assertions. There are probably more cases...*/
+    match assignComponent
+      case  CREF(__) then '<%lhs_str%> = <%rhs_str%>'
+      case  TUPLE(__) then '<%lhs_str%> = <%rhs_str%>'
+      case  CALL(__) then '<%lhs_str%> = <%rhs_str%>'
+      /* Lets do a crazy oneliner :)) */
+      case  CONS(__) then '<%lhs_str%> = listHead(<%rhs_str%>), listRest(<%rhs_str%>)'
+      else  '@assert <%lhs_str%> == (<%rhs_str%>)'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
     let elseif_str = (elseIfAlgorithmBranch |> (c, b) =>
@@ -768,7 +795,11 @@ template dumpTypeSpecOpt(Option<Absyn.TypeSpec> typespecOpt, Context context)
 end dumpTypeSpecOpt;
 
 template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
-"Dumps the type specification"
+"
+  Dumps the type specification. We currently ignore complex types.
+  Possible to implement by declaring unique T for each parameter T1, T2,T3 and so on
+  might not be needed. I hope :(
+"
 ::=
 match typeSpec
   case TPATH(__) then
@@ -779,7 +810,7 @@ match typeSpec
     let path_str = dumpPathJL(path)
     let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty, context) ;separator=", ")
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
-    '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
+    '<%path_str%><%arraydim_str%>'
 end dumpTypeSpec;
 
 template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
@@ -890,7 +921,13 @@ match exp
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
-    '<%head_str%> => <%rest_str%>'
+    /* There is one special case in match expression where we need to construct a tuple instead of a cons */
+    match context
+      case FUNCTION(__) then
+        match retValsStr
+          case "listMatchAssign" then '<%head_str%>, <%rest_str%>'
+          else '<%head_str%> <| <%rest_str%>'
+      else '<%head_str%> <| <%rest_str%>'
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
@@ -912,7 +949,7 @@ match exp
   case LIST(__)
   case CALL(function_=Absyn.CREF_IDENT(name="list"), functionArgs=FUNCTIONARGS(args=exps))
   case CALL(function_=Absyn.CREF_IDENT(name="$array"), functionArgs=FUNCTIONARGS(args=exps)) then
-    '<%exps |> e => '<%dumpPattern(e)%> => '%> Nil()'
+    '<%exps |> e => '<%dumpPattern(e)%> <| '%> nil()'
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
     let func_str = (match id
@@ -937,7 +974,7 @@ match exp
 end dumpPattern;
 
 template dumpCons(String headString, String tailString)
-::= '<%headString%> => <%tailString%>'
+::= '<%headString%> <| <%tailString%>'
 end dumpCons;
 
 template dumpFunctionArgsPattern(Absyn.FunctionArgs args)
@@ -1145,7 +1182,6 @@ match iterator
     let guard_str = match guardExp case SOME(g) then ' if <%dumpExp(g, context)%>'
     '<%name%><%range_str%><%guard_str%>'
 end dumpForIterator;
-
 
 template dumpForIteratorRanges(Absyn.ForIterator iterator, Context context)
 ::=

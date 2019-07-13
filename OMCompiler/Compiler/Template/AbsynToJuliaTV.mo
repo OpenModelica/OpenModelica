@@ -986,16 +986,26 @@ package MMToJuliaUtil
   uniontype Context
     record FUNCTION
       String retValsStr;
+      String ty_str;
     end FUNCTION;
+    record FUNCTION_RETURN_CONTEXT
+      String retValsStr "Contains return values";
+      String ty_str "String of the type we are currently operating on";
+    end FUNCTION_RETURN_CONTEXT;
     record PACKAGE
     end PACKAGE;
     record UNIONTYPE
       String name;
     end UNIONTYPE;
+    record INPUT_CONTEXT
+    end INPUT_CONTEXT;
+    record NO_CONTEXT
+    end NO_CONTEXT;
   end Context;
   constant Context packageContext;
   constant Context functionContext;
   constant Context noContext;
+  constant Context inputContext;
   function makeUniontypeContext
     input String name;
     output Context context;
@@ -1004,6 +1014,11 @@ package MMToJuliaUtil
     input String returnValuesStr;
     output Context context;
   end makeFunctionContext;
+  function makeFunctionReturnContext
+    input String returnValuesStr;
+    input String ty_str;
+    output Context context;
+  end makeFunctionReturnContext;
   function filterOnDirection
     input list<Absyn.ElementItem> inputs;
     input Absyn.Direction direction;

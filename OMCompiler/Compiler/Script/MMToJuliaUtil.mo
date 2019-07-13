@@ -37,20 +37,34 @@ import AbsynUtil;
 public
 uniontype Context
   record FUNCTION
-    String retValsStr;
+    String retValsStr "Contains return values";
   end FUNCTION;
+
+  record FUNCTION_RETURN_CONTEXT
+    String retValsStr "Contains return values";
+    String ty_str "String of the type we are currently operating on";
+  end FUNCTION_RETURN_CONTEXT;
+
   record PACKAGE
   end PACKAGE;
+
   record UNIONTYPE
     String name;
   end UNIONTYPE;
+
   record NO_CONTEXT
   end NO_CONTEXT;
+
+  record INPUT_CONTEXT
+  end INPUT_CONTEXT;
+
 end Context;
 
 constant Context packageContext = PACKAGE();
 constant Context noContext = NO_CONTEXT();
 constant Context functionContext = FUNCTION("");
+constant Context returnContext = FUNCTION_RETURN_CONTEXT("","");
+constant Context inputContext = INPUT_CONTEXT();
 
 function makeUniontypeContext
   input String name;
@@ -65,6 +79,15 @@ function makeFunctionContext
 algorithm
   context := FUNCTION(returnValuesStr);
 end makeFunctionContext;
+
+function makeFunctionReturnContext
+  input String returnValuesStr;
+  input String ty_str;
+  output Context context;
+algorithm
+  context := FUNCTION_RETURN_CONTEXT(returnValuesStr, ty_str);
+end makeFunctionReturnContext;
+
 
 function makeInputDirection
   output Absyn.Direction direction;

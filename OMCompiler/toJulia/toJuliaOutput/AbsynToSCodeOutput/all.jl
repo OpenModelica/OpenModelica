@@ -1,0 +1,7 @@
+push!(LOAD_PATH, "./OMCompiler/toJulia/toJuliaOutput/AbsynToSCode")
+println(ARGS)
+include("./Absyn.jl")
+include("./AbsynUtil.jl")
+include("./List.jl")
+include("./SCode.jl")
+include("./SCodeUtil.jl")
