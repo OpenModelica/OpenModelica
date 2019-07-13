@@ -3,6 +3,8 @@ package Algorithms
   This files contains a couple of different algorithms; no match or matchcontinue expressions.
 */
 
+import MetaModelica.Dangerous;
+
 uniontype Complex
   record COMPLEX
     Real r;
@@ -249,5 +251,30 @@ algorithm
     end if;
   end if;
 end sort;
+
+public function split<T>
+  "Takes a list and a position, and splits the list at the position given.
+    Example: split({1, 2, 5, 7}, 2) => ({1, 2}, {5, 7})"
+  input list<T> inList;
+  input Integer inPosition;
+  output list<T> outList1;
+  output list<T> outList2;
+protected
+  Integer pos;
+  list<T> l1 = {}, l2 = inList;
+  T e;
+algorithm
+  true := inPosition >= 0;
+  pos := inPosition;
+
+  // Move elements from l2 to l1 until we reach the split position.
+  for i in 1:pos loop
+    e :: l2 := l2;
+    l1 := e :: l1;
+  end for;
+
+  outList1 := Dangerous.listReverseInPlace(l1);
+  outList2 := l2;
+end split;
 
 end Algorithms;

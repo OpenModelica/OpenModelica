@@ -2,11 +2,13 @@
 module TestAlgorithms
 #= We might fail here already =#
 include("../OutputAlgorithms/Algorithms.jl")
-include("../testsuiteUtil.jl")
 #include("./tableu.jl") For simplex
 using Test
 using .Algorithms
-using .MMToJuliaTestSuiteUtil
+using ..MMToJuliaTestSuiteUtil
+import Random
+using Random
+using MetaModelica
 
 @testset "Test Algorithms" begin
   @test_nothrow_nowarn Algorithms.factorial(5) == 120
@@ -15,6 +17,12 @@ using .MMToJuliaTestSuiteUtil
   @test_nothrow_nowarn Algorithms.fibonacci(10) == 55
   @test_nothrow_nowarn Algorithms.tak(5,5,5) == 5
   @test_nothrow_nowarn length(Algorithms.createTestArray2(10)) == 10
+  #= Attempting to use the builtin merge sort =#
+  @test_nothrow_nowarn length(Algorithms.sort(list(), intGt)) == 0
+  @test_nothrow_nowarn 1 == length(Algorithms.sort(list(1), intGt))
+  testLst = list(randperm(100)...)
+  @test_nothrow_nowarn 100 == length(Algorithms.sort(testLst, intGt))
+  @test_nothrow_nowarn 1 == listHead(Algorithms.sort(testLst, intGt))
 end #= End testset =#
 
 end
