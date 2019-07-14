@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -2692,7 +2692,7 @@ public function printUsage
 algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
-  Print.printBuf(System.gettext("Copyright © 2015 Open Source Modelica Consortium (OSMC)\n"));
+  Print.printBuf(System.gettext("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
   Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
