@@ -27,53 +27,53 @@ buildModel(problem3); getErrorString();
 // ========================================
 // Number of non zero elements: 4
 // independents [or inputs] (2)
-// {x[1], x[2]}
+// {x[2], x[1]}
 // dependents [or outputs] (2)
 // {$res1, $res2}
-// x[1] affects the following (2) outputs
-//   {$res2, $res1}
 // x[2] affects the following (2) outputs
+//   {$res2, $res1}
+// x[1] affects the following (2) outputs
 //   {$res2, $res1}
 //
 // transposed pattern
 // $res1 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 // $res2 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 //
 //  --- Sparsity Coloring ---
 // ========================================
 // Number of colors: 2
 // The following (1) independents belong to one color
-// 0: {x[1]}
+// 0: {x[2]}
 // The following (1) independents belong to one color
-// 1: {x[2]}
+// 1: {x[1]}
 //
 //  --- SparsityPattern ---
 // ========================================
 // Number of non zero elements: 4
 // independents [or inputs] (2)
-// {x[1], x[2]}
+// {x[2], x[1]}
 // dependents [or outputs] (2)
 // {$res1, $res2}
-// x[1] affects the following (2) outputs
-//   {$res2, $res1}
 // x[2] affects the following (2) outputs
+//   {$res2, $res1}
+// x[1] affects the following (2) outputs
 //   {$res2, $res1}
 //
 // transposed pattern
 // $res1 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 // $res2 affects the following (2) outputs
-//   {x[1], x[2]}
+//   {x[2], x[1]}
 //
 //  --- Sparsity Coloring ---
 // ========================================
 // Number of colors: 2
 // The following (1) independents belong to one color
-// 0: {x[1]}
+// 0: {x[2]}
 // The following (1) independents belong to one color
-// 1: {x[2]}
+// 1: {x[1]}
 // {"problem3","problem3_init.xml"}
 // "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
 // To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.

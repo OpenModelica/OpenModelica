@@ -152,19 +152,19 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"14\" name=\"$DER.spring1.f\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Force between flanges (positive in direction of flange axis R)\">
+// <variable id=\"14\" name=\"$DER.damper1.v_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
 // <attributesValues>
 // <fixed string=\"false\">
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"15\" name=\"$DER.spring1.s_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
+// <variable id=\"15\" name=\"$DER.spring1.f\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Force between flanges (positive in direction of flange axis R)\">
 // <attributesValues>
 // <fixed string=\"false\">
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"16\" name=\"$DER.damper1.v_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
+// <variable id=\"16\" name=\"$DER.spring1.s_rel\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
 // <attributesValues>
 // <fixed string=\"false\">
 // </fixed>
@@ -519,9 +519,9 @@ readFile("stateSpace-MSD.xml");
 // <solvedIn variableId=\"11\" equationId=\"13\" />
 // <solvedIn variableId=\"12\" equationId=\"6\" />
 // <solvedIn variableId=\"13\" equationId=\"5\" />
-// <solvedIn variableId=\"14\" equationId=\"15\" />
-// <solvedIn variableId=\"15\" equationId=\"14\" />
-// <solvedIn variableId=\"16\" equationId=\"16\" />
+// <solvedIn variableId=\"14\" equationId=\"16\" />
+// <solvedIn variableId=\"15\" equationId=\"15\" />
+// <solvedIn variableId=\"16\" equationId=\"14\" />
 // <solvedIn variableId=\"17\" equationId=\"17\" />
 // </matchingAlgorithm>
 // <bltRepresentation>
