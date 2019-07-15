@@ -7,6 +7,8 @@ package AbsynToJulia
 
 TODO: Public/Private semantics : (
 
+TODO: Julia does string concatination with * instead of +
+
 */
 
 import interface AbsynToJuliaTV;
@@ -89,8 +91,8 @@ match class
     */
     <<
     <%commentStr%>
+    <%header%>
     function <%name%>(<%inputs_str%>)<%returnType%>
-      <%header%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -189,7 +191,7 @@ match restriction
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
   /*Not pretty. But should solve generic functions scathered here and there*/
   case R_FUNCTION(__) then
-    (if typeVars then ((typeVars |> tv => tv + " = Any " ; separator=",")))
+    (if typeVars then ((typeVars |> tv => tv + " = Any " ; separator="\n")))
   else ""
 end dumpClassTypeTypeVars;
 
@@ -403,7 +405,7 @@ match ann
   case ANNOTATION(__) then
     <<
     #= annotation(
-      <%(elementArgs |> earg => dumpElementArg(earg, context) ;separator=',<%\n%>')%>) #=
+      <%(elementArgs |> earg => dumpElementArg(earg, context) ;separator=',<%\n%>')%>) =#
     >>
 end dumpAnnotation;
 
@@ -907,11 +909,14 @@ match exp
     let stop_str = dumpOperand(stop, e, false, context)
     '<%start_str%>:<%stop_str%>'
   case TUPLE(__) then
-   /* Paranthesis does not seem to be needed for tuples in Julia and gives parse errors..*/
+   /* Paranthesis does not seem to be needed for tuples in Julia
+      and gives parse errors.. In certain situations that is
+      Readded paranthesis and added linebreaks to if expressions. Not
+      safe to generate one line if exprs
+   */
     let tuple_str = (expressions |> e => dumpExp(e,context); separator=", " ;empty)
-    if tuple_str then '<%tuple_str%>'
-    /* Just use underscore and hope nothing breaks */
-    else '_'
+    if tuple_str then '(<%tuple_str%>)'
+    else '()'
   case END(__) then 'end'
   case CODE(__) then '$Code(<%dumpCodeNode(code, context)%>)'
   case AS(__) then
@@ -937,7 +942,7 @@ match exp
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 
-template dumpPattern(Absyn.Exp exp)
+template dumpPattern(Absyn.Exp exp, Context context, Text &as_str)
 ::=
 match exp
   case INTEGER(__) then value
@@ -949,7 +954,7 @@ match exp
   case LIST(__)
   case CALL(function_=Absyn.CREF_IDENT(name="list"), functionArgs=FUNCTIONARGS(args=exps))
   case CALL(function_=Absyn.CREF_IDENT(name="$array"), functionArgs=FUNCTIONARGS(args=exps)) then
-    '<%exps |> e => '<%dumpPattern(e)%> <| '%> nil()'
+    '<%exps |> e => '<%dumpPattern(e, context, &as_str)%> <| '%> nil()'
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
     let func_str = (match id
@@ -961,14 +966,19 @@ match exp
     let args_str = dumpFunctionArgsPattern(functionArgs)
     '<%func_str%>(<%args_str%>)'
   case TUPLE(__) then
-    let tuple_str = (expressions |> e => dumpPattern(e); separator=", " ;empty)
+    let tuple_str = (expressions |> e => dumpPattern(e, context, &as_str); separator=", " ;empty)
     '(<%tuple_str%>)'
   case AS(__) then
-  /*TODO: Macro might be needed here*/
-    let exp_str = dumpPattern(exp)
-    '<%id%> = <%exp_str%>'
+    let exp_str = dumpPattern(exp, context, &as_str)
+    let id_str = '<%id%>'
+    match context
+      case MATCH_CONTEXT(__) then
+        let &as_str += '<%id%>,'
+        '<%exp_str%>'
+      else
+        '<%id_str%> = <%exp_str%>'
   case CONS(__) then
-    let consOp = dumpCons(dumpPattern(head), dumpPattern(rest))
+    let consOp = dumpCons(dumpPattern(head, context, &as_str), dumpPattern(rest, context, &as_str))
     '<%consOp%>'
   case _ then '#= AbsynDumpTpl.dumpPattern: UNHANDLED Abyn.Exp  =#'
 end dumpPattern;
@@ -981,7 +991,7 @@ template dumpFunctionArgsPattern(Absyn.FunctionArgs args)
 ::=
 match args
   case FUNCTIONARGS(__) then
-    let args_str = (args |> arg => dumpPattern(arg) ;separator=", ")
+    let args_str = (args |> arg => dumpPattern(arg, functionContext, emptyTxt) ;separator=", ")
     let namedargs_str = (argNames |> narg => dumpNamedArgPattern(narg) ;separator=", ")
     let separator = if args_str then if argNames then ', '
     '<%args_str%><%separator%><%namedargs_str%>'
@@ -992,7 +1002,7 @@ template dumpNamedArgPattern(Absyn.NamedArg narg)
 ::=
 match narg
   case NAMEDARG(__) then
-    '<%argName%> = <%dumpPattern(argValue)%>'
+    '<%argName%> = <%dumpPattern(argValue, functionContext, emptyTxt)%>'
 end dumpNamedArgPattern;
 
 template dumpLhsExp(Absyn.Exp lhs, Context context)
@@ -1019,7 +1029,12 @@ match if_exp
     let true_branch_str = dumpExp(trueBranch, context)
     let else_branch_str = dumpExp(elseBranch, context)
     let else_if_str = dumpElseIfExp(elseIfBranch, context)
-    'if <%cond_str%> <%true_branch_str%><%else_if_str%> else <%else_branch_str%> end'
+    'if <%cond_str%>
+      <%true_branch_str%>
+    <%else_if_str%>
+    else
+      <%else_branch_str%>
+    end'
 end dumpIfExp;
 
 template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context context)
@@ -1027,7 +1042,8 @@ template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context contex
   else_if |> eib as (cond, branch) =>
     let cond_str = dumpExp(cond, context)
     let branch_str = dumpExp(branch, context)
-    ' elseif (<%cond_str%>) <%branch_str%>' ;separator="\n"
+    'elseif (<%cond_str%>)
+      <%branch_str%>' ;separator="\n"
 end dumpElseIfExp;
 
 template dumpCodeNode(Absyn.CodeNode code, Context context)
@@ -1054,7 +1070,8 @@ match match_exp
     let match_ty_str = dumpMatchType(matchTy)
     let input_str = dumpExp(inputExp, functionContext)
     let locals_str = dumpMatchLocals(localDecls)
-    let cases_str = (cases |> c => dumpMatchCase(c, functionContext) ;separator="\n\n")
+    /* Input string is a tuple or a single variable*/
+    let cases_str = (cases |> c => dumpMatchCase(c, makeAsContext(input_str)) ;separator="\n\n")
     let cmt_str = dumpCommentStrOpt(comment)
     <<
     begin
@@ -1099,11 +1116,24 @@ template dumpMatchCase(Absyn.Case c, Context context)
 ::=
 match c
   case CASE(__) then
-    let pattern_str = dumpPattern(pattern)
-    let guard_str = match patternGuard case SOME(g) then 'where <%dumpExp(g, context)%> '
+    let &as_str = buffer ""
+    let pattern_str = dumpPattern(pattern, context, &as_str)
+    let guard_str = match patternGuard case SOME(g) then 'where (<%dumpExp(g, context)%>) '
     let eql_str = dumpMatchContents(classPart)
     let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
+    let input_str = match context
+      case MATCH_CONTEXT(__) then '<%asString%>'
+      else ''
+    if as_str then
+    <<
+    <%pattern_str%> <%guard_str%><%cmt_str%> => begin
+      <%&as_str%> = <%input_str%>
+      <%eql_str%>
+      <%result_str%>
+    end
+    >>
+    else
     <<
     <%pattern_str%> <%guard_str%><%cmt_str%> => begin
       <%eql_str%>

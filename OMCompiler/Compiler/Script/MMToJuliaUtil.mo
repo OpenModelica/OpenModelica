@@ -34,8 +34,10 @@ protected
 import List;
 import Absyn;
 import AbsynUtil;
+import Tpl;
 public
 uniontype Context
+
   record FUNCTION
     String retValsStr "Contains return values";
   end FUNCTION;
@@ -57,6 +59,10 @@ uniontype Context
 
   record INPUT_CONTEXT
   end INPUT_CONTEXT;
+
+  record MATCH_CONTEXT
+    Tpl.Text asString;
+  end MATCH_CONTEXT;
 
 end Context;
 
@@ -88,6 +94,12 @@ algorithm
   context := FUNCTION_RETURN_CONTEXT(returnValuesStr, ty_str);
 end makeFunctionReturnContext;
 
+function makeAsContext
+  input Tpl.Text asString;
+  output Context context;
+algorithm
+  context := MATCH_CONTEXT(asString);
+end makeAsContext;
 
 function makeInputDirection
   output Absyn.Direction direction;

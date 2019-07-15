@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -960,8 +960,6 @@ package System
   end escapedString;
 end System;
 
-
-
 package Tpl
   function addSourceTemplateError
     input String inErrMsg;
@@ -971,6 +969,71 @@ package Tpl
   function addTemplateError
     input String inErrMsg;
   end addTemplateError;
+
+uniontype Text
+  record MEM_TEXT
+  end MEM_TEXT;
+  record FILE_TEXT
+  end FILE_TEXT;
+end Text;
+
+constant Text emptyTxt;
+
+uniontype BlockTypeFileText
+  record BT_FILE_TEXT
+  end BT_FILE_TEXT;
+end BlockTypeFileText;
+
+uniontype StringToken
+  record ST_NEW_LINE "Always outputs the new-line char." end ST_NEW_LINE;
+
+  record ST_STRING "A string without new-lines in it."
+    String value;
+  end ST_STRING;
+
+  record ST_LINE "A (non-empty) string with new-line at the end."
+    String line;
+  end ST_LINE;
+
+  record ST_STRING_LIST "Every string in the list can have a new-line at its end (but does not have to)."
+    list<String> strList;
+    Boolean lastHasNewLine "True when the last string in the list has new-line at the end.";
+  end ST_STRING_LIST;
+
+  record ST_BLOCK
+    Tokens tokens;
+    BlockType blockType;
+  end ST_BLOCK;
+end StringToken;
+
+uniontype BlockType
+  record BT_TEXT  end BT_TEXT;
+
+  record BT_INDENT
+    Integer width;
+  end BT_INDENT;
+
+  record BT_ABS_INDENT
+    Integer width;
+  end BT_ABS_INDENT;
+
+  record BT_REL_INDENT
+    Integer offset;
+  end BT_REL_INDENT;
+
+  record BT_ANCHOR
+    Integer offset;
+  end BT_ANCHOR;
+
+  record BT_ITER
+  end BT_ITER;
+end BlockType;
+
+uniontype IterOptions
+  record ITER_OPTIONS
+  end ITER_OPTIONS;
+end IterOptions;
+
 end Tpl;
 
 package Flags
@@ -1001,6 +1064,9 @@ package MMToJuliaUtil
     end INPUT_CONTEXT;
     record NO_CONTEXT
     end NO_CONTEXT;
+    record MATCH_CONTEXT
+      Tpl.Text asString;
+    end MATCH_CONTEXT;
   end Context;
   constant Context packageContext;
   constant Context functionContext;
@@ -1019,6 +1085,10 @@ package MMToJuliaUtil
     input String ty_str;
     output Context context;
   end makeFunctionReturnContext;
+  function makeAsContext
+    input Tpl.Text asString;
+   output Context context;
+  end makeAsContext;
   function filterOnDirection
     input list<Absyn.ElementItem> inputs;
     input Absyn.Direction direction;
