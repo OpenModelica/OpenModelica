@@ -2519,6 +2519,7 @@ public function incidenceRow
   output Integer rowSize;
 protected
   list<Integer> whenIntegerLst;
+  BackendDAE.Equation inlinedEquation;
 algorithm
   whenIntegerLst := matchcontinue inIndexType
     local
@@ -2543,7 +2544,15 @@ algorithm
     else {};
   end matchcontinue;
 
-  (outIntegerLst,rowSize) := matchcontinue (inEquation)
+  /* Fix for ticket #5170
+  Functions with the annotation "InlineAfterIndexReduction" can contain dependencies which are only
+  used for differentiation purposes and should not be part of the adjacency matrix. Therefore these
+  are inlined before constructing the adjacency row.
+  E.g. func(a,b) = a --d/dt--> func_der(a,b) = b
+  */
+  (inlinedEquation,_) := BackendInline.inlineEq(inEquation,(functionTree,{DAE.AFTER_INDEX_RED_INLINE()}));
+
+  (outIntegerLst,rowSize) := matchcontinue (inlinedEquation)
     local
       AvlSetInt.Tree lst1,lst2,res;
       list<Integer> dimsize;

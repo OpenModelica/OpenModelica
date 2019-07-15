@@ -172,7 +172,7 @@ algorithm
   end for;
 end inlineEquationOptArray;
 
-protected function inlineEq "
+public function inlineEq "
   inlines function calls in equations"
   input BackendDAE.Equation inEquation;
   input Inline.Functiontuple fns;
