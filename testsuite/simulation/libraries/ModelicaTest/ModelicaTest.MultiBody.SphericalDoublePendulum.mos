@@ -3,7 +3,7 @@
 // status: correct
 // cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem
 //
-// Simulation Results 
+// Simulation Results
 // ModelicaTest library
 //
 
@@ -11,7 +11,6 @@ loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.SphericalDoublePendulum,stopTime=3);
 

@@ -62,21 +62,21 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	25: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
 // 	26: x6=$cse4 * x4 + 5.0 * x5 [Real ]
 // 	27: x8=$cse5 * x6 + x7 [Real ]
-// 	31: 2.0 * x2 - $cse4 * x3 + x1 (RESIDUAL)
-// 	30: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
-// 	29: 0.5 * $cse6 * x7 + x6 + x5 (RESIDUAL)
-// 	28: (-2.0) * x4 - $cse5 * x5 + x3 (RESIDUAL)
+// 	31: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
+// 	30: 0.5 * $cse6 * x7 + x6 + x5 (RESIDUAL)
+// 	29: (-2.0) * x4 - $cse5 * x5 + x3 (RESIDUAL)
+// 	28: 2.0 * x2 - $cse4 * x3 + x1 (RESIDUAL)
 //
 // 	simJac:
 //
 // 	Jacobian idx: 1
-// 	32: $res1.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
+// 	32: $res4.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
 // 	33: x4.$pDERLSJac1.dummyVarLSJac1=0.25 * (-$cse5) * x2.SeedLSJac1 - (-0.5) * x3.SeedLSJac1 [Real ]
 // 	34: x6.$pDERLSJac1.dummyVarLSJac1=$cse4 * x4.$pDERLSJac1.dummyVarLSJac1 + 5.0 * x5.SeedLSJac1 [Real ]
 // 	35: x8.$pDERLSJac1.dummyVarLSJac1=$cse5 * x6.$pDERLSJac1.dummyVarLSJac1 + x7.SeedLSJac1 [Real ]
-// 	36: $res2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
-// 	37: $res3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
-// 	38: $res4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
+// 	36: $res1.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
+// 	37: $res2.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
+// 	38: $res3.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
 // 	
 // columnVars(8)
 // ----------------------
@@ -92,11 +92,11 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // casual set:
 // 55:  (LINEAR) index:2 jacobian: true
 // 	40: x1=(-x2) - $cse4 [Real ]
-// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-012 (global)] [Real ]
+// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-12 (global)] [Real ]
 // 	42: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
-// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-012 (global)] [Real ]
+// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-12 (global)] [Real ]
 // 	44: x6=$cse4 * x4 + 5.0 * x5 [Real ]
-// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-012 (global)] [Real ]
+// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real ]
 // 	46: x8=$cse5 * x6 + x7 [Real ]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
 // 	
@@ -149,21 +149,21 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	25: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
 // 	26: x6=$cse4 * x4 + 5.0 * x5 [Real ]
 // 	27: x8=$cse5 * x6 + x7 [Real ]
-// 	31: 2.0 * x2 - $cse4 * x3 + x1 (RESIDUAL)
-// 	30: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
-// 	29: 0.5 * $cse6 * x7 + x6 + x5 (RESIDUAL)
-// 	28: (-2.0) * x4 - $cse5 * x5 + x3 (RESIDUAL)
+// 	31: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
+// 	30: 0.5 * $cse6 * x7 + x6 + x5 (RESIDUAL)
+// 	29: (-2.0) * x4 - $cse5 * x5 + x3 (RESIDUAL)
+// 	28: 2.0 * x2 - $cse4 * x3 + x1 (RESIDUAL)
 //
 // 	simJac:
 //
 // 	Jacobian idx: -1
-// 	32: $res1.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
+// 	32: $res4.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
 // 	33: x4.$pDERLSJac1.dummyVarLSJac1=0.25 * (-$cse5) * x2.SeedLSJac1 - (-0.5) * x3.SeedLSJac1 [Real ]
 // 	34: x6.$pDERLSJac1.dummyVarLSJac1=$cse4 * x4.$pDERLSJac1.dummyVarLSJac1 + 5.0 * x5.SeedLSJac1 [Real ]
 // 	35: x8.$pDERLSJac1.dummyVarLSJac1=$cse5 * x6.$pDERLSJac1.dummyVarLSJac1 + x7.SeedLSJac1 [Real ]
-// 	36: $res2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
-// 	37: $res3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
-// 	38: $res4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
+// 	36: $res1.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
+// 	37: $res2.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
+// 	38: $res3.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
 // 	
 // columnVars(8)
 // ----------------------
@@ -179,11 +179,11 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // casual set:
 // 55:  (LINEAR) index:2 jacobian: true
 // 	40: x1=(-x2) - $cse4 [Real ]
-// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-012 (global)] [Real ]
+// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-12 (global)] [Real ]
 // 	42: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
-// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-012 (global)] [Real ]
+// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-12 (global)] [Real ]
 // 	44: x6=$cse4 * x4 + 5.0 * x5 [Real ]
-// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-012 (global)] [Real ]
+// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real ]
 // 	46: x8=$cse5 * x6 + x7 [Real ]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
 // 	
@@ -254,9 +254,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // index: 5: x3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 4: x5.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 3: x8.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: $cse3 (no alias)  protected  hideResult  initial:  no arrCref index:() []
-// index: 1: $cse2 (no alias)  protected  hideResult  initial:  no arrCref index:() []
-// index: 2: $cse1 (no alias)  protected  hideResult  initial:  no arrCref index:() []
+// index: 0: $cse3 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index: 1: $cse2 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index: 2: $cse1 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
 // index: 3: $res4.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 2: $res3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 1: $res2.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
@@ -322,21 +322,21 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // index: 5: x3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 4: x5.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 3: x8.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: $cse3 (no alias)  protected  hideResult  initial:  no arrCref index:() []
-// index: 1: $cse2 (no alias)  protected  hideResult  initial:  no arrCref index:() []
-// index: 2: $cse1 (no alias)  protected  hideResult  initial:  no arrCref index:() []
+// index: 0: $cse3 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index: 1: $cse2 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index: 2: $cse1 (no alias)  protected  hideResult  initial: 	no arrCref index:() []
 // index: 3: $res4.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 2: $res3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 1: $res2.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 0: $res1.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // 	Jacobian idx: 1
-// 	32: $res1.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
+// 	32: $res4.$pDERLSJac1.dummyVarLSJac1=x2.SeedLSJac1 - $cse4 * x3.SeedLSJac1 [Real ]
 // 	33: x4.$pDERLSJac1.dummyVarLSJac1=0.25 * (-$cse5) * x2.SeedLSJac1 - (-0.5) * x3.SeedLSJac1 [Real ]
 // 	34: x6.$pDERLSJac1.dummyVarLSJac1=$cse4 * x4.$pDERLSJac1.dummyVarLSJac1 + 5.0 * x5.SeedLSJac1 [Real ]
 // 	35: x8.$pDERLSJac1.dummyVarLSJac1=$cse5 * x6.$pDERLSJac1.dummyVarLSJac1 + x7.SeedLSJac1 [Real ]
-// 	36: $res2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
-// 	37: $res3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
-// 	38: $res4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
+// 	36: $res1.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real ]
+// 	37: $res2.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real ]
+// 	38: $res3.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real ]
 // 	
 // columnVars(8)
 // ----------------------
@@ -398,10 +398,10 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "dynamicTearing2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'dynamicTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
 //     messages = "stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_DT_CONS       | info    | The following global constraint is violated:
-// |                 | |       | abs($cse4) > 1e-012
+// |                 | |       | abs($cse4) > 1e-12
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

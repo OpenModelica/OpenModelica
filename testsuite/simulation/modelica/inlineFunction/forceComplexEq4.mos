@@ -44,8 +44,8 @@ val(x3,{0,1});
 // 2: x1:VARIABLE()  type: Real 
 //
 // residual vars
-// 1: x2:VARIABLE()  type: Real 
-// 2: x3:VARIABLE()  type: Real 
+// 1: x3:VARIABLE()  type: Real
+// 2: x2:VARIABLE()  type: Real
 //
 // internal equation
 // 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]

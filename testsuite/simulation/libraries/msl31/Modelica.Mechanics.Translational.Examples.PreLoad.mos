@@ -2,12 +2,11 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.1"});
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.Translational.Examples.PreLoad);
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Translational.Examples.PreLoad_res.mat",
@@ -15,7 +14,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Trans
   {"friction.v_rel","innerContactA.s_rel","innerContactB.s_rel","outerContactA.v_rel","outerContactB.s_rel","outerContactB.v_rel"});
 
 // Result:
-// true
 // true
 // true
 // record SimulationResult

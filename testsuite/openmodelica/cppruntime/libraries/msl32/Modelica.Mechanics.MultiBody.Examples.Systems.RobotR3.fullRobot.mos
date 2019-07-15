@@ -4,13 +4,12 @@
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlus"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 
 simulate(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot, outputFormat="mat"); getErrorString();
@@ -32,10 +31,10 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
    "axis3.gear.spring.phi_rel",
    "axis3.gear.spring.w_rel",
    "axis3.motor.C.v",
-   "axis3.motor.La.i",   
+   "axis3.motor.La.i",
    "axis4.controller.PI.x",
    "axis4.motor.C.v",
-   "axis4.motor.La.i",   
+   "axis4.motor.La.i",
    "axis5.controller.PI.x",
    "axis5.motor.C.v",
    "axis5.motor.La.i",
@@ -58,8 +57,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 
 // Result:
 // true
-// true
-// ""
 // true
 // ""
 // record SimulationResult

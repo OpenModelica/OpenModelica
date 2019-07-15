@@ -3,13 +3,12 @@
 // status: correct
 // depends: Modelica.Electrical.Analog.Examples.OvervoltageProtection_eqs_prof.json
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
@@ -22,7 +21,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Anal
   {"CL.v"});
 
 // Result:
-// true
 // true
 // true
 // true

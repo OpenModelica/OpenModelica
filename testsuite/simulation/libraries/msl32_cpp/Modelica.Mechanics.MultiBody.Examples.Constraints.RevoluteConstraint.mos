@@ -8,7 +8,6 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-setMatchingAlgorithm("MC21A"); getErrorString();
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint);
 compareVars :=
@@ -33,8 +32,6 @@ runScript(modelTesting);getErrorString();
 // Result:
 // "true
 // "
-// ""
-// true
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint

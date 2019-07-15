@@ -3,13 +3,12 @@
 // status: correct
 // depends: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_eqs_prof.json
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=mcp"); getErrorString();
@@ -32,8 +31,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Mach
 
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

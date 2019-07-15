@@ -191,56 +191,25 @@ simulate(Tearing15); getErrorString();
 // Final Results
 // ###############################################################
 //
-// ########### Updated Variable List (jacobian) (3)
-// ========================================
-// 1: $cse5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(protected = true )  type: Real  unreplaceable
-// 2: $res1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real  unreplaceable
-// 3: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
-//
-//
-// ########### Updated Equation List (jacobian) (3, 3)
-// ========================================
-// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding |0|0|0|0|]
-// 2/2 (1): $cse5.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v1.SeedNLSJac3   [unknown |0|0|0|0|]
-// 3/3 (1): $cse7 = cos(v1)   [unknown |0|0|0|0|]
-//
-//
-// ########### Updated globalKnownVars (jacobian) (3)
-// ========================================
-// 1: input v1.SeedNLSJac3:STATE_DER()  type: Real  unreplaceable
-// 2: input $res1:VARIABLE()  type: Real
-// 3: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
-//
-//
-// ########### CSE Replacements (1/44)
-// ========================================
-// 1: $cse7 - cos(v1) - {}
-//
-//
-//
-// ###############################################################
-// Final Results
-// ###############################################################
-//
 // ########### Updated Variable List (jacobian) (4)
 // ========================================
-// 1: v5.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(start = 1.0 )  type: Real 
-// 2: $cse6.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(protected = true )  type: Real  unreplaceable
-// 3: $res1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real  unreplaceable
-// 4: $cse8:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: v5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(start = 1.0 )  type: Real
+// 2: $cse6.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: $res1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real  unreplaceable
+// 4: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
-// 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown |0|0|0|0|]
-// 4/4 (1): $cse8 = cos(v6)   [unknown |0|0|0|0|]
+// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v5.$pDERNLSJac3.dummyVarNLSJac3 + v6 * $cse6.$pDERNLSJac3.dummyVarNLSJac3 * source + v6.SeedNLSJac3 * $cse6 * source   [dynamic |0|0|0|0|]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac3.dummyVarNLSJac3 + (-v6) * $cse6.$pDERNLSJac3.dummyVarNLSJac3 - v6.SeedNLSJac3 * $cse6 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse6.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v6.SeedNLSJac3   [unknown |0|0|0|0|]
+// 4/4 (1): $cse7 = cos(v6)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (4)
 // ========================================
-// 1: input v6.SeedNLSJac4:STATE_DER()  type: Real  unreplaceable
+// 1: input v6.SeedNLSJac3:STATE_DER()  type: Real  unreplaceable
 // 2: input $res1:VARIABLE()  type: Real
 // 3: input $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
 // 4: input v5:VARIABLE(start = 1.0 )  type: Real
@@ -248,7 +217,38 @@ simulate(Tearing15); getErrorString();
 //
 // ########### CSE Replacements (1/45)
 // ========================================
-// 1: $cse8 - cos(v6) - {}
+// 1: $cse7 - cos(v6) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (3)
+// ========================================
+// 1: $cse5.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 2: $res1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real  unreplaceable
+// 3: $cse8:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (3, 3)
+// ========================================
+// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v1 * $cse5.$pDERNLSJac4.dummyVarNLSJac4 + v1.SeedNLSJac4 * $cse5   [binding |0|0|0|0|]
+// 2/2 (1): $cse5.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v1.SeedNLSJac4   [unknown |0|0|0|0|]
+// 3/3 (1): $cse8 = cos(v1)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (3)
+// ========================================
+// 1: input v1.SeedNLSJac4:STATE_DER()  type: Real  unreplaceable
+// 2: input $res1:VARIABLE()  type: Real
+// 3: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: $cse8 - cos(v1) - {}
 // record SimulationResult
 //     resultFile = "Tearing15_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

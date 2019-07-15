@@ -2,14 +2,13 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.Forces.ForceWithTwoMasses,stopTime=3);
 
@@ -21,7 +20,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.F
 getErrorString();
 
 // Result:
-// true
 // true
 // true
 // true

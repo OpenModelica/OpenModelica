@@ -3,14 +3,13 @@
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.* PlanarMechanicsForTesting.Examples.WheelBasedCranCrab_* PlanarMechanicsForTesting.Examples.WheelBasedCranCrab PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.exe PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.cpp PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.makefile PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.libs PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.log PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.c PlanarMechanicsForTesting.Examples.WheelBasedCranCrab.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.1"}); getErrorString();
 loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 // adrpo: stopTime=3 is got from the experiment annotation in the model
 simulate(PlanarMechanicsForTesting.Examples.WheelBasedCranCrab); getErrorString();
@@ -24,7 +23,6 @@ res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTestin
 // ""
 // true
 // ""
-// true
 // true
 // record SimulationResult
 //     resultFile = "PlanarMechanicsForTesting.Examples.WheelBasedCranCrab_res.mat",

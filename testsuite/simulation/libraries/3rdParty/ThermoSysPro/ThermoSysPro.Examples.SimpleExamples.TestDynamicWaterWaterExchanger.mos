@@ -10,7 +10,6 @@
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 loadModel(ThermoSysPro); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger, stopTime=1000); getErrorString();
@@ -29,7 +28,6 @@ getErrorString();
 // ""
 // true
 // ""
-// true
 // true
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger_res.mat",

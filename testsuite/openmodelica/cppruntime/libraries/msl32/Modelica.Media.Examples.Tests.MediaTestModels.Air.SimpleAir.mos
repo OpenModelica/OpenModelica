@@ -4,13 +4,12 @@
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 simulate(Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir, outputFormat="mat");
 getErrorString();
@@ -22,8 +21,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Media.Examples.
    "volume.m"});
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

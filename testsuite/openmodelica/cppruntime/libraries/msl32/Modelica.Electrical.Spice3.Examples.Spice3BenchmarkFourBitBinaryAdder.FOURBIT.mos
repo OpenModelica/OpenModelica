@@ -5,13 +5,12 @@
 // teardown_command: rm -f -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 
 simulate(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.FOURBIT, outputFormat="mat"); getErrorString();
@@ -354,8 +353,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spic
    "X2.X2.X9.Q5.vbe"});
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

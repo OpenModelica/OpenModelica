@@ -3,12 +3,11 @@
 // status: correct
 // depends: Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_eqs_prof.json
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
@@ -30,8 +29,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 
 // Result:
 // true
-// true
-// ""
 // true
 // ""
 // true

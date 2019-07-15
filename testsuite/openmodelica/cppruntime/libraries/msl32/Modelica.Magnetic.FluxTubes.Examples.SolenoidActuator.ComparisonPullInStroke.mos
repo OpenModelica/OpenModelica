@@ -4,13 +4,12 @@
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 
 simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke, outputFormat="mat"); getErrorString();
@@ -18,19 +17,17 @@ simulate(Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInS
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke.mat",
   "Modelica.Magnetic.FluxTubes.Examples.SolenoidActuator.ComparisonPullInStroke_diff.csv",0.01,0.0001,
-  {"advancedSolenoid.armature.stopper_xMax.v_rel", 
-   "advancedSolenoid.c_par1.v", 
-   "advancedSolenoid.c_par2.v", 
-   "advancedSolenoid.coil1.Phi", 
-   "advancedSolenoid.coil2.Phi", 
-   "advancedSolenoid.x", 
-   "simpleSolenoid.armature.stopper_xMax.v_rel", 
-   "simpleSolenoid.coil.Phi", 
+  {"advancedSolenoid.armature.stopper_xMax.v_rel",
+   "advancedSolenoid.c_par1.v",
+   "advancedSolenoid.c_par2.v",
+   "advancedSolenoid.coil1.Phi",
+   "advancedSolenoid.coil2.Phi",
+   "advancedSolenoid.x",
+   "simpleSolenoid.armature.stopper_xMax.v_rel",
+   "simpleSolenoid.coil.Phi",
    "simpleSolenoid.x"});
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true

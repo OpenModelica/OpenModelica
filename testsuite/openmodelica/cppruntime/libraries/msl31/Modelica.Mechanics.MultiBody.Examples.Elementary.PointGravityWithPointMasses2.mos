@@ -4,7 +4,7 @@
 // teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -13,7 +13,6 @@ loadModel(Modelica,{"3.1"});
 // index reduction method fails becauses z_a is removed from the equation
 // frame_a.t = I*z_a + cross(w_a, I*w_a) + cross(r_CM, frame_a.f);
 // In result of that there are 2 equations for frame_a.t and none for z_a
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2,stopTime=3.0, outputFormat="csv");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2_res.csv",

@@ -2,7 +2,7 @@
 // keywords: simulation ModelicaTest library models
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // ModelicaTest library
 //
 
@@ -10,7 +10,6 @@ loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.Forces.DifferentiationOfForces,stopTime=1.1);
 
@@ -20,7 +19,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.F
   {"rev.phi","rev.w","der1[1].y","der1[2].y","der1[3].y","der2[1].y","der2[2].y","der2[3].y"});
 
 // Result:
-// true
 // true
 // true
 // true

@@ -5,7 +5,6 @@ addComponent(stateGraphRoot, StateGraph.StateGraphRoot, Modelica.Fluid.Examples.
 setComponentProperties(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, {false,false,false,false,false},{""},{true,false},{""}); getErrorString();
 setComponentComment(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks, stateGraphRoot, "added to make the model complete"); getErrorString();
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks);
 getErrorString();

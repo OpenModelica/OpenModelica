@@ -3,14 +3,13 @@
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.* PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_* PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.exe PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.cpp PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.makefile PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.libs PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.log PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.c PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.1"}); getErrorString();
 loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 // adrpo: stopTime=3 is got from the experiment annotation in the model
 simulate(PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection, tolerance=0.0001); getErrorString();
@@ -24,7 +23,6 @@ res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTestin
 // ""
 // true
 // ""
-// true
 // true
 // record SimulationResult
 //     resultFile = "PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_res.mat",

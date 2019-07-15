@@ -3,13 +3,12 @@
 // status: correct
 // depends: Modelica.Electrical.Analog.Examples.CompareTransformers_eqs_prof.json
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=2 +hpcomScheduler=list +hpcomCode=pthreads"); getErrorString();
@@ -24,7 +23,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Anal
    "inductor21.i"});
 
 // Result:
-// true
 // true
 // true
 // true

@@ -2,14 +2,13 @@
 // keywords: simulation MSL Examples
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.Joints.JointUSP);
 
@@ -22,7 +21,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.J
 
 // Result:
 // b'true,
-// true,
 // true,
 // true,
 // record SimulationResult,

@@ -2,19 +2,17 @@
 // keywords: index reduction
 // status:   correct
 // teardown_command: rm -rf myTanCall* output.log
-// 
 //
-// 
+//
+//
 
 loadModel(Modelica,{"3.2.1"});
 loadFile("ArbitrarilyHighStructuralIndex.mo");
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ArbitrarilyHighStructuralIndex);
 
 // Result:
-// true
 // true
 // true
 // true

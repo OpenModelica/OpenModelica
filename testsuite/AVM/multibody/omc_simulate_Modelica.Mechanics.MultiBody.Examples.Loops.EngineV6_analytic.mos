@@ -1,4 +1,3 @@
 loadModel(Modelica,{"3.2.1"});
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic, simflags="-iom kinsol", stopTime=0.1);

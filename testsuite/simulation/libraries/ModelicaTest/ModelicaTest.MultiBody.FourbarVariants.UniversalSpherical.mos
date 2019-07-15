@@ -3,14 +3,13 @@
 // status: correct
 // cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem
 //
-// Simulation Results 
+// Simulation Results
 // ModelicaTest library
 //
 
 loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.FourbarVariants.UniversalSpherical,stopTime=5);
 
@@ -18,9 +17,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.F
   "ReferenceFiles/ModelicaTest.MultiBody.FourbarVariants.UniversalSpherical.mat",
   "ModelicaTest.MultiBody.FourbarVariants.UniversalSpherical_diff.csv",0.01,0.0001,
   {"j1.phi","j1.w","j2.s","j2.v"});
-  
+
 // Result:
-// true
 // true
 // true
 // true

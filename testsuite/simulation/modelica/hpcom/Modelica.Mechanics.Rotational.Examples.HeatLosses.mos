@@ -8,7 +8,6 @@
 //
 
 loadModel(Modelica,{"3.2.1"});
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=2 +hpcomScheduler=list +hpcomCode=pthreads"); getErrorString();
@@ -33,7 +32,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Rotat
 
 
 // Result:
-// true
 // true
 // true
 // true

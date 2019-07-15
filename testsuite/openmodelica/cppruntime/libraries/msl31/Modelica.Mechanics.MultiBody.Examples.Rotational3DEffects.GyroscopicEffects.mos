@@ -4,12 +4,11 @@
 // teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.1"});
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects,stopTime=5.0, outputFormat="csv");
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.csv",
@@ -42,7 +41,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 
 
 // Result:
-// true
 // true
 // true
 // record SimulationResult

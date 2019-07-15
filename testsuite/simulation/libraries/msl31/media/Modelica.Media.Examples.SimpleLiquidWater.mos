@@ -6,15 +6,12 @@
 
 loadModel(Modelica,{"3.1"}); getErrorString();
 setDebugFlags("showStatement");
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Media.Examples.SimpleLiquidWater);
 
 // Result:
 // true
 // ""
-// true
-// Evaluating: setMatchingAlgorithm("PFPlusExt")
 // true
 // Evaluating: setIndexReductionMethod("dynamicStateSelection")
 // true

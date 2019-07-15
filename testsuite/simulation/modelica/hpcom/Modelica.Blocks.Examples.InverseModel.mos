@@ -9,7 +9,6 @@
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=list +hpcomCode=openmp"); getErrorString();
@@ -27,7 +26,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples
 
 
 // Result:
-// true
 // true
 // true
 // true

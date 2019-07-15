@@ -9,7 +9,6 @@
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt");
 setIndexReductionMethod("dynamicStateSelection");
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
@@ -23,7 +22,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spic
    "D3.n.v"
 });
 // Result:
-// true
 // true
 // true
 // true

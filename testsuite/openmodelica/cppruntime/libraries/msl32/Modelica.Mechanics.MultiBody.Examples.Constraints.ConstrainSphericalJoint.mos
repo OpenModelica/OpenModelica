@@ -3,13 +3,12 @@
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(Modelica.Mechanics.MultiBody.Examples.Constraints.ConstrainSphericalJoint, outputFormat="mat");
 

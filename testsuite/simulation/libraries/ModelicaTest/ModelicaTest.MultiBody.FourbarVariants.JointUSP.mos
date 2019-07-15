@@ -2,7 +2,7 @@
 // keywords: simulation ModelicaTest library models
 // status: correct
 //
-// Simulation Results 
+// Simulation Results
 // ModelicaTest library
 //
 
@@ -10,7 +10,6 @@ loadModel(Modelica,{"3.2.1"});
 loadModel(ModelicaTest);
 
 
-setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 simulate(ModelicaTest.MultiBody.FourbarVariants.JointUSP,stopTime=5);
 
@@ -18,9 +17,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ModelicaTest.MultiBody.F
   "ReferenceFiles/ModelicaTest.MultiBody.FourbarVariants.JointUSP.mat",
   "ModelicaTest.MultiBody.FourbarVariants.JointUSP_diff.csv",0.01,0.0001,
   {"revolute.phi","revolute.w"});
-  
+
 // Result:
-// true
 // true
 // true
 // true

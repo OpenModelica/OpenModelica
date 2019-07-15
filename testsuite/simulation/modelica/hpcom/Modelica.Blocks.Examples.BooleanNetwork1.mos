@@ -9,7 +9,6 @@
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
 simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=1.0); getErrorString();
@@ -28,9 +27,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples
 // ""
 // true
 // ""
-// true
-// ""
-// hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ 
+// hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_
 // readCalcTimesFromFile: No valid profiling-file found.
 // Warning: The costs have been estimated. Maybe Modelica.Blocks.Examples.BooleanNetwork1_eqs_prof-file is missing.
 // You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!

@@ -3,13 +3,12 @@
 // status: correct
 // depends: Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_eqs_prof.json
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=mcp +hpcomCode=pthreads"); getErrorString();
@@ -24,16 +23,14 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
   getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.mat",
   "Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_diff.csv",0.13,0.0005,
 	{
-	  "tank1.level", 
-	  "tank1.medium.T", 
-	  "tank2.level", 
+	  "tank1.level",
+	  "tank1.medium.T",
+	  "tank2.level",
 	  "tank2.medium.T"
 	});
 //res := OpenModelica.Scripting.checkTaskGraph("taskGraphModelica.Fluid.Examples.ControlledTankSystem.ControlledTanksODE.graphml","ReferenceGraphs/Fluid.Examples.ControlledTankSystem.ControlledTanks_TaskGraphODE.graphml");
 // Result:
 // true
-// true
-// ""
 // true
 // ""
 // true

@@ -78,39 +78,39 @@ simulationTests = [
 #'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis']
 
 #simulationTests = ['Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive']
-                   
+
 class Kind:
     Instantiation,Translation,Compilation,SuppressedSimulation,SimpleSimulation,VerifiedSimulation= range(6)
-    
+
 def testingString(type):
     if type==Kind.Instantiation:return 'OpenModelicaModelTesting.Kind.Instantiation'
-    if type==Kind.Translation:return 'OpenModelicaModelTesting.Kind.Translation'    
+    if type==Kind.Translation:return 'OpenModelicaModelTesting.Kind.Translation'
     if type==Kind.Compilation:return 'OpenModelicaModelTesting.Kind.Compilation'
     if type==Kind.SuppressedSimulation:return 'OpenModelicaModelTesting.Kind.SuppressedSimulation'
     if type==Kind.SimpleSimulation:return 'OpenModelicaModelTesting.Kind.SimpleSimulation'
     if type==Kind.VerifiedSimulation:return 'OpenModelicaModelTesting.Kind.VerifiedSimulation'
-    
+
 def findStateSet(model):
     mosFile='tempMos.mos'
     f=open(mosFile,'w')
     f.write('loadModel(Modelica,{"3.2.1"});\n')
-    
+
     if EXTRALIB:
         for lib in EXTRALIB:
             lib=lib.replace('\\','/')
             f.write('loadFile("%s");\n'%lib)
-    f.write('setMatchingAlgorithm("PFPlusExt");\nsetIndexReductionMethod("dynamicStateSelection");\nsetDebugFlags("scodeInstShortcut");\n')
+    f.write('setIndexReductionMethod("dynamicStateSelection");\nsetDebugFlags("scodeInstShortcut");\n')
     f.write('translateModel(%s);\n'%model)
     f.write('getErrorString();\n')
     f.close()
-    
+
     try:
         ret = subprocess.check_output([OPENMODELICAHOME + '/bin/omc.exe', mosFile, '+d=backenddaeinfo,stateselection'])
         ret = ret.replace('\r\n', '\n')
     except subprocess.CalledProcessError as cpe:
         print('Error: states identification failed for model %s'%model)
         return
-    
+
     BEGIN_STATES = "selected States: "
     END_STATES = '\n'
     begin = ret.find(BEGIN_STATES)
@@ -121,13 +121,13 @@ def findStateSet(model):
             states = ret[begin:end]
             if states:
                 states = states.split(', ')
-            else: 
+            else:
                 states=None
     return states
-    
-        
+
+
 def replaceInFile(fileName, varName, value):
-       
+
         if not isinstance(varName, (tuple,list)):
             varName = [varName]
         if not isinstance(value, (tuple,list)):
@@ -203,14 +203,14 @@ def generateRefFiles(tests):
     # get a proper escaped string
     dymola_res_file = dymola_res_file.replace('\\', '/')
     f = open(dymola_mos_file, 'w')
-    
+
     f.write('clear();\n')
     f.write('openModel("%s");\n'%OMLIBRARY)
     f.write('openModel("%s");\n'%SERVICELIBRARY)
-    
+
     if EXTRALIB:
         for lib in EXTRALIB: f.write('openModel("%s");\n'%lib)
-        
+
     f.write("system(\"clean.cmd\");\n");
     f.write('cd("%s");\n'%absPath);
     empty=True;
@@ -233,7 +233,7 @@ def generateRefFiles(tests):
     except subprocess.CalledProcessError as cpe:
         print("Generating ref-files with Dymola failed!")
     #move all generated file to ../ReferenceFiles/
-    
+
     if not empty:
         for modelName in tests:
             refFile = os.path.join(os.path.abspath(REFFILESDIR),modelName)
@@ -249,7 +249,7 @@ def main():
     #Trying to find a solution
     #missingTests = getExamples(OMLIBRARY)
     for i in simulationTests:
-        if i.endswith('.mos'): 
+        if i.endswith('.mos'):
             simulationTests[simulationTests.index(i)]=i[:i.rfind('.mos')]
 
     # generate ref files
@@ -257,9 +257,9 @@ def main():
 
     # go one folder up, now I should be in the folder where tests must be put
     absPath = os.path.abspath(os.path.curdir);
-    
+
     logFile=open(log_file,'w')
-    
+
     # select kind of test for each model.
     OMPython.execute("clear()")
     command='loadModel(Modelica,{"%s"})'%MSLVERSION
@@ -267,7 +267,7 @@ def main():
     if not res:
         print('Loading modelica library failed')
         return
-    
+
     if EXTRALIB:
         for lib in EXTRALIB:
             lib=lib.replace('\\','/')
@@ -275,7 +275,7 @@ def main():
             if not res:
                 print('Loading library %s failed'%lib)
     # build a dictionary containing the list of tests to be created and the kind of functionality to be tested
-    
+
     #the dictionary
     TestingType={}
     logFile.write('List of models tested with test kind\n')
@@ -286,7 +286,7 @@ def main():
         if not (os.path.exists(refFile)):
             logFile.write("Skipping %s because there is no ref-file\n"%modelName)
             continue
-        
+
         # do not run tests, that have already been set up
         mos=modelName+'.mos'
         if (os.path.exists(mos)):
@@ -294,13 +294,13 @@ def main():
             continue
 
         print('Analyzing the current status of %s'%modelName)
-        
+
         command='simulate(%s)'%modelName
         #try to simulate
         res=OMPython.execute(command)
-        
+
         resultMess=res['SimulationResults']['messages']
-        
+
         if  res['SimulationResults']['resultFile']<>'""':
             #if an output file exists we should check results but still have to think on how to do it
             if resultMess=='""':
@@ -312,7 +312,7 @@ def main():
                 TestingType[modelName]=Kind.SuppressedSimulation
                 logFile.write('%s : SuppressedSimulation\n'%modelName)
                 continue
-        #if there is no result file 
+        #if there is no result file
         else:
             command='buildModel(%s)'%modelName
             commandtransl='translateModel(%s)'%modelName
@@ -340,7 +340,7 @@ def main():
     warnings=False
     logFile.write('\n\nWarnings:\n\n')
     for model,test in TestingType.iteritems():
-        
+
         if test==Kind.Instantiation:
             stateset='';
         else:
@@ -350,14 +350,14 @@ def main():
                 TestingType[model]=Kind.SimpleSimulation
                 test=Kind.SimpleSimulation
                 stateset='""'
-            else:    
-                stateset=[i for i in stateset if i.find('STATESET')==-1] 
+            else:
+                stateset=[i for i in stateset if i.find('STATESET')==-1]
                 stateset='"'+'","'.join(stateset)+'"'
-        
+
         mosTest='%s.mos'%model
         print('creating %s'%mosTest)
         shutil.copy('../Common/Template.mos', mosTest)
-        
+
         replaceInFile(mosTest,['testingType','modelName','states'],[testingString(test),model,stateset])
         ret = subprocess.check_output([OPENMODELICAHOME + '/bin/omc.exe', mosTest])
         ret=' '+ret.replace('\r\n','\n// ')

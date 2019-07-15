@@ -41,8 +41,8 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Number of discrete variables: 36 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (747):
-//  * Single equations (assignments): 743
+// Notification: Strong component statistics for initialization (765):
+//  * Single equations (assignments): 761
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -52,7 +52,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(4,93.8%) 64}
+//  * Linear torn systems: 1 {(4,87.5%) 64}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 4
@@ -60,8 +60,8 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (182):
-//  * Single equations (assignments): 178
+// Notification: Strong component statistics for simulation (200):
+//  * Single equations (assignments): 196
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -71,7 +71,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum3_res.m
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(9,67.9%) 54}
+//  * Linear torn systems: 1 {(8,75.0%) 55}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

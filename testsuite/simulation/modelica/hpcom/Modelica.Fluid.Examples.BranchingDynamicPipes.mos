@@ -11,7 +11,6 @@ alarm(800);
 
 loadModel(Modelica,{"3.2.1"});
 
-setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=4 +hpcomScheduler=list +hpcomCode=openmp"); getErrorString();
@@ -102,8 +101,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
 // Result:
 // 900
 // true
-// true
-// ""
 // true
 // ""
 // true
