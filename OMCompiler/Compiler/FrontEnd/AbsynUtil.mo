@@ -32,6 +32,7 @@
 encapsulated package AbsynUtil
 
 protected import Absyn.*;
+protected import Dump;
 protected import Error;
 protected import List;
 protected import System;
