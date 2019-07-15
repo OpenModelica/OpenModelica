@@ -39,8 +39,8 @@ simulate(Tearing12); getErrorString();
 //  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3713):
-//  * Single equations (assignments): 3709
+// Notification: Strong component statistics for initialization (3819):
+//  * Single equations (assignments): 3815
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -58,8 +58,8 @@ simulate(Tearing12); getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1722):
-//  * Single equations (assignments): 1718
+// Notification: Strong component statistics for simulation (1828):
+//  * Single equations (assignments): 1824
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
