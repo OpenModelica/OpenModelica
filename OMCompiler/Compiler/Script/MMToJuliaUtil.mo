@@ -34,7 +34,6 @@ protected
 import List;
 import Absyn;
 import AbsynUtil;
-import Tpl;
 public
 uniontype Context
 
@@ -58,10 +57,11 @@ uniontype Context
   end NO_CONTEXT;
 
   record INPUT_CONTEXT
+    String ty_str;
   end INPUT_CONTEXT;
 
   record MATCH_CONTEXT
-    Tpl.Text asString;
+    Absyn.Exp inputExp;
   end MATCH_CONTEXT;
 
 end Context;
@@ -70,7 +70,7 @@ constant Context packageContext = PACKAGE();
 constant Context noContext = NO_CONTEXT();
 constant Context functionContext = FUNCTION("");
 constant Context returnContext = FUNCTION_RETURN_CONTEXT("","");
-constant Context inputContext = INPUT_CONTEXT();
+constant Context inputContext = INPUT_CONTEXT("");
 
 function makeUniontypeContext
   input String name;
@@ -78,6 +78,13 @@ function makeUniontypeContext
 algorithm
   context := UNIONTYPE(name);
 end makeUniontypeContext;
+
+function makeInputContext
+  input String ty_str;
+  output Context context;
+algorithm
+  context := INPUT_CONTEXT(ty_str);
+end makeInputContext;
 
 function makeFunctionContext
   input String returnValuesStr;
@@ -94,12 +101,12 @@ algorithm
   context := FUNCTION_RETURN_CONTEXT(returnValuesStr, ty_str);
 end makeFunctionReturnContext;
 
-function makeAsContext
-  input Tpl.Text asString;
+function makeMatchContext
+  input Absyn.Exp iExp;
   output Context context;
 algorithm
-  context := MATCH_CONTEXT(asString);
-end makeAsContext;
+  context := MATCH_CONTEXT(iExp);
+end makeMatchContext;
 
 function makeInputDirection
   output Absyn.Direction direction;

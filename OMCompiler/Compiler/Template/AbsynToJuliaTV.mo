@@ -1061,11 +1061,12 @@ package MMToJuliaUtil
       String name;
     end UNIONTYPE;
     record INPUT_CONTEXT
+      String ty_str;
     end INPUT_CONTEXT;
     record NO_CONTEXT
     end NO_CONTEXT;
     record MATCH_CONTEXT
-      Tpl.Text asString;
+      Absyn.Exp inputExp;
     end MATCH_CONTEXT;
   end Context;
   constant Context packageContext;
@@ -1085,10 +1086,14 @@ package MMToJuliaUtil
     input String ty_str;
     output Context context;
   end makeFunctionReturnContext;
-  function makeAsContext
-    input Tpl.Text asString;
-   output Context context;
-  end makeAsContext;
+  function makeInputContext
+    input String ty_str;
+    output Context context;
+  end makeInputContext;
+  function makeMatchContext
+    input Absyn.Exp iExp;
+    output Context context;
+  end makeMatchContext;
   function filterOnDirection
     input list<Absyn.ElementItem> inputs;
     input Absyn.Direction direction;

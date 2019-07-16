@@ -82,7 +82,7 @@ match class
     let commentStr = dumpCommentStrOpt(parts.comment)
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(getElementItemsInClassPart(cp)))
     let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(getElementItemsInClassPart(cp), functionContext))%>'
-    let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), functionContext))
+    let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), inputContext))
     let header = dumpClassHeader(parts, restriction)
     let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
     /*
@@ -164,7 +164,7 @@ match class
     let name_of_new_function = '<%name%>'
       <<
         <%comment%>
-        @ExtendedFunction <%name_of_new_function%> <%spec%>(<%attr%>)
+        @ExtendedFunction <%name_of_new_function%> <%spec%>(<%args%>)
       >>
   /*PDER. Should not occur. Derived Enumeration and Overload might?*/
 end dumpClassElement;
@@ -218,10 +218,9 @@ template dumpInputsJL(list<ElementItem> inputs, Context context)
 ::=
   let inputStr = (listReverse((MMToJuliaUtil.filterOnDirection(inputs, MMToJuliaUtil.makeInputDirection())))
     |> ei
-      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), context)%>::<%dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), inputContext)%>'
+      => '<%dumpComponentItems(getComponentItemsFromElementItem(ei), makeInputContext(dumpTypeSpecOpt(getTypeSpecFromElementItemOpt(ei), inputContext)))%>'
       ;separator=", ")
  '<%inputStr%>'
-
 end dumpInputsJL;
 
 template dumpReturnTypeJL(list<ElementItem> outputs)
@@ -616,6 +615,7 @@ match comp
     match context
       case FUNCTION_RETURN_CONTEXT(__) then '<%component_name%>::<%ty_str%><%dim_str%><%mod_str%>'
       case FUNCTION(__) then '<%component_name%>'
+      case INPUT_CONTEXT(__) then '<%component_name%>::<%ty_str%><%dim_str%><%mod_str%>'
       else '<%component_name%><%dim_str%><%mod_str%>'
 end dumpComponent;
 
@@ -718,7 +718,7 @@ match alg
   case ALG_BREAK(__) then "break"
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ, context) else "..."
-    'failure(<%arg_str%>)' //We could simply use throw or we can define a macro for this
+    'throw("<%arg_str%>")'
   case ALG_TRY(__) then
     let arg1 = dumpAlgorithmItems(body, context)
     let arg2 = dumpAlgorithmItems(elseBody, context)
@@ -922,7 +922,7 @@ match exp
   case AS(__) then
     let exp_str = dumpExp(exp, context)
     /* TODO Macro might be needed for this case*/
-    '<%id%> = <%exp_str%>'
+    '(@match <%exp_str%> = <%id%>)'
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
@@ -973,7 +973,7 @@ match exp
     let id_str = '<%id%>'
     match context
       case MATCH_CONTEXT(__) then
-        let &as_str += '<%id%>,'
+        let &as_str += '<%id_str%>,'
         '<%exp_str%>'
       else
         '<%id_str%> = <%exp_str%>'
@@ -1071,7 +1071,7 @@ match match_exp
     let input_str = dumpExp(inputExp, functionContext)
     let locals_str = dumpMatchLocals(localDecls)
     /* Input string is a tuple or a single variable*/
-    let cases_str = (cases |> c => dumpMatchCase(c, makeAsContext(input_str)) ;separator="\n\n")
+    let cases_str = (cases |> c => dumpMatchCase(c, makeMatchContext(inputExp)) ;separator="\n\n")
     let cmt_str = dumpCommentStrOpt(comment)
     <<
     begin
@@ -1123,12 +1123,16 @@ match c
     let result_str = dumpExp(result, context)
     let cmt_str = dumpCommentStrOpt(comment)
     let input_str = match context
-      case MATCH_CONTEXT(__) then '<%asString%>'
+      case MATCH_CONTEXT(__) then dumpExp(inputExp, context)
       else ''
-    if as_str then
+  /*
+    There are more cases in which this as statements can be used to mess up rematch.jl
+    only a partial fix.
+  */
+  if as_str then
     <<
     <%pattern_str%> <%guard_str%><%cmt_str%> => begin
-      <%&as_str%> = <%input_str%>
+      <%&as_str%>
       <%eql_str%>
       <%result_str%>
     end
