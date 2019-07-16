@@ -1713,7 +1713,7 @@ protected function makeReductionFoldExp
 protected
   String func_name;
 algorithm
-  (outEnv, afoldExp) := match path
+  (outEnv, afoldExp) := match AbsynUtil.makeNotFullyQualified(path)
     local
       Absyn.Exp exp;
       Absyn.ComponentRef cr, cr1, cr2;
@@ -1761,7 +1761,7 @@ end makeReductionFoldExp;
 protected function reductionType
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.Path fn;
+  input Absyn.Path inFn;
   input DAE.Exp inExp;
   input DAE.Type inType;
   input DAE.Type unboxedType;
@@ -1774,6 +1774,8 @@ protected function reductionType
   output DAE.Type resultType;
   output Option<Values.Value> defaultValue;
   output Absyn.Path outPath;
+protected
+  Absyn.Path fn = AbsynUtil.makeNotFullyQualified(inFn);
 algorithm
   (outExp, outType, resultType, defaultValue, outPath) := match(fn, unboxedType)
     local
@@ -1951,8 +1953,8 @@ algorithm
 
     else
       algorithm
-        (outCache, fnTypes) := Lookup.lookupFunctionsInEnv(inCache, inEnv, fn, info);
-        (typeA,typeB,resType,defaultBinding,path) := checkReductionType1(inEnv, fn,fnTypes,info);
+        (outCache, fnTypes) := Lookup.lookupFunctionsInEnv(inCache, inEnv, inFn, info);
+        (typeA,typeB,resType,defaultBinding,path) := checkReductionType1(inEnv,inFn,fnTypes,info);
         ty2 := if isSome(defaultBinding) then typeB else inType;
         (exp,typeA,bindings) := Types.matchTypePolymorphicWithError(inExp, inType,typeA,SOME(path),{},info);
         (_,typeB,bindings) := Types.matchTypePolymorphicWithError(DAE.CREF(DAE.CREF_IDENT("$result",DAE.T_ANYTYPE_DEFAULT,{}),DAE.T_ANYTYPE_DEFAULT),ty2,typeB,SOME(path),bindings,info);
