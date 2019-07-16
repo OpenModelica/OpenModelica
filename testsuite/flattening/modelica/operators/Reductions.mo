@@ -15,6 +15,7 @@ model Reductions
   Real f;
   Real g[n,n];
   Real h;
+  Real k;
 equation
   c = sum(A[i]^2 + B[i]^2 for i in 1:n);
   d = product(A[i]^2 + B[i]^2 for i in 1:n);
@@ -22,6 +23,7 @@ equation
   f = min(A[i]^2 + B[i]^2 for i in 1:n);
   g = {(1/(i+j-1)) for i in 1:n, j in 1:n};
   h = sum((1/(i+j-1)) for i in 1:n, j in 1:n);
+  k = .sum(i for i in 1:n);
 end Reductions;
 
 // Result:
@@ -67,6 +69,7 @@ end Reductions;
 //   Real g[5,4];
 //   Real g[5,5];
 //   Real h;
+//   Real k;
 // equation
 //   c = A[1] ^ 2.0 + B[1] ^ 2.0 + A[2] ^ 2.0 + B[2] ^ 2.0 + A[3] ^ 2.0 + B[3] ^ 2.0 + A[4] ^ 2.0 + B[4] ^ 2.0 + A[5] ^ 2.0 + B[5] ^ 2.0;
 //   d = (A[1] ^ 2.0 + B[1] ^ 2.0) * (A[2] ^ 2.0 + B[2] ^ 2.0) * (A[3] ^ 2.0 + B[3] ^ 2.0) * (A[4] ^ 2.0 + B[4] ^ 2.0) * (A[5] ^ 2.0 + B[5] ^ 2.0);
@@ -97,6 +100,7 @@ end Reductions;
 //   g[5,3] = 0.1428571428571428;
 //   g[5,4] = 0.125;
 //   g[5,5] = 0.1111111111111111;
-//   h = 6.456349206349207;
+//   h = 6.456349206349206;
+//   k = 15.0;
 // end Reductions;
 // endResult
