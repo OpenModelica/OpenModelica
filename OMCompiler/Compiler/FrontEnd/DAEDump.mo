@@ -3336,10 +3336,12 @@ public function daeTypeStr
   input DAE.Type inType;
   output String outTypeStr;
 protected
-  String s1,s2;
+  String typeAttrStr;
 algorithm
-  (s1,s2) := printTypeStr(inType);
-  outTypeStr := s1 + " " + s2;
+  (outTypeStr, typeAttrStr) := printTypeStr(inType);
+  if typeAttrStr <> "" then
+    outTypeStr := outTypeStr + " " + typeAttrStr;
+  end if;
 end daeTypeStr;
 
 public function printTypeStr
