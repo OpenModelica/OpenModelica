@@ -441,34 +441,7 @@ Spring::Spring(float r, float rWire, float nWindings, float l) :
  */
 osg::Vec4f getAutoCADRGB(int colorCode)
 {
-  osg::Vec4f col;
-  switch (colorCode)
-  {
-  case(0) :
-    col = osg::Vec4f(0.0f / 255.0f, 0.0f / 255.0f, 0.0f / 255.0f, 1.0);
-    break;
-  case(1) :
-    col = osg::Vec4f(255.0f / 255.0f, 0.0f / 255.0f, 0.0f / 255.0f, 1.0);
-    break;
-  case(2) :
-    col = osg::Vec4f(255.0f / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0);
-    break;
-  case(3) :
-    col = osg::Vec4f(0.0f / 255.0f, 255.0f / 255.0f, 0.0f / 255.0f, 1.0);
-    break;
-  case(4) :
-    col = osg::Vec4f(0.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f, 1.0);
-    break;
-  case(30) :
-    col = osg::Vec4f(255.0f / 255.0f, 127.0f / 255.0f, 0.f / 255.0f, 1.0);
-    break;
-  case(251) :
-    col = osg::Vec4f(80.0f / 255.0f, 80.0f / 255.0f, 80.0f / 255.0f, 1.0);
-    break;
-  default:
-    col = osg::Vec4f(0 / 255, 0 / 255, 0 / 255, 1.0);
-    break;
-  }
+  osg::Vec4f col = colorArray[colorCode];
   return col;
 }
 
@@ -506,6 +479,7 @@ void DXF3dFace::dumpDXF3DFace()
                    <<"(" << vec4[0] << ", "<< vec4[1]<<", "<< vec4[2]<< ")" <<std::endl;
 
 }
+
 
 /*!
  * \brief DXF3dFace::fill3dFace
