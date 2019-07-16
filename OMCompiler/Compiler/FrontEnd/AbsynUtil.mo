@@ -6376,7 +6376,7 @@ algorithm
 end getComponentItemsFromElementSpec;
 
 public function getComponentItemsFromElementItem
-"@auhtor: johti
+"@author: johti
  Get the componentItems from a given elementItem"
   input Absyn.ElementItem inElementItem;
   output list<Absyn.ComponentItem> componentItems;
