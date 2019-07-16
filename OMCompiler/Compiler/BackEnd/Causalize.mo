@@ -48,18 +48,12 @@ import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
 import BackendVariable;
-import DAEUtil;
 import Debug;
-import DumpGraphML;
 import ElementSource;
 import Error;
 import Flags;
 import List;
 import Matching;
-
-
-protected type DAEHandler = tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String>;
-
 
 /*****************************************
  Singular System check
