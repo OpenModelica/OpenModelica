@@ -224,7 +224,7 @@ algorithm
     var_str := BackendDump.dumpMarkedVars(isyst, List.sort(vars, intGt));
     source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
     info := ElementSource.getElementSourceFileInfo(source);
-
+    //print("foundSingularSystem\n");
     Error.addSourceMessage(if BackendDAEUtil.isInitializationDAE(ishared) then Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM else Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
     fail();
   end if;

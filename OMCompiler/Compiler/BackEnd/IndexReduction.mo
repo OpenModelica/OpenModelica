@@ -2086,7 +2086,7 @@ algorithm
         // match the variables not the equations, to have preferred states unmatched
         vec1 = Array.expand(nfreeStates, ass1, -1);
         vec2 = Array.expand(neqns, ass2, -1);
-        (vec2, vec1, _) = Matching.ContinueMatching(mT1, ne1, nv1, vec2, vec1);
+        (vec1, vec2, _) = Matching.ContinueMatching(mT1, nv1, ne1, vec1, vec2);
         comps = Sorting.TarjanTransposed(mT1, vec2);
         // remove blocks without differentiated equations
         comps = List.select1(comps, selectBlock, ne);
