@@ -191,74 +191,50 @@ algorithm
   end match;
 end freeStateAssignments;
 
-protected function foundSingularSystem
-"author: Frenkel TUD 2012-12
-  check if the system is singular"
+protected function foundSingularSystem "print error message if the system contains equations"
   input list<list<Integer>> eqns;
-  input Integer actualEqn;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output list<Integer> changedEqns;
-  output Integer continueEqn;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-algorithm
-  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) :=
-  match(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
-    case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-    case (_::_,_,_,_,_,_,_)
-      equation
-        singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-      then
-        fail();
-  end match;
-end foundSingularSystem;
-
-protected function singularSystemError
-  input list<list<Integer>> eqns;
-  input Integer actualEqn;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output list<Integer> changedEqns = {};
+  input output Integer actualEqn;
+  input output BackendDAE.EqSystem isyst;
+  input output BackendDAE.Shared ishared;
+  input output array<Integer> inAssignments1;
+  input output array<Integer> inAssignments2;
+  input output BackendDAE.StructurallySingularSystemHandlerArg inArg;
 protected
-  Integer n;
-  list<Integer> unmatched,unmatched1,vars;
-  String eqn_str,var_str;
-  DAE.ElementSource source;
-  SourceInfo info;
   array<Integer> mapIncRowEqn;
   BackendDAE.EqSystem syst;
+  DAE.ElementSource source;
+  Integer n;
+  list<Integer> unmatched, unmatched1, vars;
+  SourceInfo info;
+  String eqn_str, var_str;
 algorithm
-  (_,_,_,mapIncRowEqn,_) := inArg;
-  n := BackendDAEUtil.systemSize(isyst);
-  /* for debugging
-    BackendDump.printEqSystem(isyst);
-    BackendDump.dumpMatching(inAssignments1);
-    BackendDump.dumpMatching(inAssignments2);
-    syst := BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-  //  DumpGraphML.dumpSystem(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
-  */
-  // get from scalar eqns indexes the indexes in the equation array
-  unmatched := List.flatten(eqns);
-  unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
-  unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-  eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
-  vars := Matching.getUnassigned(n, inAssignments2, {});
-  vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
-  var_str := BackendDump.dumpMarkedVars(isyst, vars);
-  source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
-  info := ElementSource.getElementSourceFileInfo(source);
+  if not listEmpty(eqns) then
+    (_,_,_,mapIncRowEqn,_) := inArg;
+    n := BackendDAEUtil.systemSize(isyst);
 
-  Error.addSourceMessage(if BackendDAEUtil.isInitializationDAE(ishared) then Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM else Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-end singularSystemError;
+    // for debugging
+    // BackendDump.printEqSystem(isyst);
+    // BackendDump.dumpMatching(inAssignments1);
+    // BackendDump.dumpMatching(inAssignments2);
+    // syst := BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+    // //DumpGraphML.dumpSystem(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
+
+    // get from scalar eqns indexes the indexes in the equation array
+    unmatched := List.flatten(eqns);
+    unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
+    unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+    eqn_str := BackendDump.dumpMarkedEqns(isyst, List.sort(unmatched1, intGt));
+    vars := Matching.getUnassigned(n, inAssignments2, {});
+    vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
+    var_str := BackendDump.dumpMarkedVars(isyst, List.sort(vars, intGt));
+    source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
+    info := ElementSource.getElementSourceFileInfo(source);
+
+    Error.addSourceMessage(if BackendDAEUtil.isInitializationDAE(ishared) then Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM else Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+    fail();
+  end if;
+end foundSingularSystem;
 
 protected function getAssignedVars
   input Integer e;
