@@ -3188,25 +3188,23 @@ public function dumpMarkedEqns
   output String outString;
 protected
   BackendDAE.EquationArray eqns;
-  list<Integer> sortedeqns;
+  list<String> slst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs = eqns) := syst;
-  outString := List.fold1(inIntegerLst,dumpMarkedEqns1,eqns,"");
+  BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
+  slst := List.map1(inIntegerLst, dumpMarkedEqns1, eqns);
+  outString := stringDelimitList(slst, "\n");
 end dumpMarkedEqns;
 
 protected function dumpMarkedEqns1
-  input Integer e;
+  input Integer index;
   input BackendDAE.EquationArray eqns;
-  input String inS;
   output String outS;
 protected
   String s1,s2,s3;
   BackendDAE.Equation eqn;
 algorithm
-  eqn := BackendEquation.get(eqns, e);
-  s2 := equationString(eqn);
-  s3 := intString(e);
-  outS := stringAppendList({inS,s3,": ",s2,";\n"});
+  eqn := BackendEquation.get(eqns, index);
+  outS := "  " + intString(index) + ": " + equationString(eqn);
 end dumpMarkedEqns1;
 
 public function dumpMarkedVarsLsts
@@ -3228,24 +3226,20 @@ protected
   BackendDAE.Variables vars;
   list<String> slst;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
-  slst := List.map1(inIntegerLst,dumpMarkedVars1,vars);
-  outString := stringDelimitList(slst,", ");
+  BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
+  slst := List.map1(inIntegerLst, dumpMarkedVars1, vars);
+  outString := stringDelimitList(slst, "\n");
 end dumpMarkedVars;
 
 protected function dumpMarkedVars1
-"Dumps only the variable names given as list of indexes to a string."
-  input Integer v;
+  input Integer index;
   input BackendDAE.Variables vars;
   output String outS;
 protected
-  String s1,s2,s3;
-  DAE.ComponentRef cr;
+  BackendDAE.Var var;
 algorithm
-  BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, v);
-  s2 := ComponentReference.printComponentRefStr(cr);
-  s3 := intString(v);
-  outS := stringAppendList({s2,"(",s3,")"});
+  var := BackendVariable.getVarAt(vars, index);
+  outS := "  " + intString(index) + ": " + varString(var);
 end dumpMarkedVars1;
 
 public function dumpMarkedVarList

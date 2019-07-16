@@ -7338,49 +7338,46 @@ protected function causalizeDAEWork "
   output Option<BackendDAE.StructurallySingularSystemHandlerArg> oArg;
   output Boolean oCausalized;
 algorithm
-  (osyst,oshared,oArg,oCausalized) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized)
+  (osyst,oshared,oArg,oCausalized) := matchcontinue (isyst,matchingAlgorithm,stateDeselection)
     local
-      String str,mAmethodstr,str1;
-      BackendDAE.MatchingOptions match_opts;
-      BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithmfunc;
+      array<Integer> mapIncRowEqn;
+      array<list<Integer>> mapEqnIncRow;
       BackendDAE.EqSystem syst;
+      BackendDAE.MatchingOptions match_opts;
       BackendDAE.Shared shared;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
+      BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithmfunc;
       BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;
       DAE.FunctionTree funcs;
       Integer nvars,neqns;
+      String str,mAmethodstr,str1;
 
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()),_,_,_,_,_)
-      then
-        (isyst,ishared,NONE(),iCausalized);
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING()), _, _)
+    then (isyst, ishared,NONE(), iCausalized);
 
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,_),(sssHandler,_,_,_),_)
-      equation
-        //  print("SystemSize: " + intString(systemSize(isyst)) + "\n");
-        funcs = getFunctions(ishared);
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs));
-        match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
-        arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
-        // check singular system
-        nvars = BackendVariable.daenumVariables(syst);
-        neqns = systemSize(syst);
-        syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        // execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
-        // match the system and reduce index if neccessary
-        (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        // execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
-      then (syst,shared,SOME(arg),true);
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()), (matchingAlgorithmfunc,_), (sssHandler,_,_,_)) equation
+      //BackendDump.dumpEqSystem(isyst, "causalizeDAEWork");
+      //print("SystemSize: " + intString(systemSize(isyst)));
+      funcs = getFunctions(ishared);
+      (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs));
+      match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
+      arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
+      // check singular system
+      nvars = BackendVariable.daenumVariables(syst);
+      neqns = systemSize(syst);
+      syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
+      // execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
+      // match the system and reduce index if neccessary
+      (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
+      // execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
+    then (syst, shared,SOME(arg), true);
 
-    case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
-      equation
-        str = "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
-        if not isInitializationDAE(ishared) then
-          Error.addMessage(Error.INTERNAL_ERROR, {str});
-        end if;
-      then
-        fail();
+    case (_, (_,mAmethodstr), (_,str1,_,_)) equation
+      str = "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
+      if not isInitializationDAE(ishared) then
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      end if;
+    then fail();
   end matchcontinue;
 end causalizeDAEWork;
 
