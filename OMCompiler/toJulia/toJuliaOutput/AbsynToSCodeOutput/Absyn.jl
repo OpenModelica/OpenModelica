@@ -1,7 +1,8 @@
   module Absyn
 
 
-    using MetaModelica
+  using MetaModelica
+  using ExportAll
     #= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#
 
     @UniontypeDecl ForIterator
@@ -102,12 +103,12 @@
               @Record ITERATOR begin
 
                        name::String
-                       guardExp::Option{Exp}
-                       range::Option{Exp}
+                       guardExp::Option
+                       range::Option
               end
          end
 
-        ForIterators = List{ForIterator}  #= For Iterators -
+        ForIterators = List  #= For Iterators -
            these are used in:
            * for loops where the expression part can be NONE() and then the range
              is taken from an array variable that the iterator is used to index,
@@ -122,7 +123,7 @@
          @Uniontype Program begin
               @Record PROGRAM begin
 
-                       classes #= List of classes =#::List{Class}
+                       classes #= List of classes =#::List
                        within_ #= Within clause =#::Within
               end
          end
@@ -169,52 +170,52 @@
          @Uniontype ClassDef begin
               @Record PARTS begin
 
-                       typeVars #= class A<B,C> ... has type variables B,C =#::List{String}
+                       typeVars #= class A<B,C> ... has type variables B,C =#::List
                        classAttrs #= optimization Op (objective=...) end Op. A list arguments attributing a
-                           class declaration. Currently used only for Optimica extensions =#::List{NamedArg}
-                       classParts::List{ClassPart}
-                       ann #= Modelica2 allowed multiple class-annotations =#::List{Annotation}
-                       comment::Option{String}
+                           class declaration. Currently used only for Optimica extensions =#::List
+                       classParts::List
+                       ann #= Modelica2 allowed multiple class-annotations =#::List
+                       comment::Option
               end
 
               @Record DERIVED begin
 
                        typeSpec #= typeSpec specification includes array dimensions =#::TypeSpec
                        attributes::ElementAttributes
-                       arguments::List{ElementArg}
-                       comment::Option{Comment}
+                       arguments::List
+                       comment::Option
               end
 
               @Record ENUMERATION begin
 
                        enumLiterals::EnumDef
-                       comment::Option{Comment}
+                       comment::Option
               end
 
               @Record OVERLOAD begin
 
-                       functionNames::List{Path}
-                       comment::Option{Comment}
+                       functionNames::List
+                       comment::Option
               end
 
               @Record CLASS_EXTENDS begin
 
                        baseClassName #= name of class to extend =#::Ident
-                       modifications #= modifications to be applied to the base class =#::List{ElementArg}
-                       comment #= comment =#::Option{String}
-                       parts #= class parts =#::List{ClassPart}
-                       ann::List{Annotation}
+                       modifications #= modifications to be applied to the base class =#::List
+                       comment #= comment =#::Option
+                       parts #= class parts =#::List
+                       ann::List
               end
 
               @Record PDER begin
 
                        functionName::Path
-                       vars #= derived variables =#::List{Ident}
-                       comment #= comment =#::Option{Comment}
+                       vars #= derived variables =#::List
+                       comment #= comment =#::Option
               end
          end
 
-        ArrayDim = List{Subscript}  #= Component attributes are
+        ArrayDim = List  #= Component attributes are
           properties of components which are applied by type prefixes.
           As an example, declaring a component as `input Real x;\\' will
           give the attributes `ATTR({},false,VAR,INPUT)\\'.
@@ -228,14 +229,14 @@
               @Record TPATH begin
 
                        path::Path
-                       arrayDim::Option{ArrayDim}
+                       arrayDim::Option
               end
 
               @Record TCOMPLEX begin
 
                        path::Path
-                       typeSpecs::List{TypeSpec}
-                       arrayDim::Option{ArrayDim}
+                       typeSpecs::List
+                       arrayDim::Option
               end
          end
 
@@ -244,7 +245,7 @@
          @Uniontype EnumDef begin
               @Record ENUMLITERALS begin
 
-                       enumLiterals::List{EnumLiteral}
+                       enumLiterals::List
               end
 
               @Record ENUM_COLON begin
@@ -258,7 +259,7 @@
               @Record ENUMLITERAL begin
 
                        literal::Ident
-                       comment::Option{Comment}
+                       comment::Option
               end
          end
 
@@ -270,43 +271,43 @@
          @Uniontype ClassPart begin
               @Record PUBLIC begin
 
-                       contents::List{ElementItem}
+                       contents::List
               end
 
               @Record PROTECTED begin
 
-                       contents::List{ElementItem}
+                       contents::List
               end
 
               @Record CONSTRAINTS begin
 
-                       contents::List{Exp}
+                       contents::List
               end
 
               @Record EQUATIONS begin
 
-                       contents::List{EquationItem}
+                       contents::List
               end
 
               @Record INITIALEQUATIONS begin
 
-                       contents::List{EquationItem}
+                       contents::List
               end
 
               @Record ALGORITHMS begin
 
-                       contents::List{AlgorithmItem}
+                       contents::List
               end
 
               @Record INITIALALGORITHMS begin
 
-                       contents::List{AlgorithmItem}
+                       contents::List
               end
 
               @Record EXTERNAL begin
 
                        externalDecl #= externalDecl =#::ExternalDecl
-                       annotation_ #= annotation =#::Option{Annotation}
+                       annotation_ #= annotation =#::Option
               end
          end
 
@@ -329,23 +330,23 @@
               @Record ELEMENT begin
 
                        finalPrefix::Bool
-                       redeclareKeywords #= replaceable, redeclare =#::Option{RedeclareKeywords}
+                       redeclareKeywords #= replaceable, redeclare =#::Option
                        innerOuter #= inner/outer =#::InnerOuter
                        specification #= Actual element specification =#::ElementSpec
                        info #= File name the class is defined in + line no + column no =#::Info
-                       constrainClass #= only valid for classdef and component =#::Option{ConstrainClass}
+                       constrainClass #= only valid for classdef and component =#::Option
               end
 
               @Record DEFINEUNIT begin
 
                        name::Ident
-                       args::List{NamedArg}
+                       args::List
               end
 
               @Record TEXT begin
 
                        optName #= optName : optional name of text, e.g. model with syntax error.
-                                                              We need the name to be able to browse it... =#::Option{Ident}
+                                                              We need the name to be able to browse it... =#::Option
                        string::String
                        info::Info
               end
@@ -356,7 +357,7 @@
               @Record CONSTRAINCLASS begin
 
                        elementSpec #= must be extends =#::ElementSpec
-                       comment #= comment =#::Option{Comment}
+                       comment #= comment =#::Option
               end
          end
 
@@ -380,14 +381,14 @@
               @Record EXTENDS begin
 
                        path #= path =#::Path
-                       elementArg #= elementArg =#::List{ElementArg}
-                       annotationOpt #= optional annotation =#::Option{Annotation}
+                       elementArg #= elementArg =#::List
+                       annotationOpt #= optional annotation =#::Option
               end
 
               @Record IMPORT begin
 
                        import_ #= import =#::Import
-                       comment #= comment =#::Option{Comment}
+                       comment #= comment =#::Option
                        info::Info
               end
 
@@ -395,7 +396,7 @@
 
                        attributes #= attributes =#::ElementAttributes
                        typeSpec #= typeSpec =#::TypeSpec
-                       components #= components =#::List{ComponentItem}
+                       components #= components =#::List
               end
          end
 
@@ -445,7 +446,7 @@
               @Record GROUP_IMPORT begin
 
                        prefix::Path
-                       groups::List{GroupImport}
+                       groups::List
               end
          end
 
@@ -471,8 +472,8 @@
               @Record COMPONENTITEM begin
 
                        component #= component =#::Component
-                       condition #= condition =#::Option{ComponentCondition}
-                       comment #= comment =#::Option{Comment}
+                       condition #= condition =#::Option
+                       comment #= comment =#::Option
               end
          end
 
@@ -482,7 +483,7 @@
 
                        name #= name =#::Ident
                        arrayDim #= Array dimensions, if any =#::ArrayDim
-                       modification #= Optional modification =#::Option{Modification}
+                       modification #= Optional modification =#::Option
               end
          end
 
@@ -493,7 +494,7 @@
               @Record EQUATIONITEM begin
 
                        equation_ #= equation =#::Equation
-                       comment #= comment =#::Option{Comment}
+                       comment #= comment =#::Option
                        info #= line number =#::Info
               end
 
@@ -508,7 +509,7 @@
               @Record ALGORITHMITEM begin
 
                        algorithm_ #= algorithm =#::Algorithm
-                       comment #= comment =#::Option{Comment}
+                       comment #= comment =#::Option
                        info #= line number =#::Info
               end
 
@@ -524,9 +525,9 @@
               @Record EQ_IF begin
 
                        ifExp #= Conditional expression =#::Exp
-                       equationTrueItems #= true branch =#::List{EquationItem}
-                       elseIfBranches #= elseIfBranches =#::List{Tuple{Exp, List{EquationItem}}}
-                       equationElseItems #= equationElseItems Standard 2-side eqn =#::List{EquationItem}
+                       equationTrueItems #= true branch =#::List
+                       elseIfBranches #= elseIfBranches =#::List
+                       equationElseItems #= equationElseItems Standard 2-side eqn =#::List
               end
 
               @Record EQ_EQUALS begin
@@ -551,14 +552,14 @@
               @Record EQ_FOR begin
 
                        iterators::ForIterators
-                       forEquations #= forEquations =#::List{EquationItem}
+                       forEquations #= forEquations =#::List
               end
 
               @Record EQ_WHEN_E begin
 
                        whenExp #= whenExp =#::Exp
-                       whenEquations #= whenEquations =#::List{EquationItem}
-                       elseWhenEquations #= elseWhenEquations =#::List{Tuple{Exp, List{EquationItem}}}
+                       whenEquations #= whenEquations =#::List
+                       elseWhenEquations #= elseWhenEquations =#::List
               end
 
               @Record EQ_NORETCALL begin
@@ -587,34 +588,34 @@
               @Record ALG_IF begin
 
                        ifExp #= ifExp =#::Exp
-                       trueBranch #= trueBranch =#::List{AlgorithmItem}
-                       elseIfAlgorithmBranch #= elseIfAlgorithmBranch =#::List{Tuple{Exp, List{AlgorithmItem}}}
-                       elseBranch #= elseBranch =#::List{AlgorithmItem}
+                       trueBranch #= trueBranch =#::List
+                       elseIfAlgorithmBranch #= elseIfAlgorithmBranch =#::List
+                       elseBranch #= elseBranch =#::List
               end
 
               @Record ALG_FOR begin
 
                        iterators::ForIterators
-                       forBody #= forBody =#::List{AlgorithmItem}
+                       forBody #= forBody =#::List
               end
 
               @Record ALG_PARFOR begin
 
                        iterators::ForIterators
-                       parforBody #= parallel for loop Body =#::List{AlgorithmItem}
+                       parforBody #= parallel for loop Body =#::List
               end
 
               @Record ALG_WHILE begin
 
                        boolExpr #= boolExpr =#::Exp
-                       whileBody #= whileBody =#::List{AlgorithmItem}
+                       whileBody #= whileBody =#::List
               end
 
               @Record ALG_WHEN_A begin
 
                        boolExpr #= boolExpr =#::Exp
-                       whenBody #= whenBody =#::List{AlgorithmItem}
-                       elseWhenAlgorithmBranch #= elseWhenAlgorithmBranch =#::List{Tuple{Exp, List{AlgorithmItem}}}
+                       whenBody #= whenBody =#::List
+                       elseWhenAlgorithmBranch #= elseWhenAlgorithmBranch =#::List
               end
 
               @Record ALG_NORETCALL begin
@@ -636,13 +637,13 @@
 
               @Record ALG_FAILURE begin
 
-                       equ::List{AlgorithmItem}
+                       equ::List
               end
 
               @Record ALG_TRY begin
 
-                       body::List{AlgorithmItem}
-                       elseBody::List{AlgorithmItem}
+                       body::List
+                       elseBody::List
               end
 
               @Record ALG_CONTINUE begin
@@ -657,7 +658,7 @@
          @Uniontype Modification begin
               @Record CLASSMOD begin
 
-                       elementArgLst::List{ElementArg}
+                       elementArgLst::List
                        eqMod::EqMod
               end
          end
@@ -681,8 +682,8 @@
                        finalPrefix #= final prefix =#::Bool
                        eachPrefix #= each =#::Each
                        path::Path
-                       modification #= modification =#::Option{Modification}
-                       comment #= comment =#::Option{String}
+                       modification #= modification =#::Option
+                       comment #= comment =#::Option
                        info::Info
               end
 
@@ -692,7 +693,7 @@
                        redeclareKeywords #= redeclare  or replaceable  =#::RedeclareKeywords
                        eachPrefix #= each prefix =#::Each
                        elementSpec #= elementSpec =#::ElementSpec
-                       constrainClass #= class definition or declaration =#::Option{ConstrainClass}
+                       constrainClass #= class definition or declaration =#::Option
                        info #= needed because ElementSpec does not contain this info; Element does =#::Info
               end
          end
@@ -882,7 +883,7 @@
                        ifExp #= ifExp =#::Exp
                        trueBranch #= trueBranch =#::Exp
                        elseBranch #= elseBranch =#::Exp
-                       elseIfBranch #= elseIfBranch Function calls =#::List{Tuple{Exp, Exp}}
+                       elseIfBranch #= elseIfBranch Function calls =#::List
               end
 
               @Record CALL begin
@@ -902,24 +903,24 @@
 
               @Record ARRAY begin
 
-                       arrayExp::List{Exp}
+                       arrayExp::List
               end
 
               @Record MATRIX begin
 
-                       matrix::List{List{Exp}}
+                       matrix::List
               end
 
               @Record RANGE begin
 
                        start #= start =#::Exp
-                       step #= step =#::Option{Exp}
+                       step #= step =#::Option
                        stop #= stop =#::Exp
               end
 
               @Record TUPLE begin
 
-                       expressions #= comma-separated expressions =#::List{Exp}
+                       expressions #= comma-separated expressions =#::List
               end
 
               @Record END begin
@@ -950,9 +951,9 @@
 
                        matchTy #=  match or matchcontinue       =#::MatchType
                        inputExp #=  match expression of          =#::Exp
-                       localDecls #=  local declarations           =#::List{ElementItem}
-                       cases #=  case list + else in the end  =#::List{Case}
-                       comment #=  match expr comment_optional  =#::Option{String}
+                       localDecls #=  local declarations           =#::List
+                       cases #=  case list + else in the end  =#::List
+                       comment #=  match expr comment_optional  =#::Option
               end
 
                #=  The following are only used internally in the compiler
@@ -960,7 +961,7 @@
 
               @Record LIST begin
 
-                       exps::List{Exp}
+                       exps::List
               end
 
               @Record DOT begin
@@ -975,23 +976,23 @@
               @Record CASE begin
 
                        pattern #=  patterns to be matched  =#::Exp
-                       patternGuard::Option{Exp}
+                       patternGuard::Option
                        patternInfo #= file information of the pattern =#::Info
-                       localDecls #=  local decls  =#::List{ElementItem}
+                       localDecls #=  local decls  =#::List
                        classPart #=  equation or algorithm section  =#::ClassPart
                        result #=  result  =#::Exp
                        resultInfo #= file information of the result-exp =#::Info
-                       comment #=  comment after case like: case pattern string_comment  =#::Option{String}
+                       comment #=  comment after case like: case pattern string_comment  =#::Option
                        info #= file information of the whole case =#::Info
               end
 
               @Record ELSE begin
 
-                       localDecls #=  local decls  =#::List{ElementItem}
+                       localDecls #=  local decls  =#::List
                        classPart #=  equation or algorithm section  =#::ClassPart
                        result #=  result  =#::Exp
                        resultInfo #= file information of the result-exp =#::Info
-                       comment #=  comment after case like: case pattern string_comment  =#::Option{String}
+                       comment #=  comment after case like: case pattern string_comment  =#::Option
                        info #= file information of the whole case =#::Info
               end
          end
@@ -1006,7 +1007,7 @@
               end
          end
 
-          #= The Code uniontype is used for Meta-programming. It originates from the $Code quoting mechanism. See paper in Modelica2003 conference =#
+          #= The Code uniontype is used for Meta-programming. It originates from the Code quoting mechanism. See paper in Modelica2003 conference =#
          @Uniontype CodeNode begin
               @Record C_TYPENAME begin
 
@@ -1021,19 +1022,19 @@
               @Record C_CONSTRAINTSECTION begin
 
                        boolean::Bool
-                       equationItemLst::List{EquationItem}
+                       equationItemLst::List
               end
 
               @Record C_EQUATIONSECTION begin
 
                        boolean::Bool
-                       equationItemLst::List{EquationItem}
+                       equationItemLst::List
               end
 
               @Record C_ALGORITHMSECTION begin
 
                        boolean::Bool
-                       algorithmItemLst::List{AlgorithmItem}
+                       algorithmItemLst::List
               end
 
               @Record C_ELEMENT begin
@@ -1057,8 +1058,8 @@
          @Uniontype FunctionArgs begin
               @Record FUNCTIONARGS begin
 
-                       args #= args =#::List{Exp}
-                       argNames #= argNames =#::List{NamedArg}
+                       args #= args =#::List
+                       argNames #= argNames =#::List
               end
 
               @Record FOR_ITER_FARG begin
@@ -1225,14 +1226,14 @@
               @Record CREF_QUAL begin
 
                        name #= name =#::Ident
-                       subscripts #= subscripts =#::List{Subscript}
+                       subscripts #= subscripts =#::List
                        componentRef #= componentRef =#::ComponentRef
               end
 
               @Record CREF_IDENT begin
 
                        name #= name =#::Ident
-                       subscripts #= subscripts =#::List{Subscript}
+                       subscripts #= subscripts =#::List
               end
 
               @Record WILD begin
@@ -1375,7 +1376,7 @@
                        moved::Bool
                        #=  true if moved outside uniontype, otherwise false.
                        =#
-                       typeVars::List{String}
+                       typeVars::List
               end
 
               @Record R_UNKNOWN begin
@@ -1424,7 +1425,7 @@
          @Uniontype Annotation begin
               @Record ANNOTATION begin
 
-                       elementArgs #= elementArgs =#::List{ElementArg}
+                       elementArgs #= elementArgs =#::List
               end
          end
 
@@ -1432,8 +1433,8 @@
          @Uniontype Comment begin
               @Record COMMENT begin
 
-                       annotation_ #= annotation =#::Option{Annotation}
-                       comment #= comment =#::Option{String}
+                       annotation_ #= annotation =#::Option
+                       comment #= comment =#::Option
               end
          end
 
@@ -1441,11 +1442,11 @@
          @Uniontype ExternalDecl begin
               @Record EXTERNALDECL begin
 
-                       funcName #= The name of the external function =#::Option{Ident}
-                       lang #= Language of the external function =#::Option{String}
-                       output_ #= output parameter as return value =#::Option{ComponentRef}
-                       args #= only positional arguments, i.e. expression list =#::List{Exp}
-                       annotation_::Option{Annotation}
+                       funcName #= The name of the external function =#::Option
+                       lang #= Language of the external function =#::Option
+                       output_ #= output parameter as return value =#::Option
+                       args #= only positional arguments, i.e. expression list =#::List
+                       annotation_::Option
               end
          end
 
@@ -1477,5 +1478,7 @@
 
               end
          end
+
+   @exportAll()
 
   end

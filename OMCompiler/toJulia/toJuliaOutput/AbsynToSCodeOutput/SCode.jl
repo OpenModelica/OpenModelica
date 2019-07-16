@@ -1,9 +1,8 @@
-  module SCode
-
+#= Partly automatically generated =#
+module SCode
 
     using MetaModelica
     #= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#
-
     @UniontypeDecl Restriction
     @UniontypeDecl FunctionRestriction
     @UniontypeDecl Mod
@@ -109,15 +108,19 @@
          *
          */ =#
 
-        import Absyn
+import Absyn
 
-        import AbsynUtil
-         #=  Some definitions are aliased from Absyn
-         =#
+import AbsynUtil
 
-        Ident = Absyn.Ident
+import Util
 
-        Path = Absyn.Path
+import List
+
+Lst = MetaModelica.List
+
+        Ident = Absyn.Ident 
+
+        Path = Absyn.Path 
 
         Subscript = Absyn.Subscript
 
@@ -214,14 +217,14 @@
                        moved::Bool
                        #=  true if moved outside uniontype, otherwise false.
                        =#
-                       typeVars::List{String}
+                       typeVars::Lst
               end
 
                #= /* added by x07simbj */ =#
 
               @Record R_UNIONTYPE begin
 
-                       typeVars::List{String}
+                       typeVars::Lst
               end
 
                #= /* added by simbj */ =#
@@ -266,8 +269,8 @@
 
                        finalPrefix #= final prefix =#::Final
                        eachPrefix #= each prefix =#::Each
-                       subModLst::List{SubMod}
-                       binding::Option{Absyn.Exp}
+                       subModLst::Lst
+                       binding::Option
                        info::SourceInfo
               end
 
@@ -294,7 +297,7 @@
               end
          end
 
-        Program = List{Element}  #= - Programs
+        Program = List  #= - Programs
         As in the AST, a program is simply a list of class definitions. =#
 
           #= Enum, which is a name in an enumeration and an optional Comment. =#
@@ -325,14 +328,14 @@
          @Uniontype ClassDef begin
               @Record PARTS begin
 
-                       elementLst #= the list of elements =#::List{Element}
-                       normalEquationLst #= the list of equations =#::List{Equation}
-                       initialEquationLst #= the list of initial equations =#::List{Equation}
-                       normalAlgorithmLst #= the list of algorithms =#::List{AlgorithmSection}
-                       initialAlgorithmLst #= the list of initial algorithms =#::List{AlgorithmSection}
-                       constraintLst #= the list of constraints =#::List{ConstraintSection}
-                       clsattrs #= the list of class attributes. Currently for Optimica extensions =#::List{Absyn.NamedArg}
-                       externalDecl #= used by external functions =#::Option{ExternalDecl}
+                       elementLst #= the list of elements =#::Lst
+                       normalEquationLst #= the list of equations =#::Lst
+                       initialEquationLst #= the list of initial equations =#::Lst
+                       normalAlgorithmLst #= the list of algorithms =#::Lst
+                       initialAlgorithmLst #= the list of initial algorithms =#::Lst
+                       constraintLst #= the list of constraints =#::Lst
+                       clsattrs #= the list of class attributes. Currently for Optimica extensions =#::Lst
+                       externalDecl #= used by external functions =#::Option
               end
 
               @Record CLASS_EXTENDS begin
@@ -350,33 +353,34 @@
 
               @Record ENUMERATION begin
 
-                       enumLst #= if the list is empty it means :, the supertype of all enumerations =#::List{Enum}
+                       enumLst #= if the list is empty it means :, the supertype of all enumerations =#::Lst
               end
 
               @Record OVERLOAD begin
 
-                       pathLst #= the path lists =#::List{Absyn.Path}
+                       pathLst #= the path lists =#::Lst
               end
 
               @Record PDER begin
 
                        functionPath #= function name =#::Absyn.Path
-                       derivedVariables #= derived variables =#::List{Ident}
+                       derivedVariables #= derived variables =#::Lst
+              end
+         end
+
+
+         @Uniontype Comment begin
+              @Record COMMENT begin
+
+                       annotation_::Option
+                       comment::Option
               end
          end
 
          noComment = COMMENT(NONE(), NONE())::Comment
 
-         @Uniontype Comment begin
-              @Record COMMENT begin
-
-                       annotation_::Option{Annotation}
-                       comment::Option{String}
-              end
-         end
-
-         #=  stefan
-         =#
+#=  stefan
+=#
 
          @Uniontype Annotation begin
               @Record ANNOTATION begin
@@ -389,11 +393,11 @@
          @Uniontype ExternalDecl begin
               @Record EXTERNALDECL begin
 
-                       funcName #= The name of the external function =#::Option{Ident}
-                       lang #= Language of the external function =#::Option{String}
-                       output_ #= output parameter as return value =#::Option{Absyn.ComponentRef}
-                       args #= only positional arguments, i.e. expression list =#::List{Absyn.Exp}
-                       annotation_::Option{Annotation}
+                       funcName #= The name of the external function =#::Option
+                       lang #= Language of the external function =#::Option
+                       output_ #= output parameter as return value =#::Option
+                       args #= only positional arguments, i.e. expression list =#::Lst
+                       annotation_::Option
               end
          end
 
@@ -411,9 +415,9 @@
          @Uniontype EEquation begin
               @Record EQ_IF begin
 
-                       condition #= conditional =#::List{Absyn.Exp}
-                       thenBranch #= the true (then) branch =#::List{List{EEquation}}
-                       elseBranch #= the false (else) branch =#::List{EEquation}
+                       condition #= conditional =#::Lst
+                       thenBranch #= the true (then) branch =#::Lst
+                       elseBranch #= the false (else) branch =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -446,8 +450,8 @@
               @Record EQ_FOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option{Absyn.Exp}
-                       eEquationLst #= the equation list =#::List{EEquation}
+                       range #= the range of the index =#::Option
+                       eEquationLst #= the equation list =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -455,8 +459,8 @@
               @Record EQ_WHEN begin
 
                        condition #= the when condition =#::Absyn.Exp
-                       eEquationLst #= the equation list =#::List{EEquation}
-                       elseBranches #= the elsewhen expression and equation list =#::List{Tuple{Absyn.Exp, List{EEquation}}}
+                       eEquationLst #= the equation list =#::Lst
+                       elseBranches #= the elsewhen expression and equation list =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -501,14 +505,14 @@
          @Uniontype AlgorithmSection begin
               @Record ALGORITHM begin
 
-                       statements #= the algorithm statements =#::List{Statement}
+                       statements #= the algorithm statements =#::Lst
               end
          end
 
          @Uniontype ConstraintSection begin
               @Record CONSTRAINTS begin
 
-                       constraints::List{Absyn.Exp}
+                       constraints::Lst
               end
          end
 
@@ -525,9 +529,9 @@
               @Record ALG_IF begin
 
                        boolExpr::Absyn.Exp
-                       trueBranch::List{Statement}
-                       elseIfBranch::List{Tuple{Absyn.Exp, List{Statement}}}
-                       elseBranch::List{Statement}
+                       trueBranch::Lst
+                       elseIfBranch::Lst
+                       elseBranch::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -535,8 +539,8 @@
               @Record ALG_FOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option{Absyn.Exp}
-                       forBody #= forBody =#::List{Statement}
+                       range #= the range of the index =#::Option
+                       forBody #= forBody =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -544,8 +548,8 @@
               @Record ALG_PARFOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option{Absyn.Exp}
-                       parforBody #= parallel for loop body =#::List{Statement}
+                       range #= the range of the index =#::Option
+                       parforBody #= parallel for loop body =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -553,14 +557,14 @@
               @Record ALG_WHILE begin
 
                        boolExpr #= boolExpr =#::Absyn.Exp
-                       whileBody #= whileBody =#::List{Statement}
+                       whileBody #= whileBody =#::Lst
                        comment::Comment
                        info::SourceInfo
               end
 
               @Record ALG_WHEN_A begin
 
-                       branches::List{Tuple{Absyn.Exp, List{Statement}}}
+                       branches::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -613,15 +617,15 @@
 
               @Record ALG_FAILURE begin
 
-                       stmts::List{Statement}
+                       stmts::Lst
                        comment::Comment
                        info::SourceInfo
               end
 
               @Record ALG_TRY begin
 
-                       body::List{Statement}
-                       elseBody::List{Statement}
+                       body::Lst
+                       elseBody::Lst
                        comment::Comment
                        info::SourceInfo
               end
@@ -671,7 +675,7 @@
          @Uniontype Replaceable begin
               @Record REPLACEABLE begin
 
-                       cc #= the constraint class =#::Option{ConstrainClass}
+                       cc #= the constraint class =#::Option
               end
 
               @Record NOT_REPLACEABLE begin
@@ -769,7 +773,7 @@
                        baseClassPath #= the extends path =#::Path
                        visibility #= the protected/public prefix =#::Visibility
                        modifications #= the modifications applied to the base class =#::Mod
-                       ann #= the extends annotation =#::Option{Annotation}
+                       ann #= the extends annotation =#::Option
                        info #= the extends info =#::SourceInfo
               end
 
@@ -793,7 +797,7 @@
                        typeSpec #= the type specification =#::Absyn.TypeSpec
                        modifications #= the modifications to be applied to the component =#::Mod
                        comment #= this if for extraction of comments and annotations from Absyn =#::Comment
-                       condition #= the conditional declaration of a component =#::Option{Absyn.Exp}
+                       condition #= the conditional declaration of a component =#::Option
                        info #= this is for line and column numbers, also file name. =#::SourceInfo
               end
 
@@ -801,8 +805,8 @@
 
                        name::Ident
                        visibility #= the protected/public prefix =#::Visibility
-                       exp #= the unit expression =#::Option{String}
-                       weight #= the weight =#::Option{ModelicaReal}
+                       exp #= the unit expression =#::Option
+                       weight #= the weight =#::Option
               end
          end
 
@@ -875,19 +879,6 @@
          defaultParamAttr = ATTR(list(), POTENTIAL(), NON_PARALLEL(), PARAM(), Absyn.BIDIR(), Absyn.NONFIELD())::Attributes
 
          defaultConstAttr = ATTR(list(), POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR(), Absyn.NONFIELD())::Attributes
-         #=  .......... functionality .........
-         =#
-
-        import Error
-
-        import Util
-
-        import List
-
-        import NFSCodeCheck
-
-        import SCodeUtil
-
          #= Removes all submodifiers from the Mod. =#
         function stripSubmod(inMod::Mod)::Mod
               local outMod::Mod
@@ -895,13 +886,13 @@
               outMod = begin
                   local fp::Final
                   local ep::Each
-                  local binding::Option{Absyn.Exp}
+                  local binding::Option
                   local info::SourceInfo
                 @match inMod begin
                   MOD(fp, ep, _, binding, info)  => begin
                     MOD(fp, ep, list(), binding, info)
                   end
-
+                  
                   _  => begin
                       inMod
                   end
@@ -923,14 +914,14 @@
                         MOD(subModLst =  nil(), binding = NONE())  => begin
                           NOMOD()
                         end
-
+                        
                         _  => begin
                             mod
                         end
                       end
                     end
                   end
-
+                  
                   _  => begin
                       mod
                   end
@@ -946,13 +937,13 @@
               outElement = begin
                   local elt::Element
                   local id::String
-                  local elts::List{Element}
-                @match inIdent, inClass begin
+                  local elts::Lst
+                @match (inIdent, inClass) begin
                   (id, CLASS(classDef = PARTS(elementLst = elts)))  => begin
                       elt = getElementNamedFromElts(id, elts)
                     elt
                   end
-
+                  
                   (id, CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts))))  => begin
                       elt = getElementNamedFromElts(id, elts)
                     elt
@@ -964,7 +955,7 @@
         end
 
          #= Helper function to getElementNamed. =#
-        function getElementNamedFromElts(inIdent::Ident, inElementLst::List{Element})::Element
+        function getElementNamedFromElts(inIdent::Ident, inElementLst::Lst)::Element
               local outElement::Element
 
               outElement = begin
@@ -973,35 +964,37 @@
                   local cdef::Element
                   local id2::String
                   local id1::String
-                  local xs::List{Element}
-                @matchcontinue inIdent, inElementLst begin
-                  (id2, comp = COMPONENT(name = id1) <| _)  => begin
+                  local xs::Lst
+                @matchcontinue (inIdent, inElementLst) begin
+                  (id2, COMPONENT(name = id1) <| _)  => begin
+                    comp,
                       @assert true == (stringEq(id1, id2))
                     comp
                   end
-
+                  
                   (id2, COMPONENT(name = id1) <| xs)  => begin
                       @assert false == (stringEq(id1, id2))
                       elt = getElementNamedFromElts(id2, xs)
                     elt
                   end
-
+                  
                   (id2, CLASS(name = id1) <| xs)  => begin
                       @assert false == (stringEq(id1, id2))
                       elt = getElementNamedFromElts(id2, xs)
                     elt
                   end
-
+                  
                   (id2, EXTENDS() <| xs)  => begin
                       elt = getElementNamedFromElts(id2, xs)
                     elt
                   end
-
-                  (id2, cdef = CLASS(name = id1) <| _)  => begin
+                  
+                  (id2, CLASS(name = id1) <| _)  => begin
+                    cdef,
                       @assert true == (stringEq(id1, id2))
                     cdef
                   end
-
+                  
                   (id2, _ <| xs)  => begin
                       elt = getElementNamedFromElts(id2, xs)
                     elt
@@ -1013,7 +1006,7 @@
           outElement
         end
 
-         #=
+         #= 
         Author BZ, 2009-01
         check if an element is of type EXTENDS or not. =#
         function isElementExtends(ele::Element)::Bool
@@ -1024,7 +1017,7 @@
                   EXTENDS()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1042,7 +1035,7 @@
                   EXTENDS()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1051,7 +1044,7 @@
           isExtend
         end
 
-         #=
+         #= 
         check if an element is not of type CLASS_EXTENDS. =#
         function isNotElementClassExtends(ele::Element)::Bool
               local isExtend::Bool
@@ -1061,7 +1054,7 @@
                   CLASS(classDef = CLASS_EXTENDS())  => begin
                     false
                   end
-
+                  
                   _  => begin
                       true
                   end
@@ -1079,7 +1072,7 @@
                   PARAM()  => begin
                     true
                   end
-
+                  
                   CONST()  => begin
                     true
                   end
@@ -1101,7 +1094,7 @@
                   CONST()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1116,18 +1109,18 @@
 
               outInteger = begin
                   local res::ModelicaInteger
-                  local elts::List{Element}
+                  local elts::Lst
                 @matchcontinue inClass begin
                   CLASS(classDef = PARTS(elementLst = elts))  => begin
                       res = listLength(elts)
                     res
                   end
-
+                  
                   CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))  => begin
                       res = listLength(elts)
                     res
                   end
-
+                  
                   _  => begin
                       0
                   end
@@ -1138,23 +1131,23 @@
         end
 
          #= Return a string list of all component names of a class. =#
-        function componentNames(inClass::Element)::List{String}
-              local outStringLst::List{String}
+        function componentNames(inClass::Element)::Lst
+              local outStringLst::Lst
 
               outStringLst = begin
-                  local res::List{String}
-                  local elts::List{Element}
+                  local res::Lst
+                  local elts::Lst
                 @match inClass begin
                   CLASS(classDef = PARTS(elementLst = elts))  => begin
                       res = componentNamesFromElts(elts)
                     res
                   end
-
+                  
                   CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))  => begin
                       res = componentNamesFromElts(elts)
                     res
                   end
-
+                  
                   _  => begin
                       list()
                   end
@@ -1165,8 +1158,8 @@
         end
 
          #= Helper function to componentNames. =#
-        function componentNamesFromElts(inElements::List{Element})::List{String}
-              local outComponentNames::List{String}
+        function componentNamesFromElts(inElements::Lst)::Lst
+              local outComponentNames::Lst
 
               outComponentNames = List.filterMap(inElements, componentName)
           outComponentNames
@@ -1189,7 +1182,7 @@
                   COMPONENT(info = i)  => begin
                     i
                   end
-
+                  
                   CLASS(info = i)  => begin
                     i
                   end
@@ -1219,7 +1212,7 @@
                   COMPONENT(name = s)  => begin
                     s
                   end
-
+                  
                   CLASS(name = s)  => begin
                     s
                   end
@@ -1232,16 +1225,16 @@
               local outInfo::SourceInfo
               local outName::String
 
-              outName, outInfo = begin
+              (outName, outInfo) = begin
                   local name::String
                   local info::SourceInfo
                 @match inElement begin
                   COMPONENT(name = name, info = info)  => begin
-                    name, info
+                    (name, info)
                   end
-
+                  
                   CLASS(name = name, info = info)  => begin
-                    name, info
+                    (name, info)
                   end
                 end
               end
@@ -1249,24 +1242,24 @@
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNames(elts::List{Element})::List{String}
-              local names::List{String}
+        function elementNames(elts::Lst)::Lst
+              local names::Lst
 
               names = List.fold(elts, elementNamesWork, list())
           names
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNamesWork(e::Element, acc::List{String})::List{String}
-              local out::List{String}
+        function elementNamesWork(e::Element, acc::Lst)::Lst
+              local out::Lst
 
               out = begin
                   local s::String
-                @match e, acc begin
+                @match (e, acc) begin
                   (COMPONENT(name = s), _)  => begin
                     s <| acc
                   end
-
+                  
                   (CLASS(name = s), _)  => begin
                     s <| acc
                   end
@@ -1293,12 +1286,12 @@
                   local ty::Absyn.TypeSpec
                   local mod::Mod
                   local cmt::Comment
-                  local cond::Option{Absyn.Exp}
-                @match inElement, inName begin
+                  local cond::Option
+                @match (inElement, inName) begin
                   (CLASS(_, pf, ep, pp, res, cdef, cmt, i), _)  => begin
                     CLASS(inName, pf, ep, pp, res, cdef, cmt, i)
                   end
-
+                  
                   (COMPONENT(_, pf, attr, ty, mod, cmt, cond, i), _)  => begin
                     COMPONENT(inName, pf, attr, ty, mod, cmt, cond, i)
                   end
@@ -1311,11 +1304,11 @@
               local outEqual::Bool
 
               outEqual = begin
-                @match inElement1, inElement2 begin
+                @match (inElement1, inElement2) begin
                   (CLASS(), CLASS())  => begin
                     inElement1.name == inElement2.name
                   end
-
+                  
                   (COMPONENT(), COMPONENT())  => begin
                     inElement1.name == inElement2.name
                   end
@@ -1363,7 +1356,7 @@
                   CLASS(restriction = R_RECORD())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1381,7 +1374,7 @@
                   CLASS(restriction = R_RECORD(true))  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1399,7 +1392,7 @@
                   CLASS(restriction = R_FUNCTION())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1417,7 +1410,7 @@
                   R_FUNCTION()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1436,7 +1429,7 @@
                   R_FUNCTION(FR_NORMAL_FUNCTION())  => begin
                     true
                   end
-
+                  
                   R_FUNCTION(FR_EXTERNAL_FUNCTION())  => begin
                     true
                   end
@@ -1459,7 +1452,7 @@
                   CLASS(restriction = R_OPERATOR())  => begin
                     true
                   end
-
+                  
                   CLASS(restriction = R_FUNCTION(FR_OPERATOR_FUNCTION()))  => begin
                     true
                   end
@@ -1494,7 +1487,7 @@
                   local info::SourceInfo
                   local prefixes::Prefixes
                   local cmt::Comment
-                @match inClass, inPartial begin
+                @match (inClass, inPartial) begin
                   (CLASS(name = id, prefixes = prefixes, encapsulatedPrefix = enc, restriction = restr, classDef = def, cmt = cmt, info = info), partialPrefix)  => begin
                     CLASS(id, prefixes, enc, partialPrefix, restr, def, cmt, info)
                   end
@@ -1530,15 +1523,15 @@
                   local im2::Absyn.Import
                   local path1::Absyn.Path
                   local path2::Absyn.Path
-                  local os1::Option{String}
-                  local os2::Option{String}
-                  local or1::Option{ModelicaReal}
-                  local or2::Option{ModelicaReal}
-                  local cond1::Option{Absyn.Exp}
-                  local cond2::Option{Absyn.Exp}
+                  local os1::Option
+                  local os2::Option
+                  local or1::Option
+                  local or2::Option
+                  local cond1::Option
+                  local cond2::Option
                   local cd1::ClassDef
                   local cd2::ClassDef
-                @matchcontinue element1, element2 begin
+                @matchcontinue (element1, element2) begin
                   (CLASS(name1, prefixes1, en1, p1, restr1, cd1, _, _), CLASS(name2, prefixes2, en2, p2, restr2, cd2, _, _))  => begin
                       @assert true == (stringEq(name1, name2))
                       @assert true == (prefixesEqual(prefixes1, prefixes2))
@@ -1548,7 +1541,7 @@
                       @assert true == (classDefEqual(cd1, cd2))
                     true
                   end
-
+                  
                   (COMPONENT(name1, prefixes1, attr1, tp1, mod1, _, cond1, _), COMPONENT(name2, prefixes2, attr2, tp2, mod2, _, cond2, _))  => begin
                       equality(cond1, cond2)
                       @assert true == (stringEq(name1, name2))
@@ -1558,25 +1551,25 @@
                       @assert true == (AbsynUtil.typeSpecEqual(tp1, tp2))
                     true
                   end
-
+                  
                   (EXTENDS(path1, _, mod1, _, _), EXTENDS(path2, _, mod2, _, _))  => begin
                       @assert true == (AbsynUtil.pathEqual(path1, path2))
                       @assert true == (modEqual(mod1, mod2))
                     true
                   end
-
+                  
                   (IMPORT(imp = im1), IMPORT(imp = im2))  => begin
                       @assert true == (AbsynUtil.importEqual(im1, im2))
                     true
                   end
-
+                  
                   (DEFINEUNIT(name1, _, os1, or1), DEFINEUNIT(name2, _, os2, or2))  => begin
                       @assert true == (stringEq(name1, name2))
                       equality(os1, os2)
                       equality(or1, or2)
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1610,11 +1603,11 @@
               equal = begin
                   local funcRest1::FunctionRestriction
                   local funcRest2::FunctionRestriction
-                @match restr1, restr2 begin
+                @match (restr1, restr2) begin
                   (R_CLASS(), R_CLASS())  => begin
                     true
                   end
-
+                  
                   (R_OPTIMIZATION(), R_OPTIMIZATION())  => begin
                     true
                   end
@@ -1715,11 +1708,11 @@
               equal = begin
                   local b1::Bool
                   local b2::Bool
-                @match funcRestr1, funcRestr2 begin
+                @match (funcRestr1, funcRestr2) begin
                   (FR_NORMAL_FUNCTION(b1), FR_NORMAL_FUNCTION(b2))  => begin
                     boolEq(b1, b2)
                   end
-
+                  
                   (FR_EXTERNAL_FUNCTION(b1), FR_EXTERNAL_FUNCTION(b2))  => begin
                     boolEq(b1, b2)
                   end
@@ -1755,7 +1748,7 @@
                   local s1::String
                   local s2::String
                   local b1::Bool
-                @match e1, e2 begin
+                @match (e1, e2) begin
                   (ENUM(s1, _), ENUM(s2, _))  => begin
                       b1 = stringEq(s1, s2)
                     b1
@@ -1772,18 +1765,18 @@
               local equal::Bool
 
               equal = begin
-                  local elts1::List{Element}
-                  local elts2::List{Element}
-                  local eqns1::List{Equation}
-                  local eqns2::List{Equation}
-                  local ieqns1::List{Equation}
-                  local ieqns2::List{Equation}
-                  local algs1::List{AlgorithmSection}
-                  local algs2::List{AlgorithmSection}
-                  local ialgs1::List{AlgorithmSection}
-                  local ialgs2::List{AlgorithmSection}
-                  local cons1::List{ConstraintSection}
-                  local cons2::List{ConstraintSection}
+                  local elts1::Lst
+                  local elts2::Lst
+                  local eqns1::Lst
+                  local eqns2::Lst
+                  local ieqns1::Lst
+                  local ieqns2::Lst
+                  local algs1::Lst
+                  local algs2::Lst
+                  local ialgs1::Lst
+                  local ialgs2::Lst
+                  local cons1::Lst
+                  local cons2::Lst
                   local attr1::Attributes
                   local attr2::Attributes
                   local tySpec1::Absyn.TypeSpec
@@ -1792,13 +1785,13 @@
                   local p2::Absyn.Path
                   local mod1::Mod
                   local mod2::Mod
-                  local elst1::List{Enum}
-                  local elst2::List{Enum}
-                  local ilst1::List{Ident}
-                  local ilst2::List{Ident}
-                  local clsttrs1::List{Absyn.NamedArg}
-                  local clsttrs2::List{Absyn.NamedArg}
-                @match cdef1, cdef2 begin
+                  local elst1::Lst
+                  local elst2::Lst
+                  local ilst1::Lst
+                  local ilst2::Lst
+                  local clsttrs1::Lst
+                  local clsttrs2::Lst
+                @match (cdef1, cdef2) begin
                   (PARTS(elts1, eqns1, ieqns1, algs1, ialgs1, _, _, _), PARTS(elts2, eqns2, ieqns2, algs2, ialgs2, _, _, _))  => begin
                       List.threadMapAllValue(elts1, elts2, elementEqual, true)
                       List.threadMapAllValue(eqns1, eqns2, equationEqual, true)
@@ -1807,19 +1800,19 @@
                       List.threadMapAllValue(ialgs1, ialgs2, algorithmEqual, true)
                     true
                   end
-
+                  
                   (DERIVED(tySpec1, mod1, attr1), DERIVED(tySpec2, mod2, attr2))  => begin
                       @assert true == (AbsynUtil.typeSpecEqual(tySpec1, tySpec2))
                       @assert true == (modEqual(mod1, mod2))
                       @assert true == (attributesEqual(attr1, attr2))
                     true
                   end
-
+                  
                   (ENUMERATION(elst1), ENUMERATION(elst2))  => begin
                       List.threadMapAllValue(elst1, elst2, enumEqual, true)
                     true
                   end
-
+                  
                   (CLASS_EXTENDS(mod1, PARTS(elts1, eqns1, ieqns1, algs1, ialgs1, _, _, _)), CLASS_EXTENDS(mod2, PARTS(elts2, eqns2, ieqns2, algs2, ialgs2, _, _, _)))  => begin
                       List.threadMapAllValue(elts1, elts2, elementEqual, true)
                       List.threadMapAllValue(eqns1, eqns2, equationEqual, true)
@@ -1829,12 +1822,12 @@
                       @assert true == (modEqual(mod1, mod2))
                     true
                   end
-
+                  
                   (PDER(_, ilst1), PDER(_, ilst2))  => begin
                       List.threadMapAllValue(ilst1, ilst2, stringEq, true)
                     true
                   end
-
+                  
                   _  => begin
                       fail()
                   end
@@ -1855,23 +1848,23 @@
         end
 
          #= Returns true if two Option<ArrayDim> are equal =#
-        function arraydimOptEqual(adopt1::Option{Absyn.ArrayDim}, adopt2::Option{Absyn.ArrayDim})::Bool
+        function arraydimOptEqual(adopt1::Option, adopt2::Option)::Bool
               local equal::Bool
 
               equal = begin
-                  local lst1::List{Absyn.Subscript}
-                  local lst2::List{Absyn.Subscript}
-                  local blst::List{Bool}
-                @matchcontinue adopt1, adopt2 begin
+                  local lst1::Lst
+                  local lst2::Lst
+                  local blst::Lst
+                @matchcontinue (adopt1, adopt2) begin
                   (NONE(), NONE())  => begin
                     true
                   end
-
+                  
                   (SOME(lst1), SOME(lst2))  => begin
                       List.threadMapAllValue(lst1, lst2, subscriptEqual, true)
                     true
                   end
-
+                  
                   (SOME(_), SOME(_))  => begin
                     false
                   end
@@ -1889,11 +1882,11 @@
               equal = begin
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
-                @match sub1, sub2 begin
+                @match (sub1, sub2) begin
                   (Absyn.NOSUB(), Absyn.NOSUB())  => begin
                     true
                   end
-
+                  
                   (Absyn.SUBSCRIPT(e1), Absyn.SUBSCRIPT(e2))  => begin
                     AbsynUtil.expEqual(e1, e2)
                   end
@@ -1907,14 +1900,14 @@
               local equal::Bool
 
               equal = begin
-                  local a1::List{Statement}
-                  local a2::List{Statement}
-                @matchcontinue alg1, alg2 begin
+                  local a1::Lst
+                  local a2::Lst
+                @matchcontinue (alg1, alg2) begin
                   (ALGORITHM(a1), ALGORITHM(a2))  => begin
                       List.threadMapAllValue(a1, a2, algorithmEqual2, true)
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -1944,28 +1937,28 @@
                   local e22::Absyn.Exp
                   local b1::Bool
                   local b2::Bool
-                @matchcontinue ai1, ai2 begin
+                @matchcontinue (ai1, ai2) begin
                   (ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1), ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))  => begin
                       b1 = AbsynUtil.crefEqual(cr1, cr2)
                       b2 = AbsynUtil.expEqual(e1, e2)
                       equal = boolAnd(b1, b2)
                     equal
                   end
-
+                  
                   (ALG_ASSIGN(assignComponent = e11 = Absyn.TUPLE(_), value = e12), ALG_ASSIGN(assignComponent = e21 = Absyn.TUPLE(_), value = e22))  => begin
                       b1 = AbsynUtil.expEqual(e11, e21)
                       b2 = AbsynUtil.expEqual(e12, e22)
                       equal = boolAnd(b1, b2)
                     equal
                   end
-
+                  
                   (a1, a2)  => begin
                       Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1)
                       Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2)
                       equality(alg1, alg2)
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2008,12 +2001,12 @@
               local equal::Bool
 
               equal = begin
-                  local tb1::List{List{EEquation}}
-                  local tb2::List{List{EEquation}}
+                  local tb1::Lst
+                  local tb2::Lst
                   local cond1::Absyn.Exp
                   local cond2::Absyn.Exp
-                  local ifcond1::List{Absyn.Exp}
-                  local ifcond2::List{Absyn.Exp}
+                  local ifcond1::Lst
+                  local ifcond2::Lst
                   local e11::Absyn.Exp
                   local e12::Absyn.Exp
                   local e21::Absyn.Exp
@@ -2034,75 +2027,75 @@
                   local cr2::Absyn.ComponentRef
                   local id1::Absyn.Ident
                   local id2::Absyn.Ident
-                  local fb1::List{EEquation}
-                  local fb2::List{EEquation}
-                  local eql1::List{EEquation}
-                  local eql2::List{EEquation}
-                  local elst1::List{EEquation}
-                  local elst2::List{EEquation}
-                @matchcontinue eq1, eq2 begin
+                  local fb1::Lst
+                  local fb2::Lst
+                  local eql1::Lst
+                  local eql2::Lst
+                  local elst1::Lst
+                  local elst2::Lst
+                @matchcontinue (eq1, eq2) begin
                   (EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1), EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))  => begin
                       @assert true == (equationEqual22(tb1, tb2))
                       List.threadMapAllValue(fb1, fb2, equationEqual2, true)
                       List.threadMapAllValue(ifcond1, ifcond2, AbsynUtil.expEqual, true)
                     true
                   end
-
+                  
                   (EQ_EQUALS(expLeft = e11, expRight = e12), EQ_EQUALS(expLeft = e21, expRight = e22))  => begin
                       @assert true == (AbsynUtil.expEqual(e11, e21))
                       @assert true == (AbsynUtil.expEqual(e12, e22))
                     true
                   end
-
+                  
                   (EQ_PDE(expLeft = e11, expRight = e12, domain = cr1), EQ_PDE(expLeft = e21, expRight = e22, domain = cr2))  => begin
                       @assert true == (AbsynUtil.expEqual(e11, e21))
                       @assert true == (AbsynUtil.expEqual(e12, e22))
                       @assert true == (AbsynUtil.crefEqual(cr1, cr2))
                     true
                   end
-
+                  
                   (EQ_CONNECT(crefLeft = cr11, crefRight = cr12), EQ_CONNECT(crefLeft = cr21, crefRight = cr22))  => begin
                       @assert true == (AbsynUtil.crefEqual(cr11, cr21))
                       @assert true == (AbsynUtil.crefEqual(cr12, cr22))
                     true
                   end
-
+                  
                   (EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1), EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))  => begin
                       List.threadMapAllValue(eql1, eql2, equationEqual2, true)
                       @assert true == (AbsynUtil.expEqual(exp1, exp2))
                       @assert true == (stringEq(id1, id2))
                     true
                   end
-
+                  
                   (EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1), EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))  => begin
                       List.threadMapAllValue(eql1, eql2, equationEqual2, true)
                       @assert true == (stringEq(id1, id2))
                     true
                   end
-
+                  
                   (EQ_WHEN(condition = cond1, eEquationLst = elst1), EQ_WHEN(condition = cond2, eEquationLst = elst2))  => begin
                       List.threadMapAllValue(elst1, elst2, equationEqual2, true)
                       @assert true == (AbsynUtil.expEqual(cond1, cond2))
                     true
                   end
-
+                  
                   (EQ_ASSERT(condition = c1, message = m1), EQ_ASSERT(condition = c2, message = m2))  => begin
                       @assert true == (AbsynUtil.expEqual(c1, c2))
                       @assert true == (AbsynUtil.expEqual(m1, m2))
                     true
                   end
-
+                  
                   (EQ_REINIT(), EQ_REINIT())  => begin
                       @assert true == (AbsynUtil.expEqual(eq1.cref, eq2.cref))
                       @assert true == (AbsynUtil.expEqual(eq1.expReinit, eq2.expReinit))
                     true
                   end
-
+                  
                   (EQ_NORETCALL(exp = e1), EQ_NORETCALL(exp = e2))  => begin
                       @assert true == (AbsynUtil.expEqual(e1, e2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2117,19 +2110,19 @@
 
          #= Author BZ
          Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.) =#
-        function equationEqual22(inTb1::List{List{EEquation}}, inTb2::List{List{EEquation}})::Bool
+        function equationEqual22(inTb1::Lst, inTb2::Lst)::Bool
               local bOut::Bool
 
               bOut = begin
-                  local tb_1::List{EEquation}
-                  local tb_2::List{EEquation}
-                  local tb1::List{List{EEquation}}
-                  local tb2::List{List{EEquation}}
-                @matchcontinue inTb1, inTb2 begin
+                  local tb_1::Lst
+                  local tb_2::Lst
+                  local tb1::Lst
+                  local tb2::Lst
+                @matchcontinue (inTb1, inTb2) begin
                   ( nil(),  nil())  => begin
                     true
                   end
-
+                  
                   (_,  nil())  => begin
                     false
                   end
@@ -2143,7 +2136,7 @@
                       @assert true == (equationEqual22(tb1, tb2))
                     true
                   end
-
+                  
                   (_ <| _, _ <| _)  => begin
                     false
                   end
@@ -2161,13 +2154,13 @@
                   local f2::Final
                   local each1::Each
                   local each2::Each
-                  local submodlst1::List{SubMod}
-                  local submodlst2::List{SubMod}
+                  local submodlst1::Lst
+                  local submodlst2::Lst
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local elt1::Element
                   local elt2::Element
-                @matchcontinue mod1, mod2 begin
+                @matchcontinue (mod1, mod2) begin
                   (MOD(f1, each1, submodlst1, SOME(e1), _), MOD(f2, each2, submodlst2, SOME(e2), _))  => begin
                       @assert true == (valueEq(f1, f2))
                       @assert true == (eachEqual(each1, each2))
@@ -2175,14 +2168,14 @@
                       @assert true == (AbsynUtil.expEqual(e1, e2))
                     true
                   end
-
+                  
                   (MOD(f1, each1, submodlst1, NONE(), _), MOD(f2, each2, submodlst2, NONE(), _))  => begin
                       @assert true == (valueEq(f1, f2))
                       @assert true == (eachEqual(each1, each2))
                       @assert true == (subModsEqual(submodlst1, submodlst2))
                     true
                   end
-
+                  
                   (NOMOD(), NOMOD())  => begin
                     true
                   end
@@ -2193,7 +2186,7 @@
                       @assert true == (elementEqual(elt1, elt2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2203,7 +2196,7 @@
         end
 
          #= Return true if two subModifier lists are equal =#
-        function subModsEqual(inSubModLst1::List{SubMod}, inSubModLst2::List{SubMod})::Bool
+        function subModsEqual(inSubModLst1::Lst, inSubModLst2::Lst)::Bool
               local equal::Bool
 
               equal = begin
@@ -2211,22 +2204,22 @@
                   local id2::Ident
                   local mod1::Mod
                   local mod2::Mod
-                  local ss1::List{Subscript}
-                  local ss2::List{Subscript}
-                  local subModLst1::List{SubMod}
-                  local subModLst2::List{SubMod}
-                @matchcontinue inSubModLst1, inSubModLst2 begin
+                  local ss1::Lst
+                  local ss2::Lst
+                  local subModLst1::Lst
+                  local subModLst2::Lst
+                @matchcontinue (inSubModLst1, inSubModLst2) begin
                   ( nil(),  nil())  => begin
                     true
                   end
-
+                  
                   (NAMEMOD(id1, mod1) <| subModLst1, NAMEMOD(id2, mod2) <| subModLst2)  => begin
                       @assert true == (stringEq(id1, id2))
                       @assert true == (modEqual(mod1, mod2))
                       @assert true == (subModsEqual(subModLst1, subModLst2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2236,19 +2229,19 @@
         end
 
          #= Returns true if two subscript lists are equal =#
-        function subscriptsEqual(inSs1::List{Subscript}, inSs2::List{Subscript})::Bool
+        function subscriptsEqual(inSs1::Lst, inSs2::Lst)::Bool
               local equal::Bool
 
               equal = begin
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
-                  local ss1::List{Subscript}
-                  local ss2::List{Subscript}
-                @matchcontinue inSs1, inSs2 begin
+                  local ss1::Lst
+                  local ss2::Lst
+                @matchcontinue (inSs1, inSs2) begin
                   ( nil(),  nil())  => begin
                     true
                   end
-
+                  
                   (Absyn.NOSUB() <| ss1, Absyn.NOSUB() <| ss2)  => begin
                     subscriptsEqual(ss1, ss2)
                   end
@@ -2258,7 +2251,7 @@
                       @assert true == (subscriptsEqual(ss1, ss2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2284,7 +2277,7 @@
                   local dir2::Absyn.Direction
                   local if1::Absyn.IsField
                   local if2::Absyn.IsField
-                @matchcontinue attr1, attr2 begin
+                @matchcontinue (attr1, attr2) begin
                   (ATTR(ad1, ct1, prl1, var1, dir1, if1), ATTR(ad2, ct2, prl2, var2, dir2, if2))  => begin
                       @assert true == (arrayDimEqual(ad1, ad2))
                       @assert true == (valueEq(ct1, ct2))
@@ -2294,7 +2287,7 @@
                       @assert true == (AbsynUtil.isFieldEqual(if1, if2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2308,11 +2301,11 @@
               local equal::Bool
 
               equal = begin
-                @match prl1, prl2 begin
+                @match (prl1, prl2) begin
                   (PARGLOBAL(), PARGLOBAL())  => begin
                     true
                   end
-
+                  
                   (PARLOCAL(), PARLOCAL())  => begin
                     true
                   end
@@ -2334,11 +2327,11 @@
               local equal::Bool
 
               equal = begin
-                @match var1, var2 begin
+                @match (var1, var2) begin
                   (VAR(), VAR())  => begin
                     true
                   end
-
+                  
                   (DISCRETE(), DISCRETE())  => begin
                     true
                   end
@@ -2368,22 +2361,22 @@
                   local e2::Absyn.Exp
                   local ad1::Absyn.ArrayDim
                   local ad2::Absyn.ArrayDim
-                @matchcontinue iad1, iad2 begin
+                @matchcontinue (iad1, iad2) begin
                   ( nil(),  nil())  => begin
                     true
                   end
-
+                  
                   (Absyn.NOSUB() <| ad1, Absyn.NOSUB() <| ad2)  => begin
                       @assert true == (arrayDimEqual(ad1, ad2))
                     true
                   end
-
+                  
                   (Absyn.SUBSCRIPT(e1) <| ad1, Absyn.SUBSCRIPT(e2) <| ad2)  => begin
                       @assert true == (AbsynUtil.expEqual(e1, e2))
                       @assert true == (arrayDimEqual(ad1, ad2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2407,12 +2400,12 @@
                   local cmt::Comment
                    #=  check if restrictions are equal, so you can return the same thing!
                    =#
-                @matchcontinue r, cl begin
+                @matchcontinue (r, cl) begin
                   (_, CLASS(restriction = oldR))  => begin
                       @assert true == (restrictionEqual(r, oldR))
                     cl
                   end
-
+                  
                   (_, CLASS(id, prefixes, e, p, _, parts, cmt, info))  => begin
                     CLASS(id, prefixes, e, p, r, parts, cmt, info)
                   end
@@ -2438,12 +2431,12 @@
                   local cmt::Comment
                    #=  check if restrictions are equal, so you can return the same thing!
                    =#
-                @matchcontinue name, cl begin
+                @matchcontinue (name, cl) begin
                   (_, CLASS(name = id))  => begin
                       @assert true == (stringEqual(name, id))
                     cl
                   end
-
+                  
                   (_, CLASS(_, prefixes, e, p, r, parts, cmt, info))  => begin
                     CLASS(name, prefixes, e, p, r, parts, cmt, info)
                   end
@@ -2463,7 +2456,7 @@
                       outClass.partialPrefix = PARTIAL()
                     outClass
                   end
-
+                  
                   _  => begin
                       outClass
                   end
@@ -2487,12 +2480,12 @@
                   local cmt::Comment
                    #=  check if partial prefix are equal, so you can return the same thing!
                    =#
-                @matchcontinue partialPrefix, cl begin
+                @matchcontinue (partialPrefix, cl) begin
                   (_, CLASS(partialPrefix = oldPartialPrefix))  => begin
                       @assert true == (valueEq(partialPrefix, oldPartialPrefix))
                     cl
                   end
-
+                  
                   (_, CLASS(id, prefixes, e, _, restriction, parts, cmt, info))  => begin
                     CLASS(id, prefixes, e, partialPrefix, restriction, parts, cmt, info)
                   end
@@ -2503,40 +2496,40 @@
           outCl
         end
 
-        function findIteratorIndexedCrefsInEEquations(inEqs::List{EEquation}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref})::List{AbsynUtil.IteratorIndexedCref}
-              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquations(inEqs::Lst, inIterator::String, inCrefs::Lst = list())::Lst
+              local outCrefs::Lst
 
               outCrefs = List.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInEEquation(inEq::EEquation, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref})::List{AbsynUtil.IteratorIndexedCref}
-              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquation(inEq::EEquation, inIterator::String, inCrefs::Lst = list())::Lst
+              local outCrefs::Lst
 
               outCrefs = SCode.foldEEquationsExps(inEq, @ExtendedAnonFunction AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatements(inStatements::List{Statement}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref})::List{AbsynUtil.IteratorIndexedCref}
-              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatements(inStatements::Lst, inIterator::String, inCrefs::Lst = list())::Lst
+              local outCrefs::Lst
 
               outCrefs = List.fold1(inStatements, findIteratorIndexedCrefsInStatement, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatement(inStatement::Statement, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref})::List{AbsynUtil.IteratorIndexedCref}
-              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatement(inStatement::Statement, inIterator::String, inCrefs::Lst = list())::Lst
+              local outCrefs::Lst
 
               outCrefs = SCode.foldStatementsExps(inStatement, @ExtendedAnonFunction AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
          #= Filters out the components from the given list of elements, as well as their names. =#
-        function filterComponents(inElements::List{Element})::Tuple{List{String}, List{Element}}
-              local outComponentNames::List{String}
-              local outComponents::List{Element}
+        function filterComponents(inElements::Lst)::Tuple{List, List}
+              local outComponentNames::Lst
+              local outComponents::Lst
 
-              outComponents, outComponentNames = List.map_2(inElements, filterComponents2)
+              (outComponents, outComponentNames) = List.map_2(inElements, filterComponents2)
           (outComponentNames, outComponents)
         end
 
@@ -2550,23 +2543,23 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassComponents(cl::Element)::Tuple{List{String}, List{Element}}
-              local compNames::List{String}
-              local compElts::List{Element}
+        function getClassComponents(cl::Element)::Tuple{List, List}
+              local compNames::Lst
+              local compElts::Lst
 
-              compElts, compNames = begin
-                  local elts::List{Element}
-                  local comps::List{Element}
-                  local names::List{String}
+              (compElts, compNames) = begin
+                  local elts::Lst
+                  local comps::Lst
+                  local names::Lst
                 @match cl begin
                   CLASS(classDef = PARTS(elementLst = elts))  => begin
-                      comps, names = filterComponents(elts)
-                    comps, names
+                      (comps, names) = filterComponents(elts)
+                    (comps, names)
                   end
-
+                  
                   CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))  => begin
-                      comps, names = filterComponents(elts)
-                    comps, names
+                      (comps, names) = filterComponents(elts)
+                    (comps, names)
                   end
                 end
               end
@@ -2574,15 +2567,15 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassElements(cl::Element)::List{Element}
-              local elts::List{Element}
+        function getClassElements(cl::Element)::Lst
+              local elts::Lst
 
               elts = begin
                 @match cl begin
                   CLASS(classDef = PARTS(elementLst = elts))  => begin
                     elts
                   end
-
+                  
                   CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = elts)))  => begin
                     elts
                   end
@@ -2604,7 +2597,7 @@
               local comment::Comment
 
               ENUM(literal = literal, comment = comment) = inEnum
-              NFSCodeCheck.checkValidEnumLiteral(literal, inInfo)
+              #NFSCodeCheck.checkValidEnumLiteral(literal, inInfo)
               outEnumType = COMPONENT(literal, defaultPrefixes, defaultConstAttr, Absyn.TPATH(Absyn.IDENT("EnumType"), NONE()), NOMOD(), comment, NONE(), inInfo)
           outEnumType
         end
@@ -2616,11 +2609,11 @@
               local outConst::Variability
 
               outConst = begin
-                @match inConst1, inConst2 begin
+                @match (inConst1, inConst2) begin
                   (CONST(), _)  => begin
                     CONST()
                   end
-
+                  
                   (_, CONST())  => begin
                     CONST()
                   end
@@ -2660,25 +2653,25 @@
                   local boolExpr::Absyn.Exp
                   local value::Absyn.Exp
                   local iterator::String
-                  local range::Option{Absyn.Exp}
+                  local range::Option
                   local functionArgs::Absyn.FunctionArgs
                   local info::SourceInfo
-                  local conditions::List{Absyn.Exp}
-                  local stmtsList::List{List{Statement}}
-                  local body::List{Statement}
-                  local trueBranch::List{Statement}
-                  local elseBranch::List{Statement}
-                  local branches::List{Tuple{Absyn.Exp, List{Statement}}}
-                  local comment::Option{Comment}
-                  local algs1::List{Absyn.AlgorithmItem}
-                  local algs2::List{Absyn.AlgorithmItem}
-                  local algsLst::List{List{Absyn.AlgorithmItem}}
-                  local abranches::List{Tuple{Absyn.Exp, List{Absyn.AlgorithmItem}}}
+                  local conditions::Lst
+                  local stmtsList::Lst
+                  local body::Lst
+                  local trueBranch::Lst
+                  local elseBranch::Lst
+                  local branches::Lst
+                  local comment::Option
+                  local algs1::Lst
+                  local algs2::Lst
+                  local algsLst::Lst
+                  local abranches::Lst
                 @match stmt begin
                   ALG_ASSIGN(assignComponent, value, _, info)  => begin
                     Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent, value), NONE(), info)
                   end
-
+                  
                   ALG_IF(boolExpr, trueBranch, branches, elseBranch, _, info)  => begin
                       algs1 = List.map(trueBranch, statementToAlgorithmItem)
                       conditions = List.map(branches, Util.tuple21)
@@ -2688,22 +2681,22 @@
                       algs2 = List.map(elseBranch, statementToAlgorithmItem)
                     Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr, algs1, abranches, algs2), NONE(), info)
                   end
-
+                  
                   ALG_FOR(iterator, range, body, _, info)  => begin
                       algs1 = List.map(body, statementToAlgorithmItem)
                     Absyn.ALGORITHMITEM(Absyn.ALG_FOR(list(Absyn.ITERATOR(iterator, NONE(), range)), algs1), NONE(), info)
                   end
-
+                  
                   ALG_PARFOR(iterator, range, body, _, info)  => begin
                       algs1 = List.map(body, statementToAlgorithmItem)
                     Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR(list(Absyn.ITERATOR(iterator, NONE(), range)), algs1), NONE(), info)
                   end
-
+                  
                   ALG_WHILE(boolExpr, body, _, info)  => begin
                       algs1 = List.map(body, statementToAlgorithmItem)
                     Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr, algs1), NONE(), info)
                   end
-
+                  
                   ALG_WHEN_A(branches, _, info)  => begin
                       boolExpr, conditions = listHead(List.map(branches, Util.tuple21)), listRest(List.map(branches, Util.tuple21))
                       stmtsList = List.map(branches, Util.tuple22)
@@ -2711,7 +2704,7 @@
                       abranches = List.threadTuple(conditions, algsLst)
                     Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr, algs1, abranches), NONE(), info)
                   end
-
+                  
                   ALG_ASSERT()  => begin
                     Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert", list()), Absyn.FUNCTIONARGS(list(stmt.condition, stmt.message, stmt.level), list())), NONE(), stmt.info)
                   end
@@ -2757,7 +2750,7 @@
                   EQ_IF(info = info)  => begin
                     info
                   end
-
+                  
                   EQ_EQUALS(info = info)  => begin
                     info
                   end
@@ -2807,7 +2800,7 @@
                   NOMOD()  => begin
                     true
                   end
-
+                  
                   MOD(subModLst =  nil())  => begin
                     true
                   end
@@ -2825,11 +2818,11 @@
 
               b = begin
                   local dir2::Absyn.Direction
-                @match elt, dir1 begin
+                @match (elt, dir1) begin
                   (COMPONENT(attributes = ATTR(direction = dir2)), _)  => begin
                     AbsynUtil.directionEqual(dir1, dir2)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2846,7 +2839,7 @@
                   COMPONENT()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2863,7 +2856,7 @@
                   COMPONENT()  => begin
                     false
                   end
-
+                  
                   _  => begin
                       true
                   end
@@ -2880,7 +2873,7 @@
                   CLASS()  => begin
                     true
                   end
-
+                  
                   COMPONENT()  => begin
                     true
                   end
@@ -2897,7 +2890,7 @@
                   CLASS()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2914,7 +2907,7 @@
                   COMPONENT(attributes = ATTR(direction = Absyn.OUTPUT(__)))  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -2923,8 +2916,8 @@
           isOutput
         end
 
-        function getOutputElements(inElements::List{Element})::List{Element}
-              local outElements::List{Element}
+        function getOutputElements(inElements::Lst)::Lst
+              local outElements::Lst
 
               outElements = List.filterOnTrue(inElements, isFunctionOutput)
           outElements
@@ -2932,18 +2925,19 @@
 
          #= Calls the given function on the equation and all its subequations, and
            updates the argument for each call. =#
-        function foldEEquations(inEquation::EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT where {ArgT <: Any}
+        ArgT = Any 
+        function foldEEquations(inEquation::EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
               local outArg::ArgT
 
               outArg = inFunc(inEquation, inArg)
               outArg = begin
-                  local eql::List{EEquation}
+                  local eql::Lst
                 @match inEquation begin
                   EQ_IF()  => begin
                       outArg = List.foldList1(inEquation.thenBranch, foldEEquations, inFunc, outArg)
                     List.fold1(inEquation.elseBranch, foldEEquations, inFunc, outArg)
                   end
-
+                  
                   EQ_FOR()  => begin
                     List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg)
                   end
@@ -2951,7 +2945,7 @@
                   EQ_WHEN()  => begin
                       outArg = List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg)
                       for branch in inEquation.elseBranches
-                        _, eql = branch
+                        (_, eql) = branch
                         outArg = List.fold1(eql, foldEEquations, inFunc, outArg)
                       end
                     outArg
@@ -2963,37 +2957,38 @@
 
          #= Calls the given function on all expressions inside the equation, and updates
            the argument for each call. =#
-        function foldEEquationsExps(inEquation::EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT where {ArgT <: Any}
+        ArgT = Any 
+        function foldEEquationsExps(inEquation::EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
               local outArg::ArgT = inArg
 
               outArg = begin
                   local exp::Absyn.Exp
-                  local eql::List{EEquation}
+                  local eql::Lst
                 @match inEquation begin
                   EQ_IF()  => begin
                       outArg = List.fold(inEquation.condition, inFunc, outArg)
                       outArg = List.foldList1(inEquation.thenBranch, foldEEquationsExps, inFunc, outArg)
                     List.fold1(inEquation.elseBranch, foldEEquationsExps, inFunc, outArg)
                   end
-
+                  
                   EQ_EQUALS()  => begin
                       outArg = inFunc(inEquation.expLeft, outArg)
                       outArg = inFunc(inEquation.expRight, outArg)
                     outArg
                   end
-
+                  
                   EQ_PDE()  => begin
                       outArg = inFunc(inEquation.expLeft, outArg)
                       outArg = inFunc(inEquation.expRight, outArg)
                     outArg
                   end
-
+                  
                   EQ_CONNECT()  => begin
                       outArg = inFunc(Absyn.CREF(inEquation.crefLeft), outArg)
                       outArg = inFunc(Absyn.CREF(inEquation.crefRight), outArg)
                     outArg
                   end
-
+                  
                   EQ_FOR()  => begin
                       if isSome(inEquation.range)
                         SOME(exp) = inEquation.range
@@ -3001,24 +2996,24 @@
                       end
                     List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg)
                   end
-
+                  
                   EQ_WHEN()  => begin
                       outArg = List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg)
                       for branch in inEquation.elseBranches
-                        exp, eql = branch
+                        (exp, eql) = branch
                         outArg = inFunc(exp, outArg)
                         outArg = List.fold1(eql, foldEEquationsExps, inFunc, outArg)
                       end
                     outArg
                   end
-
+                  
                   EQ_ASSERT()  => begin
                       outArg = inFunc(inEquation.condition, outArg)
                       outArg = inFunc(inEquation.message, outArg)
                       outArg = inFunc(inEquation.level, outArg)
                     outArg
                   end
-
+                  
                   EQ_TERMINATE()  => begin
                     inFunc(inEquation.message, outArg)
                   end
@@ -3028,7 +3023,7 @@
                       outArg = inFunc(inEquation.expReinit, outArg)
                     outArg
                   end
-
+                  
                   EQ_NORETCALL()  => begin
                     inFunc(inEquation.exp, outArg)
                   end
@@ -3039,30 +3034,31 @@
 
          #= Calls the given function on all expressions inside the statement, and updates
            the argument for each call. =#
-        function foldStatementsExps(inStatement::Statement, inFunc::FoldFunc, inArg::ArgT)::ArgT where {ArgT <: Any}
+        ArgT = Any 
+        function foldStatementsExps(inStatement::Statement, inFunc::FoldFunc, inArg::ArgT)::ArgT
               local outArg::ArgT = inArg
 
               outArg = begin
                   local exp::Absyn.Exp
-                  local stmts::List{Statement}
+                  local stmts::Lst
                 @match inStatement begin
                   ALG_ASSIGN()  => begin
                       outArg = inFunc(inStatement.assignComponent, outArg)
                       outArg = inFunc(inStatement.value, outArg)
                     outArg
                   end
-
+                  
                   ALG_IF()  => begin
                       outArg = inFunc(inStatement.boolExpr, outArg)
                       outArg = List.fold1(inStatement.trueBranch, foldStatementsExps, inFunc, outArg)
                       for branch in inStatement.elseIfBranch
-                        exp, stmts = branch
+                        (exp, stmts) = branch
                         outArg = inFunc(exp, outArg)
                         outArg = List.fold1(stmts, foldStatementsExps, inFunc, outArg)
                       end
                     outArg
                   end
-
+                  
                   ALG_FOR()  => begin
                       if isSome(inStatement.range)
                         SOME(exp) = inStatement.range
@@ -3070,7 +3066,7 @@
                       end
                     List.fold1(inStatement.forBody, foldStatementsExps, inFunc, outArg)
                   end
-
+                  
                   ALG_PARFOR()  => begin
                       if isSome(inStatement.range)
                         SOME(exp) = inStatement.range
@@ -3078,28 +3074,28 @@
                       end
                     List.fold1(inStatement.parforBody, foldStatementsExps, inFunc, outArg)
                   end
-
+                  
                   ALG_WHILE()  => begin
                       outArg = inFunc(inStatement.boolExpr, outArg)
                     List.fold1(inStatement.whileBody, foldStatementsExps, inFunc, outArg)
                   end
-
+                  
                   ALG_WHEN_A()  => begin
                       for branch in inStatement.branches
-                        exp, stmts = branch
+                        (exp, stmts) = branch
                         outArg = inFunc(exp, outArg)
                         outArg = List.fold1(stmts, foldStatementsExps, inFunc, outArg)
                       end
                     outArg
                   end
-
+                  
                   ALG_ASSERT()  => begin
                       outArg = inFunc(inStatement.condition, outArg)
                       outArg = inFunc(inStatement.message, outArg)
                       outArg = inFunc(inStatement.level, outArg)
                     outArg
                   end
-
+                  
                   ALG_TERMINATE()  => begin
                     inFunc(inStatement.message, outArg)
                   end
@@ -3108,7 +3104,7 @@
                       outArg = inFunc(inStatement.cref, outArg)
                     inFunc(inStatement.newValue, outArg)
                   end
-
+                  
                   ALG_NORETCALL()  => begin
                     inFunc(inStatement.exp, outArg)
                   end
@@ -3121,7 +3117,7 @@
                       outArg = List.fold1(inStatement.body, foldStatementsExps, inFunc, outArg)
                     List.fold1(inStatement.elseBody, foldStatementsExps, inFunc, outArg)
                   end
-
+                  
                   ALG_RETURN()  => begin
                     outArg
                   end
@@ -3142,67 +3138,67 @@
 
          #= Traverses a list of EEquations, calling traverseEEquations on each EEquation
           in the list. =#
-        function traverseEEquationsList(inEEquations::List{EEquation}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, List{EEquation}}
-              local outTuple::Tuple{TraverseFunc, Argument}
-              local outEEquations::List{EEquation}
+        function traverseEEquationsList(inEEquations::Lst, inTuple::Tuple)::Tuple{Tuple, List}
+              local outTuple::Tuple
+              local outEEquations::Lst
 
-              outEEquations, outTuple = List.mapFold(inEEquations, traverseEEquations, inTuple)
+              (outEEquations, outTuple) = List.mapFold(inEEquations, traverseEEquations, inTuple)
           (outTuple, outEEquations)
         end
 
          #= Traverses an EEquation. For each EEquation it finds it calls the given
           function with the EEquation and an extra argument which is passed along. =#
-        function traverseEEquations(inEEquation::EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, EEquation}
-              local outTuple::Tuple{TraverseFunc, Argument}
+        function traverseEEquations(inEEquation::EEquation, inTuple::Tuple)::Tuple{Tuple, EEquation}
+              local outTuple::Tuple
               local outEEquation::EEquation
 
               local traverser::TraverseFunc
               local arg::Argument
               local eq::EEquation
 
-              traverser, arg = inTuple
-              eq, arg = traverser(inEEquation, arg)
-              outEEquation, outTuple = traverseEEquations2(eq, traverser, arg)
+              (traverser, arg) = inTuple
+              (eq, arg) = traverser((inEEquation, arg))
+              (outEEquation, outTuple) = traverseEEquations2(eq, (traverser, arg))
           (outTuple, outEEquation)
         end
 
          #= Helper function to traverseEEquations, does the actual traversing. =#
-        function traverseEEquations2(inEEquation::EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, EEquation}
-              local outTuple::Tuple{TraverseFunc, Argument}
+        function traverseEEquations2(inEEquation::EEquation, inTuple::Tuple)::Tuple{Tuple, EEquation}
+              local outTuple::Tuple
               local outEEquation::EEquation
 
-              outEEquation, outTuple = begin
-                  local tup::Tuple{TraverseFunc, Argument}
+              (outEEquation, outTuple) = begin
+                  local tup::Tuple
                   local e1::Absyn.Exp
-                  local oe1::Option{Absyn.Exp}
-                  local expl1::List{Absyn.Exp}
-                  local then_branch::List{List{EEquation}}
-                  local else_branch::List{EEquation}
-                  local eql::List{EEquation}
-                  local else_when::List{Tuple{Absyn.Exp, List{EEquation}}}
+                  local oe1::Option
+                  local expl1::Lst
+                  local then_branch::Lst
+                  local else_branch::Lst
+                  local eql::Lst
+                  local else_when::Lst
                   local comment::Comment
                   local info::SourceInfo
                   local index::Ident
-                @match inEEquation, inTuple begin
+                @match (inEEquation, inTuple) begin
                   (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)  => begin
-                      then_branch, tup = List.mapFold(then_branch, traverseEEquationsList, tup)
-                      else_branch, tup = traverseEEquationsList(else_branch, tup)
-                    EQ_IF(expl1, then_branch, else_branch, comment, info), tup
+                      (then_branch, tup) = List.mapFold(then_branch, traverseEEquationsList, tup)
+                      (else_branch, tup) = traverseEEquationsList(else_branch, tup)
+                    (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
                   end
-
+                  
                   (EQ_FOR(index, oe1, eql, comment, info), tup)  => begin
-                      eql, tup = traverseEEquationsList(eql, tup)
-                    EQ_FOR(index, oe1, eql, comment, info), tup
+                      (eql, tup) = traverseEEquationsList(eql, tup)
+                    (EQ_FOR(index, oe1, eql, comment, info), tup)
                   end
-
+                  
                   (EQ_WHEN(e1, eql, else_when, comment, info), tup)  => begin
-                      eql, tup = traverseEEquationsList(eql, tup)
-                      else_when, tup = List.mapFold(else_when, traverseElseWhenEEquations, tup)
-                    EQ_WHEN(e1, eql, else_when, comment, info), tup
+                      (eql, tup) = traverseEEquationsList(eql, tup)
+                      (else_when, tup) = List.mapFold(else_when, traverseElseWhenEEquations, tup)
+                    (EQ_WHEN(e1, eql, else_when, comment, info), tup)
                   end
-
+                  
                   _  => begin
-                      inEEquation, inTuple
+                      (inEEquation, inTuple)
                   end
                 end
               end
@@ -3211,26 +3207,26 @@
 
          #= Traverses all EEquations in an else when branch, calling the given function
           on each EEquation. =#
-        function traverseElseWhenEEquations(inElseWhen::Tuple{Absyn.Exp, List{EEquation}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, Tuple{Absyn.Exp, List{EEquation}}}
-              local outTuple::Tuple{TraverseFunc, Argument}
-              local outElseWhen::Tuple{Absyn.Exp, List{EEquation}}
+        function traverseElseWhenEEquations(inElseWhen::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
+              local outTuple::Tuple
+              local outElseWhen::Tuple
 
               local exp::Absyn.Exp
-              local eql::List{EEquation}
+              local eql::Lst
 
-              exp, eql = inElseWhen
-              eql, outTuple = traverseEEquationsList(eql, inTuple)
-              outElseWhen = exp, eql
+              (exp, eql) = inElseWhen
+              (eql, outTuple) = traverseEEquationsList(eql, inTuple)
+              outElseWhen = (exp, eql)
           (outTuple, outElseWhen)
         end
 
          #= Traverses a list of EEquations, calling the given function on each Absyn.Exp
           it encounters. =#
-        function traverseEEquationListExps(inEEquations::List{EEquation}, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, List{EEquation}}
+        function traverseEEquationListExps(inEEquations::Lst, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, List}
               local outArg::Argument
-              local outEEquations::List{EEquation}
+              local outEEquations::Lst
 
-              outEEquations, outArg = List.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg)
+              (outEEquations, outArg) = List.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg)
           (outArg, outEEquations)
         end
 
@@ -3241,84 +3237,84 @@
               local outArg::Argument
               local outEEquation::EEquation
 
-              outEEquation, outArg = begin
+              (outEEquation, outArg) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple{TraverseFunc, Argument}
+                  local tup::Tuple
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local e3::Absyn.Exp
-                  local expl1::List{Absyn.Exp}
-                  local then_branch::List{List{EEquation}}
-                  local else_branch::List{EEquation}
-                  local eql::List{EEquation}
-                  local else_when::List{Tuple{Absyn.Exp, List{EEquation}}}
+                  local expl1::Lst
+                  local then_branch::Lst
+                  local else_branch::Lst
+                  local eql::Lst
+                  local else_when::Lst
                   local comment::Comment
                   local info::SourceInfo
                   local cr1::Absyn.ComponentRef
                   local cr2::Absyn.ComponentRef
                   local domain::Absyn.ComponentRef
                   local index::Ident
-                @match inEEquation, inFunc, inArg begin
+                @match (inEEquation, inFunc, inArg) begin
                   (EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)  => begin
-                      expl1, arg = AbsynUtil.traverseExpList(expl1, traverser, arg)
-                    EQ_IF(expl1, then_branch, else_branch, comment, info), arg
+                      (expl1, arg) = AbsynUtil.traverseExpList(expl1, traverser, arg)
+                    (EQ_IF(expl1, then_branch, else_branch, comment, info), arg)
                   end
-
+                  
                   (EQ_EQUALS(e1, e2, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      e2, arg = traverser(e2, arg)
-                    EQ_EQUALS(e1, e2, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (EQ_EQUALS(e1, e2, comment, info), arg)
                   end
-
+                  
                   (EQ_PDE(e1, e2, domain, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      e2, arg = traverser(e2, arg)
-                    EQ_PDE(e1, e2, domain, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (EQ_PDE(e1, e2, domain, comment, info), arg)
                   end
-
+                  
                   (EQ_CONNECT(cr1, cr2, comment, info), _, _)  => begin
-                      cr1, arg = traverseComponentRefExps(cr1, inFunc, inArg)
-                      cr2, arg = traverseComponentRefExps(cr2, inFunc, arg)
-                    EQ_CONNECT(cr1, cr2, comment, info), arg
+                      (cr1, arg) = traverseComponentRefExps(cr1, inFunc, inArg)
+                      (cr2, arg) = traverseComponentRefExps(cr2, inFunc, arg)
+                    (EQ_CONNECT(cr1, cr2, comment, info), arg)
                   end
-
+                  
                   (EQ_FOR(index, SOME(e1), eql, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    EQ_FOR(index, SOME(e1), eql, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (EQ_FOR(index, SOME(e1), eql, comment, info), arg)
                   end
-
+                  
                   (EQ_WHEN(e1, eql, else_when, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      else_when, arg = List.map1Fold(else_when, traverseElseWhenExps, traverser, arg)
-                    EQ_WHEN(e1, eql, else_when, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (else_when, arg) = List.map1Fold(else_when, traverseElseWhenExps, traverser, arg)
+                    (EQ_WHEN(e1, eql, else_when, comment, info), arg)
                   end
-
+                  
                   (EQ_ASSERT(e1, e2, e3, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      e2, arg = traverser(e2, arg)
-                      e3, arg = traverser(e3, arg)
-                    EQ_ASSERT(e1, e2, e3, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                      (e3, arg) = traverser(e3, arg)
+                    (EQ_ASSERT(e1, e2, e3, comment, info), arg)
                   end
-
+                  
                   (EQ_TERMINATE(e1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    EQ_TERMINATE(e1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (EQ_TERMINATE(e1, comment, info), arg)
                   end
-
+                  
                   (EQ_REINIT(e1, e2, comment, info), traverser, _)  => begin
-                      e1, arg = traverser(e1, inArg)
-                      e2, arg = traverser(e2, arg)
-                    EQ_REINIT(e1, e2, comment, info), arg
+                      (e1, arg) = traverser(e1, inArg)
+                      (e2, arg) = traverser(e2, arg)
+                    (EQ_REINIT(e1, e2, comment, info), arg)
                   end
-
+                  
                   (EQ_NORETCALL(e1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    EQ_NORETCALL(e1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (EQ_NORETCALL(e1, comment, info), arg)
                   end
-
+                  
                   _  => begin
-                      inEEquation, inArg
+                      (inEEquation, inArg)
                   end
                 end
               end
@@ -3331,30 +3327,30 @@
               local outArg::Argument
               local outCref::Absyn.ComponentRef
 
-              outCref, outArg = begin
+              (outCref, outArg) = begin
                   local name::Absyn.Ident
-                  local subs::List{Absyn.Subscript}
+                  local subs::Lst
                   local cr::Absyn.ComponentRef
                   local arg::Argument
-                @match inCref, inFunc, inArg begin
+                @match (inCref, inFunc, inArg) begin
                   (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)  => begin
-                      cr, arg = traverseComponentRefExps(cr, inFunc, inArg)
-                    AbsynUtil.crefMakeFullyQualified(cr), arg
+                      (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg)
+                    (AbsynUtil.crefMakeFullyQualified(cr), arg)
                   end
-
+                  
                   (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)  => begin
-                      cr, arg = traverseComponentRefExps(cr, inFunc, inArg)
-                      subs, arg = List.map1Fold(subs, traverseSubscriptExps, inFunc, arg)
-                    Absyn.CREF_QUAL(name, subs, cr), arg
+                      (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg)
+                      (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, arg)
+                    (Absyn.CREF_QUAL(name, subs, cr), arg)
                   end
-
+                  
                   (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)  => begin
-                      subs, arg = List.map1Fold(subs, traverseSubscriptExps, inFunc, inArg)
-                    Absyn.CREF_IDENT(name, subs), arg
+                      (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, inArg)
+                    (Absyn.CREF_IDENT(name, subs), arg)
                   end
-
+                  
                   (Absyn.WILD(), _, _)  => begin
-                    inCref, inArg
+                    (inCref, inArg)
                   end
                 end
               end
@@ -3366,18 +3362,18 @@
               local outArg::Argument
               local outSubscript::Absyn.Subscript
 
-              outSubscript, outArg = begin
+              (outSubscript, outArg) = begin
                   local sub_exp::Absyn.Exp
                   local traverser::TraverseFunc
                   local arg::Argument
-                @match inSubscript, inFunc, inArg begin
+                @match (inSubscript, inFunc, inArg) begin
                   (Absyn.SUBSCRIPT(subscript = sub_exp), traverser, arg)  => begin
-                      sub_exp, arg = traverser(sub_exp, arg)
-                    Absyn.SUBSCRIPT(sub_exp), arg
+                      (sub_exp, arg) = traverser(sub_exp, arg)
+                    (Absyn.SUBSCRIPT(sub_exp), arg)
                   end
-
+                  
                   (Absyn.NOSUB(), _, _)  => begin
-                    inSubscript, inArg
+                    (inSubscript, inArg)
                   end
                 end
               end
@@ -3386,23 +3382,23 @@
 
          #= Traverses the expressions in an else when branch, and calls the given
           function on the expressions. =#
-        function traverseElseWhenExps(inElseWhen::Tuple{Absyn.Exp, List{EEquation}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, Tuple{Absyn.Exp, List{EEquation}}}
+        function traverseElseWhenExps(inElseWhen::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, Tuple}
               local outArg::Argument
-              local outElseWhen::Tuple{Absyn.Exp, List{EEquation}}
+              local outElseWhen::Tuple
 
               local exp::Absyn.Exp
-              local eql::List{EEquation}
+              local eql::Lst
 
-              exp, eql = inElseWhen
-              exp, outArg = traverser(exp, inArg)
-              outElseWhen = exp, eql
+              (exp, eql) = inElseWhen
+              (exp, outArg) = traverser(exp, inArg)
+              outElseWhen = (exp, eql)
           (outArg, outElseWhen)
         end
 
          #= Calls the given function on the value expression associated with a named
           function argument. =#
-        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, Absyn.NamedArg}
-              local outTuple::Tuple{TraverseFunc, Argument}
+        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple)::Tuple{Tuple, Absyn.NamedArg}
+              local outTuple::Tuple
               local outArg::Absyn.NamedArg
 
               local traverser::TraverseFunc
@@ -3410,11 +3406,11 @@
               local name::Absyn.Ident
               local value::Absyn.Exp
 
-              traverser, arg = inTuple
+              (traverser, arg) = inTuple
               Absyn.NAMEDARG(argName = name, argValue = value) = inArg
-              value, arg = traverser(value, arg)
+              (value, arg) = traverser(value, arg)
               outArg = Absyn.NAMEDARG(name, value)
-              outTuple = traverser, arg
+              outTuple = (traverser, arg)
           (outTuple, outArg)
         end
 
@@ -3423,31 +3419,31 @@
               local outArg::Argument
               local outIterator::Absyn.ForIterator
 
-              outIterator, outArg = begin
+              (outIterator, outArg) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
                   local ident::Absyn.Ident
                   local guardExp::Absyn.Exp
                   local range::Absyn.Exp
-                @match inIterator, inFunc, inArg begin
+                @match (inIterator, inFunc, inArg) begin
                   (Absyn.ITERATOR(ident, NONE(), NONE()), _, arg)  => begin
-                    Absyn.ITERATOR(ident, NONE(), NONE()), arg
+                    (Absyn.ITERATOR(ident, NONE(), NONE()), arg)
                   end
-
+                  
                   (Absyn.ITERATOR(ident, NONE(), SOME(range)), traverser, arg)  => begin
-                      range, arg = traverser(range, arg)
-                    Absyn.ITERATOR(ident, NONE(), SOME(range)), arg
+                      (range, arg) = traverser(range, arg)
+                    (Absyn.ITERATOR(ident, NONE(), SOME(range)), arg)
                   end
-
+                  
                   (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), traverser, arg)  => begin
-                      guardExp, arg = traverser(guardExp, arg)
-                      range, arg = traverser(range, arg)
-                    Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), arg
+                      (guardExp, arg) = traverser(guardExp, arg)
+                      (range, arg) = traverser(range, arg)
+                    (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), arg)
                   end
-
+                  
                   (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), traverser, arg)  => begin
-                      guardExp, arg = traverser(guardExp, arg)
-                    Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg
+                      (guardExp, arg) = traverser(guardExp, arg)
+                    (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg)
                   end
                 end
               end
@@ -3455,84 +3451,84 @@
         end
 
          #= Calls traverseStatement on each statement in the given list. =#
-        function traverseStatementsList(inStatements::List{Statement}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, List{Statement}}
-              local outTuple::Tuple{TraverseFunc, Argument}
-              local outStatements::List{Statement}
+        function traverseStatementsList(inStatements::Lst, inTuple::Tuple)::Tuple{Tuple, List}
+              local outTuple::Tuple
+              local outStatements::Lst
 
-              outStatements, outTuple = List.mapFold(inStatements, traverseStatements, inTuple)
+              (outStatements, outTuple) = List.mapFold(inStatements, traverseStatements, inTuple)
           (outTuple, outStatements)
         end
 
          #= Traverses all statements in the given statement in a top-down approach where
           the given function is applied to each statement found, beginning with the given
           statement. =#
-        function traverseStatements(inStatement::Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, Statement}
-              local outTuple::Tuple{TraverseFunc, Argument}
+        function traverseStatements(inStatement::Statement, inTuple::Tuple)::Tuple{Tuple, Statement}
+              local outTuple::Tuple
               local outStatement::Statement
 
               local traverser::TraverseFunc
               local arg::Argument
               local stmt::Statement
 
-              traverser, arg = inTuple
-              stmt, arg = traverser(inStatement, arg)
-              outStatement, outTuple = traverseStatements2(stmt, traverser, arg)
+              (traverser, arg) = inTuple
+              (stmt, arg) = traverser((inStatement, arg))
+              (outStatement, outTuple) = traverseStatements2(stmt, (traverser, arg))
           (outTuple, outStatement)
         end
 
          #= Helper function to traverseStatements. Goes through each statement contained
           in the given statement and calls traverseStatements on them. =#
-        function traverseStatements2(inStatement::Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, Statement}
-              local outTuple::Tuple{TraverseFunc, Argument}
+        function traverseStatements2(inStatement::Statement, inTuple::Tuple)::Tuple{Tuple, Statement}
+              local outTuple::Tuple
               local outStatement::Statement
 
-              outStatement, outTuple = begin
+              (outStatement, outTuple) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple{TraverseFunc, Argument}
+                  local tup::Tuple
                   local e::Absyn.Exp
-                  local stmts1::List{Statement}
-                  local stmts2::List{Statement}
-                  local branches::List{Tuple{Absyn.Exp, List{Statement}}}
+                  local stmts1::Lst
+                  local stmts2::Lst
+                  local branches::Lst
                   local comment::Comment
                   local info::SourceInfo
                   local iter::String
-                  local range::Option{Absyn.Exp}
-                @match inStatement, inTuple begin
+                  local range::Option
+                @match (inStatement, inTuple) begin
                   (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)  => begin
-                      stmts1, tup = traverseStatementsList(stmts1, tup)
-                      branches, tup = List.mapFold(branches, traverseBranchStatements, tup)
-                      stmts2, tup = traverseStatementsList(stmts2, tup)
-                    ALG_IF(e, stmts1, branches, stmts2, comment, info), tup
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                      (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup)
+                      (stmts2, tup) = traverseStatementsList(stmts2, tup)
+                    (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)
                   end
-
+                  
                   (ALG_FOR(iter, range, stmts1, comment, info), tup)  => begin
-                      stmts1, tup = traverseStatementsList(stmts1, tup)
-                    ALG_FOR(iter, range, stmts1, comment, info), tup
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (ALG_FOR(iter, range, stmts1, comment, info), tup)
                   end
-
+                  
                   (ALG_PARFOR(iter, range, stmts1, comment, info), tup)  => begin
-                      stmts1, tup = traverseStatementsList(stmts1, tup)
-                    ALG_PARFOR(iter, range, stmts1, comment, info), tup
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (ALG_PARFOR(iter, range, stmts1, comment, info), tup)
                   end
-
+                  
                   (ALG_WHILE(e, stmts1, comment, info), tup)  => begin
-                      stmts1, tup = traverseStatementsList(stmts1, tup)
-                    ALG_WHILE(e, stmts1, comment, info), tup
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (ALG_WHILE(e, stmts1, comment, info), tup)
                   end
-
+                  
                   (ALG_WHEN_A(branches, comment, info), tup)  => begin
-                      branches, tup = List.mapFold(branches, traverseBranchStatements, tup)
-                    ALG_WHEN_A(branches, comment, info), tup
+                      (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup)
+                    (ALG_WHEN_A(branches, comment, info), tup)
                   end
-
+                  
                   (ALG_FAILURE(stmts1, comment, info), tup)  => begin
-                      stmts1, tup = traverseStatementsList(stmts1, tup)
-                    ALG_FAILURE(stmts1, comment, info), tup
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (ALG_FAILURE(stmts1, comment, info), tup)
                   end
-
+                  
                   _  => begin
-                      inStatement, inTuple
+                      (inStatement, inTuple)
                   end
                 end
               end
@@ -3541,26 +3537,26 @@
 
          #= Helper function to traverseStatements2. Calls traverseStatement each
           statement in a given branch. =#
-        function traverseBranchStatements(inBranch::Tuple{Absyn.Exp, List{Statement}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{TraverseFunc, Argument}, Tuple{Absyn.Exp, List{Statement}}}
-              local outTuple::Tuple{TraverseFunc, Argument}
-              local outBranch::Tuple{Absyn.Exp, List{Statement}}
+        function traverseBranchStatements(inBranch::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
+              local outTuple::Tuple
+              local outBranch::Tuple
 
               local exp::Absyn.Exp
-              local stmts::List{Statement}
+              local stmts::Lst
 
-              exp, stmts = inBranch
-              stmts, outTuple = traverseStatementsList(stmts, inTuple)
-              outBranch = exp, stmts
+              (exp, stmts) = inBranch
+              (stmts, outTuple) = traverseStatementsList(stmts, inTuple)
+              outBranch = (exp, stmts)
           (outTuple, outBranch)
         end
 
          #= Traverses a list of statements and calls the given function on each
           expression found. =#
-        function traverseStatementListExps(inStatements::List{Statement}, inFunc::TraverseFunc, inArg::Argument)::Tuple{Argument, List{Statement}}
+        function traverseStatementListExps(inStatements::Lst, inFunc::TraverseFunc, inArg::Argument)::Tuple{Argument, List}
               local outArg::Argument
-              local outStatements::List{Statement}
+              local outStatements::Lst
 
-              outStatements, outArg = List.map1Fold(inStatements, traverseStatementExps, inFunc, inArg)
+              (outStatements, outArg) = List.map1Fold(inStatements, traverseStatementExps, inFunc, inArg)
           (outArg, outStatements)
         end
 
@@ -3571,78 +3567,78 @@
               local outArg::Argument
               local outStatement::Statement
 
-              outStatement, outArg = begin
+              (outStatement, outArg) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple{TraverseFunc, Argument}
+                  local tup::Tuple
                   local iterator::String
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local e3::Absyn.Exp
-                  local stmts1::List{Statement}
-                  local stmts2::List{Statement}
-                  local branches::List{Tuple{Absyn.Exp, List{Statement}}}
+                  local stmts1::Lst
+                  local stmts2::Lst
+                  local branches::Lst
                   local comment::Comment
                   local info::SourceInfo
                   local cref::Absyn.ComponentRef
-                @match inStatement, inFunc, inArg begin
+                @match (inStatement, inFunc, inArg) begin
                   (ALG_ASSIGN(e1, e2, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      e2, arg = traverser(e2, arg)
-                    ALG_ASSIGN(e1, e2, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (ALG_ASSIGN(e1, e2, comment, info), arg)
                   end
-
+                  
                   (ALG_IF(e1, stmts1, branches, stmts2, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                      branches, arg = List.map1Fold(branches, traverseBranchExps, traverser, arg)
-                    ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                      (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg)
+                    (ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg)
                   end
-
+                  
                   (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    ALG_FOR(iterator, SOME(e1), stmts1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), arg)
                   end
-
+                  
                   (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), arg)
                   end
-
+                  
                   (ALG_WHILE(e1, stmts1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    ALG_WHILE(e1, stmts1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (ALG_WHILE(e1, stmts1, comment, info), arg)
                   end
-
+                  
                   (ALG_WHEN_A(branches, comment, info), traverser, arg)  => begin
-                      branches, arg = List.map1Fold(branches, traverseBranchExps, traverser, arg)
-                    ALG_WHEN_A(branches, comment, info), arg
+                      (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg)
+                    (ALG_WHEN_A(branches, comment, info), arg)
                   end
-
+                  
                   (ALG_ASSERT(), traverser, arg)  => begin
-                      e1, arg = traverser(inStatement.condition, arg)
-                      e2, arg = traverser(inStatement.message, arg)
-                      e3, arg = traverser(inStatement.level, arg)
-                    ALG_ASSERT(e1, e2, e3, inStatement.comment, inStatement.info), arg
+                      (e1, arg) = traverser(inStatement.condition, arg)
+                      (e2, arg) = traverser(inStatement.message, arg)
+                      (e3, arg) = traverser(inStatement.level, arg)
+                    (ALG_ASSERT(e1, e2, e3, inStatement.comment, inStatement.info), arg)
                   end
-
+                  
                   (ALG_TERMINATE(), traverser, arg)  => begin
-                      e1, arg = traverser(inStatement.message, arg)
-                    ALG_TERMINATE(e1, inStatement.comment, inStatement.info), arg
+                      (e1, arg) = traverser(inStatement.message, arg)
+                    (ALG_TERMINATE(e1, inStatement.comment, inStatement.info), arg)
                   end
-
+                  
                   (ALG_REINIT(), traverser, arg)  => begin
-                      e1, arg = traverser(inStatement.cref, arg)
-                      e2, arg = traverser(inStatement.newValue, arg)
-                    ALG_REINIT(e1, e2, inStatement.comment, inStatement.info), arg
+                      (e1, arg) = traverser(inStatement.cref, arg)
+                      (e2, arg) = traverser(inStatement.newValue, arg)
+                    (ALG_REINIT(e1, e2, inStatement.comment, inStatement.info), arg)
                   end
-
+                  
                   (ALG_NORETCALL(e1, comment, info), traverser, arg)  => begin
-                      e1, arg = traverser(e1, arg)
-                    ALG_NORETCALL(e1, comment, info), arg
+                      (e1, arg) = traverser(e1, arg)
+                    (ALG_NORETCALL(e1, comment, info), arg)
                   end
-
+                  
                   _  => begin
-                      inStatement, inArg
+                      (inStatement, inArg)
                   end
                 end
               end
@@ -3650,17 +3646,17 @@
         end
 
          #= Calls the given function on each expression found in an if or when branch. =#
-        function traverseBranchExps(inBranch::Tuple{Absyn.Exp, List{Statement}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, Tuple{Absyn.Exp, List{Statement}}}
+        function traverseBranchExps(inBranch::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Argument, Tuple}
               local outArg::Argument
-              local outBranch::Tuple{Absyn.Exp, List{Statement}}
+              local outBranch::Tuple
 
               local arg::Argument
               local exp::Absyn.Exp
-              local stmts::List{Statement}
+              local stmts::Lst
 
-              exp, stmts = inBranch
-              exp, outArg = traverser(exp, inArg)
-              outBranch = exp, stmts
+              (exp, stmts) = inBranch
+              (exp, outArg) = traverser(exp, inArg)
+              outBranch = (exp, stmts)
           (outArg, outBranch)
         end
 
@@ -3672,7 +3668,7 @@
                   CLASS()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -3689,7 +3685,7 @@
                   IMPORT()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -3706,7 +3702,7 @@
                   IMPORT(visibility = PUBLIC())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -3723,7 +3719,7 @@
                   IMPORT(visibility = PROTECTED())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -3740,7 +3736,7 @@
                   CLASS()  => begin
                     el
                   end
-
+                  
                   _  => begin
                       fail()
                   end
@@ -3749,21 +3745,21 @@
           cl
         end
 
-         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List{String}
+         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::Lst
 
-        function isBuiltinFunction(cl::Element, inVars::List{String}, outVars::List{String})::String
+        function isBuiltinFunction(cl::Element, inVars::Lst, outVars::Lst)::String
               local name::String
 
               name = begin
                   local outVar1::String
                   local outVar2::String
-                  local argsStr::List{String}
-                  local args::List{Absyn.Exp}
-                @match cl, inVars, outVars begin
+                  local argsStr::Lst
+                  local args::Lst
+                @match (cl, inVars, outVars) begin
                   (CLASS(name = name, restriction = R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef = PARTS(externalDecl = SOME(EXTERNALDECL(funcName = NONE(), lang = SOME("builtin"))))), _, _)  => begin
                     name
                   end
-
+                  
                   (CLASS(restriction = R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef = PARTS(externalDecl = SOME(EXTERNALDECL(funcName = SOME(name), lang = SOME("builtin"))))), _, _)  => begin
                     name
                   end
@@ -3783,7 +3779,7 @@
                       equality(argsStr, inVars)
                     name
                   end
-
+                  
                   (CLASS(name = name, restriction = R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef = PARTS(externalDecl = SOME(EXTERNALDECL(funcName = NONE(), lang = SOME("C"))))), _, _)  => begin
                       @assert true == (listMember(name, knownExternalCFunctions))
                     name
@@ -3803,7 +3799,7 @@
                   EQ_IF(info = info)  => begin
                     info
                   end
-
+                  
                   EQ_EQUALS(info = info)  => begin
                     info
                   end
@@ -3853,7 +3849,7 @@
                   ALG_ASSIGN()  => begin
                     inStatement.info
                   end
-
+                  
                   ALG_IF()  => begin
                     inStatement.info
                   end
@@ -3911,7 +3907,7 @@
                   end
 
                   _  => begin
-                        Error.addInternalError("SCode.getStatementInfo failed", sourceInfo())
+                    println("Error error..")
                       AbsynUtil.dummyInfo
                   end
                 end
@@ -3935,14 +3931,14 @@
         function addElementToCompositeClassDef(inElement::Element, inClassDef::ClassDef)::ClassDef
               local outClassDef::ClassDef
 
-              local el::List{Element}
-              local nel::List{Equation}
-              local iel::List{Equation}
-              local nal::List{AlgorithmSection}
-              local ial::List{AlgorithmSection}
-              local nco::List{ConstraintSection}
-              local ed::Option{ExternalDecl}
-              local clsattrs::List{Absyn.NamedArg}
+              local el::Lst
+              local nel::Lst
+              local iel::Lst
+              local nal::Lst
+              local ial::Lst
+              local nco::Lst
+              local ed::Option
+              local clsattrs::Lst
 
               PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed) = inClassDef
               outClassDef = PARTS(inElement <| el, nel, iel, nal, ial, nco, clsattrs, ed)
@@ -3974,7 +3970,7 @@
                   PUBLIC()  => begin
                     true
                   end
-
+                  
                   PROTECTED()  => begin
                     false
                   end
@@ -3992,7 +3988,7 @@
                   true  => begin
                     PUBLIC()
                   end
-
+                  
                   false  => begin
                     PROTECTED()
                   end
@@ -4005,11 +4001,11 @@
               local outEqual::Bool
 
               outEqual = begin
-                @match inVisibility1, inVisibility2 begin
+                @match (inVisibility1, inVisibility2) begin
                   (PUBLIC(), PUBLIC())  => begin
                     true
                   end
-
+                  
                   (PROTECTED(), PROTECTED())  => begin
                     true
                   end
@@ -4030,7 +4026,7 @@
                   EACH()  => begin
                     true
                   end
-
+                  
                   NOT_EACH()  => begin
                     false
                   end
@@ -4047,7 +4043,7 @@
                   true  => begin
                     EACH()
                   end
-
+                  
                   false  => begin
                     NOT_EACH()
                   end
@@ -4097,7 +4093,7 @@
                   REDECLARE()  => begin
                     true
                   end
-
+                  
                   NOT_REDECLARE()  => begin
                     false
                   end
@@ -4114,7 +4110,7 @@
                   true  => begin
                     REDECLARE()
                   end
-
+                  
                   false  => begin
                     NOT_REDECLARE()
                   end
@@ -4131,7 +4127,7 @@
                   REPLACEABLE()  => begin
                     true
                   end
-
+                  
                   NOT_REPLACEABLE()  => begin
                     false
                   end
@@ -4140,16 +4136,16 @@
           bReplaceable
         end
 
-        function replaceableOptConstraint(inReplaceable::Replaceable)::Option{ConstrainClass}
-              local outOptConstrainClass::Option{ConstrainClass}
+        function replaceableOptConstraint(inReplaceable::Replaceable)::Option
+              local outOptConstrainClass::Option
 
               outOptConstrainClass = begin
-                  local cc::Option{ConstrainClass}
+                  local cc::Option
                 @match inReplaceable begin
                   REPLACEABLE(cc)  => begin
                     cc
                   end
-
+                  
                   NOT_REPLACEABLE()  => begin
                     NONE()
                   end
@@ -4158,20 +4154,20 @@
           outOptConstrainClass
         end
 
-        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{ConstrainClass})::Replaceable
+        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option)::Replaceable
               local outReplaceable::Replaceable
 
               outReplaceable = begin
-                @match inBoolReplaceable, inOptConstrainClass begin
+                @match (inBoolReplaceable, inOptConstrainClass) begin
                   (true, _)  => begin
                     REPLACEABLE(inOptConstrainClass)
                   end
-
+                  
                   (false, SOME(_))  => begin
                       print("Ignoring constraint class because replaceable prefix is not present!\n")
                     NOT_REPLACEABLE()
                   end
-
+                  
                   (false, _)  => begin
                     NOT_REPLACEABLE()
                   end
@@ -4188,7 +4184,7 @@
                   ENCAPSULATED()  => begin
                     true
                   end
-
+                  
                   NOT_ENCAPSULATED()  => begin
                     false
                   end
@@ -4205,7 +4201,7 @@
                   true  => begin
                     ENCAPSULATED()
                   end
-
+                  
                   false  => begin
                     NOT_ENCAPSULATED()
                   end
@@ -4222,7 +4218,7 @@
                   PARTIAL()  => begin
                     true
                   end
-
+                  
                   NOT_PARTIAL()  => begin
                     false
                   end
@@ -4239,7 +4235,7 @@
                   true  => begin
                     PARTIAL()
                   end
-
+                  
                   false  => begin
                     NOT_PARTIAL()
                   end
@@ -4263,7 +4259,7 @@
                   FINAL()  => begin
                     true
                   end
-
+                  
                   NOT_FINAL()  => begin
                     false
                   end
@@ -4276,11 +4272,11 @@
               local bFinal::Bool
 
               bFinal = begin
-                @match inFinal1, inFinal2 begin
+                @match (inFinal1, inFinal2) begin
                   (FINAL(), FINAL())  => begin
                     true
                   end
-
+                  
                   (NOT_FINAL(), NOT_FINAL())  => begin
                     true
                   end
@@ -4301,7 +4297,7 @@
                   true  => begin
                     FINAL()
                   end
-
+                  
                   false  => begin
                     NOT_FINAL()
                   end
@@ -4314,11 +4310,11 @@
               local outEqual::Bool
 
               outEqual = begin
-                @match inConnectorType1, inConnectorType2 begin
+                @match (inConnectorType1, inConnectorType2) begin
                   (POTENTIAL(), POTENTIAL())  => begin
                     true
                   end
-
+                  
                   (FLOW(), FLOW())  => begin
                     true
                   end
@@ -4339,7 +4335,7 @@
                   POTENTIAL()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4356,7 +4352,7 @@
                   FLOW()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4373,7 +4369,7 @@
                   true  => begin
                     FLOW()
                   end
-
+                  
                   _  => begin
                       POTENTIAL()
                   end
@@ -4390,7 +4386,7 @@
                   STREAM()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4407,7 +4403,7 @@
                   true  => begin
                     STREAM()
                   end
-
+                  
                   _  => begin
                       POTENTIAL()
                   end
@@ -4422,12 +4418,12 @@
               outAttributes = begin
                   local cls_attr::Attributes
                   local attr::Attributes
-                @match inAttributes, inClass begin
+                @match (inAttributes, inClass) begin
                   (_, CLASS(classDef = DERIVED(attributes = cls_attr)))  => begin
                       SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr))
                     attr
                   end
-
+                  
                   _  => begin
                       inAttributes
                   end
@@ -4439,8 +4435,8 @@
          #= @author: adrpo
          Function that is used with Derived classes,
          merge the derived Attributes with the optional Attributes returned from ~instClass~. =#
-        function mergeAttributes(ele::Attributes, oEle::Option{Attributes})::Option{Attributes}
-              local outoEle::Option{Attributes}
+        function mergeAttributes(ele::Attributes, oEle::Option)::Option
+              local outoEle::Option
 
               outoEle = begin
                   local p1::Parallelism
@@ -4461,11 +4457,11 @@
                   local ct1::ConnectorType
                   local ct2::ConnectorType
                   local ct::ConnectorType
-                @match ele, oEle begin
+                @match (ele, oEle) begin
                   (_, NONE())  => begin
                     SOME(ele)
                   end
-
+                  
                   (ATTR(ad1, ct1, p1, v1, d1, isf1), SOME(ATTR(_, ct2, p2, v2, d2, isf2)))  => begin
                       ct = propagateConnectorType(ct1, ct2)
                       p = propagateParallelism(p1, p2)
@@ -4507,11 +4503,11 @@
               local equal::Bool
 
               equal = begin
-                @match each1, each2 begin
+                @match (each1, each2) begin
                   (NOT_EACH(), NOT_EACH())  => begin
                     true
                   end
-
+                  
                   (EACH(), EACH())  => begin
                     true
                   end
@@ -4533,17 +4529,17 @@
                   local p2::Absyn.Path
                   local m1::Mod
                   local m2::Mod
-                @matchcontinue r1, r2 begin
+                @matchcontinue (r1, r2) begin
                   (NOT_REPLACEABLE(), NOT_REPLACEABLE())  => begin
                     true
                   end
-
+                  
                   (REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p1, modifier = m1))), REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))  => begin
                       @assert true == (AbsynUtil.pathEqual(p1, p2))
                       @assert true == (modEqual(m1, m2))
                     true
                   end
-
+                  
                   (REPLACEABLE(NONE()), REPLACEABLE(NONE()))  => begin
                     true
                   end
@@ -4571,7 +4567,7 @@
                   local io2::Absyn.InnerOuter
                   local rpl1::Replaceable
                   local rpl2::Replaceable
-                @matchcontinue prefixes1, prefixes2 begin
+                @matchcontinue (prefixes1, prefixes2) begin
                   (PREFIXES(v1, rd1, f1, io1, rpl1), PREFIXES(v2, rd2, f2, io2, rpl2))  => begin
                       @assert true == (valueEq(v1, v2))
                       @assert true == (valueEq(rd1, rd2))
@@ -4580,7 +4576,7 @@
                       @assert true == (replaceableEqual(rpl1, rpl2))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4606,7 +4602,7 @@
                   CLASS(prefixes = pf)  => begin
                     pf
                   end
-
+                  
                   COMPONENT(prefixes = pf)  => begin
                     pf
                   end
@@ -4700,7 +4696,7 @@
                   DERIVED()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4717,7 +4713,7 @@
                   R_CONNECTOR()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4741,7 +4737,7 @@
                   CLASS(classDef = PARTS(externalDecl = SOME(EXTERNALDECL(lang = SOME("builtin")))))  => begin
                     false
                   end
-
+                  
                   _  => begin
                       true
                   end
@@ -4762,7 +4758,7 @@
                   EXTENDS(ann = SOME(ann))  => begin
                     ann
                   end
-
+                  
                   CLASS(cmt = COMMENT(annotation_ = SOME(ann)))  => begin
                     ann
                   end
@@ -4782,7 +4778,7 @@
               local info::SourceInfo
               local exp::Absyn.Exp
 
-              local submods::List{SubMod}
+              local submods::Lst
 
               ANNOTATION(modification = MOD(subModLst = submods)) = inAnnotation
               NAMEMOD(mod = MOD(info = info, binding = SOME(exp))) = List.find1(submods, hasNamedAnnotation, inName)
@@ -4796,11 +4792,11 @@
 
               outIsMatch = begin
                   local id::String
-                @match inSubMod, inName begin
+                @match (inSubMod, inName) begin
                   (NAMEMOD(ident = id, mod = MOD(binding = SOME(_))), _)  => begin
                     stringEq(id, inName)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4814,7 +4810,7 @@
         function lookupNamedAnnotation(ann::Annotation, name::String)::Mod
               local mod::Mod
 
-              local submods::List{SubMod}
+              local submods::Lst
               local id::String
 
               mod = begin
@@ -4823,12 +4819,12 @@
                       for sm in submods
                         SubMod.NAMEMOD(id, mod) = sm
                         if id == name
-                          return
+                          return 
                         end
                       end
                     Mod.NOMOD()
                   end
-
+                  
                   _  => begin
                       Mod.NOMOD()
                   end
@@ -4838,10 +4834,10 @@
         end
 
          #= Returns a list of modifiers with the given name found in the annotation. =#
-        function lookupNamedAnnotations(ann::Annotation, name::String)::List{Mod}
-              local mods::List{Mod} = list()
+        function lookupNamedAnnotations(ann::Annotation, name::String)::Lst
+              local mods::Lst = list()
 
-              local submods::List{SubMod}
+              local submods::Lst
               local id::String
               local mod::Mod
 
@@ -4856,7 +4852,7 @@
                       end
                     mods
                   end
-
+                  
                   _  => begin
                       list()
                   end
@@ -4870,11 +4866,11 @@
 
               hasAnn = begin
                   local ann::Annotation
-                @match inClass, namedAnnotation begin
+                @match (inClass, namedAnnotation) begin
                   (CLASS(cmt = COMMENT(annotation_ = SOME(ann))), _)  => begin
                     hasBooleanNamedAnnotation(ann, namedAnnotation)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4888,11 +4884,11 @@
 
               hasAnn = begin
                   local ann::Annotation
-                @match inComponent, namedAnnotation begin
+                @match (inComponent, namedAnnotation) begin
                   (COMPONENT(comment = COMMENT(annotation_ = SOME(ann))), _)  => begin
                     hasBooleanNamedAnnotation(ann, namedAnnotation)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4902,16 +4898,16 @@
         end
 
          #= check if the named annotation is present and has value true =#
-        function optCommentHasBooleanNamedAnnotation(comm::Option{Comment}, annotationName::String)::Bool
+        function optCommentHasBooleanNamedAnnotation(comm::Option, annotationName::String)::Bool
               local outB::Bool
 
               outB = begin
                   local ann::Annotation
-                @match comm, annotationName begin
+                @match (comm, annotationName) begin
                   (SOME(COMMENT(annotation_ = SOME(ann))), _)  => begin
                     hasBooleanNamedAnnotation(ann, annotationName)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4926,11 +4922,11 @@
 
               outB = begin
                   local ann::Annotation
-                @match comm, annotationName begin
+                @match (comm, annotationName) begin
                   (COMMENT(annotation_ = SOME(ann)), _)  => begin
                     hasBooleanNamedAnnotation(ann, annotationName)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4944,7 +4940,7 @@
         function hasBooleanNamedAnnotation(inAnnotation::Annotation, inName::String)::Bool
               local outHasEntry::Bool
 
-              local submods::List{SubMod}
+              local submods::Lst
 
               ANNOTATION(modification = MOD(subModLst = submods)) = inAnnotation
               outHasEntry = List.exist1(submods, hasBooleanNamedAnnotation2, inName)
@@ -4962,7 +4958,7 @@
                   NAMEMOD(ident = id, mod = MOD(binding = SOME(Absyn.BOOL(value = true))))  => begin
                     stringEq(id, inName)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4974,7 +4970,7 @@
          #= @author: adrpo
          returns true if annotation(Evaluate = true) is present,
          otherwise false =#
-        function getEvaluateAnnotation(inCommentOpt::Option{Comment})::Bool
+        function getEvaluateAnnotation(inCommentOpt::Option)::Bool
               local evalIsTrue::Bool
 
               evalIsTrue = begin
@@ -4983,7 +4979,7 @@
                   SOME(COMMENT(annotation_ = SOME(ann)))  => begin
                     hasBooleanNamedAnnotation(ann, "Evaluate")
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -4992,8 +4988,8 @@
           evalIsTrue
         end
 
-        function getInlineTypeAnnotationFromCmt(inComment::Comment)::Option{Annotation}
-              local outAnnotation::Option{Annotation}
+        function getInlineTypeAnnotationFromCmt(inComment::Comment)::Option
+              local outAnnotation::Option
 
               outAnnotation = begin
                   local ann::Annotation
@@ -5001,7 +4997,7 @@
                   COMMENT(annotation_ = SOME(ann))  => begin
                     getInlineTypeAnnotation(ann)
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -5010,11 +5006,11 @@
           outAnnotation
         end
 
-        function getInlineTypeAnnotation(inAnnotation::Annotation)::Option{Annotation}
-              local outAnnotation::Option{Annotation}
+        function getInlineTypeAnnotation(inAnnotation::Annotation)::Option
+              local outAnnotation::Option
 
               outAnnotation = begin
-                  local submods::List{SubMod}
+                  local submods::Lst
                   local inline_mod::SubMod
                   local fp::Final
                   local ep::Each
@@ -5024,7 +5020,7 @@
                       inline_mod = List.find(submods, isInlineTypeSubMod)
                     SOME(ANNOTATION(MOD(fp, ep, list(inline_mod), NONE(), info)))
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -5041,7 +5037,7 @@
                   NAMEMOD(ident = "Inline")  => begin
                     true
                   end
-
+                  
                   NAMEMOD(ident = "LateInline")  => begin
                     true
                   end
@@ -5058,18 +5054,18 @@
               local outComment::Comment
 
               outComment = begin
-                  local cmt::Option{String}
+                  local cmt::Option
                   local fp::Final
                   local ep::Each
-                  local mods1::List{SubMod}
-                  local mods2::List{SubMod}
-                  local b::Option{Absyn.Exp}
+                  local mods1::Lst
+                  local mods2::Lst
+                  local b::Option
                   local info::SourceInfo
-                @match inAnnotation, inComment begin
+                @match (inAnnotation, inComment) begin
                   (_, COMMENT(NONE(), cmt))  => begin
                     COMMENT(SOME(inAnnotation), cmt)
                   end
-
+                  
                   (ANNOTATION(modification = MOD(subModLst = mods1)), COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt))  => begin
                       mods2 = listAppend(mods1, mods2)
                     COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt)
@@ -5089,7 +5085,7 @@
                   MOD(info = info)  => begin
                     info
                   end
-
+                  
                   REDECL(element = el)  => begin
                     elementInfo(el)
                   end
@@ -5102,8 +5098,8 @@
           outInfo
         end
 
-        function getModifierBinding(inMod::Mod)::Option{Absyn.Exp}
-              local outBinding::Option{Absyn.Exp}
+        function getModifierBinding(inMod::Mod)::Option
+              local outBinding::Option
 
               outBinding = begin
                   local binding::Absyn.Exp
@@ -5111,7 +5107,7 @@
                   MOD(binding = SOME(binding))  => begin
                     SOME(binding)
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -5120,15 +5116,15 @@
           outBinding
         end
 
-        function getComponentCondition(element::Element)::Option{Absyn.Exp}
-              local condition::Option{Absyn.Exp}
+        function getComponentCondition(element::Element)::Option
+              local condition::Option
 
               condition = begin
                 @match element begin
                   COMPONENT()  => begin
                     element.condition
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -5164,7 +5160,7 @@
                   COMPONENT(prefixes = PREFIXES(innerOuter = io))  => begin
                     AbsynUtil.isInner(io)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5182,19 +5178,19 @@
                   local ty::Absyn.TypeSpec
                   local mod::Mod
                   local cmt::Comment
-                  local cnd::Option{Absyn.Exp}
+                  local cnd::Option
                   local info::SourceInfo
                   local rdp::Redeclare
                   local fp::Final
                   local io::Absyn.InnerOuter
                   local rpp::Replaceable
                   local bc::Path
-                  local ann::Option{Annotation}
+                  local ann::Option
                 @match inElement begin
                   COMPONENT(prefixes = PREFIXES(visibility = PROTECTED()))  => begin
                     inElement
                   end
-
+                  
                   COMPONENT(name, PREFIXES(_, rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)  => begin
                     COMPONENT(name, PREFIXES(PROTECTED(), rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)
                   end
@@ -5237,7 +5233,7 @@
                   CLASS(encapsulatedPrefix = ENCAPSULATED())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5259,7 +5255,7 @@
                   local e::Element
                   local p::Absyn.Path
                   local i::Absyn.Ident
-                @match inProgram, inElement, inClassPath begin
+                @match (inProgram, inElement, inClassPath) begin
                   (_, _, Absyn.QUALIFIED(i, p))  => begin
                       e = getElementWithId(inProgram, i)
                       sp = getElementsFromElement(inProgram, e)
@@ -5268,12 +5264,12 @@
                       sp = replaceOrAddElementWithId(inProgram, e, i)
                     sp
                   end
-
+                  
                   (_, _, Absyn.IDENT(i))  => begin
                       sp = replaceOrAddElementWithId(inProgram, inElement, i)
                     sp
                   end
-
+                  
                   (_, _, Absyn.FULLYQUALIFIED(p))  => begin
                       sp = replaceOrAddElementInProgram(inProgram, inElement, p)
                     sp
@@ -5296,27 +5292,27 @@
                   local p::Absyn.Path
                   local i::Absyn.Ident
                   local n::Absyn.Ident
-                @matchcontinue inProgram, inElement, inId begin
+                @matchcontinue (inProgram, inElement, inId) begin
                   (CLASS(name = n) <| rest, _, i)  => begin
                       @assert true == (stringEq(n, i))
                     inElement <| rest
                   end
-
+                  
                   (COMPONENT(name = n) <| rest, _, i)  => begin
                       @assert true == (stringEq(n, i))
                     inElement <| rest
                   end
-
+                  
                   (EXTENDS(baseClassPath = p) <| rest, _, i)  => begin
                       @assert true == (stringEq(AbsynUtil.pathString(p), i))
                     inElement <| rest
                   end
-
+                  
                   (e <| rest, _, i)  => begin
                       sp = replaceOrAddElementWithId(rest, inElement, i)
                     e <| sp
                   end
-
+                  
                   ( nil(), _, _)  => begin
                       sp = list(inElement)
                     sp
@@ -5338,11 +5334,11 @@
                   local i::Absyn.Ident
                    #=  a class with parts
                    =#
-                @match inProgram, inElement begin
+                @match (inProgram, inElement) begin
                   (_, CLASS(classDef = PARTS(elementLst = els)))  => begin
                     els
                   end
-
+                  
                   (_, CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = els))))  => begin
                     els
                   end
@@ -5380,14 +5376,14 @@
                   local cmt::Comment
                    #=  a class with parts, non derived
                    =#
-                @matchcontinue inProgram, inElement, inElements begin
+                @matchcontinue (inProgram, inElement, inElements) begin
                   (_, CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)  => begin
-                      classDef, NONE() = replaceElementsInClassDef(inProgram, classDef, inElements)
+                      (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements)
                     CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info)
                   end
-
+                  
                   (_, CLASS(classDef = classDef), _)  => begin
-                      classDef, SOME(e) = replaceElementsInClassDef(inProgram, classDef, inElements)
+                      (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements)
                     e
                   end
                 end
@@ -5400,8 +5396,8 @@
          #= replaces the elements in class definition.
          if derived a SOME(element) is returned,
          otherwise the modified class def and NONE() =#
-        function replaceElementsInClassDef(inProgram::Program, classDef::ClassDef, inElements::Program)::Tuple{Option{Element}, ClassDef}
-              local outElementOpt::Option{Element}
+        function replaceElementsInClassDef(inProgram::Program, classDef::ClassDef, inElements::Program)::Tuple{Option, ClassDef}
+              local outElementOpt::Option
 
 
               outElementOpt = begin
@@ -5416,18 +5412,18 @@
                       e = replaceElementsInElement(inProgram, e, inElements)
                     SOME(e)
                   end
-
+                  
                   PARTS()  => begin
                        #=  a parts
                        =#
                       classDef.elementLst = inElements
                     NONE()
                   end
-
+                  
                   CLASS_EXTENDS(composition = composition)  => begin
                        #=  a class extends
                        =#
-                      composition, outElementOpt = replaceElementsInClassDef(inProgram, composition, inElements)
+                      (composition, outElementOpt) = replaceElementsInClassDef(inProgram, composition, inElements)
                       if isNone(outElementOpt)
                         classDef.composition = composition
                       end
@@ -5451,19 +5447,22 @@
                   local p::Absyn.Path
                   local i::Absyn.Ident
                   local n::Absyn.Ident
-                @match inProgram, inId begin
-                  (e = CLASS(name = n) <| _, i) where stringEq(n, i)  => begin
+                @match (inProgram, inId) begin
+                  (CLASS(name = n) <| _, i) where (stringEq(n, i))  => begin
+                    e,
                     e
                   end
-
-                  (e = COMPONENT(name = n) <| _, i) where stringEq(n, i)  => begin
+                  
+                  (COMPONENT(name = n) <| _, i) where (stringEq(n, i))  => begin
+                    e,
                     e
                   end
-
-                  (e = EXTENDS(baseClassPath = p) <| _, i) where stringEq(AbsynUtil.pathString(p), i)  => begin
+                  
+                  (EXTENDS(baseClassPath = p) <| _, i) where (stringEq(AbsynUtil.pathString(p), i))  => begin
+                    e,
                     e
                   end
-
+                  
                   (_ <| rest, i)  => begin
                     getElementWithId(rest, i)
                   end
@@ -5485,16 +5484,16 @@
                   local p::Absyn.Path
                   local i::Absyn.Ident
                   local n::Absyn.Ident
-                @match inProgram, inPath begin
+                @match (inProgram, inPath) begin
                   (_, Absyn.FULLYQUALIFIED(p))  => begin
                     getElementWithPath(inProgram, p)
                   end
-
+                  
                   (_, Absyn.IDENT(i))  => begin
                       e = getElementWithId(inProgram, i)
                     e
                   end
-
+                  
                   (_, Absyn.QUALIFIED(i, p))  => begin
                       e = getElementWithId(inProgram, i)
                       sp = getElementsFromElement(inProgram, e)
@@ -5516,7 +5515,7 @@
                   COMPONENT(name = s)  => begin
                     s
                   end
-
+                  
                   CLASS(name = s)  => begin
                     s
                   end
@@ -5537,7 +5536,7 @@
               local bc::Path
               local v::Visibility
               local m::Mod
-              local a::Option{Annotation}
+              local a::Option
               local i::SourceInfo
 
               EXTENDS(bc, v, m, a, i) = inE
@@ -5553,7 +5552,7 @@
               local bc::Path
               local v::Visibility
               local m::Mod
-              local a::Option{Annotation}
+              local a::Option
               local i::SourceInfo
 
               EXTENDS(baseClassPath = outBcPath) = inE
@@ -5570,11 +5569,11 @@
               local atr::Attributes
               local ts::Absyn.TypeSpec
               local cmt::Comment
-              local cnd::Option{Absyn.Exp}
+              local cnd::Option
               local bc::Path
               local v::Visibility
               local m::Mod
-              local a::Option{Annotation}
+              local a::Option
               local i::SourceInfo
 
               COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -5601,11 +5600,11 @@
               local atr::Attributes
               local ts::Absyn.TypeSpec
               local cmt::Comment
-              local cnd::Option{Absyn.Exp}
+              local cnd::Option
               local bc::Path
               local v::Visibility
               local m::Mod
-              local a::Option{Annotation}
+              local a::Option
               local i::SourceInfo
 
               COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -5630,7 +5629,7 @@
                   CLASS(classDef = DERIVED())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5647,7 +5646,7 @@
                   CLASS(classDef = CLASS_EXTENDS())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5670,7 +5669,7 @@
               local cd::ClassDef
               local i::SourceInfo
               local ts::Absyn.TypeSpec
-              local ann::Option{Annotation}
+              local ann::Option
               local cmt::Comment
               local m::Mod
 
@@ -5713,7 +5712,7 @@
                   local cmt::Comment
                    #=  not the same, change
                    =#
-                @match inPrefixes, cl begin
+                @match (inPrefixes, cl) begin
                   (_, CLASS(id, _, e, pp, restriction, parts, cmt, info))  => begin
                     CLASS(id, inPrefixes, e, pp, restriction, parts, cmt, info)
                   end
@@ -5744,7 +5743,7 @@
 
          #= @author:
          returns true if equations contains reinit =#
-        function equationsContainReinit(inEqs::List{EEquation})::Bool
+        function equationsContainReinit(inEqs::Lst)::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5766,32 +5765,32 @@
 
               hasReinit = begin
                   local b::Bool
-                  local eqs::List{EEquation}
-                  local eqs_lst::List{List{EEquation}}
-                  local tpl_el::List{Tuple{Absyn.Exp, List{EEquation}}}
+                  local eqs::Lst
+                  local eqs_lst::Lst
+                  local tpl_el::Lst
                 @match inEq begin
                   EQ_REINIT()  => begin
                     true
                   end
-
+                  
                   EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)  => begin
                       b = equationsContainReinit(eqs)
                       eqs_lst = List.map(tpl_el, Util.tuple22)
                       b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b)
                     b
                   end
-
+                  
                   EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)  => begin
                       b = equationsContainReinit(eqs)
                       b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b)
                     b
                   end
-
+                  
                   EQ_FOR(eEquationLst = eqs)  => begin
                       b = equationsContainReinit(eqs)
                     b
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5802,7 +5801,7 @@
 
          #= @author:
          returns true if statements contains reinit =#
-        function algorithmsContainReinit(inAlgs::List{Statement})::Bool
+        function algorithmsContainReinit(inAlgs::Lst)::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5816,6 +5815,24 @@
               end
           hasReinit
         end
+#= For testing =#
+        function getConstrainedByModifiers(inPrefixes::SCode.Prefixes)::SCode.Mod
+              local outMod::SCode.Mod
+
+              outMod = begin
+                  local m::SCode.Mod
+                @match inPrefixes begin
+                  SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))  => begin
+                    m
+                  end
+                  
+                  _  => begin
+                      SCode.NOMOD()
+                  end
+                end
+              end
+          outMod
+        end
 
          #= @author:
          returns true if statement contains reinit =#
@@ -5827,22 +5844,22 @@
                   local b1::Bool
                   local b2::Bool
                   local b3::Bool
-                  local algs::List{Statement}
-                  local algs1::List{Statement}
-                  local algs2::List{Statement}
-                  local algs_lst::List{List{Statement}}
-                  local tpl_alg::List{Tuple{Absyn.Exp, List{Statement}}}
+                  local algs::Lst
+                  local algs1::Lst
+                  local algs2::Lst
+                  local algs_lst::Lst
+                  local tpl_alg::Lst
                 @match inAlg begin
                   ALG_REINIT()  => begin
                     true
                   end
-
+                  
                   ALG_WHEN_A(branches = tpl_alg)  => begin
                       algs_lst = List.map(tpl_alg, Util.tuple22)
                       b = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false)
                     b
                   end
-                  
+
                   ALG_IF(trueBranch = algs1, elseIfBranch = tpl_alg, elseBranch = algs2)  => begin
                       b1 = algorithmsContainReinit(algs1)
                       algs_lst = List.map(tpl_alg, Util.tuple22)
@@ -5851,17 +5868,17 @@
                       b = boolOr(b1, boolOr(b2, b3))
                     b
                   end
-
+                  
                   ALG_FOR(forBody = algs)  => begin
                       b = algorithmsContainReinit(algs)
                     b
                   end
-
+                  
                   ALG_WHILE(whileBody = algs)  => begin
                       b = algorithmsContainReinit(algs)
                     b
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5892,7 +5909,7 @@
                   NAMEMOD(mod = REDECL())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -5910,7 +5927,7 @@
                   COMPONENT(modifications = mod)  => begin
                     mod
                   end
-
+                  
                   _  => begin
                       NOMOD()
                   end
@@ -5928,15 +5945,15 @@
                   COMPONENT(modifications = mod)  => begin
                     mod
                   end
-
+                  
                   CLASS(classDef = DERIVED(modifications = mod))  => begin
                     mod
                   end
-
+                  
                   CLASS(classDef = CLASS_EXTENDS(modifications = mod))  => begin
                     mod
                   end
-
+                  
                   EXTENDS(modifications = mod)  => begin
                     mod
                   end
@@ -5956,7 +5973,7 @@
                   local attr::Attributes
                   local ty::Absyn.TypeSpec
                   local cmt::Comment
-                  local cnd::Option{Absyn.Exp}
+                  local cnd::Option
                   local i::SourceInfo
                   local ep::Encapsulated
                   local pp::Partial
@@ -5964,17 +5981,17 @@
                   local cdef::ClassDef
                   local bc::Absyn.Path
                   local vis::Visibility
-                  local ann::Option{Annotation}
-                @match inElement, inMod begin
+                  local ann::Option
+                @match (inElement, inMod) begin
                   (COMPONENT(n, pf, attr, ty, _, cmt, cnd, i), _)  => begin
                     COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i)
                   end
-
+                  
                   (CLASS(n, pf, ep, pp, res, cdef, cmt, i), _)  => begin
                       cdef = setClassDefMod(cdef, inMod)
                     CLASS(n, pf, ep, pp, res, cdef, cmt, i)
                   end
-
+                  
                   (EXTENDS(bc, vis, _, ann, i), _)  => begin
                     EXTENDS(bc, vis, inMod, ann, i)
                   end
@@ -5991,11 +6008,11 @@
                   local cdef::ClassDef
                   local ty::Absyn.TypeSpec
                   local attr::Attributes
-                @match inClassDef, inMod begin
+                @match (inClassDef, inMod) begin
                   (DERIVED(ty, _, attr), _)  => begin
                     DERIVED(ty, inMod, attr)
                   end
-
+                  
                   (CLASS_EXTENDS(_, cdef), _)  => begin
                     CLASS_EXTENDS(inMod, cdef)
                   end
@@ -6013,11 +6030,11 @@
                   CLASS(classDef = PARTS(externalDecl = SOME(EXTERNALDECL(lang = SOME("builtin")))))  => begin
                     true
                   end
-
+                  
                   CLASS(cmt = COMMENT(annotation_ = SOME(ann)))  => begin
                     hasBooleanNamedAnnotation(ann, "__OpenModelica_builtin")
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6026,60 +6043,65 @@
           outIsBuiltin
         end
 
-        function partitionElements(inElements::List{Element})::Tuple{List{Element}, List{Element}, List{Element}, List{Element}, List{Element}}
-              local outDefineUnits::List{Element}
-              local outImports::List{Element}
-              local outExtends::List{Element}
-              local outClasses::List{Element}
-              local outComponents::List{Element}
+        function partitionElements(inElements::Lst)::Tuple{List, List, List, List, List}
+              local outDefineUnits::Lst
+              local outImports::Lst
+              local outExtends::Lst
+              local outClasses::Lst
+              local outComponents::Lst
 
-              outComponents, outClasses, outExtends, outImports, outDefineUnits = partitionElements2(inElements, list(), list(), list(), list(), list())
+              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = partitionElements2(inElements, list(), list(), list(), list(), list())
           (outDefineUnits, outImports, outExtends, outClasses, outComponents)
         end
 
-        function partitionElements2(inElements::List{Element}, inComponents::List{Element}, inClasses::List{Element}, inExtends::List{Element}, inImports::List{Element}, inDefineUnits::List{Element})::Tuple{List{Element}, List{Element}, List{Element}, List{Element}, List{Element}}
-              local outDefineUnits::List{Element}
-              local outImports::List{Element}
-              local outExtends::List{Element}
-              local outClasses::List{Element}
-              local outComponents::List{Element}
+        function partitionElements2(inElements::Lst, inComponents::Lst, inClasses::Lst, inExtends::Lst, inImports::Lst, inDefineUnits::Lst)::Tuple{List, List, List, List, List}
+              local outDefineUnits::Lst
+              local outImports::Lst
+              local outExtends::Lst
+              local outClasses::Lst
+              local outComponents::Lst
 
-              outComponents, outClasses, outExtends, outImports, outDefineUnits = begin
+              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = begin
                   local el::Element
-                  local rest_el::List{Element}
-                  local comp::List{Element}
-                  local cls::List{Element}
-                  local ext::List{Element}
-                  local imp::List{Element}
-                  local def::List{Element}
-                @match inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits begin
-                  (el = COMPONENT() <| rest_el, comp, cls, ext, imp, def)  => begin
-                      comp, cls, ext, imp, def = partitionElements2(rest_el, el <| comp, cls, ext, imp, def)
-                    comp, cls, ext, imp, def
+                  local rest_el::Lst
+                  local comp::Lst
+                  local cls::Lst
+                  local ext::Lst
+                  local imp::Lst
+                  local def::Lst
+                @match (inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits) begin
+                  (COMPONENT() <| rest_el, comp, cls, ext, imp, def)  => begin
+                    el,
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, el <| comp, cls, ext, imp, def)
+                    (comp, cls, ext, imp, def)
                   end
-
-                  (el = CLASS() <| rest_el, comp, cls, ext, imp, def)  => begin
-                      comp, cls, ext, imp, def = partitionElements2(rest_el, comp, el <| cls, ext, imp, def)
-                    comp, cls, ext, imp, def
+                  
+                  (CLASS() <| rest_el, comp, cls, ext, imp, def)  => begin
+                    el,
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, el <| cls, ext, imp, def)
+                    (comp, cls, ext, imp, def)
                   end
-
-                  (el = EXTENDS() <| rest_el, comp, cls, ext, imp, def)  => begin
-                      comp, cls, ext, imp, def = partitionElements2(rest_el, comp, cls, el <| ext, imp, def)
-                    comp, cls, ext, imp, def
+                  
+                  (EXTENDS() <| rest_el, comp, cls, ext, imp, def)  => begin
+                    el,
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, el <| ext, imp, def)
+                    (comp, cls, ext, imp, def)
                   end
-
-                  (el = IMPORT() <| rest_el, comp, cls, ext, imp, def)  => begin
-                      comp, cls, ext, imp, def = partitionElements2(rest_el, comp, cls, ext, el <| imp, def)
-                    comp, cls, ext, imp, def
+                  
+                  (IMPORT() <| rest_el, comp, cls, ext, imp, def)  => begin
+                    el,
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, ext, el <| imp, def)
+                    (comp, cls, ext, imp, def)
                   end
-
-                  (el = DEFINEUNIT() <| rest_el, comp, cls, ext, imp, def)  => begin
-                      comp, cls, ext, imp, def = partitionElements2(rest_el, comp, cls, ext, imp, el <| def)
-                    comp, cls, ext, imp, def
+                  
+                  (DEFINEUNIT() <| rest_el, comp, cls, ext, imp, def)  => begin
+                    el,
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, ext, imp, el <| def)
+                    (comp, cls, ext, imp, def)
                   end
-
+                  
                   ( nil(), comp, cls, ext, imp, def)  => begin
-                    listReverse(comp), listReverse(cls), listReverse(ext), listReverse(imp), listReverse(def)
+                    (listReverse(comp), listReverse(cls), listReverse(ext), listReverse(imp), listReverse(def))
                   end
                 end
               end
@@ -6094,7 +6116,7 @@
                   FR_EXTERNAL_FUNCTION()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6111,11 +6133,11 @@
                   FR_EXTERNAL_FUNCTION(true)  => begin
                     true
                   end
-
+                  
                   FR_NORMAL_FUNCTION(true)  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6128,19 +6150,19 @@
               local isExternal::Bool
 
               isExternal = begin
-                @match inRestr, hasZeroOutputPreMSL3_2 begin
+                @match (inRestr, hasZeroOutputPreMSL3_2) begin
                   (R_FUNCTION(FR_EXTERNAL_FUNCTION(true)), _)  => begin
                     true
                   end
-
+                  
                   (R_FUNCTION(FR_NORMAL_FUNCTION(true)), _)  => begin
                     true
                   end
-
+                  
                   (R_FUNCTION(FR_EXTERNAL_FUNCTION(false)), false)  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6159,36 +6181,36 @@
                   local ty::Absyn.TypeSpec
                   local mod::Mod
                   local cmt::Comment
-                  local cond::Option{Absyn.Exp}
+                  local cond::Option
                   local info::SourceInfo
                   local ep::Encapsulated
                   local pp::Partial
                   local res::Restriction
                   local cdef::ClassDef
                   local bc::Absyn.Path
-                  local ann::Option{Annotation}
+                  local ann::Option
                   local imp::Absyn.Import
-                  local unit::Option{String}
-                  local weight::Option{ModelicaReal}
-                @match inElement, inVisibility begin
+                  local unit::Option
+                  local weight::Option
+                @match (inElement, inVisibility) begin
                   (COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)  => begin
                       prefs = prefixesSetVisibility(prefs, inVisibility)
                     COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info)
                   end
-
+                  
                   (CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)  => begin
                       prefs = prefixesSetVisibility(prefs, inVisibility)
                     CLASS(name, prefs, ep, pp, res, cdef, cmt, info)
                   end
-
+                  
                   (EXTENDS(bc, _, mod, ann, info), _)  => begin
                     EXTENDS(bc, inVisibility, mod, ann, info)
                   end
-
+                  
                   (IMPORT(imp, _, info), _)  => begin
                     IMPORT(imp, inVisibility, info)
                   end
-
+                  
                   (DEFINEUNIT(name, _, unit, weight), _)  => begin
                     DEFINEUNIT(name, inVisibility, unit, weight)
                   end
@@ -6203,11 +6225,11 @@
 
               outIsNamed = begin
                   local name::Ident
-                @match inName, inClass begin
+                @match (inName, inClass) begin
                   (_, CLASS(name = name))  => begin
                     stringEq(inName, name)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6217,8 +6239,8 @@
         end
 
          #= Returns the comment of an element. =#
-        function getElementComment(inElement::Element)::Option{Comment}
-              local outComment::Option{Comment}
+        function getElementComment(inElement::Element)::Option
+              local outComment::Option
 
               outComment = begin
                   local cmt::Comment
@@ -6227,11 +6249,11 @@
                   COMPONENT(comment = cmt)  => begin
                     SOME(cmt)
                   end
-
+                  
                   CLASS(cmt = cmt)  => begin
                     SOME(cmt)
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -6241,17 +6263,17 @@
         end
 
          #= Removes the annotation from a comment. =#
-        function stripAnnotationFromComment(inComment::Option{Comment})::Option{Comment}
-              local outComment::Option{Comment}
+        function stripAnnotationFromComment(inComment::Option)::Option
+              local outComment::Option
 
               outComment = begin
-                  local str::Option{String}
-                  local cmt::Option{Comment}
+                  local str::Option
+                  local cmt::Option
                 @match inComment begin
                   SOME(COMMENT(_, str))  => begin
                     SOME(COMMENT(NONE(), str))
                   end
-
+                  
                   _  => begin
                       NONE()
                   end
@@ -6268,7 +6290,7 @@
                   CLASS(classDef = OVERLOAD())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6311,12 +6333,12 @@
                   local im2::Absyn.Import
                   local path1::Absyn.Path
                   local path2::Absyn.Path
-                  local os1::Option{String}
-                  local os2::Option{String}
-                  local or1::Option{ModelicaReal}
-                  local or2::Option{ModelicaReal}
-                  local cond1::Option{Absyn.Exp}
-                  local cond2::Option{Absyn.Exp}
+                  local os1::Option
+                  local os2::Option
+                  local or1::Option
+                  local or2::Option
+                  local cond1::Option
+                  local cond2::Option
                   local cd1::ClassDef
                   local cd2::ClassDef
                   local cm::Comment
@@ -6325,21 +6347,21 @@
                   local mCCOld::Mod
                    #=  for functions return the new one!
                    =#
-                @matchcontinue inNew, inOld begin
+                @matchcontinue (inNew, inOld) begin
                   (_, _)  => begin
                       @assert true == (isFunction(inNew))
                     inNew
                   end
-
+                  
                   (CLASS(name1, prefixes1, en1, p1, restr1, cd1, cm, i), CLASS(_, prefixes2, _, _, _, cd2, _, _))  => begin
-                      mCCNew = SCodeUtil.getConstrainedByModifiers(prefixes1)
-                      mCCOld = SCodeUtil.getConstrainedByModifiers(prefixes2)
+                      mCCNew = getConstrainedByModifiers(prefixes1)
+                      mCCOld = getConstrainedByModifiers(prefixes2)
                       cd1 = mergeClassDef(cd1, cd2, mCCNew, mCCOld)
                       prefixes1 = propagatePrefixes(prefixes2, prefixes1)
                       n = CLASS(name1, prefixes1, en1, p1, restr1, cd1, cm, i)
                     n
                   end
-
+                  
                   _  => begin
                       inNew
                   end
@@ -6362,7 +6384,7 @@
                   local m2::Mod
                   local a1::Attributes
                   local a2::Attributes
-                @match inNew, inOld, inCCModNew, inCCModOld begin
+                @match (inNew, inOld, inCCModNew, inCCModOld) begin
                   (DERIVED(ts1, m1, a1), DERIVED(_, m2, a2), _, _)  => begin
                       m2 = mergeModifiers(m2, inCCModOld)
                       m1 = mergeModifiers(m1, inCCModNew)
@@ -6384,28 +6406,28 @@
                   local f2::Final
                   local e1::Each
                   local e2::Each
-                  local sl1::List{SubMod}
-                  local sl2::List{SubMod}
-                  local sl::List{SubMod}
-                  local b1::Option{Absyn.Exp}
-                  local b2::Option{Absyn.Exp}
-                  local b::Option{Absyn.Exp}
+                  local sl1::Lst
+                  local sl2::Lst
+                  local sl::Lst
+                  local b1::Option
+                  local b2::Option
+                  local b::Option
                   local i1::SourceInfo
                   local i2::SourceInfo
                   local m::Mod
-                @matchcontinue inNewMod, inOldMod begin
+                @matchcontinue (inNewMod, inOldMod) begin
                   (_, NOMOD())  => begin
                     inNewMod
                   end
-
+                  
                   (NOMOD(), _)  => begin
                     inOldMod
                   end
-
+                  
                   (REDECL(), _)  => begin
                     inNewMod
                   end
-
+                  
                   (MOD(f1, e1, sl1, b1, i1), MOD(f2, e2, sl2, b2, _))  => begin
                       b = mergeBindings(b1, b2)
                       sl = mergeSubMods(sl1, sl2)
@@ -6418,7 +6440,7 @@
                       end
                     m
                   end
-
+                  
                   _  => begin
                       inNewMod
                   end
@@ -6427,15 +6449,15 @@
           outMod
         end
 
-        function mergeBindings(inNew::Option{Absyn.Exp}, inOld::Option{Absyn.Exp})::Option{Absyn.Exp}
-              local outBnd::Option{Absyn.Exp}
+        function mergeBindings(inNew::Option, inOld::Option)::Option
+              local outBnd::Option
 
               outBnd = begin
-                @match inNew, inOld begin
+                @match (inNew, inOld) begin
                   (SOME(_), _)  => begin
                     inNew
                   end
-
+                  
                   (NONE(), _)  => begin
                     inOld
                   end
@@ -6444,25 +6466,25 @@
           outBnd
         end
 
-        function mergeSubMods(inNew::List{SubMod}, inOld::List{SubMod})::List{SubMod}
-              local outSubs::List{SubMod}
+        function mergeSubMods(inNew::Lst, inOld::Lst)::Lst
+              local outSubs::Lst
 
               outSubs = begin
-                  local sl::List{SubMod}
-                  local rest::List{SubMod}
-                  local old::List{SubMod}
+                  local sl::Lst
+                  local rest::Lst
+                  local old::Lst
                   local s::SubMod
-                @matchcontinue inNew, inOld begin
+                @matchcontinue (inNew, inOld) begin
                   ( nil(), _)  => begin
                     inOld
                   end
-
+                  
                   (s <| rest, _)  => begin
                       old = removeSub(s, inOld)
                       sl = mergeSubMods(rest, old)
                     s <| sl
                   end
-
+                  
                   _  => begin
                       inNew
                   end
@@ -6471,26 +6493,26 @@
           outSubs
         end
 
-        function removeSub(inSub::SubMod, inOld::List{SubMod})::List{SubMod}
-              local outSubs::List{SubMod}
+        function removeSub(inSub::SubMod, inOld::Lst)::Lst
+              local outSubs::Lst
 
               outSubs = begin
-                  local rest::List{SubMod}
+                  local rest::Lst
                   local id1::Ident
                   local id2::Ident
-                  local idxs1::List{Subscript}
-                  local idxs2::List{Subscript}
+                  local idxs1::Lst
+                  local idxs2::Lst
                   local s::SubMod
-                @matchcontinue inSub, inOld begin
+                @matchcontinue (inSub, inOld) begin
                   (_,  nil())  => begin
                     inOld
                   end
-
+                  
                   (NAMEMOD(ident = id1), NAMEMOD(ident = id2) <| rest)  => begin
                       @assert true == (stringEqual(id1, id2))
                     rest
                   end
-
+                  
                   (_, s <| rest)  => begin
                       rest = removeSub(inSub, rest)
                     s <| rest
@@ -6517,12 +6539,12 @@
                   local m::Mod
                   local c1::Comment
                   local c2::Comment
-                  local cnd1::Option{Absyn.Exp}
-                  local cnd2::Option{Absyn.Exp}
+                  local cnd1::Option
+                  local cnd2::Option
                   local i1::SourceInfo
                   local i2::SourceInfo
                   local c::Element
-                @match inNewComp, inOldComp begin
+                @match (inNewComp, inOldComp) begin
                   (COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1), COMPONENT(_, _, _, _, m2, _, _, _))  => begin
                       m = mergeModifiers(m1, m2)
                       c = COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1)
@@ -6533,7 +6555,7 @@
           outComp
         end
 
-        function propagateAttributes(inOriginalAttributes::Attributes, inNewAttributes::Attributes, inNewTypeIsArray::Bool)::Attributes
+        function propagateAttributes(inOriginalAttributes::Attributes, inNewAttributes::Attributes, inNewTypeIsArray::Bool = false)::Attributes
               local outNewAttributes::Attributes
 
               local dims1::Absyn.ArrayDim
@@ -6575,11 +6597,11 @@
               local outNewDims::Absyn.ArrayDim
 
               outNewDims = begin
-                @match inOriginalDims, inNewDims begin
+                @match (inOriginalDims, inNewDims) begin
                   (_,  nil())  => begin
                     inOriginalDims
                   end
-
+                  
                   _  => begin
                       inNewDims
                   end
@@ -6592,11 +6614,11 @@
               local outNewConnectorType::ConnectorType
 
               outNewConnectorType = begin
-                @match inOriginalConnectorType, inNewConnectorType begin
+                @match (inOriginalConnectorType, inNewConnectorType) begin
                   (_, POTENTIAL())  => begin
                     inOriginalConnectorType
                   end
-
+                  
                   _  => begin
                       inNewConnectorType
                   end
@@ -6609,11 +6631,11 @@
               local outNewParallelism::Parallelism
 
               outNewParallelism = begin
-                @match inOriginalParallelism, inNewParallelism begin
+                @match (inOriginalParallelism, inNewParallelism) begin
                   (_, NON_PARALLEL())  => begin
                     inOriginalParallelism
                   end
-
+                  
                   _  => begin
                       inNewParallelism
                   end
@@ -6626,11 +6648,11 @@
               local outNewVariability::Variability
 
               outNewVariability = begin
-                @match inOriginalVariability, inNewVariability begin
+                @match (inOriginalVariability, inNewVariability) begin
                   (_, VAR())  => begin
                     inOriginalVariability
                   end
-
+                  
                   _  => begin
                       inNewVariability
                   end
@@ -6643,11 +6665,11 @@
               local outNewDirection::Absyn.Direction
 
               outNewDirection = begin
-                @match inOriginalDirection, inNewDirection begin
+                @match (inOriginalDirection, inNewDirection) begin
                   (_, Absyn.BIDIR())  => begin
                     inOriginalDirection
                   end
-
+                  
                   _  => begin
                       inNewDirection
                   end
@@ -6660,11 +6682,11 @@
               local outNewIsField::Absyn.IsField
 
               outNewIsField = begin
-                @matchcontinue inOriginalIsField, inNewIsField begin
+                @matchcontinue (inOriginalIsField, inNewIsField) begin
                   (_, Absyn.NONFIELD())  => begin
                     inOriginalIsField
                   end
-
+                  
                   _  => begin
                       inNewIsField
                   end
@@ -6684,7 +6706,7 @@
               local ty::Absyn.TypeSpec
               local mod::Mod
               local cmt::Comment
-              local cond::Option{Absyn.Exp}
+              local cond::Option
               local info::SourceInfo
 
               COMPONENT(prefixes = pref1, attributes = attr1) = inOriginalVar
@@ -6737,11 +6759,11 @@
               local outIO::Absyn.InnerOuter
 
               outIO = begin
-                @match inOriginalIO, inIO begin
+                @match (inOriginalIO, inIO) begin
                   (_, Absyn.NOT_INNER_OUTER())  => begin
                     inOriginalIO
                   end
-
+                  
                   _  => begin
                       inIO
                   end
@@ -6759,7 +6781,7 @@
                   CLASS(restriction = R_PACKAGE())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6777,7 +6799,7 @@
                   CLASS(partialPrefix = PARTIAL())  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6796,11 +6818,11 @@
                   COMPONENT(attributes = ATTR(variability = CONST()))  => begin
                     true
                   end
-
+                  
                   COMPONENT()  => begin
                     false
                   end
-
+                  
                   _  => begin
                       true
                   end
@@ -6814,12 +6836,12 @@
               local res::Bool
 
               res = begin
-                  local els::List{Element}
+                  local els::Lst
                 @match cl begin
                   CLASS(classDef = PARTS(elementLst = els))  => begin
                     isExternalObject(els)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6831,7 +6853,7 @@
          #= Returns true if the element list fulfills the condition of an External Object.
         An external object extends the builtinClass ExternalObject, and has two local
         functions, destructor and constructor.  =#
-        function isExternalObject(els::List{Element})::Bool
+        function isExternalObject(els::Lst)::Bool
               local res::Bool
 
               res = begin
@@ -6843,7 +6865,7 @@
                       @assert true == (hasExternalObjectConstructor(els))
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6853,21 +6875,21 @@
         end
 
          #= returns true if element list contains 'extends ExternalObject;' =#
-        function hasExtendsOfExternalObject(inEls::List{Element})::Bool
+        function hasExtendsOfExternalObject(inEls::Lst)::Bool
               local res::Bool
 
               res = begin
-                  local els::List{Element}
+                  local els::Lst
                   local path::Absyn.Path
                 @match inEls begin
                    nil()  => begin
                     false
                   end
-
-                  EXTENDS(baseClassPath = path) <| _ where AbsynUtil.pathEqual(path, Absyn.IDENT("ExternalObject"))  => begin
+                  
+                  EXTENDS(baseClassPath = path) <| _ where (AbsynUtil.pathEqual(path, Absyn.IDENT("ExternalObject")))  => begin
                     true
                   end
-
+                  
                   _ <| els  => begin
                     hasExtendsOfExternalObject(els)
                   end
@@ -6877,20 +6899,20 @@
         end
 
          #= returns true if element list contains 'function destructor .. end destructor' =#
-        function hasExternalObjectDestructor(inEls::List{Element})::Bool
+        function hasExternalObjectDestructor(inEls::Lst)::Bool
               local res::Bool
 
               res = begin
-                  local els::List{Element}
+                  local els::Lst
                 @match inEls begin
                   CLASS(name = "destructor") <| _  => begin
                     true
                   end
-
+                  
                   _ <| els  => begin
                     hasExternalObjectDestructor(els)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6900,20 +6922,20 @@
         end
 
          #= returns true if element list contains 'function constructor ... end constructor' =#
-        function hasExternalObjectConstructor(inEls::List{Element})::Bool
+        function hasExternalObjectConstructor(inEls::Lst)::Bool
               local res::Bool
 
               res = begin
-                  local els::List{Element}
+                  local els::Lst
                 @match inEls begin
                   CLASS(name = "constructor") <| _  => begin
                     true
                   end
-
+                  
                   _ <| els  => begin
                     hasExternalObjectConstructor(els)
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -6923,16 +6945,17 @@
         end
 
          #= returns the class 'function destructor .. end destructor' from element list =#
-        function getExternalObjectDestructor(inEls::List{Element})::Element
+        function getExternalObjectDestructor(inEls::Lst)::Element
               local cl::Element
 
               cl = begin
-                  local els::List{Element}
+                  local els::Lst
                 @match inEls begin
-                  cl = CLASS(name = "destructor") <| _  => begin
+                  CLASS(name = "destructor") <| _  => begin
+                    cl,
                     cl
                   end
-
+                  
                   _ <| els  => begin
                     getExternalObjectDestructor(els)
                   end
@@ -6942,16 +6965,17 @@
         end
 
          #= returns the class 'function constructor ... end constructor' from element list =#
-        function getExternalObjectConstructor(inEls::List{Element})::Element
+        function getExternalObjectConstructor(inEls::Lst)::Element
               local cl::Element
 
               cl = begin
-                  local els::List{Element}
+                  local els::Lst
                 @match inEls begin
-                  cl = CLASS(name = "constructor") <| _  => begin
+                  CLASS(name = "constructor") <| _  => begin
+                    cl,
                     cl
                   end
-
+                  
                   _ <| els  => begin
                     getExternalObjectConstructor(els)
                   end
@@ -6968,31 +6992,31 @@
                   R_CLASS()  => begin
                     true
                   end
-
+                  
                   R_MODEL()  => begin
                     true
                   end
-
+                  
                   R_RECORD()  => begin
                     true
                   end
-
+                  
                   R_BLOCK()  => begin
                     true
                   end
-
+                  
                   R_CONNECTOR()  => begin
                     true
                   end
-
+                  
                   R_TYPE()  => begin
                     true
                   end
-
+                  
                   R_ENUMERATION()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -7009,7 +7033,7 @@
                   INITIAL()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -7023,10 +7047,10 @@
               local outInfo::SourceInfo
               local outRes::Restriction
 
-              outRes, outInfo = begin
-                @match inResNew, inResOrig, inInfoNew, inInfoOrig begin
+              (outRes, outInfo) = begin
+                @match (inResNew, inResOrig, inInfoNew, inInfoOrig) begin
                   (_, _, _, _)  => begin
-                    inResNew, inInfoNew
+                    (inResNew, inInfoNew)
                   end
                 end
               end
@@ -7045,11 +7069,11 @@
               local atr::Attributes
               local ts::Absyn.TypeSpec
               local cmt::Comment
-              local cnd::Option{Absyn.Exp}
+              local cnd::Option
               local bc::Path
               local v::Visibility
               local m::Mod
-              local a::Option{Annotation}
+              local a::Option
               local i::SourceInfo
 
               COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -7065,7 +7089,7 @@
                   COMPONENT(attributes = ATTR(arrayDims = _ <| _))  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -7082,7 +7106,7 @@
                   Mod.NOMOD()  => begin
                     true
                   end
-
+                  
                   _  => begin
                       false
                   end
@@ -7099,19 +7123,19 @@
                   Element.CLASS(prefixes = Prefixes.PREFIXES(replaceablePrefix = Replaceable.REPLACEABLE(cc = SOME(ConstrainClass.CONSTRAINCLASS(modifier = mod)))))  => begin
                     mod
                   end
-
+                  
                   Element.CLASS(classDef = ClassDef.DERIVED(modifications = mod))  => begin
                     mod
                   end
-
+                  
                   Element.COMPONENT(prefixes = Prefixes.PREFIXES(replaceablePrefix = Replaceable.REPLACEABLE(cc = SOME(ConstrainClass.CONSTRAINCLASS(modifier = mod)))))  => begin
                     mod
                   end
-
+                  
                   Element.COMPONENT(modifications = mod)  => begin
                     mod
                   end
-
+                  
                   _  => begin
                       Mod.NOMOD()
                   end
@@ -7128,15 +7152,15 @@
                   PARTS()  => begin
                     listEmpty(cdef.elementLst) && listEmpty(cdef.normalEquationLst) && listEmpty(cdef.initialEquationLst) && listEmpty(cdef.normalAlgorithmLst) && listEmpty(cdef.initialAlgorithmLst) && isNone(cdef.externalDecl)
                   end
-
+                  
                   CLASS_EXTENDS()  => begin
                     isEmptyClassDef(cdef.composition)
                   end
-
+                  
                   ENUMERATION()  => begin
                     listEmpty(cdef.enumLst)
                   end
-
+                  
                   _  => begin
                       true
                   end
@@ -7156,30 +7180,30 @@
         function stripCommentsFromElement(element::Element, stripAnn::Bool, stripCmt::Bool)::Element
 
 
-              _ = begin
+              () = begin
                 @match element begin
                   Element.EXTENDS()  => begin
                       if stripAnn
                         element.ann = NONE()
                       end
                       element.modifications = stripCommentsFromMod(element.modifications, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Element.CLASS()  => begin
                       element.classDef = stripCommentsFromClassDef(element.classDef, stripAnn, stripCmt)
                       element.cmt = stripCommentsFromComment(element.cmt, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Element.COMPONENT()  => begin
                       element.modifications = stripCommentsFromMod(element.modifications, stripAnn, stripCmt)
                       element.comment = stripCommentsFromComment(element.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   _  => begin
-                      _
+                      ()
                   end
                 end
               end
@@ -7189,20 +7213,20 @@
         function stripCommentsFromMod(mod::Mod, stripAnn::Bool, stripCmt::Bool)::Mod
 
 
-              _ = begin
+              () = begin
                 @match mod begin
                   Mod.MOD()  => begin
                       mod.subModLst = list(stripCommentsFromSubMod(m, stripAnn, stripCmt) for m in mod.subModLst)
-                    _
+                    ()
                   end
-
+                  
                   Mod.REDECL()  => begin
                       mod.element = stripCommentsFromElement(mod.element, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   _  => begin
-                      _
+                      ()
                   end
                 end
               end
@@ -7220,12 +7244,12 @@
 
 
               cdef = begin
-                  local el::List{Element}
-                  local eql::List{Equation}
-                  local ieql::List{Equation}
-                  local alg::List{AlgorithmSection}
-                  local ialg::List{AlgorithmSection}
-                  local ext::Option{ExternalDecl}
+                  local el::Lst
+                  local eql::Lst
+                  local ieql::Lst
+                  local alg::Lst
+                  local ialg::Lst
+                  local ext::Option
                 @match cdef begin
                   ClassDef.PARTS()  => begin
                       el = list(stripCommentsFromElement(e, stripAnn, stripCmt) for e in cdef.elementLst)
@@ -7236,23 +7260,23 @@
                       ext = stripCommentsFromExternalDecl(cdef.externalDecl, stripAnn, stripCmt)
                     ClassDef.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext)
                   end
-
+                  
                   ClassDef.CLASS_EXTENDS()  => begin
                       cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
                       cdef.composition = stripCommentsFromClassDef(cdef.composition, stripAnn, stripCmt)
                     cdef
                   end
-
+                  
                   ClassDef.DERIVED()  => begin
                       cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
                     cdef
                   end
-
+                  
                   ClassDef.ENUMERATION()  => begin
                       cdef.enumLst = list(stripCommentsFromEnum(e, stripAnn, stripCmt) for e in cdef.enumLst)
                     cdef
                   end
-
+                  
                   _  => begin
                       cdef
                   end
@@ -7280,7 +7304,7 @@
           cmt
         end
 
-        function stripCommentsFromExternalDecl(extDecl::Option{ExternalDecl}, stripAnn::Bool, stripCmt::Bool)::Option{ExternalDecl}
+        function stripCommentsFromExternalDecl(extDecl::Option, stripAnn::Bool, stripCmt::Bool)::Option
 
 
               local ext_decl::ExternalDecl
@@ -7303,76 +7327,76 @@
         function stripCommentsFromEEquation(eq::EEquation, stripAnn::Bool, stripCmt::Bool)::EEquation
 
 
-              _ = begin
+              () = begin
                 @match eq begin
                   EEquation.EQ_IF()  => begin
                       eq.thenBranch = list(list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch) for branch in eq.thenBranch)
                       eq.elseBranch = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.elseBranch)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_EQUALS()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_PDE()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_CONNECT()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_FOR()  => begin
                       eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_WHEN()  => begin
                       eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
                       eq.elseBranches = list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_ASSERT()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_TERMINATE()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_REINIT()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   EEquation.EQ_NORETCALL()  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
                 end
               end
           eq
         end
 
-        function stripCommentsFromWhenEqBranch(branch::Tuple{Absyn.Exp, List{EEquation}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{EEquation}}
+        function stripCommentsFromWhenEqBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
 
 
               local cond::Absyn.Exp
-              local body::List{EEquation}
+              local body::Lst
 
-              cond, body = branch
+              (cond, body) = branch
               body = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in body)
-              branch = cond, body
+              branch = (cond, body)
           branch
         end
 
@@ -7386,11 +7410,11 @@
         function stripCommentsFromStatement(stmt::Statement, stripAnn::Bool, stripCmt::Bool)::Statement
 
 
-              _ = begin
+              () = begin
                 @match stmt begin
                   Statement.ALG_ASSIGN()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
 
                   Statement.ALG_IF()  => begin
@@ -7398,93 +7422,93 @@
                       stmt.elseIfBranch = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.elseIfBranch)
                       stmt.elseBranch = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBranch)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_FOR()  => begin
                       stmt.forBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.forBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_PARFOR()  => begin
                       stmt.parforBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.parforBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_WHILE()  => begin
                       stmt.whileBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.whileBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_WHEN_A()  => begin
                       stmt.branches = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.branches)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_ASSERT()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_TERMINATE()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_REINIT()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_NORETCALL()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_RETURN()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_BREAK()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_FAILURE()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_TRY()  => begin
                       stmt.body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.body)
                       stmt.elseBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
-
+                  
                   Statement.ALG_CONTINUE()  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
-                    _
+                    ()
                   end
                 end
               end
           stmt
         end
 
-        function stripCommentsFromStatementBranch(branch::Tuple{Absyn.Exp, List{Statement}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{Statement}}
+        function stripCommentsFromStatementBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
 
 
               local cond::Absyn.Exp
-              local body::List{Statement}
+              local body::Lst
 
-              cond, body = branch
+              (cond, body) = branch
               body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in body)
-              branch = cond, body
+              branch = (cond, body)
           branch
         end
 
