@@ -284,6 +284,6 @@
           outString
         end
 
-    #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
     @exportAll()
   end

@@ -76,6 +76,6 @@
 
          buildModelClocks = list(RT_CLOCK_BUILD_MODEL, RT_CLOCK_SIMULATE_TOTAL, RT_CLOCK_TEMPLATES, RT_CLOCK_LINEARIZE, RT_CLOCK_SIMCODE, RT_CLOCK_BACKEND, RT_CLOCK_FRONTEND)::IList
 
-    #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
     @exportAll()
   end

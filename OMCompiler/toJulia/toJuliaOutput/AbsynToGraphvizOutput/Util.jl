@@ -64,7 +64,7 @@
               @Record REPLACEPATTERN begin
 
                        from #= from string (ie \\\".\\\" =#::String
-                       to #= to string (ie \\\"$p\\\") )) =#::String
+                       to #= to string (ie \\\"p\\\") )) =#::String
               end
          end
 
@@ -103,21 +103,21 @@
 
          dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::SourceInfo
 
-         derivativeNamePrefix = "$DER"::String
+         derivativeNamePrefix = "DER"::String
 
-         pointStr = "$P"::String
+         pointStr = "P"::String
 
-         leftBraketStr = "$lB"::String
+         leftBraketStr = "lB"::String
 
-         rightBraketStr = "$rB"::String
+         rightBraketStr = "rB"::String
 
-         leftParStr = "$lP"::String
+         leftParStr = "lP"::String
 
-         rightParStr = "$rP"::String
+         rightParStr = "rP"::String
 
-         commaStr = "$c"::String
+         commaStr = "c"::String
 
-         appostrophStr = "$a"::String
+         appostrophStr = "a"::String
 
          replaceStringPatterns = list(REPLACEPATTERN(".", pointStr), REPLACEPATTERN("[", leftBraketStr), REPLACEPATTERN("]", rightBraketStr), REPLACEPATTERN("(", leftParStr), REPLACEPATTERN(")", rightParStr), REPLACEPATTERN(",", commaStr), REPLACEPATTERN("'", appostrophStr))::IList
 
@@ -657,12 +657,12 @@
         end
 
          #=  this replaces symbols that are illegal in C to legal symbols
-         see replaceStringPatterns to see the format. (example: \\\".\\\" becomes \\\"$P\\\")
+         see replaceStringPatterns to see the format. (example: \\\".\\\" becomes \\\"P\\\")
           author: x02lucpo
 
           NOTE: This function should not be used in OMC, since the OMC backend no longer
             uses stringified components. It is still used by MathCore though. =#
-        function modelicaStringToCStr(str::String, changeDerCall::Bool #= if true, first change 'DER(v)' to $derivativev =#)::String
+        function modelicaStringToCStr(str::String, changeDerCall::Bool #= if true, first change 'DER(v)' to derivativev =#)::String
               local res_str::String
 
               res_str = begin
@@ -674,7 +674,7 @@
                   end
 
                   (_, false)  => begin
-                      res_str = "$" + modelicaStringToCStr1(str, replaceStringPatterns)
+                      res_str = "" + modelicaStringToCStr1(str, replaceStringPatterns)
                     res_str
                   end
 
@@ -686,13 +686,13 @@
               end
                #=  BoschRexroth specifics
                =#
-               #=  debug_print(\"prefix$\", res_str);
+               #=  debug_print(\"prefix\", res_str);
                =#
           res_str
         end
 
          #= help function to modelicaStringToCStr,
-        first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with applied rules for v =#
+        first  changes name 'der(v)' to derivativev and 'pre(v)' to 'pre(v)' with applied rules for v =#
         function modelicaStringToCStr2(inDerName::String)::String
               local outDerName::String
 
@@ -725,9 +725,9 @@
                =#
                #=  the commented text: _::name::_ = listLast(System.strtok(derName,\"()\"));
                =#
-               #=  is wrong as der(der(x)) ends up beeing translated to $der$der instead
+               #=  is wrong as der(der(x)) ends up beeing translated to derder instead
                =#
-               #=  of $der$der$x. Changed to the following 2 lines below!
+               #=  of derderx. Changed to the following 2 lines below!
                =#
           outDerName
         end
@@ -764,7 +764,7 @@
         end
 
          #=  this replaces symbols that have been replace to correct value for modelica string
-         see replaceStringPatterns to see the format. (example: \\\"$p\\\" becomes \\\".\\\")
+         see replaceStringPatterns to see the format. (example: \\\"p\\\" becomes \\\".\\\")
           author: x02lucpo
 
           NOTE: This function should not be used in OMC, since the OMC backend no longer
@@ -1293,7 +1293,7 @@
           outResult
         end
 
-        StatefulBoolean = Array  #= A single boolean value that can be updated (a destructive operation). NOTE: Use Mutable<Boolean> instead. This implementation is kept since Susan cannot use that type. =#
+        StatefulBoolean = MArray  #= A single boolean value that can be updated (a destructive operation). NOTE: Use Mutable<Boolean> instead. This implementation is kept since Susan cannot use that type. =#
 
          #= Create a boolean with state (that is, it is mutable) =#
         function makeStatefulBoolean(b::Bool)::StatefulBoolean
@@ -1908,11 +1908,11 @@
                           else
                             name
                           end
-                      (i, strs) = System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 6, true, false)
+                      (i, strs) = System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)", 6, true, false)
                       friendly = listGet(strs, i)
                     friendly
                   end
-
+                  
                   _  => begin
                       name
                   end
@@ -2038,7 +2038,7 @@
 
               local i::ModelicaInteger
 
-              (i, _) = System.regex(str, "^[_A-Za-z][_A-Za-z0-9]*$", 0, true, false)
+              (i, _) = System.regex(str, "^[_A-Za-z][_A-Za-z0-9]*", 0, true, false)
               b = i == 1
           b
         end
@@ -2061,7 +2061,7 @@
         function getTempVariableIndex()::String
               local name::String
 
-              name = stringAppend("$tmpVar", intString(System.tmpTickIndex(Global.tmpVariableIndex)))
+              name = stringAppend("tmpVar", intString(System.tmpTickIndex(Global.tmpVariableIndex)))
           name
         end
 
@@ -2243,6 +2243,6 @@
           outTuple
         end
 
-    #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
     @exportAll()
   end

@@ -36,6 +36,6 @@
          systemLibs = list("-lomcruntime", "-lexpat", "-lsqlite3", "-llpsolve55", corbaLibs, "-lomcgc", hwloc)::IList
          triple = "x86_64-linux-gnu"::String
 
-    #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
     @exportAll()
   end

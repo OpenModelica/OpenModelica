@@ -1008,7 +1008,7 @@
               end
          end
 
-          #= The Code uniontype is used for Meta-programming. It originates from the $Code quoting mechanism. See paper in Modelica2003 conference =#
+          #= The Code uniontype is used for Meta-programming. It originates from the Code quoting mechanism. See paper in Modelica2003 conference =#
          @Uniontype CodeNode begin
               @Record C_TYPENAME begin
 
@@ -1480,6 +1480,6 @@
               end
          end
 
-    #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
     @exportAll()
   end

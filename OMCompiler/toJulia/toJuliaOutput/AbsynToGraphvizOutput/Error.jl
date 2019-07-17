@@ -11,9 +11,13 @@
     @UniontypeDecl Message
     @UniontypeDecl TotalMessage
 
-    prefixToStr = Function
+  prefixToStr = Function
 
-    prefixToStr = Function
+  prefixToStr = Function
+
+  ErrorID = ModelicaInteger  #= Unique error id. Used to
+  look up message string and type and severity =#
+
 
          #= /*
          * This file is part of OpenModelica.
@@ -100,8 +104,6 @@
               end
          end
 
-        ErrorID = ModelicaInteger  #= Unique error id. Used to
-                look up message string and type and severity =#
 
          @Uniontype Message begin
               @Record MESSAGE begin
