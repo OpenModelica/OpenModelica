@@ -505,12 +505,13 @@ void GraphicsView::deleteComponent(Component *pComponent)
   // First Remove the connections associated to this component
   int i = 0;
   while(i != mConnectionsList.size()) {
-    QString startComponentName, endComponentName = "";
-    if (mConnectionsList[i]->getStartComponent()) {
-      startComponentName = mConnectionsList[i]->getStartComponent()->getRootParentComponent()->getName();
+    QString startComponentName = StringHandler::getFirstWordBeforeDot(mConnectionsList[i]->getStartComponentName());
+    if (startComponentName.contains("[")) {
+      startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
     }
-    if (mConnectionsList[i]->getEndComponent()) {
-      endComponentName = mConnectionsList[i]->getEndComponent()->getRootParentComponent()->getName();
+    QString endComponentName = StringHandler::getFirstWordBeforeDot(mConnectionsList[i]->getEndComponentName());
+    if (endComponentName.contains("[")) {
+      endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
     }
     if (startComponentName == pComponent->getName() || endComponentName == pComponent->getName()) {
       deleteConnection(mConnectionsList[i]);
