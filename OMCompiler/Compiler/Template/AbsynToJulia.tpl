@@ -118,7 +118,7 @@ match class
         <%\n%>
         <%cdef_str1%>
         <%\n%>
-        #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+        #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
         @exportAll()
         >>
       else
@@ -641,7 +641,7 @@ match imp
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPathJL(prefix)
     let groups_str = (groups |> group => dumpGroupImport(group) ;separator=",")
-    'using <%prefix_str%>:<%groups_str%>}'
+    'using <%prefix_str%>:<%groups_str%>'
 end dumpImport;
 
 template dumpGroupImport(Absyn.GroupImport gimp)
