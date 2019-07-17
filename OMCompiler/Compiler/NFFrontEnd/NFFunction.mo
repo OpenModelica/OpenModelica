@@ -470,6 +470,33 @@ uniontype Function
     end match;
   end getCachedFuncs;
 
+  function mapCachedFuncs
+    input InstNode inNode;
+    input MapFn mapFn;
+
+    partial function MapFn
+      input output Function fn;
+    end MapFn;
+  protected
+    InstNode cls_node;
+    CachedData cache;
+  algorithm
+    cls_node := InstNode.classScope(inNode);
+    cache := InstNode.getFuncCache(cls_node);
+
+    cache := match cache
+      case CachedData.FUNCTION()
+        algorithm
+          cache.funcs := list(mapFn(fn) for fn in cache.funcs);
+        then
+          cache;
+
+      else fail();
+    end match;
+
+    InstNode.setFuncCache(cls_node, cache);
+  end mapCachedFuncs;
+
   function isEvaluated
     input Function fn;
     output Boolean evaluated;
