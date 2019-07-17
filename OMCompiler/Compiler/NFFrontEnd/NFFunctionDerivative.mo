@@ -60,6 +60,7 @@ public
     InstNode derivedFn;
     Expression order;
     list<tuple<Integer, Condition>> conditions;
+    list<InstNode> lowerOrderDerivatives;
   end FUNCTION_DER;
 
   function instDerivatives
@@ -124,7 +125,7 @@ public
       list(conditionToDAE(c) for c in fnDer.conditions),
       // TODO: Figure out if the two fields below are needed.
       NONE(),
-      {}
+      list(Function.name(listHead(Function.getCachedFuncs(fn))) for fn in fnDer.lowerOrderDerivatives)
     );
   end toDAE;
 
@@ -186,9 +187,10 @@ protected
       case SCode.Mod.MOD(subModLst = attrs, binding = SOME(Absyn.CREF(acref)))
         algorithm
           (_, der_node) := Function.instFunction(acref, scope, mod.info);
+          addLowerOrderDerivative(der_node, fnNode);
           (order, conds) := getDerivativeAttributes(attrs, fn, fnNode, mod.info);
         then
-          FUNCTION_DER(der_node, fnNode, order, conds) :: fnDers;
+          FUNCTION_DER(der_node, fnNode, order, conds, {}) :: fnDers;
 
       // Give a warning if the derivative annotation doesn't specify a function name.
       case SCode.Mod.MOD()
@@ -285,6 +287,28 @@ protected
       {name, AbsynUtil.pathString(Function.name(fn))}, info);
     fail();
   end getInputIndex;
+
+  function addLowerOrderDerivative
+    input InstNode fnNode;
+    input InstNode lowerDerNode;
+  algorithm
+    Function.mapCachedFuncs(fnNode, function addLowerOrderDerivative2(lowerDerNode = lowerDerNode));
+  end addLowerOrderDerivative;
+
+  function addLowerOrderDerivative2
+    input output Function fn;
+    input InstNode lowerDerNode;
+  algorithm
+    fn.derivatives := list(
+        match fn_der
+          case FUNCTION_DER()
+            algorithm
+              fn_der.lowerOrderDerivatives := lowerDerNode :: fn_der.lowerOrderDerivatives;
+            then
+              fn_der;
+        end match
+      for fn_der in fn.derivatives);
+  end addLowerOrderDerivative2;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFunctionDerivative;

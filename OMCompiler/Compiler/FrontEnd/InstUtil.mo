@@ -4294,62 +4294,35 @@ public function addNameToDerivativeMapping
   input Absyn.Path path;
   output list<DAE.Function> outElts;
 algorithm
-  outElts := match(inElts,path)
-  local
-    DAE.Function elt;
-    list<DAE.FunctionDefinition> funcs;
-    DAE.Type tp;
-    Absyn.Path p;
-    Boolean part,isImpure;
-    DAE.InlineType inlineType;
-    DAE.ElementSource source;
-    Option<SCode.Comment> cmt;
-    list<DAE.Function> elts;
-    SCode.Visibility visiblity;
+  outElts := list(
+      match fn
+        case DAE.FUNCTION()
+          algorithm
+            fn.functions := addNameToDerivativeMappingFunctionDefs(fn.functions, path);
+          then
+            fn;
 
-    case({},_) then {};
-
-    case(DAE.FUNCTION(p,funcs,tp,visiblity,part,isImpure,inlineType,source,cmt)::elts,_)
-      equation
-        elts = addNameToDerivativeMapping(elts,path);
-        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION(p,funcs,tp,visiblity,part,isImpure,inlineType,source,cmt)::elts;
-
-    case(elt::elts,_)
-      equation
-        elts = addNameToDerivativeMapping(elts,path);
-      then elt::elts;
-  end match;
+        else fn;
+      end match
+    for fn in inElts);
 end addNameToDerivativeMapping;
 
-protected function addNameToDerivativeMappingFunctionDefs " help function to addNameToDerivativeMappingElts"
+protected function addNameToDerivativeMappingFunctionDefs " help function to addNameToDerivativeMapping"
   input list<DAE.FunctionDefinition> inFuncs;
   input Absyn.Path path;
   output list<DAE.FunctionDefinition> outFuncs;
 algorithm
-  outFuncs := match(inFuncs,path)
-    local
-      DAE.FunctionDefinition func;
-      Absyn.Path p1,p2;
-      Integer do;
-      Option<Absyn.Path> dd;
-      list<Absyn.Path> lowerOrderDerivatives;
-      list<tuple<Integer,DAE.derivativeCond>> conds;
-      list<DAE.FunctionDefinition> funcs;
+  outFuncs := list(
+      match fn
+        case DAE.FUNCTION_DER_MAPPER()
+          algorithm
+            fn.lowerOrderDerivatives := path :: fn.lowerOrderDerivatives;
+          then
+            fn;
 
-    case({},_) then {};
-
-    case(DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,lowerOrderDerivatives)::funcs,_)
-      equation
-        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,path::lowerOrderDerivatives)::funcs;
-
-    case(func::funcs,_)
-      equation
-        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then func::funcs;
-
-  end match;
+        else fn;
+      end match
+    for fn in inFuncs);
 end addNameToDerivativeMappingFunctionDefs;
 
 public function getDeriveAnnotation "
