@@ -3623,7 +3623,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   // Translation Flags layout
   QGridLayout *pTranslationFlagsGridLayout = new QGridLayout;
   pTranslationFlagsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pTranslationFlagsGridLayout->addWidget(mpTranslationFlagsWidget, 0, 0);
+  pTranslationFlagsGridLayout->addWidget(new Label("Global flags applied to the Simulation Setup dialog upon the first simulation of a model.\n"
+                                                   "For subsequent simulations, you can change them locally using the Simulation Setup dialog."), 0, 0);
+  pTranslationFlagsGridLayout->addWidget(mpTranslationFlagsWidget, 1, 0);
   mpTranslationFlagsGroupBox->setLayout(pTranslationFlagsGridLayout);
   // Target Language
   mpTargetLanguageLabel = new Label(tr("Target Language:"));
