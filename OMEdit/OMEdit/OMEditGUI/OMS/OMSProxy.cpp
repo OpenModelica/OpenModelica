@@ -182,6 +182,11 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
     fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMSCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
   }
 
+  // flush the logs if --Debug=true
+  if (MainWindow::instance()->isDebug()) {
+    fflush(NULL);
+  }
+
   MainWindow::instance()->printStandardOutAndErrorFilesMessages();
 }
 
