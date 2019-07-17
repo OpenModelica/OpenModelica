@@ -538,13 +538,23 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         /* Ticket:4204
          * If we have extend component then call Component::getParameterDisplayString from root component.
          */
-        if (mpComponent->getComponentType() == Component::Extend) {
-          textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
-        } else {
-          textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
-        }
+        textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
-          mTextString.replace(pos, regExp.matchedLength(), textValue);
+          QString unit = "";
+          QString displaytUnit = "";
+          Component *pComponent = mpComponent->getRootParentComponent()->getComponentByName(variable);
+          if (pComponent) {
+            displaytUnit = pComponent->getDerivedClassModifierValue("displaytUnit");
+            if (displaytUnit.isEmpty()) {
+              unit = pComponent->getDerivedClassModifierValue("unit");
+              displaytUnit = unit;
+            }
+          }
+          if (displaytUnit.isEmpty()) {
+            mTextString.replace(pos, regExp.matchedLength(), textValue);
+          } else {
+            mTextString.replace(pos, regExp.matchedLength(), QString("%1 %2").arg(textValue, displaytUnit));
+          }
         } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
         }
@@ -552,7 +562,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         mTextString.replace(pos, 1, "");
       }
     }
-    pos += regExp.matchedLength();
+    pos = 0;
   }
 }
 

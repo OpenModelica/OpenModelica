@@ -1778,7 +1778,11 @@ bool GraphicsView::isParameterConnectorSizing(Component *pComponent, QString par
   }
   // Look in class inherited components
   foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
-    if (pInheritedComponent->getComponentInfo() && pInheritedComponent->getName().compare(parameter) == 0) {
+    /* Since we use the parent ComponentInfo for inherited classes so we should not use
+     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
+     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
+     */
+    if (pInheritedComponent->getLibraryTreeItem() && pInheritedComponent->getLibraryTreeItem()->getName().compare(parameter) == 0) {
       return (pInheritedComponent->getDialogAnnotation().size() > 10) && (pInheritedComponent->getDialogAnnotation().at(10).compare("true") == 0);
     }
     result = isParameterConnectorSizing(pInheritedComponent, parameter);
@@ -3532,9 +3536,8 @@ void UndoStack::push(UndoCommand *cmd)
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
     mComponentsLoaded(false), mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false),
-    mExtendsModifiersLoaded(false)
+    mExtendsModifiersLoaded(false), mDerivedClassModifiersLoaded(false)
 {
-  mExtendsModifiersMap.clear();
   // create widgets based on library type
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     // icon graphics framework
@@ -3642,12 +3645,37 @@ QMap<QString, QString> ModelWidget::getExtendsModifiersMap(QString extendsClass)
 }
 
 /*!
+ * \brief ModelWidget::getDerivedClassModifiersMap
+ * Returns a derived class modifiers map
+ * \param derivedClass
+ * \return
+ */
+QMap<QString, QString> ModelWidget::getDerivedClassModifiersMap()
+{
+  if (!mDerivedClassModifiersLoaded) {
+    mDerivedClassModifiersMap.clear();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    QStringList derivedClassModifierNames = pOMCProxy->getDerivedClassModifierNames(mpLibraryTreeItem->getNameStructure());
+    foreach (QString derivedClassModifierName, derivedClassModifierNames) {
+      // if we have already read the record modifier then continue
+      if (mDerivedClassModifiersMap.contains(derivedClassModifierName)) {
+        continue;
+      }
+      mDerivedClassModifiersMap.insert(derivedClassModifierName, pOMCProxy->getDerivedClassModifierValue(mpLibraryTreeItem->getNameStructure(), derivedClassModifierName));
+    }
+    mDerivedClassModifiersLoaded = true;
+  }
+  return mDerivedClassModifiersMap;
+}
+
+/*!
  * \brief ModelWidget::fetchExtendsModifiers
  * Gets the extends modifiers and their values.
  * \param extendsClass
  */
 void ModelWidget::fetchExtendsModifiers(QString extendsClass)
 {
+  mExtendsModifiersMap.clear();
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QStringList extendsModifiersList = pOMCProxy->getExtendsModifierNames(mpLibraryTreeItem->getNameStructure(), extendsClass);
   QMap<QString, QString> extendsModifiersMap;
@@ -4401,6 +4429,7 @@ void ModelWidget::reDrawModelWidget()
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
+    mDerivedClassModifiersLoaded = false;
     // remove saved inherited classes
     clearInheritedClasses();
     // get inherited classes

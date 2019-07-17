@@ -1298,6 +1298,78 @@ QString Component::getParameterDisplayString(QString parameterName)
 }
 
 /*!
+ * \brief Component::getDerivedClassModifierValue
+ * Used to fetch the values of unit and displayUnit.
+ * \param modifierName
+ * \return
+ */
+QString Component::getDerivedClassModifierValue(QString modifierName)
+{
+  /* Get unit value
+   * First check if unit is defined with in the component modifier.
+   * If no unit is found then check it in the derived class modifier value.
+   * A derived class can be inherited, so look recursively.
+   */
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString modifierValue = mpComponentInfo->getModifiersMap(pOMCProxy, className, this).value(modifierName);
+  if (modifierValue.isEmpty()) {
+    if (!pOMCProxy->isBuiltinType(mpComponentInfo->getClassName())) {
+      if (mpLibraryTreeItem) {
+        if (!mpLibraryTreeItem->getModelWidget()) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+        }
+        modifierValue = mpLibraryTreeItem->getModelWidget()->getDerivedClassModifiersMap().value(modifierName);
+      }
+      if (modifierValue.isEmpty()) {
+        modifierValue = getInheritedDerivedClassModifierValue(this, modifierName);
+      }
+    }
+  }
+  return StringHandler::removeFirstLastQuotes(modifierValue);
+}
+
+/*!
+ * \brief Component::getInheritedDerivedClassModifierValue
+ * Helper function for Component::getDerivedClassModifierValue()
+ * \param pComponent
+ * \param modifierName
+ * \return
+ */
+QString Component::getInheritedDerivedClassModifierValue(Component *pComponent, QString modifierName)
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
+  QString modifierValue = "";
+  if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
+    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
+  }
+  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+    /* Ticket #4031
+     * Since we use the parent ComponentInfo for inherited classes so we should not use
+     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
+     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
+     * Also don't just return after reading from first inherited class. Check recursively.
+     */
+    if (!pOMCProxy->isBuiltinType(pInheritedComponent->getLibraryTreeItem()->getNameStructure())) {
+      if (pInheritedComponent->getLibraryTreeItem()) {
+        if (!pInheritedComponent->getLibraryTreeItem()->getModelWidget()) {
+          pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedComponent->getLibraryTreeItem(), false);
+        }
+        modifierValue = pInheritedComponent->getLibraryTreeItem()->getModelWidget()->getDerivedClassModifiersMap().value(modifierName);
+      }
+      if (modifierValue.isEmpty()) {
+        modifierValue = getInheritedDerivedClassModifierValue(pInheritedComponent, modifierName);
+      }
+      if (!modifierValue.isEmpty()) {
+        return StringHandler::removeFirstLastQuotes(modifierValue);
+      }
+    }
+  }
+  return "";
+}
+
+/*!
  * \brief Component::shapeAdded
  * Called when a reference shape is added in its actual class.
  */
@@ -1476,6 +1548,31 @@ void Component::setBusComponent(Component *pBusComponent)
 {
   mpBusComponent = pBusComponent;
   setVisible(!isInBus());
+}
+
+/*!
+ * \brief Component::getComponentByName
+ * Finds the component by name.
+ * \param componentName
+ * \return
+ */
+Component *Component::getComponentByName(const QString &componentName)
+{
+  Component *pComponentFound = 0;
+  foreach (Component *pComponent, getComponentsList()) {
+    if (pComponent->getComponentInfo() && pComponent->getName().compare(componentName) == 0) {
+      pComponentFound = pComponent;
+      return pComponentFound;
+    }
+  }
+  /* if is not found in components list then look into the inherited components list. */
+  foreach (Component *pInheritedComponent, getInheritedComponentsList()) {
+    pComponentFound = pInheritedComponent->getComponentByName(componentName);
+    if (pComponentFound) {
+      return pComponentFound;
+    }
+  }
+  return pComponentFound;
 }
 
 /*!

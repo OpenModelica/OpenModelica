@@ -95,36 +95,11 @@ Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab
   setSaveSelectorFilter("-");
   setSaveSelectorCaption("-");
   createValueWidget();
-  /* Get unit value
-   * First check if unit is defined with in the component modifier.
-   * If no unit is found then check it in the derived class modifier value.
-   * A derived class can be inherited, so look recursively.
-   */
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QString unit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent).value("unit");
-  if (unit.isEmpty()) {
-    if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
-      unit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "unit");
-      if (unit.isEmpty()) {
-        unit = getModifierValueFromDerivedClass(mpComponent, "unit");
-      }
-    }
-  }
-  mUnit = StringHandler::removeFirstLastQuotes(unit);
-  /* Get displayUnit value
-   * First check if displayUnit is defined with in the component modifier.
-   * If no displayUnit is found then check it in the derived class modifier value.
-   * A derived class can be inherited, so look recursively.
-   */
-  QString displayUnit = mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent).value("displayUnit");
-  if (displayUnit.isEmpty()) {
-    if (!pOMCProxy->isBuiltinType(mpComponent->getComponentInfo()->getClassName())) {
-      displayUnit = pOMCProxy->getDerivedClassModifierValue(mpComponent->getComponentInfo()->getClassName(), "displayUnit");
-      if (displayUnit.isEmpty()) {
-        displayUnit = getModifierValueFromDerivedClass(mpComponent, "displayUnit");
-      }
-    }
-  }
+  // Get unit value
+  QString unit = mpComponent->getDerivedClassModifierValue("unit");
+  mUnit = unit;
+  // Get displayUnit value
+  QString displayUnit = mpComponent->getDerivedClassModifierValue("displayUnit");
   if (displayUnit.isEmpty()) {
     displayUnit = unit;
   }
@@ -291,43 +266,6 @@ void Parameter::setFixedState(QString fixed, bool defaultValue)
 QString Parameter::getFixedState()
 {
   return mpFixedCheckBox->tickStateString();
-}
-
-/*!
- * \brief Parameter::getModifierValueFromDerivedClass
- * Returns the modifier value by reading the derived classes.
- * \param pComponent
- * \param modifierName
- * \return the modifier value.
- */
-QString Parameter::getModifierValueFromDerivedClass(Component *pComponent, QString modifierName)
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
-  QString modifierValue = "";
-  if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
-    pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
-  }
-  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
-    /* Ticket #4031
-     * Since we use the parent ComponentInfo for inherited classes so we should not use
-     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
-     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
-     * Also don't just return after reading from first inherited class. Check recursively.
-     */
-    if (pInheritedComponent->getLibraryTreeItem() &&
-        !pOMCProxy->isBuiltinType(pInheritedComponent->getLibraryTreeItem()->getNameStructure())) {
-      modifierValue = pOMCProxy->getDerivedClassModifierValue(pInheritedComponent->getLibraryTreeItem()->getNameStructure(),
-                                                              modifierName);
-      if (modifierValue.isEmpty()) {
-        modifierValue = getModifierValueFromDerivedClass(pInheritedComponent, modifierName);
-      }
-      if (!modifierValue.isEmpty()) {
-        return modifierValue;
-      }
-    }
-  }
-  return "";
 }
 
 /*!
