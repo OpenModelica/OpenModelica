@@ -640,8 +640,8 @@ match imp
   case UNQUAL_IMPORT(__) then 'using <%dumpPathJL(path)%>'
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPathJL(prefix)
-    let groups_str = (groups |> group => dumpGroupImport(group) ;separator=",")
-    'using <%prefix_str%>:<%groups_str%>'
+    let groups_str = (groups |> group => dumpGroupImport(group) ;separator=", ")
+    'using <%prefix_str%>: <%groups_str%>'
 end dumpImport;
 
 template dumpGroupImport(Absyn.GroupImport gimp)
@@ -781,7 +781,7 @@ match path
       case "Integer" then 'ModelicaInteger'
       case "Boolean" then 'Bool'
       case "list" then 'IList'
-      case "array" then 'Array'
+      case "array" then 'MArray'
       case "tuple" then 'Tuple'
       else '<%name%>'
   else
