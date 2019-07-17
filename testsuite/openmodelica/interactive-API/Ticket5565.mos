@@ -12,6 +12,32 @@ getComponentAnnotations(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString
 getInheritedClasses(Modelica.Mechanics.MultiBody.Interfaces.Frame_a); getErrorString();
 getIconAnnotation(Modelica.Mechanics.MultiBody.Joints.Prismatic); getErrorString();
 
+getComponents(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, useQuotes = true); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Interfaces.PartialVisualizer,"world"); getErrorString();
+getDiagramAnnotation(Modelica.Mechanics.MultiBody.Visualizers.FixedShape); getErrorString();
+getExtendsModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder,Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.Cylinder_analytic_CAD, useQuotes = true); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,"cylinder2"); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder2.crankAngleOffset); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder2.cylinderInclination); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder2.animation); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,"cylinder3"); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder3.cylinderInclination); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder3.animation); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder3.crankAngleOffset); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,"cylinder4"); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder4.cylinderInclination); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder4.animation); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder4.crankAngleOffset); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,"cylinder5"); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder5.cylinderInclination); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder5.animation); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder5.crankAngleOffset); getErrorString();
+getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,"cylinder6"); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder6.cylinderInclination); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder6.animation); getErrorString();
+getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder6.crankAngleOffset); getErrorString();
+getInheritedClasses(Modelica.Mechanics.MultiBody.Joints.Revolute); getErrorString();
+
 // Result:
 // true
 // Evaluating: loadModel(Modelica)
@@ -32,6 +58,106 @@ getIconAnnotation(Modelica.Mechanics.MultiBody.Joints.Prismatic); getErrorString
 // ""
 // Evaluating: getIconAnnotation(Modelica.Mechanics.MultiBody.Joints.Prismatic)
 // {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0, {Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {192, 192, 192}, LinePattern.None, FillPattern.Solid, 0.25, BorderPattern.None, {{-100.0, -50.0}, {-30.0, 41.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.None, FillPattern.Solid, 0.25, BorderPattern.None, {{-100.0, 40.0}, {-30.0, 50.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {192, 192, 192}, LinePattern.None, FillPattern.Solid, 0.25, BorderPattern.None, {{-30.0, -30.0}, {100.0, 20.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.None, FillPattern.Solid, 0.25, BorderPattern.None, {{-30.0, 20.0}, {100.0, 30.0}}, 0.0), Line(true, {0.0, 0.0}, 0.0, {{-30.0, -50.0}, {-30.0, 50.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None), Line(true, {0.0, 0.0}, 0.0, {{100.0, -30.0}, {100.0, 21.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None), Text(true, {0.0, 0.0}, 0.0, {128, 128, 128}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{60.0, 12.0}, {96.0, -13.0}}, "b", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Text(true, {0.0, 0.0}, 0.0, {128, 128, 128}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-95.0, 13.0}, {-60.0, -9.0}}, "a", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Text(useAxisFlange, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150.0, -135.0}, {150.0, -95.0}}, "%name", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Text(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150.0, -90.0}, {150.0, -60.0}}, "n=%n", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Rectangle(useAxisFlange, {0.0, 0.0}, 0.0, {0, 0, 255}, {192, 192, 192}, LinePattern.None, FillPattern.Solid, 0.25, BorderPattern.None, {{90.0, 30.0}, {100.0, 70.0}}, 0.0), Text(not useAxisFlange, {0.0, 0.0}, 0.0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150.0, 60.0}, {150.0, 100.0}}, "%name", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center)}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponents(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, useQuotes = true)
+// {{"Boolean","animation","= true, if animation shall be enabled", "public", "false", "false", "false", "false", "parameter", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder1","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder2","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder3","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder4","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder5","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder","cylinder6","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Joints.Revolute","bearing","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Parts.BodyShape","crank","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.Rotational.Interfaces.Flange_b","flange_b","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"},{"Modelica.Mechanics.MultiBody.Interfaces.Frame_a","frame_a","", "public", "false", "false", "false", "false", "unspecified", "none", "unspecified","{}"}}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Interfaces.PartialVisualizer, "world")
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getDiagramAnnotation(Modelica.Mechanics.MultiBody.Visualizers.FixedShape)
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getExtendsModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic.Cylinder, Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.Cylinder_analytic_CAD, useQuotes = true)
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, "cylinder2")
+// {"crankAngleOffset","cylinderInclination","animation"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder2.crankAngleOffset)
+// "90"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder2.cylinderInclination)
+// "30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder2.animation)
+// "animation"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, "cylinder3")
+// {"cylinderInclination","animation","crankAngleOffset"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder3.cylinderInclination)
+// "-30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder3.animation)
+// "animation"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder3.crankAngleOffset)
+// "210"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, "cylinder4")
+// {"cylinderInclination","animation","crankAngleOffset"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder4.cylinderInclination)
+// "30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder4.animation)
+// "animation"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder4.crankAngleOffset)
+// "210"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, "cylinder5")
+// {"cylinderInclination","animation","crankAngleOffset"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder5.cylinderInclination)
+// "-30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder5.animation)
+// "animation"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder5.crankAngleOffset)
+// "90"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierNames(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, "cylinder6")
+// {"cylinderInclination","animation","crankAngleOffset"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder6.cylinderInclination)
+// "30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder6.animation)
+// "animation"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic, cylinder6.crankAngleOffset)
+// "-30"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInheritedClasses(Modelica.Mechanics.MultiBody.Joints.Revolute)
+// {}
 // Evaluating: getErrorString()
 // ""
 // endResult

@@ -1449,8 +1449,15 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
         nargs := getApiFunctionNamedArgs(inStatement);
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.setCheckpoint("getExtendsModifierNames");
+        end if;
+        outResult := getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
+        if not Flags.isSet(Flags.NF_API_NOISE) then
+          ErrorExt.rollBack("getExtendsModifierNames");
+        end if;
       then
-        getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
+        outResult;
 
     case "getExtendsModifierValue"
       algorithm
