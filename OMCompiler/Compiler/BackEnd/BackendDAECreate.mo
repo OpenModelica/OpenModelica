@@ -819,7 +819,7 @@ algorithm
                   comment = comment,
                   innerOuter = io)
       equation
-        (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr);
+        (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr, protection);
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr, b);
@@ -1091,6 +1091,7 @@ protected function lowerVarkind
   input DAE.VarDirection inVarDirection;
   input DAE.ConnectorType inConnectorType;
   input Option<DAE.VariableAttributes> daeAttr;
+  input DAE.VarVisibility protection;
   output BackendDAE.VarKind outVarKind;
 algorithm
   outVarKind := match(inVarKind, daeAttr)
@@ -1104,7 +1105,7 @@ algorithm
 
     else
       algorithm
-        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
+        true := (not DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType)) or  DAEUtil.boolVarVisibility(protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
