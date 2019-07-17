@@ -497,12 +497,12 @@ void GraphicsView::addComponentToClass(Component *pComponent)
 
 /*!
  * \brief GraphicsView::deleteComponent
- * Delete the component and its corresponding connectors from the components list and OMC.
+ * Delete the component and its corresponding connections from the components list and OMC.
  * \param component is the object to be deleted.
  */
 void GraphicsView::deleteComponent(Component *pComponent)
 {
-  // First Remove the Connector associated to this component
+  // First Remove the connections associated to this component
   int i = 0;
   while(i != mConnectionsList.size()) {
     QString startComponentName, endComponentName = "";
@@ -642,7 +642,7 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     MainWindow *pMainWindow = MainWindow::instance();
     // check for connectorSizing on start component
     Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
-    if (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
+    if (pStartComponent && pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
       QString parameter = StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex());
       // if connectorSizing then set a new value for the connectorSizing parameter.
       if (isParameterConnectorSizing(pStartComponent->getRootParentComponent(), parameter)) {
@@ -663,7 +663,7 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     }
     // check for connectorSizing on end component
     Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
+    if (pEndComponent && pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
       QString parameter = StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex());
       // if connectorSizing then set a new value for the connectorSizing parameter.
       if (isParameterConnectorSizing(pEndComponent->getRootParentComponent(), parameter)) {
@@ -717,7 +717,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
       // check for connectorSizing on start component
       Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
       int numberOfStartComponentConnections = 0;
-      if (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
+      if (pStartComponent && pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
         QString parameter = StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex());
         // if connectorSizing then update the connectorSizing modifier.
         if (isParameterConnectorSizing(pStartComponent->getRootParentComponent(), parameter)) {
@@ -732,7 +732,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
       // check for connectorSizing on end component
       Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
       int numberOfEndComponentConnections = 0;
-      if (pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
+      if (pEndComponent && pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
         QString parameter = StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex());
         // if connectorSizing then update the connectorSizing modifier.
         if (isParameterConnectorSizing(pEndComponent->getRootParentComponent(), parameter)) {
