@@ -137,7 +137,7 @@ void SimulationProcessThread::runSimulationExecutable()
   QStringList args(QString("-port=").append(QString::number(mpSimulationOutputWidget->getTcpServer()->serverPort())));
   args << "-logFormat=xmltcp" << simulationOptions.getSimulationFlags();
   // start the executable
-  QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.());
+   QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
 #ifdef WIN32
