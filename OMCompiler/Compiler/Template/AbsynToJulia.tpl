@@ -111,11 +111,15 @@ match class
         <<
         <%\n%>
         using MetaModelica
+        #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+        using ExportAll
         <%inform%>
         <%forwardDeclarations%>
         <%\n%>
         <%cdef_str1%>
         <%\n%>
+        #=So that we can use wildcard imports and named imports when they do occur. Not good Julia practice=#
+        @exportAll()
         >>
       else
       <<
@@ -538,7 +542,7 @@ match specification
       else 'ERROR'
   case IMPORT(__) then
     let imp_str = dumpImport(import_)
-    'import <%imp_str%>'
+    '<%imp_str%>'
 end dumpElementSpec;
 
 template dumpElementSpecForComponents(ElementSpec specification, DumpOptions options, Context context)
@@ -631,12 +635,13 @@ template dumpImport(Absyn.Import imp)
 ::=
 match imp
   case NAMED_IMPORT(__) then AbsynDumpTpl.errorMsg("Named imports are not implemented!.")
-  case QUAL_IMPORT(__) then dumpPathJL(path)
-  case UNQUAL_IMPORT(__) then '<%dumpPathJL(path)%>.*'
+  case QUAL_IMPORT(__) then 'import <%dumpPathJL(path)%>'
+  /*This case will depend on my ExportAll.jl package. Not good practice but seem to be needed at places*/
+  case UNQUAL_IMPORT(__) then 'using <%dumpPathJL(path)%>'
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPathJL(prefix)
     let groups_str = (groups |> group => dumpGroupImport(group) ;separator=",")
-    '<%prefix_str%>.{<%groups_str%>}'
+    'using <%prefix_str%>:<%groups_str%>}'
 end dumpImport;
 
 template dumpGroupImport(Absyn.GroupImport gimp)
@@ -674,9 +679,9 @@ match alg
     match assignComponent
       case  CREF(__) then '<%lhs_str%> = <%rhs_str%>'
       case  TUPLE(__) then '<%lhs_str%> = <%rhs_str%>'
-      case  CALL(__) then '<%lhs_str%> = <%rhs_str%>'
       /* Lets do a crazy oneliner :)) */
       case  CONS(__) then '<%lhs_str%> = listHead(<%rhs_str%>), listRest(<%rhs_str%>)'
+      case  CALL(__) then '#= This is crazy code =#<%lhs_str%> = <%rhs_str%>'
       else  '@assert <%lhs_str%> == (<%rhs_str%>)'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
@@ -775,7 +780,7 @@ match path
       case "Real" then 'ModelicaReal'
       case "Integer" then 'ModelicaInteger'
       case "Boolean" then 'Bool'
-      case "list" then 'List'
+      case "list" then 'IList'
       case "array" then 'Array'
       case "tuple" then 'Tuple'
       else '<%name%>'
@@ -958,7 +963,7 @@ match exp
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
     let func_str = (match id
-    case "list" then "List"
+    case "list" then "IList"
     else dumpCref(function_, functionContext))
     '<%func_str%>(<%args_str%>)'
   case CALL(__) then
@@ -971,12 +976,14 @@ match exp
   case AS(__) then
     let exp_str = dumpPattern(exp, context, &as_str)
     let id_str = '<%id%>'
-    match context
-      case MATCH_CONTEXT(__) then
-        let &as_str += '<%id_str%>,'
-        '<%exp_str%>'
-      else
-        '<%id_str%> = <%exp_str%>'
+    //match context
+      // case MATCH_CONTEXT(__) then
+      //   let &as_str += '<%id_str%>,'
+      //   '<%exp_str%>'
+      // else
+      //   '<%id_str%> = <%exp_str%>'
+      //I should be able to do this
+      '<%id_str%> && <%exp_str%>'
   case CONS(__) then
     let consOp = dumpCons(dumpPattern(head, context, &as_str), dumpPattern(rest, context, &as_str))
     '<%consOp%>'

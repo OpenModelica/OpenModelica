@@ -5,12 +5,12 @@ dependencies :(
 */
 
 //Translating Absyn, to generate a syntax tree
+// setCommandLineOptions("-g=MetaModelica");getErrorString();
 // loadFile("Compiler/FrontEnd/Absyn.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Absyn.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 // deleteClass(Absyn);getErrorString();
 
 //Translating AbsynUtil
-// setCommandLineOptions("-g=MetaModelica");getErrorString();
 // loadFile("Compiler/FrontEnd/AbsynUtil.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 // deleteClass(AbsynUtil);getErrorString();
