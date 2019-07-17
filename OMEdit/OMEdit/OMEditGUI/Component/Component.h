@@ -239,6 +239,8 @@ public:
   void emitDeleted();
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
+  QString getDerivedClassModifierValue(QString modifierName);
+  QString getInheritedDerivedClassModifierValue(Component *pComponent, QString modifierName);
   void shapeAdded();
   void shapeUpdated();
   void shapeDeleted();
@@ -251,6 +253,7 @@ public:
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Component *pBusComponent);
   Component* getBusComponent() {return mpBusComponent;}
+  Component* getComponentByName(const QString &componentName);
 
   Transformation mTransformation;
   Transformation mOldTransformation;

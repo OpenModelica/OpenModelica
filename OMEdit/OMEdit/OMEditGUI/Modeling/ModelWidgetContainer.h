@@ -429,6 +429,7 @@ public:
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
   const QList<ComponentInfo*> &getComponentsList() {return mComponentsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
+  QMap<QString, QString> getDerivedClassModifiersMap();
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
   void drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
@@ -490,6 +491,8 @@ private:
   bool mCreateModelWidgetComponents;
   bool mExtendsModifiersLoaded;
   QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
+  bool mDerivedClassModifiersLoaded;
+  QMap<QString, QString> mDerivedClassModifiersMap;
   QList<LibraryTreeItem*> mInheritedClassesList;
   QList<ComponentInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;

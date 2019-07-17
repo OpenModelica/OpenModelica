@@ -226,6 +226,7 @@ public:
   QString uriToFilename(QString uri);
   QString getModelicaPath();
   QStringList getAvailableLibraries();
+  QStringList getDerivedClassModifierNames(QString className);
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);

@@ -84,7 +84,6 @@ public:
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState();
-  QString getModifierValueFromDerivedClass(Component *pComponent, QString modifierName);
   void setEnabled(bool enable);
 private:
   Component *mpComponent;

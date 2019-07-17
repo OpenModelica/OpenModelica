@@ -2649,6 +2649,17 @@ QStringList OMCProxy::getAvailableLibraries()
 }
 
 /*!
+ * \brief OMCProxy::getDerivedClassModifierNames
+ * Gets the derived class modifier names.
+ * \param className
+ * \return
+ */
+QStringList OMCProxy::getDerivedClassModifierNames(QString className)
+{
+  return mpOMCInterface->getDerivedClassModifierNames(className);
+}
+
+/*!
  * \brief OMCProxy::getDerivedClassModifierValue
  * Gets the derived class modifier value.
  * \param className - the name of the derived class.
