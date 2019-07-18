@@ -148,9 +148,9 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         //print("- Flatten ok\n");
         dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
-        //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
+        //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualRHS", "expandDerOperator"}), NONE(), NONE(),NONE());
         Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls","expandDerOperator"}), NONE(), NONE(), SOME({}));
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
         Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
         //print("* Lowered Ok \n");
 

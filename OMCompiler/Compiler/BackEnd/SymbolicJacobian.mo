@@ -2095,7 +2095,7 @@ algorithm
           end if;
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   {"removeEqualFunctionCalls",
+                                                                   {"removeEqualRHS",
                                                                     "removeSimpleEquations",
                                                                     "evalFunc"},
                                                                    NONE(),
