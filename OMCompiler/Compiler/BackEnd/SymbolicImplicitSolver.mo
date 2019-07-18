@@ -136,7 +136,7 @@ algorithm
   end if;
 
   inlineBDAE := BackendDAEUtil.getSolvedSystemforJacobians(inlineBDAE,
-                                                           {"removeEqualFunctionCalls",
+                                                           {"removeEqualRHS",
                                                             "removeSimpleEquations",
                                                             "evalFunc"},
                                                            NONE(),

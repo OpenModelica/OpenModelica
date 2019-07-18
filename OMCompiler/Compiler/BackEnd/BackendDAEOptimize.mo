@@ -906,9 +906,9 @@ end protectedParametersFinder;
 // remove equal function calls equations stuff
 //
 // =============================================================================
-public function removeEqualFunctionCalls "author: Frenkel TUD 2011-04
-  This function detects equal function calls of the form a=f(b) and c=f(b) in
-  BackendDAE.BackendDAE to get speed up."
+public function removeEqualRHS "author: Frenkel TUD 2011-04
+  Detects equal expressions of the form a=<exp> and b=<exp> and substitutes
+  them to get speed up."
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
@@ -918,7 +918,7 @@ algorithm
   else
     odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
   end if;
-end removeEqualFunctionCalls;
+end removeEqualRHS;
 
 protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04
   This function detects equal function calls of the form a=f(b) and c=f(b) in
@@ -1018,22 +1018,22 @@ algorithm
         then fail();
       case (DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),DAE.CREF(),_)
         then fail();
-      // a = -f(...);
+      // a = -<exp>
       case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(),exp=e2),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e1),e2);
-      // a = f(...);
+      // a = <exp>;
       case (e1 as DAE.CREF(componentRef = cr),e2,_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e1,e2);
-      // a = -f(...);
+      // -<exp> = a
       case (DAE.UNARY(operator=op as DAE.UMINUS(),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e2),e1);
-      // f(...)=a;
+      // <exp> = a
       case (e1,e2 as DAE.CREF(componentRef = cr),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
