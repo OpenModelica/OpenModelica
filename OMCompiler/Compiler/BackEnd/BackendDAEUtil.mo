@@ -7088,8 +7088,8 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
-  if Flags.isSet(Flags.DUMP_DAE_LOW) then
-    BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
+  if Flags.isSet(Flags.DUMP_DAE_LOW) or Flags.isSet(Flags.OPT_DAE_DUMP) then
+    BackendDump.dumpBackendDAE(inDAE, "dumpdaelow (before pre-optimization)");
     if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
       BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
     end if;
