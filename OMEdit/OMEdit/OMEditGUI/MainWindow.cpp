@@ -4007,15 +4007,10 @@ void MainWindow::switchToModelingPerspective()
   // show/hide toolbars
   mpEditToolBar->setVisible(true);
   mpViewToolBar->setVisible(true);
-  mpShapesToolBar->setVisible(true);
   mpModelSwitcherToolBar->setVisible(true);
-  mpCheckToolBar->setVisible(true);
-  mpSimulationToolBar->setVisible(true);
   enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
-  mpTLMSimulationToolbar->setVisible(true);
-  mpOMSimulatorToobar->setVisible(true);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4099,15 +4094,10 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   // show/hide toolbars
   mpEditToolBar->setVisible(true);
   mpViewToolBar->setVisible(true);
-  mpShapesToolBar->setVisible(true);
   mpModelSwitcherToolBar->setVisible(true);
-  mpCheckToolBar->setVisible(true);
-  mpSimulationToolBar->setVisible(true);
   enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
-  mpTLMSimulationToolbar->setVisible(false);
-  mpOMSimulatorToobar->setVisible(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {

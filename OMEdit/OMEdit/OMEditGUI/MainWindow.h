@@ -203,6 +203,11 @@ public:
   QAction* getCommitFilesAction() {return mpCommitFilesAction;}
   QAction* getRevertCommitAction() {return mpRevertCommitAction;}
   QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
+  QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
+  QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
+  QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
+  QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
+  QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToobar;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
   void closeEvent(QCloseEvent *event);

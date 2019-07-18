@@ -7262,6 +7262,34 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
+    /* ticket:5441 OMEdit toolbars
+     * Show the relevant toolbars if we are in a Modeling perspective
+     */
+    if (MainWindow::instance()->getPerspectiveTabBar()->currentIndex() == 1) {
+      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        MainWindow::instance()->getShapesToolBar()->setVisible(true);
+        MainWindow::instance()->getCheckToolBar()->setVisible(true);
+        MainWindow::instance()->getSimulationToolBar()->setVisible(true);
+        MainWindow::instance()->getTLMSimulationToolbar()->setVisible(false);
+        MainWindow::instance()->getOMSimulatorToobar()->setVisible(false);
+      } else {
+        MainWindow::instance()->getShapesToolBar()->setVisible(false);
+        MainWindow::instance()->getCheckToolBar()->setVisible(false);
+        MainWindow::instance()->getSimulationToolBar()->setVisible(false);
+        if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+          MainWindow::instance()->getTLMSimulationToolbar()->setVisible(false);
+          MainWindow::instance()->getOMSimulatorToobar()->setVisible(false);
+        } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+          MainWindow::instance()->getTLMSimulationToolbar()->setVisible(true);
+          MainWindow::instance()->getOMSimulatorToobar()->setVisible(false);
+        } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+          MainWindow::instance()->getTLMSimulationToolbar()->setVisible(false);
+          MainWindow::instance()->getOMSimulatorToobar()->setVisible(true);
+        } else {
+          qDebug() << "Unable to show/hide toolbars, unknown library type.";
+        }
+      }
+    }
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);
