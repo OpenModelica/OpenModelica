@@ -38,4 +38,4 @@ syntaxTest :
 semanticTest : syntaxTest
 	julia runSemanticCheck.jl ${OMC_EXEC}
 clean :
-	rm ./OutputPrimitives/*.jl* ./OutputAlgorithms/*.jl* ./OutputEquations/*.jl* *~ \#* .\# .#* ./OutputAbsyn/*.jl* ./OutputGraphviz/*.jl*
+	rm ./OutputPrimitives/*.jl* ./OutputAlgorithms/*.jl* ./OutputEquations/*.jl* *~ \#* .\# .#* ./OutputAbsyn/*.jl* ./OutputGraphviz/*.jl* ./OutputSCode/*.jl* ./OutputSCodeUtil/*.jl* ./OutputMatchExpressions/*.jl*

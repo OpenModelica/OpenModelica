@@ -56,18 +56,20 @@ function syntaxCheck(omc)
   @assert pwd() == abspath(".")[1:end - 1] "Tests should be run from the suite"
   checkHome = pwd()
   @testset "Syntax tests" begin
-    xIsGraphviz = (x -> x == "Graphviz.mo")
     xIsAbsyn = (x -> x == "Absyn.mo")
-    xIsAbsynUtil = (x -> x == "AbsynUtil.mo")
     xIsSCode = (x -> x == "SCode.mo")
+    xIsGraphviz = (x -> x == "Graphviz.mo")
+    xIsAbsynUtil = (x -> x == "AbsynUtil.mo")
     xIsSCodeUtil = (x -> x == "SCodeUtil.mo")
+    xIsMatchTests = (x -> x == "MatchExpressions.mo")
     executeTestSteps(checkHome, "./Primitives", "./OutputPrimitives", omc)
     executeTestSteps(checkHome, "./Algorithms", "./OutputAlgorithms", omc)
-    executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputGraphviz", omc, xIsGraphviz)
     executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputAbsyn", omc, xIsAbsyn)
-    executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputAbsynUtil", omc, xIsAbsynUtil)
     executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputSCode", omc, xIsSCode)
+    executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputGraphviz", omc, xIsGraphviz)
+    executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputAbsynUtil", omc, xIsAbsynUtil)
     executeTestSteps(checkHome, "./../../Compiler/FrontEnd", "./OutputSCodeUtil", omc, xIsSCodeUtil)
+    executeTestSteps(checkHome, "./MatchExpressions", "./OutputMatchExpressions", omc, xIsMatchTests)
   end
 end
 

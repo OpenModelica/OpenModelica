@@ -53,9 +53,8 @@ function semanticCheck(omc)
       include("./SemanticCheckPrimitives/testAlgorithms.jl")
     end
     #= TODO =#
-    @testset "Test compiler sources" begin
-      #= Failing on purpose=#
-      println("TODO: Implement test for compiler sources\n")
+    @testset "Test Absyn and Match" begin
+      include("./SemanticCheckPrimitives/testMatchSemantics.jl")
     end
   end
 end
