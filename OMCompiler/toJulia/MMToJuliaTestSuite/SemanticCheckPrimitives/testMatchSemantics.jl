@@ -3,8 +3,8 @@ module TestMatch
 #= We might fail here already =#
 include("../OutputMatchExpressions/MatchExpressions.jl")
 include("../testsuiteUtil.jl")
-using Test
 import Absyn
+using Test
 using .MatchExpressions
 using .MMToJuliaTestSuiteUtil
 using MetaModelica
