@@ -31,6 +31,36 @@ buildModel(testOptdaedump); getErrorString();
 // ""
 //
 // ########################################
+// dumpdaelow (before pre-optimization)
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
+// 2/2 (1): (y ^ 3.0 + x ^ 3.0) ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): if noEvent(x > 0.0) then 1.0 + 3.0 * z else 2.0 + 5.0 * z = y   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+//
+// ########################################
 // pre-optimization module evalFunc (simulation)
 // ########################################
 //
@@ -40,9 +70,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -71,9 +101,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -113,9 +143,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -143,9 +173,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -187,9 +217,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -229,9 +259,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -271,9 +301,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -313,9 +343,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -355,9 +385,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -397,9 +427,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -440,9 +470,9 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: z:VARIABLE()  type: Real 
-// 2: y:VARIABLE()  type: Real 
-// 3: x:VARIABLE()  type: Real 
+// 1: z:VARIABLE()  type: Real
+// 2: y:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
 //
 //
 // Equations (3, 3)

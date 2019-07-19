@@ -47,8 +47,8 @@ echo(true);
 res.resultFile;
 if regexBool(messages, "EXIT: Optimal Solution Found.\n") then
   print("Optimal Solution Found!\n");
-  if regexBool(messages,"Number of Iterations....: 91") then
-    print("Number of Iterations....: 91\n");
+  if regexBool(messages,"Number of Iterations....: 64") then
+    print("Number of Iterations....: 64\n");
   else
     print("wrong Number of Iterations! Update test\n");
   end if;
@@ -90,26 +90,26 @@ val(Fx,5.0);
 // true
 // "pendel_res.mat"
 // Optimal Solution Found!
-// Number of Iterations....: 91
+// Number of Iterations....: 64
 //
 // ""
 // ""
 // -0.0
-// -1.659802327071079
-// -0.1810650803223208
-// -0.8129041257070627
-// -0.06888096344942475
-// -0.03166506452173983
-// 0.4999999993337779
-// 0.4999999833403194
-// 0.4999999666751017
-// 0.4999999501796328
-// 0.4999999337320414
-// 0.4999999182288091
-// -3.307612995835737
-// -3.307611589112298
+// -1.659802327078357
+// -0.1810650803865322
+// -0.8129041257192984
+// -0.06888096353801476
+// -0.03166509723098942
+// 0.4999999993334864
+// 0.499999983333118
+// 0.4999999666607624
+// 0.4999999501537177
+// 0.4999999336917155
+// 0.4999999180081858
+// -3.307612995585031
+// -3.307611589086047
 // -5.0
-// -3.307611465222483
+// -3.307611465132354
 // -4.999999999999887
-// -4.999999953525426
+// -4.999999953525733
 // endResult

@@ -55,7 +55,7 @@ readSimulationResultSize("testModel_res.mat");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 124
+// 211
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEventEmit'",
@@ -63,7 +63,7 @@ readSimulationResultSize("testModel_res.mat");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 107
+// 186
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxStepSize=0.001'",
@@ -71,7 +71,7 @@ readSimulationResultSize("testModel_res.mat");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 2076
+// 2134
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1'",
@@ -79,7 +79,7 @@ readSimulationResultSize("testModel_res.mat");
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 6419
+// 6691
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",

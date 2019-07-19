@@ -78,8 +78,8 @@ val(h_i[5], 1.0); getErrorString();
 // allEquations: 
 // ========================================
 //
-// 6: T=273.15 + 10.0 * time [Real ]
-// 7: p_s=4000000.0 * time [Real ]
+// 6: T=273.15 + 10.0 * time [Real]
+// 7: p_s=4000000.0 * time [Real]
 // 10:  (NONLINEAR) index:1 jacobian: false
 // crefs: p
 // 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
@@ -98,8 +98,8 @@ val(h_i[5], 1.0); getErrorString();
 //
 // algebraicEquations (1 systems): 
 // ========================================
-// 6: T=273.15 + 10.0 * time [Real ]
-// 7: p_s=4000000.0 * time [Real ]
+// 6: T=273.15 + 10.0 * time [Real]
+// 7: p_s=4000000.0 * time [Real]
 // 10:  (NONLINEAR) index:1 jacobian: false
 // crefs: p
 // 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
@@ -149,7 +149,7 @@ val(h_i[5], 1.0); getErrorString();
 //
 // parameterEquations: 
 // ========================================
-// 11: nc=5 [Integer ]
+// 11: nc=5 [Integer]
 //
 // removedEquations: 
 // ========================================
@@ -206,7 +206,7 @@ val(h_i[5], 1.0); getErrorString();
 // 	outVars: ppS (Real, )  , delta_hv (Real, )  , delta_hd (Real, )  , h_idealGas (Real, )  , 
 // record SimulationResult
 //     resultFile = "TestFalseIterationNLS_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -219,7 +219,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 2.994315439165665e-315
+// 6.951844801137586e-310
 // ""
 // 0.0
 // ""
@@ -235,7 +235,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 2.994563815847143e-315
+// 6.951844803621352e-310
 // ""
 // 0.0
 // ""

@@ -65,21 +65,21 @@ val(res,1);
 // end SimulationResult;
 // ""
 // 0.0
-// 4.142218078956314e-14
+// 4.301237230969203e-14
 // true
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 3 linear systems
-// LOG_LS            | info    | Start solving Linear System 5 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | Start solving Linear System 15 (size 1) at time 0 with Lapack Solver
-// LOG_LS            | info    | Start solving Linear System 18 (size 4) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // 0.0
-// 7.216113123709188e-14
+// 6.632656836952361e-14
 // endResult

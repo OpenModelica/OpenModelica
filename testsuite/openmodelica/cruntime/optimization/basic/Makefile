@@ -38,6 +38,8 @@ testAlgLoop1.mos \
 testAlgLoop2.mos \
 testAlgLoop3.mos \
 testAlgLoop4.mos \
+testAlgLoop5.mos \
+testAlgLoop6.mos \
 testAlgLoop7.mos \
 testAlgLoop8.mos \
 testAlgLoop9.mos \
@@ -55,14 +57,11 @@ TFC8.mos \
 TFCtestFlag.mos \
 TT.mos \
 
-
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES = \
 TT2.mos \
 TT3.mos \
-testAlgLoop5.mos \
-testAlgLoop6.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
