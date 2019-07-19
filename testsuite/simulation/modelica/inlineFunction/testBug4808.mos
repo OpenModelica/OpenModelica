@@ -38,7 +38,7 @@ getErrorString();
 // ""
 //
 // ########################################
-// dumpdaelow
+// dumpdaelow (before pre-optimization)
 // ########################################
 //
 //
@@ -47,12 +47,12 @@ getErrorString();
 //
 // Variables (6)
 // ========================================
-// 1: k.im:VARIABLE()  "Imaginary part of complex number" type: Real 
-// 2: k.re:VARIABLE()  "Real part of complex number" type: Real 
-// 3: vA.im:VARIABLE()  "Imaginary part of complex number" type: Real 
-// 4: vA.re:VARIABLE()  "Real part of complex number" type: Real 
-// 5: vAt.im:VARIABLE()  "Imaginary part of complex number" type: Real 
-// 6: vAt.re:VARIABLE()  "Real part of complex number" type: Real 
+// 1: k.im:VARIABLE()  "Imaginary part of complex number" type: Real
+// 2: k.re:VARIABLE()  "Real part of complex number" type: Real
+// 3: vA.im:VARIABLE()  "Imaginary part of complex number" type: Real
+// 4: vA.re:VARIABLE()  "Real part of complex number" type: Real
+// 5: vAt.im:VARIABLE()  "Imaginary part of complex number" type: Real
+// 6: vAt.re:VARIABLE()  "Real part of complex number" type: Real
 //
 //
 // Equations (6, 6)
@@ -74,7 +74,7 @@ getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: r:PARAM()  = 10.0  type: Real 
+// 1: r:PARAM()  = 10.0  type: Real
 //
 //
 // record SimulationResult

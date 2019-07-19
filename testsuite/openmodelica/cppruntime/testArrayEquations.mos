@@ -72,20 +72,20 @@ val(y4, 1.0);
 // *********************
 //
 //
-// allEquations: 
+// allEquations:
 // ========================================
 //
 // ========================================
 //
 //
 //
-// odeEquations (0 systems): 
+// odeEquations (0 systems):
 // ========================================
 // ========================================
 //
 //
 //
-// algebraicEquations (0 systems): 
+// algebraicEquations (0 systems):
 // ========================================
 // ========================================
 //
@@ -99,36 +99,36 @@ val(y4, 1.0);
 //
 // SubPartition Vars:
 // ========================================
-// index: -1: $DER.x4 (no alias)  initial: 	no arrCref index:() [10]  
+// index: -1: $DER.x4 (no alias)  initial: 	no arrCref index:() [10]
 // index: -1: x1 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: x2 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: x3 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: x4 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
-// index: -1: y1 (no alias)  initial: 	no arrCref index:() []  
-// index: -1: y2 (no alias)  initial: 	no arrCref index:() []  
-// index: -1: y3 (no alias)  initial: 	no arrCref index:() []  
-// index: -1: y4 (no alias)  initial: 	no arrCref index:() []  
+// index: -1: y1 (no alias)  initial: 	no arrCref index:() []
+// index: -1: y2 (no alias)  initial: 	no arrCref index:() []
+// index: -1: y3 (no alias)  initial: 	no arrCref index:() []
+// index: -1: y4 (no alias)  initial: 	no arrCref index:() []
 // partition equations:
 // ========================================
-// 26: $CLKPRE.x1=x1 [Real[10] ]
-// 25: $CLKPRE.x2=x2 [Real[10] ]
-// 24: $CLKPRE.x3=x3 [Real[10] ]
-// 23: $CLKPRE.x4=x4 [Real[10] ]
+// 26: $CLKPRE.x1=x1 [Real[10]]
+// 25: $CLKPRE.x2=x2 [Real[10]]
+// 24: $CLKPRE.x3=x3 [Real[10]]
+// 23: $CLKPRE.x4=x4 [Real[10]]
 // 14 FOR-LOOP:  for i in (1:10) loop
-// x1[i]=if firstTick() then previous(x1[i]) else previous(x1[i]) + u[i][Real ]
+// x1[i]=if firstTick() then previous(x1[i]) else previous(x1[i]) + u[i][Real]
 // end for;
-// 15: y1=sum(x1) [Real ]
-// 16: x2=ArrayEquationsTest.myfor(u, previous(x2), firstTick()) [Real[10] ]
-// 17: y2=sum(x2) [Real ]
-// 18: x3=if firstTick() then previous(x3) else previous(x3) + u [Real[10] ]
+// 15: y1=sum(x1) [Real]
+// 16: x2=ArrayEquationsTest.myfor(u, previous(x2), firstTick()) [Real[10]]
+// 17: y2=sum(x2) [Real]
+// 18: x3=if firstTick() then previous(x3) else previous(x3) + u [Real[10]]
 // 19 FOR-LOOP:  for i in (1:10) loop
-// $DER.x4[i]=x3[i][Real ]
+// $DER.x4[i]=x3[i][Real]
 // end for;
 // 20 FOR-LOOP:  for i in (1:10) loop
-// x4[i]=(if firstTick() then 0.0 else $DER.x4[i]) * interval() + previous(x4[i])[Real ]
+// x4[i]=(if firstTick() then 0.0 else $DER.x4[i]) * interval() + previous(x4[i])[Real]
 // end for;
-// 21: y4=sum(x4) [Real ]
-// 22: y3=sum(x3) [Real ]removedEquations equations:
+// 21: y4=sum(x4) [Real]
+// 22: y3=sum(x3) [Real]removedEquations equations:
 // ========================================
 // SubClock:
 // factor(1/1) shift(0/1) Hold Events: false
@@ -139,19 +139,19 @@ val(y4, 1.0);
 //
 // initialEquations: (13)
 // ========================================
-// 1: $DER.x4=0.0 [Real ]
-// 2: x1=1.0 [Real ]
-// 3: $CLKPRE.x1=x1 [Real[10] ]
-// 4: x2=2.0 [Real ]
-// 5: $CLKPRE.x2=x2 [Real[10] ]
-// 6: x3=3.0 [Real ]
-// 7: $CLKPRE.x3=x3 [Real[10] ]
-// 8: x4=4.0 [Real ]
-// 9: $CLKPRE.x4=x4 [Real[10] ]
-// 10: y1=0.0 [Real ]
-// 11: y2=0.0 [Real ]
-// 12: y3=0.0 [Real ]
-// 13: y4=0.0 [Real ]
+// 1: $DER.x4=0.0 [Real]
+// 2: x1=1.0 [Real]
+// 3: $CLKPRE.x1=x1 [Real[10]]
+// 4: x2=2.0 [Real]
+// 5: $CLKPRE.x2=x2 [Real[10]]
+// 6: x3=3.0 [Real]
+// 7: $CLKPRE.x3=x3 [Real[10]]
+// 8: x4=4.0 [Real]
+// 9: $CLKPRE.x4=x4 [Real[10]]
+// 10: y1=0.0 [Real]
+// 11: y2=0.0 [Real]
+// 12: y3=0.0 [Real]
+// 13: y4=0.0 [Real]
 // ========================================
 //
 //
@@ -159,81 +159,81 @@ val(y4, 1.0);
 // initialEquations_lambda0: (0)
 // ========================================
 //
-// removedInitialEquations: 
+// removedInitialEquations:
 // ========================================
 //
-// startValueEquations: 
+// startValueEquations:
 // ========================================
 //
-// nominalValueEquations: 
+// nominalValueEquations:
 // ========================================
 //
-// minValueEquations: 
+// minValueEquations:
 // ========================================
 //
-// maxValueEquations: 
+// maxValueEquations:
 // ========================================
 //
-// parameterEquations: 
+// parameterEquations:
 // ========================================
-// 27: n=10 [Integer ]
+// 27: n=10 [Integer]
 //
-// removedEquations: 
-// ========================================
-//
-// algorithmAndEquationAsserts: 
+// removedEquations:
 // ========================================
 //
-// equationsForZeroCrossings: 
+// algorithmAndEquationAsserts:
 // ========================================
 //
-// jacobianEquations: 
+// equationsForZeroCrossings:
 // ========================================
 //
-// jacobianMatrices: 
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	
-// 	Jacobian idx: 1
-// 	
-// 	Jacobian idx: 2
-// 	
-// 	Jacobian idx: 3
-// 	
-// 	Jacobian idx: 4
-// 	
 //
-// modelInfo: 
+// 	Jacobian idx: 1
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+//
+// modelInfo:
 // ========================================
 // algVars (104)
 // ----------------------
-// index: 0: $CLKPRE.x1 (no alias)  initial: x1	no arrCref index:(1) [10] 
-// index: 1: $CLKPRE.x2 (no alias)  initial: x2	no arrCref index:(11) [10] 
-// index: 2: $CLKPRE.x3 (no alias)  initial: x3	no arrCref index:(21) [10] 
-// index: 3: $CLKPRE.x4 (no alias)  initial: x4	no arrCref index:(31) [10] 
-// index: 4: $DER.x4 (no alias)  initial: 	no arrCref index:(41) [10] 
-// index: 5: u (no alias)  initial: 1.0:10.0	no arrCref index:(51) [10] 
-// index: 6: x1 (no alias)  initial: 	no arrCref index:(61) [10] 
-// index: 7: x2 (no alias)  initial: 	no arrCref index:(71) [10] 
-// index: 8: x3 (no alias)  initial: 	no arrCref index:(81) [10] 
-// index: 9: x4 (no alias)  initial: 	no arrCref index:(91) [10] 
-// index: 10: y1 (no alias)  initial: 	no arrCref index:(101) [] 
-// index: 11: y2 (no alias)  initial: 	no arrCref index:(102) [] 
-// index: 12: y3 (no alias)  initial: 	no arrCref index:(103) [] 
-// index: 13: y4 (no alias)  initial: 	no arrCref index:(104) [] 
+// index: 0: $CLKPRE.x1 (no alias)  initial: x1	no arrCref index:(1) [10]
+// index: 1: $CLKPRE.x2 (no alias)  initial: x2	no arrCref index:(11) [10]
+// index: 2: $CLKPRE.x3 (no alias)  initial: x3	no arrCref index:(21) [10]
+// index: 3: $CLKPRE.x4 (no alias)  initial: x4	no arrCref index:(31) [10]
+// index: 4: $DER.x4 (no alias)  initial: 	no arrCref index:(41) [10]
+// index: 5: u (no alias)  initial: 1.0:10.0	no arrCref index:(51) [10]
+// index: 6: x1 (no alias)  initial: 	no arrCref index:(61) [10]
+// index: 7: x2 (no alias)  initial: 	no arrCref index:(71) [10]
+// index: 8: x3 (no alias)  initial: 	no arrCref index:(81) [10]
+// index: 9: x4 (no alias)  initial: 	no arrCref index:(91) [10]
+// index: 10: y1 (no alias)  initial: 	no arrCref index:(101) []
+// index: 11: y2 (no alias)  initial: 	no arrCref index:(102) []
+// index: 12: y3 (no alias)  initial: 	no arrCref index:(103) []
+// index: 13: y4 (no alias)  initial: 	no arrCref index:(104) []
 // intParamVars
 // ----------------------
-// index: 0: n (no alias)  initial: 10	no arrCref index:(105) [] 
+// index: 0: n (no alias)  initial: 10	no arrCref index:(105) []
 // functions:
 // -----------
 //
 // Function: ArrayEquationsTest.myfor
-// 	outVars: x (Real, )  , 
-// 	functionArguments: u (array(Real)[:], )  , previous_x (array(Real)[size(u, 1)], )  , isFirstTick (Boolean, )  , 
-// 	variableDeclarations: x (Real, )  , 
+// 	outVars: x (Real, )  ,
+// 	functionArguments: u (array(Real)[:], )  , previous_x (array(Real)[size(u, 1)], )  , isFirstTick (Boolean, )  ,
+// 	variableDeclarations: x (Real, )  ,
 // record SimulationResult
 //     resultFile = "ArrayEquationsTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'ArrayEquationsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayEquationsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""

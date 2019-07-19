@@ -19,57 +19,104 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SingularPlanarLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: SingularPlanarLoop"
 // end SimulationResult;
-// "[Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:321:7-321:60:writable] Error: Model is structurally singular, error found sorting equations 
-//  94: bodyshape3.frame_a.R.T[2,3] = (revolute3.e[2] - revolute3.e[2] * cos(revolute3.phi)) * revolute3.e[3] + revolute3.e[1] * sin(revolute3.phi);
-// 73: bodyshape3.frame_a.R.T[2,3] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,3];
-// 91: bodyshape3.frame_a.R.T[1,3] = (revolute3.e[1] - revolute3.e[1] * cos(revolute3.phi)) * revolute3.e[3] - revolute3.e[2] * sin(revolute3.phi);
-// 70: bodyshape3.frame_a.R.T[1,3] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,3];
-// 92: bodyshape3.frame_a.R.T[2,1] = (revolute3.e[2] - revolute3.e[2] * cos(revolute3.phi)) * revolute3.e[1] - revolute3.e[3] * sin(revolute3.phi);
-// 97: bodyshape3.frame_a.R.T[3,3] = revolute3.e[3] ^ 2.0 + (1.0 - revolute3.e[3] ^ 2.0) * cos(revolute3.phi);
-// 23: bodyshape1.frame_a.R.T[1,3] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,3];
-// 76: bodyshape3.frame_a.R.T[3,3] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,3];
-// 15: revolute1.R_rel.T[3,1] = (revolute1.e[3] - revolute1.e[3] * cos(revolute1.phi)) * revolute1.e[1] + revolute1.e[2] * sin(revolute1.phi);
-// 11: revolute1.R_rel.T[1,3] = (revolute1.e[1] - revolute1.e[1] * cos(revolute1.phi)) * revolute1.e[3] - revolute1.e[2] * sin(revolute1.phi);
-// 10: revolute1.R_rel.T[1,2] = (revolute1.e[1] - revolute1.e[1] * cos(revolute1.phi)) * revolute1.e[2] + revolute1.e[3] * sin(revolute1.phi);
-// 9: revolute1.R_rel.T[1,1] = revolute1.e[1] ^ 2.0 + (1.0 - revolute1.e[1] ^ 2.0) * cos(revolute1.phi);
-// 25: bodyshape1.frame_a.R.T[2,2] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,2];
-// 3: 0.0 = atan2(revolute1.frame_a.R.T[1,2], revolute1.frame_a.R.T[3,3]);
-// 22: bodyshape1.frame_a.R.T[1,2] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,2];
-// 17: revolute1.R_rel.T[3,3] = revolute1.e[3] ^ 2.0 + (1.0 - revolute1.e[3] ^ 2.0) * cos(revolute1.phi);
-// 16: revolute1.R_rel.T[3,2] = (revolute1.e[3] - revolute1.e[3] * cos(revolute1.phi)) * revolute1.e[2] - revolute1.e[1] * sin(revolute1.phi);
-// 28: bodyshape1.frame_a.R.T[3,2] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,2];
-// 26: bodyshape1.frame_a.R.T[2,3] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,3];
-// 2: 0.0 = atan2(-revolute1.frame_a.R.T[1,3], revolute1.frame_a.R.T[2,2]);
-// 29: bodyshape1.frame_a.R.T[3,3] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,3];
-// 14: revolute1.R_rel.T[2,3] = (revolute1.e[2] - revolute1.e[2] * cos(revolute1.phi)) * revolute1.e[3] + revolute1.e[1] * sin(revolute1.phi);
-// 13: revolute1.R_rel.T[2,2] = revolute1.e[2] ^ 2.0 + (1.0 - revolute1.e[2] ^ 2.0) * cos(revolute1.phi);
-// 12: revolute1.R_rel.T[2,1] = (revolute1.e[2] - revolute1.e[2] * cos(revolute1.phi)) * revolute1.e[1] - revolute1.e[3] * sin(revolute1.phi);
-// 21: bodyshape1.frame_a.R.T[1,1] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,1];
-// 27: bodyshape1.frame_a.R.T[3,1] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,1];
-// 1: 0.0 = atan2(revolute1.frame_a.R.T[2,3], revolute1.frame_a.R.T[1,1]);
-// 89: bodyshape3.frame_a.R.T[1,1] = revolute3.e[1] ^ 2.0 + (1.0 - revolute3.e[1] ^ 2.0) * cos(revolute3.phi);
-// 71: bodyshape3.frame_a.R.T[2,1] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,1];
-// 24: bodyshape1.frame_a.R.T[2,1] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,1];
-// 74: bodyshape3.frame_a.R.T[3,1] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,1];
-// 93: bodyshape3.frame_a.R.T[2,2] = revolute3.e[2] ^ 2.0 + (1.0 - revolute3.e[2] ^ 2.0) * cos(revolute3.phi);
-// 61: revolute2.R_rel.T[2,3] = (revolute2.e[2] - revolute2.e[2] * cos(revolute2.phi)) * revolute2.e[3] + revolute2.e[1] * sin(revolute2.phi);
-// 60: revolute2.R_rel.T[2,2] = revolute2.e[2] ^ 2.0 + (1.0 - revolute2.e[2] ^ 2.0) * cos(revolute2.phi);
-// 59: revolute2.R_rel.T[2,1] = (revolute2.e[2] - revolute2.e[2] * cos(revolute2.phi)) * revolute2.e[1] - revolute2.e[3] * sin(revolute2.phi);
-// 95: bodyshape3.frame_a.R.T[3,1] = (revolute3.e[3] - revolute3.e[3] * cos(revolute3.phi)) * revolute3.e[1] + revolute3.e[2] * sin(revolute3.phi);
-// 56: revolute2.R_rel.T[1,1] = revolute2.e[1] ^ 2.0 + (1.0 - revolute2.e[1] ^ 2.0) * cos(revolute2.phi);
-// 96: bodyshape3.frame_a.R.T[3,2] = (revolute3.e[3] - revolute3.e[3] * cos(revolute3.phi)) * revolute3.e[2] - revolute3.e[1] * sin(revolute3.phi);
-// 64: revolute2.R_rel.T[3,3] = revolute2.e[3] ^ 2.0 + (1.0 - revolute2.e[3] ^ 2.0) * cos(revolute2.phi);
-// 63: revolute2.R_rel.T[3,2] = (revolute2.e[3] - revolute2.e[3] * cos(revolute2.phi)) * revolute2.e[2] - revolute2.e[1] * sin(revolute2.phi);
-// 62: revolute2.R_rel.T[3,1] = (revolute2.e[3] - revolute2.e[3] * cos(revolute2.phi)) * revolute2.e[1] + revolute2.e[2] * sin(revolute2.phi);
-// 90: bodyshape3.frame_a.R.T[1,2] = (revolute3.e[1] - revolute3.e[1] * cos(revolute3.phi)) * revolute3.e[2] + revolute3.e[3] * sin(revolute3.phi);
-// 58: revolute2.R_rel.T[1,3] = (revolute2.e[1] - revolute2.e[1] * cos(revolute2.phi)) * revolute2.e[3] - revolute2.e[2] * sin(revolute2.phi);
-// 57: revolute2.R_rel.T[1,2] = (revolute2.e[1] - revolute2.e[1] * cos(revolute2.phi)) * revolute2.e[2] + revolute2.e[3] * sin(revolute2.phi);
-// 68: bodyshape3.frame_a.R.T[1,1] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,1];
-// 72: bodyshape3.frame_a.R.T[2,2] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,2];
-// 75: bodyshape3.frame_a.R.T[3,2] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,2];
-// 69: bodyshape3.frame_a.R.T[1,2] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,2];
-//  for variables 
-//  revolute3.R_rel.w[1](66), revolute3.R_rel.w[3](64), bodyshape2.body.frame_a.t[3](44), bodyshape2.frame_b.f[3](55), bodyshape3.frame_a.R.T[1,1](43), bodyshape2.frameTranslation.frame_a.t[2](50), revolute1.R_rel.w[3](126), bodyshape2.frame_a.f[3](61), world.frame_b.t[2](121), revolute1.R_rel.T[2,2](133), revolute1.R_rel.T[2,1](134), revolute1.R_rel.T[1,3](135), world.frame_b.f[2](124), revolute1.R_rel.T[3,3](129), revolute1.R_rel.T[1,2](136), bodyshape3.frame_a.R.T[3,1](37), world.frame_b.t[3](120), bodyshape1.frame_b.t[1](107), revolute1.frame_a.R.w[3](153), bodyshape1.body.frame_a.f[1](102), revolute1.R_rel.T[3,2](130), revolute1.R_rel.T[3,1](131), revolute1.R_rel.T[2,3](132), revolute1.R_rel.T[1,1](137), world.frame_b.f[3](123), revolute1.frame_a.R.w[2](154), revolute1.frame_a.R.T[1,2](163), bodyshape2.frame_b.t[1](54), world.frame_b.f[1](125), bodyshape2.frame_a.f[1](63), bodyshape3.frame_a.R.T[1,2](42), revolute1.frame_a.R.T[3,1](158), revolute3.a(67), revolute1.frame_a.R.T[3,2](157), revolute3.R_rel.w[2](65), revolute2.frame_b.f[3](88), revolute1.phi(140), revolute1.w(139), revolute2.R_rel.T[2,2](77), revolute1.frame_a.R.w[1](155), revolute1.frame_a.R.T[3,3](156), revolute2.phi(84), bodyshape2.frame_b.t[2](53), bodyshape2.frame_a.f[2](62), bodyshape1.body.w_a[2](95), revolute3.phi(69), revolute2.R_rel.w[3](70), revolute2.R_rel.T[3,3](73)
+// "[Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:321:7-321:60:writable] Error: Model is structurally singular, error found sorting equations
+//   1: 0.0 = atan2(revolute1.frame_a.R.T[2,3], revolute1.frame_a.R.T[1,1])
+//   2: 0.0 = atan2(-revolute1.frame_a.R.T[1,3], revolute1.frame_a.R.T[2,2])
+//   3: 0.0 = atan2(revolute1.frame_a.R.T[1,2], revolute1.frame_a.R.T[3,3])
+//   9: revolute1.R_rel.T[1,1] = revolute1.e[1] ^ 2.0 + (1.0 - revolute1.e[1] ^ 2.0) * cos(revolute1.phi)
+//   10: revolute1.R_rel.T[1,2] = (revolute1.e[1] - revolute1.e[1] * cos(revolute1.phi)) * revolute1.e[2] + revolute1.e[3] * sin(revolute1.phi)
+//   11: revolute1.R_rel.T[1,3] = (revolute1.e[1] - revolute1.e[1] * cos(revolute1.phi)) * revolute1.e[3] - revolute1.e[2] * sin(revolute1.phi)
+//   12: revolute1.R_rel.T[2,1] = (revolute1.e[2] - revolute1.e[2] * cos(revolute1.phi)) * revolute1.e[1] - revolute1.e[3] * sin(revolute1.phi)
+//   13: revolute1.R_rel.T[2,2] = revolute1.e[2] ^ 2.0 + (1.0 - revolute1.e[2] ^ 2.0) * cos(revolute1.phi)
+//   14: revolute1.R_rel.T[2,3] = (revolute1.e[2] - revolute1.e[2] * cos(revolute1.phi)) * revolute1.e[3] + revolute1.e[1] * sin(revolute1.phi)
+//   15: revolute1.R_rel.T[3,1] = (revolute1.e[3] - revolute1.e[3] * cos(revolute1.phi)) * revolute1.e[1] + revolute1.e[2] * sin(revolute1.phi)
+//   16: revolute1.R_rel.T[3,2] = (revolute1.e[3] - revolute1.e[3] * cos(revolute1.phi)) * revolute1.e[2] - revolute1.e[1] * sin(revolute1.phi)
+//   17: revolute1.R_rel.T[3,3] = revolute1.e[3] ^ 2.0 + (1.0 - revolute1.e[3] ^ 2.0) * cos(revolute1.phi)
+//   21: bodyshape1.frame_a.R.T[1,1] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,1]
+//   22: bodyshape1.frame_a.R.T[1,2] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,2]
+//   23: bodyshape1.frame_a.R.T[1,3] = revolute1.R_rel.T[1,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[1,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[1,3] * revolute1.frame_a.R.T[3,3]
+//   24: bodyshape1.frame_a.R.T[2,1] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,1]
+//   25: bodyshape1.frame_a.R.T[2,2] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,2]
+//   26: bodyshape1.frame_a.R.T[2,3] = revolute1.R_rel.T[2,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[2,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[2,3] * revolute1.frame_a.R.T[3,3]
+//   27: bodyshape1.frame_a.R.T[3,1] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,1] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,1] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,1]
+//   28: bodyshape1.frame_a.R.T[3,2] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,2] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,2] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,2]
+//   29: bodyshape1.frame_a.R.T[3,3] = revolute1.R_rel.T[3,1] * revolute1.frame_a.R.T[1,3] + revolute1.R_rel.T[3,2] * revolute1.frame_a.R.T[2,3] + revolute1.R_rel.T[3,3] * revolute1.frame_a.R.T[3,3]
+//   56: revolute2.R_rel.T[1,1] = revolute2.e[1] ^ 2.0 + (1.0 - revolute2.e[1] ^ 2.0) * cos(revolute2.phi)
+//   57: revolute2.R_rel.T[1,2] = (revolute2.e[1] - revolute2.e[1] * cos(revolute2.phi)) * revolute2.e[2] + revolute2.e[3] * sin(revolute2.phi)
+//   58: revolute2.R_rel.T[1,3] = (revolute2.e[1] - revolute2.e[1] * cos(revolute2.phi)) * revolute2.e[3] - revolute2.e[2] * sin(revolute2.phi)
+//   59: revolute2.R_rel.T[2,1] = (revolute2.e[2] - revolute2.e[2] * cos(revolute2.phi)) * revolute2.e[1] - revolute2.e[3] * sin(revolute2.phi)
+//   60: revolute2.R_rel.T[2,2] = revolute2.e[2] ^ 2.0 + (1.0 - revolute2.e[2] ^ 2.0) * cos(revolute2.phi)
+//   61: revolute2.R_rel.T[2,3] = (revolute2.e[2] - revolute2.e[2] * cos(revolute2.phi)) * revolute2.e[3] + revolute2.e[1] * sin(revolute2.phi)
+//   62: revolute2.R_rel.T[3,1] = (revolute2.e[3] - revolute2.e[3] * cos(revolute2.phi)) * revolute2.e[1] + revolute2.e[2] * sin(revolute2.phi)
+//   63: revolute2.R_rel.T[3,2] = (revolute2.e[3] - revolute2.e[3] * cos(revolute2.phi)) * revolute2.e[2] - revolute2.e[1] * sin(revolute2.phi)
+//   64: revolute2.R_rel.T[3,3] = revolute2.e[3] ^ 2.0 + (1.0 - revolute2.e[3] ^ 2.0) * cos(revolute2.phi)
+//   68: bodyshape3.frame_a.R.T[1,1] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,1]
+//   69: bodyshape3.frame_a.R.T[1,2] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,2]
+//   70: bodyshape3.frame_a.R.T[1,3] = revolute2.R_rel.T[1,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[1,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[1,3] * bodyshape1.frame_a.R.T[3,3]
+//   71: bodyshape3.frame_a.R.T[2,1] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,1]
+//   72: bodyshape3.frame_a.R.T[2,2] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,2]
+//   73: bodyshape3.frame_a.R.T[2,3] = revolute2.R_rel.T[2,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[2,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[2,3] * bodyshape1.frame_a.R.T[3,3]
+//   74: bodyshape3.frame_a.R.T[3,1] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,1] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,1] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,1]
+//   75: bodyshape3.frame_a.R.T[3,2] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,2] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,2] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,2]
+//   76: bodyshape3.frame_a.R.T[3,3] = revolute2.R_rel.T[3,1] * bodyshape1.frame_a.R.T[1,3] + revolute2.R_rel.T[3,2] * bodyshape1.frame_a.R.T[2,3] + revolute2.R_rel.T[3,3] * bodyshape1.frame_a.R.T[3,3]
+//   89: bodyshape3.frame_a.R.T[1,1] = revolute3.e[1] ^ 2.0 + (1.0 - revolute3.e[1] ^ 2.0) * cos(revolute3.phi)
+//   90: bodyshape3.frame_a.R.T[1,2] = (revolute3.e[1] - revolute3.e[1] * cos(revolute3.phi)) * revolute3.e[2] + revolute3.e[3] * sin(revolute3.phi)
+//   91: bodyshape3.frame_a.R.T[1,3] = (revolute3.e[1] - revolute3.e[1] * cos(revolute3.phi)) * revolute3.e[3] - revolute3.e[2] * sin(revolute3.phi)
+//   92: bodyshape3.frame_a.R.T[2,1] = (revolute3.e[2] - revolute3.e[2] * cos(revolute3.phi)) * revolute3.e[1] - revolute3.e[3] * sin(revolute3.phi)
+//   93: bodyshape3.frame_a.R.T[2,2] = revolute3.e[2] ^ 2.0 + (1.0 - revolute3.e[2] ^ 2.0) * cos(revolute3.phi)
+//   94: bodyshape3.frame_a.R.T[2,3] = (revolute3.e[2] - revolute3.e[2] * cos(revolute3.phi)) * revolute3.e[3] + revolute3.e[1] * sin(revolute3.phi)
+//   95: bodyshape3.frame_a.R.T[3,1] = (revolute3.e[3] - revolute3.e[3] * cos(revolute3.phi)) * revolute3.e[1] + revolute3.e[2] * sin(revolute3.phi)
+//   96: bodyshape3.frame_a.R.T[3,2] = (revolute3.e[3] - revolute3.e[3] * cos(revolute3.phi)) * revolute3.e[2] - revolute3.e[1] * sin(revolute3.phi)
+//   97: bodyshape3.frame_a.R.T[3,3] = revolute3.e[3] ^ 2.0 + (1.0 - revolute3.e[3] ^ 2.0) * cos(revolute3.phi)
+// for variables
+//   37: bodyshape3.frame_a.R.T[3,1]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   42: bodyshape3.frame_a.R.T[1,2]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   43: bodyshape3.frame_a.R.T[1,1]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   44: bodyshape2.body.frame_a.t[3]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   50: bodyshape2.frameTranslation.frame_a.t[2]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   53: bodyshape2.frame_b.t[2]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   54: bodyshape2.frame_b.t[1]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   55: bodyshape2.frame_b.f[3]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   61: bodyshape2.frame_a.f[3]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   62: bodyshape2.frame_a.f[2]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   63: bodyshape2.frame_a.f[1]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   64: revolute3.R_rel.w[3]:VARIABLE(unit = "rad/s" protected = true )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   65: revolute3.R_rel.w[2]:VARIABLE(unit = "rad/s" protected = true )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   66: revolute3.R_rel.w[1]:VARIABLE(unit = "rad/s" protected = true )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   67: revolute3.a:VARIABLE(start = 0.0 unit = "rad/s2" )  "Second derivative of angle phi (relative angular acceleration)" type: Real
+//   69: revolute3.phi:STATE(1,revolute3.w)(start = 0.0 unit = "rad" stateSelect=StateSelect.prefer )  "Relative rotation angle from frame_a to frame_b" type: Real
+//   70: revolute2.R_rel.w[3]:VARIABLE(unit = "rad/s" protected = true )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   73: revolute2.R_rel.T[3,3]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   77: revolute2.R_rel.T[2,2]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   84: revolute2.phi:STATE(1,revolute2.w)(start = 0.0 unit = "rad" stateSelect=StateSelect.prefer )  "Relative rotation angle from frame_a to frame_b" type: Real
+//   88: revolute2.frame_b.f[3]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   95: bodyshape1.body.w_a[2]:STATE(1,bodyshape1.body.z_a[2])(start = Modelica.Mechanics.MultiBody.Frames.resolve2(Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0}), {bodyshape1.body.w_0_start[1], bodyshape1.body.w_0_start[2], bodyshape1.body.w_0_start[3]})[2] unit = "rad/s" fixed = false stateSelect=StateSelect.avoid )  "Absolute angular velocity of frame_a resolved in frame_a" type: Real [3]
+//   102: bodyshape1.body.frame_a.f[1]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   107: bodyshape1.frame_b.t[1]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   120: world.frame_b.t[3]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   121: world.frame_b.t[2]:VARIABLE(flow=true unit = "N.m" )  "Cut-torque resolved in connector frame" type: Real [3]
+//   123: world.frame_b.f[3]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   124: world.frame_b.f[2]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   125: world.frame_b.f[1]:VARIABLE(flow=true unit = "N" )  "Cut-force resolved in connector frame" type: Real [3]
+//   126: revolute1.R_rel.w[3]:VARIABLE(unit = "rad/s" protected = true )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   129: revolute1.R_rel.T[3,3]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   130: revolute1.R_rel.T[3,2]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   131: revolute1.R_rel.T[3,1]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   132: revolute1.R_rel.T[2,3]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   133: revolute1.R_rel.T[2,2]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   134: revolute1.R_rel.T[2,1]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   135: revolute1.R_rel.T[1,3]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   136: revolute1.R_rel.T[1,2]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   137: revolute1.R_rel.T[1,1]:VARIABLE(protected = true )  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   139: revolute1.w:STATE(1,revolute1.a)(start = 0.0 unit = "rad/s" stateSelect=StateSelect.prefer )  "First derivative of angle phi (relative angular velocity)" type: Real
+//   140: revolute1.phi:STATE(1,revolute1.w)(start = 0.0 unit = "rad" stateSelect=StateSelect.prefer )  "Relative rotation angle from frame_a to frame_b" type: Real
+//   153: revolute1.frame_a.R.w[3]:VARIABLE(unit = "rad/s" )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   154: revolute1.frame_a.R.w[2]:VARIABLE(unit = "rad/s" )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   155: revolute1.frame_a.R.w[1]:VARIABLE(unit = "rad/s" )  "Absolute angular velocity of local frame, resolved in local frame" type: Real [3]
+//   156: revolute1.frame_a.R.T[3,3]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   157: revolute1.frame_a.R.T[3,2]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   158: revolute1.frame_a.R.T[3,1]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
+//   163: revolute1.frame_a.R.T[1,2]:VARIABLE()  "Transformation matrix from world frame to local frame" type: Real [3,3]
 // Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
 // "
 // endResult
