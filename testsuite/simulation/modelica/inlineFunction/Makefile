@@ -1,7 +1,6 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-inlineArray1.mos \
 inlineArray2.mos \
 inlineArray3.mos \
 inlineArrayRecord.mos \
@@ -30,6 +29,7 @@ testBug4841.mos \
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
+inlineArray1.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
