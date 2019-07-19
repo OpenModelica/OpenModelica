@@ -15,8 +15,80 @@ match program
 end dump;
 
 template dumpClass(Absyn.Class cls, DumpOptions options)
-::= dumpClassElement(cls, "", "", "" , "", options)
+::= dumpClassDef(cls, options)
 end dumpClass;
+
+template dumpClassDef(Absyn.ClassDef, DumpOptions options)
+::=
+match cdef
+  case PARTS(__) then
+    let tvs_str = if (typeVars |> typevar => typevar ;separator=", ")
+    let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=", ")
+    let cmt_str = dumpStringCommentOption(comment)
+    let body_str = (classParts |> class_part hasindex idx =>
+        dumpClassPart(class_part, options) ;separator=", ")
+    let attr_str = (e |> classAttrs => dumpNamedArg(e) ;separator=", ")
+    'PARTS(list(<%tvs_str%>), list(<%attr_str%>), list(<%body_str%>), list(<%ann_str%>), <%cmt_str%>)'
+  case DERIVED(__) then
+    let attr_str = dumpElementAttr(attributes)
+    let ty_str = dumpTypeSpec(typeSpec)
+    let arg_str = '(<%(arguments |> arg => dumpElementArg(arg) ;separator=", ")%>)'
+    let cmt_str = dumpCommentOpt(comment)
+    'DERIVED(<%ty_str%>, <%attr_str%>, list(<%arg_str%>), <%cmt_str%>)'
+  case CLASS_EXTENDS(__) then
+    let body_str = (parts |> class_part hasindex idx =>
+      dumpClassPart(class_part, options) ;separator="\n")
+    let mod_str = if modifications then
+      '(<%(modifications |> mod => dumpElementArg(mod) ;separator=", ")%>)'
+    let cmt_str = dumpStringCommentOption(comment)
+    let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
+    'CLASS_EXTENDS(<%ident%>, list(<%mod_str%>), <%cmt_str%>, list(<%body_str%>), list(<%ann_str%>))'
+  case ENUMERATION(__) then
+    let enum_str = dumpEnumDef(enumLiterals)
+    let cmt_str = dumpCommentOpt(comment)
+    'ENUMERATION(<%enum_str%>, <%cmt_str%>)'
+  case OVERLOAD(__) then
+    let funcs_str = (functionNames |> fn => dumpPath(fn) ;separator=", ")
+    let cmt_str = dumpCommentOpt(comment)
+    'OVERLOAD(list(<%funcs_str%>), <%cmt_str%>)'
+  case PDER(__) then "NOT SUPPORTED???"
+end dumpClassDef;
+
+template dumpClassPart(Absyn.ClassPart class_part, DumpOptions options)
+::=
+match class_part
+  case PUBLIC(__) then
+    let el_str = dumpElementItems(contents, "", true, options)
+    'PUBLIC(<%el_str%>)'
+  case PROTECTED(__) then
+    let el_str = dumpElementItems(contents, "", true, options)
+    'PROTECTED(<%el_str%>)'
+  case CONSTRAINTS(__) then
+    let el_str = (contents |> exp => dumpExp(exp) ;separator=", ")
+    'CONSTRAINTS(<%el_str%>)'
+  case EQUATIONS(__) then
+      let el_str = (contents |> eq => dumpEquationItem(eq) ;separator=", ")
+      'EQUATIONS(<%el_str%>)'
+  case INITIALEQUATIONS(__) then
+      let el_str = (contents |> eq => dumpEquationItem(eq) ;separator=", ")
+      'INITIALEQUATIONS(<%el_str%>)'
+  case ALGORITHMS(__) then
+      let el_str = (contents |> eq => dumpAlgorithmItem(eq) ;separator=", ")
+      'ALGORITHMS(<%el_str%>)'
+  case INITIALALGORITHMS(__) then
+      let el_str = (contents |> eq => dumpAlgorithmItem(eq) ;separator=", ")
+      'INITIALALGORITHMS(<%el_str%>)'
+  case EXTERNAL(__) then
+    let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann)%>;'
+    match externalDecl
+      case EXTERNALDECL(__) then
+        let fn_str = match funcName case SOME(fn) then 'SOME(<%fn%>)' else 'NONE()'
+        let lang_str = match lang case SOME(l) then 'SOME(1)' else 'NONE()'
+        let output_str = match output_ case SOME(o) then 'SOME(<%dumpCref(o)%>)' else 'NONE()'
+        let args_str = (args |> arg => dumpExp(arg) ;separator=", ")
+        let ann2_str = dumpAnnotationOptSpace(annotation_)
+       EXTERNAL(EXTERNALDECL(<%fn_str%>, <%lang_str%>, <%output_str%>, list(<%args_str%>), <%ann2_str%>), <%ann_str%>)
+end dumpClassPart;
 
 template dumpWithin(Absyn.Within within)
 ::=
