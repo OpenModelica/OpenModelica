@@ -436,6 +436,7 @@ package Absyn
       Path path;
       Option<Modification> modification;
       Option<String> comment;
+      builtin.SourceInfo info;
     end MODIFICATION;
 
     record REDECLARATION
@@ -444,6 +445,7 @@ package Absyn
       Each eachPrefix;
       ElementSpec elementSpec;
       Option<ConstrainClass> constrainClass;
+      builtin.SourceInfo info;
     end REDECLARATION;
   end ElementArg;
 
