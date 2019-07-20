@@ -23,11 +23,12 @@ template dumpClass(Absyn.Class cls, DumpOptions options)
     case CLASS(__) then
       let n = name
       let pp = dumpFinal(partialPrefix)
+      let fp = dumpFinal(finalPrefix)
       let ep = dumpFinal(encapsulatedPrefix)
       let r = dumpRestriction(restriction)
       let cd = dumpClassDef(body, options)
       let i = dumpInfo(info)
-      'CLASS(<%n%>, <%pp%>, <%ep%>, <%r%>, <%cd%>, <%i%>)'
+      'CLASS(<%n%>, <%pp%>, <%fp%> ,<%ep%>, <%r%>, <%cd%>, <%i%>)'
 end dumpClass;
 
 template dumpClassDef(Absyn.ClassDef cdef, DumpOptions options)
@@ -166,7 +167,7 @@ template dumpInfo(builtin.SourceInfo info)
 ::=
 match info
   case SOURCEINFO(__) then
-    let rm_str = if isReadOnly then "readonly" else "writable"
+    let rm_str = if isReadOnly then "true" else "false"
     'SOURCEINFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)'
 end dumpInfo;
 
