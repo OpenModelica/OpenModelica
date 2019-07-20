@@ -385,6 +385,7 @@ if true then /* Suppress output */
     "../SimCode/ReduceDAE.mo",
 
     "../Template/AbsynToJulia.mo",
+    "../Template/AbsynJLDumpTpl.mo",
     "../Template/CodegenAdevs.mo",
     "../Template/CodegenC.mo",
     "../Template/CodegenEmbeddedC.mo",

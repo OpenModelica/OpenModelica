@@ -548,6 +548,8 @@ constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(186, "warnMinMax", tru
   Util.gettext("Makes a warning assert from min/max variable attributes instead of error."));
 constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(187, "nfExpandFuncArgs", false,
   Util.gettext("Expand all function arguments in the new frontend."));
+constant DebugFlag DUMP_JL = DEBUG_FLAG(188, "dumpJL", false,
+  Util.gettext("Dumps the absyn representation of a program as a Julia representation"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -741,7 +743,8 @@ constant list<DebugFlag> allDebugFlags = {
   NF_API_NOISE,
   FMI20_DEPENDENCIES,
   WARNING_MINMAX_ATTRIBUTES,
-  NF_EXPAND_FUNC_ARGS
+  NF_EXPAND_FUNC_ARGS,
+  DUMP_JL
 };
 
 public

@@ -294,6 +294,7 @@ package Absyn
     record EQUATIONITEM
       Equation equation_;
       Option<Comment> comment;
+      builtin.SourceInfo info;
     end EQUATIONITEM;
 
     record EQUATIONITEMCOMMENT
@@ -305,6 +306,7 @@ package Absyn
     record ALGORITHMITEM
       Algorithm algorithm_;
       Option<Comment> comment;
+      builtin.SourceInfo info;
     end ALGORITHMITEM;
 
     record ALGORITHMITEMCOMMENT
@@ -423,6 +425,7 @@ package Absyn
 
     record EQMOD
       Exp exp;
+      builtin.SourceInfo info;
     end EQMOD;
   end EqMod;
 

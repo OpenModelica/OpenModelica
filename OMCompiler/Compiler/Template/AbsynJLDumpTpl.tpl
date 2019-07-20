@@ -4,30 +4,42 @@ package AbsynJLDumpTpl
 "
 import interface AbsynDumpTV;
 
-template dump(Absyn.Program program, DumpOptions options)
+template dump(Absyn.Program program)
+::= dump2(program, defaultDumpOptions)
+end dump;
+
+template dump2(Absyn.Program program, DumpOptions options)
 ::=
 match program
-  case PROGRAM(classes = {}) then 'PROGRAM(list(), <%dumpWithin(within_)%>)'
+  case PROGRAM(classes = {}) then <<PROGRAM(list(), <%dumpWithin(within_)%>)>>
   case PROGRAM(__) then
     let within_str = dumpWithin(within_)
     let cls_str = (classes |> cls => dumpClass(cls, options) ;separator=", ")
-    'PROGRAM(list(<%cls_str%>), <%within_str%>)'
-end dump;
+    <<PROGRAM(list(<%cls_str%>), <%within_str%>)>>
+end dump2;
 
 template dumpClass(Absyn.Class cls, DumpOptions options)
-::= dumpClassDef(cls, options)
+::= match cls
+    case CLASS(__) then
+      let n = name
+      let pp = dumpFinal(partialPrefix)
+      let ep = dumpFinal(encapsulatedPrefix)
+      let r = dumpRestriction(restriction)
+      let cd = dumpClassDef(body, options)
+      let i = dumpInfo(info)
+      'CLASS(<%n%>, <%pp%>, <%ep%>, <%r%>, <%cd%>, <%i%>)'
 end dumpClass;
 
-template dumpClassDef(Absyn.ClassDef, DumpOptions options)
+template dumpClassDef(Absyn.ClassDef cdef, DumpOptions options)
 ::=
 match cdef
   case PARTS(__) then
-    let tvs_str = if (typeVars |> typevar => typevar ;separator=", ")
+    let tvs_str = (typeVars |> typevar => typevar ;separator=", ")
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=", ")
     let cmt_str = dumpStringCommentOption(comment)
     let body_str = (classParts |> class_part hasindex idx =>
         dumpClassPart(class_part, options) ;separator=", ")
-    let attr_str = (e |> classAttrs => dumpNamedArg(e) ;separator=", ")
+    let attr_str = (classAttrs |> e => dumpNamedArg(e) ;separator=", ")
     'PARTS(list(<%tvs_str%>), list(<%attr_str%>), list(<%body_str%>), list(<%ann_str%>), <%cmt_str%>)'
   case DERIVED(__) then
     let attr_str = dumpElementAttr(attributes)
@@ -37,12 +49,12 @@ match cdef
     'DERIVED(<%ty_str%>, <%attr_str%>, list(<%arg_str%>), <%cmt_str%>)'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
-      dumpClassPart(class_part, options) ;separator="\n")
+      dumpClassPart(class_part, options) ;separator=", ")
     let mod_str = if modifications then
       '(<%(modifications |> mod => dumpElementArg(mod) ;separator=", ")%>)'
     let cmt_str = dumpStringCommentOption(comment)
-    let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=";\n")
-    'CLASS_EXTENDS(<%ident%>, list(<%mod_str%>), <%cmt_str%>, list(<%body_str%>), list(<%ann_str%>))'
+    let ann_str = (listReverse(ann) |> a => dumpAnnotation(a) ;separator=", ")
+    'CLASS_EXTENDS(<%baseClassName%>, list(<%mod_str%>), <%cmt_str%>, list(<%body_str%>), list(<%ann_str%>))'
   case ENUMERATION(__) then
     let enum_str = dumpEnumDef(enumLiterals)
     let cmt_str = dumpCommentOpt(comment)
@@ -54,15 +66,68 @@ match cdef
   case PDER(__) then "NOT SUPPORTED???"
 end dumpClassDef;
 
+template dumpEnumDef(Absyn.EnumDef enum_def)
+::=
+match enum_def
+  case ENUMLITERALS(__) then
+    let els = (enumLiterals |> lit => dumpEnumLiteral(lit) ;separator=", ")
+    'ENUMLITERALS(list(<%els%>))'
+  case ENUM_COLON() then 'ENUM_COLON()'
+end dumpEnumDef;
+
+template dumpEnumLiteral(Absyn.EnumLiteral lit)
+::=
+match lit
+  case ENUMLITERAL(__) then
+    let cmt_str = dumpCommentOpt(comment)
+    'ENUMLITERAL(<%literal%>, <%cmt_str%>)'
+end dumpEnumLiteral;
+
+
+template dumpRestriction(Absyn.Restriction restriction)
+::=
+match restriction
+  case R_CLASS(__) then 'R_CLASS()'
+  case R_OPTIMIZATION(__) then 'R_OPTIMIZATION()'
+  case R_MODEL(__) then 'R_MODEL()'
+  case R_RECORD(__) then 'R_RECORD()'
+  case R_BLOCK(__) then 'R_BLOCK()'
+  case R_CONNECTOR(__) then 'R_CONNECTOR()'
+  case R_EXP_CONNECTOR(__) then 'R_EXP_CONNECTOR()'
+  case R_TYPE(__) then 'R_TYPE()'
+  case R_PACKAGE(__) then 'R_PACKAGE()'
+  case R_FUNCTION(__) then
+    let prefix_str = match functionRestriction
+      case FR_NORMAL_FUNCTION(purity = IMPURE()) then 'FR_NORMAL_FUNCTION(IMPURE())'
+      case FR_NORMAL_FUNCTION(purity = PURE()) then 'FR_NORMAL_FUNCTION(PURE())'
+      case FR_NORMAL_FUNCTION(purity = NO_PURITY()) then 'FR_NORMAL_FUNCTION(NO_PURITY())'
+      case FR_OPERATOR_FUNCTION() then 'FR_OPERATOR_FUNCTION()'
+      case FR_PARALLEL_FUNCTION() then 'FR_PARALLEL_FUNCTION()'
+      case FR_KERNEL_FUNCTION() then 'FR_KERNEL_FUNCTION()'
+    'R_FUNCTION(<%prefix_str%>)'
+  case R_OPERATOR(__) then 'R_OPERATOR()'
+  case R_OPERATOR_RECORD(__) then 'R_OPERATOR_RECORD()'
+  case R_ENUMERATION(__) then 'R_ENUMERATION()'
+  case R_PREDEFINED_INTEGER(__) then 'R_PREDEFINED_INTEGER()'
+  case R_PREDEFINED_REAL(__) then 'R_PREDEFINED_REAL()'
+  case R_PREDEFINED_STRING(__) then 'R_PREDEFINED_STRING()'
+  case R_PREDEFINED_BOOLEAN(__) then 'R_PREDEFINED_BOOLEAN()'
+  case R_PREDEFINED_ENUMERATION(__) then 'R_PREDEFINED_ENUMERATION()'
+  case R_UNIONTYPE(__) then 'R_UNIONTYPE()'
+  case R_METARECORD(__) then "MR: Does not work"
+  case R_UNKNOWN(__) then 'R_UNKNOWN()'
+end dumpRestriction;
+
+
 template dumpClassPart(Absyn.ClassPart class_part, DumpOptions options)
 ::=
 match class_part
   case PUBLIC(__) then
-    let el_str = dumpElementItems(contents, "", true, options)
-    'PUBLIC(<%el_str%>)'
+    let el_str = (contents |> c => dumpElementItem(c, options))
+    'PUBLIC(list(<%el_str%>))'
   case PROTECTED(__) then
-    let el_str = dumpElementItems(contents, "", true, options)
-    'PROTECTED(<%el_str%>)'
+    let el_str = (contents |> c => dumpElementItem(c, options))
+    'PROTECTED(list(<%el_str%>))'
   case CONSTRAINTS(__) then
     let el_str = (contents |> exp => dumpExp(exp) ;separator=", ")
     'CONSTRAINTS(<%el_str%>)'
@@ -87,7 +152,7 @@ match class_part
         let output_str = match output_ case SOME(o) then 'SOME(<%dumpCref(o)%>)' else 'NONE()'
         let args_str = (args |> arg => dumpExp(arg) ;separator=", ")
         let ann2_str = dumpAnnotationOptSpace(annotation_)
-       EXTERNAL(EXTERNALDECL(<%fn_str%>, <%lang_str%>, <%output_str%>, list(<%args_str%>), <%ann2_str%>), <%ann_str%>)
+       'EXTERNAL(EXTERNALDECL(<%fn_str%>, <%lang_str%>, <%output_str%>, list(<%args_str%>), <%ann2_str%>), <%ann_str%>)'
 end dumpClassPart;
 
 template dumpWithin(Absyn.Within within)
@@ -102,18 +167,18 @@ template dumpInfo(builtin.SourceInfo info)
 match info
   case SOURCEINFO(__) then
     let rm_str = if isReadOnly then "readonly" else "writable"
-    'SOURCEINFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)\n'
+    'SOURCEINFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)'
 end dumpInfo;
 
 template dumpAnnotation(Absyn.Annotation ann)
 ::=
 match ann
   case ANNOTATION(elementArgs={}) then "ANNOTATION(list())"
-  case ANNOTATION(__) then 'ANNOTATION(list(<%(elementArgs |> earg => dumpElementArg(earg) ;separator=',<%\n%>')%>))'
+  case ANNOTATION(__) then 'ANNOTATION(list(<%(elementArgs |> earg => dumpElementArg(earg) ;separator=', ')%>))'
 end dumpAnnotation;
 
 template dumpAnnotationOpt(Option<Absyn.Annotation> oann)
-::= match oann case SOME(ann) then SOME(dumpAnnotation(ann)) else 'NONE()'
+::= match oann case SOME(ann) then 'SOME(<%dumpAnnotation(ann)%>)' else 'NONE()'
 end dumpAnnotationOpt;
 
 template dumpAnnotationOptSpace(Option<Absyn.Annotation> oann)
@@ -152,7 +217,7 @@ match earg
 end dumpElementArg;
 
 template dumpEach(Absyn.Each each)
-::= match each case EACH() then "each "
+::= match each case EACH() then "EACH()"
 end dumpEach;
 
 template dumpFinal(Boolean final)
@@ -204,7 +269,8 @@ template dumpElementSpec(Absyn.ElementSpec elem, String final, String redecl,
     String repl, String io, DumpOptions options)
 ::=
 match elem
-  case CLASSDEF(__) then 'CLASSDEF(<%replaceable_%>, <%dumpClass(class_)%>)'
+  case CLASSDEF(__) then
+     'CLASSDEF(<%replaceable_%>, <%dumpClass(class_, options)%>)'
   case EXTENDS(__) then
     let bc_str = dumpPath(path)
     let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
@@ -231,8 +297,8 @@ match attr
     let field_str = dumpIsField(isField)
     let var_str = dumpVariability(variability)
     let dir_str = dumpDirection(direction)
-    let arrayDim = dumpArrayDim(arrayDim)
-    'ATTR(<%flow_str%>, <%stream_str%>, <%par_str%>, <%var_str%>, <%dir_str%>, <%field_str%>, <%arrayDim%>)'
+    let array_dim = dumpArrayDim(arrayDim)
+    'ATTR(<%flow_str%>, <%stream_str%>, <%par_str%>, <%var_str%>, <%dir_str%>, <%field_str%>, <%array_dim%>)'
 end dumpElementAttr;
 
 template dumpParallelism(Absyn.Parallelism par)
@@ -324,6 +390,12 @@ match gimp
   case GROUP_IMPORT_RENAME(__) then 'GROUP_IMPORT_RENAME(<%rename%>, <%name%>)'
 end dumpGroupImport;
 
+template dumpElementItem(Absyn.ElementItem eitem, DumpOptions options)
+::=
+match eitem
+  case ELEMENTITEM(__) then 'ELEMENTITEM(<%dumpElement(element, options)%>)'
+  case LEXER_COMMENT(__) then 'LEXER_COMMENT(<%System.trimWhitespace(comment)%>)'
+end dumpElementItem;
 
 template dumpElement(Absyn.Element elem, DumpOptions options)
 ::=
@@ -349,7 +421,6 @@ match elem
     'TEXT(<%name_str%>,<%string_str%>,<%info_str%>)'
 end dumpElement;
 
-
 template dumpEquationItem(Absyn.EquationItem eq)
 ::=
 match eq
@@ -362,7 +433,7 @@ match eq
 end dumpEquationItem;
 
 template dumpEquationItems(list<Absyn.EquationItem> eql)
-::= (eql |> eq => dumpEquationItem(eq) ;separator="\n")
+::= (eql |> eq => dumpEquationItem(eq) ;separator=", ")
 end dumpEquationItems;
 
 template dumpEquation(Absyn.Equation eq)
@@ -396,7 +467,7 @@ match eq
     let when_str = dumpExp(whenExp)
     let elsewhen_str = (elseWhenEquations |> (c, b) =>
         '(<%dumpExp(c)%>, list(<%dumpEquationItems(b)%>))' ;separator=", ")
-    let else_branch_str = dumpEquationItems(equationElseItems)
+    let else_branch_str = dumpEquationItems(whenEquations)
     'EQ_WHEN_E(<%when_str%>, list(<%elsewhen_str%>))'
   case EQ_NORETCALL(__) then
     let name_str = dumpCref(functionName)
@@ -409,8 +480,8 @@ end dumpEquation;
 
 template dumpAlgorithmItems(list<Absyn.AlgorithmItem> algs)
 ::=
-  let items = (algs |> alg => dumpAlgorithmItem(alg) ;separator="\n")
-  if items then 'list(<%items%>)' else 'list()'
+  let items = (algs |> alg => dumpAlgorithmItem(alg) ;separator=", ")
+  'list(<%items%>)'
 end dumpAlgorithmItems;
 
 template dumpAlgorithmItem(Absyn.AlgorithmItem alg)
@@ -419,8 +490,8 @@ match alg
   case ALGORITHMITEM(__) then
     let alg_str = dumpAlgorithm(algorithm_)
     let cmt_str = dumpCommentOpt(comment)
-    let info  = dumpInfo(info)
-    'ALGORITHMITEM(<%alg_str%>, <%cmt_str%>, <%info%>)'
+    let info_str  = dumpInfo(info)
+    'ALGORITHMITEM(<%alg_str%>, <%cmt_str%>, <%info_str%>)'
   case ALGORITHMITEMCOMMENT(__) then 'ALGORITHMITEMCOMMENT<%System.trimWhitespace(comment)%>'
 end dumpAlgorithmItem;
 
@@ -434,10 +505,9 @@ match alg
   case ALG_IF(__) then
     let if_str = dumpExp(ifExp)
     let true_branch = dumpAlgorithmItems(trueBranch)
-    let false_branch = dumpAlgorithmItems(falseBranch)
     let else_if_alg_branch = (elseIfAlgorithmBranch |> (c, b) =>
         '(<%dumpExp(c)%>, list(<%dumpAlgorithmItems(b)%>))' ;separator=", ")
-    let else_branch_str = dumpEquationItems(equationElseItems)
+    let else_branch_str = dumpAlgorithmItems(elseBranch)
     let else_branch = dumpAlgorithmItems(elseBranch)
     'ALG_IF(<%if_str%>, <%true_branch%>, <%else_if_alg_branch%>, <%else_branch%>)'
   case ALG_FOR(__) then
@@ -451,8 +521,9 @@ match alg
   case ALG_WHILE(__) then
     'ALG_WHILE(<%dumpExp(boolExpr)%>, <%dumpAlgorithmItems(whileBody)%>)'
   case ALG_WHEN_A(__) then
-    let ewab = dumpElseIfExp(elseWhenAlgorithmBranch)
-    'ALG_WHEN_A(<%dumpExp(boolExpr)%>, <%dumpAlgorithmItems(whileBody)%>, <%ewab%>)'
+    let ewab = (elseWhenAlgorithmBranch |> (c, b) =>
+        '(<%dumpExp(c)%>, list(<%dumpAlgorithmItems(b)%>))' ;separator=", ")
+    'ALG_WHEN_A(<%dumpExp(boolExpr)%>, <%dumpAlgorithmItems(whenBody)%>, <%ewab%>)'
   case ALG_NORETCALL(__) then
     let name_str = dumpCref(functionCall)
     let args_str = dumpFunctionArgs(functionArgs)
@@ -511,9 +582,8 @@ template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim)
 ::= match arraydim case SOME(ad) then 'SOME(<%dumpSubscripts(ad)%>)' else 'NONE()'
 end dumpArrayDimOpt;
 
-
-template dumpArrayDim(Option<Absyn.ArrayDim> arraydim)
-::= dumpSubscripts(ad)
+template dumpArrayDim(Absyn.ArrayDim arraydim)
+::= dumpSubscripts(arraydim)
 end dumpArrayDim;
 
 template dumpSubscripts(list<Subscript> subscripts)
@@ -539,7 +609,7 @@ match exp
   case REAL(__) then 'REAL(<%value%>::ModelicaReal)'
   case CREF(__) then 'CREF(<%dumpCref(componentRef)%>)'
   case STRING(__) then 'STRING(<%value%>)'
-  case BOOL(__) then 'BOOL(<%value%>::Bool)'
+  case BOOL(__) then 'BOOL(<%value%>)'
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true)
     let rhs_str = dumpOperand(exp2, e, false)
@@ -580,7 +650,7 @@ match exp
     'list(<%array_str%>)'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
-        list((row |> e => dumpExp(e) ;separator=", ")) ;separator=", ")
+        'list(<%(row |> e => dumpExp(e) ;separator=", ")%>)' ;separator=", ")
     'MATRIX(list(<%matrix_str%>))'
   case e as RANGE(step = SOME(step)) then
     let start_str = dumpOperand(start, e, false)
@@ -650,11 +720,12 @@ match code
   case C_VARIABLENAME(__) then 'C_VARIABLENAME(dumpCref(componentRef))'
   case C_CONSTRAINTSECTION(__) then
     let initial_str = if boolean then "true " else "false"
-    'C_CONSTRAINTSECTION(<%initial_str%>, <%algs_str%>)'
+    let equation_is_str = dumpEquationItems(equationItemLst)
+    'C_CONSTRAINTSECTION(<%initial_str%>, <%equation_is_str%>)'
   case C_EQUATIONSECTION(__) then
     let initial_str = if boolean then "true " else "false"
     let eql_str = dumpEquationItems(equationItemLst)
-    'C_EQUATIONSECTION(<%initial_str%>, <%algs_str%>)'
+    'C_EQUATIONSECTION(<%initial_str%>, <%eql_str%>)'
   case C_ALGORITHMSECTION(__) then
     let initial_str = if boolean then "true" else "false"
     let algs_str = dumpAlgorithmItems(algorithmItemLst)
@@ -671,7 +742,7 @@ match match_exp
     let ty_str = dumpMatchType(matchTy)
     let input_str = dumpExp(inputExp)
     let locals_str = dumpMatchLocals(localDecls)
-    let cases_str = (cases |> c => dumpMatchCase(c) ;separator="\n\n")
+    let cases_str = (cases |> c => dumpMatchCase(c) ;separator=", ")
     let cmt_str = dumpStringCommentOption(comment)
     'MATCHEXP(<%ty_str%>, <%input_str%>, <%locals_str%>, <%cases_str%>, <%cmt_str%>)'
 end dumpMatchExp;
@@ -707,7 +778,7 @@ match c
     let pattern_str = dumpExp(pattern)
     let guard_str = match patternGuard case SOME(g) then 'SOME(<%dumpExp(g)%>)' else 'NONE()'
     let p_info_str = dumpInfo(patternInfo)
-    let local_decls_str = (local_decls |> decl => dumpElementItem(decl);separator=", ")
+    let local_decls_str = (localDecls |> d => dumpElementItem(d, defaultDumpOptions);separator=", ")
     let eql_str = dumpMatchEquations(classPart)
     let result_str = dumpExp(result)
     let r_i_str = dumpInfo(resultInfo)
@@ -715,7 +786,7 @@ match c
     let i_str = dumpInfo(info)
     'CASE(<%pattern_str%>, <%guard_str%>, <%p_info_str%>, list(<%local_decls_str%>), <%eql_str%>, <%result_str%>, <%r_i_str%>, <%cmt_str%>, <%i_str%>)'
   case ELSE(__) then
-    let local_decls_str = (local_decls |> decl => dumpElementItem(decl);separator=", ")
+    let local_decls_str = (localDecls |> d => dumpElementItem(d, defaultDumpOptions);separator=", ")
     let eql_str = dumpMatchEquations(classPart)
     let result_str = dumpExp(result)
     let cmt_str = dumpStringCommentOption(comment)
@@ -787,7 +858,9 @@ end dumpForIterators;
 template dumpForIterator(Absyn.ForIterator iterator)
 ::=
 match iterator case ITERATOR(__) then
-  'ITERATOR(<%name%>, SOME(<%dumpExp(guardExp)%>), SOME(<%dumpExp(range_str)%>))'
+  let ge = match guardExp case SOME(x) then 'SOME(<%dumpExp(x)%>)' else 'NONE()'
+  let re = match range case SOME(x) then 'SOME(<%dumpExp(x)%>)' else 'NONE()'
+  'ITERATOR(<%name%>, <%ge%>, <%re%>)'
 end dumpForIterator;
 
 template errorMsg(String errMessage)
@@ -799,4 +872,5 @@ let() = Tpl.addTemplateError(errMessage)
 end errorMsg;
 
 annotation(__OpenModelica_Interface="frontend");
+
 end AbsynJLDumpTpl;
