@@ -38,6 +38,10 @@ getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.
 getComponentModifierValue(Modelica.Mechanics.MultiBody.Examples.Loops.Utilities.EngineV6_analytic,cylinder6.crankAngleOffset); getErrorString();
 getInheritedClasses(Modelica.Mechanics.MultiBody.Joints.Revolute); getErrorString();
 
+getInheritedClasses(Modelica.Fluid.Machines.BaseClasses.PartialPump.Monitoring); getErrorString();
+getInheritedClasses(Modelica.Fluid.Machines.BaseClasses.PartialPump.HeatTransfer); getErrorString();
+
+
 // Result:
 // true
 // Evaluating: loadModel(Modelica)
@@ -158,6 +162,14 @@ getInheritedClasses(Modelica.Mechanics.MultiBody.Joints.Revolute); getErrorStrin
 // ""
 // Evaluating: getInheritedClasses(Modelica.Mechanics.MultiBody.Joints.Revolute)
 // {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInheritedClasses(Modelica.Fluid.Machines.BaseClasses.PartialPump.Monitoring)
+// {Modelica.Fluid.Machines.BaseClasses.PumpMonitoring.PumpMonitoringBase}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getInheritedClasses(Modelica.Fluid.Machines.BaseClasses.PartialPump.HeatTransfer)
+// {Modelica.Fluid.Vessels.BaseClasses.HeatTransfer.IdealHeatTransfer}
 // Evaluating: getErrorString()
 // ""
 // endResult

@@ -9203,6 +9203,13 @@ public function getInheritedClasses
   input Absyn.Path inPath;
   output list<Absyn.Path> outPaths;
 algorithm
+
+try
+
+  if not Flags.isSet(Flags.NF_API_NOISE) then
+    ErrorExt.setCheckpoint("getInheritedClasses");
+  end if;
+
   outPaths := matchcontinue inPath
     local
       Absyn.Path modelpath;
@@ -9236,6 +9243,17 @@ algorithm
         paths;
     else {};
   end matchcontinue;
+
+  if not Flags.isSet(Flags.NF_API_NOISE) then
+    ErrorExt.rollBack("getInheritedClasses");
+  end if;
+
+else
+  if not Flags.isSet(Flags.NF_API_NOISE) then
+    ErrorExt.rollBack("getInheritedClasses");
+  end if;
+end try;
+
 end getInheritedClasses;
 
 protected function getInheritanceCount
