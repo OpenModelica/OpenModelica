@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-currentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -452,7 +452,6 @@ algorithm
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
         checkTypeSpec(t, info);
-        // fprintln(Flags.TRANSLATE, "translating derived class: " + Dump.unparseTypeSpec(t));
         mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
@@ -461,7 +460,6 @@ algorithm
 
     case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating class parts");
         typeVars = match re
           case SCode.R_METARECORD() then List.union(typeVars, re.typeVars);
           case SCode.R_UNIONTYPE() then List.union(typeVars, re.typeVars);
@@ -483,7 +481,6 @@ algorithm
 
     case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating enumerations");
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
       then
@@ -491,21 +488,18 @@ algorithm
 
     case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating enumeration of ':'");
         scodeCmt = translateComment(cmt);
       then
         (SCode.ENUMERATION({}),scodeCmt);
 
     case (Absyn.OVERLOAD(pathLst,cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating overloaded");
         scodeCmt = translateComment(cmt);
       then
         (SCode.OVERLOAD(pathLst),scodeCmt);
 
     case (Absyn.CLASS_EXTENDS(modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
       equation
-        // fprintln(Flags.TRANSLATE "translating model extends " + name + " ... end " + name + ";");
         els = translateClassdefElements(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
@@ -521,7 +515,6 @@ algorithm
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating pder( " + AbsynUtil.pathString(path) + ", vars)");
         scodeCmt = translateComment(cmt);
       then
         (SCode.PDER(path,vars),scodeCmt);
@@ -982,7 +975,6 @@ algorithm
         list<SCode.Element> e_1;
       case (Absyn.ELEMENTITEM(element = e))
         equation
-          // fprintln(Flags.TRANSLATE, "translating element: " + Dump.unparseElementStr(1, e));
           e_1 = translateElement(e, inVisibility);
           l = List.append_reverse(e_1, l);
         then ();
@@ -1180,7 +1172,6 @@ algorithm
 
     case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating local class: " + n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         (de_1,cmt) = translateClassdef(de,i,re_1);
         (_, redecl) = translateRedeclarekeywords(repl);
@@ -1199,14 +1190,12 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo);
         ann = translateAnnotation(absann);
       then
@@ -1222,7 +1211,6 @@ algorithm
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment, condition=cond) := comp;
           // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
           checkTypeSpec(t,info);
-          // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCode.finalStr(SCode.boolFinal(finalPrefix)));
           setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
           setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
           mod := translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
@@ -1257,7 +1245,6 @@ algorithm
       then xs_1;
     case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating import: " + Dump.unparseImportStr(imp));
         xs_1 = translateImports(imp,vis,info);
       then
         xs_1;
