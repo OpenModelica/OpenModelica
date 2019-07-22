@@ -1217,21 +1217,19 @@ algorithm
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
       (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)), typeSpec = t),info)
       algorithm
-        xs_1 := {};
+          xs_1 := {};
         for comp in inElementSpec4.components loop
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment, condition=cond) := comp;
-          // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
+          /*Julia did not play well with the previous expr. I did not manage to fix it @johti*/
           checkTypeSpec(t,info);
-          // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCode.finalStr(SCode.boolFinal(finalPrefix)));
           setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
           setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
-          mod := translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
+          mod := translateMod(comp.component.modification, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           prl1 := translateParallelism(parallelism);
           var1 := translateVariability(variability);
           // PR. This adds the arraydimension that may be specified together with the type of the component.
-          tot_dim := listAppend(d, ad);
+          tot_dim := listAppend(comp.component.arrayDim, ad);
           (repl_1, redecl) := translateRedeclarekeywords(repl);
-          (cmt,info) := translateCommentWithLineInfoChanges(comment,info);
+          (cmt,info) := translateCommentWithLineInfoChanges(comp.comment, info);
           sFin := SCode.boolFinal(finalPrefix);
           sRed := SCode.boolRedeclare(redecl);
           scc := translateConstrainClass(cc);
@@ -1245,12 +1243,12 @@ algorithm
               String inName;
             case Absyn.INPUT_OUTPUT() guard not Flags.isSet(Flags.SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR)
               algorithm
-                inName := "$in_"+n;
+                inName := "$in_"+comp.component.name;
                 attr1 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.INPUT(),isf);
                 attr2 := SCode.ATTR(tot_dim,ct,prl1,var1,Absyn.OUTPUT(),isf);
                 mod2 := SCode.MOD(SCode.FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(inName,{}))), info);
-              then SCode.COMPONENT(n,prefixes,attr2,t,mod2,cmt,cond,info) :: SCode.COMPONENT(inName,prefixes,attr1,t,mod,cmt,cond,info) :: xs_1;
-            else SCode.COMPONENT(n,prefixes,SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),t,mod,cmt,cond,info) :: xs_1;
+              then SCode.COMPONENT(comp.component.name,prefixes,attr2,t,mod2,cmt,comp.condition,info) :: SCode.COMPONENT(inName,prefixes,attr1,t,mod,cmt,comp.condition,info) :: xs_1;
+            else SCode.COMPONENT(comp.component.name,prefixes,SCode.ATTR(tot_dim,ct,prl1,var1,di,isf),t,mod,cmt,comp.condition,info) :: xs_1;
           end match;
         end for;
         xs_1 := Dangerous.listReverseInPlace(xs_1);
