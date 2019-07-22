@@ -632,11 +632,16 @@ match cond
 end dumpComponentCondition;
 
 template dumpImport(Absyn.Import imp)
+  "This will depend on my ExportAll.jl package. Not good practice but seem to be needed at places"
 ::=
 match imp
   case NAMED_IMPORT(__) then AbsynDumpTpl.errorMsg("Named imports are not implemented!.")
-  case QUAL_IMPORT(__) then 'import <%dumpPathJL(path)%>'
-  /*This case will depend on my ExportAll.jl package. Not good practice but seem to be needed at places*/
+  case QUAL_IMPORT(__) then
+    let path_str = dumpPathJL(path)
+    match path_str
+      case "Array" then 'import MetaModelica.ArrayUtil'
+      case "List" then  'import MetaModelica.ListUtil'
+      else 'import <%path_str%>'
   case UNQUAL_IMPORT(__) then 'using <%dumpPathJL(path)%>'
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPathJL(prefix)
@@ -680,8 +685,9 @@ match alg
       case  CREF(__) then '<%lhs_str%> = <%rhs_str%>'
       case  TUPLE(__) then '<%lhs_str%> = <%rhs_str%>'
       /* Lets do a crazy oneliner :)) */
-      case  CONS(__) then '<%lhs_str%> = listHead(<%rhs_str%>), listRest(<%rhs_str%>)'
-      case  CALL(__) then '#= This is crazy code =#<%lhs_str%> = <%rhs_str%>'
+      case  CONS(__) then '@match <%lhs_str%> = listHead(<%rhs_str%>), listRest(<%rhs_str%>)'
+      case  CALL(__) then '@match <%lhs_str%> = <%rhs_str%>'
+      /*Otherwise used as assert it seems like*/
       else  '@assert <%lhs_str%> == (<%rhs_str%>)'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
@@ -768,13 +774,6 @@ match path
     '<%name%>__<%AbsynDumpTpl.dumpPath(path)%>'
     else
     '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
-  /*Julia keywords have a slightly different semantic meaning*/
-  /*
-    ModelicaReal = Union {Signed, AbstractFloat}
-    ModelicaInteger is represented as it's own type.
-    Bool "should" not require any change
-    Clock e.t.c are probably not necessary to add since it is pure Modelica only.
-  */
   case IDENT(__) then
     match name
       case "Real" then 'ModelicaReal'
@@ -896,7 +895,12 @@ match exp
     /*  Same scenario when extending functions.
         We pass a function and change the parameters
     */
-    '@ExtendedAnonFunction <%func_str%>(<%args_str%>)'
+    let args2_str = match functionArgs
+      case FUNCTIONARGS(__) then
+        '<%(argNames |> na => dumpNamedArgPattern3(na) ;separator=", ")%>'
+      else
+        ''
+    '(<%args2_str%>) -> <%func_str%>(<%args_str%>)'
   case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur... Probably not used so can be ignored */ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
     'list(<%array_str%>)'
@@ -969,21 +973,18 @@ match exp
   case CALL(__) then
     let func_str = dumpCref(function_, functionContext)
     let args_str = dumpFunctionArgsPattern(functionArgs)
-    '<%func_str%>(<%args_str%>)'
+    if args_str then
+      '<%func_str%>(<%args_str%>)'
+    else
+    /* This means we have a wildcard */
+      '<%func_str%>(__)'
   case TUPLE(__) then
     let tuple_str = (expressions |> e => dumpPattern(e, context, &as_str); separator=", " ;empty)
     '(<%tuple_str%>)'
   case AS(__) then
     let exp_str = dumpPattern(exp, context, &as_str)
     let id_str = '<%id%>'
-    //match context
-      // case MATCH_CONTEXT(__) then
-      //   let &as_str += '<%id_str%>,'
-      //   '<%exp_str%>'
-      // else
-      //   '<%id_str%> = <%exp_str%>'
-      //I should be able to do this
-      '<%id_str%> && <%exp_str%>'
+    '<%id_str%> && <%exp_str%>'
   case CONS(__) then
     let consOp = dumpCons(dumpPattern(head, context, &as_str), dumpPattern(rest, context, &as_str))
     '<%consOp%>'
@@ -1011,6 +1012,24 @@ match narg
   case NAMEDARG(__) then
     '<%argName%> = <%dumpPattern(argValue, functionContext, emptyTxt)%>'
 end dumpNamedArgPattern;
+
+
+template dumpNamedArgPattern2(Absyn.NamedArg narg)
+"Returns the argument name"
+::=
+match narg
+  case NAMEDARG(__) then
+    '<%argName%>'
+end dumpNamedArgPattern2;
+
+
+template dumpNamedArgPattern3(Absyn.NamedArg narg)
+"Returns the argument value"
+::=
+match narg
+  case NAMEDARG(__) then
+    '<%dumpPattern(argValue, functionContext, emptyTxt)%>'
+end dumpNamedArgPattern3;
 
 template dumpLhsExp(Absyn.Exp lhs, Context context)
 ::=
@@ -1176,9 +1195,14 @@ template dumpCref(Absyn.ComponentRef cref, Context context)
 ::=
 match cref
   case CREF_QUAL(__) then
-    '<%name%><%dumpSubscripts(subscripts, context)%>.<%dumpCref(componentRef, context)%>'
-  case CREF_IDENT(__)
-    then '<%name%><%dumpSubscripts(subscripts, context)%>'
+     let ss_str = dumpSubscripts(subscripts, context)
+     let c_str = dumpCref(componentRef, context)
+    match name
+      case "List" then 'ListUtil<%ss_str%>.<%c_str%>'
+      case "Array" then 'ArrayUtil<%ss_str%>.<%c_str%>'
+      else '<%name%>.<%c_str%>'
+  case CREF_IDENT(__) then
+    '<%name%><%dumpSubscripts(subscripts, context)%>'
   case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef, context)%>'
   case WILD(__) then if Config.acceptMetaModelicaGrammar() then "_" else ""
   case ALLWILD(__) then '__'

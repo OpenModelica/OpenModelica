@@ -6326,7 +6326,7 @@ public function getTypeSpecFromElementItemOpt
   input Absyn.ElementItem inElementItem;
   output Option<Absyn.TypeSpec> outTypeSpec;
 algorithm
-  outTypeSpec := match inElementItem
+  outTypeSpec := matchcontinue inElementItem
     local
       Absyn.TypeSpec typeSpec;
       Absyn.ElementSpec specification;
@@ -6335,12 +6335,10 @@ algorithm
         case Absyn.ELEMENT(specification = specification) then
         match specification
           case Absyn.COMPONENTS(typeSpec = typeSpec) then SOME(typeSpec);
-          else then NONE();
         end match;
-        else then NONE();
       end match;
     else then NONE();
-  end match;
+  end matchcontinue;
 end getTypeSpecFromElementItemOpt;
 
 public function getElementSpecificationFromElementItemOpt
@@ -6349,17 +6347,16 @@ public function getElementSpecificationFromElementItemOpt
   input Absyn.ElementItem inElementItem;
   output Option<Absyn.ElementSpec> outSpec;
 algorithm
-  outSpec := match inElementItem
+  outSpec := matchcontinue inElementItem
     local
       Absyn.ElementSpec specification;
       Absyn.Element element;
     case Absyn.ELEMENTITEM(element = element) then
       match element
         case Absyn.ELEMENT(specification = specification) then SOME(specification);
-        else NONE();
       end match;
     else NONE();
-  end match;
+  end matchcontinue;
 end getElementSpecificationFromElementItemOpt;
 
 public function getComponentItemsFromElementSpec
@@ -6394,7 +6391,7 @@ public function getDirection
   input Absyn.ElementItem elementItem;
   output Direction oDirection;
 algorithm
-  oDirection:= match elementItem
+  oDirection:= matchcontinue elementItem
     local Element element;
     case ELEMENTITEM(element = element) then match element
       local ElementSpec specification;
@@ -6403,14 +6400,11 @@ algorithm
         case COMPONENTS(attributes=attributes) then match attributes
           local Direction direction;
           case ATTR(direction=direction) then direction;
-          else BIDIR();
         end match;
-        else BIDIR();
       end match;
-      else BIDIR();
     end match;
     else BIDIR();
-  end match;
+  end matchcontinue;
 end getDirection;
 
 annotation(__OpenModelica_Interface="frontend");

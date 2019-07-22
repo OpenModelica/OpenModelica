@@ -213,8 +213,6 @@ uniontype ClassDef
 
 end ClassDef;
 
-public constant Comment noComment = COMMENT(NONE(),NONE());
-
 public
 uniontype Comment
 
@@ -224,6 +222,10 @@ uniontype Comment
   end COMMENT;
 
 end Comment;
+
+
+public constant Comment noComment = COMMENT(NONE(),NONE());
+
 
 // stefan
 public
