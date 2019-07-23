@@ -60,7 +60,7 @@ extern char* _replace(char* source_str,char* search_str,char* replace_str); //De
 
 static char* winPath = NULL;
 
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && (defined(linux) || defined(__APPLE_CC__))
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && (defined(__linux__) || defined(__APPLE_CC__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
@@ -86,101 +86,27 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
   return path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
 }
-#elif defined(linux)
-#include <sys/stat.h>
-#include <linux/limits.h>
-#include <unistd.h>
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
-  struct stat sb;
-  static char omhome[PATH_MAX];
-  const char *omhome_env = getenv("OPENMODELICAHOME");
-  static int init = 0;
-  ssize_t r;
-  /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
-   * because that FS is not POSIX-compliant.
-   */
-  if (omhome_env != NULL) {
-    strcpy(omhome, omhome_env);
-    return omhome;
-  }
-
-  if (init) {
-    return omhome;
-  }
-
-  r = readlink("/proc/self/exe", omhome, sizeof(omhome)-1);
-  if (r < 0) {
-    perror("readlink");
-    exit(EXIT_FAILURE);
-  }
-  assert(r < sizeof(omhome)-1);
-  omhome[r] = '\0';
-  stripbinpath(omhome);
-  init = 1;
-  return omhome;
-}
-#elif defined(__APPLE_CC__)
-
-#if 1
+#elif defined(__linux__) || defined(__APPLE_CC__)
 #include <dlfcn.h>
 
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
   pid_t pid;
-  static char *omhome = getenv("OPENMODELICAHOME");
-  static int init = 0;
-  if (init || omhome != NULL) {
+  static char *omhome = NULL;
+  if (omhome) {
     return omhome;
   }
 
   Dl_info info;
   if (!dladdr((void*) SettingsImpl__getInstallationDirectoryPath, &info)) {
-    fprintf(stderr, "proc_pidpath() failed: %s\n", strerror(errno));
+    fprintf(stderr, "dladdr() failed: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   } else {
     omhome = omc_alloc_interface.malloc_strdup(info.dli_fname);
     stripbinpath(omhome);
   }
-  init = 1;
   return omhome;
 }
-
-#else
-/* If we do not use dylib in the future */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <libproc.h>
-
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
-  int ret;
-  pid_t pid;
-  static char omhome[PROC_PIDPATHINFO_MAXSIZE];
-  const char* omhome_env  = getenv("OPENMODELICAHOME");
-  static int init = 0;
-  if (omhome_env != NULL) {
-    strcpy(omhome, omhome_env);
-    return omhome;
-  }
-
-  if (init)
-  {
-     return omhome;
-  }
-
-  pid = getpid();
-  ret = proc_pidpath(pid, omhome, sizeof(omhome));
-  if (ret <= 0) {
-    fprintf(stderr, "proc_pidpath() failed: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  } else {
-    stripbinpath(omhome);
-  }
-  init = 1;
-  return omhome;
-}
-#endif /* dylib */
 
 #else /* Not linux or Apple */
 const char* SettingsImpl__getInstallationDirectoryPath(void) {

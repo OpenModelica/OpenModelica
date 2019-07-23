@@ -191,6 +191,18 @@ void buildOMC(CC, CXX, extraFlags) {
   // OMSimulator requires HOME to be set and writeable
   sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} --output-sync omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+  sh '''
+  mv build build.sanity-check
+  mkdir .sanity-check
+  cd .sanity-check
+  echo 'loadString("model M end M;");getErrorString();buildModel(M);getErrorString();' > test.mos
+  cat test.mos
+  ../build.sanity-check/bin/omc test.mos
+  ./M
+  cd ..
+  mv build.sanity-check build
+  rm -rf .sanity-check
+  '''
   }
 }
 
