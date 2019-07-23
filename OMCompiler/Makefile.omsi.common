@@ -73,19 +73,25 @@ OMSIBaseMSVC: getMSVCversion
 	cp -R --verbose Build_MSVC/tmp/* $(builddir_build)
 	cp -R --verbose Build_MSVC_static/tmp/lib/* $(builddir_build)/lib
 
+TMPAHEU = $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+
 OMSIBaseInstall: OMSIBase
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);) \
 
+	echo AHeu: otool
+
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+	#test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_nvecserial.0.dylib
+	#test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/libsundials_kinsol.1.dylib
+	#test ! `uname` = Darwin || install_name_tool -change libOMSIBase.dylib @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+
+	echo AHeu: otool
+	test ! `uname` = Darwin || otool -L -v $(TMPAHEU)
+
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
