@@ -91,7 +91,6 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
-  pid_t pid;
   static char *omhome = NULL;
   if (omhome) {
     return omhome;
