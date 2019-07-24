@@ -105,6 +105,10 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
     omhome = omc_alloc_interface.malloc_strdup(info.dli_fname);
     stripbinpath(omhome);
   }
+  if (!(omhome && omhome[0])) {
+    fprintf(stderr, "Failed to get binary path from dladdr path: %s\n", info.dli_fname);
+    exit(EXIT_FAILURE);
+  }
   return omhome;
 }
 
