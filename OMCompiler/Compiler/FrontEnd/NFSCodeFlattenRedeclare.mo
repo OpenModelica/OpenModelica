@@ -107,6 +107,7 @@ protected import List;
 protected import NFSCodeCheck;
 protected import Util;
 protected import SCodeDump;
+import SCodeUtil;
 
 public function addElementRedeclarationsToEnv
   input list<SCode.Element> inRedeclares;
@@ -132,8 +133,8 @@ algorithm
 
     case (_, _)
       equation
-        name = SCode.elementName(inRedeclare);
-        info = SCode.elementInfo(inRedeclare);
+        name = SCodeUtil.elementName(inRedeclare);
+        info = SCodeUtil.elementInfo(inRedeclare);
         ext_pathl = lookupElementRedeclaration(name, inEnv, info);
         env_path = NFSCodeEnv.getEnvPath(inEnv);
         item = NFSCodeEnv.ALIAS(name, SOME(env_path), info);
@@ -145,7 +146,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +
-          SCode.elementName(inRedeclare) + " in " +
+          SCodeUtil.elementName(inRedeclare) + " in " +
           NFSCodeEnv.getEnvName(inEnv) + "\n");
       then
         fail();

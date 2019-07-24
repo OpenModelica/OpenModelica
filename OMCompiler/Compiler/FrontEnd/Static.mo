@@ -70,7 +70,7 @@ import FNode;
 import MetaUtil;
 import Prefix;
 import SCode;
-import SCodeUtil;
+import AbsynToSCode;
 import Util;
 import Values;
 
@@ -124,6 +124,7 @@ import Patternm;
 import PrefixUtil;
 import Print;
 import SCodeDump;
+import SCodeUtil;
 import System;
 import Types;
 import ValuesUtil;
@@ -7151,7 +7152,7 @@ algorithm
            Lookup.lookupClassIdent(cache, env, "GraphicalAnnotationsProgram____");
         (cache,cl as SCode.CLASS( restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn);
         (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
-        (_,_::names) = SCode.getClassComponents(cl); // remove the first one as it is the result!
+        (_,_::names) = SCodeUtil.getClassComponents(cl); // remove the first one as it is the result!
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1)
           = Lookup.lookupType(cache, env, fn, SOME(info));
@@ -7211,13 +7212,13 @@ algorithm
         false = Mutable.access(stopElab);
 
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn);
-        true = SCode.isOperatorRecord(recordCl);
+        true = SCodeUtil.isOperatorRecord(recordCl);
 
         fn_1 = AbsynUtil.joinPaths(fn,Absyn.IDENT("'constructor'"));
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,recordEnv,fn_1);
-        true = SCode.isOperator(recordCl);
+        true = SCodeUtil.isOperator(recordCl);
 
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(recordCl);
+        operNames = AbsynToSCode.getListofQualOperatorFuncsfromOperator(recordCl);
         (cache,typelist as _::_) = Lookup.lookupFunctionsListInEnv(cache, recordEnv, operNames, info, {});
 
         Mutable.update(stopElab,true);
@@ -7283,7 +7284,7 @@ algorithm
     case (cache,env,fn,_,_,_,_) /* class found; not function */
       equation
         (cache,SCode.CLASS(restriction = re),_) = Lookup.lookupClass(cache,env,fn);
-        false = SCode.isFunctionRestriction(re);
+        false = SCodeUtil.isFunctionRestriction(re);
         fn_str = AbsynUtil.pathString(fn);
         s = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);
@@ -7953,13 +7954,13 @@ algorithm
   if Lookup.isFunctionCallViaComponent(inCache, inEnv, inFunctionName) then
     // do NOT qualify function calls via component instance!
     (_, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName);
-    outFunctionName := FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCode.elementName(outClass)));
+    outFunctionName := FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCodeUtil.elementName(outClass)));
     outCache := inCache;
   else
     // qualify everything else
     (outCache, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName);
     outFunctionName := AbsynUtil.makeFullyQualified(
-      FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCode.elementName(outClass))));
+      FGraph.joinScopePath(outEnv, AbsynUtil.makeIdentPathFromString(SCodeUtil.elementName(outClass))));
   end if;
 end lookupAndFullyQualify;
 
@@ -8207,7 +8208,7 @@ algorithm
   try
     (outCache, SCode.CLASS(classDef = SCode.PARTS(elementLst = els)), _) :=
       Lookup.lookupClass(inCache, inEnv, inPath);
-    true := SCode.isExternalObject(els);
+    true := SCodeUtil.isExternalObject(els);
     outIsExt := true;
   else
     last_id := AbsynUtil.pathLastIdent(inPath);
@@ -8874,7 +8875,7 @@ protected
   SCode.Element dummy_var;
 algorithm
   for var in inVars loop
-    dummy_var := SCode.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
+    dummy_var := SCodeUtil.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
     outEnv := FGraph.mkComponentNode(outEnv, var, dummy_var, DAE.NOMOD(),
       FCore.VAR_TYPED(), FGraph.empty());
   end for;
@@ -9438,7 +9439,7 @@ algorithm
         case SLOT(defaultArg = defarg as DAE.FUNCARG())
           algorithm
             SCode.COMPONENT(modifications = SCode.MOD(binding = SOME(e))) :=
-              SCode.getElementNamed(defarg.name, inClass);
+              SCodeUtil.getElementNamed(defarg.name, inClass);
 
             (outCache, exp, DAE.PROP(ty, c)) :=
               elabExpInExpression(outCache, inEnv, e, inImplicit, true, inPrefix, inInfo);
@@ -10187,7 +10188,7 @@ algorithm
           Lookup.lookupClass(cache, env, path);
         typeStr = AbsynUtil.pathLastIdent(path);
         path = FGraph.joinScopePath(env, Absyn.IDENT(typeStr));
-        enum_lit_strs = SCode.componentNames(cl);
+        enum_lit_strs = SCodeUtil.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
         (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));

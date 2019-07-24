@@ -66,6 +66,7 @@ protected import InstFunction;
 protected import InstSection;
 protected import InstUtil;
 protected import Util;
+import SCodeUtil;
 protected import Types;
 protected import PrefixUtil;
 protected import List;
@@ -143,7 +144,7 @@ algorithm
     fail();
   end if;
 
-  io := SCode.prefixesInnerOuter(inPrefixes);
+  io := SCodeUtil.prefixesInnerOuter(inPrefixes);
 
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
   matchcontinue (inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
@@ -352,7 +353,7 @@ algorithm
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        typeName = SCode.className(cl);
+        typeName = SCodeUtil.className(cl);
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
@@ -386,7 +387,7 @@ algorithm
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        typeName = SCode.className(cl);
+        typeName = SCodeUtil.className(cl);
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
@@ -492,7 +493,7 @@ algorithm
                   NONE()));
 
         // now instantiate it as an outer with no modifications
-        pf = SCode.prefixesSetInnerOuter(pf, Absyn.OUTER());
+        pf = SCodeUtil.prefixesSetInnerOuter(pf, Absyn.OUTER());
         (cache,compenv,ih,store,dae,_,ty,graph) =
           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
 
@@ -599,10 +600,10 @@ algorithm
 
     source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(inEnv), inPrefix);
     (outCache, outDae) := addArrayVarEquation(outCache, inEnv, outIH, inState,
-      outDae, outType, mod, NFInstUtil.toConst(SCode.attrVariability(attr)),
+      outDae, outType, mod, NFInstUtil.toConst(SCodeUtil.attrVariability(attr)),
       inPrefix, inName, source);
     outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
-      Types.arrayElementType(outType), SCode.elementInfo(inClass));
+      Types.arrayElementType(outType), SCodeUtil.elementInfo(inClass));
 
     Error.clearCurrentComponent();
   else
@@ -630,7 +631,7 @@ algorithm
     case DAE.MOD()
       algorithm
         // Only lift modifiers without 'each'.
-        if not SCode.eachBool(outMod.eachPrefix) then
+        if not SCodeUtil.eachBool(outMod.eachPrefix) then
           outMod.binding := liftUserTypeEqMod(outMod.binding, inDims);
           outMod.subModLst := list(liftUserTypeSubMod(s, inDims) for s in outMod.subModLst);
         end if;
@@ -1116,7 +1117,7 @@ algorithm
         // Propagate and instantiate attributes.
         (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env_1, inMod, ty, {});
         attr = InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
-        attr = SCode.removeAttributeDimensions(attr);
+        attr = SCodeUtil.removeAttributeDimensions(attr);
 
         // Attempt to set the correct type for array variable if splitArrays is
         // false. Does not work correctly yet.
@@ -1142,7 +1143,7 @@ algorithm
         source = ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
 
         // Instantiate the components binding.
-        mod = if not listEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+        mod = if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
@@ -1211,7 +1212,7 @@ algorithm
         true = BaseHashSet.has(cref, sm);
       then inAttributes;
     // Everything else, strip the input/output prefix.
-    else SCode.setAttributesDirection(inAttributes, Absyn.BIDIR());
+    else SCodeUtil.setAttributesDirection(inAttributes, Absyn.BIDIR());
   end matchcontinue;
 end stripVarAttrDirection;
 
@@ -1702,7 +1703,7 @@ algorithm
            type A = input discrete flow Integer[3];
            A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
          */
-        //SOME(attr3) = SCode.mergeAttributes(attr,SOME(absynAttr));
+        //SOME(attr3) = SCodeUtil.mergeAttributes(attr,SOME(absynAttr));
 
         smod := InstUtil.chainRedeclares(inMod, smod);
         (_, mod) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, smod, inImpl, Mod.DERIVED(cls_path), inInfo);

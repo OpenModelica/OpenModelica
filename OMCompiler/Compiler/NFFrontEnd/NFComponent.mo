@@ -47,6 +47,7 @@ protected
 import NFInstUtil;
 import List;
 import Prefixes = NFPrefixes;
+import SCodeUtil;
 
 public
 constant Component.Attributes DEFAULT_ATTR =
@@ -241,7 +242,7 @@ uniontype Component
     output SourceInfo info;
   algorithm
     info := match component
-      case COMPONENT_DEF() then SCode.elementInfo(component.definition);
+      case COMPONENT_DEF() then SCodeUtil.elementInfo(component.definition);
       case UNTYPED_COMPONENT() then component.info;
       case TYPED_COMPONENT() then component.info;
     end match;
@@ -608,7 +609,7 @@ uniontype Component
     output Boolean isRedeclare;
   algorithm
     isRedeclare := match component
-      case COMPONENT_DEF() then SCode.isElementRedeclare(component.definition);
+      case COMPONENT_DEF() then SCodeUtil.isElementRedeclare(component.definition);
       else false;
     end match;
   end isRedeclare;
@@ -619,7 +620,7 @@ uniontype Component
   algorithm
     isFinal := match component
       case COMPONENT_DEF()
-        then SCode.finalBool(SCode.prefixesFinal(SCode.elementPrefixes(component.definition)));
+        then SCodeUtil.finalBool(SCodeUtil.prefixesFinal(SCodeUtil.elementPrefixes(component.definition)));
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
       else false;
@@ -634,8 +635,8 @@ uniontype Component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(innerOuter = io)) then io;
       case COMPONENT_DEF()
-        then Prefixes.innerOuterFromSCode(SCode.prefixesInnerOuter(
-          SCode.elementPrefixes(component.definition)));
+        then Prefixes.innerOuterFromSCode(SCodeUtil.prefixesInnerOuter(
+          SCodeUtil.elementPrefixes(component.definition)));
       else InnerOuter.NOT_INNER_OUTER;
     end match;
   end innerOuter;
@@ -819,7 +820,7 @@ uniontype Component
     output Option<SCode.Comment> comment;
   algorithm
     comment := match component
-      case COMPONENT_DEF() then SCode.getElementComment(component.definition);
+      case COMPONENT_DEF() then SCodeUtil.getElementComment(component.definition);
       case UNTYPED_COMPONENT() then component.comment;
       case TYPED_COMPONENT() then component.comment;
       else NONE();
@@ -842,7 +843,7 @@ uniontype Component
   protected
     SCode.Comment cmt;
   algorithm
-    evaluate := SCode.getEvaluateAnnotation(comment(component));
+    evaluate := SCodeUtil.getEvaluateAnnotation(comment(component));
   end getEvaluateAnnotation;
 
   function getFixedAttribute

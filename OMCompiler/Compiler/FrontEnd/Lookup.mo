@@ -77,6 +77,7 @@ protected import Mod;
 protected import Mutable;
 protected import Prefix;
 protected import PrefixUtil;
+import SCodeUtil;
 protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
@@ -287,7 +288,7 @@ algorithm
           ci_state, c, SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
-        (_,names) = SCode.getClassComponents(c);
+        (_,names) = SCodeUtil.getClassComponents(c);
         Types.checkEnumDuplicateLiterals(names, c.info);
         // generate the enumeration type
         path = FGraph.getGraphName(env_3);
@@ -335,7 +336,7 @@ algorithm
     case (cache,env_1,c)
       equation
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
-        true = SCode.classIsExternalObject(c);
+        true = SCodeUtil.classIsExternalObject(c);
         (cache,env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), c,
@@ -485,7 +486,7 @@ algorithm
     case (_, _, _)
       equation
          (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Mutable.create(false), inInfo);
-         // print("CLRET: " + SCode.elementName(outClass) + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
+         // print("CLRET: " + SCodeUtil.elementName(outClass) + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
       then
         (outCache,outClass,outEnv);
   end matchcontinue;
@@ -714,12 +715,12 @@ algorithm
      Config.languageStandardAtLeast(Config.LanguageStandard.'3.2') then
     FCore.N(data = FCore.CL(e = el, pre = pre)) :=
       FNode.fromRef(FGraph.lastScopeRef(inEnv));
-    name := SCode.elementName(el);
+    name := SCodeUtil.elementName(el);
 
     if FGraph.graphPrefixOf(inParentEnv, inEnv) and not
        PrefixUtil.isNoPrefix(pre) then
       pre_str := PrefixUtil.printPrefixStr(pre);
-      cls_info := SCode.elementInfo(el);
+      cls_info := SCodeUtil.elementInfo(el);
       pre_info := PrefixUtil.getPrefixInfo(pre);
       cc_str := getConstrainingClass(el, FGraph.stripLastScopeRef(inEnv), inCache);
       Error.addMultiSourceMessage(Error.USE_OF_PARTIAL_CLASS,
@@ -759,7 +760,7 @@ algorithm
       then
         getConstrainingClass(el, env, inCache);
 
-    else FGraph.printGraphPathStr(inEnv) + "." + SCode.elementName(inClass);
+    else FGraph.printGraphPathStr(inEnv) + "." + SCodeUtil.elementName(inClass);
   end matchcontinue;
 end getConstrainingClass;
 
@@ -1182,7 +1183,7 @@ algorithm
           end try;
 
           // Propagate variability.
-          attr := DAEUtil.setAttrVariability(attr, SCode.variabilityOr(
+          attr := DAEUtil.setAttrVariability(attr, SCodeUtil.variabilityOr(
             DAEUtil.getAttrVariability(attr), DAEUtil.getAttrVariability(parent_attr)));
 
           // Use the inner/outer from the first identifier.
@@ -1381,7 +1382,7 @@ algorithm
     case (_, _, _,DAE.ATTR(variability = SCode.PARAM()),_,_)
       equation
         FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
-        false = SCode.isPackage(cl);
+        false = SCodeUtil.isPackage(cl);
         // print("cref:  " + ComponentReference.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
       then
         ();*/
@@ -2128,7 +2129,7 @@ algorithm
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop!
         //           Did not investigate this further then that it can crasch the kernel.
         (cache,(c as SCode.CLASS(name=str,restriction=restr)),env_1) = lookupClass(cache, inEnv, id);
-        true = SCode.isFunctionRestriction(restr);
+        true = SCodeUtil.isFunctionRestriction(restr);
         // get function dae from instantiation
         // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " + FGraph.printGraphPathStr(env_1) + "." + str);
         (cache,env_2 as FCore.G(scope = r::_),_)
@@ -2328,7 +2329,7 @@ algorithm
 
     case (_,FCore.N(data = FCore.CO(e = comp)),_,id)
       equation
-        info = SCode.elementInfo(comp);
+        info = SCodeUtil.elementInfo(comp);
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
       then
         fail();
@@ -2424,7 +2425,7 @@ algorithm
           (cache, {ty});
 
       // A function, instantiate to get the type.
-      case FCore.CL(e = cl) guard(SCode.isFunction(cl))
+      case FCore.CL(e = cl) guard(SCodeUtil.isFunction(cl))
         algorithm
           (cache, env) := InstFunction.implicitFunctionTypeInstantiation(
             inCache, inEnv, InnerOuter.emptyInstHierarchy, cl);
@@ -2434,7 +2435,7 @@ algorithm
           (cache, tps);
 
       // An external object.
-      case FCore.CL(e = cl) guard(SCode.classIsExternalObject(cl))
+      case FCore.CL(e = cl) guard(SCodeUtil.classIsExternalObject(cl))
         algorithm
           (cache, env) := Inst.instClass(inCache, inEnv,
             InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, DAE.NOMOD(),
@@ -2485,7 +2486,7 @@ protected
   SCode.Element cdef;
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,icdef);
-  name := SCode.className(cdef);
+  name := SCodeUtil.className(cdef);
   // fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " + FGraph.printGraphPathStr(env) + "." + name);
   (outCache,outEnv,_) := InstFunction.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
@@ -2761,9 +2762,9 @@ protected function buildRecordConstructorResultElt
   output SCode.Element outElement;
 algorithm
   //print(" creating element of type: " + id + "\n");
-  //print(" with generated mods:" + SCode.printSubs1Str(submodlst) + "\n");
+  //print(" with generated mods:" + SCodeUtil.printSubs1Str(submodlst) + "\n");
   //print(" creating element of type: " + id + "\n");
-  //print(" with generated mods:" + SCode.printSubs1Str(submodlst) + "\n");
+  //print(" with generated mods:" + SCodeUtil.printSubs1Str(submodlst) + "\n");
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
           SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT(),Absyn.NONFIELD()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
@@ -3177,7 +3178,7 @@ algorithm
                 case ({}) // without spliced Expression
                   then NONE();
               end match;
-              vt := SCode.variabilityOr(vt,vt2);
+              vt := SCodeUtil.variabilityOr(vt,vt2);
               binding := lookupBinding(inComponentRef, tyParent, ty, parentBinding, binding);
               splicedExpData := InstTypes.SPLICEDEXPDATA(oSplicedExp,idTp);
             then

@@ -76,7 +76,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Array;
 import ElementSource;
-
+import SCodeUtil;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -396,14 +396,14 @@ uniontype Function
         list<Function> funcs;
         list<FunctionDerivative> fn_ders;
 
-      case SCode.CLASS() guard SCode.isOperatorRecord(def)
+      case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
           fnNode := instFunction3(fnNode);
           fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, info);
         then
           (fnNode, false);
 
-      case SCode.CLASS() guard SCode.isRecord(def)
+      case SCode.CLASS() guard SCodeUtil.isRecord(def)
         algorithm
           fnNode := instFunction3(fnNode);
           fnNode := Record.instDefaultConstructor(fnPath, fnNode, info);
@@ -431,7 +431,7 @@ uniontype Function
 
       case SCode.CLASS()
         algorithm
-          if SCode.isOperator(def) then
+          if SCodeUtil.isOperator(def) then
             OperatorOverloading.checkOperatorRestrictions(fnNode);
           end if;
 
@@ -1568,7 +1568,7 @@ uniontype Function
     defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity,
       ElementSource.createElementSource(InstNode.info(fn.node)),
-      SCode.getElementComment(InstNode.definition(fn.node)));
+      SCodeUtil.getElementComment(InstNode.definition(fn.node)));
   end toDAE;
 
   function makeDAEType
@@ -1620,12 +1620,12 @@ uniontype Function
 
   function hasUnboxArgsAnnotation
     input SCode.Comment cmt;
-    output Boolean res = SCode.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnboxArguments");
+    output Boolean res = SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnboxArguments");
   end hasUnboxArgsAnnotation;
 
   function hasOptionalArgument
     input SCode.Element component;
-    output Boolean res = SCode.hasBooleanNamedAnnotationInComponent(component, "__OpenModelica_optionalArgument");
+    output Boolean res = SCodeUtil.hasBooleanNamedAnnotationInComponent(component, "__OpenModelica_optionalArgument");
   end hasOptionalArgument;
 
   function mapExp
@@ -1863,18 +1863,18 @@ protected
   function hasOMPure
     input SCode.Comment cmt;
     output Boolean res =
-      not SCode.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure");
+      not SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure");
   end hasOMPure;
 
   function hasImpure
     input SCode.Comment cmt;
     output Boolean res =
-      SCode.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
+      SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
   end hasImpure;
 
   function getBuiltin
     input SCode.Element def;
-    output DAE.FunctionBuiltin builtin = if SCode.isBuiltinElement(def) then
+    output DAE.FunctionBuiltin builtin = if SCodeUtil.isBuiltinElement(def) then
        DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
   end getBuiltin;
 
@@ -1893,7 +1893,7 @@ protected
 
       mod := match cmt
         case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = mod2)))
-          then SCode.mergeModifiers(mod2, mod);
+          then SCodeUtil.mergeModifiers(mod2, mod);
         else mod;
       end match;
     end for;
@@ -1919,12 +1919,12 @@ protected
     SCode.Comment cmt;
   algorithm
     def := InstNode.definition(node);
-    res := SCode.getClassRestriction(def);
+    res := SCodeUtil.getClassRestriction(def);
 
-    Error.assertion(SCode.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
+    Error.assertion(SCodeUtil.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
 
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
-    is_partial := SCode.isPartial(def);
+    is_partial := SCodeUtil.isPartial(def);
 
     cmts := InstNode.getComments(node);
     cmt := mergeFunctionAnnotations(cmts);
@@ -1942,7 +1942,7 @@ protected
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
-          name := SCode.isBuiltinFunction(def, in_params, out_params);
+          name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
           is_impure := is_impure or hasImpure(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
@@ -1955,7 +1955,7 @@ protected
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
-          name := SCode.isBuiltinFunction(def, in_params, out_params);
+          name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
@@ -1981,10 +1981,10 @@ protected
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
-          is_impure := SCode.isRestrictionImpure(res,
+          is_impure := SCodeUtil.isRestrictionImpure(res,
               Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
               not listEmpty(outputs)) or
-            SCode.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
+            SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
             getBuiltin(def), DAE.FP_NON_PARALLEL());

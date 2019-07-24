@@ -61,6 +61,7 @@ protected import Values;
 protected import Types;
 protected import ClassInf;
 protected import SCodeDump;
+import SCodeUtil;
 protected import List;
 protected import Flags;
 protected import DAEDumpTpl;
@@ -755,7 +756,7 @@ algorithm
         elseif Config.showStructuralAnnotations() then
           ann_mod := filterStructuralMods(ann_mod);
 
-          if not SCode.isEmptyMod(ann_mod) then
+          if not SCodeUtil.isEmptyMod(ann_mod) then
             ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
           end if;
         else
@@ -772,7 +773,7 @@ end dumpAnnotationStr;
 public function filterStructuralMods
   input output SCode.Mod mod;
 algorithm
-  mod := SCode.filterSubMods(mod, filterStructuralMod);
+  mod := SCodeUtil.filterSubMods(mod, filterStructuralMod);
 end filterStructuralMods;
 
 public function filterStructuralMod
@@ -2745,7 +2746,7 @@ algorithm
     case (DAE.FUNCTION(inlineType = DAE.EARLY_INLINE()), _, true) then false;
     // Hide functions with annotation __OpenModelica_builtin = true.
     case (DAE.FUNCTION(comment = cmt), _, _)
-      then not SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_builtin");
+      then not SCodeUtil.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_builtin");
     // Hide record constructors if requested.
     case (DAE.RECORD_CONSTRUCTOR(), true, _) then false;
     else true;

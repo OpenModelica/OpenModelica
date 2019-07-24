@@ -63,6 +63,7 @@ import HashSet;
 import List;
 import MetaModelica.Dangerous;
 import Mutable;
+import SCodeUtil;
 import StringUtil;
 import System;
 import Types;
@@ -1296,7 +1297,7 @@ algorithm
     local SCode.Comment comm;
 
     case (BackendDAE.VAR(comment=SOME(comm) ))
-       then SCode.commentHasBooleanNamedAnnotation(comm, "isMayer");
+       then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "isMayer");
     else false;
   end match;
 end hasMayerTermAnno;
@@ -1311,7 +1312,7 @@ algorithm
     local SCode.Comment comm;
 
     case (BackendDAE.VAR(comment=SOME(comm) ))
-       then SCode.commentHasBooleanNamedAnnotation(comm, "isLagrange");
+       then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "isLagrange");
     else false;
   end match;
 end hasLagrangeTermAnno;
@@ -1326,7 +1327,7 @@ algorithm
     local SCode.Comment comm;
 
     case (BackendDAE.VAR(comment=SOME(comm) ))
-       then SCode.commentHasBooleanNamedAnnotation(comm, "isConstraint");
+       then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "isConstraint");
     else false;
   end match;
 end hasConTermAnno;
@@ -1341,7 +1342,7 @@ algorithm
     local SCode.Comment comm;
 
     case (BackendDAE.VAR(comment=SOME(comm) ))
-       then SCode.commentHasBooleanNamedAnnotation(comm, "isFinalConstraint");
+       then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "isFinalConstraint");
     else false;
   end match;
 end hasFinalConTermAnno;
@@ -1356,7 +1357,7 @@ algorithm
     local SCode.Comment comm;
 
     case (BackendDAE.VAR(comment=SOME(comm) ))
-       then SCode.commentHasBooleanNamedAnnotation(comm, "isTimeGrid");
+       then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "isTimeGrid");
     else false;
   end match;
 end hasTimeGridAnno;
@@ -1419,7 +1420,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(anno)))) := v;
-    val := SCode.getNamedAnnotation(anno, "HideResult");
+    val := SCodeUtil.getNamedAnnotation(anno, "HideResult");
     hidden := match(val)
       case Absyn.BOOL(true) then true;
       else false;
@@ -1466,7 +1467,7 @@ algorithm
       SCode.Annotation anno;
     // Parameter with evaluate annotation
     case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(anno))))
-      then SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
+      then SCodeUtil.hasBooleanNamedAnnotation(anno,"Evaluate");
     else false;
   end match;
 end hasVarEvaluateAnnotation;
@@ -1481,7 +1482,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCode.getNamedAnnotation(ann, "Evaluate");
+    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
     isTrue := stringEqual(Dump.printExpStr(val), "true");
   else
     isTrue := false;
@@ -1499,7 +1500,7 @@ protected
 algorithm
   try
     BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-    (val,_) := SCode.getNamedAnnotation(ann, "Evaluate");
+    (val,_) := SCodeUtil.getNamedAnnotation(ann, "Evaluate");
     isFalse := stringEqual(Dump.printExpStr(val), "false");
   else
     isFalse := false;
@@ -1526,7 +1527,7 @@ protected
   SCode.Annotation ann;
 algorithm
   BackendDAE.VAR(comment = SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
-  outValue := SCode.getNamedAnnotation(ann, inName);
+  outValue := SCodeUtil.getNamedAnnotation(ann, inName);
 end getNamedAnnotation;
 
 public function getAnnotationComment"gets the annotation comment, if there is one"

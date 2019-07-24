@@ -90,7 +90,7 @@ import EvalConstants = NFEvalConstants;
 import SimplifyModel = NFSimplifyModel;
 import InstNodeType = NFInstNode.InstNodeType;
 import ExpandableConnectors = NFExpandableConnectors;
-
+import SCodeUtil;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -134,7 +134,7 @@ protected
   Option<SCode.Comment> cmt;
 algorithm
   sections := Sections.EMPTY();
-  cmt := SCode.getElementComment(InstNode.definition(classInst));
+  cmt := SCodeUtil.getElementComment(InstNode.definition(classInst));
 
   (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
     Visibility.PUBLIC, NONE(), {}, sections);

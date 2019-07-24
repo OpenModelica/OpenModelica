@@ -70,6 +70,7 @@ protected import InstUtil;
 protected import List;
 protected import PrefixUtil;
 protected import Print;
+import SCodeUtil;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -78,7 +79,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
 protected import Lookup;
-protected import SCodeUtil;
+protected import AbsynToSCode;
 
 public uniontype ModScope
   "Used to know where a modifier came from, for error reporting."
@@ -129,7 +130,7 @@ public function elabMod "
 protected
   SCode.Mod mod;
 algorithm
-  mod := SCodeUtil.expandEnumerationMod(inMod);
+  mod := AbsynToSCode.expandEnumerationMod(inMod);
   (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,mod,inBoolean,inModScope,inInfo)
     local
       Boolean impl;
@@ -379,8 +380,8 @@ algorithm
       equation
         true = stringEq(cn, bcn);
         (c, _) = Lookup.lookupClassLocal(inEnv, bcn);
-        tp = SCode.getDerivedTypeSpec(c);
-        c = SCode.mergeWithOriginal(SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i), c);
+        tp = SCodeUtil.getDerivedTypeSpec(c);
+        c = SCodeUtil.mergeWithOriginal(SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i), c);
         SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
         (cache, emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
         (cache, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, cn, tp);
@@ -396,7 +397,7 @@ algorithm
     case SCode.CLASS(cn, prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(tp,mod,attr1), cmt, i)
       equation
         // merge modifers from the component to the modifers from the constrained by
-        mod = SCode.mergeModifiers(mod, SCode.getConstrainedByModifiers(prefixes));
+        mod = SCodeUtil.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache, emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
         (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, cn, tp);
         // unelab mod so we get constant evaluation of parameters
@@ -416,7 +417,7 @@ algorithm
     case SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i)
       equation
         // merge modifers from the component to the modifers from the constrained by
-        mod = SCode.mergeModifiers(mod, SCode.getConstrainedByModifiers(prefixes));
+        mod = SCodeUtil.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
         (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, compname, tp);
         // unelab mod so we get constant evaluation of parameters
@@ -928,8 +929,8 @@ algorithm
     // Both modifiers have bindings, print error.
     case (SCode.NAMEMOD(mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
       equation
-        info1 = SCode.getModifierInfo(mod1);
-        info2 = SCode.getModifierInfo(mod2);
+        info1 = SCodeUtil.getModifierInfo(mod1);
+        info2 = SCodeUtil.getModifierInfo(mod2);
         scope = printModScope(inModScope);
         name = stringDelimitList(listReverse(inElementName), ".");
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
@@ -1353,7 +1354,7 @@ algorithm
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
     case(DAE.REDECL(), DAE.REDECL())
       equation
-        true = SCode.elementEqual(mod1.element, mod2.element);
+        true = SCodeUtil.elementEqual(mod1.element, mod2.element);
       then
         (mod2, true);
 
@@ -1677,12 +1678,12 @@ algorithm
     case (DAE.REDECL(element = el1 as SCode.COMPONENT(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.COMPONENT(), mod = emod2))
       algorithm
-        smod1 := SCode.getConstrainedByModifiers(el1.prefixes);
-        smod1 := SCode.mergeModifiers(el1.modifications, smod1);
+        smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
+        smod1 := SCodeUtil.mergeModifiers(el1.modifications, smod1);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
 
-        smod2 := SCode.getConstrainedByModifiers(el2.prefixes);
-        smod2 := SCode.mergeModifiers(el2.modifications, smod2);
+        smod2 := SCodeUtil.getConstrainedByModifiers(el2.prefixes);
+        smod2 := SCodeUtil.mergeModifiers(el2.modifications, smod2);
         dmod2 := elabUntypedMod(smod2, COMPONENT(el2.name));
 
         dmod := merge(dmod1, dmod2, el1.name, inCheckFinal);
@@ -1690,8 +1691,8 @@ algorithm
         // If we have a constraining class we don't need the mod.
         el1.modifications := unelabMod(dmod);
 
-        el1.prefixes := SCode.propagatePrefixes(el2.prefixes, el1.prefixes);
-        el1.attributes := SCode.propagateAttributes(el2.attributes, el1.attributes);
+        el1.prefixes := SCodeUtil.propagatePrefixes(el2.prefixes, el1.prefixes);
+        el1.attributes := SCodeUtil.propagateAttributes(el2.attributes, el1.attributes);
         outMod.element := el1;
         outMod.mod := emod;
       then
@@ -1707,17 +1708,17 @@ algorithm
     case (DAE.REDECL(element = el1 as SCode.CLASS(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.CLASS(), mod = emod2))
       algorithm
-        smod1 := SCode.getConstrainedByModifiers(el1.prefixes);
+        smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
         emod1 := merge(emod1, dmod1, el1.name, inCheckFinal);
 
-        smod2 := SCode.getConstrainedByModifiers(el2.prefixes);
+        smod2 := SCodeUtil.getConstrainedByModifiers(el2.prefixes);
         dmod2 := elabUntypedMod(smod2, COMPONENT(el2.name));
         emod2 := merge(emod2, dmod2, el1.name, inCheckFinal);
 
         emod := merge(emod1, emod2, el1.name, inCheckFinal);
-        el1.prefixes := SCode.propagatePrefixes(el2.prefixes, el2.prefixes);
-        (res, info) := SCode.checkSameRestriction(
+        el1.prefixes := SCodeUtil.propagatePrefixes(el2.prefixes, el2.prefixes);
+        (res, info) := SCodeUtil.checkSameRestriction(
           el1.restriction, el2.restriction, el1.info, el2.info);
         el1.restriction := res;
         el1.info := info;
@@ -1895,7 +1896,7 @@ algorithm
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
     case(DAE.MOD(f1,_,_,NONE(),_),DAE.MOD(f2,SCode.NOT_EACH(),{},SOME(_),_))
       equation
-        true = SCode.finalEqual(f1, f2);
+        true = SCodeUtil.finalEqual(f1, f2);
       then
         true;
 
@@ -1908,8 +1909,8 @@ algorithm
     // handle subset equal
     case(DAE.MOD(f1,each1,submods1,eqmod1,_),DAE.MOD(f2,each2,submods2,eqmod2,_))
       equation
-        true = SCode.finalEqual(f1, f2);
-        true = SCode.eachEqual(each1,each2);
+        true = SCodeUtil.finalEqual(f1, f2);
+        true = SCodeUtil.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
       then
@@ -1918,9 +1919,9 @@ algorithm
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
     case(DAE.REDECL(f1, each1),DAE.REDECL(f2, each2))
       equation
-        true = SCode.finalEqual(f1, f2);
-        true = SCode.eachEqual(each1, each2);
-        true = SCode.elementEqual(mod1.element, mod2.element);
+        true = SCodeUtil.finalEqual(f1, f2);
+        true = SCodeUtil.eachEqual(each1, each2);
+        true = SCodeUtil.elementEqual(mod1.element, mod2.element);
       then
         true;
 
@@ -2019,15 +2020,15 @@ Compares two DAE.Mod, returns true if equal"
 algorithm
   equal := match (mod1, mod2)
     case (DAE.MOD(), DAE.MOD())
-      then SCode.finalEqual(mod1.finalPrefix, mod2.finalPrefix) and
-           SCode.eachEqual(mod1.eachPrefix, mod2.eachPrefix) and
+      then SCodeUtil.finalEqual(mod1.finalPrefix, mod2.finalPrefix) and
+           SCodeUtil.eachEqual(mod1.eachPrefix, mod2.eachPrefix) and
            List.isEqualOnTrue(mod1.subModLst, mod2.subModLst, subModEqual) and
            eqModEqual(mod1.binding, mod2.binding);
 
     case (DAE.REDECL(), DAE.REDECL())
-      then SCode.finalEqual(mod1.finalPrefix, mod2.finalPrefix) and
-           SCode.eachEqual(mod1.eachPrefix, mod2.eachPrefix) and
-           SCode.elementEqual(mod1.element, mod2.element);
+      then SCodeUtil.finalEqual(mod1.finalPrefix, mod2.finalPrefix) and
+           SCodeUtil.eachEqual(mod1.eachPrefix, mod2.eachPrefix) and
+           SCodeUtil.elementEqual(mod1.element, mod2.element);
 
     case (DAE.NOMOD(), DAE.NOMOD()) then true;
     else false;
@@ -2224,7 +2225,7 @@ algorithm
       then prettyPrintSubs(subs,depth);
 
     case(DAE.MOD(finalPrefix = fp, binding=SOME(eq)),_)
-      then (if SCode.finalBool(fp) then "final " else "") + " = " + Types.unparseEqMod(eq);
+      then (if SCodeUtil.finalBool(fp) then "final " else "") + " = " + Types.unparseEqMod(eq);
 
     case(DAE.REDECL(),_)
       then SCodeDump.unparseElementStr(m.element);
@@ -2288,8 +2289,8 @@ algorithm
       equation
         s1 = SCodeDump.unparseElementStr(m.element);
         s2 = id + "(redeclare " +
-             (if SCode.eachBool(m.eachPrefix) then "each " else "") +
-             (if SCode.finalBool(m.finalPrefix) then "final " else "") + s1 + ")";
+             (if SCodeUtil.eachBool(m.eachPrefix) then "each " else "") +
+             (if SCodeUtil.finalBool(m.finalPrefix) then "final " else "") + s1 + ")";
       then
         s2;
 
@@ -2505,7 +2506,7 @@ protected
   DAE.ComponentRef cref;
 algorithm
   DAE.REDECL(element = el) := inRedeclare;
-  id := SCode.elementName(el);
+  id := SCodeUtil.elementName(el);
   cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
   cref := ComponentReference.joinCrefs(inTopCref, cref);
   outFullMod := MOD(cref, inRedeclare);
@@ -2819,7 +2820,7 @@ algorithm
     case DAE.NOMOD() then DAE.NOMOD();
 
     case DAE.REDECL()
-      then if SCode.elementName(inMod.element) == componentModified then DAE.NOMOD() else inMod;
+      then if SCodeUtil.elementName(inMod.element) == componentModified then DAE.NOMOD() else inMod;
 
     case DAE.MOD(f,e,subs,oem,info)
       equation
@@ -2997,7 +2998,7 @@ algorithm
       SCode.Element e;
 
     case DAE.MOD() then inMod.info;
-    case DAE.REDECL() then SCode.elementInfo(inMod.element);
+    case DAE.REDECL() then SCodeUtil.elementInfo(inMod.element);
     else AbsynUtil.dummyInfo;
   end match;
 end getModInfo;
@@ -3161,8 +3162,8 @@ algorithm
 
     case DAE.MOD()
       algorithm
-        final_str := if SCode.finalBool(inMod.finalPrefix) then "final " else "";
-        each_str := if SCode.eachBool(inMod.eachPrefix) then "each " else "";
+        final_str := if SCodeUtil.finalBool(inMod.finalPrefix) then "final " else "";
+        each_str := if SCodeUtil.eachBool(inMod.eachPrefix) then "each " else "";
         sub_str := List.toString(inMod.subModLst, unparseSubModStr, "", "(", ", ", ")", false);
         binding_str := unparseBindingStr(inMod.binding);
       then
@@ -3170,8 +3171,8 @@ algorithm
 
     case DAE.REDECL()
       algorithm
-        final_str := if SCode.finalBool(inMod.finalPrefix) then "final " else "";
-        each_str := if SCode.eachBool(inMod.eachPrefix) then "each " else "";
+        final_str := if SCodeUtil.finalBool(inMod.finalPrefix) then "final " else "";
+        each_str := if SCodeUtil.eachBool(inMod.eachPrefix) then "each " else "";
         el_str := SCodeDump.unparseElementStr(inMod.element);
       then
         final_str + each_str + "redeclare " + el_str;

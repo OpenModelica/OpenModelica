@@ -998,7 +998,7 @@ algorithm
 
     case(_,path,p,context, env) // if it doesn't work, try the hard way
       equation
-        //  p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        //  p_1 = AbsynToSCode.translateAbsyn2SCode(p);
         //  (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache,p_1, Absyn.IDENT(""));
         (_, fullPath) = Interactive.mkFullyQual(env, path);
         //  print("env:\n");print(FGraph.printGraphStr(env));

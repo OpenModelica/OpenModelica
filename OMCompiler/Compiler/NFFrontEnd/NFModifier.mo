@@ -52,6 +52,7 @@ import Inst = NFInst;
 protected
 import Error;
 import List;
+import SCodeUtil;
 
 constant Modifier EMPTY_MOD = NOMOD();
 
@@ -172,7 +173,7 @@ public
 
       case SCode.MOD()
         algorithm
-          is_each := SCode.eachBool(mod.eachPrefix);
+          is_each := SCodeUtil.eachBool(mod.eachPrefix);
           binding := Binding.fromAbsyn(mod.binding, is_each, parents, scope, mod.info);
           pars := if is_each then {} else parents;
           submod_lst := list((m.ident, createSubMod(m, modScope, pars, scope)) for m in mod.subModLst);
@@ -204,7 +205,7 @@ public
 
       case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.DERIVED(modifications = mod))
         algorithm
-          if not SCode.isEmptyMod(mod) then
+          if not SCodeUtil.isEmptyMod(mod) then
             cdef.modifications := SCode.Mod.NOMOD();
             elem.classDef := cdef;
           end if;
@@ -213,7 +214,7 @@ public
 
       case SCode.Element.COMPONENT(modifications = mod)
         algorithm
-          if not SCode.isEmptyMod(mod) then
+          if not SCodeUtil.isEmptyMod(mod) then
             elem.modifications := SCode.Mod.NOMOD();
           end if;
         then
@@ -254,7 +255,7 @@ public
   end fromElement;
 
   function patchElementModFinal
-    // TODO: This would be cheaper to do in SCodeUtil when creating the
+    // TODO: This would be cheaper to do in AbsynToSCode when creating the
     //       modifiers, but it breaks the old instantiation.
     "This function makes modifiers applied to final elements final, e.g. for
      'final Real x(start = 1.0)' it will mark '(start = 1.0)' as final. This is
@@ -264,7 +265,7 @@ public
     input SourceInfo info;
     input output SCode.Mod mod;
   algorithm
-    if SCode.finalBool(SCode.prefixesFinal(prefixes)) then
+    if SCodeUtil.finalBool(SCodeUtil.prefixesFinal(prefixes)) then
       mod := match mod
         case SCode.Mod.MOD()
           algorithm

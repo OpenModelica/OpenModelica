@@ -56,6 +56,7 @@ import List;
 import Mod;
 import Patternm;
 import SCode;
+import SCodeUtil;
 
 public
 
@@ -582,7 +583,7 @@ algorithm
       equation
         // skip over known external C functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
         fname = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(path));
-        b = listMember(name, SCode.knownExternalCFunctions) and stringEq(fname, name);
+        b = listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
           (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
         end if;

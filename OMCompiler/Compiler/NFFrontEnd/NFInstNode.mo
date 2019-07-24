@@ -52,6 +52,7 @@ import List;
 import ConvertDAE = NFConvertDAE;
 import Restriction = NFRestriction;
 import NFClassTree.ClassTree;
+import SCodeUtil;
 
 public
 uniontype InstNodeType
@@ -480,7 +481,7 @@ uniontype InstNode
     output Boolean op;
   algorithm
     op := match node
-      case CLASS_NODE() then SCode.isOperator(node.definition);
+      case CLASS_NODE() then SCodeUtil.isOperator(node.definition);
       case INNER_OUTER_NODE() then isOperator(node.innerNode);
       else false;
     end match;
@@ -860,8 +861,8 @@ uniontype InstNode
       local
         InstNodeType ty;
       case CLASS_NODE(nodeType = ty as InstNodeType.BASE_CLASS())
-        then SCode.elementInfo(ty.definition);
-      case CLASS_NODE() then SCode.elementInfo(node.definition);
+        then SCodeUtil.elementInfo(ty.definition);
+      case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
       else AbsynUtil.dummyInfo;
@@ -1062,7 +1063,7 @@ uniontype InstNode
     isInner := match node
       case COMPONENT_NODE() then Component.isInner(Pointer.access(node.component));
       case CLASS_NODE()
-        then AbsynUtil.isInner(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isInner(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isInner(node.outerNode);
       else false;
     end match;
@@ -1075,7 +1076,7 @@ uniontype InstNode
     isOuter := match node
       case COMPONENT_NODE() then Component.isOuter(Pointer.access(node.component));
       case CLASS_NODE()
-        then AbsynUtil.isOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOuter(node.outerNode);
       else false;
     end match;
@@ -1088,7 +1089,7 @@ uniontype InstNode
     isOuter := match node
       case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
       case CLASS_NODE()
-        then AbsynUtil.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
+        then AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(node.definition)));
       case INNER_OUTER_NODE() then isOnlyOuter(node.outerNode);
       else false;
     end match;
@@ -1326,7 +1327,7 @@ uniontype InstNode
     output Boolean isRedeclare;
   algorithm
     isRedeclare := match node
-      case CLASS_NODE() then SCode.isElementRedeclare(definition(node));
+      case CLASS_NODE() then SCodeUtil.isElementRedeclare(definition(node));
       case COMPONENT_NODE() then Component.isRedeclare(Pointer.access(node.component));
       else false;
     end match;
@@ -1539,7 +1540,7 @@ uniontype InstNode
     output Boolean isPartial;
   algorithm
     isPartial := match node
-      case CLASS_NODE() then SCode.isPartial(node.definition);
+      case CLASS_NODE() then SCodeUtil.isPartial(node.definition);
       else false;
     end match;
   end isPartial;

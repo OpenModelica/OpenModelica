@@ -40,6 +40,7 @@ import NFComponent.Component;
 protected
 import Dump;
 import Error;
+import SCodeUtil;
 import System;
 import NFClass.Class;
 
@@ -138,7 +139,7 @@ uniontype LookupState
   protected
     SCode.Element def = InstNode.definition(node);
   algorithm
-    callable := SCode.isRecord(def) or SCode.isOperator(def);
+    callable := SCodeUtil.isRecord(def) or SCodeUtil.isOperator(def);
   end isCallableType;
 
   function isCallableComponent
@@ -518,7 +519,7 @@ uniontype LookupState
   //    // a non-package.
   //    case (_, _, _)
   //      equation
-  //        true = SCode.isElementEncapsulated(inElement);
+  //        true = SCodeUtil.isElementEncapsulated(inElement);
   //      then
   //        ();
 
@@ -535,7 +536,7 @@ uniontype LookupState
   //    // satisfy the requirements for a package, print an error.
   //    else
   //      equation
-  //        (name, info) = SCode.elementNameInfo(inElement);
+  //        (name, info) = SCodeUtil.elementNameInfo(inElement);
   //        env_str = NFEnv.printEnvPathStr(inEnv);
   //        Error.addSourceMessage(Error.NON_ENCAPSULATED_CLASS_ACCESS,
   //          {env_str, name}, info);
@@ -556,7 +557,7 @@ uniontype LookupState
   //  /* TODO: A component might be a constant due to a class prefix. */
   //  /* TODO: Return the found invalid element to improve the error message. */
   //  el := NFEnv.entryElement(inEntry);
-  //  true := SCode.isValidPackageElement(el);
+  //  true := SCodeUtil.isValidPackageElement(el);
   //  outEntry := inEntry;
   //end isValidPackageElement;
 end LookupState;

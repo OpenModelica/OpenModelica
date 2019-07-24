@@ -73,6 +73,7 @@ import Flags;
 import FGraph;
 import FNode;
 import SCodeDump;
+import SCodeUtil;
 import Lookup;
 import ValuesUtil;
 import Static;
@@ -115,7 +116,7 @@ protected function isNotFunction
   input SCode.Element cls;
   output Boolean res;
 algorithm
-  res := SCode.isFunction(cls);
+  res := SCodeUtil.isFunction(cls);
   res := boolNot(res);
 end isNotFunction;
 
@@ -301,7 +302,7 @@ algorithm
 
     case (_, _, _)
       equation
-        cls = List.getMemberOnTrue(inName, inProgram, SCode.isClassNamed);
+        cls = List.getMemberOnTrue(inName, inProgram, SCodeUtil.isClassNamed);
       then
         cls;
 
@@ -586,7 +587,7 @@ algorithm
     // anything else but functions, do not check equality
     case (SCode.CLASS(restriction = r),_)
       equation
-        false = SCode.isFunctionRestriction(r);
+        false = SCodeUtil.isFunctionRestriction(r);
       then
         true;
 
@@ -1214,7 +1215,7 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
     equation
       cref_ = ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       localComps = extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
-      names = SCode.componentNamesFromElts(localComps);
+      names = SCodeUtil.componentNamesFromElts(localComps);
       existing = listAppend(names,existing);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
       outComps = listAppend(localComps,outComps);
@@ -1272,7 +1273,7 @@ public function constantEls
 protected
   SCode.Attributes attr;
 algorithm
-  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCode.isConstant(SCode.attrVariability(attr)); else false; end match in elements);
+  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCodeUtil.isConstant(SCodeUtil.attrVariability(attr)); else false; end match in elements);
 end constantEls;
 
 public function constantAndParameterEls
@@ -1284,7 +1285,7 @@ public function constantAndParameterEls
 protected
   SCode.Attributes attr;
 algorithm
-  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCode.isParameterOrConst(SCode.attrVariability(attr)); else false; end match in elements);
+  outElements := list(el for el guard match el case SCode.COMPONENT(attributes=attr) then SCodeUtil.isParameterOrConst(SCodeUtil.attrVariability(attr)); else false; end match in elements);
 end constantAndParameterEls;
 
 protected function removeBindings
@@ -1486,7 +1487,7 @@ protected function removeCurrentElementFromArrayDimDeps
   input list<tuple<SCode.Element, DAE.Mod>> inDependencies;
   output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
 algorithm
-  outDependencies := list(dep for dep guard not stringEq(name, SCode.elementName(Util.tuple21(dep))) in inDependencies);
+  outDependencies := list(dep for dep guard not stringEq(name, SCodeUtil.elementName(Util.tuple21(dep))) in inDependencies);
 end removeCurrentElementFromArrayDimDeps;
 
 public function getExpsFromConstrainClass
@@ -1708,7 +1709,7 @@ algorithm
                            attributes = SCode.ATTR(arrayDims = ad, variability = var),
                            modifications = mod), daeMod), (inAllElements, isFunction))
       equation
-        true = SCode.isParameterOrConst(var);
+        true = SCodeUtil.isParameterOrConst(var);
         (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
         exps = listAppend(bexps, listAppend(sexps, exps));
@@ -1721,7 +1722,7 @@ algorithm
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
         deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
-        // print(name + " deps " + stringDelimitList(list(SCode.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
+        // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
         deps;
 
@@ -1756,7 +1757,7 @@ algorithm
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
         deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
-        // print(name + " deps " + stringDelimitList(list(SCode.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
+        // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
         deps;
 
@@ -2019,7 +2020,7 @@ algorithm
       SCode.Variability var;
 
     case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = var)), _))
-      then SCode.isParameterOrConst(var);
+      then SCodeUtil.isParameterOrConst(var);
 
     else false;
   end match;
@@ -2039,7 +2040,7 @@ algorithm
     case (_)
       equation
         (elem, _) = inElement;
-        outName = SCode.elementName(elem);
+        outName = SCodeUtil.elementName(elem);
       then
         outName;
 
@@ -2079,7 +2080,7 @@ algorithm
         (cdef::cdefs,els);
     case((el as (SCode.COMPONENT(attributes=attr),_))::xs,SCode.NOT_PARTIAL())
        equation
-        SCode.CONST() = SCode.attrVariability(attr);
+        SCode.CONST() = SCodeUtil.attrVariability(attr);
          (cdefs,els) = classdefElts2(xs,partialPrefix);
        then (cdefs,el::els);
     case ((_ :: xs),_)
@@ -2241,7 +2242,7 @@ algorithm
     // otherwise, extend frame with in class.
     case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_)
       equation
-        // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCode.className(cl));
+        // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCodeUtil.className(cl));
         env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD(), checkDuplicates);
         ih = InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
       then
@@ -2356,7 +2357,7 @@ algorithm
           ty_path := AbsynUtil.typeSpecPath(comp.typeSpec);
           local_mod := Mod.lookupModificationP(mod, ty_path);
 
-          if SCode.finalBool(SCode.prefixesFinal(prefs)) then
+          if SCodeUtil.finalBool(SCodeUtil.prefixesFinal(prefs)) then
             comp.modifications := traverseModAddFinal(comp.modifications);
           end if;
 
@@ -2442,7 +2443,7 @@ algorithm
       case(_, _)
         equation
           outMod = chainRedeclare_dispatch(inModOuter,inModInner);
-          false = SCode.modEqual(inModInner, outMod);
+          false = SCodeUtil.modEqual(inModInner, outMod);
           print("Chain:\nO:" + Mod.printModStr(inModOuter) + "\nI:" + SCodeDump.printModStr(inModInner, SCodeDump.defaultOptions) + "\nR:" + SCodeDump.printModStr(outMod, SCodeDump.defaultOptions) + "\n");
         then
           outMod;
@@ -2480,7 +2481,7 @@ algorithm
       equation
         // lookup the class mod in the outer
         DAE.REDECL(element = cls) = Mod.lookupCompModification(inModOuter, nDerivedInner);
-        cls = SCode.setClassName(nInner, cls);
+        cls = SCodeUtil.setClassName(nInner, cls);
       then (SCode.REDECL(f, e, cls),true);
 
     // outer B(redeclare X = Y), inner B(redeclare X = Z) -> B(redeclare X = Z)
@@ -2711,7 +2712,7 @@ algorithm
       equation
         // NOTE: Should be type identical instead? see spec.
         // p.23, check of flattening. "Check that duplicate elements are identical".
-        true = SCode.elementEqual(oldElt,newElt);
+        true = SCodeUtil.elementEqual(oldElt,newElt);
       then
         ();
 
@@ -2723,9 +2724,9 @@ algorithm
       equation
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
-        true = SCode.prefixesEqual(prefixes1, prefixes2);
-        true = SCode.attributesEqual(attr1, attr2);
-        true = SCode.modEqual(smod1, smod2);
+        true = SCodeUtil.prefixesEqual(prefixes1, prefixes2);
+        true = SCodeUtil.attributesEqual(attr1, attr2);
+        true = SCodeUtil.modEqual(smod1, smod2);
         equality(ad1 = ad2);
         equality(cond1 = cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
@@ -2734,7 +2735,7 @@ algorithm
         // the class has the same environment
         true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
-        true = SCode.elementEqual(c1, c2);
+        true = SCodeUtil.elementEqual(c1, c2);
         /*
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt);
@@ -2752,9 +2753,9 @@ algorithm
         // see if the most stuff is the same!
         true = stringEq(n1, n2);
         true = stringEq(n1, "m_flow");
-        true = SCode.prefixesEqual(prefixes1, prefixes2);
-        true = SCode.attributesEqual(attr1, attr2);
-        false = SCode.modEqual(smod1, smod2);
+        true = SCodeUtil.prefixesEqual(prefixes1, prefixes2);
+        true = SCodeUtil.attributesEqual(attr1, attr2);
+        false = SCodeUtil.modEqual(smod1, smod2);
         equality(ad1 = ad2);
         equality(cond1 = cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
@@ -2763,7 +2764,7 @@ algorithm
         // the class has the same environment
         true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
-        true = SCode.elementEqual(c1, c2);
+        true = SCodeUtil.elementEqual(c1, c2);
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
         s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
@@ -2804,16 +2805,16 @@ algorithm
     //   Special cases for checking enumerations which can be represented differently
     case(SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
       equation
-        sl1=List.map(enumLst,SCode.enumName);
-        sl2=List.map(elementLst,SCode.elementName);
+        sl1=List.map(enumLst,SCodeUtil.enumName);
+        sl2=List.map(elementLst,SCodeUtil.elementName);
         List.threadMapAllValue(sl1,sl2,stringEq,true);
       then
         ();
 
     case(SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)))
       equation
-        sl1=List.map(enumLst,SCode.enumName);
-        sl2=List.map(elementLst,SCode.elementName);
+        sl1=List.map(enumLst,SCodeUtil.enumName);
+        sl2=List.map(elementLst,SCodeUtil.elementName);
         List.threadMapAllValue(sl1,sl2,stringEq,true);
       then
         ();
@@ -2821,15 +2822,15 @@ algorithm
     // try equality first!
     case(oldCl,newCl)
       equation
-        true = SCode.elementEqual(oldCl,newCl);
+        true = SCodeUtil.elementEqual(oldCl,newCl);
       then ();
 
     case (oldCl,newCl)
       equation
       s1 = SCodeDump.unparseElementStr(oldCl,SCodeDump.defaultOptions);
       s2 = SCodeDump.unparseElementStr(newCl,SCodeDump.defaultOptions);
-      info1 = SCode.elementInfo(oldCl);
-      info2 = SCode.elementInfo(newCl);
+      info1 = SCodeUtil.elementInfo(oldCl);
+      info2 = SCodeUtil.elementInfo(newCl);
       Error.addMultiSourceMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,
         {s1, s2}, {info1, info2});
       //print(" *** error message added *** \n");
@@ -2904,7 +2905,7 @@ algorithm
     case(DAE.REDECL(_,_,_),_) then inMod;
     case(DAE.MOD(f,e,subs,oe,info),_)
       equation
-        compNames = List.map(elems,SCode.elementName);
+        compNames = List.map(elems,SCodeUtil.elementName);
         subs = keepConstrainingTypeModifersOnly2(subs,compNames);
       then
         DAE.MOD(f,e,subs,oe,info);
@@ -3486,7 +3487,7 @@ algorithm
         id = FNode.refName(FGraph.lastScopeRef(inNewEnv));
         (rest, _) = FGraph.stripLastScopeRef(inNewEnv);
         (_, cls, _) = Lookup.lookupClassIdent(inCache, rest, id);
-        ci_state = ClassInf.start(SCode.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
+        ci_state = ClassInf.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
 
@@ -3816,7 +3817,7 @@ protected function propagateFinal
 algorithm
   outVarAttributes := match(inVarAttributes, inFinal)
     case (_, SCode.FINAL())
-      then DAEUtil.setFinalAttr(inVarAttributes, SCode.finalBool(inFinal));
+      then DAEUtil.setFinalAttr(inVarAttributes, SCodeUtil.finalBool(inFinal));
     else inVarAttributes;
   end match;
 end propagateFinal;
@@ -3928,7 +3929,7 @@ algorithm
         (cache,_,SCode.COMPONENT(modifications = m),cmod,_,_)
           = Lookup.lookupIdent(cache, env, id);
         cmod_1 = Mod.stripSubmod(cmod);
-        m_1 = SCode.stripSubmod(m);
+        m_1 = SCodeUtil.stripSubmod(m);
         (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
         mod_2 = Mod.merge(cmod_1, m_2);
         SOME(eq) = Mod.modEquation(mod_2);
@@ -4789,7 +4790,7 @@ algorithm
       DAE.ComponentRef cr;
     case DAE.VAR(comment = cmt)
       equation
-        result = SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
+        result = SCodeUtil.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
       then not result;
     else true;
   end match;
@@ -5500,7 +5501,7 @@ algorithm
     case (p,ClassInf.META_UNIONTYPE(_),_,_,_,_)
       equation
         pstr = AbsynUtil.pathString(p);
-        info = SCode.elementInfo(inClass);
+        info = SCodeUtil.elementInfo(inClass);
         Error.addSourceMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr}, info);
       then fail();
     /*------------------------*/
@@ -5907,7 +5908,7 @@ algorithm
     case (em::rest, _, _, _)
       equation
         e = Util.tuple21(em);
-        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
         true = stringEq("ModelicaServices", AbsynUtil.pathFirstIdent(p));
         (acc1, acc2, acc3) = splitInners(rest, em::inAcc1, inAcc2, inAcc3);
       then
@@ -5916,7 +5917,7 @@ algorithm
     case (em::rest, _, _, _)
       equation
         e = Util.tuple21(em);
-        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
         true = stringEq("Modelica", AbsynUtil.pathFirstIdent(p));
         (acc1, acc2, acc3) = splitInners(rest, inAcc1, em::inAcc2, inAcc3);
       then
@@ -6839,7 +6840,7 @@ algorithm
         SCode.ATTR(direction = dir) = inAttributes;
         dir = propagateAbSCDirection2(dir, inClassAttributes, inInfo);
       then
-        SCode.setAttributesDirection(inAttributes, dir);
+        SCodeUtil.setAttributesDirection(inAttributes, dir);
   end match;
 end propagateAbSCDirection;
 
@@ -7178,11 +7179,11 @@ algorithm
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
-        name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
+        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = commentIsInlineFunc(inheritedComment);
-        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-        isImpure = if isImpure then true else SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure");
-        unboxArgs = SCode.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
+        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        isImpure = if isImpure then true else SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure");
+        unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
@@ -7190,18 +7191,18 @@ algorithm
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
-        name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
+        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = commentIsInlineFunc(inheritedComment);
-        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-        unboxArgs = SCode.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
+        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()))
       equation
         inlineType = commentIsInlineFunc(inheritedComment);
-        isBuiltin = if SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
@@ -7212,10 +7213,10 @@ algorithm
       equation
         inlineType = commentIsInlineFunc(inheritedComment);
         hasOutVars = List.exist(vl,Types.isOutputVar);
-        isBuiltin = if SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
-        isImpure = SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
+        isImpure = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCodeUtil.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
@@ -8087,7 +8088,7 @@ algorithm
         false = FNode.isRefTop(r);
         scopeName = FNode.refName(r);
         true = FGraph.checkScopeType({r}, SOME(FCore.PARALLEL_SCOPE()));
-        isparglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
+        isparglobal = SCodeUtil.parallelismEqual(prl, SCode.PARGLOBAL());
         hasnodir = not AbsynUtil.isInputOrOutput(dir);
         true = isparglobal and hasnodir;
 

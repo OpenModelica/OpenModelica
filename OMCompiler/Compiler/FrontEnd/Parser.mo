@@ -48,7 +48,7 @@ import Config;
 import ErrorExt;
 import Flags;
 import ParserExt;
-import SCodeUtil;
+import AbsynToSCode;
 import System;
 import Util;
 
@@ -63,7 +63,7 @@ function parse "Parse a mo-file"
 algorithm
   outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
   /* Check that the program is not totally off the charts */
-  _ := SCodeUtil.translateAbsyn2SCode(outProgram);
+  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parse;
 
 function parseexp "Parse a mos-file"
@@ -80,7 +80,7 @@ function parsestring "Parse a string as if it were a stored definition"
 algorithm
   outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
   /* Check that the program is not totally off the charts */
-  _ := SCodeUtil.translateAbsyn2SCode(outProgram);
+  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
 
 function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."

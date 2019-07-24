@@ -72,6 +72,7 @@ import Flags;
 import List;
 import Lookup;
 import PrefixUtil;
+import SCodeUtil;
 import System;
 import Types;
 import Util;
@@ -2965,9 +2966,9 @@ algorithm
         // This will set either fv, sv, or pv to 1, and the rest to 0, and
         // checkConnectorBalance2 will then be called to provide the appropriate
         // error message (or might actually succeed if +std=2.x or 1.x).
-        if SCode.flowBool(ct) then
+        if SCodeUtil.flowBool(ct) then
           fv := 1;
-        elseif SCode.streamBool(ct) then
+        elseif SCodeUtil.streamBool(ct) then
           sv := 1;
         else
           pv := 1;

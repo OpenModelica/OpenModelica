@@ -67,6 +67,7 @@ import ExpressionSimplify;
 import Flags;
 import Global;
 import List;
+import SCodeUtil;
 import Types;
 import VarTransform;
 
@@ -939,7 +940,7 @@ algorithm
       list<SCode.Annotation> annos;
     case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
       then
-        SCode.hasBooleanNamedAnnotation(anno,"GenerateEvents");
+        SCodeUtil.hasBooleanNamedAnnotation(anno,"GenerateEvents");
     else false;
   end match;
 end hasGenerateEventsAnnotation;

@@ -57,6 +57,7 @@ protected import Flags;
 protected import InstBinding;
 protected import InstUtil;
 protected import List;
+import SCodeUtil;
 protected import Types;
 protected import DAEDump;
 protected import System;
@@ -126,7 +127,7 @@ algorithm
         vk = InstUtil.makeDaeVariability(var);
         vd = InstUtil.makeDaeDirection(dir);
         vv = InstUtil.makeDaeProt(vis);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr, SCode.finalBool(finalPrefix));
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr, SCodeUtil.finalBool(finalPrefix));
         dae = daeDeclare2(vn, ty, ct1, vk, vd, daeParallelism, vv, e, inst_dims, start, dae_var_attr, comment, io, source, declareComplexVars);
 
         showDAE(inCache,inParentEnv,inClassEnv,inState,dae);

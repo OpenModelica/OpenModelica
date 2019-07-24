@@ -73,6 +73,7 @@ import Flags;
 import Dump;
 import Absyn;
 import AbsynUtil;
+import SCodeUtil;
 import Util;
 
 public function dumpGraph
@@ -323,8 +324,8 @@ algorithm
     // redeclare replaceable class
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
-        true = SCode.isElementRedeclare(e);
-        true = SCode.isElementReplaceable(e);
+        true = SCodeUtil.isElementRedeclare(e);
+        true = SCodeUtil.isElementReplaceable(e);
         b = FNode.isClassExtends(node);
         s = if b then "rdrpCE:" else "rdrpC:";
         s = s + FNode.name(node);
@@ -334,7 +335,7 @@ algorithm
     // redeclare class
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
-        true = SCode.isElementRedeclare(e);
+        true = SCodeUtil.isElementRedeclare(e);
         b = FNode.isClassExtends(node);
         s = if b then "rdCE:" else "rdC:";
         s = s + FNode.name(node);
@@ -344,7 +345,7 @@ algorithm
     // replaceable class
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
-        true = SCode.isElementReplaceable(e);
+        true = SCodeUtil.isElementReplaceable(e);
         s = "rpC:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.RECTANGLE(), s);
@@ -352,8 +353,8 @@ algorithm
     // redeclare replaceable component
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation
-        true = SCode.isElementRedeclare(e);
-        true = SCode.isElementReplaceable(e);
+        true = SCodeUtil.isElementRedeclare(e);
+        true = SCodeUtil.isElementReplaceable(e);
         s = "rdrpc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
@@ -361,7 +362,7 @@ algorithm
     // redeclare component
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation
-        true = SCode.isElementRedeclare(e);
+        true = SCodeUtil.isElementRedeclare(e);
         s = "rdc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
@@ -369,7 +370,7 @@ algorithm
     // replaceable component
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation
-        true = SCode.isElementReplaceable(e);
+        true = SCodeUtil.isElementReplaceable(e);
         s = "rpc:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.ELLIPSE(), s);

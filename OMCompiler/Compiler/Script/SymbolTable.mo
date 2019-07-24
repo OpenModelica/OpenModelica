@@ -51,7 +51,7 @@ import Global;
 import Inst;
 import Lookup;
 import List;
-import SCodeUtil;
+import AbsynToSCode;
 import System;
 
 public
@@ -117,7 +117,7 @@ protected
 algorithm
   table := get();
   if isNone(table.explodedAst) then
-    ast := SCodeUtil.translateAbsyn2SCode(table.ast);
+    ast := AbsynToSCode.translateAbsyn2SCode(table.ast);
     table.explodedAst := SOME(ast);
     update(table);
   else

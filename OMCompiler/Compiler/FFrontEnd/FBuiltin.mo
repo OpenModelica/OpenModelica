@@ -56,7 +56,8 @@ protected import Global;
 protected import List;
 protected import MetaUtil;
 protected import Parser;
-protected import SCodeUtil;
+protected import AbsynToSCode;
+import SCodeUtil;
 protected import Settings;
 protected import System;
 protected import Util;
@@ -392,8 +393,8 @@ algorithm
         pCF = Absyn.PROGRAM(classesCF,Absyn.TOP());
         (pNF as Absyn.PROGRAM(classes=classesNF)) = MetaUtil.createMetaClassesInProgram(pNF);
         (pCF as Absyn.PROGRAM(classes=classesCF)) = MetaUtil.createMetaClassesInProgram(pCF);
-        spNF = List.map(classesNF, SCodeUtil.translateClass);
-        spCF = List.map(classesCF, SCodeUtil.translateClass);
+        spNF = List.map(classesNF, AbsynToSCode.translateClass);
+        spCF = List.map(classesCF, AbsynToSCode.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, ((Flags.METAMODELICA, true), (pNF,spNF))::((Flags.METAMODELICA, false), (pCF,spCF))::assocLst);
         (p, sp) = if Flags.isSet(Flags.SCODE_INST) then (pNF, spNF) else (pCF, spCF);
@@ -411,8 +412,8 @@ algorithm
         classesCF = listAppend(classes1CF,classes2);
         pNF = Absyn.PROGRAM(classesNF,Absyn.TOP());
         pCF = Absyn.PROGRAM(classesCF,Absyn.TOP());
-        spNF = List.map(classesNF, SCodeUtil.translateClass);
-        spCF = List.map(classesCF, SCodeUtil.translateClass);
+        spNF = List.map(classesNF, AbsynToSCode.translateClass);
+        spCF = List.map(classesCF, AbsynToSCode.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, ((Flags.PARMODELICA, true), (pNF,spNF))::((Flags.PARMODELICA, false), (pCF,spCF))::assocLst);
         (p, sp) = if Flags.isSet(Flags.SCODE_INST) then (pNF, spNF) else (pCF, spCF);
@@ -424,8 +425,8 @@ algorithm
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaCF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaCF},AbsynUtil.dummyInfo);
         (pNF as Absyn.PROGRAM(classes=classes1NF,within_=Absyn.TOP())) = Parser.parsebuiltin(fileModelicaNF,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         (pCF as Absyn.PROGRAM(classes=classes1CF,within_=Absyn.TOP())) = Parser.parsebuiltin(fileModelicaCF,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
-        spNF = List.map(classes1NF, SCodeUtil.translateClass);
-        spCF = List.map(classes1CF, SCodeUtil.translateClass);
+        spNF = List.map(classes1NF, AbsynToSCode.translateClass);
+        spCF = List.map(classes1CF, AbsynToSCode.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, ((Flags.MODELICA, true), (pNF,spNF))::((Flags.MODELICA, false), (pCF,spCF))::assocLst);
         (p, sp) = if Flags.isSet(Flags.SCODE_INST) then (pNF, spNF) else (pCF, spCF);
@@ -443,8 +444,8 @@ algorithm
         classesCF = listAppend(classes1CF,classes2);
         pNF = Absyn.PROGRAM(classesNF,Absyn.TOP());
         pCF = Absyn.PROGRAM(classesCF,Absyn.TOP());
-        spNF = List.map(classesNF, SCodeUtil.translateClass);
-        spCF = List.map(classesCF, SCodeUtil.translateClass);
+        spNF = List.map(classesNF, AbsynToSCode.translateClass);
+        spCF = List.map(classesCF, AbsynToSCode.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, ((Flags.PDEMODELICA, true), (pNF,spNF))::((Flags.PDEMODELICA, false), (pCF,spCF))::assocLst);
         (p, sp) = if Flags.isSet(Flags.SCODE_INST) then (pNF, spNF) else (pCF, spCF);
@@ -686,12 +687,12 @@ algorithm
       Absyn.Ident i, n;
 
     case (_, _)
-      then SCode.getElementWithPath(inProgram, inPath);
+      then SCodeUtil.getElementWithPath(inProgram, inPath);
 
     else
       equation
         (_,sp) = FBuiltin.getInitialFunctions();
-      then SCode.getElementWithPath(sp, inPath);
+      then SCodeUtil.getElementWithPath(sp, inPath);
   end matchcontinue;
 end getElementWithPathCheckBuiltin;
 

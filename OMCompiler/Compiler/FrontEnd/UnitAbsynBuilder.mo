@@ -51,7 +51,7 @@ protected import FGraph;
 protected import List;
 protected import Lookup;
 protected import SCode;
-protected import SCodeUtil;
+protected import AbsynToSCode;
 protected import Types;
 protected import UnitParserExt;
 protected import Util;
@@ -266,7 +266,7 @@ algorithm
      case {} then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCodeUtil.translateElement(du,false);
+       {SCode.DEFINEUNIT(name,SOME(exp),_)} = AbsynToSCode.translateElement(du,false);
        UnitParserExt.addDerivedWeight(name,exp,weight);
        registerDefineunits(elts);
      then ();*/
@@ -274,7 +274,7 @@ algorithm
      /* Derived unit without weigth */
      case ((du as Absyn.DEFINEUNIT())::rest)
        equation
-         {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
+         {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = AbsynToSCode.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addDerived(name,exp);
          registerDefineunits2(rest);
        then ();
@@ -282,7 +282,7 @@ algorithm
        /* base unit does not not have weight*/
      case((du as Absyn.DEFINEUNIT())::rest)
        equation
-         {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
+         {SCode.DEFINEUNIT(name,_,NONE(),_)} = AbsynToSCode.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addBase(name);
          registerDefineunits2(rest);
        then ();

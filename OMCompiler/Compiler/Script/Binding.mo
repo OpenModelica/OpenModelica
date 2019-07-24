@@ -7,7 +7,7 @@ public import SCode;
 public import SCodeDump;
 public import Dump;
 
-protected import SCodeUtil;
+protected import AbsynToSCode;
 protected import Interactive;
 protected import Parser;
 protected import GlobalScript;
@@ -78,7 +78,7 @@ protected
   list<Client_e> client_list;
 algorithm
   model_def := Interactive.getPathedClassInProgram(model_path, env);
-  scode_def := SCodeUtil.translateAbsyn2SCode(env);
+  scode_def := AbsynToSCode.translateAbsyn2SCode(env);
   // print(SCodeDump.programStr(scode_def));
   ms := getMediatorDefsElements(scode_def, {});
   client_list := buildInstList(model_def, env, NO_PRED(), ms, {}, {});
@@ -102,7 +102,7 @@ protected
   Absyn.ElementItem autogen_model;
   Integer i;
 algorithm
-  scode_def := SCodeUtil.translateAbsyn2SCode(in_env);
+  scode_def := AbsynToSCode.translateAbsyn2SCode(in_env);
   // get all design alternatives
   design_alts := getAllElementsOfType(scode_def, "VVDRlib.Verification.Design", "", {});
   // get all requirements

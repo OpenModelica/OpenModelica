@@ -108,6 +108,7 @@ import OnRelaxation;
 import RemoveSimpleEquations;
 import ResolveLoops;
 import SCode;
+import SCodeUtil;
 import Sorting;
 import StackOverflow;
 import SymbolicImplicitSolver;
@@ -1145,7 +1146,7 @@ protected
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    val := SCode.getNamedAnnotation(ann, "tearingSelect");
+    val := SCodeUtil.getNamedAnnotation(ann, "tearingSelect");
     ts_str := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
     ts := match(ts_str)
       case "always" then SOME(BackendDAE.ALWAYS());
@@ -1176,7 +1177,7 @@ protected
 algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
-    val := SCode.getNamedAnnotation(ann, "HideResult");
+    val := SCodeUtil.getNamedAnnotation(ann, "HideResult");
     hideResult := Expression.fromAbsynExp(val);
 
     hideResult := match(inCref)

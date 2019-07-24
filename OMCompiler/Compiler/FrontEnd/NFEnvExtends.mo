@@ -130,6 +130,7 @@ protected import Flags;
 protected import List;
 protected import NFSCodeCheck;
 protected import SCodeDump;
+import SCodeUtil;
 protected import NFSCodeFlattenRedeclare;
 protected import NFSCodeLookup;
 protected import System;
@@ -1193,7 +1194,7 @@ algorithm
         (path,_) = lookupClassExtendsBaseClass(inName, env, inInfo);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
         {cls_frame} = NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
-        cls = SCode.addElementToClass(ext, inClass);
+        cls = SCodeUtil.addElementToClass(ext, inClass);
       then
         (cls, cls_frame :: env);
 
@@ -1306,7 +1307,7 @@ algorithm
 
     case (_, _)
       equation
-        info = SCode.elementInfo(inClassExtends);
+        info = SCodeUtil.elementInfo(inClassExtends);
         el_str = SCodeDump.unparseElementStr(inClassExtends,SCodeDump.defaultOptions);
         env_str = NFSCodeEnv.getEnvName(inEnv);
         err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +
