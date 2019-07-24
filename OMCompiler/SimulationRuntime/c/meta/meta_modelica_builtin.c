@@ -690,7 +690,7 @@ modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)
   return inSignal;
 }
 
-#if defined(linux) || defined(__APPLE_CC__)
+#if defined(__linux__) || defined(__APPLE_CC__)
 #include <execinfo.h>
 metamodelica_string referenceDebugString(modelica_metatype fnptr)
 {
