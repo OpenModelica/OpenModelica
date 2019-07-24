@@ -3,8 +3,8 @@ encapsulated package Figaro "Figaro support."
 // Imports
 import Absyn;
 import Error;
+import FBuiltin;
 import SCode;
-import SCodeUtil;
 protected
 
 import Autoconf;
@@ -35,7 +35,7 @@ protected
   list<String> sl;
 algorithm
 
-  program := SCodeUtil.getElementWithPathCheckBuiltin(inProgram, inPath);
+  program := FBuiltin.getElementWithPathCheckBuiltin(inProgram, inPath);
 
   // Code for the Figaro objects.
   figaro := makeFigaro(inProgram, program, inProgram);
@@ -153,7 +153,7 @@ algorithm
       then fcAddFigaroClass(ft, program, cn, tn, e);
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       equation
-        cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+        cdef = FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
         true = fcExtends(fb, ft, program, SOME(cn), cdef, e);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
@@ -196,7 +196,7 @@ algorithm
       then true;
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp), e)
       equation
-        cdef = SCodeUtil.getElementWithPathCheckBuiltin(e, bcp);
+        cdef = FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
       then fcExtends(fb, ft, program, SOME(cn), cdef, e);
     // Nested class of some sort.
     case (_, _, _, _, _, _)

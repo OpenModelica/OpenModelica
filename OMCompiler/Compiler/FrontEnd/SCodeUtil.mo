@@ -51,9 +51,8 @@ public import SCode;
 protected
 import Debug;
 import Error;
-import FBuiltin;
 import Flags;
-import Inst;
+import InstHashTable;
 import List;
 import MetaUtil;
 import SCodeDump;
@@ -82,7 +81,7 @@ algorithm
 
     case _
       equation
-        Inst.initInstHashTable();
+        InstHashTable.init();
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
@@ -2513,18 +2512,6 @@ algorithm
   end match;
 end removeSelfReferenceFromSubMod;
 
-public function getConstrainedByModifiers
-  input SCode.Prefixes inPrefixes;
-  output SCode.Mod outMod;
-algorithm
-  outMod := match(inPrefixes)
-    local SCode.Mod m;
-    case (SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m)))))
-      then m;
-    else SCode.NOMOD();
-  end match;
-end getConstrainedByModifiers;
-
 protected function expandEnumerationSubMod
   input SCode.SubMod inSubMod;
   input Boolean inChanged;
@@ -2650,30 +2637,6 @@ public function makeEnumComponents
 algorithm
   outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
 end makeEnumComponents;
-
-public function getElementWithPathCheckBuiltin
-"returns the element from the program having the name as the id.
- if the element does not exist it fails"
-  input SCode.Program inProgram;
-  input Absyn.Path inPath;
-  output SCode.Element outElement;
-algorithm
-  outElement := matchcontinue (inProgram, inPath)
-    local
-      SCode.Program sp, rest;
-      SCode.Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i, n;
-
-    case (_, _)
-      then SCode.getElementWithPath(inProgram, inPath);
-
-    else
-      equation
-        (_,sp) = FBuiltin.getInitialFunctions();
-      then SCode.getElementWithPath(sp, inPath);
-  end matchcontinue;
-end getElementWithPathCheckBuiltin;
 
 protected function checkTypeSpec
   input Absyn.TypeSpec ts;

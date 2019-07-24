@@ -388,22 +388,6 @@ algorithm
   end match;
 end checkRedeclarationVisibility;
 
-public function checkValidEnumLiteral
-  input String inLiteral;
-  input SourceInfo inInfo;
-algorithm
-  _ := match(inLiteral, inInfo)
-    case (_, _) guard not listMember(inLiteral, {"quantity", "min", "max", "start", "fixed"})
-      then ();
-
-    else
-      equation
-        Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, {inLiteral}, inInfo);
-      then
-        fail();
-  end match;
-end checkValidEnumLiteral;
-
 public function checkDuplicateRedeclarations
   "Checks if a redeclaration already exists in a list of redeclarations."
   input NFSCodeEnv.Redeclaration inRedeclare;

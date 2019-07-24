@@ -396,7 +396,7 @@ algorithm
     case SCode.CLASS(cn, prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(tp,mod,attr1), cmt, i)
       equation
         // merge modifers from the component to the modifers from the constrained by
-        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
+        mod = SCode.mergeModifiers(mod, SCode.getConstrainedByModifiers(prefixes));
         (cache, emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
         (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, cn, tp);
         // unelab mod so we get constant evaluation of parameters
@@ -416,7 +416,7 @@ algorithm
     case SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i)
       equation
         // merge modifers from the component to the modifers from the constrained by
-        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
+        mod = SCode.mergeModifiers(mod, SCode.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(inCache, inEnv, inIH, inPrefix, mod, impl, inModScope, info);
         (_, tp1) = elabModQualifyTypespec(cache, inEnv, inIH, inPrefix, impl, info, compname, tp);
         // unelab mod so we get constant evaluation of parameters
@@ -1677,11 +1677,11 @@ algorithm
     case (DAE.REDECL(element = el1 as SCode.COMPONENT(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.COMPONENT(), mod = emod2))
       algorithm
-        smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
+        smod1 := SCode.getConstrainedByModifiers(el1.prefixes);
         smod1 := SCode.mergeModifiers(el1.modifications, smod1);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
 
-        smod2 := SCodeUtil.getConstrainedByModifiers(el2.prefixes);
+        smod2 := SCode.getConstrainedByModifiers(el2.prefixes);
         smod2 := SCode.mergeModifiers(el2.modifications, smod2);
         dmod2 := elabUntypedMod(smod2, COMPONENT(el2.name));
 
@@ -1707,11 +1707,11 @@ algorithm
     case (DAE.REDECL(element = el1 as SCode.CLASS(), mod = emod1),
           DAE.REDECL(element = el2 as SCode.CLASS(), mod = emod2))
       algorithm
-        smod1 := SCodeUtil.getConstrainedByModifiers(el1.prefixes);
+        smod1 := SCode.getConstrainedByModifiers(el1.prefixes);
         dmod1 := elabUntypedMod(smod1, COMPONENT(el1.name));
         emod1 := merge(emod1, dmod1, el1.name, inCheckFinal);
 
-        smod2 := SCodeUtil.getConstrainedByModifiers(el2.prefixes);
+        smod2 := SCode.getConstrainedByModifiers(el2.prefixes);
         dmod2 := elabUntypedMod(smod2, COMPONENT(el2.name));
         emod2 := merge(emod2, dmod2, el1.name, inCheckFinal);
 

@@ -71,6 +71,11 @@ type TypeMemoryEntry = tuple<DAE.Type, DAE.Type>;
 type TypeMemoryEntryList = list<TypeMemoryEntry>;
 type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
 
+type InstDims = list<list<DAE.Dimension>>
+"Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
+ This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
+ E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
+
 public function callingScopeStr
   input CallingScope inCallingScope;
   output String str;

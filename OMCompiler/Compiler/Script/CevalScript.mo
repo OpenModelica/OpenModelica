@@ -103,7 +103,6 @@ import StackOverflow;
 import System;
 import Static;
 import SCode;
-import SCodeUtil;
 import Settings;
 import SymbolTable;
 import Tpl;
@@ -773,7 +772,7 @@ algorithm
         absynClass = if b1 then AbsynUtil.getFunctionInterface(absynClass) else absynClass;
         absynClass = if b2 then AbsynUtil.getShortClass(absynClass) else absynClass;
         p = Absyn.PROGRAM({absynClass},Absyn.TOP());
-        cl = SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className);
+        cl = FBuiltin.getElementWithPathCheckBuiltin(scodeP, className);
         str = match name
           case "Absyn" then Dump.unparseStr(p, false);
           case "SCode" then SCodeDump.unparseElementStr(cl);
@@ -1277,7 +1276,7 @@ algorithm
     case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className)), Values.STRING(name)},_)
       algorithm
         scodeP := SymbolTable.getSCode();
-        elts := match SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className)
+        elts := match FBuiltin.getElementWithPathCheckBuiltin(scodeP, className)
           case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then elts;
           case cl equation Error.addSourceMessage(Error.INTERNAL_ERROR, {AbsynUtil.pathString(className) + " does not contain SCode.PARTS"}, SCode.elementInfo(cl)); then fail();
         end match;
