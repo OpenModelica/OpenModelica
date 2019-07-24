@@ -671,5 +671,29 @@ algorithm
 
 end initialGraphOptimica;
 
+function getElementWithPathCheckBuiltin
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input SCode.Program inProgram;
+  input Absyn.Path inPath;
+  output SCode.Element outElement;
+algorithm
+  outElement := matchcontinue (inProgram, inPath)
+    local
+      SCode.Program sp, rest;
+      SCode.Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+
+    case (_, _)
+      then SCode.getElementWithPath(inProgram, inPath);
+
+    else
+      equation
+        (_,sp) = FBuiltin.getInitialFunctions();
+      then SCode.getElementWithPath(sp, inPath);
+  end matchcontinue;
+end getElementWithPathCheckBuiltin;
+
 annotation(__OpenModelica_Interface="frontend");
 end FBuiltin;

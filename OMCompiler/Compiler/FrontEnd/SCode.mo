@@ -636,8 +636,6 @@ public constant Attributes defaultConstAttr =
 protected import Error;
 protected import Util;
 protected import List;
-protected import NFSCodeCheck;
-protected import SCodeUtil;
 
 public function stripSubmod
   "Removes all submodifiers from the Mod."
@@ -1982,7 +1980,7 @@ protected
   Comment comment;
 algorithm
   ENUM(literal = literal, comment = comment) := inEnum;
-  NFSCodeCheck.checkValidEnumLiteral(literal, inInfo);
+  checkValidEnumLiteral(literal, inInfo);
   outEnumType := COMPONENT(literal, defaultPrefixes, defaultConstAttr,
     Absyn.TPATH(Absyn.IDENT("EnumType"), NONE()),
     NOMOD(), comment, NONE(), inInfo);
@@ -5297,8 +5295,8 @@ algorithm
 
     case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),CLASS(_,prefixes2,_,_,_,cd2,_,_))
       equation
-        mCCNew = SCodeUtil.getConstrainedByModifiers(prefixes1);
-        mCCOld = SCodeUtil.getConstrainedByModifiers(prefixes2);
+        mCCNew = getConstrainedByModifiers(prefixes1);
+        mCCOld = getConstrainedByModifiers(prefixes2);
         cd1 = mergeClassDef(cd1, cd2, mCCNew, mCCOld);
         prefixes1 = propagatePrefixes(prefixes2, prefixes1);
         n = CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
@@ -5309,6 +5307,18 @@ algorithm
 
   end matchcontinue;
 end mergeWithOriginal;
+
+public function getConstrainedByModifiers
+  input SCode.Prefixes inPrefixes;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inPrefixes)
+    local SCode.Mod m;
+    case (SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m)))))
+      then m;
+    else SCode.NOMOD();
+  end match;
+end getConstrainedByModifiers;
 
 public function mergeClassDef
 "@author: adrpo
@@ -6277,6 +6287,16 @@ algorithm
   body := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in body);
   branch := (cond, body);
 end stripCommentsFromStatementBranch;
+
+function checkValidEnumLiteral
+  input String inLiteral;
+  input SourceInfo inInfo;
+algorithm
+  if listMember(inLiteral, {"quantity", "min", "max", "start", "fixed"}) then
+    Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, {inLiteral}, inInfo);
+    fail();
+  end if;
+end checkValidEnumLiteral;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCode;

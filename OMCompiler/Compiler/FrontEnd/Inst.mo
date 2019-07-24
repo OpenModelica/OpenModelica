@@ -100,10 +100,7 @@ protected type Ident = DAE.Ident "an identifier";
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
-protected type InstDims = list<list<DAE.Dimension>>
-"Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
- This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
- E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
+protected type InstDims = InstTypes.InstDims;
 
 protected partial function BasicTypeAttrTyper
   input String inAttrName;
@@ -138,6 +135,7 @@ import GC;
 import Global;
 import HashTable;
 import HashTable5;
+import InstHashTable;
 import InstSection;
 import InstBinding;
 import InstVar;
@@ -219,7 +217,7 @@ algorithm
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
 
         // let the GC collect these as they are used only by Inst!
-        releaseInstHashTable();
+        InstHashTable.release();
       then
         (cache,env,ih,dae2);
 
@@ -286,7 +284,7 @@ algorithm
         //print("\nSetSource+DAE: " + realString(System.getTimerIntervalTime()));
 
         // let the GC collect these as they are used only by Inst!
-        releaseInstHashTable();
+        InstHashTable.release();
       then
         (cache, env, ih, dae);
 
@@ -347,7 +345,7 @@ algorithm
         end if;
 
         // let the GC collect these as they are used only by Inst!
-        releaseInstHashTable();
+        InstHashTable.release();
       then
         fail();
   end matchcontinue;
@@ -880,9 +878,8 @@ public function instClassIn2
         output DAE.EqualityConstraint equalityConstraint;
 protected
   Absyn.Path cache_path;
-  InstHashTable inst_hash;
-  CachedInstItemInputs inputs;
-  CachedInstItemOutputs outputs;
+  InstHashTable.CachedInstItemInputs inputs;
+  InstHashTable.CachedInstItemOutputs outputs;
   tuple<InstDims, Boolean, DAE.Mod, Connect.Sets, ClassInf.State, SCode.Element, Option<DAE.ComponentRef>> bbx, bby;
   DAE.Mod m;
   Prefix.Prefix pre;
@@ -912,10 +909,8 @@ algorithm
 
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
-    inst_hash := getGlobalRoot(Global.instHashIndex);
-
     try
-      {SOME(FUNC_instClassIn(inputs, outputs)), _} := BaseHashTable.get(cache_path, inst_hash);
+      {SOME(InstHashTable.FUNC_instClassIn(inputs, outputs)), _} := InstHashTable.get(cache_path);
       (m, pre, csets, st, e as SCode.CLASS(), dims, impl, scr, cs) := inputs;
 
       // Are the important inputs the same?
@@ -942,7 +937,7 @@ algorithm
     outputs := (env, dae, sets, state, vars, ty, optDerAttr, equalityConstraint, graph);
 
     showCacheInfo("Full Inst Add: ", cache_path);
-    addToInstCache(cache_path, SOME(FUNC_instClassIn(inputs, outputs)), NONE());
+    InstHashTable.addToInstCache(cache_path, SOME(InstHashTable.FUNC_instClassIn(inputs, outputs)), NONE());
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Inst.instClassIn2 failed on class: " + SCode.elementName(cls) +
@@ -1542,9 +1537,8 @@ public function partialInstClassIn
         output list<DAE.Var> vars;
 protected
   Absyn.Path cache_path;
-  InstHashTable inst_hash;
-  CachedPartialInstItemInputs inputs;
-  CachedPartialInstItemOutputs outputs;
+  InstHashTable.CachedPartialInstItemInputs inputs;
+  InstHashTable.CachedPartialInstItemOutputs outputs;
   tuple<InstDims, DAE.Mod, ClassInf.State, SCode.Element> bbx, bby;
   DAE.Mod m;
   Prefix.Prefix pre;
@@ -1557,10 +1551,9 @@ algorithm
 
   // See if we have it in the cache.
   if Flags.isSet(Flags.CACHE) then
-    inst_hash := getGlobalRoot(Global.instHashIndex);
 
     try
-      {_, SOME(FUNC_partialInstClassIn(inputs, outputs))} := BaseHashTable.get(cache_path, inst_hash);
+      {_, SOME(InstHashTable.FUNC_partialInstClassIn(inputs, outputs))} := InstHashTable.get(cache_path);
       (m, pre, st, e as SCode.CLASS(), dims) := inputs;
 
       // Are the important inputs the same?
@@ -1596,7 +1589,7 @@ algorithm
     outputs := (env, state, vars);
 
     showCacheInfo("Partial Inst Add: ", cache_path);
-    addToInstCache(cache_path, NONE(), SOME(FUNC_partialInstClassIn(inputs, outputs)));
+    InstHashTable.addToInstCache(cache_path, NONE(), SOME(InstHashTable.FUNC_partialInstClassIn(inputs, outputs)));
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Inst.partialInstClassIn failed on class: " +
@@ -3337,7 +3330,7 @@ algorithm
         true = if Config.acceptParModelicaGrammar() then InstUtil.checkParallelismWRTEnv(env,name,attr,info) else true;
 
         // merge modifers from the component to the modifers from the constrained by
-        m = SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(prefixes));
+        m = SCode.mergeModifiers(m, SCode.getConstrainedByModifiers(prefixes));
 
         if SCode.finalBool(final_prefix) then
           m = InstUtil.traverseModAddFinal(m);
@@ -4282,7 +4275,7 @@ algorithm
   try
     1 := BaseHashTable.get(inCref, inUpdatedComps);
   else
-    smod := SCode.mergeModifiers(inSMod, SCodeUtil.getConstrainedByModifiers(inPrefixes));
+    smod := SCode.mergeModifiers(inSMod, SCode.getConstrainedByModifiers(inPrefixes));
     (outCache, mod1) :=
       updateComponentInEnv3(outCache, outEnv, outIH, smod, inImpl, Mod.COMPONENT(inName), inInfo);
     class_mod := Mod.lookupModificationP(inMod, inPath);
@@ -5344,224 +5337,29 @@ algorithm
   end match;
 end makeFullyQualified2Builtin;
 
-// *********************************************************************
-//    hash table implementation for cashing instantiation results
-// *********************************************************************
-
-protected function addToInstCache
-  input Absyn.Path fullEnvPathPlusClass;
-  input Option<CachedInstItem> fullInstOpt;
-  input Option<CachedInstItem> partialInstOpt;
-algorithm
-  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
-    local
-      CachedInstItem fullInst, partialInst;
-      InstHashTable instHash;
-      Option<CachedInstItem> opt;
-      list<Option<CachedInstItem>> lst;
-
-    // nothing is we have -d=noCache
-    case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.CACHE);
-       then
-         ();
-
-    // we have them both
-    case (_, SOME(_), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
-        setGlobalRoot(Global.instHashIndex, instHash);
-      then
-        ();
-
-    // we have a partial inst result and the full in the cache
-    case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        // see if we have a full inst here
-        {opt,_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
-        setGlobalRoot(Global.instHashIndex, instHash);
-      then
-        ();
-
-    // we have a partial inst result and the full is NOT in the cache
-    case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        // see if we have a full inst here
-        // failed above {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
-        setGlobalRoot(Global.instHashIndex, instHash);
-      then
-        ();
-
-    // we have a full inst result and the partial in the cache
-    case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        // see if we have a partial inst here
-        (_::(lst as {SOME(_)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
-        setGlobalRoot(Global.instHashIndex, instHash);
-      then
-        ();
-
-    // we have a full inst result and the partial is NOT in the cache
-    case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        // see if we have a partial inst here
-        // failed above {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
-        setGlobalRoot(Global.instHashIndex, instHash);
-      then
-        ();
-
-    // we failed above??!!
-    else ();
-  end matchcontinue;
-end addToInstCache;
-
-protected type CachedInstItemInputs = tuple<DAE.Mod, Prefix.Prefix,
-    Connect.Sets, ClassInf.State, SCode.Element, InstDims, Boolean,
-    Option<DAE.ComponentRef>, InstTypes.CallingScope>;
-
-protected type CachedInstItemOutputs = tuple<FCore.Graph, DAE.DAElist, Connect.Sets,
-    ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
-    DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph>;
-
-protected type CachedPartialInstItemInputs = tuple<DAE.Mod, Prefix.Prefix,
-    ClassInf.State, SCode.Element, InstDims>;
-
-protected type CachedPartialInstItemOutputs = tuple<FCore.Graph, ClassInf.State, list<DAE.Var>>;
-
-protected
-uniontype CachedInstItem
-  // *important* inputs/outputs for instClassIn
-  record FUNC_instClassIn
-    CachedInstItemInputs inputs;
-    CachedInstItemOutputs outputs;
-  end FUNC_instClassIn;
-
-  // *important* inputs/outputs for partialInstClassIn
-  record FUNC_partialInstClassIn
-    CachedPartialInstItemInputs inputs;
-    CachedPartialInstItemOutputs outputs;
-  end FUNC_partialInstClassIn;
-
-end CachedInstItem;
-
-protected type CachedInstItems = list<Option<CachedInstItem>>;
-
-/* Begin inline HashTable */
-protected type Key = Absyn.Path;
-protected type Value = CachedInstItems;
-
-protected type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
-protected type InstHashTable = tuple<
-  array<list<tuple<Key,Integer>>>,
-  tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
-  Integer,
-  HashTableKeyFunctionsType
->;
-
-protected partial function FuncHashKey
-  input Key cr;
-  input Integer mod;
-  output Integer res;
-end FuncHashKey;
-
-protected partial function FuncKeyEqual
-  input Key cr1;
-  input Key cr2;
-  output Boolean res;
-end FuncKeyEqual;
-
-protected partial function FuncKeyStr
-  input Key cr;
-  output String res;
-end FuncKeyStr;
-
-protected partial function FuncValueStr
-  input Value exp;
-  output String res;
-end FuncValueStr;
-
-protected function opaqVal
-"Don't actually print what is stored in the value... It's too damn long."
-  input Value v;
-  output String str;
-algorithm
-  str := "OPAQUE_VALUE";
-end opaqVal;
-
-public function initInstHashTable
-protected
-  InstHashTable ht;
-algorithm
-  /* adrpo: reuse it if is already there! */
-  try
-    ht := getGlobalRoot(Global.instHashIndex);
-    ht := BaseHashTable.clear(ht);
-    setGlobalRoot(Global.instHashIndex, ht);
-  else
-    setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
-  end try;
-end initInstHashTable;
-
-public function releaseInstHashTable
-algorithm
-  setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
-  OperatorOverloading.initCache();
-end releaseInstHashTable;
-
-protected function emptyInstHashTable
-  "Returns an empty HashTable."
-  output InstHashTable hashTable;
-algorithm
-  hashTable := emptyInstHashTableSized(Flags.getConfigInt(Flags.INST_CACHE_SIZE));
-  OperatorOverloading.initCache();
-end emptyInstHashTable;
-
-protected function emptyInstHashTableSized
-  "Returns an empty HashTable, using the given bucket size."
-  input Integer size;
-  output InstHashTable hashTable;
-algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(AbsynUtil.pathHashMod,AbsynUtil.pathEqual,AbsynUtil.pathStringDefault,opaqVal));
-end emptyInstHashTableSized;
-
-/* end HashTable */
-
 public function getCachedInstance
   input output FCore.Cache cache;
   input output FCore.Graph env;
   input String name;
   input FCore.Ref ref;
 protected
-  InstHashTable inst_hash;
   Absyn.Path cache_path;
   SCode.Element cls;
   Prefix.Prefix prefix, prefix2;
   FCore.Graph env2;
   SCode.Encapsulated enc;
   SCode.Restriction res;
-  CachedInstItemInputs inputs;
+  InstHashTable.CachedInstItemInputs inputs;
 algorithm
   true := Flags.isSet(Flags.CACHE);
 
-  inst_hash := getGlobalRoot(Global.instHashIndex);
   FCore.CL(cls as SCode.CLASS(encapsulatedPrefix = enc, restriction = res), prefix) :=
     FNode.refData(ref);
   env2 := FGraph.openScope(env, enc, name, FGraph.restrictionToScopeType(res));
 
   try
     cache_path := generateCachePath(env2, cls, prefix, InstTypes.INNER_CALL());
-    {SOME(FUNC_instClassIn(inputs, (env, _, _, _, _, _, _, _, _))), _} :=
-      BaseHashTable.get(cache_path, inst_hash);
+    {SOME(InstHashTable.FUNC_instClassIn(inputs, (env, _, _, _, _, _, _, _, _))), _} := InstHashTable.get(cache_path);
     (_, prefix2, _, _, _, _, _, _, _) := inputs;
     true := PrefixUtil.isPrefix(prefix) and PrefixUtil.isPrefix(prefix2);
   else

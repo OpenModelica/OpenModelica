@@ -85,6 +85,7 @@ import GlobalScriptDump;
 import GlobalScriptUtil;
 import InnerOuter;
 import Inst;
+import InstHashTable;
 import InstUtil;
 import InstTypes;
 import InteractiveUtil.mo;
@@ -335,7 +336,7 @@ algorithm
         evalfunc = Flags.set(Flags.EVAL_FUNC, false);
         keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
         Flags.setConfigBool(Flags.KEEP_ARRAYS, false);
-        Inst.initInstHashTable();
+        InstHashTable.init();
         str = evaluateGraphicalApi(stmt, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
       then str_1;
@@ -343,7 +344,7 @@ algorithm
     // Evaluate algorithm statements in evaluateAlgStmt()
     case GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))
       equation
-        Inst.initInstHashTable();
+        InstHashTable.init();
         str = evaluateAlgStmt(algitem);
         str_1 = stringAppend(str, "\n");
       then str_1;
@@ -351,7 +352,7 @@ algorithm
     // Evaluate expressions in evaluate_exprToStr()
     case GlobalScript.IEXP(exp = exp, info = info)
       equation
-        Inst.initInstHashTable();
+        InstHashTable.init();
         str = evaluateExprToStr(exp, info);
         str_1 = stringAppend(str, "\n");
       then str_1;
@@ -13023,15 +13024,15 @@ protected
   GraphicEnvCache cache;
 algorithm
   if not Flags.isSet(Flags.NF_API) then
-	  placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
-	  graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
-	  (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
+    placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
+    graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
+    (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
   else
     env := FGraph.emptyGraph;
   end if;
-	cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-	res := getComponentitemsAnnotations(comps, env, inClass, cache);
-	resStr := stringDelimitList(res, ",");
+  cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
+  res := getComponentitemsAnnotations(comps, env, inClass, cache);
+  resStr := stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
 
 protected function getComponentitemsAnnotations
