@@ -2598,8 +2598,20 @@ int System_getTerminalWidth(void)
 
 #include "simulation_options.h"
 
-#define SB_SIZE 8192*2
+#define SB_SIZE 8192*4
 #define SB_SIZE_MINUS_ONE (SB_SIZE-1)
+
+/* snprintf check negative size */
+static size_t check_nonnegative(long sz)
+{
+  if (sz < 0) {
+    fprintf(stderr, "%s:%d got negative size: %ld, which should not happen\n", __FILE__, __LINE__, sz);
+    exit(EXIT_FAILURE);
+  }
+  return sz;
+}
+
+#define CHECK_NONNEGATIVE_BUFFER() check_nonnegative((long)SB_SIZE_MINUS_ONE-(cur-buf))
 
 char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 {
@@ -2611,13 +2623,13 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
   for(i=1; i<FLAG_MAX; ++i)
   {
     if (sphinx) {
-      cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "\n.. _simflag-%s :\n\n", FLAG_NAME[i]);
+      cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "\n.. _simflag-%s :\n\n", FLAG_NAME[i]);
     }
     if (FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
       if (sphinx) {
-        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), ":ref:`-%s <simflag-%s>`\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s <simflag-%s>`\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
-        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "<-%s>\n%s\n", FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "<-%s>\n%s\n", FLAG_NAME[i], desc[i]);
       }
     } else if (FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
       int numExtraFlags=0;
@@ -2625,9 +2637,9 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       const char **flagName;
       const char **flagDesc;
       if (sphinx) {
-        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
-        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       }
 
       switch(i) {
@@ -2696,20 +2708,20 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       }
 
       if (numExtraFlags) {
-        cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "\n");
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "\n");
         if (flagName) {
           for (j=firstExtraFlag; j<numExtraFlags; j++) {
-            cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "  * %s (%s)\n", flagName[j], flagDesc[j]);
+            cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "  * %s (%s)\n", flagName[j], flagDesc[j]);
           }
         } else {
           for (j=firstExtraFlag; j<numExtraFlags; j++) {
-            cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "  * %s\n", flagDesc[j]);
+            cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "  * %s\n", flagDesc[j]);
           }
         }
       }
 
     } else {
-      cur += snprintf(cur, SB_SIZE_MINUS_ONE-(buf-cur), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
+      cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "[unknown flag-type] <-%s>\n", FLAG_NAME[i]);
     }
   }
   *cur = 0;
